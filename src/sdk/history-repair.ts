@@ -91,22 +91,26 @@ export interface HistoryRepairResult {
   generated_at: string;
 }
 
-/** Documents one history event whose replayed effect a repair reconciliation overwrites. */
+/** Documents one history event attributed to fields changed by reconciliation. */
 export interface HistoryRepairDiscardedEvent {
   /** 1-based index of the event in the (re-anchored) history stream. */
   index: number;
-  /** Timestamp of the discarded event. */
+  /** Timestamp of the attributed event. */
   ts: string;
-  /** Author whose mutation the reconciliation overwrites. */
+  /** Author whose mutation is being classified. */
   author: string;
   /** Operation label of the discarded event. */
   op: string;
-  /** Reverted fields this event last wrote. */
+  /** Reconciled fields this event last wrote. */
   fields: string[];
 }
 
 /** Documents the repair reconciliation data-loss report exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairReconciliationReport {
+  /** Total number of fields changed by the reconciliation patch. */
+  reconciled_field_count: number;
+  /** Every field changed by the reconciliation patch. */
+  reconciled_fields: string[];
   /** Number of fields the reconciliation patch reverts relative to the replayed chain. */
   reverted_field_count: number;
   /** Fields whose replayed values the reconciliation overwrites with the on-disk item's values. */
@@ -115,30 +119,84 @@ export interface HistoryRepairReconciliationReport {
   discarded_events: HistoryRepairDiscardedEvent[];
   /** Distinct authors whose mutations the reconciliation discards. */
   discarded_authors: string[];
+  /** Number of changed fields whose replayed value remains present in the on-disk item. */
+  preserved_field_count: number;
+  /** Changed fields whose replayed value remains present after reconciliation. */
+  preserved_fields: string[];
+  /** Newest history events whose effects remain preserved by reconciliation. */
+  preserved_events: HistoryRepairDiscardedEvent[];
+  /** Distinct authors whose reconciled mutations remain preserved. */
+  preserved_authors: string[];
   /** How to recover a discarded mutation instead of accepting the revert. */
-  recovery_hint: string;
+  recovery_hint: string | null;
 }
 
-/** Compute which fields a chain-vs-item reconciliation reverts and which history events (and authors) last wrote them. The reconciliation patch rewrites the replayed final state into the on-disk item state, so any field it touches is a replayed mutation being overwritten — after a lossy merge resolution this is exactly the other branch's discarded work (GH-603). */
-export function analyzeReconciliationDiscard(
+function replayFieldValue(document: ReplayDocument, field: string): unknown {
+  return field === "body"
+    ? document.body
+    : (document.metadata as unknown as Record<string, unknown>)[field];
+}
+
+/**
+ * Report whether the replayed value survives inside the reconciled value.
+ *
+ * Arrays use multiset containment so append-only unions and deterministic
+ * reordering remain lossless, while removals and scalar replacements stay loud.
+ */
+function isReplayValuePreserved(
+  replayed: unknown,
+  reconciled: unknown,
+): boolean {
+  if (replayed === undefined || Object.is(replayed, reconciled)) {
+    return true;
+  }
+  if (Array.isArray(replayed)) {
+    if (!Array.isArray(reconciled)) {
+      return false;
+    }
+    const matched = new Set<number>();
+    return replayed.every((expected) => {
+      const index = reconciled.findIndex(
+        (candidate, candidateIndex) =>
+          !matched.has(candidateIndex) &&
+          isReplayValuePreserved(expected, candidate),
+      );
+      if (index < 0) {
+        return false;
+      }
+      matched.add(index);
+      return true;
+    });
+  }
+  if (
+    replayed === null ||
+    reconciled === null ||
+    typeof replayed !== "object" ||
+    typeof reconciled !== "object" ||
+    Array.isArray(reconciled)
+  ) {
+    return false;
+  }
+  const reconciledRecord = reconciled as Record<string, unknown>;
+  return Object.entries(replayed as Record<string, unknown>).every(
+    ([key, value]) =>
+      Object.hasOwn(reconciledRecord, key) &&
+      isReplayValuePreserved(value, reconciledRecord[key]),
+  );
+}
+
+/** Attribute reconciled fields to the newest history event that wrote each one. */
+function collectReconciliationEvents(
   entries: HistoryEntry[],
-  finalReplay: ReplayDocument,
-  currentItemReplay: ReplayDocument,
-): HistoryRepairReconciliationReport | undefined {
-  const reconcilePatch = jsonPatch.compare(
-    finalReplay,
-    currentItemReplay,
-  ) as HistoryPatchOp[];
-  if (reconcilePatch.length === 0) {
-    return undefined;
-  }
-  const revertedFields = new Set<string>();
-  for (const op of reconcilePatch) {
-    revertedFields.add(patchPathToChangedField(op.path));
-  }
-  const remaining = new Set(revertedFields);
-  const discardedEvents: HistoryRepairDiscardedEvent[] = [];
-  for (let index = entries.length - 1; index >= 0 && remaining.size > 0; index -= 1) {
+  fields: ReadonlySet<string>,
+): HistoryRepairDiscardedEvent[] {
+  const remaining = new Set(fields);
+  const events: HistoryRepairDiscardedEvent[] = [];
+  for (
+    let index = entries.length - 1;
+    index >= 0 && remaining.size > 0;
+    index -= 1
+  ) {
     const entry = entries[index];
     const entryFields = new Set<string>();
     for (const op of normalizeReplayPatchOps(entry.patch)) {
@@ -154,7 +212,7 @@ export function analyzeReconciliationDiscard(
     for (const field of overlap) {
       remaining.delete(field);
     }
-    discardedEvents.push({
+    events.push({
       index: index + 1,
       ts: entry.ts,
       author: entry.author,
@@ -162,18 +220,69 @@ export function analyzeReconciliationDiscard(
       fields: overlap.sort((left, right) => left.localeCompare(right)),
     });
   }
-  discardedEvents.reverse();
-  return {
-    reverted_field_count: revertedFields.size,
-    reverted_fields: [...revertedFields].sort((left, right) =>
-      left.localeCompare(right),
+  return events.reverse();
+}
+
+/** Compute which chain-vs-item differences preserve replayed context and which genuinely discard it. */
+export function analyzeReconciliationDiscard(
+  entries: HistoryEntry[],
+  finalReplay: ReplayDocument,
+  currentItemReplay: ReplayDocument,
+): HistoryRepairReconciliationReport | undefined {
+  const reconcilePatch = jsonPatch.compare(
+    finalReplay,
+    currentItemReplay,
+  ) as HistoryPatchOp[];
+  if (reconcilePatch.length === 0) {
+    return undefined;
+  }
+  const reconciledFields = new Set<string>();
+  for (const op of reconcilePatch) {
+    reconciledFields.add(patchPathToChangedField(op.path));
+  }
+  const preservedFields = new Set(
+    [...reconciledFields].filter((field) =>
+      isReplayValuePreserved(
+        replayFieldValue(finalReplay, field),
+        replayFieldValue(currentItemReplay, field),
+      ),
     ),
+  );
+  const revertedFields = new Set(
+    [...reconciledFields].filter((field) => !preservedFields.has(field)),
+  );
+  const discardedEvents = collectReconciliationEvents(entries, revertedFields);
+  const preservedEvents = collectReconciliationEvents(entries, preservedFields);
+  const sortedReconciledFields = [...reconciledFields].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const sortedRevertedFields = [...revertedFields].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const sortedPreservedFields = [...preservedFields].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const discardedAuthors = [
+    ...new Set(discardedEvents.map((event) => event.author)),
+  ].sort((left, right) => left.localeCompare(right));
+  const preservedAuthors = [
+    ...new Set(preservedEvents.map((event) => event.author)),
+  ].sort((left, right) => left.localeCompare(right));
+  return {
+    reconciled_field_count: reconciledFields.size,
+    reconciled_fields: sortedReconciledFields,
+    reverted_field_count: revertedFields.size,
+    reverted_fields: sortedRevertedFields,
     discarded_events: discardedEvents,
-    discarded_authors: [
-      ...new Set(discardedEvents.map((event) => event.author)),
-    ].sort((left, right) => left.localeCompare(right)),
+    discarded_authors: discardedAuthors,
+    preserved_field_count: preservedFields.size,
+    preserved_fields: sortedPreservedFields,
+    preserved_events: preservedEvents,
+    preserved_authors: preservedAuthors,
     recovery_hint:
-      "Reconciliation keeps the on-disk item and overwrites these replayed mutations. To recover one, inspect it with pm history <id> --diff --field <field>, then re-apply the lost value with pm update.",
+      discardedEvents.length > 0
+        ? "Reconciliation keeps the on-disk item and overwrites these replayed mutations. To recover one, inspect it with pm history <id> --diff --field <field>, then re-apply the lost value with pm update."
+        : null,
   };
 }
 
@@ -432,7 +541,7 @@ export async function runHistoryRepair(
   }
 
   const warnings = collectHistoryRepairWarnings(changed, reanchor.skippedOps);
-  if (reconciliation) {
+  if (reconciliation && reconciliation.discarded_events.length > 0) {
     warnings.push(
       `history_repair_reconcile_discards_events:${reconciliation.discarded_events.length}`,
     );
@@ -620,8 +729,8 @@ export async function runHistoryRepairAll(
     drifted_streams: drift.driftedItems.length,
     streams,
     totals,
-    warnings: [...new Set([...itemReadWarnings, ...repairWarnings])].sort((left, right) =>
-      left.localeCompare(right),
+    warnings: [...new Set([...itemReadWarnings, ...repairWarnings])].sort(
+      (left, right) => left.localeCompare(right),
     ),
     generated_at: nowIso(),
   };

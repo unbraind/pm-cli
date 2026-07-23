@@ -81,7 +81,10 @@ import {
   parseReminderEntries,
   parseTypeOptionEntries,
 } from "./repeatable-metadata-parsers.js";
-import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
+import {
+  assertDependencyEdgesAllowed,
+  assertValidBareDependencyFlagValue,
+} from "../../sdk/dependency-flag-validation.js";
 import {
   normalizeDependencySeedId,
   normalizeDependencySourceKind,
@@ -337,10 +340,7 @@ const OWNERSHIP_BYPASS_RESTRICTED_FLAG_REPLACEMENTS: ReadonlyMap<
   string,
   (id: string) => string
 > = new Map([
-  [
-    "--comment",
-    (id: string) => `pm comments ${id} --add "<text>" --force`,
-  ],
+  ["--comment", (id: string) => `pm comments ${id} --add "<text>" --force`],
   [
     "--file",
     (id: string) =>
@@ -2381,10 +2381,7 @@ function applyAcceptanceCriteriaAdditiveMutation(
   if (document.metadata.acceptance_criteria === nextValue) {
     return;
   }
-  if (
-    nextValue === "" &&
-    document.metadata.acceptance_criteria === undefined
-  ) {
+  if (nextValue === "" && document.metadata.acceptance_criteria === undefined) {
     return;
   }
   document.metadata.acceptance_criteria = nextValue;
@@ -2722,6 +2719,18 @@ function mutateUpdateDocument(
     warnings,
   );
   if (
+    context.options.dep !== undefined ||
+    context.options.depRemove !== undefined ||
+    context.options.blockedBy !== undefined ||
+    context.clearItemMetadataKeys.has("dependencies") ||
+    context.clearItemMetadataKeys.has("blocked_by")
+  ) {
+    assertDependencyEdgesAllowed(
+      document.metadata.id,
+      document.metadata.dependencies,
+    );
+  }
+  if (
     normalizeStatusInput(document.metadata.status, context.statusRegistry) ===
       context.statusRegistry.canceled_status &&
     document.metadata.assignee !== undefined
@@ -2927,14 +2936,16 @@ export async function runUpdate(
     typeToFolder: typeRegistry.type_to_folder,
     id,
     op:
-      options.ownershipMetadataBypass === true || options.ownershipDependencyBypass === true
+      options.ownershipMetadataBypass === true ||
+      options.ownershipDependencyBypass === true
         ? "update_ownership_bypass"
         : "update",
     author,
     message: options.message,
     force: options.force,
     bypassAssigneeConflict:
-      options.ownershipMetadataBypass === true || options.ownershipDependencyBypass === true,
+      options.ownershipMetadataBypass === true ||
+      options.ownershipDependencyBypass === true,
     extensionFieldNames,
     skipNoop: true,
     mutate(document) {

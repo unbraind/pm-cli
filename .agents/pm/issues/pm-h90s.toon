@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[3]: agent-ux,"area:governance",history-integrity
 created_at: "2026-07-17T04:42:36.823Z"
-updated_at: "2026-07-21T07:57:07.125Z"
+updated_at: "2026-07-23T05:33:55.569Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: "strict mode (opt-in settings key) rejects mutations resolving to author 'unknown' with a typed usage error naming --author/PM_AUTHOR; TestAllCommandOptions accepts author and threads it to appendTrackedTestRunSummary (parity with single-run path); an audited acknowledgment flow dispositions the five 2026-07-16 events and pm health returns ok:true without baseline moves or history rewrites; validate/health docs cover all three; regression specs for each"
@@ -19,7 +19,8 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-demq,related,"2026-07-17T04:42:36.823Z",null,null
   pm-u14c,related,"2026-07-17T04:42:36.823Z",null,null
   pm-wenq,related,"2026-07-17T04:42:36.823Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-19T16:15:16.114Z",codex-wide-sdk-20260719,"2026-07-19 verification: pm health still reports exactly history_unknown_author_events:5 and validate reports no history drift, matching this canonical open issue's documented immutable-event scope. No duplicate item created and no history files were rewritten."
   "2026-07-21T07:57:07.125Z",codex-root-20260721,"2026-07-21 shipping-lane verification: pm health still reports exactly 5 actionable unknown-author events, with 0 history drift, 0 active/stale locks, and storage integrity otherwise clean. This remains the canonical prevention/disposition item; no duplicate was created and immutable history was not rewritten."
+  "2026-07-23T05:33:55.569Z",claude-code-agent,"Fresh health evidence 2026-07-23: pm health --check-only reports storage warn with 167 unknown-author events, partitioned into 162 legacy and 5 actionable across 1,925 streams / 32,373 checked events. This is the existing canonical item; no duplicate was created and it was not claimed by the truthful-context PR."
 body: ""

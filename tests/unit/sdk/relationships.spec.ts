@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { assertDependencyEdgesAllowed } from "../../../src/sdk/dependency-flag-validation.js";
+import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   RelationshipGraph,
   RelationshipKindRegistry,
+  assertRelationshipEdgeAllowed,
   createRelationshipKindRegistry,
   dependencyToRelationship,
   isOrderingRelationshipKind,
@@ -150,6 +153,57 @@ describe("relationship kind registry", () => {
         hierarchyDirection: "source_parent",
       }),
     ).toThrow("Non-hierarchy relationship kind");
+  });
+
+  it("enforces self-edge policy after alias resolution while preserving custom opt-ins", () => {
+    const registry = createRelationshipKindRegistry().register({
+      kind: "reflects",
+      direction: "directed",
+      ordering: false,
+      hierarchy: false,
+      outgoing: "many",
+      incoming: "many",
+      lifecycle: "persistent",
+      aliases: ["self_reflection"],
+      compatibilityVersion: 1,
+      allowSelf: true,
+    });
+
+    expect(() =>
+      assertRelationshipEdgeAllowed("pm-a", "pm-a", "depends-on", registry),
+    ).toThrow("Self relationship is not allowed for blocked_by");
+    expect(
+      assertRelationshipEdgeAllowed("pm-a", "pm-a", "self-reflection", registry)
+        .kind,
+    ).toBe("reflects");
+    expect(() =>
+      assertRelationshipEdgeAllowed(" ", "pm-a", "related", registry),
+    ).toThrow("Relationship endpoint must not be empty");
+  });
+
+  it("normalizes defensive dependency-policy failures into structured usage errors", () => {
+    const registry = createRelationshipKindRegistry();
+    vi.spyOn(registry, "require").mockImplementation(() => {
+      throw "non-error registry failure";
+    });
+
+    expect(() =>
+      assertDependencyEdgesAllowed(
+        "pm-a",
+        [{ id: "pm-b", kind: "related", created_at: "now" }],
+        registry,
+      ),
+    ).toThrowError(
+      expect.objectContaining<PmCliError>({
+        message: "non-error registry failure",
+        context: expect.objectContaining({
+          code: "dependency_edge_not_allowed",
+        }),
+      }),
+    );
+    expect(() =>
+      assertDependencyEdgesAllowed("pm-a", undefined, registry),
+    ).not.toThrow();
   });
 });
 
@@ -469,14 +523,19 @@ describe("neighborEdges", () => {
       "root",
     ]);
     expect(
-      graph.neighborEdges("root", { direction: "incoming" }).value.map(({ id }) => id),
+      graph
+        .neighborEdges("root", { direction: "incoming" })
+        .value.map(({ id }) => id),
     ).toEqual(["alpha", "beta"]);
     expect(
       graph
         .neighborEdges("root", { direction: "both", kinds: ["parent"] })
         .value.map(({ id }) => id),
     ).toEqual(["beta"]);
-    const bounded = graph.neighborEdges("root", { direction: "both", limit: 1 });
+    const bounded = graph.neighborEdges("root", {
+      direction: "both",
+      limit: 1,
+    });
     expect(bounded.value).toHaveLength(1);
     expect(bounded.meta.truncated).toBe(true);
     expect(() => graph.neighborEdges("missing-node", {})).toThrow(

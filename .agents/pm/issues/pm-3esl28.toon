@@ -2,22 +2,41 @@ id: pm-3esl28
 title: "GH-645: standard-depth get/show JSON omits notes without notes_count"
 description: "At the default standard depth, pm get/show --json suppresses notes but exposes no notes_count or omission metadata, so agents can falsely conclude the item has no working context."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",gh-issue,json,token-efficiency
 created_at: "2026-07-22T19:01:44.269Z"
-updated_at: "2026-07-22T19:01:57.176Z"
+updated_at: "2026-07-23T05:38:23.338Z"
+closed_at: "2026-07-23T05:34:00.488Z"
 author: codex-sdk-boundary-20260722
 acceptance_criteria: "Default standard-depth get/show JSON reports notes_count whenever notes are omitted; full/deep projections remain backward compatible and include notes; CLI aliases, SDK result contracts, MCP projections, TOON/JSON docs, and contract fixtures remain coherent; regression tests cover zero, one, and multiple notes plus explicit depth modes"
 parent: pm-mpbb
 reporter: GitHub GH-645
 severity: medium
-expected_result: "Standard-depth structured output makes omitted note context explicit through notes_count and depth/projection metadata, or includes the notes consistently."
-actual_result: Default standard-depth JSON omits notes and exposes neither notes_count nor a signal that note context was projected out.
+resolution: "Standard and brief get projections now expose item.notes_count whenever note bodies are omitted; deep/full reads retain note bodies without a redundant count, and narrow fields accept notes_count."
+expected_result: Agents can distinguish zero notes from omitted note context without requesting a full item payload.
+actual_result: "CLI, PmClient, aliases, field projection, SDK docs, focused tests, full coverage, and packed installed-consumer acceptance all confirm the truthful count contract."
 affected_version: 2026.7.22
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-22T19:01:44.269Z",null,null
-comments[2]{created_at,author,text}:
+  pm-ds3b,verifies,"2026-07-23T04:53:26.301Z",null,null
+  pm-k9t17l,related,"2026-07-23T04:53:26.301Z",null,null
+  pm-mmm9o5,related,"2026-07-23T04:53:26.301Z",null,null
+comments[6]{created_at,author,text}:
   "2026-07-22T19:01:44.269Z",codex-sdk-boundary-20260722,"Duplicate check 2026-07-22: all-status searches for GH-645,show/get JSON notes_count,standard depth omitted notes,and projection metadata found adjacent output-contract lineage pm-srns and completed JSON work pm-cfed/pm-wrss,but no item owns this exact missing-context signal. Created open and unclaimed; not part of the active SDK boundary PR."
   "2026-07-22T19:01:57.175Z",codex-sdk-boundary-20260722,"GitHub linkage evidence: posted the canonical pm item link on GH-645 at https://github.com/unbraind/pm-cli/issues/645. Item remains open/unclaimed and outside the active SDK boundary implementation."
+  "2026-07-23T05:04:48.453Z",claude-code-agent,"TDD evidence: added failing standard/brief/deep/full and narrow notes_count assertions, then implemented the compact projection contract. Focused acceptance is green."
+  "2026-07-23T05:31:49.890Z",claude-code-agent,"Packed installed-consumer acceptance passed from an isolated npm install: standard get returned notes_count=1 without note bodies; full get returned one note without redundant notes_count. Evidence workspace: /tmp/tmp.9DpM65yUme (local-only, not committed)."
+  "2026-07-23T05:33:58.199Z",claude-code-agent,"Final local evidence: 6,101 tests pass at exact 100% statements/branches/functions/lines; typecheck, ESLint, jscpd zero-clone, 100% docstrings, package boundary, token budget, docs, links, secrets, version, packed smoke, and 88-command dogfood gates pass."
+  "2026-07-23T05:38:23.338Z",claude-code-agent,"PR evidence: truthful SDK/CLI context bundle is published for hosted review at https://github.com/unbraind/pm-cli/pull/652, initial implementation commit c0358d12."
+files[2]{path,scope,note}:
+  src/cli/commands/get.ts,project,Truthful token-bounded note projection
+  tests/unit/commands/get-append-command.spec.ts,project,Depth and narrow-field acceptance coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts,project,240,Get projection acceptance
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrx2qrkl-ksdhg7,test,passed,"2026-07-23T05:31:51.916Z","2026-07-23T05:32:05.013Z","2026-07-23T05:32:05.013Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,GetResult notes_count contract
+close_reason: "Implemented and verified truthful omitted-note counts across CLI/SDK projections, docs, full coverage, and packed consumer acceptance."
 body: ""

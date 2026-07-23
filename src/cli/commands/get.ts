@@ -64,13 +64,19 @@ interface ClaimStateContext {
   last_release: ClaimHistoryContext | null;
 }
 
+type GetItemProjection = Partial<ItemMetadata> & {
+  body?: string;
+  /** Number of notes omitted by a token-bounded projection. */
+  notes_count?: number;
+};
+
 /** Documents the get result payload exchanged by command, SDK, and package integrations. */
 export interface GetResult {
   // `body` lives inside `item` (alongside `description`/`acceptance_criteria`)
   // for parity with `pm list --include-body`, so agents reliably find it at
   // `.item.body` in JSON output instead of a top-level sibling.
   /** Value that configures or reports item for this contract. */
-  item: Partial<ItemMetadata> & { body?: string };
+  item: GetItemProjection;
   /** Value that configures or reports linked for this contract. */
   linked?: {
     files: LinkedFile[];
@@ -187,7 +193,7 @@ function parseGetDepth(raw: string | undefined): GetDepth {
 function projectItemForDepth(
   item: ItemMetadata,
   depth: GetDepth,
-): Partial<ItemMetadata> {
+): GetItemProjection {
   if (depth === "deep") {
     return item;
   }
@@ -202,7 +208,10 @@ function projectItemForDepth(
     events: _events,
     ...projected
   } = item;
-  return projected;
+  return {
+    ...projected,
+    notes_count: item.notes?.length ?? 0,
+  };
 }
 
 function parseGetFields(raw: string | undefined): string[] | null {
@@ -236,6 +245,7 @@ function validateGetFields(
   const itemFields = new Set([
     ...ITEM_METADATA_KEY_ORDER,
     ...runtimeMetadataKeys,
+    "notes_count",
   ]);
   const allowedRootFields = new Set([
     "body",
@@ -292,7 +302,7 @@ function validateGetFields(
 function projectItemForFields(
   item: ItemMetadata,
   fields: string[],
-): Partial<ItemMetadata> {
+): GetItemProjection {
   const source = toItemRecord(item);
   const projected: Record<string, unknown> = {};
   for (const field of fields) {
@@ -310,9 +320,12 @@ function projectItemForFields(
     ) {
       continue;
     }
-    projected[normalized] = source[normalized];
+    projected[normalized] =
+      normalized === "notes_count"
+        ? (item.notes?.length ?? 0)
+        : source[normalized];
   }
-  return projected as Partial<ItemMetadata>;
+  return projected as GetItemProjection;
 }
 
 function fieldsInclude(fields: string[] | null, name: string): boolean {
@@ -550,9 +563,7 @@ function attachGetSchedule(
   }
   result.schedule = Object.fromEntries(
     Object.entries(schedule).filter(([key]) =>
-      fields.some(
-        (field) => normalizeGetField(field) === `schedule.${key}`,
-      ),
+      fields.some((field) => normalizeGetField(field) === `schedule.${key}`),
     ),
   ) as Partial<ItemScheduleContext>;
 }

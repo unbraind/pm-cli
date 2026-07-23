@@ -33,12 +33,12 @@ pm merge install --dry-run --json
 
 ## Artifact semantics
 
-| Artifact                         | Driver                              | Merge behavior                                                                                                                                                                                                                               |
-| -------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Item `.toon` / `.md`             | `pm-item-toon` / `pm-item-markdown` | Three-way field merge; format-specific drivers avoid passing the repository path through Git's shell command, append-like collections use set union, `updated_at` uses latest timestamp, and canonical serialization recomputes TOON counts. |
-| `history/*.jsonl`                | `pm-history`                        | Preserves the common prefix and both divergent suffixes, orders deterministically, then re-anchors the resulting hash chain.                                                                                                                 |
-| tracker `**/*.jsonl` except the later `history/*.jsonl` override | `pm-relationship` | Covers default and package-owned custom relationship event paths, unions divergent suffixes by `eventId` (timestamp-ordered, ours-first on ties), and renumbers `sequence` consecutively so the strict-sequence store loader accepts the merged stream. |
-| `settings.json`, `schema/*.json` | `pm-json`                           | Recursively merges objects per key; disjoint settings changes compose without a whole-file conflict.                                                                                                                                         |
+| Artifact                                                         | Driver                              | Merge behavior                                                                                                                                                                                                                                          |
+| ---------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Item `.toon` / `.md`                                             | `pm-item-toon` / `pm-item-markdown` | Three-way field merge; format-specific drivers avoid passing the repository path through Git's shell command, append-like collections use set union, `updated_at` uses latest timestamp, and canonical serialization recomputes TOON counts.            |
+| `history/*.jsonl`                                                | `pm-history`                        | Preserves the common prefix and both divergent suffixes, orders deterministically, then re-anchors the resulting hash chain.                                                                                                                            |
+| tracker `**/*.jsonl` except the later `history/*.jsonl` override | `pm-relationship`                   | Covers default and package-owned custom relationship event paths, unions divergent suffixes by `eventId` (timestamp-ordered, ours-first on ties), and renumbers `sequence` consecutively so the strict-sequence store loader accepts the merged stream. |
+| `settings.json`, `schema/*.json`                                 | `pm-json`                           | Recursively merges objects per key; disjoint settings changes compose without a whole-file conflict.                                                                                                                                                    |
 
 When both sides change the same scalar or JSON leaf differently, the driver writes a parseable preferred-side result but exits nonzero. Git keeps the path conflicted so a human or coordinating agent must review the losing value and explicitly `git add` the resolution. Use `--prefer theirs` only when that is the intended resolution policy.
 
@@ -78,7 +78,7 @@ pm history-repair <item-id>
 pm merge reconcile --dry-run --json
 ```
 
-`history-repair` records the reconciliation patch and surfaces discarded event authors/operations when the on-disk document would otherwise revert effective merged history. Re-apply any intended losing mutation as a normal `pm update` so it remains explicit and auditable.
+`history-repair` records the reconciliation patch and classifies its changed fields against the final item. Append-only collection unions and deterministic reordering are reported as preserved context without a data-loss warning. Fields whose replayed values are actually removed or replaced remain loud with discarded event authors/operations and recovery guidance. Re-apply any intended losing mutation as a normal `pm update` so it remains explicit and auditable.
 
 ## Delete versus modify policy
 

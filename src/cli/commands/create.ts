@@ -122,7 +122,10 @@ import type {
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
 import { ensureEnumValue } from "./recurrence-parsers.js";
-import { assertValidBareDependencyFlagValue } from "../../sdk/dependency-flag-validation.js";
+import {
+  assertDependencyEdgesAllowed,
+  assertValidBareDependencyFlagValue,
+} from "../../sdk/dependency-flag-validation.js";
 import {
   normalizeDependencySeedId,
   normalizeDependencySourceKind,
@@ -2799,6 +2802,7 @@ export async function runCreate(
     author,
   });
   const dependencyValues = blockedByResolution.dependencyValues;
+  assertDependencyEdgesAllowed(id, dependencyValues);
   status = blockedByResolution.status;
   const blockedReason = resolveUnsettableOptionalString(
     unsetKeys,
