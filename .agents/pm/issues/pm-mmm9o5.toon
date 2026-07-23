@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:history","area:merge","area:sdk",gh-issue,multi-agent,token-efficiency
 created_at: "2026-07-23T04:52:48.714Z"
-updated_at: "2026-07-23T05:38:24.952Z"
+updated_at: "2026-07-23T06:14:27.647Z"
 closed_at: "2026-07-23T05:34:03.760Z"
 author: claude-code-agent
 acceptance_criteria: "Public reconciliation results classify every candidate event as net-lossy or net-lossless using field semantics and final on-disk state, discarded_authors and recovery guidance include only effective loss, append-only union fields retain attribution and avoid loss warnings, genuinely lossy GH-603 behavior remains loud, CLI SDK and documentation use truthful terminology, real git branch acceptance covers driver union and lossy resolution, focused and full coverage remain 100 percent"
@@ -26,7 +26,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-3esl28,related,"2026-07-23T04:53:28.251Z",null,null
   pm-ds3b,verifies,"2026-07-23T04:53:28.251Z",null,null
   pm-k9t17l,related,"2026-07-23T04:53:28.251Z",null,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-23T04:52:48.714Z",claude-code-agent,"Duplicate check 2026-07-23: all-status searches for GH-646,merge reconcile discarded events/authors,history repair discard union field,and the GH-603/GH-623 lineage found closed canonical merge work pm-g5sx,pm-gpo7,pm-mfkv92,pm-wc1r,and pm-9q2t,but no item owns the complementary false-positive/net-lossless classification defect. Created this canonical leaf without reopening completed merge safety items."
   "2026-07-23T04:53:30.151Z",claude-code-agent,"GitHub linkage evidence: canonical pm item posted on GH-646 at https://github.com/unbraind/pm-cli/issues/646#issuecomment-5054564363. Active bundle shares the truthful-context lifecycle acceptance surface with pm-3esl28, pm-k9t17l, and rolling SDK reference pm-ds3b."
   "2026-07-23T05:04:50.147Z",claude-code-agent,"TDD evidence: added failing lossy-versus-union reconciliation cases, then partitioned reconciled fields/events/authors into preserved and discarded results. Discard warnings now remain exclusive to genuine loss; focused command and SDK tests are green."
@@ -34,6 +34,7 @@ comments[7]{created_at,author,text}:
   "2026-07-23T05:31:51.281Z",claude-code-agent,"Packed real-Git acceptance passed using installed merge drivers: divergent agent-a/agent-b note appends merged to two notes; merge reconcile dry-run reported zero false discard warnings/events; strict history-drift validation passed. Evidence workspace: /tmp/tmp.9DpM65yUme."
   "2026-07-23T05:33:59.541Z",claude-code-agent,"Final local evidence: exact full coverage and all repository-owned gates pass; installed two-branch merge validation is green. Live health storage warning belongs to existing open pm-h90s (unknown-author history disposition) and was refreshed there without expanding this PR."
   "2026-07-23T05:38:24.952Z",claude-code-agent,"PR evidence: net-loss merge reconciliation classification is published for hosted review at https://github.com/unbraind/pm-cli/pull/652, initial implementation commit c0358d12."
+  "2026-07-23T06:14:27.647Z",claude-code-agent,"Published release evidence: loss-aware reconciliation shipped in v2026.7.23 at release commit 1206c26a after PR #652 merged as 0c2928ff. Full hosted gates and real two-branch installed merge acceptance passed with preserved notes and zero false discard warnings."
 files[2]{path,scope,note}:
   src/sdk/history-repair.ts,project,Loss-aware reconciliation classification
   tests/unit/sdk/history-repair-reconciliation.spec.ts,project,Lossy and union-preserved classification coverage
