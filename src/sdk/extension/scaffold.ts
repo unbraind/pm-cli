@@ -2078,7 +2078,7 @@ function buildDeclarativeCapabilityTestBlock(
           "    result: { ok: true },",
           "  });",
           "  assert.equal(rendered.overridden, true);",
-          `  assert.equal(rendered.rendered, ${JSON.stringify(`${extensionName}: `)} + JSON.stringify({ ok: true }));`,
+          "  assert.equal(rendered.rendered, JSON.stringify({ ok: true }));",
           "",
           "  // Output for any other command passes through to pm's default renderer.",
           "  const passthrough = await ext.runRendererOverride({",
@@ -2573,7 +2573,7 @@ function buildDefineBuilderExports(
       "",
       "export const toonRenderer = defineRendererOverride({",
       `  commands: [${JSON.stringify(commandName)}],`,
-      `  run: (context) => ${JSON.stringify(`${extensionName}: `)} + JSON.stringify(context.result),`,
+      "  run: (context) => JSON.stringify(context.result),",
       "});",
     );
   }

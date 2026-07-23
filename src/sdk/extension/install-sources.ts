@@ -691,7 +691,6 @@ async function installNpmPackageRuntimeDependencies(
           "--no-save",
           "--omit=peer",
           "--",
-          ...dependencySpecs,
         ],
         packageRoot,
       );
@@ -792,13 +791,7 @@ function validateRuntimeDependencySpec(name: string, version: string): string {
       "&|;()`\"'".includes(character)
     );
   });
-  const hasUnsafeAngleToken = version
-    .split(/\s+/u)
-    .some(
-      (token) =>
-        /[<>]/u.test(token) && !/^(?:[<>]=?)[v\d*]/u.test(token),
-    );
-  if (hasUnsafeControlOrShellCharacter || hasUnsafeAngleToken) {
+  if (hasUnsafeControlOrShellCharacter) {
     throw new PmCliError(
       `Extension runtime dependency "${name}" has an unsafe version specifier.`,
       EXIT_CODE.USAGE,
@@ -820,7 +813,7 @@ function validateRuntimeDependencySpec(name: string, version: string): string {
         code: "extension_dependency_spec_invalid",
         required:
           "Use a valid npm package name and npm-supported version, range, dist-tag, URL, or file specifier.",
-        why: "Only grammar-validated dependency specs may reach npm install.",
+        why: "Only grammar-validated dependency specs may be written to the isolated runtime install manifest.",
       },
     );
   }

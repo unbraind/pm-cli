@@ -185,6 +185,9 @@ describe("extension scaffold define builder guidance", () => {
     );
     expect(readme).toContain("export const toonRenderer = defineRendererOverride({");
     expect(readme).toContain('commands: ["starter view kit ping"]');
+    expect(readme).toContain(
+      "run: (context) => JSON.stringify(context.result)",
+    );
     expect(readme).toContain('api.registerRenderer("toon", toonRenderer.run, toonRenderer);');
     expect(readme).toContain("## Output Renderer");
     expect(readme).toContain("## Lazy Activation");

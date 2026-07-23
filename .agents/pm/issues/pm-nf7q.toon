@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[5]: agent-ux,diagnostics,extensions,packages,renderers
 created_at: "2026-07-15T20:00:19.764Z"
-updated_at: "2026-07-23T15:37:26.444Z"
-closed_at: "2026-07-23T15:37:25.791Z"
+updated_at: "2026-07-23T15:50:18.670Z"
+closed_at: "2026-07-23T15:50:18.022Z"
 author: codex-audit-20260715
 estimated_minutes: 180
 acceptance_criteria: "The renderer registration contract can declare command paths or a result discriminator without breaking existing callbacks; doctor warns for unscoped or provably unsafe global overrides but treats declared safe ownership as healthy; pm-changelog JSON and TOON marker renderers are migrated to the scoped contract and isolated deep doctor is warning-free; unrelated commands still fall back to native rendering; collisions between packages remain visible; SDK types, define or compose helpers, scaffold, package-author docs, describe output, runtime contracts, and focused real-CLI plus SDK-harness tests are updated together"
@@ -18,12 +18,14 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-5teq,related,"2026-07-15T20:01:19.786Z",codex-audit-20260715,null
   pm-ixoa,related,"2026-07-15T20:01:19.786Z",codex-audit-20260715,null
   pm-x6jf,related,"2026-07-15T20:01:19.786Z",codex-audit-20260715,null
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-15T20:00:19.764Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for pm-changelog renderer warning scoped renderer command ownership and doctor false positive found only closed pm-5teq diagnostics and the distinct open pm-ixoa service collision."
   "2026-07-23T14:21:43.773Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
   "2026-07-23T14:59:21.321Z",claude-code-agent,"Implementation evidence: registerRenderer now accepts host-enforced command/result ownership, composeExtension and defineRendererOverride preserve the scope, runtime summaries expose renderer_ownership, and doctor warns only for legacy unscoped callbacks while collision detection remains unchanged. Focused renderer, compose, and generated-scaffold tests passed."
   "2026-07-23T15:30:15.399Z",claude-code-agent,"Verification evidence (2026-07-23): full instrumented repository suite passed 347 files / 6,146 tests with exact 100% statements (41,920/41,920), branches (29,630/29,630), functions (8,532/8,532), and lines (40,744/40,744). pnpm lint passed ESLint, zero jscpd clones, 100% source/export/member docstrings, package-boundary audit, and token-budget gate. pnpm security:scan found no credential-like tracked content; pnpm audit --prod found no known vulnerabilities. Packed artifact proof passed scripts/smoke-npx-from-pack.mjs (version 2026.7.23, 15 packages). A separate fresh /tmp consumer installed the npm tarball, initialized an isolated tracker, generated schema and renderer scaffolds, accepted repeated identical --capability values, rejected conflicting values, installed the scoped renderer, and returned extension doctor ok=true without a global renderer warning."
   "2026-07-23T15:37:21.807Z",claude-code-agent,"Consolidated release-gate evidence: all owned local gates passed, including exact coverage, version policy/sync, secret scan, packed npx smoke, and 88-command package-first dogfood. The aggregate command stopped only at greptile-review because this branch is intentionally not committed yet (reported: no committed code changes to review against main); review convergence will run after push and is not being misclassified as a code/test failure."
+  "2026-07-23T15:49:29.281Z",claude-code-agent,"GitHub report link: https://github.com/unbraind/pm-cli/security/code-scanning/31 (PR #657 inline thread). CodeQL js/bad-code-sanitization identified name-derived JSON.stringify output embedded into generated TypeScript. Although scaffold names are grammar-normalized, remediation removes the name-derived code entirely and retains scoped renderer behavior."
+  "2026-07-23T15:50:17.283Z",claude-code-agent,"Review remediation evidence: declarative renderer scaffold no longer embeds extensionName in generated executable TypeScript; it serializes only context.result. Generated guidance plus real scaffold/install suite passed 162/162 focused tests."
 notes[1]{created_at,author,text}:
   "2026-07-23T14:59:21.890Z",claude-code-agent,"Compatibility decision: keep the two-argument renderer callback source-compatible. Scoped ownership is an additive third registerRenderer argument or declarative object; command and result predicates are conjunctive when both are supplied."
 files[13]{path,scope,note}:
@@ -48,5 +50,5 @@ tests[4]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,Package author renderer ownership contract
   docs/SDK.md,project,Public SDK renderer registration guidance
-close_reason: "Delivered command/result scoped renderer ownership across SDK, loader, runtime dispatch, summaries, doctor, scaffolds, and dependent pm-changelog adoption with full behavioral coverage."
+close_reason: Scoped renderer ownership shipped with CodeQL alert 31 remediated by removing name-derived generated code; focused generated-package acceptance passes.
 body: "Live reproduction on current main with only project packages: pm package doctor --project --isolated --detail deep --trace --json returns warning status for pm-changelog renderers json and toon. The package callback is well-behaved and returns null for every non-marker result, so output is not corrupted; however doctor sees only global registration and cannot prove ownership. Closed pm-5teq correctly introduced warnings for dangerous global overrides and must not be reversed. Open pm-ixoa covers an actual calendar and guide-shell service collision. This item adds positive scoping metadata so safe package renderers can be both explicit and warning-free."

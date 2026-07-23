@@ -40,15 +40,20 @@ describe("untrusted extension runtime dependencies", () => {
       _testOnlyInstallSources.runtimeDependencyInstallSpecs({
         dependencies: { safe: "latest<malicious" },
       }),
-    ).toThrow(/unsafe version specifier/);
+    ).toThrow(/not a valid npm dependency specifier/);
     expect(
       _testOnlyInstallSources.runtimeDependencyInstallSpecs({
         dependencies: { safe: ">=1.0.0 <2.0.0" },
       }),
     ).toEqual(["safe@>=1.0.0 <2.0.0"]);
+    expect(
+      _testOnlyInstallSources.runtimeDependencyInstallSpecs({
+        dependencies: { safe: ">= 1.0.0 < 2.0.0" },
+      }),
+    ).toEqual(["safe@>= 1.0.0 < 2.0.0"]);
   });
 
-  it("puts validated dependency specs after npm's end-of-options fence", async () => {
+  it("installs from the validated manifest without forwarding specs through the shell", async () => {
     const packageRoot = await mkdtemp(
       path.join(os.tmpdir(), "pm-extension-dependency-security-"),
     );
@@ -83,7 +88,6 @@ describe("untrusted extension runtime dependencies", () => {
         "--no-save",
         "--omit=peer",
         "--",
-        "safe@^1.2.3",
       ],
     ]);
     expect(JSON.parse(await readFile(packageJsonPath, "utf8"))).toMatchObject({

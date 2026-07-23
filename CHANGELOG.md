@@ -10,9 +10,9 @@
 
 ### Fixed
 
+- Scoped renderer ownership: safe package renderers should not keep isolated package doctor in warning state ([pm-nf7q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nf7q.toon))
 - Extension flag value-arity decided by three divergent predicates in cli/extension-command-help.ts - help, parse, and summary surfaces can disagree ([pm-853a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-853a.toon))
 - Post-install activation verification can load stale overwritten extension modules ([pm-4v4c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4v4c.toon))
-- Scoped renderer ownership: safe package renderers should not keep isolated package doctor in warning state ([pm-nf7q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nf7q.toon))
 - Relationship timestamp snapshots must honor event time for late and offline arrivals ([pm-j3swnb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j3swnb.toon))
 
 ### Security
