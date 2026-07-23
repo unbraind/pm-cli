@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: customization,durability,long-horizon,schema,sdk
 created_at: "2026-07-06T23:35:40.341Z"
-updated_at: "2026-07-23T19:12:28.004Z"
+updated_at: "2026-07-23T20:21:54.285Z"
 closed_at: "2026-07-23T19:10:46.438Z"
 author: maintainer-agent
 estimated_minutes: 720
@@ -22,10 +22,11 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-3mna,related,"2026-07-06T23:35:40.341Z",null,null
   pm-klo8,related,"2026-07-06T23:35:40.341Z",null,null
   pm-z5nb,related,"2026-07-06T23:35:40.341Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-23T17:15:35.259Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full open/closed customization lineage review, and GitHub/security/dependency reconciliation. Active scope is the complete SDK-first rename-type, rename-field, and status-remap migration surface with dry-run plans, audited per-item persistence, resumability, CLI/MCP/contracts, docs, and isolated acceptance; no duplicate item created."
   "2026-07-23T19:00:14.851Z",claude-code-agent,"Implementation evidence: delivered SDK-first rename-type, rename-field, and remap-status plans with deterministic idempotency keys, derived metadata/type index selection, atomic workspace transactions, compensation, resumable committed journals, per-item history, and workspace history. Packed-consumer acceptance exercised dry-run, apply, and committed recovery. A real pm-mi2x large-tier 100000-item workspace produced a zero-affected indexed type plan in 284 ms."
   "2026-07-23T19:12:28.003Z",claude-code-agent,"Final local gates: 349 files and 6177 tests passed; statements 42340/42340, branches 29971/29971, functions 8635/8635, lines 41152/41152. Lint, zero clones, 100% source/export/member docstrings, SDK boundary, typecheck, contracts, docs/skills, secrets, version, packed consumer, and git diff checks passed. Repository validation remains ok with only pre-existing legacy resolution/unknown-author warnings outside these items."
+  "2026-07-23T20:21:54.285Z",claude-code-agent,"Merged-head evidence: PR #660 (https://github.com/unbraind/pm-cli/pull/660) merged as a894a8ba21df4cca220bd348b6d86dc495449ea5. Exact-head review inventory had zero unresolved threads and zero unreacted bot findings. Merged-main CI, Security, CodeQL, Docs, OSSF, and CodSpeed workflows completed successfully. The final local gate covered 349 files and 6,180 tests at 100% statements, branches, functions, and lines; packed consumer smoke also passed. Item remains closed and unclaimed."
 files[18]{path,scope,note}:
   CHANGELOG.md,project,Package-generated closeout entry
   src/cli/commands/completion.ts,project,Schema migration SDK CLI contract implementation and verification

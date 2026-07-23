@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:config","area:history","area:storage",audit-trail,pm-cli
 created_at: "2026-07-06T23:08:35.037Z"
-updated_at: "2026-07-23T19:59:52.214Z"
+updated_at: "2026-07-23T20:21:54.924Z"
 closed_at: "2026-07-23T19:10:48.024Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -20,11 +20,12 @@ actual_result: "Settings, schema, profile, init reruns, templates, and package a
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-bgcu,related,"2026-07-06T23:10:04.566Z",maintainer-agent,null
   pm-e200,related,"2026-07-06T23:10:04.566Z",maintainer-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-23T17:40:01.962Z",claude-code-agent,"Implementation start 2026-07-23: activated because pm-dijg requires its canonical workspace audit dependency. Scope is a reusable HistoryEntry-compatible workspace stream, atomic append under workspace mutation locks, verification coverage, and schema-migration integration; no duplicate item created."
   "2026-07-23T19:00:15.567Z",claude-code-agent,"Implementation evidence: added the append-only hash-chained _workspace HistoryEntry stream, audited singleton writers with rollback, history/activity rendering, drift validation, and coverage for settings/config, schema, profile, init reruns, saved templates, and project package activation/deactivation state changes. Packed-consumer verification observed 8 valid entries and health/validation ok."
   "2026-07-23T19:12:28.602Z",claude-code-agent,"Final local gates: 349 files and 6177 tests passed; statements 42340/42340, branches 29971/29971, functions 8635/8635, lines 41152/41152. Lint, zero clones, 100% source/export/member docstrings, SDK boundary, typecheck, contracts, docs/skills, secrets, version, packed consumer, and git diff checks passed. Repository validation remains ok with only pre-existing legacy resolution/unknown-author warnings outside these items."
   "2026-07-23T19:59:52.213Z",claude-code-agent,"CodeRabbit review convergence: widened the workspace-history lock to cover read, atomic singleton write, history append, and compensation; routed settings through the same primitive; added competing generic/settings writer regressions; cached workspace drift verification; exported WorkspaceJsonWriteOptions through SDK entrypoints; and covered init lock-hook observability plus inaccessible history roots. Verification: focused 85 tests passed; typecheck, lint, zero clones, package boundary, token budget, and 100% docstrings passed; full coverage passed 349 files / 6180 tests with statements 42352/42352, branches 29971/29971, functions 8636/8636, lines 41163/41163. Item remains closed and unclaimed."
+  "2026-07-23T20:21:54.924Z",claude-code-agent,"Merged-head evidence: PR #660 merged as a894a8ba21df4cca220bd348b6d86dc495449ea5. CodeRabbit verified all five concurrency, caching, initialization, and workspace-history fixes at the corrected head; every thread was acknowledged, reacted to, replied to, and resolved. Exact review inventory reported zero unresolved threads and zero unreacted bot findings. Full 100/100/100/100 coverage and all merged-main workflows passed. Item remains closed and unclaimed."
 files[15]{path,scope,note}:
   CHANGELOG.md,project,Package-generated closeout entry
   src/cli/commands/history.ts,project,Workspace audit stream implementation and command coverage
