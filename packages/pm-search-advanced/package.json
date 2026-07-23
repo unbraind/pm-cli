@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-search-advanced",
-  "version": "2026.7.22",
+  "version": "2026.7.23",
   "private": true,
   "type": "module",
   "description": "First-party pm package for semantic, hybrid, and reindex search workflows.",

@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-kanban",
-  "version": "2026.7.22",
+  "version": "2026.7.23",
   "private": true,
   "type": "module",
   "description": "First-party pm archetype package: a complete Kanban continuous-flow profile built on public SDK primitives.",

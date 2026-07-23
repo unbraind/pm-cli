@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-vcs",
-  "version": "2026.7.22",
+  "version": "2026.7.23",
   "private": true,
   "type": "module",
   "description": "Beyond-PM exemplar: a VCS-style changeset workflow built entirely on public pm SDK and extension primitives.",
