@@ -8,13 +8,15 @@ import path from "node:path";
 import {
   pathExists,
   readFileIfExists,
-  writeFileAtomic,
 } from "../core/fs/fs-utils.js";
+import { writeWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
+import { resolveAuthor } from "../core/shared/author.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { nowIso } from "../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import { readSettings } from "../core/store/settings.js";
 import { CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS } from "./cli-contracts.js";
 
 const TEMPLATE_DIRECTORY_NAME = "templates";
@@ -384,8 +386,17 @@ export async function runTemplatesSave(
     updated_at: now,
     options: nextOptions,
   };
+  const settings = await readSettings(pmRoot);
   await fs.mkdir(templatesDirectory(pmRoot), { recursive: true });
-  await writeFileAtomic(storedPath, `${JSON.stringify(document, null, 2)}\n`);
+  await writeWorkspaceJsonWithHistory({
+    pmRoot,
+    filePath: storedPath,
+    raw: `${JSON.stringify(document, null, 2)}\n`,
+    op: "templates:save",
+    author: resolveAuthor(undefined, settings.author_default),
+    lockTtlSeconds: settings.locks.ttl_seconds,
+    lockWaitMs: settings.locks.wait_ms,
+  });
   return {
     name: document.name,
     created_at: document.created_at,

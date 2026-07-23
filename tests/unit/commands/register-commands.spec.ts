@@ -93,6 +93,9 @@ vi.mock("../../../src/cli/commands/schema.js", () => ({
     "list",
     "show",
     "show-status",
+    "rename-type",
+    "rename-field",
+    "remap-status",
   ],
   runSchemaAddType: vi.fn(),
   runSchemaRemoveType: vi.fn(),
@@ -107,6 +110,7 @@ vi.mock("../../../src/cli/commands/schema.js", () => ({
   runSchemaList: vi.fn(),
   runSchemaShow: vi.fn(),
   runSchemaShowStatus: vi.fn(),
+  runSchemaEvolutionMigration: vi.fn(),
   formatSchemaAddTypeHuman: vi.fn(() => "added type"),
   formatSchemaRemoveTypeHuman: vi.fn(() => "removed type"),
   formatSchemaAddStatusHuman: vi.fn(() => "added status"),
@@ -120,6 +124,7 @@ vi.mock("../../../src/cli/commands/schema.js", () => ({
   formatSchemaListHuman: vi.fn(() => "schema list"),
   formatSchemaShowHuman: vi.fn(() => "schema show"),
   formatSchemaShowStatusHuman: vi.fn(() => "schema status"),
+  formatSchemaEvolutionMigrationHuman: vi.fn(() => "schema migration"),
 }));
 vi.mock("../../../src/cli/commands/profile.js", () => ({
   PROFILE_SUBCOMMANDS: ["list", "show", "apply", "lint"],
@@ -210,6 +215,7 @@ import {
   formatSchemaRemoveTypeHuman,
   formatSchemaShowHuman,
   formatSchemaShowStatusHuman,
+  formatSchemaEvolutionMigrationHuman,
   runSchemaAddStatus,
   runSchemaAddType,
   runSchemaAddField,
@@ -223,6 +229,7 @@ import {
   runSchemaRemoveType,
   runSchemaShow,
   runSchemaShowStatus,
+  runSchemaEvolutionMigration,
 } from "../../../src/cli/commands/schema.js";
 import {
   formatProfileApplyHuman,
@@ -1516,6 +1523,73 @@ describe("mutation command actions", () => {
     expect(vi.mocked(formatSchemaListHuman)).toHaveBeenCalledTimes(1);
     await expect(runCli("schema", "add-status", "bad", "--order", "not-a-number")).rejects.toThrow(
       "--order must be a finite integer",
+    );
+
+    vi.mocked(runSchemaEvolutionMigration).mockResolvedValueOnce({
+      action: "rename-field",
+      migration_id: "rename-owner",
+      request: {
+        kind: "rename-field",
+        from: "owner",
+        to: "account_owner",
+        type: "Task",
+      },
+    } as never);
+    await runCliRaw(
+      "schema",
+      "rename-field",
+      "owner",
+      "--to",
+      "account_owner",
+      "--type",
+      "Task",
+      "--migration-id",
+      "rename-owner",
+      "--dry-run",
+    );
+    expect(vi.mocked(runSchemaEvolutionMigration)).toHaveBeenLastCalledWith(
+      {
+        kind: "rename-field",
+        from: "owner",
+        to: "account_owner",
+        type: "Task",
+      },
+      expect.objectContaining({
+        migrationId: "rename-owner",
+        dryRun: true,
+      }),
+      expect.anything(),
+    );
+    expect(
+      vi.mocked(formatSchemaEvolutionMigrationHuman),
+    ).toHaveBeenCalledTimes(1);
+
+    vi.mocked(runSchemaEvolutionMigration).mockResolvedValueOnce({
+      action: "rename-type",
+      migration_id: "rename-legacy",
+      request: {
+        kind: "rename-type",
+        from: "Legacy",
+        to: "WorkItem",
+      },
+    } as never);
+    await runCliRaw(
+      "schema",
+      "rename-type",
+      "Legacy",
+      "--to",
+      "WorkItem",
+      "--migration_id",
+      "rename-legacy",
+    );
+    expect(vi.mocked(runSchemaEvolutionMigration)).toHaveBeenLastCalledWith(
+      {
+        kind: "rename-type",
+        from: "Legacy",
+        to: "WorkItem",
+      },
+      expect.objectContaining({ migrationId: "rename-legacy" }),
+      expect.anything(),
     );
 
     await runCliRaw(

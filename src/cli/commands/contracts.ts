@@ -124,6 +124,12 @@ import {
   type CliFlagContract,
   type CommanderOptionAliasContract,
 } from "../../sdk/cli-contracts.js";
+import {
+  GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
+  GOVERNANCE_CREATE_MODE_DEFAULT_VALUES,
+  GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES,
+  GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES,
+} from "../../types.js";
 
 /** Documents the contracts command options payload exchanged by command, SDK, and package integrations. */
 export interface ContractsCommandOptions {
@@ -215,8 +221,12 @@ export interface ContractsResult {
     capabilities: string[];
     services: string[];
     policy_modes: string[];
+    /** Settings path governed by policy_modes; prevents conflation with workflow governance. */
+    policy_mode_scope: "extensions.policy.mode";
     policy_surfaces: string[];
     trust_modes: string[];
+    /** Settings path governed by trust_modes. */
+    trust_mode_scope: "extensions.policy.trust_mode";
     sandbox_profiles: string[];
     manifest_versions: number[];
     compatibility: {
@@ -224,6 +234,13 @@ export interface ContractsResult {
       previous: string[];
       breaking_strategy: string;
     };
+  };
+  /** Canonical value domains accepted by project governance config setters. */
+  governance_contracts?: {
+    ownership_enforcement_modes: string[];
+    create_modes: string[];
+    close_validation_modes: string[];
+    workflow_enforcement_modes: string[];
   };
   // pm-4os2: static MCP tool surface (tool names, required fields, inputSchema
   // shapes) so the contract golden file catches unintended MCP schema drift.
@@ -2355,8 +2372,10 @@ function attachRuntimeContractsResult(
     capabilities: [...PM_EXTENSION_CAPABILITY_CONTRACTS],
     services: [...PM_EXTENSION_SERVICE_NAME_CONTRACTS],
     policy_modes: [...PM_EXTENSION_POLICY_MODE_CONTRACTS],
+    policy_mode_scope: "extensions.policy.mode",
     policy_surfaces: [...PM_EXTENSION_POLICY_SURFACE_CONTRACTS],
     trust_modes: [...PM_EXTENSION_TRUST_MODE_CONTRACTS],
+    trust_mode_scope: "extensions.policy.trust_mode",
     sandbox_profiles: [...PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS],
     manifest_versions: [1, 2],
     compatibility: {
@@ -2364,6 +2383,14 @@ function attachRuntimeContractsResult(
       previous: ["v1"],
       breaking_strategy: "versioned_breaking",
     },
+  };
+  result.governance_contracts = {
+    ownership_enforcement_modes: [
+      ...GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES,
+    ],
+    create_modes: [...GOVERNANCE_CREATE_MODE_DEFAULT_VALUES],
+    close_validation_modes: [...GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES],
+    workflow_enforcement_modes: [...GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES],
   };
 }
 

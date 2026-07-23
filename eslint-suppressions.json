@@ -99,14 +99,6 @@
       "count": 2
     }
   },
-  "src/cli/commands/history.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "src/cli/commands/reindex.ts": {
     "no-useless-assignment": {
       "count": 1

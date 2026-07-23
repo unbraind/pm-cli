@@ -10,6 +10,14 @@
 - Use `--json` only when strict parsing is needed.
 - Use `pm contracts` for current command/schema metadata.
 
+Machine consumers must not infer project-governance values from extension
+policy values. `pm contracts --json` exposes extension modes under
+`extension_contracts` with their exact settings-path scopes and exposes
+project-governance values separately under `governance_contracts`. For example,
+`governance_contracts.workflow_enforcement_modes` is
+`["off","warn","strict"]`, while `extension_contracts.policy_modes` governs
+`extensions.policy.mode` and uses `["off","warn","enforce"]`.
+
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## Configuration Commands
@@ -36,6 +44,11 @@ pm config set definition-of-done "Tests pass" # same as --criterion "Tests pass"
 The `context` key has no single value and still uses `--default-depth`,
 `--activity-limit`, `--stale-threshold-days`, and `--section-<name>` flags. Use
 `--criterion` (repeatable) to set more than one criteria-list value at once.
+
+Successful singleton configuration writes append a hash-verified entry to
+`.agents/pm/history/_workspace.jsonl`. Inspect the cross-domain audit trail with
+`pm activity --id _workspace` or verify it with
+`pm history _workspace --verify`.
 
 Scopes:
 

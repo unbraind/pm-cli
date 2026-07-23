@@ -10,7 +10,6 @@ import {
   EXIT_CODE,
   splitCommaList,
   PmCliError,
-  isPureSnakeCaseAlias,
 } from "../sdk/runtime-primitives.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
@@ -28,6 +27,16 @@ import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
 import { PLAN_SUBCOMMANDS, runPlan } from "./commands/plan.js";
+import {
+  isPureSnakeCaseAlias,
+  looksLikeSchemaSubcommandTypo,
+  parseSchemaOrderOption,
+} from "./schema-registration-helpers.js";
+
+export {
+  looksLikeSchemaSubcommandTypo,
+  parseSchemaOrderOption,
+} from "./schema-registration-helpers.js";
 
 // Lowercase set of built-in type names ("epic", "feature", ...) used by the
 // `pm create` positional guard (pm-edge #1, 2026-05-28): if the single
@@ -119,67 +128,6 @@ function addHiddenOptions(
   }
 }
 
-const SCHEMA_SHORTHAND_RESERVED_PREFIXES = [
-  "add-",
-  "apply-",
-  "list-",
-  "remove-",
-  "show-",
-] as const;
-const SCHEMA_SHORTHAND_RESERVED_TOKENS = new Set([
-  "field",
-  "fields",
-  "help",
-  "status",
-  "statuses",
-  "type",
-  "types",
-]);
-
-/** Implements looks like schema subcommand typo for the public runtime surface of this module. */
-export function looksLikeSchemaSubcommandTypo(value: string): boolean {
-  const normalized = value.trim().toLowerCase();
-  if (normalized.length === 0) {
-    return false;
-  }
-  return (
-    SCHEMA_SHORTHAND_RESERVED_TOKENS.has(normalized) ||
-    SCHEMA_SHORTHAND_RESERVED_PREFIXES.some((prefix) =>
-      normalized.startsWith(prefix),
-    )
-  );
-}
-
-/** Parse the `--order` value for `pm schema add-status`. Accepts a value that is already a number or a numeric string; throws a usage error when the flag was supplied but does not parse to a finite integer (rather than silently dropping it). Returns `undefined` only when the flag was genuinely not provided. */
-export function parseSchemaOrderOption(raw: unknown): number | undefined {
-  if (raw === undefined || raw === null) {
-    return undefined;
-  }
-  if (typeof raw === "number") {
-    if (!Number.isInteger(raw)) {
-      throw new PmCliError(
-        "--order must be a finite integer.",
-        EXIT_CODE.USAGE,
-      );
-    }
-    return raw;
-  }
-  if (typeof raw === "string") {
-    if (raw.trim().length === 0) {
-      return undefined;
-    }
-    const parsed = Number(raw);
-    if (!Number.isInteger(parsed)) {
-      throw new PmCliError(
-        "--order must be a finite integer.",
-        EXIT_CODE.USAGE,
-      );
-    }
-    return parsed;
-  }
-  throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
-}
-
 type SchemaCommandModule = typeof import("./commands/schema.js");
 type SchemaCommandResult =
   | Awaited<ReturnType<SchemaCommandModule["runSchemaList"]>>
@@ -194,7 +142,8 @@ type SchemaCommandResult =
   | Awaited<ReturnType<SchemaCommandModule["runSchemaListFields"]>>
   | Awaited<ReturnType<SchemaCommandModule["runSchemaShowField"]>>
   | Awaited<ReturnType<SchemaCommandModule["runSchemaApplyPreset"]>>
-  | Awaited<ReturnType<SchemaCommandModule["runSchemaInferTypes"]>>;
+  | Awaited<ReturnType<SchemaCommandModule["runSchemaInferTypes"]>>
+  | Awaited<ReturnType<SchemaCommandModule["runSchemaEvolutionMigration"]>>;
 
 interface SchemaDispatchInputs {
   normalizedSubcommand: string;
@@ -213,13 +162,45 @@ interface SchemaDispatchInputs {
   globalOptions: GlobalOptions;
 }
 
-/** Routes a normalized `pm schema` subcommand to its run function. Extracted from the schema `.action()` body so the per-subcommand dispatch lives in one single-purpose function and registerMutationCommands stays under the cyclomatic-complexity gate. */
-async function dispatchSchemaSubcommand(
+function dispatchSchemaMigration(
   schema: SchemaCommandModule,
   inputs: SchemaDispatchInputs,
-): Promise<SchemaCommandResult> {
-  const { normalizedSubcommand, typeName, options, globalOptions } = inputs;
-  const { author, force, description } = inputs;
+): Promise<SchemaCommandResult> | null {
+  const kind = inputs.normalizedSubcommand;
+  if (
+    kind !== "rename-type" &&
+    kind !== "rename-field" &&
+    kind !== "remap-status"
+  ) {
+    return null;
+  }
+  return schema.runSchemaEvolutionMigration(
+    {
+      kind,
+      from: inputs.typeName!,
+      to: readOptionString(inputs.options, "to")!,
+      ...(kind === "rename-field" && typeof inputs.options.type === "string"
+        ? { type: inputs.options.type }
+        : {}),
+    },
+    {
+      migrationId:
+        readOptionString(inputs.options, "migrationId") ??
+        readOptionString(inputs.options, "migration_id")!,
+      dryRun: inputs.options.dryRun === true,
+      author: inputs.author,
+      force: inputs.force,
+    },
+    inputs.globalOptions,
+  );
+}
+
+function dispatchSchemaReadRemoveOrPreset(
+  schema: SchemaCommandModule,
+  inputs: SchemaDispatchInputs,
+): Promise<SchemaCommandResult> | null {
+  const { normalizedSubcommand, typeName, globalOptions, author, force } =
+    inputs;
   switch (normalizedSubcommand) {
     case "list":
       return schema.runSchemaList(globalOptions);
@@ -243,12 +224,35 @@ async function dispatchSchemaSubcommand(
         { author, force },
         globalOptions,
       );
+    case "remove-status":
+      return schema.runSchemaRemoveStatus(
+        typeName,
+        { author, force },
+        globalOptions,
+      );
     case "apply-preset":
       return schema.runSchemaApplyPreset(
         typeName,
         { author, force },
         globalOptions,
       );
+    default:
+      return null;
+  }
+}
+
+/** Routes a normalized `pm schema` subcommand to its run function. Extracted from the schema `.action()` body so the per-subcommand dispatch lives in one single-purpose function and registerMutationCommands stays under the cyclomatic-complexity gate. */
+async function dispatchSchemaSubcommand(
+  schema: SchemaCommandModule,
+  inputs: SchemaDispatchInputs,
+): Promise<SchemaCommandResult> {
+  const { normalizedSubcommand, typeName, options, globalOptions } = inputs;
+  const { author, force, description } = inputs;
+  const migration = dispatchSchemaMigration(schema, inputs);
+  if (migration) return migration;
+  const readRemoveOrPreset = dispatchSchemaReadRemoveOrPreset(schema, inputs);
+  if (readRemoveOrPreset) return readRemoveOrPreset;
+  switch (normalizedSubcommand) {
     case "add-field":
       return schema.runSchemaAddField(
         typeName,
@@ -281,12 +285,6 @@ async function dispatchSchemaSubcommand(
           author,
           force,
         },
-        globalOptions,
-      );
-    case "remove-status":
-      return schema.runSchemaRemoveStatus(
-        typeName,
-        { author, force },
         globalOptions,
       );
     default:
@@ -323,6 +321,10 @@ function renderSchemaResultHuman(
   schema: SchemaCommandModule,
   result: SchemaCommandResult,
 ): void {
+  if ("migration_id" in result) {
+    writeStdout(`${schema.formatSchemaEvolutionMigrationHuman(result)}\n`);
+    return;
+  }
   switch (result.action) {
     case "list":
       writeStdout(`${schema.formatSchemaListHuman(result)}\n`);
@@ -1516,6 +1518,9 @@ function assertSchemaSubcommandPresent(
         "pm schema list-fields",
         "pm schema apply-preset agile",
         "pm schema add-type --infer --min-count 10",
+        "pm schema rename-type Spike --to Experiment --migration-id spike-v2 --dry-run",
+        "pm schema rename-field severity --to impact --migration-id severity-v2",
+        "pm schema remap-status review --to verifying --migration-id review-v2",
       ],
     },
   );
@@ -3182,11 +3187,11 @@ export function registerMutationCommands(program: Command): void {
     .command("schema")
     .argument(
       "[subcommand]",
-      "Schema subcommand: list, show, show-status, add-type, remove-type, add-status, remove-status, or a custom item type name shorthand",
+      "Schema subcommand: list, show, show-status, add/remove type/status/field, rename-type, rename-field, remap-status, or a custom item type name shorthand",
     )
     .argument(
       "[name]",
-      "Item type name (add-type/remove-type/show) or status id (show-status/add-status/remove-status)",
+      "Definition name, or source name for rename/remap migrations",
     )
     .option(
       "--description <text>",
@@ -3247,6 +3252,15 @@ export function registerMutationCommands(program: Command): void {
       "--apply",
       "Register inferred types (add-type --infer); without it the command previews only",
     )
+    .option("--to <name>", "Target definition name for rename/remap migrations")
+    .option(
+      "--migration-id <id>",
+      "Stable idempotency key for a resumable schema migration",
+    )
+    .option(
+      "--dry-run",
+      "Plan a schema migration without writing schema, items, or history",
+    )
     .option("--author <value>", "Mutation author")
     .option("--force", "Force ownership/lock override")
     .description(
@@ -3257,6 +3271,12 @@ export function registerMutationCommands(program: Command): void {
     schemaCommand,
     "--default_status <status>",
     "Alias for --default-status",
+    false,
+  );
+  addHiddenOption(
+    schemaCommand,
+    "--migration_id <id>",
+    "Alias for --migration-id",
     false,
   );
   schemaCommand.action(runSchemaAction);

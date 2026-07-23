@@ -6021,6 +6021,18 @@
           "flag": "--apply"
         },
         {
+          "flag": "--to"
+        },
+        {
+          "aliases": [
+            "--migration_id"
+          ],
+          "flag": "--migration-id"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -8720,6 +8732,7 @@
       1,
       2
     ],
+    "policy_mode_scope": "extensions.policy.mode",
     "policy_modes": [
       "off",
       "warn",
@@ -8765,10 +8778,32 @@
       "context_relevance",
       "command_result"
     ],
+    "trust_mode_scope": "extensions.policy.trust_mode",
     "trust_modes": [
       "off",
       "warn",
       "enforce"
+    ]
+  },
+  "governance_contracts": {
+    "close_validation_modes": [
+      "off",
+      "warn",
+      "strict"
+    ],
+    "create_modes": [
+      "progressive",
+      "strict"
+    ],
+    "ownership_enforcement_modes": [
+      "none",
+      "warn",
+      "strict"
+    ],
+    "workflow_enforcement_modes": [
+      "off",
+      "warn",
+      "strict"
     ]
   },
   "mcp_tools": [
@@ -20094,6 +20129,63 @@
             "if": {
               "properties": {
                 "subcommand": {
+                  "const": "rename-type"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name",
+                "to",
+                "migrationId"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "rename-field"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name",
+                "to",
+                "migrationId"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
+                  "const": "remap-status"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name",
+                "to",
+                "migrationId"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
                   "const": "apply-preset"
                 }
               },
@@ -20177,6 +20269,10 @@
             "description": "Item description text.",
             "type": "string"
           },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
           "fieldType": {
             "description": "Value type for a custom field (schema add-field): string, number, boolean, or string_array.",
             "enum": [
@@ -20189,6 +20285,14 @@
               "string",
               "number",
               "string_array"
+            ],
+            "type": "string"
+          },
+          "fieldTypeScope": {
+            "description": "Optional item type restricting which records participate in schema rename-field.",
+            "examples": [
+              "Issue",
+              "Feature"
             ],
             "type": "string"
           },
@@ -20208,6 +20312,13 @@
             "default": true,
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
+          },
+          "migrationId": {
+            "description": "Stable idempotency key used to persist and resume a schema migration plan.",
+            "examples": [
+              "severity-to-impact-v2"
+            ],
+            "type": "string"
           },
           "minCount": {
             "description": "Minimum number of items sharing a title prefix for schema add-type inference (default 10).",
@@ -20321,6 +20432,10 @@
               120000
             ],
             "type": "number"
+          },
+          "to": {
+            "description": "To.",
+            "type": "string"
           },
           "typePreset": {
             "description": "Domain item-type preset registered during initialization.",

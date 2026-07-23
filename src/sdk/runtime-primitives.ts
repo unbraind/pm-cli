@@ -94,6 +94,13 @@ export {
   hashEmptyDocument,
 } from "../core/history/history.js";
 export {
+  appendWorkspaceHistoryChange,
+  getWorkspaceHistoryPath,
+  WORKSPACE_HISTORY_ID,
+  writeWorkspaceJsonWithHistory,
+  type WorkspaceHistoryChange,
+} from "../core/history/workspace-history.js";
+export {
   normalizeReplayPatchOps,
   replayToCanonicalItemDocument,
   replayToItemDocument,

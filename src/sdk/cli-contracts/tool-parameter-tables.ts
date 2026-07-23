@@ -150,6 +150,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   from: { type: "string" },
   before: { type: "string" },
   to: { type: "string" },
+  migrationId: { type: "string" },
+  fieldTypeScope: { type: "string" },
   past: { type: "boolean" },
   fullPeriod: { type: "boolean" },
   include: { type: "string" },
@@ -729,7 +731,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   name: {
     description:
-      "Custom item type name (schema add-type/remove-type/show), custom status id (schema show-status/add-status/remove-status), custom field key (schema add-field/remove-field/show-field), or profile name (profile show/apply/lint).",
+      "Custom definition name, schema migration source name, or profile name.",
     examples: ["Spike", "review", "component"],
   },
   defaultStatus: {
@@ -749,6 +751,16 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Value type for a custom field (schema add-field): string, number, boolean, or string_array.",
     examples: ["string", "number", "string_array"],
+  },
+  fieldTypeScope: {
+    description:
+      "Optional item type restricting which records participate in schema rename-field.",
+    examples: ["Issue", "Feature"],
+  },
+  migrationId: {
+    description:
+      "Stable idempotency key used to persist and resume a schema migration plan.",
+    examples: ["severity-to-impact-v2"],
   },
   commands: {
     description:

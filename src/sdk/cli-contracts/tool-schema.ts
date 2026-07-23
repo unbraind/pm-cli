@@ -517,6 +517,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "infer",
         "minCount",
         "apply",
+        "to",
+        "migrationId",
+        "fieldTypeScope",
+        "dryRun",
         "author",
         "force",
       ],
@@ -532,6 +536,21 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         { property: "subcommand", value: "add-field", required: ["name"] },
         { property: "subcommand", value: "remove-field", required: ["name"] },
         { property: "subcommand", value: "show-field", required: ["name"] },
+        {
+          property: "subcommand",
+          value: "rename-type",
+          required: ["name", "to", "migrationId"],
+        },
+        {
+          property: "subcommand",
+          value: "rename-field",
+          required: ["name", "to", "migrationId"],
+        },
+        {
+          property: "subcommand",
+          value: "remap-status",
+          required: ["name", "to", "migrationId"],
+        },
         // apply-preset passes the preset name as `typePreset`.
         {
           property: "subcommand",

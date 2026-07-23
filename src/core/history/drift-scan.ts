@@ -11,6 +11,10 @@ import { getHistoryPath } from "../store/paths.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { hashDocument } from "./history.js";
 import { verifyHistoryChain } from "./replay.js";
+import {
+  getWorkspaceHistoryPath,
+  WORKSPACE_HISTORY_ID,
+} from "./workspace-history.js";
 import type { HistoryEntry, ItemMetadata } from "../../types/index.js";
 
 /** Documents the drift scan result payload exchanged by command, SDK, and package integrations. */
@@ -96,6 +100,24 @@ interface DriftScanAccumulator {
   unreadableStreams: string[];
   hashMismatches: string[];
   chainMismatches: string[];
+}
+
+async function scanWorkspaceHistory(
+  pmRoot: string,
+  accumulator: DriftScanAccumulator,
+): Promise<void> {
+  try {
+    const verification = await verifyHistoryStream(
+      getWorkspaceHistoryPath(pmRoot),
+    );
+    if (verification && !verification.chainOk) {
+      accumulator.chainMismatches.push(WORKSPACE_HISTORY_ID);
+    }
+  } catch (error: unknown) {
+    if (!isErrno(error, "ENOENT")) {
+      accumulator.unreadableStreams.push(WORKSPACE_HISTORY_ID);
+    }
+  }
 }
 
 function hashContent(raw: string): string {
@@ -316,6 +338,7 @@ export async function scanHistoryDrift(
       accumulator.hashMismatches.push(item.id);
     }
   }
+  await scanWorkspaceHistory(pmRoot, accumulator);
 
   if (
     cacheDirty ||

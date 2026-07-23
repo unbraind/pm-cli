@@ -4,12 +4,15 @@
 
 ### Added
 
+- Workspace-scoped audit history stream: schema/config/profile/init mutations recorded as append-only hash-chained JSONL ([pm-klo8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-klo8.toon))
+- Schema evolution migrations: lossless, history-recorded bulk migration of existing items when custom types, fields, or statuses are renamed or retired ([pm-dijg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-dijg.toon))
 - Beyond-PM SDK exemplar phase 2: temporal digital-twin graph with entity relationships, event replay, point-in-time state, and invariants ([pm-kr3t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-kr3t.toon))
 - Bounded SQLite metadata list reads and compact get child continuations ([pm-px153l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-px153l.toon))
 - Workspace memory tiers: derived rollup summaries of closed-item epochs keep decades-old work queryable in bounded tokens ([pm-5qmm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-5qmm.toon))
 
 ### Fixed
 
+- GH-449: contracts policy_modes advertises 'enforce' but governance config accepts 'strict' (contract drift) ([pm-kjbh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kjbh.toon))
 - Scoped renderer ownership: safe package renderers should not keep isolated package doctor in warning state ([pm-nf7q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nf7q.toon))
 - Extension flag value-arity decided by three divergent predicates in cli/extension-command-help.ts - help, parse, and summary surfaces can disagree ([pm-853a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-853a.toon))
 - Post-install activation verification can load stale overwritten extension modules ([pm-4v4c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4v4c.toon))
@@ -22,6 +25,7 @@
 
 ### Other
 
+- SDK reference documentation for promoted primitives + migration notes for the CLI-on-SDK layering ([pm-ds3b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ds3b.toon))
 - SDK authoring DX polish: manifest-drift guard in scaffold tests, expectation key naming, repeated --capability, define\* index signatures ([pm-llrp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-llrp.toon))
 - Extension install should scaffold newly required item-type folders (pm health ok:false after installing pm-kanban until pm init) ([pm-l98s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l98s.toon))
 - Cursor fingerprints: replace per-command presentation-flag deny-lists with contract-declared semantic classification in sdk/pagination ([pm-fgih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fgih.toon))

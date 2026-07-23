@@ -10,7 +10,7 @@ import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import type { ItemMetadata } from "../../types/index.js";
 
 const QUERY_INDEX_FILENAME = "metadata-query-index.sqlite";
-const QUERY_INDEX_VERSION = "1";
+const QUERY_INDEX_VERSION = "2";
 
 /** One light-metadata row projected into the persistent query index. */
 export interface ItemMetadataQueryIndexRow {
@@ -32,6 +32,8 @@ export interface ItemMetadataIndexQuery {
   types?: readonly string[];
   /** Include only these exact item identifiers. */
   ids?: readonly string[];
+  /** Include only rows that define every requested metadata key. */
+  metadataKeys?: readonly string[];
   /** Include only direct children of this item. */
   parent?: string;
   /** Include only this assignee value. */
@@ -64,6 +66,7 @@ function queryIndexPath(pmRoot: string): string {
 
 function createSchema(database: DatabaseSync): void {
   database.exec(`
+    PRAGMA foreign_keys = ON;
     PRAGMA journal_mode = OFF;
     PRAGMA synchronous = OFF;
     CREATE TABLE metadata (
@@ -92,6 +95,14 @@ function createSchema(database: DatabaseSync): void {
       ON items(type, priority, updated_at DESC, id);
     CREATE INDEX items_parent_default_order
       ON items(parent, priority, updated_at DESC, id);
+    CREATE TABLE item_metadata_keys (
+      item_id TEXT NOT NULL,
+      key TEXT NOT NULL,
+      PRIMARY KEY(item_id, key),
+      FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
+    ) STRICT;
+    CREATE INDEX item_metadata_keys_key_item
+      ON item_metadata_keys(key, item_id);
   `);
 }
 
@@ -145,6 +156,15 @@ function insertRow(
       metadata.sprint ?? null,
       metadata.release ?? null,
     );
+  database
+    .prepare("DELETE FROM item_metadata_keys WHERE item_id = ?")
+    .run(metadata.id);
+  const insertMetadataKey = database.prepare(
+    "INSERT INTO item_metadata_keys(item_id, key) VALUES (?, ?)",
+  );
+  for (const key of Object.keys(metadata)) {
+    insertMetadataKey.run(metadata.id, key);
+  }
 }
 
 /** Atomically rebuild the complete query projection from authoritative cache rows. */
@@ -205,6 +225,7 @@ export async function updateItemMetadataQueryIndex(options: {
   try {
     await fs.access(indexPath);
     database = new DatabaseSync(indexPath);
+    database.exec("PRAGMA foreign_keys = ON");
     const metadata = readIndexMetadata(database);
     if (
       metadata.version !== QUERY_INDEX_VERSION ||
@@ -249,17 +270,10 @@ function appendSetPredicate(
   parameters.push(...values);
 }
 
-/**
- * Query the persistent projection without materializing the full metadata
- * cache. Returns null when the database is absent, stale, corrupt, or active
- * extension read hooks require canonical per-document dispatch.
- */
-export async function queryItemMetadataIndex(options: {
-  pmRoot: string;
-  expectedSourceCursor: string;
-  query?: ItemMetadataIndexQuery;
-}): Promise<ItemMetadataIndexQueryResult | null> {
-  const query = options.query ?? {};
+function buildQueryPredicates(query: ItemMetadataIndexQuery): {
+  where: string;
+  parameters: SQLInputValue[];
+} {
   const clauses: string[] = [];
   const parameters: SQLInputValue[] = [];
   appendSetPredicate(clauses, parameters, "status", query.statuses, "IN");
@@ -272,6 +286,12 @@ export async function queryItemMetadataIndex(options: {
   );
   appendSetPredicate(clauses, parameters, "type", query.types, "IN");
   appendSetPredicate(clauses, parameters, "id", query.ids, "IN");
+  for (const metadataKey of query.metadataKeys ?? []) {
+    clauses.push(
+      "EXISTS (SELECT 1 FROM item_metadata_keys AS indexed_key WHERE indexed_key.item_id = items.id AND indexed_key.key = ?)",
+    );
+    parameters.push(metadataKey);
+  }
   for (const [column, value] of [
     ["parent", query.parent],
     ["assignee", query.assignee],
@@ -287,7 +307,24 @@ export async function queryItemMetadataIndex(options: {
     clauses.push("priority = ?");
     parameters.push(query.priority);
   }
-  const where = clauses.length === 0 ? "" : ` WHERE ${clauses.join(" AND ")}`;
+  return {
+    where: clauses.length === 0 ? "" : ` WHERE ${clauses.join(" AND ")}`,
+    parameters,
+  };
+}
+
+/**
+ * Query the persistent projection without materializing the full metadata
+ * cache. Returns null when the database is absent, stale, corrupt, or active
+ * extension read hooks require canonical per-document dispatch.
+ */
+export async function queryItemMetadataIndex(options: {
+  pmRoot: string;
+  expectedSourceCursor: string;
+  query?: ItemMetadataIndexQuery;
+}): Promise<ItemMetadataIndexQueryResult | null> {
+  const query = options.query ?? {};
+  const { where, parameters } = buildQueryPredicates(query);
   let database: DatabaseSync | undefined;
   try {
     database = new DatabaseSync(queryIndexPath(options.pmRoot), {

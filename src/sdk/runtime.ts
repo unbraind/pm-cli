@@ -252,6 +252,7 @@ import {
   runSchemaInferTypes,
   runSchemaList,
   runSchemaListFields,
+  runSchemaEvolutionMigration,
   runSchemaRemoveField,
   runSchemaRemoveStatus,
   runSchemaRemoveType,
@@ -271,6 +272,9 @@ import {
   type SchemaInspectResult,
   type SchemaListFieldsResult,
   type SchemaListResult,
+  type RunSchemaEvolutionMigrationOptions,
+  type SchemaEvolutionMigrationRequest,
+  type SchemaEvolutionMigrationResult,
   type SchemaRemoveFieldCommandOptions,
   type SchemaRemoveFieldResult,
   type SchemaRemoveStatusCommandOptions,
@@ -607,7 +611,8 @@ export type SchemaResult =
   | SchemaAddFieldResult
   | SchemaRemoveFieldResult
   | SchemaApplyPresetResult
-  | SchemaAddTypeInferResult;
+  | SchemaAddTypeInferResult
+  | SchemaEvolutionMigrationResult;
 
 /** Result returned by the SDK `startTask` lifecycle shortcut. */
 export interface StartTaskResult {
@@ -1008,6 +1013,48 @@ export class PmClient {
   ): Promise<SchemaAddTypeInferResult> {
     return this.runTyped("schema", {
       options: { ...options, subcommand: "add-type", infer: true },
+    });
+  }
+
+  /** Rename a custom item type and migrate every affected item atomically. */
+  schemaRenameType(
+    from: string,
+    to: string,
+    options: RunSchemaEvolutionMigrationOptions,
+  ): Promise<SchemaEvolutionMigrationResult> {
+    return this.runTyped("schema", {
+      name: from,
+      options: { ...options, subcommand: "rename-type", to },
+    });
+  }
+
+  /** Rename a custom metadata field and migrate every affected item atomically. */
+  schemaRenameField(
+    from: string,
+    to: string,
+    options: RunSchemaEvolutionMigrationOptions,
+    type?: string,
+  ): Promise<SchemaEvolutionMigrationResult> {
+    return this.runTyped("schema", {
+      name: from,
+      options: {
+        ...options,
+        subcommand: "rename-field",
+        to,
+        ...(type ? { fieldTypeScope: type } : {}),
+      },
+    });
+  }
+
+  /** Remap a custom lifecycle status and migrate every affected item atomically. */
+  schemaRemapStatus(
+    from: string,
+    to: string,
+    options: RunSchemaEvolutionMigrationOptions,
+  ): Promise<SchemaEvolutionMigrationResult> {
+    return this.runTyped("schema", {
+      name: from,
+      options: { ...options, subcommand: "remap-status", to },
     });
   }
 
@@ -1812,6 +1859,37 @@ export function schemaInferTypes(
   clientOptions: PmClientOptions = {},
 ): Promise<SchemaAddTypeInferResult> {
   return new PmClient(clientOptions).schemaInferTypes(options);
+}
+
+/** Rename a custom item type without constructing a reusable client. */
+export function schemaRenameType(
+  from: string,
+  to: string,
+  options: RunSchemaEvolutionMigrationOptions,
+  clientOptions: PmClientOptions = {},
+): Promise<SchemaEvolutionMigrationResult> {
+  return new PmClient(clientOptions).schemaRenameType(from, to, options);
+}
+
+/** Rename a custom field without constructing a reusable client. */
+export function schemaRenameField(
+  from: string,
+  to: string,
+  options: RunSchemaEvolutionMigrationOptions,
+  type?: string,
+  clientOptions: PmClientOptions = {},
+): Promise<SchemaEvolutionMigrationResult> {
+  return new PmClient(clientOptions).schemaRenameField(from, to, options, type);
+}
+
+/** Remap a custom status without constructing a reusable client. */
+export function schemaRemapStatus(
+  from: string,
+  to: string,
+  options: RunSchemaEvolutionMigrationOptions,
+  clientOptions: PmClientOptions = {},
+): Promise<SchemaEvolutionMigrationResult> {
+  return new PmClient(clientOptions).schemaRemapStatus(from, to, options);
 }
 
 /** Show a custom status without constructing a reusable client. */
@@ -3227,6 +3305,45 @@ function runMcpSchemaAddTypeAction(schema: McpSchemaContext): Promise<unknown> {
   );
 }
 
+function runMcpSchemaMigrationAction(
+  schema: McpSchemaContext,
+): Promise<SchemaEvolutionMigrationResult> {
+  const { ctx, subcommand, name, author, force } = schema;
+  const to =
+    readString(ctx.args, "to") ?? readRequiredString(ctx.options, "to");
+  const migrationId =
+    readString(ctx.args, "migrationId") ??
+    readString(ctx.args, "migration_id") ??
+    readString(ctx.options, "migrationId") ??
+    readRequiredString(ctx.options, "migration_id");
+  const fieldTypeScope =
+    readString(ctx.args, "fieldTypeScope") ??
+    readString(ctx.options, "fieldTypeScope") ??
+    readString(ctx.args, "type") ??
+    readString(ctx.options, "type");
+  const request: SchemaEvolutionMigrationRequest =
+    subcommand === "rename-type"
+      ? { kind: "rename-type", from: name ?? "", to }
+      : subcommand === "rename-field"
+        ? {
+            kind: "rename-field",
+            from: name ?? "",
+            to,
+            ...(fieldTypeScope === undefined ? {} : { type: fieldTypeScope }),
+          }
+        : { kind: "remap-status", from: name ?? "", to };
+  return runSchemaEvolutionMigration(
+    request,
+    {
+      migrationId,
+      dryRun: ctx.args.dryRun === true || ctx.options.dryRun === true,
+      author,
+      force,
+    },
+    ctx.global,
+  );
+}
+
 function runMcpSchemaAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> | unknown {
@@ -3234,6 +3351,13 @@ function runMcpSchemaAction(
   const simpleResult = runMcpSchemaReadOrRemoveAction(schema);
   if (simpleResult !== null) {
     return simpleResult;
+  }
+  if (
+    schema.subcommand === "rename-type" ||
+    schema.subcommand === "rename-field" ||
+    schema.subcommand === "remap-status"
+  ) {
+    return runMcpSchemaMigrationAction(schema);
   }
   if (schema.subcommand === "add-field") {
     return runMcpSchemaAddFieldAction(schema);
@@ -3259,7 +3383,7 @@ function runMcpSchemaAction(
     return runMcpSchemaAddTypeAction(schema);
   }
   throw new PmCliError(
-    `Unknown pm schema subcommand "${schema.subcommand}". Allowed: add-type, remove-type, add-status, remove-status, add-field, remove-field, list-fields, show-field, apply-preset, list, show, show-status`,
+    `Unknown pm schema subcommand "${schema.subcommand}". Allowed: add-type, remove-type, add-status, remove-status, add-field, remove-field, rename-type, rename-field, remap-status, list-fields, show-field, apply-preset, list, show, show-status`,
     64,
   );
 }
@@ -3698,6 +3822,9 @@ export type {
   SchemaInspectResult,
   SchemaListFieldsResult,
   SchemaListResult,
+  RunSchemaEvolutionMigrationOptions,
+  SchemaEvolutionMigrationRequest,
+  SchemaEvolutionMigrationResult,
   SchemaRemoveFieldCommandOptions,
   SchemaRemoveFieldResult,
   SchemaRemoveStatusCommandOptions,

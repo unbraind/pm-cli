@@ -13,6 +13,7 @@ import {
   SETTINGS_DEFAULTS,
 } from "../shared/constants.js";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import { appendWorkspaceHistoryChange } from "../history/workspace-history.js";
 import {
   DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
   ensureRuntimeSchemaFileScaffold,
@@ -1787,13 +1788,32 @@ export async function writeSettings(
   op = SETTINGS_WRITE_OP,
 ): Promise<void> {
   const settingsPath = getSettingsPath(pmRoot);
-  await writeFileAtomic(
-    settingsPath,
-    serializeSettings(settings, {
-      persist_source: getSettingsPersistSourceSnapshot(settings),
-    }),
-  );
+  const beforeRaw = await readFileIfExists(settingsPath);
+  const afterRaw = serializeSettings(settings, {
+    persist_source: getSettingsPersistSourceSnapshot(settings),
+  });
+  await writeFileAtomic(settingsPath, afterRaw);
   try {
+    if (beforeRaw !== null && beforeRaw !== afterRaw) {
+      try {
+        await appendWorkspaceHistoryChange({
+          pmRoot,
+          documentPath: "settings.json",
+          before: JSON.parse(beforeRaw),
+          after: JSON.parse(afterRaw),
+          op,
+          author:
+            process.env.PM_AUTHOR?.trim() ||
+            settings.author_default.trim() ||
+            "unknown",
+          lockTtlSeconds: settings.locks.ttl_seconds,
+          lockWaitMs: settings.locks.wait_ms,
+        });
+      } catch (error: unknown) {
+        await writeFileAtomic(settingsPath, beforeRaw);
+        throw error;
+      }
+    }
     await runActiveOnWriteHooks({
       path: settingsPath,
       scope: "project",
