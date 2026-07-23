@@ -48,5 +48,17 @@ describe("SDK host-output control", () => {
     expect(() => serializeNdjsonRows([[]])).toThrow(
       "NDJSON row 0 must be a non-null object",
     );
+    expect(() => serializeNdjsonRows([new Date("2026-01-01T00:00:00.000Z")])).toThrow(
+      "NDJSON row 0 must serialize to a non-null object",
+    );
+    expect(() => serializeNdjsonRows([{ toJSON: () => undefined }])).toThrow(
+      "NDJSON row 0 must serialize to a non-null object",
+    );
+    expect(() => serializeNdjsonRows([{ toJSON: () => null }])).toThrow(
+      "NDJSON row 0 must serialize to a non-null object",
+    );
+    expect(() => serializeNdjsonRows([{ toJSON: () => [] }])).toThrow(
+      "NDJSON row 0 must serialize to a non-null object",
+    );
   });
 });

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:07.441Z"
-updated_at: "2026-07-23T21:19:29.814Z"
+updated_at: "2026-07-23T22:03:05.486Z"
 closed_at: "2026-07-23T21:19:12.304Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -19,11 +19,12 @@ expected_result: Context removes repeated inherited tag payload while retaining 
 actual_result: Exact child tag sets fold to tags_inherited when their parent is present; --no-tags strips all tag fields; packed acceptance and context tests passed.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-14T17:05:07.270Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-23T20:33:29.802Z",claude-code-agent,"Implementation start 2026-07-23: actively deliver the shared bounded/streamable read projection surface across pm-gygna8, pm-a9mc, pm-ishm, and pm-646c. Scope includes public SDK contracts, thin CLI/MCP wiring, deterministic bounds, token-efficient projections, pipeline behavior, docs, contracts, focused regressions, exact coverage, and packed/manual consumer proof. All-status duplicate review reused these canonical items and their closed prerequisites; no parallel implementation item was created."
   "2026-07-23T21:01:50.384Z",claude-code-agent,"Implementation evidence: context folds exact inherited child tags only when the parent row is present, emits tags_inherited provenance, and --no-tags removes tags across every focus collection; focused tests pass."
   "2026-07-23T21:13:06.222Z",claude-code-agent,"Acceptance evidence: packed temporary tracker folded identical child tag sets to tags_inherited=qa-root and --no-tags removed both tags and tags_inherited throughout the context payload."
   "2026-07-23T21:19:07.816Z",claude-code-agent,"Final verification evidence: full sandboxed repository coverage passed 349 files / 6,189 tests at exact Statements 42,435/42,435, Branches 30,059/30,059, Functions 8,645/8,645, Lines 41,245/41,245. Typecheck, ESLint, zero-duplication, static quality, 100% docstrings, package boundary, token budgets, docs/skills, contracts, context evaluation, linked tests, and packed consumer acceptance also passed."
+  "2026-07-23T22:03:05.486Z",claude-code-agent,"Review-round evidence: accepted CodeRabbit multi-level folding and global-json precedence findings. Immutable pre-projection tag signatures now fold grandparent/parent/child chains deterministically, and --json --format ndjson preserves the explicit stream format. Focused tests and full 6,189-test exact coverage pass."
 files[5]{path,scope,note}:
   src/cli/commands/context.ts,project,tag folding projection
   src/cli/register-list-query.ts,project,no-tags registration

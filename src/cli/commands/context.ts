@@ -619,7 +619,7 @@ export function resolveContextOutputFormat(
     );
   }
   if (global.json) {
-    return "json";
+    return commandFormat === "ndjson" ? "ndjson" : "json";
   }
   return commandFormat ?? "toon";
 }
@@ -2503,14 +2503,21 @@ export function applyContextTagProjection(
     return;
   }
   const rowsById = new Map(rows.map((row) => [row.id, row]));
+  const originalTagSignatures = new Map(
+    rows.map((row) => [
+      row.id,
+      row.tags ? [...row.tags].sort().join("\0") : undefined,
+    ]),
+  );
   for (const row of rows) {
     if (!row.parent || !row.tags) {
       continue;
     }
     const parent = rowsById.get(row.parent);
     if (
-      parent?.tags &&
-      [...row.tags].sort().join("\0") === [...parent.tags].sort().join("\0")
+      parent &&
+      originalTagSignatures.get(row.id) ===
+        originalTagSignatures.get(parent.id)
     ) {
       delete row.tags;
       row.tags_inherited = parent.id;

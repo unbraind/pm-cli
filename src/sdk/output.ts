@@ -17,7 +17,8 @@ export {
  * newline. CLI hosts can append their final newline while SDK consumers can
  * stream or frame the returned payload themselves.
  *
- * @throws {TypeError} When a row is not a non-null, non-array object.
+ * @throws {TypeError} When a row or its `toJSON` projection is not a non-null,
+ * non-array object.
  */
 export function serializeNdjsonRows(rows: readonly unknown[]): string {
   return rows
@@ -27,7 +28,23 @@ export function serializeNdjsonRows(rows: readonly unknown[]): string {
           `NDJSON row ${index} must be a non-null object.`,
         );
       }
-      return JSON.stringify(row);
+      const serialized = JSON.stringify(row);
+      if (serialized === undefined) {
+        throw new TypeError(
+          `NDJSON row ${index} must serialize to a non-null object.`,
+        );
+      }
+      const projected: unknown = JSON.parse(serialized);
+      if (
+        typeof projected !== "object" ||
+        projected === null ||
+        Array.isArray(projected)
+      ) {
+        throw new TypeError(
+          `NDJSON row ${index} must serialize to a non-null object.`,
+        );
+      }
+      return serialized;
     })
     .join("\n");
 }

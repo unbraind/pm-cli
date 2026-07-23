@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-07-07T15:13:53.449Z"
-updated_at: "2026-07-23T21:19:30.540Z"
+updated_at: "2026-07-23T22:03:06.213Z"
 closed_at: "2026-07-23T21:19:13.904Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -21,11 +21,12 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-07T15:15:27.561Z",null,null
   pm-nilh,related,"2026-07-16T05:45:16.343Z",null,null
   pm-gygna8,related,"2026-07-23T21:01:39.666Z",claude-code-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-23T20:33:27.392Z",claude-code-agent,"Implementation start 2026-07-23: actively deliver the shared bounded/streamable read projection surface across pm-gygna8, pm-a9mc, pm-ishm, and pm-646c. Scope includes public SDK contracts, thin CLI/MCP wiring, deterministic bounds, token-efficient projections, pipeline behavior, docs, contracts, focused regressions, exact coverage, and packed/manual consumer proof. All-status duplicate review reused these canonical items and their closed prerequisites; no parallel implementation item was created."
   "2026-07-23T21:01:51.057Z",claude-code-agent,"Implementation evidence: validate --counts and projectValidateCounts preserve the gate envelope, warnings, scalar totals, and nested count maps while recursively omitting diagnostic/fix row arrays; focused tests pass."
   "2026-07-23T21:13:04.735Z",claude-code-agent,"Acceptance evidence: packed tarball installed into /tmp/tmp.2S2yySAQe2/consumer; validate --counts retained scalar/count-map evidence, removed diagnostic arrays recursively, and public SDK projectValidateCounts export passed. Public overloads now distinguish ValidateResult from ValidateCountsResult."
   "2026-07-23T21:19:08.546Z",claude-code-agent,"Final verification evidence: full sandboxed repository coverage passed 349 files / 6,189 tests at exact Statements 42,435/42,435, Branches 30,059/30,059, Functions 8,645/8,645, Lines 41,245/41,245. Typecheck, ESLint, zero-duplication, static quality, 100% docstrings, package boundary, token budgets, docs/skills, contracts, context evaluation, linked tests, and packed consumer acceptance also passed."
+  "2026-07-23T22:03:06.212Z",claude-code-agent,"Review-round evidence: exported ValidateCountsResult from the primary SDK barrel so the counts:true overload return type is directly importable. Typecheck, SDK index tests, and exact full coverage pass."
 files[6]{path,scope,note}:
   src/cli/register-operations.ts,project,validate flag adapter
   src/sdk/cli-contracts/tool-schema.ts,project,MCP validate option parity
