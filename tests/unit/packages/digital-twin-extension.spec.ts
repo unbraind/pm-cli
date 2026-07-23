@@ -248,7 +248,8 @@ describe("pm-digital-twin public SDK exemplar", () => {
   });
 
   it("validates state payloads precisely", () => {
-    const base = twinLog(["facility", "machine"]).append(
+    const log = twinLog(["facility", "machine"]);
+    const base = log.append(
       stateInput({
         eventId: "base",
         entity: "machine",
@@ -286,6 +287,40 @@ describe("pm-digital-twin public SDK exemplar", () => {
         }),
       ).toThrow(message);
     }
+
+    const malformed = log.append({
+      ...stateInput({
+        eventId: "malformed",
+        entity: "machine",
+        state: "degraded",
+        timestamp: "2026-07-23T08:01:00Z",
+        action: "supersede",
+      }),
+      edge: {
+        ...base.edge!,
+        payload: { ...base.edge!.payload, event_id: "malformed", counter: 0 },
+      },
+    });
+    const recovered = log.append(
+      stateInput({
+        eventId: "recovered",
+        entity: "machine",
+        state: "stopped",
+        timestamp: "2026-07-23T08:02:00Z",
+        counter: 2,
+        action: "supersede",
+      }),
+    );
+    expect(replayTwinEvents([base, malformed, recovered])).toMatchObject({
+      states: { machine: { event_id: "recovered", state: "stopped" } },
+      processed: 3,
+      violations: [
+        expect.objectContaining({
+          code: "malformed_state_event",
+          entity_id: "machine",
+        }),
+      ],
+    });
   });
 
   it("materializes topology, invariants, and bounded impact at event time", () => {
@@ -704,9 +739,43 @@ describe("pm-digital-twin public SDK exemplar", () => {
         await invoke("twin observe", ["direct-facility"], {
           state: "stopped",
           event_id: "direct-facility-stopped",
-          counter: 2,
         }),
-      ).toMatchObject({ action: "twin-observe" });
+      ).toMatchObject({
+        action: "twin-observe",
+        details: {
+          event: { edge: { payload: { counter: 2, replica_id: "primary" } } },
+        },
+      });
+      expect(
+        await invoke("twin observe", ["source-machine"], {
+          state: "standby",
+          event_id: "source-machine-secondary-first",
+          replica: "edge-secondary",
+        }),
+      ).toMatchObject({
+        details: {
+          event: {
+            edge: {
+              payload: { counter: 1, replica_id: "edge-secondary" },
+            },
+          },
+        },
+      });
+      expect(
+        await invoke("twin observe", ["source-machine"], {
+          state: "running",
+          event_id: "source-machine-secondary-second",
+          replica: "edge-secondary",
+        }),
+      ).toMatchObject({
+        details: {
+          event: {
+            edge: {
+              payload: { counter: 2, replica_id: "edge-secondary" },
+            },
+          },
+        },
+      });
       expect(
         await invoke("twin observe", ["source-machine"], {
           state: "degraded",
@@ -929,6 +998,45 @@ describe("pm-digital-twin public SDK exemplar", () => {
         ],
         definitions: TWIN_RELATIONSHIP_KINDS,
         relativePath: "relationships/digital-twin-events.jsonl",
+      });
+      await store.append({
+        eventId: "malformed-imported-state",
+        relationshipId: "state:pm-direct-facility",
+        action: "supersede",
+        edge: {
+          source: "pm-direct-facility",
+          target: "pm-direct-facility",
+          kind: "twin_state",
+          payload: {
+            event_id: "malformed-imported-state",
+            state: "running",
+            observed_at: "2026-07-23T08:04:30Z",
+            source: "untrusted-import",
+            schema_version: 2,
+            replica_id: "primary",
+            counter: 0,
+          },
+        },
+        author: "untrusted-import",
+        timestamp: "2026-07-23T08:04:30Z",
+      });
+      expect(await invoke("twin query", ["direct-facility"])).toMatchObject({
+        details: {
+          state: { state: "stopped" },
+          violations: expect.arrayContaining([
+            expect.objectContaining({ code: "malformed_state_event" }),
+          ]),
+        },
+      });
+      expect(await invoke("twin verify")).toMatchObject({
+        details: {
+          checkpoint_valid: true,
+          replay: {
+            violations: expect.arrayContaining([
+              expect.objectContaining({ code: "malformed_state_event" }),
+            ]),
+          },
+        },
       });
       expect(
         await invoke("twin observe", ["source-facility"], {

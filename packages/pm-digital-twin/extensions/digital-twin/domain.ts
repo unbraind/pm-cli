@@ -131,6 +131,7 @@ export interface TwinInvariantViolation {
   /** Stable machine-readable invariant code. */
   code:
     | "counter_gap"
+    | "malformed_state_event"
     | "missing_superseded_event"
     | "unsupported_schema_version"
     | "upstream_not_running"
@@ -371,10 +372,17 @@ export function replayTwinEvents(
       accumulator.states.delete(event.relationshipId.slice("state:".length));
       continue;
     }
-    const state = parseTwinStateEvent(event);
-    if (state === undefined) continue;
+    if (event.edge?.kind !== "twin_state") continue;
     processed += 1;
-    applyTwinStateEvent(state, accumulator);
+    try {
+      applyTwinStateEvent(parseTwinStateEvent(event)!, accumulator);
+    } catch (error) {
+      accumulator.violations.push({
+        code: "malformed_state_event",
+        entity_id: event.edge.target,
+        detail: `event ${event.eventId} was quarantined: ${String(error)}`,
+      });
+    }
   }
   return {
     states: Object.fromEntries(

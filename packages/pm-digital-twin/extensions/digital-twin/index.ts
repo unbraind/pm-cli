@@ -29,6 +29,7 @@ import {
   materializeTwinTopology,
   mergeTwinReplicaEvents,
   parseTwinBundle,
+  parseTwinStateEvent,
   replayTwinEvents,
   validateTwinImport,
   verifyTwinCheckpoint,
@@ -235,6 +236,7 @@ async function findEvent(
 function statePayload(
   context: CommandHandlerContext,
   eventId: string,
+  counterFallback = 1,
 ): TwinStatePayload {
   const observedAt =
     stringOption(context, "observed_at", false) ?? new Date().toISOString();
@@ -251,7 +253,7 @@ function statePayload(
       TWIN_SCHEMA_VERSION,
     )!,
     replica_id: stringOption(context, "replica", false) ?? "primary",
-    counter: positiveIntegerOption(context, "counter", 1)!,
+    counter: positiveIntegerOption(context, "counter", counterFallback)!,
     ...(stringOption(context, "supersedes", false) === undefined
       ? {}
       : { supersedes_event_id: stringOption(context, "supersedes")! }),
@@ -265,8 +267,9 @@ function stateEventInput(
   eventId: string,
   action: "add" | "supersede",
   expectedVersion?: number,
+  counterFallback?: number,
 ): RelationshipEventInput {
-  const payload = statePayload(context, eventId);
+  const payload = statePayload(context, eventId, counterFallback);
   return {
     eventId,
     relationshipId: `state:${entityId}`,
@@ -427,6 +430,20 @@ async function runObserve(
     .at(-1);
   if (active?.action === "remove")
     throw new TypeError(`digital twin entity ${id} state was retired`);
+  const replicaId = stringOption(context, "replica", false) ?? "primary";
+  let nextCounter = 1;
+  for (const priorEvent of events) {
+    try {
+      const priorState = parseTwinStateEvent(priorEvent);
+      if (
+        priorState?.entity_id === id &&
+        priorState.replica_id === replicaId
+      )
+        nextCounter = Math.max(nextCounter, priorState.counter + 1);
+    } catch {
+      // Replay reports malformed historical events; counter derivation skips them.
+    }
+  }
   const expectedVersion = positiveIntegerOption(
     context,
     "expected_version",
@@ -441,6 +458,7 @@ async function runObserve(
       eventId,
       active === undefined ? "add" : "supersede",
       expectedVersion,
+      nextCounter,
     ),
   );
   return {

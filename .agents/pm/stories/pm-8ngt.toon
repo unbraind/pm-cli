@@ -6,7 +6,7 @@ status: closed
 priority: 4
 tags[5]: extensibility,horizon-5,long-term,sdk,universal-tool
 created_at: "2026-07-06T22:17:47.761Z"
-updated_at: "2026-07-23T11:27:02.624Z"
+updated_at: "2026-07-23T11:59:28.240Z"
 closed_at: "2026-07-23T11:27:01.945Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -14,9 +14,9 @@ acceptance_criteria: Primitive-gap inventory exists for at least one non-PM doma
 parent: pm-usfg
 risk: low
 confidence: medium
-resolution: "Story accepted via the pm-xtrd exemplar (PR#587): @unbrained/pm-vcs proves a non-PM domain runs on public SDK primitives alone; primitive-gap inventory complete with every gap shipped, filed (pm-v1yo, pm-um4g, pm-4e12 transaction boundary), or out-of-scope."
-expected_result: "A platform developer can model a foreign domain (VCS changesets/refs) using only public pm SDK primitives, with a gap inventory feeding filed or waived SDK items."
-actual_result: "packages/pm-vcs ships custom types/fields, schema-owned lifecycle, seven domain commands, reviewed-merge hook, event-sourced history with time travel, durable relationship-event projections, and crash-consistent merge reconciliation — zero private core imports, packed-artifact acceptance at 100% coverage; GAP_REPORT.md dispositions all twelve domain needs."
+resolution: "Accepted through two independent public-SDK-only packages: @unbrained/pm-vcs proves transactional event-sourced software-delivery workflows, and @unbrained/pm-digital-twin proves temporal physical-domain state, topology, invariants, and offline reconciliation."
+expected_result: "Independent non-PM exemplars can define custom domain schemas, lifecycle behavior, immutable event history, point-in-time projections, relationship graphs, transactions, validation, and package commands through published SDK and host-injected extension contracts only."
+actual_result: "The VCS exemplar delivers refs, changesets, atomic merge/replay, and projections; the digital-twin exemplar delivers facility/assets, temporal observations, topology/impact, recoverable invariant replay, replica conflict handling, and checkpointed import/export. Both install and run in clean consumers without private CLI imports."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-xc68,related,"2026-07-13T22:02:04.058Z",null,null
 comments[6]{created_at,author,text}:
