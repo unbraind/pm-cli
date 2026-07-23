@@ -464,6 +464,42 @@ describe("list-query command actions", () => {
     expect(vi.mocked(runList)).toHaveBeenCalledTimes(1);
   });
 
+  it("renders list, search, and context --format ndjson as row-only streams", async () => {
+    const stdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    vi.mocked(runList).mockResolvedValue({
+      items: [{ id: "pm-list" }],
+      count: 1,
+      filters: {},
+      warnings: [],
+    } as never);
+    await runCliRaw("list", "--format", "ndjson");
+    expect(stdout).toHaveBeenLastCalledWith('{"id":"pm-list"}\n');
+
+    vi.mocked(runSearch).mockResolvedValue({
+      items: [{ id: "pm-search", score: 10 }],
+      count: 1,
+    } as never);
+    await runCliRaw("search", "sdk", "--format", "ndjson");
+    expect(stdout).toHaveBeenLastCalledWith(
+      '{"id":"pm-search","score":10}\n',
+    );
+
+    vi.mocked(runContext).mockResolvedValue({
+      high_level: [{ id: "pm-feature" }],
+      low_level: [{ id: "pm-task" }],
+      blocked_fallback: [],
+    } as never);
+    vi.mocked(resolveContextOutputFormat).mockReturnValue("ndjson" as never);
+    await runCliRaw("context", "--format", "ndjson", "--no-tags");
+    expect(stdout).toHaveBeenLastCalledWith(
+      '{"id":"pm-feature"}\n{"id":"pm-task"}\n',
+    );
+    expect(
+      lastCallArg<Record<string, unknown>>(vi.mocked(runContext) as never, 0),
+    ).toMatchObject({ format: "ndjson", noTags: true });
+    stdout.mockRestore();
+  });
+
   it("normalizes aggregate options through the real helper", async () => {
     await runCli("aggregate", "--group-by", "type,status", "--completion", "--include-unparented");
     const options = lastCallArg<Record<string, unknown>>(vi.mocked(runAggregate) as never, 0);
@@ -1166,6 +1202,8 @@ describe("operation command actions", () => {
       "lifecycle",
       "--prune-missing",
       "--check-history-drift",
+      "--check-storage-integrity",
+      "--counts",
     );
     const validateOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runValidate) as never, 0);
     expect(validateOptions.checkResolution).toBe(true);
@@ -1186,6 +1224,8 @@ describe("operation command actions", () => {
     expect(validateOptions.fixScope).toEqual(["metadata", "lifecycle"]);
     expect(validateOptions.pruneMissing).toBe(true);
     expect(validateOptions.checkHistoryDrift).toBe(true);
+    expect(validateOptions.checkStorageIntegrity).toBe(true);
+    expect(validateOptions.counts).toBe(true);
 
     await runCli("contracts", "--action", "create", "--schema-only", "--availability-only", "--runtime-only", "--full");
     const contractsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runContracts) as never, 0);

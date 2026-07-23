@@ -443,6 +443,7 @@ async function runValidateAction(
         ? (options.fixScope as string[])
         : undefined,
       pruneMissing: Boolean(options.pruneMissing),
+      counts: Boolean(options.counts),
     },
     globalOptions,
   );
@@ -993,6 +994,10 @@ export function registerOperationCommands(program: Command): void {
     .option(
       "--check-storage-integrity",
       "Run the post-merge storage-integrity check (unreadable items, history conflict markers, resurrected deletes, unparseable config/schema)",
+    )
+    .option(
+      "--counts",
+      "Keep validation counts and totals while omitting per-item diagnostic arrays",
     )
     .action(runValidateAction);
 

@@ -922,6 +922,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "pruneMissing",
         "checkHistoryDrift",
         "checkCommandReferences",
+        "counts",
       ],
     },
     gc: { optional: ["dryRun", "gcScope"] },

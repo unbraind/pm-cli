@@ -64,8 +64,10 @@ export {
 } from "./governance/health.js";
 export {
   _testOnlyValidateCommand,
+  projectValidateCounts,
   runValidate,
   type ValidateCheck,
+  type ValidateCountsFixesSummary,
   type ValidateFixesSummary,
   type ValidateMutationServices,
 } from "./governance/validate.js";

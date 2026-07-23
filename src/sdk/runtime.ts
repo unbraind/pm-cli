@@ -96,6 +96,7 @@ import {
 import {
   runValidate,
   type ValidateCommandOptions,
+  type ValidateCountsResult,
   type ValidateResult,
 } from "./governance/validate.js";
 import {
@@ -1100,8 +1101,22 @@ export class PmClient {
     return this.runTyped("profile", { name, options: { subcommand: "lint" } });
   }
 
+  /** Run project validation checks with counts-only diagnostics. */
+  validate(
+    options: ValidateCommandOptions & { counts: true },
+  ): Promise<ValidateCountsResult>;
+  /** Run project validation checks with complete diagnostic arrays. */
+  validate(
+    options?: ValidateCommandOptions & { counts?: false },
+  ): Promise<ValidateResult>;
+  /** Run project validation checks with a dynamically selected projection. */
+  validate(
+    options: ValidateCommandOptions,
+  ): Promise<ValidateResult | ValidateCountsResult>;
   /** Run project validation checks. */
-  validate(options: ValidateCommandOptions = {}): Promise<ValidateResult> {
+  validate(
+    options: ValidateCommandOptions = {},
+  ): Promise<ValidateResult | ValidateCountsResult> {
     return this.runTyped("validate", { options });
   }
 
@@ -1941,11 +1956,26 @@ export function profileLint(
   return new PmClient(clientOptions).profileLint(name);
 }
 
+/** Validate a tracker without constructing a reusable client using counts-only diagnostics. */
+export function validate(
+  options: ValidateCommandOptions & { counts: true },
+  clientOptions?: PmClientOptions,
+): Promise<ValidateCountsResult>;
+/** Validate a tracker without constructing a reusable client using complete diagnostics. */
+export function validate(
+  options?: ValidateCommandOptions & { counts?: false },
+  clientOptions?: PmClientOptions,
+): Promise<ValidateResult>;
+/** Validate a tracker without constructing a reusable client with a dynamic projection. */
+export function validate(
+  options: ValidateCommandOptions,
+  clientOptions?: PmClientOptions,
+): Promise<ValidateResult | ValidateCountsResult>;
 /** Validate a tracker without constructing a reusable client. */
 export function validate(
   options: ValidateCommandOptions = {},
   clientOptions: PmClientOptions = {},
-): Promise<ValidateResult> {
+): Promise<ValidateResult | ValidateCountsResult> {
   return new PmClient(clientOptions).validate(options);
 }
 
@@ -3838,5 +3868,6 @@ export type {
   UpgradeCommandOptions,
   UpgradeResult,
   ValidateCommandOptions,
+  ValidateCountsResult,
   ValidateResult,
 };

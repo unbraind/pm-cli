@@ -156,7 +156,7 @@ pm search "calendar" --type Task --assignee alice --updated-after=-7d --parent p
 
 Use only one updated-at window per list call: `--today`, `--recent`, and `--updated-after` are mutually exclusive. `--today` starts at local midnight; `--recent` is the same as `--updated-after=-7d`.
 
-`pm get`, `pm history`, and `pm search` also accept command-local `--format json|toon`. `--format json` is equivalent to the global `--json` flag for that command, while `--format toon` keeps the default agent-readable output. Do not combine global `--json` with `--format toon`.
+`pm get` and `pm history` accept command-local `--format json|toon`. `pm search` also accepts `ndjson`, which emits each projected hit as one JSON object per line with no envelope or trailing summary. `--format json` is equivalent to the global `--json` flag for that command, while `--format toon` keeps the default agent-readable output. Do not combine global `--json` with `--format toon`.
 
 `list`/`search` full and fields projections echo full filter metadata. Compact mode emits only active filters (plus runtime schema filters when present) and omits the default projection/sorting/now trailer keys for lower token cost.
 
@@ -267,15 +267,16 @@ pm list-open --json --include-body         # full fields + body for every return
 
 ### Output render formats (`--format`)
 
-`pm list*` accepts `--format <csv|table|json|toon>` to choose how rows render. `csv` and `table` are **human export** modes — pipe them into a spreadsheet or read them directly in a terminal — while `json`/`toon` override the machine output format the same way the global `--json` flag does. The rendered columns follow the active projection, so combine `--format` with `--fields`/`--brief`/`--compact` to control exactly which columns appear:
+`pm list*` accepts `--format <csv|table|json|ndjson|toon>` to choose how rows render. `csv` and `table` are **human export** modes — pipe them into a spreadsheet or read them directly in a terminal — while `json`/`toon` override the machine output format the same way the global `--json` flag does. `ndjson` writes each projected item as one self-contained JSON object per line, with no wrapper or trailing summary. The rendered fields follow the active projection, so combine `--format` with `--fields`/`--brief`/`--compact` to control exactly what appears:
 
 ```bash
 pm list-open --format table                      # aligned, monospace-friendly columns
 pm list-all --fields id,title,priority --format csv  # spreadsheet export with chosen columns
 pm list-open --format csv > backlog.csv          # capture for reporting
+pm list-all --brief --format ndjson | jq -c 'select(.status == "open")'
 ```
 
-CSV output is RFC 4180 compliant (values with commas, quotes, or newlines are quoted; array fields such as `tags` join with `;`). `--format csv|table` cannot be combined with `--stream` (which is line-delimited JSON and requires `--json`).
+CSV output is RFC 4180 compliant (values with commas, quotes, or newlines are quoted; array fields such as `tags` join with `;`). `--format csv|table|ndjson` cannot be combined with the legacy envelope-oriented `--stream` mode.
 
 ### Missing-metadata filters
 
@@ -634,7 +635,7 @@ pm deps <id> --format tree
 pm deps <id> --format context --direction both --kind blocked_by,parent --token-budget 800
 ```
 
-Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships. `--format context` returns one bounded, explainable relationship packet: a counts-first summary, per-node `role`/`via`/`reasons`, root evidence pointers, enumerated `missing_references` with active-versus-legacy classification, `meta.completeness`, and cursor continuation; `--direction`, repeatable or comma-separated `--kind`, `--max-depth`, `--node-limit`, `--edge-limit`, `--token-budget`, and `--cursor` control the traversal (see [Relationship Graph](RELATIONSHIP_GRAPH.md)). `--edge-limit` caps both returned graph edges and enumerated `missing_references`; `missing_reference_count` retains the total when rows are omitted. The standalone `--note <text>` flag annotates every link added by `--add`/`--add-glob` in the same invocation (a per-entry embedded `note=` wins); `--note` without an add is a usage error.
+Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships. Tree and graph formats are bounded by depth, node, edge, and estimated-token budgets (safe defaults: depth 32, 200 nodes, 400 edges, 16,000 tokens); pass `--max-depth`, `--node-limit`, `--edge-limit`, or `--token-budget` to tighten them. A bounded result carries deterministic `truncation.reasons`, effective limits, full unique-node/edge totals, and omitted counts. `--format context` returns one bounded, explainable relationship packet: a counts-first summary, per-node `role`/`via`/`reasons`, root evidence pointers, enumerated `missing_references` with active-versus-legacy classification, `meta.completeness`, and cursor continuation; `--direction`, repeatable or comma-separated `--kind`, and `--cursor` further control that traversal (see [Relationship Graph](RELATIONSHIP_GRAPH.md)). `--edge-limit` caps both returned graph edges and enumerated `missing_references`; `missing_reference_count` retains the total when rows are omitted. The standalone `--note <text>` flag annotates every link added by `--add`/`--add-glob` in the same invocation (a per-entry embedded `note=` wins); `--note` without an add is a usage error.
 
 Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; create/update `--dep` accepts `id,kind,type,author,created_at,source_kind`; `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. Set `source_kind=global` for a dependency owned by another workspace: pm preserves its id verbatim, materializes it as an external graph endpoint, and excludes it from dangling-local-reference findings. Dependencies without that explicit provenance retain normal local `id_prefix` normalization. Bare values (`--add src/cli/main.ts`) skip key validation.
 
@@ -720,6 +721,8 @@ pm context --section recently_created --section unparented --limit 10
 pm context --depth full                  # every section, no per-section row cap
 pm context --parent pm-epic1 --depth deep # scope the snapshot to one item's subtree
 pm context --fields id,title,priority    # project focus rows to a field subset
+pm context --no-tags                    # omit tag arrays from every focus row
+pm context --format ndjson              # one focus-row object per line
 ```
 
 `pm context --depth full` returns the comprehensive snapshot: every known section
@@ -733,9 +736,11 @@ blocked-fallback, recently-created, unparented) to a chosen subset of fields for
 low-token reads — the same shaping `pm list --fields` and `pm get --fields`
 provide. Selectable fields: `id`, `title`, `type`, `status`, `priority`, `order`,
 `deadline`, `assignee`, `tags`, `updated_at`, `parent`, `children_total`,
-`children_closed`, `completion_pct`, `created_at`. The projection applies across
+`children_closed`, `completion_pct`, `created_at`, `tags_inherited`. Repeated child tags are folded when the matching parent row is present: the child omits `tags` and reports `tags_inherited: <parent-id>`. `--no-tags` removes both tag values and inheritance markers. The projection applies across
 the markdown, TOON, and JSON renderings and is also available on the `pm_context`
 MCP tool via `options.fields`.
+
+`pm context --format ndjson` concatenates the bounded high-level, low-level, and blocked-fallback focus rows in deterministic ranking order. Like list/search NDJSON, it emits no wrapper and no trailing count object. SDK and MCP callers retain the structured arrays; package authors can use the exported `serializeNdjsonRows` primitive when their transport needs line framing.
 
 `calendar` defaults to markdown for human and agent readability. Other commands default to TOON unless configured otherwise.
 For `--include events` without explicit `--to`, `--recurrence-lookahead-days`, or `--occurrence-limit`, recurring expansion is intentionally capped to a bounded default window and emits a warning with retry hints for broader windows.
@@ -744,6 +749,7 @@ For `--include events` without explicit `--to`, `--recurrence-lookahead-days`, o
 
 ```bash
 pm validate --check-resolution --check-history-drift
+pm validate --check-metadata --counts --json
 pm validate --check-files --scan-mode tracked-all
 pm validate --check-resolution --fix-hints --json
 pm validate --auto-fix --dry-run --json
@@ -764,6 +770,8 @@ The `checkpoints` scope prunes bulk-mutation rollback checkpoints under `checkpo
 `--fix-hints` is a read-only flag: each failing check gains `details.fix_hints`, an array of `pm` command templates derived from the warning codes it raised (for example `pm history-repair <id>` for history drift, or `pm update <id> --reviewer "<name>"` for a missing reviewer). Generic hints may contain `<id>`/`<field>`/`<path>` placeholders the agent substitutes from the check's detail rows; the resolution check aliases concrete per-row commands and marks `fix_hints_truncated` when the list is summarized. It never mutates items. The mapping comes from the shared remediation registry that also backs `pm health --json` (see Self-Repair Remediation below), so agents gating on `pm validate` can auto-repair findings without hardcoding warning-code-to-command lookups.
 
 `pm validate --check-metadata` also groups missing-required-field counts per item type in `details.missing_by_type` (for example `{ "Task": { "close_reason": 3 } }`) — counts only, zero-suppressed, and limited to the active metadata profile's required fields, so remediation can be targeted by type without verbose row dumps.
+
+`--counts` keeps the validation envelope, check statuses, warning codes, scalar counts/totals, nested count maps, and fix summary totals while recursively omitting diagnostic and fix row arrays. It is the preferred agent projection when deciding whether drift exists; remove it only when the affected ids or remediation rows are needed. The public SDK `projectValidateCounts` helper applies the identical projection to an already-computed `ValidateResult`.
 
 By default the human view caps each diagnostic `*_item_ids` list at 5 entries and sets the matching `*_truncated` flag. `--json` **never** truncates those lists (machine consumers always receive the complete arrays), and `--all-affected-ids` (equivalent to `--verbose-diagnostics`) emits the full lists in human mode too — so bulk remediation can pipe every affected id straight into `pm update-many`:
 

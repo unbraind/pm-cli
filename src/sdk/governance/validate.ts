@@ -303,6 +303,8 @@ export interface ValidateCommandOptions {
   fixScope?: string[];
   /** Value that configures or reports prune missing for this contract. */
   pruneMissing?: boolean;
+  /** Keep validation counts and scalar totals while omitting diagnostic row arrays. */
+  counts?: boolean;
 }
 
 /** Mutation operations injected when validation is allowed to apply audited fixes. */
@@ -353,6 +355,24 @@ export interface ValidateFixesSummary {
   failed_fixes: Array<Record<string, unknown>>;
 }
 
+/** Counts-only fix summary emitted when validate diagnostics omit row arrays. */
+export interface ValidateCountsFixesSummary {
+  /** Whether fixes were applied or only previewed. */
+  mode: "apply" | "dry_run";
+  /** Whether safe automatic fixes were requested. */
+  auto_fix: boolean;
+  /** Whether missing linked paths were eligible for pruning. */
+  prune_missing: boolean;
+  /** Number of planned entries represented by this result. */
+  planned_count: number;
+  /** Number of applied entries represented by this result. */
+  applied_count: number;
+  /** Number of gated entries represented by this result. */
+  gated_count: number;
+  /** Number of failed entries represented by this result. */
+  failed_count: number;
+}
+
 /** Documents the validate result payload exchanged by command, SDK, and package integrations. */
 export interface ValidateResult {
   /** Whether the operation completed without a blocking failure. */
@@ -367,6 +387,60 @@ export interface ValidateResult {
   fixes?: ValidateFixesSummary;
   /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
+}
+
+/** Validate result returned when `counts: true` omits diagnostic row arrays. */
+export interface ValidateCountsResult
+  extends Omit<ValidateResult, "fixes"> {
+  /** Scalar-only remediation totals, present when remediation was requested. */
+  fixes?: ValidateCountsFixesSummary;
+}
+
+function projectValidateCountsRecord(
+  record: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  const projected: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    if (Array.isArray(value)) {
+      continue;
+    }
+    projected[key] =
+      typeof value === "object" && value !== null
+        ? projectValidateCountsRecord(value as Record<string, unknown>)
+        : value;
+  }
+  return projected;
+}
+
+/**
+ * Build the counts-only validate projection without mutating the full result.
+ * The check envelope and warning codes remain available for gates, while every
+ * per-item diagnostic/fix array is removed recursively and scalar counts,
+ * totals, statuses, and truncation markers are preserved.
+ */
+export function projectValidateCounts(
+  result: ValidateResult,
+): ValidateCountsResult {
+  return {
+    ...result,
+    checks: result.checks.map((check) => ({
+      ...check,
+      details: projectValidateCountsRecord(check.details),
+    })),
+    ...(result.fixes
+      ? {
+          fixes: {
+            mode: result.fixes.mode,
+            auto_fix: result.fixes.auto_fix,
+            prune_missing: result.fixes.prune_missing,
+            planned_count: result.fixes.planned_count,
+            applied_count: result.fixes.applied_count,
+            gated_count: result.fixes.gated_count,
+            failed_count: result.fixes.failed_count,
+          },
+        }
+      : {}),
+  };
 }
 
 function normalizeRelativePath(value: string): string {
@@ -3416,12 +3490,30 @@ async function buildValidateFixesSummary(
 /* v8 ignore stop */
 
 /* c8 ignore start -- validate orchestration + fix-application matrices are covered by end-to-end command integration runs */
+/** Run validation with an accurately typed counts-only projection. */
+export function runValidate(
+  options: ValidateCommandOptions & { counts: true },
+  global: GlobalOptions,
+  services?: ValidateMutationServices,
+): Promise<ValidateCountsResult>;
+/** Run validation with complete diagnostic and remediation arrays. */
+export function runValidate(
+  options: ValidateCommandOptions & { counts?: false },
+  global: GlobalOptions,
+  services?: ValidateMutationServices,
+): Promise<ValidateResult>;
+/** Run validation when the caller determines the projection dynamically. */
+export function runValidate(
+  options: ValidateCommandOptions,
+  global: GlobalOptions,
+  services?: ValidateMutationServices,
+): Promise<ValidateResult | ValidateCountsResult>;
 /** Implements run validate for the public runtime surface of this module. */
 export async function runValidate(
   options: ValidateCommandOptions,
   global: GlobalOptions,
   services: ValidateMutationServices = {},
-): Promise<ValidateResult> {
+): Promise<ValidateResult | ValidateCountsResult> {
   const fixesRequested =
     options.autoFix === true || options.pruneMissing === true;
   if (options.dryRun === true && !fixesRequested) {
@@ -3528,7 +3620,7 @@ export async function runValidate(
     left.localeCompare(right),
   );
   const hasErrors = state.checks.some((check) => check.status === "error");
-  return {
+  const result: ValidateResult = {
     ok: !hasErrors,
     has_warnings: normalizedWarnings.length > 0,
     checks: state.checks,
@@ -3536,5 +3628,6 @@ export async function runValidate(
     ...(fixes !== undefined ? { fixes } : {}),
     generated_at: nowIso(),
   };
+  return options.counts === true ? projectValidateCounts(result) : result;
 }
 /* c8 ignore stop */

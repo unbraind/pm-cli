@@ -79,7 +79,12 @@ import {
 // ---------------------------------------------------------------------------
 
 /** Supported values accepted by the context output contract. */
-export const CONTEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
+export const CONTEXT_OUTPUT_VALUES = [
+  "markdown",
+  "toon",
+  "json",
+  "ndjson",
+] as const;
 /** Restricts context output format values accepted by command, SDK, and storage contracts. */
 export type ContextOutputFormat = (typeof CONTEXT_OUTPUT_VALUES)[number];
 
@@ -135,6 +140,8 @@ export interface ContextOptions {
   explainRanking?: boolean;
   /** Maximum estimated tokens spent on ranked focus rows. */
   tokenBudget?: string | number;
+  /** Omit tag arrays from every context focus-row collection. */
+  noTags?: boolean;
   [key: string]: unknown;
 }
 
@@ -161,7 +168,9 @@ export interface ContextFocusItem {
   /** Value that configures or reports assignee for this contract. */
   assignee: string | null;
   /** Value that configures or reports tags for this contract. */
-  tags: string[];
+  tags?: string[];
+  /** Parent item whose identical tag set was folded out of this row. */
+  tags_inherited?: string;
   /** ISO 8601 timestamp recording when updated occurred. */
   updated_at: string;
   /** Value that configures or reports parent for this contract. */
@@ -522,7 +531,7 @@ function parseOutputFormat(
   const normalized = raw.trim().toLowerCase();
   if (!CONTEXT_OUTPUT_VALUES.includes(normalized as ContextOutputFormat)) {
     throw new PmCliError(
-      "Context format must be one of markdown|toon|json",
+      "Context format must be one of markdown|toon|json|ndjson",
       EXIT_CODE.USAGE,
     );
   }
@@ -542,6 +551,7 @@ const FOCUS_PROJECTION_FIELDS = new Set<string>([
   "deadline",
   "assignee",
   "tags",
+  "tags_inherited",
   "updated_at",
   "parent",
   "children_total",
@@ -597,7 +607,12 @@ export function resolveContextOutputFormat(
   global: GlobalOptions,
 ): ContextOutputFormat {
   const commandFormat = parseOutputFormat(options.format);
-  if (global.json && commandFormat && commandFormat !== "json") {
+  if (
+    global.json &&
+    commandFormat &&
+    commandFormat !== "json" &&
+    commandFormat !== "ndjson"
+  ) {
     throw new PmCliError(
       "Cannot combine --json with --format markdown|toon",
       EXIT_CODE.USAGE,
@@ -2463,6 +2478,46 @@ function applyContextFocusProjection(
   }
 }
 
+/**
+ * Remove redundant context tags while preserving their provenance. Identical
+ * child tag sets are folded only when the parent row is present in the same
+ * bounded result, so consumers never need an unavailable follow-up read.
+ * `--no-tags` removes both tag values and inheritance markers.
+ */
+export function applyContextTagProjection(
+  result: ContextResult,
+  noTags: boolean,
+): void {
+  const rows = [
+    result.high_level,
+    result.low_level,
+    result.blocked_fallback,
+    result.recently_created ?? [],
+    result.unparented ?? [],
+  ].flat();
+  if (noTags) {
+    for (const row of rows) {
+      delete row.tags;
+      delete row.tags_inherited;
+    }
+    return;
+  }
+  const rowsById = new Map(rows.map((row) => [row.id, row]));
+  for (const row of rows) {
+    if (!row.parent || !row.tags) {
+      continue;
+    }
+    const parent = rowsById.get(row.parent);
+    if (
+      parent?.tags &&
+      [...row.tags].sort().join("\0") === [...parent.tags].sort().join("\0")
+    ) {
+      delete row.tags;
+      row.tags_inherited = parent.id;
+    }
+  }
+}
+
 function maybeAttachEmptyContextSuggestions(
   result: ContextResult,
   activeItems: ItemMetadata[],
@@ -2659,6 +2714,7 @@ export async function runContext(
   );
 
   attachOptionalContextSections(result, sections);
+  applyContextTagProjection(result, options.noTags === true);
   if (options.explainRanking === true) {
     result.ranking = toContextRankingSummary(
       focusGroups.ranking,

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: dx,gh-issue,init,onboarding
 created_at: "2026-07-11T18:01:34.472Z"
-updated_at: "2026-07-13T09:18:16.316Z"
+updated_at: "2026-07-23T20:35:24.737Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Fenced ignore block and tracked-cache warning also cover .agents/pm/locks/ (runtime lock files must never be committed)
@@ -15,9 +15,10 @@ risk: low
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-69nl,related,"2026-07-11T18:02:06.291Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-11T23:05:12.110Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
   "2026-07-11T23:15:35.696Z",codex-root,"Progress evidence: implemented and SDK-exported an idempotent fenced .gitignore primitive; pm init applies it in workspace-discovery, explicit workspace, and .agents/pm tracker-path layouts; repair/idempotence/unit/integration and packed-consumer proof pass. Remaining acceptance work: add health/validate detection for already-tracked cache files before closing."
+  "2026-07-23T20:35:24.737Z",claude-code-agent,"GitHub intake update (2026-07-23): issue #659 reports the remaining custom --pm-path runtime-cache ignore gap. This is the same canonical lineage as GH #514, with the earlier custom-root bootstrap portion already completed by pm-4uqm. Reusing pm-hous rather than creating a duplicate; the remaining acceptance still covers health/validate detection and runtime-cache ignore ownership."
 notes[2]{created_at,author,text}:
   "2026-07-12T06:11:43.742Z",maintainer-agent,"PR#520 (merged 2026-07-12) shipped AC halves 1-2: SDK primitives ensurePmGitignore/getPmGitignoreBlock (src/sdk/workspace.ts, re-exported via runtime) + pm init writes/repairs the fenced ignore block at the workspace root in discovered/explicit/tracker-path modes with updated:gitignore:<path> warning; docs/SDK.md + docs/AGENT_GUIDE.md updated. REMAINING scope (why this stays open): AC half 3 — pm validate or pm health warning when tracked .agents/pm runtime/search cache files already exist in git (git rm --cached remediation hint); grep confirms no validate/health implementation on main. Optional: init/getting-started docs coverage beyond AGENT_GUIDE."
   "2026-07-13T09:18:15.456Z",maintainer-agent,"Scope extension (pass #77, 2026-07-13): the fenced ignore block MUST also cover .agents/pm/locks/ — concrete failure: review pass #76's commit (67ccbcf4) accidentally committed .agents/pm/locks/reindex.lock (a live-pid runtime lock) because this repo's .gitignore covered runtime/ and search/ but not locks/. The tracked-cache health warning (AC half 3) should likewise flag tracked lock files. Our own repo's .gitignore gets the locks/ line directly this pass (hygiene fix, pass #77 commit); pm init's fenced block owns it for user repos."

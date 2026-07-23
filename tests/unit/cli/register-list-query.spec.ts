@@ -130,9 +130,10 @@ describe("register-list-query list output formats", () => {
     expect(parseListFormat(" CSV ")).toBe("csv");
     expect(parseListFormat("table")).toBe("table");
     expect(parseListFormat("json")).toBe("json");
+    expect(parseListFormat("ndjson")).toBe("ndjson");
     expect(parseListFormat("toon")).toBe("toon");
-    expect(() => parseListFormat("yaml")).toThrow(/csv\|table\|json\|toon/);
-    expect(() => parseListFormat(true as never)).toThrow(/csv\|table\|json\|toon/);
+    expect(() => parseListFormat("yaml")).toThrow(/csv\|table\|json\|ndjson\|toon/);
+    expect(() => parseListFormat(true as never)).toThrow(/csv\|table\|json\|ndjson\|toon/);
   });
 
   it("renders CSV output through writeStdout and bypasses printResult", async () => {
@@ -167,6 +168,22 @@ describe("register-list-query list output formats", () => {
     expect(outputOptions.json).toBe(true);
   });
 
+  it("renders list NDJSON rows and suppresses quiet or empty streams", async () => {
+    await runRaw("list", "--format", "ndjson");
+    expect(vi.mocked(writeStdout)).toHaveBeenLastCalledWith(
+      '{"id":"pm-1","status":"open","type":"Task","title":"First"}\n{"id":"pm-2","status":"open","type":"Epic","title":"Second"}\n',
+    );
+    expect(getActiveCommandResult()).toMatchObject({ count: 2 });
+
+    vi.mocked(writeStdout).mockClear();
+    await runRaw("list", "--format", "ndjson", "--quiet");
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+
+    vi.mocked(runList).mockResolvedValueOnce({ items: [], count: 0 } as never);
+    await runRaw("list", "--format", "ndjson");
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+  });
+
   it("emits a JSON stream when --stream and --json are set", async () => {
     await runRaw("list", "--json", "--stream");
     expect(vi.mocked(printListJsonStream)).toHaveBeenCalledTimes(1);
@@ -179,7 +196,7 @@ describe("register-list-query list output formats", () => {
 
   it("rejects combining --format csv with --stream", async () => {
     await expect(runRaw("list", "--json", "--format", "csv", "--stream")).rejects.toThrow(
-      /--format csv\|table cannot be combined with --stream/,
+      /--format csv\|table\|ndjson cannot be combined with --stream/,
     );
     expect(vi.mocked(runList)).not.toHaveBeenCalled();
   });
@@ -212,6 +229,21 @@ describe("register-list-query get options", () => {
   it("rejects non-string read command format values defensively", () => {
     expect(() =>
       _testOnlyRegisterListQuery.resolveReadCommandOutputFormat("Get", true, { quiet: false }),
+    ).toThrow(/Get --format must be one of json\|toon/);
+    expect(() =>
+      _testOnlyRegisterListQuery.resolveReadCommandOutputFormat(
+        "Search",
+        true,
+        { quiet: false },
+        true,
+      ),
+    ).toThrow(/Search --format must be one of json\|ndjson\|toon/);
+    expect(() =>
+      _testOnlyRegisterListQuery.resolveReadCommandOutputFormat(
+        "Get",
+        "ndjson",
+        { quiet: false },
+      ),
     ).toThrow(/Get --format must be one of json\|toon/);
   });
 
@@ -270,7 +302,49 @@ describe("register-list-query search options", () => {
   });
 
   it("rejects unsupported read command formats", async () => {
-    await expect(runRaw("search", "token", "--format", "markdown")).rejects.toThrow(/Search --format must be one of json\|toon/);
+    await expect(runRaw("search", "token", "--format", "markdown")).rejects.toThrow(/Search --format must be one of json\|ndjson\|toon/);
+  });
+
+  it("renders search NDJSON rows and suppresses quiet or empty streams", async () => {
+    vi.mocked(runSearch).mockResolvedValueOnce({
+      items: [{ id: "pm-hit", score: 4 }],
+      count: 1,
+    } as never);
+    await runRaw("search", "token", "--format", "ndjson");
+    expect(vi.mocked(writeStdout)).toHaveBeenLastCalledWith(
+      '{"id":"pm-hit","score":4}\n',
+    );
+
+    vi.mocked(writeStdout).mockClear();
+    vi.mocked(runSearch).mockResolvedValue({ items: [], count: 0 } as never);
+    await runRaw("search", "token", "--format", "ndjson");
+    await runRaw("search", "token", "--format", "ndjson", "--quiet");
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+  });
+});
+
+describe("register-list-query context NDJSON", () => {
+  it("renders ranked focus rows and suppresses quiet or empty streams", async () => {
+    vi.mocked(resolveContextOutputFormat).mockReturnValue("ndjson" as never);
+    vi.mocked(runContext).mockResolvedValueOnce({
+      high_level: [{ id: "pm-feature" }],
+      low_level: [{ id: "pm-task" }],
+      blocked_fallback: [],
+    } as never);
+    await runRaw("context", "--format", "ndjson");
+    expect(vi.mocked(writeStdout)).toHaveBeenLastCalledWith(
+      '{"id":"pm-feature"}\n{"id":"pm-task"}\n',
+    );
+
+    vi.mocked(writeStdout).mockClear();
+    vi.mocked(runContext).mockResolvedValue({
+      high_level: [],
+      low_level: [],
+      blocked_fallback: [],
+    } as never);
+    await runRaw("context", "--format", "ndjson");
+    await runRaw("context", "--format", "ndjson", "--quiet");
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
   });
 });
 
