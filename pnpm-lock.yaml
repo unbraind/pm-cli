@@ -58,13 +58,13 @@ importers:
         version: 10.7.0(jiti@2.7.0)
       eslint-plugin-sonarjs:
         specifier: ^4.1.0
-        version: 4.1.0(eslint@10.7.0(jiti@2.7.0))
+        version: 4.2.0(eslint@10.7.0(jiti@2.7.0))
       eslint-plugin-unicorn:
         specifier: ^71.1.0
         version: 71.1.0(eslint@10.7.0(jiti@2.7.0))
       greptile:
         specifier: ^3.1.1
-        version: 3.2.0
+        version: 3.2.2
       jscpd:
         specifier: ^5.0.11
         version: 5.0.12
@@ -930,8 +930,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-plugin-sonarjs@4.1.0:
-    resolution: {integrity: sha512-rh+FlVz0yfd2RNIb6WqSkuGh0addX/Qi5scwQ5FphXDFrM6fZKcxP1+attJ78yUKcyYfiu6MTaISPpAFPzqRJw==}
+  eslint-plugin-sonarjs@4.2.0:
+    resolution: {integrity: sha512-bqADfuNtTL7VK6RU29eoiFTtaaBKIpVPuX3bOl+rBpWSBa0zIBVZlqZNZQjfP6s4iXkAJokv5IsD8OsACkwApg==}
     peerDependencies:
       eslint: ^8.0.0 || ^9.0.0 || ^10.0.0
 
@@ -1097,8 +1097,8 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
-  greptile@3.2.0:
-    resolution: {integrity: sha512-nDR+nSo+0eeCvfdabKJlxzPMI+8HWUUzbRf5G45EacAr68ptP8YSoipjEEaYALDpFM4kHrWsK7fck1Y3uQ47Fg==}
+  greptile@3.2.2:
+    resolution: {integrity: sha512-TF7+GB1y1IQWEYr5M43mjvHXpxUvFVJwAxmNyKn+kGJBHzFT10sEQ9ZkiUA3IwqLM/UB0i4+8ILECshzFMfJMA==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -2449,7 +2449,7 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-plugin-sonarjs@4.1.0(eslint@10.7.0(jiti@2.7.0)):
+  eslint-plugin-sonarjs@4.2.0(eslint@10.7.0(jiti@2.7.0)):
     dependencies:
       '@eslint-community/regexpp': 4.12.2
       builtin-modules: 3.3.0
@@ -2659,7 +2659,7 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  greptile@3.2.0: {}
+  greptile@3.2.2: {}
 
   has-flag@4.0.0: {}
 
