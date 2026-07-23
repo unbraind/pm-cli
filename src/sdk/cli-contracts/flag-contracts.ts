@@ -426,6 +426,10 @@ export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--infer" },
   { flag: "--min-count" },
   { flag: "--apply" },
+  // Lossless schema evolution flags.
+  { flag: "--to" },
+  { flag: "--migration-id", aliases: ["--migration_id"] },
+  { flag: "--dry-run" },
   { flag: "--author" },
   { flag: "--force" },
 ];

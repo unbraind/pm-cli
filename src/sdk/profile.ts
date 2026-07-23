@@ -13,8 +13,8 @@ import path from "node:path";
 import {
   pathExists,
   readFileIfExists,
-  writeFileAtomic,
 } from "../core/fs/fs-utils.js";
+import { writeWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { acquireLock } from "../core/lock/lock.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -565,7 +565,15 @@ export async function runProfileApply(
         schema.files.types,
         DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types,
       );
-      await writeFileAtomic(typesPath, serializeItemTypesFile(plan.types.file));
+      await writeWorkspaceJsonWithHistory({
+        pmRoot,
+        filePath: typesPath,
+        raw: serializeItemTypesFile(plan.types.file),
+        op: "profile:apply-types",
+        author,
+        lockTtlSeconds: settings.locks.ttl_seconds,
+        lockWaitMs: settings.locks.wait_ms,
+      });
       const stagedNames = new Set(
         profile.types.map((type) => normalizeAddTypeInput(type).name),
       );
@@ -592,10 +600,15 @@ export async function runProfileApply(
         schema.files.statuses,
         DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.statuses,
       );
-      await writeFileAtomic(
-        statusesPath,
-        serializeStatusDefsFile(plan.statuses.file),
-      );
+      await writeWorkspaceJsonWithHistory({
+        pmRoot,
+        filePath: statusesPath,
+        raw: serializeStatusDefsFile(plan.statuses.file),
+        op: "profile:apply-statuses",
+        author,
+        lockTtlSeconds: settings.locks.ttl_seconds,
+        lockWaitMs: settings.locks.wait_ms,
+      });
       warnings.push(
         ...(await runActiveOnWriteHooks({
           path: statusesPath,
@@ -610,7 +623,15 @@ export async function runProfileApply(
         schema.files.fields,
         DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields,
       );
-      await writeFileAtomic(fieldsPath, serializeFieldsFile(plan.fields.file));
+      await writeWorkspaceJsonWithHistory({
+        pmRoot,
+        filePath: fieldsPath,
+        raw: serializeFieldsFile(plan.fields.file),
+        op: "profile:apply-fields",
+        author,
+        lockTtlSeconds: settings.locks.ttl_seconds,
+        lockWaitMs: settings.locks.wait_ms,
+      });
       warnings.push(
         ...(await runActiveOnWriteHooks({
           path: fieldsPath,

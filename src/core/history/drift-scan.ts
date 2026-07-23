@@ -11,6 +11,10 @@ import { getHistoryPath } from "../store/paths.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { hashDocument } from "./history.js";
 import { verifyHistoryChain } from "./replay.js";
+import {
+  getWorkspaceHistoryPath,
+  WORKSPACE_HISTORY_ID,
+} from "./workspace-history.js";
 import type { HistoryEntry, ItemMetadata } from "../../types/index.js";
 
 /** Documents the drift scan result payload exchanged by command, SDK, and package integrations. */
@@ -96,6 +100,49 @@ interface DriftScanAccumulator {
   unreadableStreams: string[];
   hashMismatches: string[];
   chainMismatches: string[];
+}
+
+async function scanWorkspaceHistory(
+  pmRoot: string,
+  previousEntries: Record<string, DriftCacheEntry>,
+  nextEntries: Record<string, DriftCacheEntry>,
+  verifyCacheHitByContent: boolean,
+  accumulator: DriftScanAccumulator,
+): Promise<boolean> {
+  const historyPath = getWorkspaceHistoryPath(pmRoot);
+  let stat: Stats;
+  try {
+    stat = await fs.stat(historyPath);
+  } catch (error: unknown) {
+    if (isErrno(error, "ENOENT")) return false;
+    accumulator.unreadableStreams.push(WORKSPACE_HISTORY_ID);
+    return false;
+  }
+  const missingCount = accumulator.missingStreams.length;
+  const resolved = await resolveStreamVerification({
+    itemId: WORKSPACE_HISTORY_ID,
+    historyPath,
+    stat,
+    cached: previousEntries[WORKSPACE_HISTORY_ID],
+    verifyCacheHitByContent,
+    accumulator,
+  });
+  if (!resolved.verification) {
+    accumulator.missingStreams.splice(missingCount);
+    return resolved.cacheDirty;
+  }
+  if (!resolved.verification.chainOk) {
+    accumulator.chainMismatches.push(WORKSPACE_HISTORY_ID);
+  }
+  nextEntries[WORKSPACE_HISTORY_ID] = {
+    mtime_ms: stat.mtimeMs,
+    ctime_ms: stat.ctimeMs,
+    size: stat.size,
+    content_hash: resolved.verification.contentHash,
+    latest_after_hash: resolved.verification.latestAfterHash,
+    chain_ok: resolved.verification.chainOk,
+  };
+  return resolved.cacheDirty;
 }
 
 function hashContent(raw: string): string {
@@ -316,6 +363,14 @@ export async function scanHistoryDrift(
       accumulator.hashMismatches.push(item.id);
     }
   }
+  const workspaceCacheDirty = await scanWorkspaceHistory(
+    pmRoot,
+    previousEntries,
+    nextEntries,
+    verifyCacheHitByContent,
+    accumulator,
+  );
+  cacheDirty ||= workspaceCacheDirty;
 
   if (
     cacheDirty ||

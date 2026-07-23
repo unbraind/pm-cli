@@ -1579,7 +1579,7 @@ describe("MCP dynamic package actions", () => {
         jsonrpc: "2.0",
         id: 133,
         method: "tools/call",
-        params: { name: "pm_schema", arguments: { path: context.pmPath, subcommand: "rename-type" } },
+        params: { name: "pm_schema", arguments: { path: context.pmPath, subcommand: "rename-types" } },
       }).then(
         () => undefined,
         (error: unknown) => error,

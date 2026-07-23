@@ -17,13 +17,20 @@ import {
   type ResolvedHistoryTarget,
 } from "../core/history/projection.js";
 import { readHistoryEntries } from "../core/history/read.js";
-import { replayToCanonicalItemDocument } from "../core/history/replay.js";
+import {
+  hashDocument,
+  hashEmptyDocument,
+} from "../core/history/history.js";
+import {
+  replayToCanonicalItemDocument,
+  verifyHistoryChain,
+} from "../core/history/replay.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import type { ItemDocument } from "../types/index.js";
+import type { HistoryEntry, ItemDocument } from "../types/index.js";
 import { resolveHistorySubject } from "./history-redact.js";
 
 /** Workspace resolution controls accepted by {@link getItemAt}. */
@@ -48,6 +55,59 @@ export interface GetItemAtResult {
   target: ResolvedHistoryTarget;
   /** Total number of entries currently available in the stream. */
   history_length: number;
+}
+
+/** Verification projection shared by CLI history reads and SDK consumers. */
+export interface HistoryVerificationResult {
+  /** Whether the hash chain and optional current document both verify. */
+  ok: boolean;
+  /** Number of entries verified. */
+  entries: number;
+  /** Stable verification errors in encounter order. */
+  errors: string[];
+  /** Hash produced by the newest entry, when one exists. */
+  latest_after_hash?: string;
+  /** Canonical hash of the supplied current document. */
+  current_item_hash?: string;
+  /** Whether the supplied document matches the newest history hash. */
+  current_matches_latest?: boolean;
+}
+
+/**
+ * Verify a history chain and optionally compare it with a current document.
+ *
+ * Omitting the current document is useful for workspace-scoped streams, which
+ * aggregate multiple configuration files and therefore have no single item
+ * document to compare.
+ */
+export function verifyHistoryEntries(
+  history: HistoryEntry[],
+  currentDocument?: ItemDocument,
+): HistoryVerificationResult {
+  const verification = verifyHistoryChain(history);
+  const latestAfterHash =
+    history.length > 0
+      ? history[history.length - 1].after_hash
+      : hashEmptyDocument();
+  const currentItemHash =
+    currentDocument === undefined ? undefined : hashDocument(currentDocument);
+  const currentMatchesLatest =
+    currentItemHash === undefined
+      ? undefined
+      : currentItemHash === latestAfterHash;
+  const errors = [...verification.errors];
+  if (currentMatchesLatest === false) {
+    errors.push("verify_failed:current_item_hash_mismatch");
+  }
+  return {
+    ok: errors.length === 0,
+    entries: history.length,
+    errors,
+    latest_after_hash:
+      history.length > 0 ? history[history.length - 1].after_hash : undefined,
+    current_item_hash: currentItemHash,
+    current_matches_latest: currentMatchesLatest,
+  };
 }
 
 /**

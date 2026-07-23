@@ -33,7 +33,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Links        | `files`, `docs`, `test`, `deps`                                                                                                | connect items to artifacts, tests, and relationships                                                                                                                                                                                                                                            |
 | Verification | `test`, `test-all`, `test-runs`†, `validate`, `gc`                                                                             | run linked tests and repository checks                                                                                                                                                                                                                                                          |
 | History      | `history`, `history-compact`, `history-redact`, `history-repair`, `activity`, `restore`, `stats`                               | inspect, compact, redact, re-anchor, and recover item state                                                                                                                                                                                                                                     |
-| Schema       | `schema add-type` / `remove-type` / `add-status` / `remove-status` / `add-field` / `remove-field` / `apply-preset`             | manage config-driven custom item types (`.agents/pm/schema/types.json`), statuses (`.agents/pm/schema/statuses.json`), and custom metadata fields (`.agents/pm/schema/fields.json`); `apply-preset` adopts a domain type preset; `add-type --infer` derives types from title-prefix conventions |
+| Schema       | `schema add/remove-*` / `rename-type` / `rename-field` / `remap-status` / `apply-preset`                                      | manage config-driven types, statuses, and fields; losslessly migrate existing items when definitions evolve; adopt presets or infer types                                                                                         |
 | Profiles     | `profile list` / `show` / `apply` / `lint`                                                                                     | compose item types, statuses, fields, workflows, config, templates, and recommended packages into archetype bundles (agile/ops/research); `apply` stages every dimension idempotently; `lint` reports author-time consistency findings without writing                                          |
 | Calendar     | `calendar`, `cal`                                                                                                              | project deadlines, reminders, and events                                                                                                                                                                                                                                                        |
 | Packages     | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups                                     | install, upgrade, manage, and run package-backed extension commands                                                                                                                                                                                                                             |
@@ -842,6 +842,7 @@ pm history <id> --limit 20
 pm history <id> --diff
 pm history <id> --diff --field status
 pm history <id> --full --diff --verify
+pm history _workspace --verify
 pm get <id> --at 12
 pm get <id> --at 2026-07-01T12:00:00.000Z --fields id,title,status,body
 pm history-compact <id> --dry-run
@@ -862,6 +863,12 @@ pm restore <id> <timestamp-or-version>
 ```
 
 History is append-only. Restore appends a new restore event instead of rewriting old history.
+Workspace-scoped mutations to settings, schema, profiles, init state, and
+extension/package activation are recorded in
+`.agents/pm/history/_workspace.jsonl` using the same patch/hash format.
+`pm activity --id _workspace` lists those events; `pm history _workspace
+--verify` verifies the chain. The stream is optional for trackers created before
+workspace auditing and is created on the first audited singleton mutation.
 `pm get --at` is the read-only counterpart: it reconstructs a recorded version through the shared restore replay kernel and labels the result so consumers cannot confuse historical state with current state. Checkpoint baselines produced by `history-compact` remain valid reconstruction roots.
 
 `--diff` replays the history chain and emits, per entry, a `changes` array of `{ field, before, after }` field-level value transitions (alongside the `changed_fields` name list) — so you can see exactly what each field changed from and to without comparing snapshots. It is independent of the compact/full projection. `--field <name>` narrows the diff to a single field's transitions (implying `--diff`), answering "when did `<field>` change?" — e.g. `pm history <id> --diff --field status`.
@@ -888,7 +895,9 @@ The maintenance engines are public SDK primitives rather than CLI-only implement
 
 ## Custom Item Types
 
-Tracker references: [pm-qq69](../.agents/pm/features/pm-qq69.toon), [pm-1lkm](../.agents/pm/features/pm-1lkm.toon).
+Tracker references: [pm-qq69](../.agents/pm/features/pm-qq69.toon),
+[pm-1lkm](../.agents/pm/features/pm-1lkm.toon), and schema evolution
+[pm-dijg](../.agents/pm/features/pm-dijg.toon).
 
 `pm schema` inspects and manages the runtime item-type registry. `list` and `show` include built-in, custom, and extension-provided types so agents can confirm project context before creating work. `add-type` registers a config-driven custom item type so agents can use `pm create <Type> "..."` for project-specific work categories without editing settings by hand. Custom definitions are merged from `.agents/pm/schema/types.json` (shape: `{ "definitions": [ItemTypeDefinition...] }`). Custom statuses are managed with `show-status`/`add-status`/`remove-status` and persist in `.agents/pm/schema/statuses.json` (shape: `{ "statuses": [RuntimeStatusDefinition...] }`).
 
@@ -908,6 +917,10 @@ pm schema remove-field severity_level
 pm schema apply-preset agile
 pm schema add-type --infer --min-count 10
 pm schema add-type --infer --apply
+pm schema rename-type Spike --to Experiment --migration-id spike-v2 --dry-run
+pm schema rename-type Spike --to Experiment --migration-id spike-v2
+pm schema rename-field severity --to impact --type Issue --migration-id severity-v2 --dry-run
+pm schema remap-status review --to verifying --migration-id review-v2
 pm create Spike "Investigate retry backoff"
 ```
 
@@ -922,8 +935,9 @@ pm create Spike "Investigate retry backoff"
 - `add-field <key>` registers a custom metadata field in `.agents/pm/schema/fields.json` (shape: `{ "fields": [RuntimeFieldDefinition...] }`). Each custom field dynamically registers a CLI flag on create/update (and any other commands you list) so projects can capture typed project-specific metadata without hand-editing JSON. It is an idempotent UPSERT keyed on the normalized key, and refuses keys that shadow a built-in field. `list-fields` / `show-field <key>` inspect registered fields; `remove-field <key>` drops one and WARNS (non-blocking) with `items_using_field:<N>` when items still carry a value. See [CONFIGURATION.md](CONFIGURATION.md) for the full `schema/fields.json` format.
 - `apply-preset <agile|ops|research>` batch-registers a domain type preset into an already-initialized project (the same vocabulary `pm init --type-preset` seeds); it is idempotent (re-running reports `replaced` entries) and shares its definitions with init.
 - `add-type --infer` scans existing item titles for stable `PREFIX-`/`PREFIX:` conventions and proposes them as custom types. It previews candidates by default (dry-run); pass `--apply` to register the non-shadowing candidates and `--min-count <n>` to tune the per-prefix threshold (default 10). Candidates whose name resolves to a built-in type are reported and skipped.
+- `rename-type`, `rename-field`, and `remap-status` are lossless migration verbs. `--migration-id` is required and must be reused for retries. Start with `--dry-run --json` to inspect the fingerprint, affected count, and ordered per-item changes. Execution stages the target definition, writes immutable history on every affected item and the workspace stream, then retires the source. A field rename refuses any item that already has the target key; `--type <Type>` optionally restricts a field rename.
 - Field flags (`add-field`): `--type <string|number|boolean|string_array>`, `--commands <list>` (repeatable/comma; defaults to create,update), `--cli-flag <flag>`, `--alias <flag>` (extra CLI flag aliases), `--required`, `--required-on-create`, `--no-allow-unset`, `--required-types <list>`.
-- Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), `--role <value>` (repeatable; add-status), `--order <n>` (add-status), plus `--author`/`--force` governance flags. Add `--json` for the machine envelope.
+- Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), `--role <value>` (repeatable; add-status), `--order <n>` (add-status), migration `--to` / `--migration-id` / `--dry-run`, plus `--author`/`--force` governance flags. Add `--json` for the machine envelope.
 - When `pm create`/`pm update` reject an unknown type, the error now points back here: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).`
 
 `pm init --type-preset agile|ops|research` registers common domain types during initialization:
@@ -1030,6 +1044,11 @@ pm help create --json
 ```
 
 Agents should use runtime contracts instead of hard-coding flag lists. Contract output includes extension-provided command surfaces when active.
+Extension policy tokens are explicitly scoped by
+`extension_contracts.policy_mode_scope` and `trust_mode_scope`.
+Project-governance setters use the separate `governance_contracts` value
+domains; in particular, workflow enforcement is `off|warn|strict`, not the
+extension policy token `enforce`.
 Use `pm contracts --summary --json` first when bootstrapping in a tight context window; it emits one command and terse intent per row before the agent requests heavier command-specific flags or schemas.
 
 ## Completion

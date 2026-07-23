@@ -2,17 +2,37 @@ id: pm-kjbh
 title: "GH-449: contracts policy_modes advertises 'enforce' but governance config accepts 'strict' (contract drift)"
 description: "Dogfood GH-449: pm contracts advertises policy_modes [off,warn,enforce] but config validation requires 'strict' — agents driving config from contracts hard-fail. Duplicate check: searched policy modes/enforce strict — no existing item."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: "area:contracts",bug,gh-issue
 created_at: "2026-07-06T08:03:09.036Z"
-updated_at: "2026-07-14T17:05:17.491Z"
+updated_at: "2026-07-23T19:59:53.717Z"
+closed_at: "2026-07-23T19:10:49.814Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Advertised policy/trust mode tokens are accepted verbatim by pm config set; drift spec walks every advertised enum through the real validator; contracts:update run"
 parent: pm-5k4v
 risk: low
 confidence: high
+resolution: Separated extension policy modes from governance workflow enforcement modes and proved every advertised workflow token through the validator.
+expected_result: Governance contract enum values are accepted verbatim by pm config set.
+actual_result: Contract drift regression and regenerated snapshot pass.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-xwah,related,"2026-07-14T17:05:17.472Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-23T17:15:37.118Z",claude-code-agent,"Implementation start 2026-07-23: actively fixing the canonical GH-449 contract-drift item inside the schema/config customization acceptance surface; no standalone duplicate created."
+  "2026-07-23T19:00:16.265Z",claude-code-agent,"Implementation evidence: governance contracts now expose workflow_enforcement_modes separately from extension policy_modes, every advertised workflow token is executed through the real config validator, and the generated contract snapshot is current."
+  "2026-07-23T19:12:29.253Z",claude-code-agent,"Final local gates: 349 files and 6177 tests passed; statements 42340/42340, branches 29971/29971, functions 8635/8635, lines 41152/41152. Lint, zero clones, 100% source/export/member docstrings, SDK boundary, typecheck, contracts, docs/skills, secrets, version, packed consumer, and git diff checks passed. Repository validation remains ok with only pre-existing legacy resolution/unknown-author warnings outside these items."
+  "2026-07-23T19:59:53.717Z",claude-code-agent,"CodeRabbit review convergence: strengthened GH-449 regression coverage so governance_contracts must exist and every advertised ownership, create, close-validation, and workflow mode round-trips through its real config setter; removed the vacuous optional fallback. Focused contracts suite and full 100/100/100/100 coverage passed. Item remains closed and unclaimed."
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated closeout entry
+  src/cli/commands/contracts.ts,project,Governance contract namespace and executable-mode drift regression
+  tests/fixtures/contracts/full.json,project,Governance contract namespace and executable-mode drift regression
+  tests/unit/commands/contracts-command.spec.ts,project,Governance contract namespace and executable-mode drift regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/integration/release-automation-contract.spec.ts,project,300
+  "pnpm contracts:check",project,120
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,Governance workflow mode contract clarification
+close_reason: Resolved GH-449 governance contract mode drift with executable enum coverage.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/449\n\n## Problem (contract drift)\n`pm contracts --json` advertises extension_contracts.policy_modes = [\"off\",\"warn\",\"enforce\"] (same for trust_modes), but governance config keys (e.g. governance-workflow-enforcement) accept `strict`, not `enforce`. Agents driving config from contracts construct invalid writes — exactly the drift class pm contracts exists to prevent.\n\n## Proposed fix\nSingle source of truth for mode tokens shared by contracts and config validation; either rename config token to `enforce` (with alias) or fix contracts to advertise `strict`; add a drift spec that walks advertised enum tokens through the real validators.\n\n## Definition of done\nAdvertised policy/trust mode tokens are accepted verbatim by config set; drift spec pins contracts<->validator parity; contracts:update run."

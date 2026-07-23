@@ -8,8 +8,6 @@ import {
   computeHistoryDiff,
   patchPathToChangedField,
   type HistoryDiffValueEntry,
-  hashDocument,
-  hashEmptyDocument,
   normalizeReplayPatchOps,
   verifyHistoryChain,
   enforceHistoryStreamPolicyForItem,
@@ -22,11 +20,17 @@ import {
   locateItem,
   readLocatedItem,
   getHistoryPath,
+  getWorkspaceHistoryPath,
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  WORKSPACE_HISTORY_ID,
 } from "../../sdk/runtime-primitives.js";
-import { readHistoryEntries } from "../../sdk/history-read.js";
+import {
+  readHistoryEntries,
+  verifyHistoryEntries,
+  type HistoryVerificationResult,
+} from "../../sdk/history-read.js";
 export { readHistoryEntries } from "../../sdk/history-read.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { HistoryEntry } from "../../types/index.js";
@@ -60,22 +64,6 @@ export interface HistoryDiffEntry {
   patch_ops: number;
   /** Value that configures or reports changed fields for this contract. */
   changed_fields: string[];
-}
-
-/** Documents the history verification result payload exchanged by command, SDK, and package integrations. */
-export interface HistoryVerificationResult {
-  /** Whether the operation completed without a blocking failure. */
-  ok: boolean;
-  /** Value that configures or reports entries for this contract. */
-  entries: number;
-  /** Value that configures or reports errors for this contract. */
-  errors: string[];
-  /** Value that configures or reports latest after hash for this contract. */
-  latest_after_hash?: string;
-  /** Value that configures or reports current item hash for this contract. */
-  current_item_hash?: string;
-  /** Value that configures or reports current matches latest for this contract. */
-  current_matches_latest?: boolean;
 }
 
 /** Documents the history result payload exchanged by command, SDK, and package integrations. */
@@ -149,7 +137,10 @@ export async function runHistory(
     settings,
     getActiveExtensionRegistrations(),
   );
-  const normalizedId = normalizeItemId(id, settings.id_prefix);
+  const workspaceHistoryRequested = id.trim() === WORKSPACE_HISTORY_ID;
+  const normalizedId = workspaceHistoryRequested
+    ? WORKSPACE_HISTORY_ID
+    : normalizeItemId(id, settings.id_prefix);
   const located = await locateItem(
     pmRoot,
     normalizedId,
@@ -158,7 +149,9 @@ export async function runHistory(
     typeRegistry.type_to_folder,
   );
   const resolvedId = located?.id ?? normalizedId;
-  const historyPath = getHistoryPath(pmRoot, resolvedId);
+  const historyPath = workspaceHistoryRequested
+    ? getWorkspaceHistoryPath(pmRoot)
+    : getHistoryPath(pmRoot, resolvedId);
   if (!located && !(await pathExists(historyPath))) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
@@ -202,40 +195,15 @@ export async function runHistory(
   }
 
   if (options.verify) {
-    const verification = verifyHistoryChain(fullHistory);
-    /* c8 ignore next -- verify path operates on non-empty streams in command-level coverage. */
-    const latestAfterHash =
-      fullHistory.length > 0
-        ? fullHistory[fullHistory.length - 1].after_hash
-        : hashEmptyDocument();
-    let currentItemHash: string | undefined;
-    let currentMatchesLatest: boolean | undefined;
-    const errors = [...verification.errors];
-
     /* c8 ignore next -- verify command paths currently execute with located on-disk items. */
-    if (located) {
-      const loaded = await readLocatedItem(located, {
-        schema: settings.schema,
-      });
-      currentItemHash = hashDocument(loaded.document);
-      currentMatchesLatest = currentItemHash === latestAfterHash;
-      if (!currentMatchesLatest) {
-        errors.push("verify_failed:current_item_hash_mismatch");
-      }
-    }
-
-    result.verification = {
-      ok: errors.length === 0,
-      entries: fullHistory.length,
-      errors,
-      /* c8 ignore next -- empty-history verification payloads are covered by lower-level stream tests. */
-      latest_after_hash:
-        fullHistory.length > 0
-          ? fullHistory[fullHistory.length - 1].after_hash
-          : undefined,
-      current_item_hash: currentItemHash,
-      current_matches_latest: currentMatchesLatest,
-    };
+    const currentDocument = located
+      ? (
+          await readLocatedItem(located, {
+            schema: settings.schema,
+          })
+        ).document
+      : undefined;
+    result.verification = verifyHistoryEntries(fullHistory, currentDocument);
   }
 
   return result;

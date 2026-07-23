@@ -672,12 +672,14 @@ describe("contracts command runtime", () => {
       capabilities: expect.arrayContaining(["commands", "schema", "services"]),
       services: expect.arrayContaining(["output_format", "history_append"]),
       policy_modes: expect.arrayContaining(["off", "warn", "enforce"]),
+      policy_mode_scope: "extensions.policy.mode",
       policy_surfaces: expect.arrayContaining([
         "commands.handler",
         "hooks.beforecommand",
         "search.provider",
       ]),
       trust_modes: expect.arrayContaining(["off", "warn", "enforce"]),
+      trust_mode_scope: "extensions.policy.trust_mode",
       sandbox_profiles: expect.arrayContaining([
         "none",
         "restricted",
@@ -696,12 +698,62 @@ describe("contracts command runtime", () => {
     expect(result.extension_contracts?.policy_surfaces).toEqual([...KNOWN_EXTENSION_POLICY_SURFACES]);
     expect(result.extension_contracts?.trust_modes).toEqual([...KNOWN_EXTENSION_TRUST_MODES]);
     expect(result.extension_contracts?.sandbox_profiles).toEqual([...KNOWN_EXTENSION_SANDBOX_PROFILES]);
+    expect(result.governance_contracts).toEqual({
+      ownership_enforcement_modes: ["none", "warn", "strict"],
+      create_modes: ["progressive", "strict"],
+      close_validation_modes: ["off", "warn", "strict"],
+      workflow_enforcement_modes: ["off", "warn", "strict"],
+    });
     expect(PM_EXTENSION_CAPABILITY_CONTRACTS).toEqual(KNOWN_EXTENSION_CAPABILITIES);
     expect(PM_EXTENSION_SERVICE_NAME_CONTRACTS).toEqual(KNOWN_EXTENSION_SERVICE_NAMES);
     expect(PM_EXTENSION_POLICY_MODE_CONTRACTS).toEqual(KNOWN_EXTENSION_POLICY_MODES);
     expect(PM_EXTENSION_POLICY_SURFACE_CONTRACTS).toEqual(KNOWN_EXTENSION_POLICY_SURFACES);
     expect(PM_EXTENSION_TRUST_MODE_CONTRACTS).toEqual(KNOWN_EXTENSION_TRUST_MODES);
     expect(PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS).toEqual(KNOWN_EXTENSION_SANDBOX_PROFILES);
+  });
+
+  it("keeps every advertised governance mode executable by config set", async () => {
+    await withTempPmPath(async (context) => {
+      const contracts = await runContracts(
+        {},
+        { ...GLOBAL_OPTIONS, path: context.pmPath },
+      );
+      const governance = contracts.governance_contracts;
+      expect(governance).toBeDefined();
+      if (!governance) throw new Error("governance contracts are required");
+      const setters = [
+        {
+          key: "governance-ownership-enforcement",
+          values: governance.ownership_enforcement_modes,
+        },
+        {
+          key: "governance-create-mode-default",
+          values: governance.create_modes,
+        },
+        {
+          key: "governance-close-validation-default",
+          values: governance.close_validation_modes,
+        },
+        {
+          key: "governance-workflow-enforcement",
+          values: governance.workflow_enforcement_modes,
+        },
+      ];
+      for (const { key, values } of setters) {
+        expect(values.length, key).toBeGreaterThan(0);
+        for (const mode of values) {
+          const result = context.runCli([
+            "config",
+            "project",
+            "set",
+            key,
+            mode,
+            "--json",
+          ]);
+          expect(result.code, `${key}=${mode}: ${result.stderr}`).toBe(0);
+        }
+      }
+    });
   });
 
   it("supports schema-only mode with action filtering", async () => {

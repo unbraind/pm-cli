@@ -12,7 +12,8 @@ import {
   GOVERNANCE_PRESET_DEFAULTS,
   SETTINGS_DEFAULTS,
 } from "../shared/constants.js";
-import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import { readFileIfExists } from "../fs/fs-utils.js";
+import { writeWorkspaceJsonWithHistory } from "../history/workspace-history.js";
 import {
   DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
   ensureRuntimeSchemaFileScaffold,
@@ -1787,13 +1788,23 @@ export async function writeSettings(
   op = SETTINGS_WRITE_OP,
 ): Promise<void> {
   const settingsPath = getSettingsPath(pmRoot);
-  await writeFileAtomic(
-    settingsPath,
-    serializeSettings(settings, {
-      persist_source: getSettingsPersistSourceSnapshot(settings),
-    }),
-  );
+  const afterRaw = serializeSettings(settings, {
+    persist_source: getSettingsPersistSourceSnapshot(settings),
+  });
   try {
+    await writeWorkspaceJsonWithHistory({
+      pmRoot,
+      filePath: settingsPath,
+      raw: afterRaw,
+      op,
+      author:
+        process.env.PM_AUTHOR?.trim() ||
+        settings.author_default.trim() ||
+        "unknown",
+      lockTtlSeconds: settings.locks.ttl_seconds,
+      lockWaitMs: settings.locks.wait_ms,
+      recordCreation: false,
+    });
     await runActiveOnWriteHooks({
       path: settingsPath,
       scope: "project",

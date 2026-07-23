@@ -8,8 +8,8 @@ import { mkdir } from "node:fs/promises";
 import {
   pathExists,
   readFileIfExists,
-  writeFileAtomic,
 } from "../core/fs/fs-utils.js";
+import { writeWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { acquireLock } from "../core/lock/lock.js";
 import { refreshMergeAttributeFenceIfInstalled } from "./merge/install.js";
 import {
@@ -96,13 +96,48 @@ export const SCHEMA_SUBCOMMANDS = [
   "list",
   "show",
   "show-status",
+  "rename-type",
+  "rename-field",
+  "remap-status",
 ] as const;
 /** Restricts schema subcommand values accepted by command, SDK, and storage contracts. */
 export type SchemaSubcommand = (typeof SCHEMA_SUBCOMMANDS)[number];
 
+export {
+  formatSchemaEvolutionMigrationHuman,
+  planSchemaEvolutionMigration,
+  runSchemaEvolutionMigration,
+  type PlanSchemaEvolutionMigrationOptions,
+  type RunSchemaEvolutionMigrationOptions,
+  type SchemaEvolutionFieldChange,
+  type SchemaEvolutionItemPlan,
+  type SchemaEvolutionMigrationPlan,
+  type SchemaEvolutionMigrationRequest,
+  type SchemaEvolutionMigrationResult,
+} from "./schema-migration.js";
+
 const SCHEMA_TYPES_LOCK_ID = "schema-types";
 const SCHEMA_STATUSES_LOCK_ID = "schema-statuses";
 const SCHEMA_FIELDS_LOCK_ID = "schema-fields";
+
+function writeAuditedSchemaFile(params: {
+  pmRoot: string;
+  filePath: string;
+  raw: string;
+  op: string;
+  author: string;
+  settings: PmSettings;
+}): Promise<boolean> {
+  return writeWorkspaceJsonWithHistory({
+    pmRoot: params.pmRoot,
+    filePath: params.filePath,
+    raw: params.raw,
+    op: params.op,
+    author: params.author,
+    lockTtlSeconds: params.settings.locks.ttl_seconds,
+    lockWaitMs: params.settings.locks.wait_ms,
+  });
+}
 
 /** Documents the schema add type command options payload exchanged by command, SDK, and package integrations. */
 export interface SchemaAddTypeCommandOptions {
@@ -668,7 +703,14 @@ export async function runSchemaAddType(
     }
     // writeFileAtomic writes to a temp file then renames, so a failure leaves the
     // existing types.json untouched; no manual rollback is needed.
-    await writeFileAtomic(typesPath, serializeItemTypesFile(upsert.file));
+    await writeAuditedSchemaFile({
+      pmRoot,
+      filePath: typesPath,
+      raw: serializeItemTypesFile(upsert.file),
+      op: "schema:add-type",
+      author,
+      settings,
+    });
     await ensureTypeFolderScaffold(
       pmRoot,
       [upsert.definition],
@@ -924,7 +966,14 @@ export async function runSchemaRemoveType(
       }
       // writeFileAtomic writes to a temp file then renames, so a failure leaves
       // the existing types.json untouched; no manual rollback is needed.
-      await writeFileAtomic(typesPath, serializeItemTypesFile(removal.file));
+      await writeAuditedSchemaFile({
+        pmRoot,
+        filePath: typesPath,
+        raw: serializeItemTypesFile(removal.file),
+        op: "schema:remove-type",
+        author,
+        settings,
+      });
       warnings.push(
         ...(await runActiveOnWriteHooks({
           path: typesPath,
@@ -1163,7 +1212,14 @@ export async function runSchemaAddStatus(
     upsert = upsertStatusDef(parsed, normalized, baseDefinition);
     // writeFileAtomic writes to a temp file then renames, so a failure leaves
     // the existing statuses.json untouched; no manual rollback is needed.
-    await writeFileAtomic(statusesPath, serializeStatusDefsFile(upsert.file));
+    await writeAuditedSchemaFile({
+      pmRoot,
+      filePath: statusesPath,
+      raw: serializeStatusDefsFile(upsert.file),
+      op: "schema:add-status",
+      author,
+      settings,
+    });
     warnings.push(
       ...(await runActiveOnWriteHooks({
         path: statusesPath,
@@ -1252,10 +1308,14 @@ export async function runSchemaRemoveStatus(
         schema,
         removedId,
       );
-      await writeFileAtomic(
-        statusesPath,
-        serializeStatusDefsFile(removal.file),
-      );
+      await writeAuditedSchemaFile({
+        pmRoot,
+        filePath: statusesPath,
+        raw: serializeStatusDefsFile(removal.file),
+        op: "schema:remove-status",
+        author,
+        settings,
+      });
       warnings.push(
         ...(await runActiveOnWriteHooks({
           path: statusesPath,
@@ -1627,7 +1687,14 @@ export async function runSchemaAddField(
       );
     }
     upsert = upsertField(parsed, normalized);
-    await writeFileAtomic(fieldsPath, serializeFieldsFile(upsert.file));
+    await writeAuditedSchemaFile({
+      pmRoot,
+      filePath: fieldsPath,
+      raw: serializeFieldsFile(upsert.file),
+      op: "schema:add-field",
+      author,
+      settings,
+    });
     warnings.push(
       ...(await runActiveOnWriteHooks({
         path: fieldsPath,
@@ -1750,7 +1817,14 @@ export async function runSchemaRemoveField(
           warnings.push(`items_using_field:${usingField}`);
         }
       }
-      await writeFileAtomic(fieldsPath, serializeFieldsFile(removal.file));
+      await writeAuditedSchemaFile({
+        pmRoot,
+        filePath: fieldsPath,
+        raw: serializeFieldsFile(removal.file),
+        op: "schema:remove-field",
+        author,
+        settings,
+      });
       warnings.push(
         ...(await runActiveOnWriteHooks({
           path: fieldsPath,
@@ -1892,7 +1966,14 @@ export async function runSchemaApplyPreset(
       (upsert.replaced ? replaced : registered).push(upsert.definition.name);
     }
     definitionsCount = nextFile.definitions.length;
-    await writeFileAtomic(typesPath, serializeItemTypesFile(nextFile));
+    await writeAuditedSchemaFile({
+      pmRoot,
+      filePath: typesPath,
+      raw: serializeItemTypesFile(nextFile),
+      op: "schema:apply-preset",
+      author,
+      settings,
+    });
     await ensureTypeFolderScaffold(
       pmRoot,
       resolveTypePresetDefinitions(presetName),
@@ -2044,7 +2125,14 @@ export async function runSchemaInferTypes(
       (upsert.replaced ? replaced : registered).push(upsert.definition.name);
     }
     definitionsCount = nextFile.definitions.length;
-    await writeFileAtomic(typesPath, serializeItemTypesFile(nextFile));
+    await writeAuditedSchemaFile({
+      pmRoot,
+      filePath: typesPath,
+      raw: serializeItemTypesFile(nextFile),
+      op: "schema:infer-types",
+      author,
+      settings,
+    });
     await ensureTypeFolderScaffold(
       pmRoot,
       nextFile.definitions.filter(

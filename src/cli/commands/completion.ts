@@ -837,7 +837,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--all --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    schema)",
-    `      COMPREPLY=(${compgen("list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset --description --default-status --folder --alias --role --order --type --commands --cli-flag --required --required-on-create --no-allow-unset --required-types --infer --min-count --apply --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status --description --default-status --folder --alias --role --order --type --commands --cli-flag --required --required-on-create --no-allow-unset --required-types --infer --min-count --apply --to --migration-id --dry-run --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    profile)",
     `      COMPREPLY=(${compgen("list show apply lint agile ops research --dry-run --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1388,7 +1388,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         schema)
           _arguments \\
-            '1:subcommand:(list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset)' \\
+            '1:subcommand:(list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status)' \\
             '--description[Human description for the custom item type, status, or field]:text' \\
             '--default-status[Default status hint for the custom item type]:status' \\
             '--folder[Storage folder for items of this custom type]:dir' \\
@@ -2406,7 +2406,7 @@ complete -c pm -n '__fish_seen_subcommand_from history-repair' -l dry-run -d 'Pr
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l force -d 'Force ownership/lock override'
-complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show show-status add-type remove-type add-status remove-status add-field remove-field list-fields show-field apply-preset rename-type rename-field remap-status' -d 'Schema subcommand'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type, status, or field' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Default status hint for the custom item type' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage folder for items of this custom type' -r

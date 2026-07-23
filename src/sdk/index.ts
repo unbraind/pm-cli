@@ -302,6 +302,14 @@ export * from "./context-usage.js";
 export * from "./dependency-provenance.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
+export {
+  appendWorkspaceHistoryChange,
+  getWorkspaceHistoryPath,
+  WORKSPACE_HISTORY_ID,
+  writeWorkspaceJsonWithHistory,
+  type WorkspaceHistoryChange,
+  type WorkspaceJsonWriteOptions,
+} from "../core/history/workspace-history.js";
 export * from "./history-redact.js";
 export * from "./history-repair.js";
 export * from "./item-children.js";
@@ -542,12 +550,15 @@ export {
   schemaInferTypes,
   schemaList,
   schemaListFields,
+  schemaRemapStatus,
   schemaRemoveField,
   schemaRemoveStatus,
   schemaRemoveType,
   schemaShow,
   schemaShowField,
   schemaShowStatus,
+  schemaRenameField,
+  schemaRenameType,
   search,
   startTask,
   stats,
@@ -686,6 +697,9 @@ export {
   type SchemaShowResult,
   type SchemaShowStatusResult,
   type SchemaResult,
+  type RunSchemaEvolutionMigrationOptions,
+  type SchemaEvolutionMigrationRequest,
+  type SchemaEvolutionMigrationResult,
   type SchemaSubcommand,
   type SearchCompactResult,
   type SearchHit,

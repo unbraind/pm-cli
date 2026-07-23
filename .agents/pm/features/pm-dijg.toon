@@ -2,20 +2,54 @@ id: pm-dijg
 title: "Schema evolution migrations: lossless, history-recorded bulk migration of existing items when custom types, fields, or statuses are renamed or retired"
 description: "Provide SDK-first, dry-run-first, resumable schema evolution migrations that losslessly rename or retire types, fields, and statuses with immutable audit proof."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: customization,durability,long-horizon,schema,sdk
 created_at: "2026-07-06T23:35:40.341Z"
-updated_at: "2026-07-13T21:37:56.466Z"
+updated_at: "2026-07-23T19:12:28.004Z"
+closed_at: "2026-07-23T19:10:46.438Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "pm schema gains migration verbs (SDK-first): rename-type, rename-field, remap-status/retire-status with an explicit value mapping; a --dry-run plan enumerates affected items and per-field changes before any write; execution rewrites affected items losslessly (unknown/unmapped values are never silently dropped) and appends a migration history entry to every touched item plus the workspace stream, preserving immutable proof; migration is O(affected) via the derived read index at 100k+ scale (benchmark on pm-mi2x workspaces); interrupted migrations are resumable or atomic per item with a verifiable completion check; docs cover the schema-evolution workflow end to end"
 parent: pm-8jdc
 risk: medium
 confidence: medium
+resolution: "Delivered lossless SDK-first schema evolution with indexed planning, atomic recovery, and immutable item/workspace history."
+expected_result: "Custom type, field, and status migrations are dry-runnable, resumable, lossless, and efficient at 100k scale."
+actual_result: "Packed CLI and SDK migrations passed dry-run, apply, recovery, history verification, and a 100000-item indexed plan in 284 ms."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-0qg5,related,"2026-07-06T23:35:40.341Z",null,null
   pm-3mna,related,"2026-07-06T23:35:40.341Z",null,null
   pm-klo8,related,"2026-07-06T23:35:40.341Z",null,null
   pm-z5nb,related,"2026-07-06T23:35:40.341Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-23T17:15:35.259Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full open/closed customization lineage review, and GitHub/security/dependency reconciliation. Active scope is the complete SDK-first rename-type, rename-field, and status-remap migration surface with dry-run plans, audited per-item persistence, resumability, CLI/MCP/contracts, docs, and isolated acceptance; no duplicate item created."
+  "2026-07-23T19:00:14.851Z",claude-code-agent,"Implementation evidence: delivered SDK-first rename-type, rename-field, and remap-status plans with deterministic idempotency keys, derived metadata/type index selection, atomic workspace transactions, compensation, resumable committed journals, per-item history, and workspace history. Packed-consumer acceptance exercised dry-run, apply, and committed recovery. A real pm-mi2x large-tier 100000-item workspace produced a zero-affected indexed type plan in 284 ms."
+  "2026-07-23T19:12:28.003Z",claude-code-agent,"Final local gates: 349 files and 6177 tests passed; statements 42340/42340, branches 29971/29971, functions 8635/8635, lines 41152/41152. Lint, zero clones, 100% source/export/member docstrings, SDK boundary, typecheck, contracts, docs/skills, secrets, version, packed consumer, and git diff checks passed. Repository validation remains ok with only pre-existing legacy resolution/unknown-author warnings outside these items."
+files[18]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated closeout entry
+  src/cli/commands/completion.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/cli/register-mutation.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/cli/schema-registration-helpers.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/core/store/item-metadata-query-index.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/sdk/cli-contracts/flag-contracts.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/sdk/cli-contracts/tool-schema.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/sdk/index.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/sdk/runtime.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/sdk/schema-migration.ts,project,Schema migration SDK CLI contract implementation and verification
+  src/sdk/schema.ts,project,Schema migration SDK CLI contract implementation and verification
+  tests/fixtures/contracts/full.json,project,Schema migration SDK CLI contract implementation and verification
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,Schema migration SDK CLI contract implementation and verification
+  tests/unit/commands/register-commands.spec.ts,project,Schema migration SDK CLI contract implementation and verification
+  tests/unit/commands/schema-command.spec.ts,project,Schema migration SDK CLI contract implementation and verification
+  tests/unit/core/item/item-metadata-query-index.spec.ts,project,Schema migration SDK CLI contract implementation and verification
+  tests/unit/sdk/schema-migration.spec.ts,project,Schema migration SDK CLI contract implementation and verification
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema-migration.spec.ts tests/unit/core/item/item-metadata-query-index.spec.ts tests/unit/commands/schema-command.spec.ts,project,300
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI schema evolution command reference
+  docs/SDK.md,project,SDK schema evolution and layering reference
+close_reason: Delivered and verified schema evolution SDK/CLI migrations with packed and 100k acceptance evidence.
 body: "Schema commands today mutate only the schema definition (types.json/fields.json/statuses): after a rename or retirement, existing items silently keep stale type names, field keys, and status values, and nothing re-validates or migrates them. A workspace spanning decades will evolve its custom schema many times, so schema evolution without data migration quietly corrupts the long tail — exactly the data the memory-tier and time-travel features (pm-5qmm, pm-hib1) later depend on.\n\nProposal: schema-evolution migration primitives, SDK-first (extends the pm-3mna schema surface; the CLI verb is presentation):\n- rename-type <old> <new>: moves item files/folders, rewrites type fields, updates workflows/profiles referencing the type.\n- rename-field <old> <new> [--type T]: rewrites the field key across affected items; collision with reserved/built-in names refused (pm-b9ov class).\n- remap-status / retire-status --map old=new: rewrites status values with an explicit total mapping; refuses partial mappings.\n- Every touched item gets a history entry recording before/after (the immutable-proof invariant holds through migrations); the workspace-scoped stream (pm-klo8) records the schema mutation itself.\n- --dry-run prints the full migration plan (affected counts, per-change detail) for review; execution is resumable/atomic-per-item so a crash never leaves an untracked half-migrated state.\n- Scale: candidate selection via the derived read index (pm-801d) so cost is O(affected); format_version gating precedent from pm-0qg5 applies if layout changes.\n\nRelation to existing work: pm-z5nb covers schema CRUD completion (remove-type, add-status, per-type workflows) — this item covers what happens to already-written items when the schema changes underneath them. pm-d1ig scaffolds extension-side migration starters; this is the workspace-side primitive."

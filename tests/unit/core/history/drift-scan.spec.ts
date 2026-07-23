@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { scanHistoryDrift } from "../../../../src/core/history/drift-scan.js";
+import { WORKSPACE_HISTORY_ID } from "../../../../src/core/history/workspace-history.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
 import { listAllItemMetadataWithBody } from "../../../../src/core/store/item-store.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
@@ -75,6 +76,18 @@ async function writeInvalidChainStream(historyPath: string): Promise<void> {
 }
 
 describe("core/history/drift-scan", () => {
+  it("classifies an inaccessible workspace history path as unreadable", async () => {
+    await withTempPmPath(async (context) => {
+      const historyRoot = path.join(context.pmPath, "history");
+      await fs.rm(historyRoot, { recursive: true, force: true });
+      await fs.writeFile(historyRoot, "not-a-directory", "utf8");
+
+      const result = await scanHistoryDrift(context.pmPath, []);
+      expect(result.unreadableStreams).toContain(WORKSPACE_HISTORY_ID);
+      expect(result.driftedItems).toContain(WORKSPACE_HISTORY_ID);
+    });
+  });
+
   it("reports no drift for clean streams and reuses the cache on a repeat scan", async () => {
     await withTempPmPath(async (context) => {
       createTestItem(context, { title: "Alpha" });

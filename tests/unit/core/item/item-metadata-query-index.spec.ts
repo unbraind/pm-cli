@@ -64,6 +64,7 @@ describe("item metadata SQLite query index", () => {
             assignee: "agent-a",
             sprint: "sprint-1",
             release: "v1",
+            customer: "Ada",
           }),
         },
         {
@@ -115,6 +116,13 @@ describe("item metadata SQLite query index", () => {
     expect(
       await queryItemMetadataIndex({
         pmRoot: root,
+        expectedSourceCursor: "cursor-1",
+        query: { metadataKeys: ["customer", "release"] },
+      }),
+    ).toMatchObject({ total: 1, items: [{ id: "pm-new" }] });
+    expect(
+      await queryItemMetadataIndex({
+        pmRoot: root,
         expectedSourceCursor: "stale",
       }),
     ).toBeNull();
@@ -145,6 +153,7 @@ describe("item metadata SQLite query index", () => {
           metadata: metadata("pm-a", {
             type: "Feature",
             title: "Moved feature",
+            customer: "Ada",
           }),
         },
         deletedRelativePaths: ["tasks/pm-a.toon"],
@@ -159,6 +168,13 @@ describe("item metadata SQLite query index", () => {
       total: 1,
       items: [{ type: "Feature", title: "Moved feature" }],
     });
+    expect(
+      await queryItemMetadataIndex({
+        pmRoot: root,
+        expectedSourceCursor: "cursor-2",
+        query: { metadataKeys: ["customer"] },
+      }),
+    ).toMatchObject({ total: 1, items: [{ id: "pm-a" }] });
     expect(
       await updateItemMetadataQueryIndex({
         pmRoot: root,
@@ -193,6 +209,16 @@ describe("item metadata SQLite query index", () => {
         expectedSourceCursor: "cursor-3",
       }),
     ).toMatchObject({ total: 0, items: [] });
+    const databaseAfterDelete = new DatabaseSync(
+      path.join(root, "runtime", "metadata-query-index.sqlite"),
+      { readOnly: true },
+    );
+    expect(
+      databaseAfterDelete
+        .prepare("SELECT COUNT(*) AS count FROM item_metadata_keys")
+        .get(),
+    ).toEqual({ count: 0 });
+    databaseAfterDelete.close();
 
     await rebuildItemMetadataQueryIndex({
       pmRoot: root,

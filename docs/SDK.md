@@ -51,6 +51,7 @@ Source of truth:
 - [`src/sdk/dependencies.ts`](../src/sdk/dependencies.ts)
 - [`src/sdk/actionability.ts`](../src/sdk/actionability.ts)
 - [`src/sdk/schema.ts`](../src/sdk/schema.ts)
+- [`src/sdk/schema-migration.ts`](../src/sdk/schema-migration.ts)
 - [`src/sdk/relationships.ts`](../src/sdk/relationships.ts)
 - [`src/sdk/graph/index.ts`](../src/sdk/graph/index.ts)
 - [`src/sdk/graph/assembly.ts`](../src/sdk/graph/assembly.ts)
@@ -171,6 +172,8 @@ Command/action contract exports:
 - Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
 - Large-workspace memory primitives: `buildWorkspaceMemorySnapshot`, `readWorkspaceMemory`, `selectWorkspaceMemoryRollups`, and `searchWorkspaceMemory` build cursor-bound, rebuildable calendar-epoch and epic-lineage summaries. The stock `context` and `search` results attach matching bounded rollups automatically at 10,000 items; smaller projects skip the artifact entirely.
 - Persistent metadata-query primitives: `queryItemMetadataIndex` with `ItemMetadataIndexQuery` / `ItemMetadataIndexQueryResult` executes bounded status/type/id/parent/assignee/sprint/release/priority windows without materializing the JSON metadata corpus. It returns `null` on absent, stale, or corrupt derived state so custom hosts can fall back to authoritative reads.
+- Schema-evolution primitives: `planSchemaEvolutionMigration` and `runSchemaEvolutionMigration`, plus `PmClient.schemaRenameType`, `schemaRenameField`, and `schemaRemapStatus`, provide deterministic dry-run plans, collision refusal, index-backed candidate selection, per-item immutable history, and crash-resumable workspace transactions.
+- Workspace audit primitives: `appendWorkspaceHistoryChange`, `writeWorkspaceJsonWithHistory`, `getWorkspaceHistoryPath`, and `WORKSPACE_HISTORY_ID` let package-owned singleton JSON mutations share the CLI's verified `HistoryEntry` stream instead of inventing an unaudited side log.
 - Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, `graph`, and `append`
 - Workspace graph-query runner: `runGraph` (with `GraphCommandOptions`, `GraphResult`, and per-subcommand envelopes) resolves the workspace relationship graph through the shared fingerprint-keyed cache and dispatches bounded `ancestors`/`descendants`/`predecessors`/`successors`/`paths`/`impact`/`analyze`/`audit`/`communities`/`redundancy`/`dominators`/`slack`/`centrality`/`articulation`/`plan` queries with counts-first cost, truncation, and cache metadata; the `pm graph` CLI command and `pm_graph` MCP tool are thin adapters over it.
 - Structural graph analytics: `detectRelationshipCommunities` (deterministic label-propagation clustering with `maxIterations`/`minSize` bounds and convergence reporting), `findRedundantRelationshipEdges` (transitive-reduction scan that joins each directed ordering or hierarchy kind with its inverse spelling and returns witness paths), and `computeRelationshipDominators` (Cooper–Harvey–Kennedy immediate dominators with per-node gating weights for bottleneck ranking) — all deterministic, cancellable, and cost-metered like every other graph query.
@@ -896,6 +899,55 @@ reverse order, limited to steps whose forward attempt was durably recorded.
 Compensations are new item-history or relationship events: the
 coordinator never deletes or rewrites immutable history. A crash during
 compensation resumes compensation before a new attempt begins.
+
+### Schema evolution and workspace history
+
+Tracked by [pm-dijg](../.agents/pm/features/pm-dijg.toon) and
+[pm-klo8](../.agents/pm/features/pm-klo8.toon).
+
+Custom schema definitions can evolve without leaving existing items on stale
+type, field, or status values. Use a stable `migrationId`: it names the durable
+plan and transaction journal, so retrying after interruption resumes the same
+fingerprinted item set instead of planning against partially migrated state.
+
+```ts
+const preview = await pm.schemaRenameField(
+  "severity",
+  "impact",
+  { migrationId: "severity-to-impact-v2", dryRun: true },
+  "Issue",
+);
+
+if (preview.affected_item_count > 0) {
+  await pm.schemaRenameField(
+    "severity",
+    "impact",
+    { migrationId: "severity-to-impact-v2" },
+    "Issue",
+  );
+}
+```
+
+`rename-type`, `rename-field`, and `remap-status` stage the target definition,
+mutate only affected items through the canonical item store, and retire the
+source definition. Field collisions and changed concurrent state fail before
+data is overwritten. Candidate selection uses the derived metadata index,
+including its metadata-key projection for field renames, and falls back to an
+authoritative scan when the index is absent or stale.
+
+Workspace singleton mutations are recorded at
+`.agents/pm/history/_workspace.jsonl`. The stream uses the normal
+`HistoryEntry` patch and before/after hash contract, is protected by its own
+writer lock, and caches unchanged verification results during drift scans. The
+`writeWorkspaceJsonWithHistory` primitive holds that lock across the singleton
+snapshot, atomic write, history append, and any compensating restore, so
+competing SDK writers cannot split persisted state from its audit chain. The
+stream participates in the history merge driver, appears in `pm activity`, and
+can be checked with
+`pm history _workspace --verify`. Package authors that persist their own
+singleton JSON should call `writeWorkspaceJsonWithHistory`; use
+`appendWorkspaceHistoryChange` only when another primitive already owns the
+document write.
 
 ```ts
 import {

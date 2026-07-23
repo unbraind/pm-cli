@@ -266,6 +266,8 @@ describe("schema add-type command", () => {
       expect(added.warnings).toEqual(["extension_hook_failed:project:schema-type-write-hook:onWrite"]);
       expect(events).toEqual([
         "lock:create:schema-types.lock",
+        "lock:create:workspace-history.lock",
+        "lock:release:workspace-history.lock",
         "schema:add-type-folder:spikes",
         "schema:add-type:types.json",
         "lock:release:schema-types.lock",
@@ -315,7 +317,10 @@ describe("schema add-type command", () => {
 
         expect(added.registered).toBe(true);
         expect(added.type.name).toBe("DefaultAuthorType");
-        expect(lockOwners).toEqual(["schema-default-author"]);
+        expect(lockOwners).toEqual([
+          "schema-default-author",
+          "schema-default-author",
+        ]);
       } finally {
         if (previousAuthor === undefined) {
           delete process.env.PM_AUTHOR;
@@ -350,7 +355,7 @@ describe("schema add-type command", () => {
 
       expect(added.registered).toBe(true);
       expect(added.type.name).toBe("BlankAuthorType");
-      expect(lockOwners).toEqual(["unknown"]);
+      expect(lockOwners).toEqual(["unknown", "unknown"]);
     });
   });
 
@@ -785,7 +790,12 @@ describe("schema remove-type command", () => {
         "extension_hook_failed:project:schema-remove-type-hook:onWrite",
         "items_using_type:1",
       ]);
-      expect(lockOwners).toEqual(["schema-add-agent", "schema-remove-agent"]);
+      expect(lockOwners).toEqual([
+        "schema-add-agent",
+        "schema-add-agent",
+        "schema-remove-agent",
+        "schema-remove-agent",
+      ]);
       expect(hookOps).toContain("schema:remove-type:types.json");
     });
   });
@@ -1064,6 +1074,8 @@ describe("schema add-status / remove-status commands", () => {
       expect(added.warnings).toEqual(["extension_hook_failed:project:schema-status-write-hook:onWrite"]);
       expect(events).toEqual([
         "lock:create:schema-statuses.lock",
+        "lock:create:workspace-history.lock",
+        "lock:release:workspace-history.lock",
         "schema:add-status:statuses.json",
         "lock:release:schema-statuses.lock",
       ]);
@@ -1149,7 +1161,7 @@ describe("schema add-status / remove-status commands", () => {
       const added = await schema.runSchemaAddStatus("blank_author_status", { author: "  " }, { path: context.pmPath });
 
       expect(added.registered).toBe(true);
-      expect(lockOwners).toEqual(["unknown"]);
+      expect(lockOwners).toEqual(["unknown", "unknown"]);
     });
   });
 
@@ -1488,7 +1500,12 @@ describe("schema add-status / remove-status commands", () => {
         "items_using_status:1",
         "status_referenced_by_workflow:in_progress_status,blocked_status",
       ]);
-      expect(lockOwners).toEqual(["test-author", "schema-remove-agent"]);
+      expect(lockOwners).toEqual([
+        "test-author",
+        "test-author",
+        "schema-remove-agent",
+        "schema-remove-agent",
+      ]);
       expect(hookOps).toContain("schema:remove-status:statuses.json");
     });
   });

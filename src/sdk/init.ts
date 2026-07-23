@@ -15,8 +15,8 @@ import {
 import {
   pathExists,
   readFileIfExists,
-  writeFileAtomic,
 } from "../core/fs/fs-utils.js";
+import { writeWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { normalizePrefix } from "../core/item/id.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import {
@@ -43,6 +43,7 @@ import {
   SETTINGS_DEFAULTS,
 } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
+import { resolveAuthor } from "../core/shared/author.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
@@ -560,7 +561,15 @@ async function registerInitTypePreset(
     nextFile = upsert.file;
     (upsert.replaced ? updated : registered).push(upsert.definition.name);
   }
-  await writeFileAtomic(typesPath, serializeItemTypesFile(nextFile));
+  await writeWorkspaceJsonWithHistory({
+    pmRoot,
+    filePath: typesPath,
+    raw: serializeItemTypesFile(nextFile),
+    op: "init:type-preset",
+    author: resolveAuthor(undefined, settings.author_default),
+    lockTtlSeconds: settings.locks.ttl_seconds,
+    lockWaitMs: settings.locks.wait_ms,
+  });
   return {
     name: preset,
     registered,
