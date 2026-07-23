@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { PmCliError } from "../core/shared/errors.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { stableStringify } from "../core/shared/serialization.js";
+import type { CliFlagContract } from "./cli-contracts/flag-contracts.js";
 
 const QUERY_CURSOR_VERSION = 1;
 const MAX_CURSOR_LENGTH = 4096;
@@ -39,6 +40,37 @@ export interface QueryCursorPage<T> {
   has_more: boolean;
   /** Opaque cursor for the next page when one exists. */
   next_cursor?: string;
+}
+
+function optionKeyForFlag(flag: string): string {
+  return flag
+    .replace(/^--/u, "")
+    .replace(/[-_]([a-z0-9])/gu, (_, character: string) =>
+      character.toUpperCase(),
+    );
+}
+
+/**
+ * Select the query-semantic portion of an options object from published flag
+ * contracts. Query semantics are the compact fail-safe default; contracts
+ * explicitly mark only presentation-only exceptions.
+ */
+export function selectCursorSemanticOptions(
+  options: Readonly<Record<string, unknown>>,
+  contracts: readonly CliFlagContract[],
+): Record<string, unknown> {
+  const presentationKeys = new Set<string>();
+  for (const contract of contracts) {
+    if (contract.cursor_semantics === "presentation") {
+      presentationKeys.add(optionKeyForFlag(contract.flag));
+      for (const alias of contract.aliases ?? []) {
+        presentationKeys.add(optionKeyForFlag(alias));
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(options).filter(([key]) => !presentationKeys.has(key)),
+  );
 }
 
 /** Build a compact deterministic fingerprint for a normalized query contract. */

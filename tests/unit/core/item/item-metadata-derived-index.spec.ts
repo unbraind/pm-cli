@@ -11,6 +11,7 @@ import {
   readItemMetadataDerivedIndexState,
   refreshItemMetadataDerivedIndex,
 } from "../../../../src/core/store/item-metadata-cache.js";
+import { queryItemMetadataIndex } from "../../../../src/core/store/item-metadata-query-index.js";
 import type { ItemMetadata } from "../../../../src/types.js";
 
 const tempRoots: string[] = [];
@@ -88,6 +89,16 @@ describe("item metadata derived-index transactions", () => {
       );
       const initialState = await readItemMetadataDerivedIndexState(pmRoot);
       expect(initialState).toMatchObject({ entry_count: 1 });
+      expect(
+        await queryItemMetadataIndex({
+          pmRoot,
+          expectedSourceCursor: initialState!.source_cursor,
+          query: { limit: 1 },
+        }),
+      ).toMatchObject({
+        total: 1,
+        items: [{ id: "pm-index-transaction" }],
+      });
 
       const updated: ItemMetadata = {
         ...original,
@@ -128,6 +139,15 @@ describe("item metadata derived-index transactions", () => {
       }
       const updatedState = await readItemMetadataDerivedIndexState(pmRoot);
       expect(updatedState?.source_cursor).not.toBe(initialState?.source_cursor);
+      expect(
+        await queryItemMetadataIndex({
+          pmRoot,
+          expectedSourceCursor: updatedState!.source_cursor,
+        }),
+      ).toMatchObject({
+        total: 1,
+        items: [{ title: "Updated indexed title" }],
+      });
 
       const readdirSpy = vi.spyOn(fs, "readdir");
       const indexed = await listAllDocumentCandidatesCached(
@@ -184,6 +204,13 @@ describe("item metadata derived-index transactions", () => {
           document: null,
         }),
       ).toEqual([]);
+      const deletedState = await readItemMetadataDerivedIndexState(pmRoot);
+      expect(
+        await queryItemMetadataIndex({
+          pmRoot,
+          expectedSourceCursor: deletedState!.source_cursor,
+        }),
+      ).toMatchObject({ total: 0, items: [] });
       expect(
         await listAllDocumentCandidatesCached(
           pmRoot,
@@ -338,6 +365,39 @@ describe("item metadata derived-index transactions", () => {
         }),
       ).toEqual(["metadata_derived_index_refresh_failed"]);
       rmSpy.mockRestore();
+    });
+  });
+
+  it("rejects cursor provenance after an external directory mutation", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const tasksDir = path.join(pmRoot, "tasks");
+      await fs.mkdir(tasksDir, { recursive: true });
+      await fs.writeFile(
+        path.join(tasksDir, "pm-directory-cursor.toon"),
+        serializeItemDocument(
+          {
+            metadata: makeTaskMetadata({ id: "pm-directory-cursor" }),
+            body: "",
+          },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+      await listAllDocumentCandidatesCached(
+        pmRoot,
+        "toon",
+        { Task: "tasks" },
+        [],
+        undefined,
+        { derivedIndexMinimumItems: 1 },
+      );
+      expect(
+        await readItemMetadataDerivedIndexState(pmRoot, ["tasks"]),
+      ).not.toBeNull();
+      await fs.writeFile(path.join(tasksDir, "external-marker.txt"), "changed");
+      expect(
+        await readItemMetadataDerivedIndexState(pmRoot, ["tasks"]),
+      ).toBeNull();
     });
   });
 });

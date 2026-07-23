@@ -17,6 +17,11 @@ import { evictOldestMemoEntries } from "../shared/memo.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
+import {
+  rebuildItemMetadataQueryIndex,
+  removeItemMetadataQueryIndex,
+  updateItemMetadataQueryIndex,
+} from "./item-metadata-query-index.js";
 import type {
   ItemDocument,
   ItemFormat,
@@ -116,6 +121,7 @@ interface DerivedIndexManifest {
   context_fingerprint: string;
   source_cursor: string;
   entry_count: number;
+  directory_signatures: DirectorySignatures;
 }
 
 /** Split parsed item-metadata into the light scalar/small fields (everything except the heavy collection arrays) and the heavy collection fields. Only keys that are actually present are moved, so an item without comments stays without comments in both tiers. */
@@ -455,7 +461,9 @@ async function loadDerivedIndexManifest(
       typeof parsed.context_fingerprint !== "string" ||
       typeof parsed.source_cursor !== "string" ||
       !Number.isInteger(parsed.entry_count) ||
-      parsed.entry_count < 0
+      parsed.entry_count < 0 ||
+      typeof parsed.directory_signatures !== "object" ||
+      parsed.directory_signatures === null
     ) {
       return null;
     }
@@ -967,6 +975,7 @@ async function persistMetadataCacheIfNeeded(params: {
   previousEntries: Record<string, CachedEntry>;
   directorySignatures: DirectorySignatures;
   state: DocumentCacheMutableState;
+  minimumIndexedItems: number;
 }): Promise<void> {
   const metadataDirty =
     params.state.misses.metadata ||
@@ -996,7 +1005,24 @@ async function persistMetadataCacheIfNeeded(params: {
       context_fingerprint: params.contextFingerprint,
       source_cursor: params.sourceCursor,
       entry_count: Object.keys(params.state.newEntries).length,
+      directory_signatures: params.directorySignatures,
     });
+    const rows = [...params.state.documentsById.values()].map(
+      ({ candidate }) => ({
+        relativePath: path.relative(params.pmRoot, candidate.item_path),
+        metadata: splitHeavyMetadata(candidate.metadata).light,
+      }),
+    );
+    if (rows.length >= params.minimumIndexedItems) {
+      await rebuildItemMetadataQueryIndex({
+        pmRoot: params.pmRoot,
+        contextFingerprint: params.contextFingerprint,
+        sourceCursor: params.sourceCursor,
+        rows,
+      });
+    } else {
+      await removeItemMetadataQueryIndex(params.pmRoot);
+    }
   } catch {
     // Cache persistence is best-effort; authoritative item reads rebuild it.
   }
@@ -1109,6 +1135,7 @@ export interface ItemMetadataDerivedIndexState {
 /** Read the effective derived-index cursor without exposing cache file layout. */
 export async function readItemMetadataDerivedIndexState(
   pmRoot: string,
+  folders?: readonly string[],
 ): Promise<ItemMetadataDerivedIndexState | null> {
   const manifest = await loadDerivedIndexManifest(pmRoot);
   if (manifest === null) return null;
@@ -1122,6 +1149,20 @@ export async function readItemMetadataDerivedIndexState(
     delta.envelope.base_source_cursor === manifest.source_cursor
       ? delta.envelope.source_cursor
       : manifest.source_cursor;
+  const effectiveDirectorySignatures =
+    delta.envelope?.context_fingerprint === manifest.context_fingerprint &&
+    delta.envelope.base_source_cursor === manifest.source_cursor
+      ? delta.envelope.directory_signatures
+      : manifest.directory_signatures;
+  if (
+    folders &&
+    !directorySignaturesMatch(
+      effectiveDirectorySignatures,
+      await readDirectorySignatures(pmRoot, folders),
+    )
+  ) {
+    return null;
+  }
   return { source_cursor: effectiveCursor, entry_count: manifest.entry_count };
 }
 
@@ -1148,6 +1189,7 @@ async function removeDerivedIndexFiles(pmRoot: string): Promise<void> {
       envelopeMemo.delete(cachePath);
     }),
   );
+  await removeItemMetadataQueryIndex(pmRoot);
 }
 
 async function createDerivedIndexDeltaChange(params: {
@@ -1233,6 +1275,11 @@ export async function refreshItemMetadataDerivedIndex(
       contextFingerprint,
       baseSourceCursor,
     );
+    const expectedSourceCursor =
+      delta.envelope?.context_fingerprint === contextFingerprint &&
+      delta.envelope.base_source_cursor === baseSourceCursor
+        ? delta.envelope.source_cursor
+        : baseSourceCursor;
     if (previousRelativePath !== undefined) {
       changes[previousRelativePath] = {
         entry: null,
@@ -1241,16 +1288,37 @@ export async function refreshItemMetadataDerivedIndex(
       };
     }
     changes[relativePath] = await createDerivedIndexDeltaChange({ mutation });
+    const sourceCursor = randomUUID();
     await persistCache(getDeltaCachePath(mutation.pmRoot), {
       version: CACHE_VERSION,
       context_fingerprint: contextFingerprint,
       base_source_cursor: baseSourceCursor,
-      source_cursor: randomUUID(),
+      source_cursor: sourceCursor,
       directory_signatures: await readDirectorySignatures(mutation.pmRoot, [
         ...new Set(Object.values(mutation.typeToFolder)),
       ]),
       changes,
     });
+    const queryIndexUpdated = await updateItemMetadataQueryIndex({
+      pmRoot: mutation.pmRoot,
+      contextFingerprint,
+      expectedSourceCursor,
+      sourceCursor,
+      row:
+        mutation.document === null
+          ? null
+          : {
+              relativePath,
+              metadata: splitHeavyMetadata(mutation.document.metadata).light,
+            },
+      deletedRelativePaths: [
+        ...(previousRelativePath === undefined ? [] : [previousRelativePath]),
+        ...(mutation.document === null ? [relativePath] : []),
+      ],
+    });
+    if (!queryIndexUpdated) {
+      await removeItemMetadataQueryIndex(mutation.pmRoot);
+    }
     return [];
   } catch {
     await removeDerivedIndexFiles(mutation.pmRoot).catch(() => {});
@@ -1558,6 +1626,7 @@ export async function listAllDocumentCandidatesCached(
     previousEntries,
     directorySignatures: stableDirectorySignatures,
     state,
+    minimumIndexedItems,
   });
 
   if (includeBody) {

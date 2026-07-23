@@ -570,10 +570,18 @@ describe("runGet and runAppend", () => {
           open: 1,
           closed: 1,
         },
-        truncated: false,
-        next_offset: null,
+        sample: [],
+        sample_limit: 0,
+        truncated: true,
+        next_offset: 0,
+        continuation: expect.stringContaining("--offset 0 --limit 20"),
       });
-      expect(standard.children?.sample.map((child) => child.id)).toEqual(
+      const deep = await runGet(
+        epicId,
+        { path: context.pmPath },
+        { depth: "deep" },
+      );
+      expect(deep.children?.sample.map((child) => child.id)).toEqual(
         [closedChildId, openChildId].sort((left, right) =>
           left.localeCompare(right),
         ),

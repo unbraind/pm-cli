@@ -4,7 +4,10 @@
  * Implements the pm list command surface and its agent-facing runtime behavior.
  */
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  hasActiveOnReadHooks,
+} from "../../core/extensions/index.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { collectDependencyBlockedIds } from "../actionability.js";
@@ -57,15 +60,21 @@ import {
   listAllItemMetadataLight,
   listAllItemMetadataWithBody,
 } from "../../core/store/item-store.js";
-import { HEAVY_METADATA_KEYS } from "../../core/store/item-metadata-cache.js";
+import {
+  HEAVY_METADATA_KEYS,
+  readItemMetadataDerivedIndexState,
+} from "../../core/store/item-metadata-cache.js";
+import { queryItemMetadataIndex } from "../../core/store/item-metadata-query-index.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemMetadata, ItemStatus, ItemType } from "../../types/index.js";
 import type { SharedItemFilterOptions } from "./item-filter-options.js";
+import { LIST_FILTER_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
 import {
   createQueryFingerprint,
   encodeQueryCursor,
   resolveQueryCursorStart,
+  selectCursorSemanticOptions,
 } from "../pagination.js";
 
 /** Documents the list options payload exchanged by command, SDK, and package integrations. */
@@ -241,17 +250,16 @@ export const resolveContentFieldFilters = (
     );
   }
   return Object.fromEntries(
-    CONTENT_FIELD_FLAG_MAPPINGS.flatMap<[
-      ContentField,
-      "present" | "absent",
-    ]>((mapping) => {
-      if (options[mapping.presentKey] === true) {
-        return [[mapping.field, "present"]];
-      }
-      return options[mapping.absentKey] === true
-        ? [[mapping.field, "absent"]]
-        : [];
-    }),
+    CONTENT_FIELD_FLAG_MAPPINGS.flatMap<[ContentField, "present" | "absent"]>(
+      (mapping) => {
+        if (options[mapping.presentKey] === true) {
+          return [[mapping.field, "present"]];
+        }
+        return options[mapping.absentKey] === true
+          ? [[mapping.field, "absent"]]
+          : [];
+      },
+    ),
   ) as ContentFieldFilters;
 };
 
@@ -1639,24 +1647,105 @@ function buildListCursorFingerprint(
   options: ListOptions,
   ordering: ListOrderingOptions,
 ): string {
-  const normalizedOptions: Record<string, unknown> = { ...options };
-  delete normalizedOptions.after;
-  delete normalizedOptions.limit;
-  delete normalizedOptions.offset;
-  delete normalizedOptions.noTruncate;
-  delete normalizedOptions.includeBody;
-  delete normalizedOptions.compact;
-  delete normalizedOptions.brief;
-  delete normalizedOptions.full;
-  delete normalizedOptions.fields;
   return createQueryFingerprint("list", {
     status,
-    options: normalizedOptions,
+    options: selectCursorSemanticOptions(
+      options as Readonly<Record<string, unknown>>,
+      LIST_FILTER_FLAG_CONTRACTS,
+    ),
     sort: ordering.sortField ?? "default",
     order: ordering.sortOrder,
     tree: ordering.treeEnabled,
     tree_depth: ordering.treeDepth ?? null,
   });
+}
+
+async function tryLoadIndexedListPage(params: {
+  options: ListOptions;
+  runtime: ListRuntimeContext;
+  statusSelection: ResolvedListStatus;
+  ordering: ListOrderingOptions;
+}): Promise<ListPageResult | null> {
+  const { options, runtime, statusSelection, ordering } = params;
+  const supportedOptionKeys = new Set([
+    "status",
+    "limit",
+    "offset",
+    "compact",
+    "brief",
+    "full",
+    "fields",
+    "format",
+    "stream",
+    "includeBody",
+    "excludeTerminal",
+    "noTruncate",
+  ]);
+  const projectionNeedsHeavyData = [
+    runtime.projection.mode === "full",
+    runtime.projection.fields.some((field) => {
+      const normalized = normalizeProjectionField(field);
+      return normalized === "body" || HEAVY_PROJECTION_FIELDS.has(normalized);
+    }),
+  ].includes(true);
+  const requiresFallback = [
+    options.limit === undefined,
+    options.after !== undefined,
+    options.noTruncate === true,
+    options.includeBody === true,
+    options.dependencyBlocked === true,
+    ordering.treeEnabled,
+    ordering.sortField !== undefined,
+    projectionNeedsHeavyData,
+    hasActiveOnReadHooks(),
+    Object.keys(runtime.runtimeFieldFilters).length > 0,
+    Object.entries(options).some(
+      ([key, value]) => value !== undefined && !supportedOptionKeys.has(key),
+    ),
+  ].includes(true);
+  if (requiresFallback) {
+    return null;
+  }
+  const indexState = await readItemMetadataDerivedIndexState(runtime.pmRoot, [
+    ...new Set(Object.values(runtime.typeRegistry.type_to_folder)),
+  ]);
+  if (!indexState) return null;
+  const limit = parseIntegerLimit(options.limit);
+  const offset = parseOffset(options.offset) ?? 0;
+  const indexed = await queryItemMetadataIndex({
+    pmRoot: runtime.pmRoot,
+    expectedSourceCursor: indexState.source_cursor,
+    query: {
+      statuses: statusSelection.resolvedStatus,
+      excludeStatuses:
+        statusSelection.resolvedStatus === undefined &&
+        statusSelection.effectiveOptions.excludeTerminal === true
+          ? [...runtime.statusRegistry.terminal_statuses]
+          : undefined,
+      terminalStatuses: [...runtime.statusRegistry.terminal_statuses],
+      limit,
+      offset,
+    },
+  });
+  if (!indexed) return null;
+  const hasMore =
+    indexed.items.length > 0 && offset + indexed.items.length < indexed.total;
+  const nextCursor = hasMore
+    ? encodeQueryCursor(
+        buildListCursorFingerprint(
+          statusSelection.filtersStatus,
+          options,
+          ordering,
+        ),
+        indexed.items.at(-1)!.id,
+        offset + indexed.items.length - 1,
+      )
+    : undefined;
+  return {
+    projected: projectListItems(indexed.items, runtime.projection, false),
+    totalMatched: indexed.total,
+    pageExtras: buildListPageExtras(limit, hasMore, nextCursor),
+  };
 }
 
 function buildVerboseListFilters(params: {
@@ -1741,57 +1830,66 @@ export async function runList(
 ): Promise<ListResult> {
   const runtime = await resolveListRuntimeContext(options, global);
   const listWarnings: string[] = [];
-  const items = await loadListItems(options, runtime, listWarnings);
   const ordering = resolveListOrderingOptions(options);
   const statusSelection = resolveListStatusSelection(
     status,
     options,
     runtime.statusRegistry,
   );
-  const filtered = applyFilters(
-    items,
-    statusSelection.resolvedStatus,
-    statusSelection.effectiveOptions,
-    runtime.typeRegistry,
-    runtime.statusRegistry,
-    runtime.runtimeFieldFilters,
-  );
-  // Edge-aware blocked selection (GH-578): classify against the complete
-  // loaded corpus so terminal blocker targets count as satisfied, then narrow
-  // the already-filtered rows to the shared blocked set.
-  const scoped =
-    options.dependencyBlocked === true
-      ? (() => {
-          const blockedIds = collectDependencyBlockedIds(
-            items,
-            runtime.statusRegistry,
-          );
-          return filtered.filter((item) =>
-            blockedIds.has(item.id.trim().toLowerCase()),
-          );
-        })()
-      : filtered;
-  const sorted = sortItems(
-    scoped,
-    ordering.sortField,
-    ordering.sortOrder,
-    runtime.statusRegistry,
-  );
-  const ordered = ordering.treeEnabled
-    ? orderItemsAsTree(sorted, ordering.parentRoot, ordering.treeDepth)
-    : sorted;
   const noTruncate = options.noTruncate === true;
-  const page = pageAndProjectListItems(
-    ordered,
+  const indexedPage = await tryLoadIndexedListPage({
     options,
-    runtime.projection,
-    ordering.treeEnabled,
-    buildListCursorFingerprint(
-      statusSelection.filtersStatus,
+    runtime,
+    statusSelection,
+    ordering,
+  });
+  let page = indexedPage;
+  if (!page) {
+    const items = await loadListItems(options, runtime, listWarnings);
+    const filtered = applyFilters(
+      items,
+      statusSelection.resolvedStatus,
+      statusSelection.effectiveOptions,
+      runtime.typeRegistry,
+      runtime.statusRegistry,
+      runtime.runtimeFieldFilters,
+    );
+    // Edge-aware blocked selection (GH-578): classify against the complete
+    // loaded corpus so terminal blocker targets count as satisfied, then narrow
+    // the already-filtered rows to the shared blocked set.
+    const scoped =
+      options.dependencyBlocked === true
+        ? (() => {
+            const blockedIds = collectDependencyBlockedIds(
+              items,
+              runtime.statusRegistry,
+            );
+            return filtered.filter((item) =>
+              blockedIds.has(item.id.trim().toLowerCase()),
+            );
+          })()
+        : filtered;
+    const sorted = sortItems(
+      scoped,
+      ordering.sortField,
+      ordering.sortOrder,
+      runtime.statusRegistry,
+    );
+    const ordered = ordering.treeEnabled
+      ? orderItemsAsTree(sorted, ordering.parentRoot, ordering.treeDepth)
+      : sorted;
+    page = pageAndProjectListItems(
+      ordered,
       options,
-      ordering,
-    ),
-  );
+      runtime.projection,
+      ordering.treeEnabled,
+      buildListCursorFingerprint(
+        statusSelection.filtersStatus,
+        options,
+        ordering,
+      ),
+    );
+  }
   const now = nowIso();
   const warnings = [...new Set(listWarnings)].sort((left, right) =>
     left.localeCompare(right),

@@ -3146,6 +3146,18 @@ describe("runSearch", () => {
     expect(typeof projected.score).toBe("number");
     expect(projected["item.title"]).toBe("Projection title token");
     expect(projected["item.status"]).toBe("in_progress");
+    const { _testOnlySearchCommand } =
+      await import("../../../src/sdk/query/search.js");
+    expect(() =>
+      _testOnlySearchCommand.validateSearchProjectionFields(
+        { mode: "fields", fields: ["custom_signal"] },
+        {
+          definitions: [
+            { key: "custom_signal", metadata_key: "custom_signal" },
+          ],
+        } as never,
+      ),
+    ).not.toThrow();
 
     await expect(
       runSearch(

@@ -84,7 +84,9 @@ export function buildItemChildrenRollup(
           code: "child_projection_item_bound_exceeded",
           required: "Use an indexed or parent-filtered metadata source.",
           why: "Unbounded graph scans can exhaust memory in universal project stores.",
-          nextSteps: ["Build the derived item index, then retry the parent read."],
+          nextSteps: [
+            "Build the derived item index, then retry the parent read.",
+          ],
         },
       );
     }
@@ -107,18 +109,22 @@ export function buildItemChildrenRollup(
     priority: child.priority,
   }));
   const truncated = children.length > sample.length;
+  const continuationLimit =
+    sampleLimit === 0 ? DEFAULT_CHILD_SAMPLE_LIMIT : sampleLimit;
   return {
     count: children.length,
     active,
     by_status: Object.fromEntries(
-      Object.entries(byStatus).sort(([left], [right]) => left.localeCompare(right)),
+      Object.entries(byStatus).sort(([left], [right]) =>
+        left.localeCompare(right),
+      ),
     ),
     sample,
     sample_limit: sampleLimit,
     truncated,
     next_offset: truncated ? sample.length : null,
     continuation: truncated
-      ? `pm list --status all --parent ${parentId} --offset ${sample.length} --limit ${sampleLimit}`
+      ? `pm list --status all --parent ${parentId} --offset ${sample.length} --limit ${continuationLimit}`
       : null,
     scanned,
   };

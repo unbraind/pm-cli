@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -10,12 +10,14 @@ import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-s
 import {
   EXIT_CODE,
   SETTINGS_DEFAULTS,
+  TYPE_TO_FOLDER,
 } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   withTempPmPath,
   type TempPmContext,
 } from "../../helpers/withTempPmPath.js";
+import { listAllDocumentCandidatesCached } from "../../../src/core/store/item-metadata-cache.js";
 
 function createItem(
   context: TempPmContext,
@@ -1012,6 +1014,76 @@ describe("runList", () => {
         { path: context.pmPath },
       );
       expect(monthRelativeFilter.count).toBe(0);
+    });
+  });
+
+  it("serves bounded default-order pages from the persistent query index", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Indexed priority two",
+        status: "open",
+        priority: "2",
+        tags: "indexed",
+        deadline: "+2d",
+      });
+      createItem(context, {
+        title: "Indexed priority zero",
+        status: "open",
+        priority: "0",
+        tags: "indexed",
+        deadline: "+1d",
+      });
+      createItem(context, {
+        title: "Indexed closed",
+        status: "closed",
+        priority: "0",
+        tags: "indexed",
+        deadline: "+3d",
+      });
+      await listAllDocumentCandidatesCached(
+        context.pmPath,
+        SETTINGS_DEFAULTS.item_format,
+        TYPE_TO_FOLDER,
+        [],
+        SETTINGS_DEFAULTS.schema,
+        {
+          includeBody: false,
+          includeCollections: false,
+          derivedIndexMinimumItems: 1,
+        },
+      );
+      const taskDirectory = path.join(context.pmPath, "tasks");
+      for (const file of await readdir(taskDirectory)) {
+        await writeFile(path.join(taskDirectory, file), "{invalid", "utf8");
+      }
+      const indexed = await runList(
+        undefined,
+        { status: "all", limit: "1", offset: "1", brief: true },
+        { path: context.pmPath },
+      );
+      expect(indexed).toMatchObject({
+        count: 1,
+        total: 3,
+        has_more: true,
+        applied_limit: 1,
+      });
+      expect(indexed.items[0]?.title).toBe("Indexed priority two");
+      const activeOnly = await runList(
+        undefined,
+        { excludeTerminal: true, limit: "1", brief: true },
+        { path: context.pmPath },
+      );
+      expect(activeOnly.total).toBe(2);
+      const emptyPage = await runList(
+        undefined,
+        { status: "blocked", limit: "1", brief: true },
+        { path: context.pmPath },
+      );
+      expect(emptyPage).toMatchObject({
+        count: 0,
+        total: 0,
+        has_more: false,
+      });
     });
   });
 

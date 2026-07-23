@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Workspace memory tiers: derived rollup summaries of closed-item epochs keep decades-old work queryable in bounded tokens ([pm-5qmm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-5qmm.toon))
+
+### Security
+
+- CodeQL alert 30: polynomial ReDoS in shared path normalization primitive ([pm-v3zd3o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3zd3o.toon))
+
+### Other
+
+- Cursor fingerprints: replace per-command presentation-flag deny-lists with contract-declared semantic classification in sdk/pagination ([pm-fgih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fgih.toon))
+
 ## 2026.7.23 - 2026-07-23
 
 ### Added

@@ -1497,34 +1497,42 @@
           "aliases": [
             "--max-items"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--format"
         },
         {
           "flag": "--depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--section"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--activity-limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--stale-threshold"
         },
         {
           "aliases": [
             "--explain_ranking"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--explain-ranking"
         },
         {
@@ -1917,34 +1925,42 @@
           "aliases": [
             "--max-items"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--format"
         },
         {
           "flag": "--depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--section"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--activity-limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--stale-threshold"
         },
         {
           "aliases": [
             "--explain_ranking"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--explain-ranking"
         },
         {
@@ -3026,30 +3042,38 @@
           "flag": "--no-linked-command"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--offset"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
           "aliases": [
             "--all"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--brief"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
@@ -3069,6 +3093,7 @@
           "flag": "--tree-depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--include-body"
         },
         {
@@ -3236,30 +3261,38 @@
           "flag": "--no-linked-command"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--offset"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
           "aliases": [
             "--all"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--brief"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
@@ -3279,6 +3312,7 @@
           "flag": "--tree-depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--include-body"
         },
         {
@@ -3446,30 +3480,38 @@
           "flag": "--no-linked-command"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--offset"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
           "aliases": [
             "--all"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--brief"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
@@ -3489,6 +3531,7 @@
           "flag": "--tree-depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--include-body"
         },
         {
@@ -3656,30 +3699,38 @@
           "flag": "--no-linked-command"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--offset"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
           "aliases": [
             "--all"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--brief"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
@@ -3699,6 +3750,7 @@
           "flag": "--tree-depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--include-body"
         },
         {
@@ -3866,30 +3918,38 @@
           "flag": "--no-linked-command"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--offset"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
           "aliases": [
             "--all"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--brief"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
@@ -3909,6 +3969,7 @@
           "flag": "--tree-depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--include-body"
         },
         {
@@ -4076,30 +4137,38 @@
           "flag": "--no-linked-command"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--offset"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
           "aliases": [
             "--all"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--brief"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
@@ -4119,6 +4188,7 @@
           "flag": "--tree-depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--include-body"
         },
         {
@@ -4286,30 +4356,38 @@
           "flag": "--no-linked-command"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--offset"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
           "aliases": [
             "--all"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--brief"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
@@ -4329,6 +4407,7 @@
           "flag": "--tree-depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--include-body"
         },
         {
@@ -4496,30 +4575,38 @@
           "flag": "--no-linked-command"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--offset"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {
           "aliases": [
             "--all"
           ],
+          "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--brief"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
@@ -4539,6 +4626,7 @@
           "flag": "--tree-depth"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--include-body"
         },
         {
@@ -5975,25 +6063,32 @@
           "flag": "--phrase-exact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--highlight"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--compact"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--full"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--fields",
           "list": true
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--format"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
           "flag": "--after"
         },
         {

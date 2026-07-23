@@ -50,6 +50,17 @@ directory signatures, and the next cursor before releasing the lock. Mutation
 cost therefore follows changed items rather than total workspace size. A torn,
 corrupt, or base-mismatched delta is rejected and rebuilt from source.
 
+Large indexes also carry `runtime/metadata-query-index.sqlite`, a rebuildable
+row/index projection with the same context fingerprint and effective
+`source_cursor`. Source scans replace it atomically; supported mutations update
+it inside the existing derived-index writer critical section. Bounded
+default-order light `list` pages query only their result window plus a count,
+instead of parsing the full JSON cache. Unsupported filters, heavy
+body/collection projections, trees, runtime fields, active read hooks, missing
+files, stale cursors, and corrupt databases fail closed to the established
+authoritative/JSON path. The SQLite file is optimization state and is safe to
+delete or rebuild with `pm reindex`.
+
 SDK hosts that commit authoritative item documents outside the stock mutation
 commands use `acquireItemMetadataDerivedIndexLock` and
 `refreshItemMetadataDerivedIndex` from `@unbrained/pm-cli/sdk` around the same
@@ -69,6 +80,13 @@ overlays on every read. SDK hosts can use `readWorkspaceContextSignals` for the
 same automatic cursor binding or compose `ContextSignalStore` directly, while
 retaining explicit `fresh`/`rebuilt` and `derived_index`/`scan_fallback`
 diagnostics. See [Context relevance and packing](CONTEXT_RELEVANCE.md).
+
+At 10,000 items, `context` and `search` also build
+`runtime/workspace-memory.json`: compact calendar-epoch and epic-lineage
+summaries over completed history. The snapshot is cursor-bound, token-bounded
+when attached to context, searchable without expanding closed rows, and skipped
+entirely below the threshold. Missing, stale, corrupt, or unwritable memory
+state rebuilds or degrades without outranking item documents or history.
 
 To refresh a baseline after an intentional, measured improvement:
 

@@ -5,10 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  coerceNumberInRange,
-  toNonEmptyStringOrUndefined,
-} from "../../core/shared/primitives.js";
+import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import {
   getActiveExtensionRegistrations,
@@ -109,7 +106,6 @@ import {
   compareTimestampStrings,
   matchesTimestampFilters,
   nowIso,
-  resolveIsoOrRelative,
 } from "../../core/shared/time.js";
 import { listAllDocumentCandidatesCached } from "../../core/store/item-metadata-cache.js";
 import { listAllItemMetadata } from "../../core/store/item-store.js";
@@ -128,125 +124,46 @@ import type {
   ItemType,
   PmSettings,
 } from "../../types/index.js";
-import type { SharedItemFilterOptions } from "./item-filter-options.js";
 import { resolveSearchPage } from "./search-pagination.js";
+import {
+  normalizeSearchPhrase,
+  parseMinScoreOverride,
+  parseSearchBoolean,
+  parseSearchDeadline,
+  parseSearchMatchMode,
+  parseSearchMode,
+  parseSearchProjection,
+  parseSearchTokens,
+  parseSemanticWeightOverride,
+  parseTimestampWindow,
+  resolveHybridSemanticWeight,
+  resolveSearchMaxResults,
+  resolveSearchScoreThreshold,
+  resolveSearchTuning,
+  validateSearchProjectionFields,
+  type SearchMatchMode,
+  type SearchOptions,
+  type SearchProjectionConfig,
+  type SearchProjectionMode,
+  type SearchTuning,
+} from "./search-contracts.js";
+import {
+  readWorkspaceMemory,
+  searchWorkspaceMemoryReadResult,
+  type WorkspaceMemoryRollup,
+} from "../workspace-memory.js";
 
-/** Documents the search options payload exchanged by command, SDK, and package integrations. */
-export interface SearchOptions extends SharedItemFilterOptions {
-  /** Value that configures or reports mode for this contract. */
-  mode?: string;
-  /** Strategy used to control match behavior. */
-  matchMode?: string;
-  /** Value that configures or reports min score for this contract. */
-  minScore?: string | number;
-  /** Value that configures or reports count for this contract. */
-  count?: boolean;
-  /** Value that configures or reports semantic weight for this contract. */
-  semanticWeight?: string | number;
-  /** Value that configures or reports include linked for this contract. */
-  includeLinked?: boolean;
-  /** Value that configures or reports title exact for this contract. */
-  titleExact?: boolean;
-  /** Value that configures or reports phrase exact for this contract. */
-  phraseExact?: boolean;
-  /** Value that configures or reports limit for this contract. */
-  limit?: string;
-  /** Opaque cursor returned by a previous search page. */
-  after?: string;
-  /** Value that configures or reports compact for this contract. */
-  compact?: boolean;
-  /** Value that configures or reports full for this contract. */
-  full?: boolean;
-  /** Value that configures or reports fields for this contract. */
-  fields?: string;
-  // GH-157: emit per-field matched-text snippets on each hit (off by default for
-  // token efficiency). Highlighted spans are wrapped with the «…» markers.
-  /** Value that configures or reports highlight for this contract. */
-  highlight?: boolean;
-}
-
-/** Restricts search match mode values accepted by command, SDK, and storage contracts. */
-export type SearchMatchMode = "and" | "or" | "exact";
-
-type SearchProjectionMode = "compact" | "full" | "fields";
-
-interface SearchProjectionConfig {
-  mode: SearchProjectionMode;
-  fields: string[];
-}
-
-const DEFAULT_COMPACT_SEARCH_FIELDS = [
-  "id",
-  "title",
-  "status",
-  "type",
-  "priority",
-  "updated_at",
-  "score",
-  "matched_fields",
-] as const;
-
-const SEARCH_HIT_FIELD_KEYS = new Set([
-  "score",
-  "matched_fields",
-  "highlights",
-]);
-const SEARCH_ITEM_FIELD_KEYS = new Set([
-  "id",
-  "title",
-  "description",
-  "type",
-  "status",
-  "priority",
-  "tags",
-  "created_at",
-  "updated_at",
-  "deadline",
-  "assignee",
-  "author",
-  "estimated_minutes",
-  "acceptance_criteria",
-  "dependencies",
-  "comments",
-  "notes",
-  "learnings",
-  "reminders",
-  "events",
-  "files",
-  "tests",
-  "docs",
-  "close_reason",
-  "parent",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blocked_by",
-  "blocked_reason",
-  "reporter",
-  "severity",
-  "environment",
-  "repro_steps",
-  "resolution",
-  "expected_result",
-  "actual_result",
-  "affected_version",
-  "fixed_version",
-  "component",
-  "regression",
-  "customer_impact",
-  "definition_of_ready",
-  "order",
-  "rank",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "why_now",
-  "plan",
-]);
+export type {
+  SearchMatchMode,
+  SearchOptions,
+  SearchTuning,
+} from "./search-contracts.js";
+export {
+  resolveHybridSemanticWeight,
+  resolveSearchMaxResults,
+  resolveSearchScoreThreshold,
+  resolveSearchTuning,
+} from "./search-contracts.js";
 
 const LONG_QUERY_TOKEN_THRESHOLD = 2;
 const LONG_QUERY_TITLE_EXACT_BONUS = 120;
@@ -346,6 +263,13 @@ interface SearchResultBase {
   // hit rows entirely (items is empty). `count` reflects the same total.
   count_only?: boolean;
   warnings?: string[];
+  /** Historical epoch and epic rollups matching the query in large workspaces. */
+  workspace_memory?: {
+    /** Persistence freshness for the derived projection. */
+    cache_status: "fresh" | "rebuilt";
+    /** Matching bounded rollups, ordered by term coverage and recency. */
+    matches: WorkspaceMemoryRollup[];
+  };
 }
 
 /** Documents the search compact result payload exchanged by command, SDK, and package integrations. */
@@ -457,11 +381,6 @@ type ExtensionVectorAdapter = {
   upsert?: ExtensionVectorUpsert;
 };
 
-interface SearchModeContext {
-  hasProvider: boolean;
-  hasVectorStore: boolean;
-}
-
 type ImplicitSemanticFallbackReason = "timeout" | "connection" | "error";
 
 /**
@@ -567,156 +486,6 @@ async function maybeEmitVectorIndexStaleWarning(
   }
 }
 
-function parseMode(
-  raw: string | undefined,
-  _context: SearchModeContext,
-): SearchMode {
-  if (raw === undefined) {
-    return "keyword";
-  }
-  const normalized = raw.trim().toLowerCase();
-  if (
-    normalized !== "keyword" &&
-    normalized !== "semantic" &&
-    normalized !== "hybrid"
-  ) {
-    throw new PmCliError(
-      "Search mode must be one of keyword|semantic|hybrid",
-      EXIT_CODE.USAGE,
-    );
-  }
-  return normalized;
-}
-
-function parseIncludeLinked(raw: boolean | undefined): boolean {
-  return raw === true;
-}
-
-function parseTitleExact(raw: boolean | undefined): boolean {
-  return raw === true;
-}
-
-function parsePhraseExact(raw: boolean | undefined): boolean {
-  return raw === true;
-}
-
-function parseSemanticWeightOverride(raw: unknown): number | undefined {
-  return coerceNumberInRange(raw, 0, 1) ?? undefined;
-}
-
-function parseMatchMode(raw: string | undefined): SearchMatchMode {
-  if (raw === undefined) {
-    return "or";
-  }
-  const normalized = raw.trim().toLowerCase();
-  if (normalized !== "and" && normalized !== "or" && normalized !== "exact") {
-    throw new PmCliError(
-      "Search --match-mode must be one of and|or|exact",
-      EXIT_CODE.USAGE,
-    );
-  }
-  return normalized;
-}
-
-// Per-query --min-score overrides the persistent search.score_threshold for this
-// query only. Accepts a finite number >= 0; anything else is a usage error.
-function parseMinScoreOverride(raw: unknown): number | undefined {
-  if (raw === undefined || raw === null || raw === "") {
-    return undefined;
-  }
-  /* c8 ignore start -- numeric-vs-string coercion branch is exercised via integration CLI parsing */
-  const parsed = typeof raw === "number" ? raw : Number(String(raw).trim());
-  /* c8 ignore stop */
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new PmCliError(
-      "Search --min-score must be a finite number >= 0",
-      EXIT_CODE.USAGE,
-    );
-  }
-  return parsed;
-}
-
-// updated/created date-window filters share the deadline ISO+relative resolver
-// so `pm search` matches `pm list` semantics exactly: pass an ISO timestamp or a
-// SIGNED relative offset ("-2h"/"-7d" reach into the past, "+1d" the future;
-// units h/d/w/m, m = months — there is no minutes unit).
-function parseTimestampWindow(
-  raw: unknown,
-  fieldLabel: string,
-): string | undefined {
-  if (raw == null) return undefined;
-  const value = String(raw).trim();
-  if (value.length === 0) return undefined;
-  return resolveIsoOrRelative(value, new Date(), fieldLabel);
-}
-
-function normalizeSearchPhrase(value: string): string {
-  return value.toLowerCase().replace(/\s+/g, " ").trim();
-}
-
-function parseDeadline(
-  raw: string | undefined,
-  fieldLabel: string,
-): string | undefined {
-  if (raw === undefined) return undefined;
-  return resolveIsoOrRelative(raw, new Date(), fieldLabel);
-}
-
-function parseFieldSelectors(raw: string | undefined): string[] | undefined {
-  if (raw === undefined) {
-    return undefined;
-  }
-  const selectors = raw
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (selectors.length === 0) {
-    throw new PmCliError(
-      "Search --fields requires a comma-separated list of field names",
-      EXIT_CODE.USAGE,
-    );
-  }
-  return [...new Set(selectors)];
-}
-
-function parseProjectionConfig(options: SearchOptions): SearchProjectionConfig {
-  const compactRequested = options.compact === true;
-  const fullRequested = options.full === true;
-  const fieldSelectors = parseFieldSelectors(options.fields);
-  const enabledModes =
-    Number(compactRequested) +
-    Number(fullRequested) +
-    Number(fieldSelectors !== undefined);
-  if (enabledModes > 1) {
-    throw new PmCliError(
-      "Search projection options are mutually exclusive. Use one of --compact, --full, or --fields.",
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (compactRequested) {
-    return {
-      mode: "compact",
-      fields: [...DEFAULT_COMPACT_SEARCH_FIELDS],
-    };
-  }
-  if (fullRequested) {
-    return {
-      mode: "full",
-      fields: [],
-    };
-  }
-  if (fieldSelectors) {
-    return {
-      mode: "fields",
-      fields: fieldSelectors,
-    };
-  }
-  return {
-    mode: "full",
-    fields: [],
-  };
-}
-
 /** Public contract for test only search command, shared by SDK and presentation-layer consumers. */
 export const _testOnlySearchCommand = {
   applyFilters,
@@ -750,9 +519,9 @@ export const _testOnlySearchCommand = {
   mergeVectorHitsById,
   normalizeExtensionProviderHits,
   normalizeScoreMap,
-  parseProjectionConfig,
+  parseProjectionConfig: parseSearchProjection,
   parseTimestampWindow,
-  parseTokens,
+  parseTokens: parseSearchTokens,
   projectSearchHits,
   readSearchFieldValue,
   requireSemanticDependencies,
@@ -766,57 +535,6 @@ export const _testOnlySearchCommand = {
   textEntries,
   validateSearchProjectionFields,
 };
-
-/* c8 ignore start -- projection/runtime-field validation edge permutations are covered by integration query-contract tests */
-function validateSearchProjectionFields(
-  projection: SearchProjectionConfig,
-  runtimeFieldRegistry: RuntimeFieldRegistry,
-): void {
-  if (projection.mode !== "fields") {
-    return;
-  }
-  const runtimeKeys = new Set(
-    runtimeFieldRegistry.definitions.flatMap((field) => [
-      field.key,
-      field.metadata_key,
-    ]),
-  );
-  const unknown = projection.fields.filter((field) => {
-    const normalized = field.trim();
-    const itemKey = normalized.startsWith("item.")
-      ? normalized.slice("item.".length)
-      : normalized;
-    return (
-      !SEARCH_HIT_FIELD_KEYS.has(normalized) &&
-      !SEARCH_ITEM_FIELD_KEYS.has(itemKey) &&
-      !runtimeKeys.has(itemKey)
-    );
-  });
-  if (unknown.length > 0) {
-    throw new PmCliError(
-      `Unknown search --fields value(s): ${unknown.join(", ")}`,
-      EXIT_CODE.USAGE,
-      {
-        examples: [
-          "pm search <query> --fields id,title,status,score",
-          "pm search <query> --fields id,title,item.description,matched_fields",
-        ],
-        nextSteps: [
-          "Use item.<field> for explicit item metadata fields, or run pm search --help for projection examples.",
-        ],
-      },
-    );
-  }
-}
-/* c8 ignore stop */
-
-function parseTokens(query: string): string[] {
-  const normalized = normalizeSearchPhrase(query);
-  if (!normalized) {
-    throw new PmCliError("Search query must not be empty", EXIT_CODE.USAGE);
-  }
-  return normalized.split(/\s+/).filter(Boolean);
-}
 
 /** Result of extracting inline `field:value` tokens from a raw search query. */
 interface InlineQueryParse {
@@ -1035,8 +753,11 @@ function resolveSearchMetadataFilterSet(
     typeFilter: parseType(options.type, typeRegistry),
     tagFilter: options.tag?.trim().toLowerCase(),
     priorityFilter: parsePriority(options.priority),
-    deadlineBefore: parseDeadline(options.deadlineBefore, "deadline-before"),
-    deadlineAfter: parseDeadline(options.deadlineAfter, "deadline-after"),
+    deadlineBefore: parseSearchDeadline(
+      options.deadlineBefore,
+      "deadline-before",
+    ),
+    deadlineAfter: parseSearchDeadline(options.deadlineAfter, "deadline-after"),
     updatedAfter: parseTimestampWindow(options.updatedAfter, "updated-after"),
     updatedBefore: parseTimestampWindow(
       options.updatedBefore,
@@ -1311,36 +1032,6 @@ async function loadLinkedCorpus(
     }
   }
   return chunks.join("\n");
-}
-
-/** Documents the search tuning payload exchanged by command, SDK, and package integrations. */
-export interface SearchTuning {
-  /** Value that configures or reports title exact bonus for this contract. */
-  title_exact_bonus: number;
-  /** Value that configures or reports title weight for this contract. */
-  title_weight: number;
-  /** Value that configures or reports description weight for this contract. */
-  description_weight: number;
-  /** Value that configures or reports tags weight for this contract. */
-  tags_weight: number;
-  /** Value that configures or reports status weight for this contract. */
-  status_weight: number;
-  /** Value that configures or reports body weight for this contract. */
-  body_weight: number;
-  /** Value that configures or reports comments weight for this contract. */
-  comments_weight: number;
-  /** Value that configures or reports notes weight for this contract. */
-  notes_weight: number;
-  /** Value that configures or reports learnings weight for this contract. */
-  learnings_weight: number;
-  /** Value that configures or reports reminders weight for this contract. */
-  reminders_weight: number;
-  /** Value that configures or reports events weight for this contract. */
-  events_weight: number;
-  /** Value that configures or reports dependencies weight for this contract. */
-  dependencies_weight: number;
-  /** Value that configures or reports linked content weight for this contract. */
-  linked_content_weight: number;
 }
 
 /**
@@ -1765,116 +1456,6 @@ function normalizeScoreMap(
     normalized.set(id, (score - minScore) / (maxScore - minScore));
   }
   return normalized;
-}
-
-/** Implements resolve search max results for the public runtime surface of this module. */
-export function resolveSearchMaxResults(settings: unknown): number {
-  const candidate = (settings as { search?: { max_results?: unknown } }).search
-    ?.max_results;
-  if (
-    typeof candidate === "number" &&
-    Number.isFinite(candidate) &&
-    candidate > 0
-  ) {
-    return Math.floor(candidate);
-  }
-  return 50;
-}
-
-/** Implements resolve search score threshold for the public runtime surface of this module. */
-export function resolveSearchScoreThreshold(settings: unknown): number {
-  const candidate = (settings as { search?: { score_threshold?: unknown } })
-    .search?.score_threshold;
-  if (typeof candidate === "number" && Number.isFinite(candidate)) {
-    return candidate;
-  }
-  return 0;
-}
-
-/** Implements resolve hybrid semantic weight for the public runtime surface of this module. */
-export function resolveHybridSemanticWeight(settings: unknown): number {
-  const candidate = (
-    settings as { search?: { hybrid_semantic_weight?: unknown } }
-  ).search?.hybrid_semantic_weight;
-  if (
-    typeof candidate === "number" &&
-    Number.isFinite(candidate) &&
-    candidate >= 0 &&
-    candidate <= 1
-  ) {
-    return candidate;
-  }
-  return 0.7;
-}
-
-/** Implements resolve search tuning for the public runtime surface of this module. */
-export function resolveSearchTuning(settings: unknown): SearchTuning {
-  const defaults: SearchTuning = {
-    title_exact_bonus: 10,
-    title_weight: 8,
-    description_weight: 5,
-    tags_weight: 6,
-    status_weight: 2,
-    body_weight: 1,
-    comments_weight: 1,
-    notes_weight: 1,
-    learnings_weight: 1,
-    reminders_weight: 2,
-    events_weight: 2,
-    dependencies_weight: 3,
-    linked_content_weight: 1,
-  };
-  const tuning = (settings as { search?: { tuning?: Partial<SearchTuning> } })
-    .search?.tuning;
-  if (!tuning) return defaults;
-
-  const resolveWeight = (candidate: unknown, fallback: number) => {
-    if (
-      typeof candidate === "number" &&
-      Number.isFinite(candidate) &&
-      candidate >= 0
-    ) {
-      return candidate;
-    }
-    return fallback;
-  };
-
-  return {
-    title_exact_bonus: resolveWeight(
-      tuning.title_exact_bonus,
-      defaults.title_exact_bonus,
-    ),
-    title_weight: resolveWeight(tuning.title_weight, defaults.title_weight),
-    description_weight: resolveWeight(
-      tuning.description_weight,
-      defaults.description_weight,
-    ),
-    tags_weight: resolveWeight(tuning.tags_weight, defaults.tags_weight),
-    status_weight: resolveWeight(tuning.status_weight, defaults.status_weight),
-    body_weight: resolveWeight(tuning.body_weight, defaults.body_weight),
-    comments_weight: resolveWeight(
-      tuning.comments_weight,
-      defaults.comments_weight,
-    ),
-    notes_weight: resolveWeight(tuning.notes_weight, defaults.notes_weight),
-    learnings_weight: resolveWeight(
-      tuning.learnings_weight,
-      defaults.learnings_weight,
-    ),
-    reminders_weight: resolveWeight(
-      tuning.reminders_weight,
-      defaults.reminders_weight,
-    ),
-    events_weight: resolveWeight(tuning.events_weight, defaults.events_weight),
-    dependencies_weight: resolveWeight(
-      tuning.dependencies_weight,
-      defaults.dependencies_weight,
-    ),
-    linked_content_weight: resolveWeight(
-      tuning.linked_content_weight,
-      defaults.linked_content_weight,
-    ),
-  };
 }
 
 /* c8 ignore start -- empty-result projection/count/warnings shape matrix is validated by integration response-contract tests */
@@ -3074,18 +2655,18 @@ function prepareSearchInput(
     options,
     inlineWarnings,
     highlight: options.highlight === true,
-    includeLinked: parseIncludeLinked(options.includeLinked),
-    titleExact: parseTitleExact(options.titleExact),
-    phraseExact: parsePhraseExact(options.phraseExact),
-    matchMode: parseMatchMode(
+    includeLinked: parseSearchBoolean(options.includeLinked),
+    titleExact: parseSearchBoolean(options.titleExact),
+    phraseExact: parseSearchBoolean(options.phraseExact),
+    matchMode: parseSearchMatchMode(
       typeof options.matchMode === "string" ? options.matchMode : undefined,
     ),
     minScoreOverride: parseMinScoreOverride(options.minScore),
     countOnly: options.count === true,
-    tokens: parseTokens(query),
+    tokens: parseSearchTokens(query),
     normalizedQuery: normalizeSearchPhrase(query),
     limit: parseLimit(options.limit),
-    projection: parseProjectionConfig(options),
+    projection: parseSearchProjection(options),
     modeWasExplicit:
       typeof options.mode === "string" && options.mode.trim().length > 0,
   };
@@ -3162,12 +2743,7 @@ async function resolveSearchRuntimeContext(
     queryExpansionExtension: resolveQueryExpansionExtension(queryExpansion),
     rerank,
     rerankExtension: resolveRerankExtension(settings),
-    effectiveMode: parseMode(prepared.options.mode, {
-      hasProvider:
-        providerResolution.active !== null || extensionSearchProvider !== null,
-      hasVectorStore:
-        vectorResolution.active !== null || extensionVectorAdapter !== null,
-    }),
+    effectiveMode: parseSearchMode(prepared.options.mode),
   };
 }
 
@@ -3569,6 +3145,18 @@ function withSearchWarnings(
   return { ...result, warnings };
 }
 
+function withSearchWorkspaceMemory(
+  result: SearchResult,
+  memory:
+    | {
+        cache_status: "fresh" | "rebuilt";
+        matches: WorkspaceMemoryRollup[];
+      }
+    | undefined,
+): SearchResult {
+  return memory ? { ...result, workspace_memory: memory } : result;
+}
+
 function attachSearchHighlights(
   prepared: PreparedSearchInput,
   filteredDocuments: ItemDocument[],
@@ -3698,6 +3286,19 @@ export async function runSearch(
   const corpus = await loadFilteredSearchCorpus(prepared, runtime);
   const warnings = corpus.warnings;
   warnings.push(...prepared.inlineWarnings);
+  const workspaceMemory = await readWorkspaceMemory(
+    corpus.allDocuments.map((document) => document.metadata),
+    {
+      pmRoot: runtime.pmRoot,
+      statusRegistry: runtime.statusRegistry,
+      now: nowIso(),
+    },
+  );
+  warnings.push(...workspaceMemory.warnings);
+  const workspaceMemoryResult = searchWorkspaceMemoryReadResult(
+    workspaceMemory,
+    prepared.query,
+  );
   if (
     runtime.effectiveMode === "hybrid" &&
     runtime.semanticWeightProvided &&
@@ -3727,9 +3328,12 @@ export async function runSearch(
     (corpus.filteredDocuments.length === 0 ||
       (prepared.limit === 0 && !prepared.countOnly))
   ) {
-    return buildEmptySearchResultFromContext(
-      { ...responseBase, effectiveMode: runtime.effectiveMode },
-      prepared.countOnly,
+    return withSearchWorkspaceMemory(
+      buildEmptySearchResultFromContext(
+        { ...responseBase, effectiveMode: runtime.effectiveMode },
+        prepared.countOnly,
+      ),
+      workspaceMemoryResult,
     );
   }
   const keywordHits = await computeKeywordSearchHits(
@@ -3751,9 +3355,12 @@ export async function runSearch(
     (corpus.filteredDocuments.length === 0 ||
       (prepared.limit === 0 && !prepared.countOnly))
   ) {
-    return buildEmptySearchResultFromContext(
-      { ...responseBase, effectiveMode: modeResult.effectiveMode },
-      prepared.countOnly,
+    return withSearchWorkspaceMemory(
+      buildEmptySearchResultFromContext(
+        { ...responseBase, effectiveMode: modeResult.effectiveMode },
+        prepared.countOnly,
+      ),
+      workspaceMemoryResult,
     );
   }
   const thresholded = modeResult.hits.filter(
@@ -3771,17 +3378,23 @@ export async function runSearch(
   });
   const response = { ...responseBase, effectiveMode: modeResult.effectiveMode };
   if (prepared.countOnly) {
-    return buildCountOnlySearchResult(response, total);
+    return withSearchWorkspaceMemory(
+      buildCountOnlySearchResult(response, total),
+      workspaceMemoryResult,
+    );
   }
   const { hits: projectedHits, projection: effectiveProjection } =
     attachSearchHighlights(prepared, corpus.filteredDocuments, page.limited);
   const projectedItems = projectSearchHits(projectedHits, effectiveProjection);
-  return buildSearchResultForHits(
-    response,
-    projectedItems,
-    total,
-    page.limited.length,
-    effectiveProjection,
-    page.pageExtras,
+  return withSearchWorkspaceMemory(
+    buildSearchResultForHits(
+      response,
+      projectedItems,
+      total,
+      page.limited.length,
+      effectiveProjection,
+      page.pageExtras,
+    ),
+    workspaceMemoryResult,
   );
 }

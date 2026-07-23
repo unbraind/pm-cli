@@ -50,6 +50,14 @@ describe("trimTrailingSlashes", () => {
   it("leaves strings without trailing slashes unchanged", () => {
     expect(trimTrailingSlashes("/a/b")).toBe("/a/b");
   });
+
+  it("handles empty, slash-only, and adversarial suffixes in linear time", () => {
+    expect(trimTrailingSlashes("")).toBe("");
+    expect(trimTrailingSlashes("///")).toBe("");
+    expect(
+      trimTrailingSlashes(`https://example.test/${"/".repeat(100_000)}`),
+    ).toBe("https://example.test");
+  });
 });
 
 describe("isFiniteNumberArray", () => {
@@ -144,7 +152,9 @@ describe("asRecordLoose", () => {
 
   it("returns the array reference (arrays are objects)", () => {
     const value = [1, 2];
-    expect(asRecordLoose(value)).toBe(value as unknown as Record<string, unknown>);
+    expect(asRecordLoose(value)).toBe(
+      value as unknown as Record<string, unknown>,
+    );
   });
 
   it("returns null for non-objects and null", () => {

@@ -6,7 +6,9 @@
 import {
   createQueryFingerprint,
   paginateQueryRows,
+  selectCursorSemanticOptions,
 } from "../pagination.js";
+import { SEARCH_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
 import type { SearchHit, SearchOptions } from "./search.js";
 import type { SearchMode } from "./search-rendering.js";
 
@@ -16,20 +18,13 @@ export function createSearchCursorFingerprint(options: {
   mode: SearchMode;
   searchOptions: SearchOptions;
 }): string {
-  const normalizedOptions: Record<string, unknown> = {
-    ...options.searchOptions,
-  };
-  delete normalizedOptions.after;
-  delete normalizedOptions.limit;
-  delete normalizedOptions.compact;
-  delete normalizedOptions.full;
-  delete normalizedOptions.fields;
-  delete normalizedOptions.highlight;
-  delete normalizedOptions.format;
   return createQueryFingerprint("search", {
     query: options.query.trim(),
     mode: options.mode,
-    options: normalizedOptions,
+    options: selectCursorSemanticOptions(
+      options.searchOptions as Readonly<Record<string, unknown>>,
+      SEARCH_FLAG_CONTRACTS,
+    ),
   });
 }
 

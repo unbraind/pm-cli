@@ -28,6 +28,8 @@ export interface CliFlagContract {
   value_name?: string;
   /** Schema type that determines the shape and validation rules for this value. */
   value_type?: "string" | "number" | "boolean";
+  /** Marks a presentation-only flag that may change paging or rendering without invalidating continuation. Omission means the flag is query-semantic. */
+  cursor_semantics?: "presentation";
 }
 
 /** Maps an MCP tool option `param` to the CLI `flag` it forwards to, plus the value semantics (`allowEmpty`, `repeatable`, `booleanish`) the bridge needs to translate a structured tool call into argv. */
@@ -187,51 +189,65 @@ const MANY_GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 /** Public contract for list filter flag contracts, shared by SDK and presentation-layer consumers. */
-export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--status", list: true },
-  { flag: "--type" },
-  { flag: "--tag", aliases: ["--tags"] },
-  { flag: "--priority" },
-  { flag: "--deadline-before" },
-  { flag: "--deadline-after" },
-  { flag: "--today" },
-  { flag: "--recent" },
-  { flag: "--updated-after" },
-  { flag: "--updated-before" },
-  { flag: "--created-after" },
-  { flag: "--created-before" },
-  { flag: "--ids", list: true },
-  { flag: "--assignee" },
-  { flag: "--assignee-filter" },
-  { flag: "--assignee_filter" },
-  { flag: "--parent" },
-  { flag: "--sprint" },
-  { flag: "--release" },
-  { flag: "--filter-ac-missing" },
-  {
-    flag: "--filter-estimates-missing",
-    aliases: ["--filter-estimate-missing"],
-  },
-  { flag: "--filter-resolution-missing" },
-  { flag: "--filter-metadata-missing" },
-  ...GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS,
-  { flag: "--limit" },
-  { flag: "--offset" },
-  { flag: "--after" },
-  { flag: "--no-truncate", aliases: ["--all"] },
-  { flag: "--compact" },
-  { flag: "--brief" },
-  { flag: "--full" },
-  { flag: "--fields", list: true },
-  { flag: "--sort" },
-  { flag: "--order" },
-  { flag: "--tree" },
-  { flag: "--tree-depth" },
-  { flag: "--tree_depth" },
-  { flag: "--include-body" },
-  { flag: "--format" },
-  { flag: "--stream" },
-];
+export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
+  withCursorSemantics(
+    [
+      { flag: "--status", list: true },
+      { flag: "--type" },
+      { flag: "--tag", aliases: ["--tags"] },
+      { flag: "--priority" },
+      { flag: "--deadline-before" },
+      { flag: "--deadline-after" },
+      { flag: "--today" },
+      { flag: "--recent" },
+      { flag: "--updated-after" },
+      { flag: "--updated-before" },
+      { flag: "--created-after" },
+      { flag: "--created-before" },
+      { flag: "--ids", list: true },
+      { flag: "--assignee" },
+      { flag: "--assignee-filter" },
+      { flag: "--assignee_filter" },
+      { flag: "--parent" },
+      { flag: "--sprint" },
+      { flag: "--release" },
+      { flag: "--filter-ac-missing" },
+      {
+        flag: "--filter-estimates-missing",
+        aliases: ["--filter-estimate-missing"],
+      },
+      { flag: "--filter-resolution-missing" },
+      { flag: "--filter-metadata-missing" },
+      ...GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS,
+      { flag: "--limit" },
+      { flag: "--offset" },
+      { flag: "--after" },
+      { flag: "--no-truncate", aliases: ["--all"] },
+      { flag: "--compact" },
+      { flag: "--brief" },
+      { flag: "--full" },
+      { flag: "--fields", list: true },
+      { flag: "--sort" },
+      { flag: "--order" },
+      { flag: "--tree" },
+      { flag: "--tree-depth" },
+      { flag: "--tree_depth" },
+      { flag: "--include-body" },
+      { flag: "--format" },
+      { flag: "--stream" },
+    ],
+    new Set([
+      "--limit",
+      "--offset",
+      "--after",
+      "--no-truncate",
+      "--compact",
+      "--brief",
+      "--full",
+      "--fields",
+      "--include-body",
+    ]),
+  );
 
 /** Public contract for aggregate flag contracts, shared by SDK and presentation-layer consumers. */
 export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -268,6 +284,17 @@ export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--message" },
   { flag: "--force" },
 ];
+
+function withCursorSemantics(
+  contracts: CliFlagContract[],
+  presentationFlags: ReadonlySet<string>,
+): CliFlagContract[] {
+  return contracts.map((contract) =>
+    presentationFlags.has(contract.flag)
+      ? { ...contract, cursor_semantics: "presentation" }
+      : contract,
+  );
+}
 
 /** Public contract for notes flag contracts, shared by SDK and presentation-layer consumers. */
 export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1392,32 +1419,45 @@ export const ACTIVITY_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 /** Public contract for context flag contracts, shared by SDK and presentation-layer consumers. */
-export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--date" },
-  { flag: "--from" },
-  { flag: "--to" },
-  { flag: "--past" },
-  { flag: "--type" },
-  { flag: "--tag" },
-  { flag: "--priority" },
-  { flag: "--assignee" },
-  { flag: "--assignee-filter" },
-  { flag: "--assignee_filter" },
-  { flag: "--sprint" },
-  { flag: "--release" },
-  { flag: "--parent" },
-  { flag: "--limit", aliases: ["--max-items"] },
-  { flag: "--after" },
-  { flag: "--format" },
-  { flag: "--depth" },
-  { flag: "--fields", list: true },
-  { flag: "--section" },
-  { flag: "--activity-limit" },
-  { flag: "--stale-threshold" },
-  { flag: "--explain-ranking" },
-  { flag: "--explain_ranking" },
-  { flag: "--token-budget", aliases: ["--token_budget"] },
-];
+export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
+  [
+    { flag: "--date" },
+    { flag: "--from" },
+    { flag: "--to" },
+    { flag: "--past" },
+    { flag: "--type" },
+    { flag: "--tag" },
+    { flag: "--priority" },
+    { flag: "--assignee" },
+    { flag: "--assignee-filter" },
+    { flag: "--assignee_filter" },
+    { flag: "--sprint" },
+    { flag: "--release" },
+    { flag: "--parent" },
+    { flag: "--limit", aliases: ["--max-items"] },
+    { flag: "--after" },
+    { flag: "--format" },
+    { flag: "--depth" },
+    { flag: "--fields", list: true },
+    { flag: "--section" },
+    { flag: "--activity-limit" },
+    { flag: "--stale-threshold" },
+    { flag: "--explain-ranking" },
+    { flag: "--explain_ranking" },
+    { flag: "--token-budget", aliases: ["--token_budget"] },
+  ],
+  new Set([
+    "--limit",
+    "--after",
+    "--format",
+    "--fields",
+    "--section",
+    "--activity-limit",
+    "--stale-threshold",
+    "--explain-ranking",
+    "--explain_ranking",
+  ]),
+);
 
 /** Public contract for get flag contracts, shared by SDK and presentation-layer consumers. */
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1501,40 +1541,51 @@ export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 /** Public contract for search flag contracts, shared by SDK and presentation-layer consumers. */
-export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--mode" },
-  { flag: "--semantic" },
-  { flag: "--hybrid" },
-  { flag: "--match-mode" },
-  { flag: "--min-score" },
-  { flag: "--count" },
-  { flag: "--semantic-weight" },
-  { flag: "--include-linked" },
-  { flag: "--title-exact" },
-  { flag: "--phrase-exact" },
-  { flag: "--highlight" },
-  { flag: "--compact" },
-  { flag: "--full" },
-  { flag: "--fields", list: true },
-  { flag: "--format" },
-  { flag: "--limit" },
-  { flag: "--after" },
-  { flag: "--status", list: true },
-  { flag: "--type" },
-  { flag: "--tag", aliases: ["--tags"] },
-  { flag: "--priority" },
-  { flag: "--deadline-before" },
-  { flag: "--deadline-after" },
-  { flag: "--updated-after" },
-  { flag: "--updated-before" },
-  { flag: "--created-after" },
-  { flag: "--created-before" },
-  { flag: "--assignee" },
-  { flag: "--sprint" },
-  { flag: "--release" },
-  { flag: "--parent" },
-  ...GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS,
-];
+export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
+  [
+    { flag: "--mode" },
+    { flag: "--semantic" },
+    { flag: "--hybrid" },
+    { flag: "--match-mode" },
+    { flag: "--min-score" },
+    { flag: "--count" },
+    { flag: "--semantic-weight" },
+    { flag: "--include-linked" },
+    { flag: "--title-exact" },
+    { flag: "--phrase-exact" },
+    { flag: "--highlight" },
+    { flag: "--compact" },
+    { flag: "--full" },
+    { flag: "--fields", list: true },
+    { flag: "--format" },
+    { flag: "--limit" },
+    { flag: "--after" },
+    { flag: "--status", list: true },
+    { flag: "--type" },
+    { flag: "--tag", aliases: ["--tags"] },
+    { flag: "--priority" },
+    { flag: "--deadline-before" },
+    { flag: "--deadline-after" },
+    { flag: "--updated-after" },
+    { flag: "--updated-before" },
+    { flag: "--created-after" },
+    { flag: "--created-before" },
+    { flag: "--assignee" },
+    { flag: "--sprint" },
+    { flag: "--release" },
+    { flag: "--parent" },
+    ...GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS,
+  ],
+  new Set([
+    "--highlight",
+    "--compact",
+    "--full",
+    "--fields",
+    "--format",
+    "--limit",
+    "--after",
+  ]),
+);
 
 /** Public contract for contracts flag contracts, shared by SDK and presentation-layer consumers. */
 export const CONTRACTS_FLAG_CONTRACTS: CliFlagContract[] = [

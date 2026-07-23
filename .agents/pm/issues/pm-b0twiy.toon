@@ -1,0 +1,17 @@
+id: pm-b0twiy
+title: "GH-651: pm activity bare relative windows silently return empty results"
+description: "GitHub issue #651 reports that pm activity --from accepts plausible bare relative windows such as 7d, 1w, P7D, and now-7d but returns an empty success response, while -7d works and other invalid strings fail loudly. Normalize bare lower-bound windows to ago semantics or reject them consistently with an actionable grammar hint; document the accepted relative syntax."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-23T07:58:53.947Z"
+updated_at: "2026-07-23T07:58:55.944Z"
+author: claude-code-agent
+acceptance_criteria: "pm activity --from 7d and equivalent supported bare windows either resolve deterministically to the intended ago bound or fail with invalid_argument_value; no invalid relative can silently masquerade as an empty activity set; help/contracts document accepted grammar; CLI and SDK regression tests cover valid, bare, and invalid forms"
+parent: pm-mpbb
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-p3x4,related,"2026-07-23T07:58:54.556Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-23T07:58:55.367Z",claude-code-agent,"Duplicate check evidence 2026-07-23: all-status searches for activity --from, bare relative windows, 7d/1w, and relative duration found pm-p3x4 for a distinct compact response decoy key plus older completed activity/duration work; no item covers the current silent-empty parser contract. Source: https://github.com/unbraind/pm-cli/issues/651"
+body: ""

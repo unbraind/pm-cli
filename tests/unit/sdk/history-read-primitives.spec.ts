@@ -227,13 +227,27 @@ describe("public SDK history and rich-read primitives", () => {
       });
       expect(rollup.sample).toHaveLength(20);
       expect(rollup.sample.map((row) => row.id)).toEqual(
-        rollup.sample.map((row) => row.id).sort((left, right) =>
-          left.localeCompare(right),
-        ),
+        rollup.sample
+          .map((row) => row.id)
+          .sort((left, right) => left.localeCompare(right)),
       );
       expect(rollup.continuation).toContain(
         "--parent CUSTOM-PARENT --offset 20 --limit 20",
       );
+      expect(
+        buildItemChildrenRollup(
+          "CUSTOM-PARENT",
+          corpus,
+          resolveRuntimeStatusRegistry(settings.schema),
+          0,
+        ),
+      ).toMatchObject({
+        sample: [],
+        sample_limit: 0,
+        truncated: true,
+        next_offset: 0,
+        continuation: expect.stringContaining("--offset 0 --limit 20"),
+      });
       expect(() =>
         buildItemChildrenRollup(
           "custom-parent",
