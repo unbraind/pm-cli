@@ -17,9 +17,7 @@ type PipelineModule = {
   getChangedFilesSince: (lastTag: string | null) => string[];
   listTodayTags: (todayKey: string) => string[];
   ensureCleanWorkingTree: () => void;
-  resolveVersion: (explicit: string | null, allowSameDay: boolean, todayKey: string) => string;
-  bumpSameDayOrdinal: (version: string, todayKey: string) => string;
-  parseCalendarVersion: (version: string) => { dateKey: string; ordinal: number } | null;
+  resolveVersion: (explicit: string | null, todayKey: string) => string;
   readPackageVersion: () => string;
   extractGeneratedChangelogSection: (changelog: string, heading: string) => string | null;
   ensureGeneratedReleaseSectionHasContent: (version: string, changelogPath?: string) => boolean;
@@ -44,6 +42,7 @@ function mockUtils(runCommand: ReturnType<typeof vi.fn>, repoRoot?: string): voi
     return {
       ...actual,
       ...(repoRoot ? { repoRoot } : {}),
+      utcDateKey: () => "2026.6.15",
       runCommand,
       fail(message: string, exitCode = 1) {
         throw new Error(`FAIL:${exitCode}:${message}`);
@@ -82,32 +81,6 @@ describe("run-release-pipeline", () => {
       process.argv = ["node", "x", "--help"];
       mod.runPipeline();
       expect(logSpy.mock.calls.some((c) => String(c[0]).includes("Usage:"))).toBe(true);
-    });
-
-    it("covers parseCalendarVersion and bumpSameDayOrdinal", async () => {
-      const mod = await harness.importModule<PipelineModule>(SCRIPT, "parse");
-      expect(mod.parseCalendarVersion("2026.6.15")).toEqual({ dateKey: "2026.6.15", ordinal: 1 });
-      expect(mod.parseCalendarVersion("2026.6.15-3")).toEqual({ dateKey: "2026.6.15", ordinal: 3 });
-      expect(mod.parseCalendarVersion("not-a-version")).toBeNull();
-
-      expect(mod.bumpSameDayOrdinal("2026.6.15", "2026.6.15")).toBe("2026.6.15-2");
-      expect(mod.bumpSameDayOrdinal("2026.6.15-4", "2026.6.15")).toBe("2026.6.15-5");
-    });
-
-    it("covers bumpSameDayOrdinal mismatch failure", async () => {
-      vi.doMock("../../../../scripts/release/utils.mjs", async () => {
-        const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(
-          "../../../../scripts/release/utils.mjs",
-        );
-        return {
-          ...actual,
-          fail(message: string, exitCode = 1) {
-            throw new Error(`FAIL:${exitCode}:${message}`);
-          },
-        };
-      });
-      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
-      expect(() => mod.bumpSameDayOrdinal("2026.6.14", "2026.6.15")).toThrow(/Automatic same-day ordinal bump/);
     });
 
     it("covers extractGeneratedChangelogSection variants", async () => {
@@ -204,21 +177,22 @@ describe("run-release-pipeline", () => {
       expect(() => mod.ensureCleanWorkingTree()).toThrow(/clean working tree/);
     });
 
-    it("covers resolveVersion explicit, today, and same-day-next paths + failure", async () => {
-      let nextStdout = "2026.6.15-2\n";
-      const runCommand = vi.fn((command: string, args: string[]) => {
-        if (args[0] === "scripts/release-version.mjs" && args[1] === "next") {
-          return { status: 0, stdout: nextStdout, stderr: "" };
-        }
-        return { status: 0, stdout: "", stderr: "" };
-      });
+    it("resolves only an explicit or current UTC calendar version", async () => {
+      const runCommand = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
       mockUtils(runCommand);
       const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
-      expect(mod.resolveVersion("2026.6.15", false, "2026.6.15")).toBe("2026.6.15");
-      expect(mod.resolveVersion(null, false, "2026.6.15")).toBe("2026.6.15");
-      expect(mod.resolveVersion(null, true, "2026.6.15")).toBe("2026.6.15-2");
-      nextStdout = "\n";
-      expect(() => mod.resolveVersion(null, true, "2026.6.15")).toThrow(/next release version/);
+      expect(mod.resolveVersion("2026.6.15", "2026.6.15")).toBe("2026.6.15");
+      expect(mod.resolveVersion(null, "2026.6.15")).toBe("2026.6.15");
+      expect(runCommand).not.toHaveBeenCalled();
+    });
+
+    it("rejects explicit past or future calendar targets", async () => {
+      const runCommand = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
+      mockUtils(runCommand);
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(() => mod.resolveVersion("2026.6.14", "2026.6.15")).toThrow(/current UTC date/);
+      expect(() => mod.resolveVersion("2026.6.16", "2026.6.15")).toThrow(/current UTC date/);
+      expect(runCommand).not.toHaveBeenCalled();
     });
 
     it("covers runReleaseGates with skip flags", async () => {
@@ -335,7 +309,7 @@ describe("run-release-pipeline", () => {
       expect(logSpy.mock.calls.some((c) => String(c[0]).includes("Release already exists"))).toBe(true);
     });
 
-    it("fails on unsupported telemetry mode and unsupported version", async () => {
+    it("fails on unsupported telemetry mode and unsupported or ordinal versions", async () => {
       const runCommand = baseGitMock(() => undefined);
       mockUtils(runCommand);
       const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
@@ -347,6 +321,36 @@ describe("run-release-pipeline", () => {
       const mod2 = await harness.importModuleStable<PipelineModule>(SCRIPT);
       process.argv = ["node", "x", "--version", "not-a-version", "--dry-run"];
       expect(() => mod2.runPipeline()).toThrow(/Unsupported target version/);
+
+      vi.resetModules();
+      mockUtils(runCommand);
+      const mod3 = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      process.argv = ["node", "x", "--version", "2026.6.15-2", "--dry-run"];
+      expect(() => mod3.runPipeline()).toThrow(/one production version per UTC day/);
+    });
+
+    it("rejects the removed same-day override before inspecting or mutating Git state", async () => {
+      const runCommand = baseGitMock(() => undefined);
+      mockUtils(runCommand);
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      process.argv = ["node", "x", "--allow-same-day-release", "--dry-run"];
+      expect(() => mod.runPipeline()).toThrow(/removed.*retry the existing tag/i);
+      expect(runCommand).not.toHaveBeenCalled();
+    });
+
+    it("rejects ordinal and different-date targets before successful skip paths or Git inspection", async () => {
+      for (const targetVersion of ["2026.6.15-2", "2026.6.16"]) {
+        vi.resetModules();
+        const runCommand = baseGitMock((command, args) => {
+          if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "0\n", stderr: "" };
+          return undefined;
+        });
+        mockUtils(runCommand);
+        const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+        process.argv = ["node", "x", "--version", targetVersion, "--dry-run"];
+        expect(() => mod.runPipeline()).toThrow(/Unsupported target version/);
+        expect(runCommand).not.toHaveBeenCalled();
+      }
     });
 
     it("dry-run with explicit version emits JSON result", async () => {
@@ -374,6 +378,19 @@ describe("run-release-pipeline", () => {
       expect(payload.dry_run).toBe(true);
       expect(payload.target_version).toBe("2026.6.15");
       expect(payload.gates.telemetry_mode).toBe("off");
+    });
+
+    it("dry-run text output identifies that no release mutation occurred", async () => {
+      const root = await harness.createTempRoot("pm-pipeline-drytext-");
+      const fs = await import("node:fs");
+      fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
+      const runCommand = baseGitMock(() => undefined);
+      mockUtils(runCommand, root);
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      process.argv = ["node", "x", "--dry-run", "--version", "2026.6.15", "--telemetry-mode", "off"];
+      mod.runPipeline();
+      expect(logSpy).toHaveBeenCalledWith("Release pipeline completed for 2026.6.15 (dry run).");
     });
 
     it("runs full non-dry-run path: changelog gen, commit, tag, push (json)", async () => {
@@ -710,54 +727,6 @@ describe("run-release-pipeline", () => {
       expect(logSpy.mock.calls.some((c) => String(c[0]).includes("no non-empty section"))).toBe(true);
     });
 
-    it("dry-run with allow-same-day + explicit version (text output, no bump block)", async () => {
-      const root = await harness.createTempRoot("pm-pipeline-sdexplicit-");
-      const fs = await import("node:fs");
-      fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
-      const runCommand = baseGitMock(() => undefined);
-      mockUtils(runCommand, root);
-      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
-      process.argv = [
-        "node",
-        "x",
-        "--allow-same-day-release",
-        "--dry-run",
-        "--version",
-        "2026.6.15",
-        "--telemetry-mode",
-        "off",
-      ];
-      mod.runPipeline();
-      expect(logSpy.mock.calls.some((c) => String(c[0]).includes("(dry run)"))).toBe(true);
-    });
-
-    it("allow-same-day without bump when previous version is an older date", async () => {
-      const root = await harness.createTempRoot("pm-pipeline-nobump-");
-      const fs = await import("node:fs");
-      const today = new Date();
-      const todayKey = `${today.getUTCFullYear()}.${today.getUTCMonth() + 1}.${today.getUTCDate()}`;
-      fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
-      const runCommand = vi.fn((command: string, args: string[]) => {
-        if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
-        if (command === "git" && args[0] === "describe") return { status: 0, stdout: "v2026.6.13\n", stderr: "" };
-        if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
-        if (command === "git" && args[0] === "diff") return { status: 0, stdout: "src/cli/main.ts\n", stderr: "" };
-        if (command === "git" && args[0] === "tag") return { status: 0, stdout: "", stderr: "" };
-        if (args[0] === "scripts/release-version.mjs" && args[1] === "next") {
-          return { status: 0, stdout: `${todayKey}\n`, stderr: "" };
-        }
-        return { status: 0, stdout: "", stderr: "" };
-      });
-      mockUtils(runCommand, root);
-      const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
-      process.argv = ["node", "x", "--json", "--allow-same-day-release", "--dry-run", "--telemetry-mode", "off"];
-      mod.runPipeline();
-      const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}"));
-      expect(payload.target_version).toBe(todayKey);
-    });
-
     it("auto-runs runPipeline when imported as the CLI entrypoint", async () => {
       const runCommand = baseGitMock((command, args) => {
         if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "0\n", stderr: "" };
@@ -778,30 +747,5 @@ describe("run-release-pipeline", () => {
       expect(payload.reason).toBe("no_changes_since_last_tag");
     });
 
-    it("bumps same-day ordinal when allow-same-day and previous version is today's date", async () => {
-      const root = await harness.createTempRoot("pm-pipeline-sameday-");
-      const fs = await import("node:fs");
-      const today = new Date();
-      const todayKey = `${today.getUTCFullYear()}.${today.getUTCMonth() + 1}.${today.getUTCDate()}`;
-      fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: `${todayKey}` }), "utf8");
-      const runCommand = vi.fn((command: string, args: string[]) => {
-        if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
-        if (command === "git" && args[0] === "describe") return { status: 0, stdout: "v2026.6.13\n", stderr: "" };
-        if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
-        if (command === "git" && args[0] === "diff") return { status: 0, stdout: "src/cli/main.ts\n", stderr: "" };
-        if (command === "git" && args[0] === "tag") return { status: 0, stdout: "", stderr: "" };
-        if (args[0] === "scripts/release-version.mjs" && args[1] === "next") {
-          return { status: 0, stdout: `${todayKey}\n`, stderr: "" };
-        }
-        return { status: 0, stdout: "", stderr: "" };
-      });
-      mockUtils(runCommand, root);
-      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
-      const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-      process.argv = ["node", "x", "--json", "--allow-same-day-release", "--dry-run", "--telemetry-mode", "off"];
-      mod.runPipeline();
-      const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}"));
-      expect(payload.target_version).toBe(`${todayKey}-2`);
-    });
   });
 });

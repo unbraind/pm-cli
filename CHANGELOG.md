@@ -13,6 +13,10 @@
 - Create/copy ID allocation TOCTOU: duplicate generated id silently overwrites the other item's file; idExists misses extension type folders ([pm-khdq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-khdq.toon))
 - GH-664: published daily release fails Bun node:sqlite verification before GitHub Release ([pm-cedo0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cedo0g.toon))
 
+### Security
+
+- Release pipeline permits duplicate same-day production versions ([pm-4s24d2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4s24d2.toon))
+
 ### Other
 
 - Holistic pm CLI, SDK, and ecosystem optimization roadmap ([pm-xe0c38](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-xe0c38.toon))

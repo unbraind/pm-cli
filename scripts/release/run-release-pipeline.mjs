@@ -24,8 +24,7 @@ delete process.env.RELEASE_PUSH_TOKEN;
 export function usage() {
   console.log(`Usage:
   node scripts/release/run-release-pipeline.mjs [--json]
-    [--version <YYYY.M.D[-N]>]
-    [--allow-same-day-release]
+    [--version <YYYY.M.D>]
     [--dry-run]
     [--push]
     [--author <name>]
@@ -99,41 +98,19 @@ export function ensureCleanWorkingTree() {
   }
 }
 
-export function resolveVersion(explicitVersion, allowSameDayRelease, todayKey) {
-  if (explicitVersion) {
-    return explicitVersion;
-  }
-  if (!allowSameDayRelease) {
-    return todayKey;
-  }
-  const next = runCommand(process.execPath, ["scripts/release-version.mjs", "next"], { capture: true });
-  const version = next.stdout.trim();
-  if (!version) {
-    fail("Failed to resolve next release version.");
-  }
-  return version;
-}
-
-export function bumpSameDayOrdinal(version, todayKey) {
-  const match = version.match(/^(\d{4}\.\d{1,2}\.\d{1,2})(?:-(\d+))?$/);
-  if (!match || match[1] !== todayKey) {
+export function resolveVersion(explicitVersion, todayKey) {
+  const targetVersion = explicitVersion ?? todayKey;
+  if (!/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(targetVersion)) {
     fail(
-      `Automatic same-day ordinal bump requires package version to use today's date (${todayKey}); current=${version}.`,
+      `Unsupported target version "${targetVersion}": expected YYYY.M.D because the release pipeline permits only one production version per UTC day.`,
     );
   }
-  const currentOrdinal = match[2] ? Number(match[2]) : 1;
-  return `${todayKey}-${currentOrdinal + 1}`;
-}
-
-export function parseCalendarVersion(version) {
-  const match = version.match(/^(\d{4}\.\d{1,2}\.\d{1,2})(?:-(\d+))?$/);
-  if (!match) {
-    return null;
+  if (targetVersion !== todayKey) {
+    fail(
+      `Unsupported target version "${targetVersion}": the release pipeline target must equal the current UTC date (${todayKey}).`,
+    );
   }
-  return {
-    dateKey: match[1],
-    ordinal: match[2] ? Number(match[2]) : 1,
-  };
+  return targetVersion;
 }
 
 export function readPackageVersion() {
@@ -279,8 +256,8 @@ function maybeSkipForTrackerOnlyChanges(lastTag, commitsSinceLastTag, changedFil
   return true;
 }
 
-function maybeSkipForSameDayRelease(tagsToday, todayKey, allowSameDayRelease, outputJson) {
-  if (allowSameDayRelease || tagsToday.length === 0) {
+function maybeSkipForSameDayRelease(tagsToday, todayKey, outputJson) {
+  if (tagsToday.length === 0) {
     return false;
   }
   writePipelineResult(
@@ -295,24 +272,6 @@ function maybeSkipForSameDayRelease(tagsToday, todayKey, allowSameDayRelease, ou
     `Release already exists for ${todayKey}: ${tagsToday.join(", ")}. Skipping.`,
   );
   return true;
-}
-
-function maybeBumpSameDayTargetVersion(previousVersion, targetVersion, explicitVersion, allowSameDayRelease, todayKey) {
-  if (!allowSameDayRelease || explicitVersion) {
-    return targetVersion;
-  }
-  const previousParsed = parseCalendarVersion(previousVersion);
-  const targetParsed = parseCalendarVersion(targetVersion);
-  if (
-    previousParsed &&
-    targetParsed &&
-    previousParsed.dateKey === todayKey &&
-    targetParsed.dateKey === todayKey &&
-    targetParsed.ordinal <= previousParsed.ordinal
-  ) {
-    return bumpSameDayOrdinal(previousVersion, todayKey);
-  }
-  return targetVersion;
 }
 
 function prepareReleaseChangelog(params) {
@@ -418,15 +377,21 @@ export function runPipeline() {
     usage();
     return;
   }
+  if (flags.has("allow-same-day-release")) {
+    fail(
+      "--allow-same-day-release was removed; retry the existing tag through the Release workflow after a partial failure.",
+    );
+  }
 
   const outputJson = flagBool(flags, "json", false);
-  const allowSameDayRelease = flagBool(flags, "allow-same-day-release", false);
   const dryRun = flagBool(flags, "dry-run", false);
   const push = flagBool(flags, "push", false);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
   const skipCompatibility = flagBool(flags, "skip-compatibility", false);
   const skipTelemetrySentry = flagBool(flags, "skip-telemetry-sentry", false);
   const explicitVersion = flagString(flags, "version", null);
+  const todayKey = utcDateKey();
+  const targetVersion = resolveVersion(explicitVersion, todayKey);
   const author = flagString(flags, "author", "release-automation");
   const releaseNotesOutput = flagString(
     flags,
@@ -451,18 +416,12 @@ export function runPipeline() {
     return;
   }
 
-  const todayKey = utcDateKey();
   const tagsToday = listTodayTags(todayKey);
-  if (maybeSkipForSameDayRelease(tagsToday, todayKey, allowSameDayRelease, outputJson)) {
+  if (maybeSkipForSameDayRelease(tagsToday, todayKey, outputJson)) {
     return;
   }
 
   const previousVersion = readPackageVersion();
-  let targetVersion = resolveVersion(explicitVersion, allowSameDayRelease, todayKey);
-  targetVersion = maybeBumpSameDayTargetVersion(previousVersion, targetVersion, explicitVersion, allowSameDayRelease, todayKey);
-  if (!/^\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/.test(targetVersion)) {
-    fail(`Unsupported target version "${targetVersion}".`);
-  }
 
   if (!dryRun) {
     const changelogPreparation = prepareReleaseChangelog({ targetVersion });
