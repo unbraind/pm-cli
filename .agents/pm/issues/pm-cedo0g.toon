@@ -2,25 +2,30 @@ id: pm-cedo0g
 title: "GH-664: published daily release fails Bun node:sqlite verification before GitHub Release"
 description: "The 2026-07-24 daily pipeline published @unbrained/pm-cli 2026.7.24 and pushed v2026.7.24, then its downstream Release verification failed because Bun 1.3.14 cannot resolve node:sqlite from the bundled CLI. Restore packed Bun compatibility, make post-publish state reporting truthful, recover the missing GitHub Release, and prove automatic release health end to end."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:compatibility","area:release","github:664","runtime:bun"
 created_at: "2026-07-24T06:30:11.279Z"
-updated_at: "2026-07-24T09:26:46.146Z"
-assignee: claude-code-agent
+updated_at: "2026-07-24T10:10:59.942Z"
+closed_at: "2026-07-24T10:10:59.279Z"
 author: claude-code-agent
 parent: pm-u9d0
+resolution: "Fixed Bun-safe optional node:sqlite loading, truthful partial-release diagnostics, stable npm dist-tag publication, and packed-consumer Sentry declarations; recovered and verified release 2026.7.24-3."
+expected_result: "Published CLI runs under Node and Bun, npm/npx/bunx verification passes, GitHub Release exists, and observability thresholds remain healthy."
+actual_result: "Release 2026.7.24-3 passes npm, npx, bunx, GitHub Release, exact coverage, Sentry, and required telemetry verification."
+fixed_version: 2026.7.24-3
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7rlp,related,"2026-07-24T06:30:11.279Z",null,null
   pm-7zs0,related,"2026-07-24T06:30:11.279Z",null,null
   pm-f2ne,related,"2026-07-24T06:30:11.279Z",null,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-24T06:30:11.279Z",claude-code-agent,"Duplicate check: searched all statuses for the exact Bun node:sqlite release-verification failure. No canonical item exists; pm-7zs0 is the recurring release-health lineage and is linked rather than duplicated."
   "2026-07-24T06:36:35.623Z",claude-code-agent,"Implementation evidence: the bundled runtime no longer contains an executable static node:sqlite import. Node keeps the persistent SQLite projection; Bun treats it as an optional optimization and falls back to authoritative document reads. Real Bun 1.3.11 executed the built CLI version and contracts commands successfully. Auto Release failure text now distinguishes partial publication and directs operators to inspect tag, npm, and GitHub Release independently."
   "2026-07-24T07:23:04.269Z",claude-code-agent,"Pre-PR verification evidence: the locally packed 2026.7.24 tarball executes under bunx --bun and reports the expected version. Focused runtime/workflow tests pass; complete coverage passed 6,212 tests at exact 100/100/100/100; aggregate release gates passed build, types, static quality, docstrings, package boundaries, secret scan, packed smoke, 88-command dogfood, npm pack, compatibility, and live Sentry/telemetry thresholds. Local Greptile review alone reported the external free_reviews_limit_reached quota; hosted review remains required before merge."
   "2026-07-24T09:18:32.660Z",claude-code-agent,"Release-recovery discovery: two clean 2026.7.24-3 gate attempts passed all pre-pack gates and exact 100% coverage, then fresh npm resolution exposed @sentry/server-utils@10.68.0's exact @apm-js-collab/code-transformer-bundler-plugins@0.7.1 dependency. Its CJS NodeNext declarations reference ./instrumentation-serde in a form TypeScript cannot resolve. The repo lock remains on known-good @sentry/node@10.65.0, but the public caret range let packed consumers select 10.68.0. No all-status PM search hit records this exact declaration defect, so the active end-to-end release recovery item owns the fix rather than creating a duplicate."
   "2026-07-24T09:21:13.192Z",claude-code-agent,"TDD/consumer proof: the red packed smoke failed against fresh @sentry/node@10.68.0 with TS2307 for the upstream transformer's missing NodeNext declaration target. Pinning public dependency @sentry/node to known-good 10.65.0 makes a fresh npm tarball install, CLI execution, SDK import, and strict NodeNext TypeScript consumer pass. Added an 18-test manifest contract ratchet; repo-wide static quality and credential scan pass."
   "2026-07-24T09:26:46.145Z",claude-code-agent,"Hosted static remediation: CI correctly detected that closing pm-gis0qo after 2026.7.24-2 made the package-generated changelog stale. Ran the current pm-changelog 2026.7.23 package in replace mode; CHANGELOG.md now contains the generated Unreleased fix entry and pnpm changelog:pm:check passes. The extension registry timestamp side effect was excluded."
+  "2026-07-24T10:10:57.887Z",claude-code-agent,"Production evidence: release commit/tag 797ae61e4322c965e28b6a32714c01c0557c6ae1 produced workflow 30083324379. First attempt published signed-provenance @unbrained/pm-cli@2026.7.24-3 with --tag latest; npm read-replica propagation exceeded the five-minute verifier window, while the primary packument confirmed timestamp 2026-07-24T09:46:38.888Z. After public convergence, the single failed-job rerun passed all gates in 8m04s, verified npx and bunx, and created https://github.com/unbraind/pm-cli/releases/tag/v2026.7.24-3. Independent verifier passed npm integrity sha512-FaF4hFQiQkjs+o905MnuqAUK8G4sSlDXv41qzRac5VgAdXYsRPH71DZlR2oEBjNd56+jeS4I5iZXpSF5lG9n1g==, npx, bunx, and GitHub Release on first attempt. Required observability gate: Sentry 0 critical/0 high; telemetry finish error rate 1.85%, zero failures missing error codes."
 files[7]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Truthful partial-publication blocker diagnostics
   package.json,project,Pin a packed-consumer-safe Sentry release because npm installs do not inherit pnpm lock resolution
@@ -35,4 +40,5 @@ tests[3]{command,scope,timeout_seconds}:
   "pnpm smoke:npx",project,240
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Package-generated unreleased record for the merged stable dist-tag recovery
+close_reason: "Released and independently verified 2026.7.24-3 after PRs #668, #670, and #671; Node/Bun compatibility, stable npm publication, packed SDK declarations, GitHub Release, Sentry, and telemetry are healthy."
 body: ""

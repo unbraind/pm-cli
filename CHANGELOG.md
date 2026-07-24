@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-664: published daily release fails Bun node:sqlite verification before GitHub Release ([pm-cedo0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cedo0g.toon))
+
 ## 2026.7.24-3 - 2026-07-24
 
 ### Fixed
