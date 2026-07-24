@@ -4,6 +4,8 @@
 
 ### Added
 
+- Mandatory exact-head DeepScan and CodeFactor zero-new-issues release gate ([pm-39cqqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-39cqqx.toon))
+- Mutation event stream primitive: pm events --follow (NDJSON with durable cursor) + SDK subscription API for cross-process agent coordination ([pm-e200](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e200.toon))
 - Create-time near-duplicate advisory: pm create/copy surface similar existing items before new work is filed ([pm-4ri6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4ri6.toon))
 
 ### Fixed

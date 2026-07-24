@@ -2,28 +2,32 @@ id: pm-39cqqx
 title: Mandatory exact-head DeepScan and CodeFactor zero-new-issues release gate
 description: "Make hosted static analysis a hard, locally executable release criterion. Verify the current Git commit's DeepScan status explicitly reports zero new issues and the CodeFactor check completes successfully with No issues found; fail on missing, pending, stale, skipped, or ambiguous results. Wire the verifier into strict release readiness, document the pushed-head prerequisite, test every state at literal 100% coverage, and require both app contexts in main branch protection."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[6]: "area:ci","area:quality",codefactor,deepscan,release-gate,static-analysis
 created_at: "2026-07-24T22:46:08.676Z"
-updated_at: "2026-07-24T23:31:57.372Z"
-assignee: claude-code-agent
+updated_at: "2026-07-24T23:34:05.432Z"
+closed_at: "2026-07-24T23:34:04.575Z"
 author: claude-code-agent
 estimated_minutes: 180
 acceptance_criteria: "A local exact-head command fails for DeepScan findings, CodeFactor findings, absent checks, pending checks, and analyzer payloads that do not prove zero new issues; it passes only when DeepScan explicitly reports zero new issues and CodeFactor explicitly reports no issues for git HEAD; strict release readiness invokes the command; main branch protection requires both DeepScan and CodeFactor; focused tests, lint, typecheck, full literal 100/100/100/100 coverage, hosted checks, and manual pushed-head verification pass."
 parent: pm-92if
 risk: medium
 confidence: high
+resolution: completed
+expected_result: "Release readiness fails closed unless the exact pushed head proves DeepScan zero new issues, CodeFactor no issues, and strict protected-main requirements for both contexts."
+actual_result: "Merged implementation adds the non-skippable exact-head verifier, exhaustive tests, documented workflow, and strict main protection requiring DeepScan plus CodeFactor; exact prior pushed head 6bfcda25 passed with DeepScan 0 new and CodeFactor no issues."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-3a68,related,"2026-07-24T22:46:08.676Z",null,null
   pm-6sqo,related,"2026-07-24T22:46:08.676Z",null,null
   pm-bkcv,related,"2026-07-24T22:46:08.676Z",null,null
   pm-e200,related,"2026-07-24T22:46:08.676Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-24T22:46:08.676Z",claude-code-agent,"Duplicate check: searched all statuses for DeepScan, CodeFactor, hosted analysis, zero-new-issues, and quality-gate terms. Reusing pm-92if as parent and pm-bkcv/pm-6sqo/pm-3a68 as terminal lineage; none implements an exact-current-HEAD hosted-result verifier or requires DeepScan in branch protection. Trigger evidence: PR #684 head a61cdc0c has CodeFactor success titled 'No issues found.' but DeepScan failure '2 new and 0 fixed issues'; existing main protection requires CodeFactor but omits DeepScan."
   "2026-07-24T22:53:31.199Z",claude-code-agent,"Policy evidence: main branch protection was updated through the GitHub API without weakening any existing requirement. strict=true now requires both app-backed CodeFactor and DeepScan status contexts; CodeFactor remained app-bound (app_id 25603), and DeepScan was added as its legacy commit-status context. Focused TDD passes 32/32 tests; the first validator was correctly rejected by local complexity 20>16, then decomposed into analyzer-specific validators and pnpm quality:static passed without suppressions or threshold changes."
   "2026-07-24T23:22:45.280Z",claude-code-agent,"Local verification evidence: focused hosted-analysis/release-runner suite passes 42/42 tests after adding branch-protection policy cases. Complete sandboxed coverage passes 360/360 files and 6,284/6,284 tests at exact 100% statements (43,175/43,175), branches (30,627/30,627), functions (8,775/8,775), and lines (41,958/41,958). pnpm lint passes ESLint, zero jscpd clones across 745 files/416,942 lines, CodeFactor parity static quality, exact docstring coverage, package boundary, and token budgets. Typecheck, docs/skills, contracts, secret scan, and version policy pass. Manual packed-package consumer smoke in a fresh temporary directory passed init/create/update/comment, three exact-item mutation events, strict history verification, storage/history validation, and health."
   "2026-07-24T23:31:57.371Z",claude-code-agent,"Exact pushed-head proof: quality:hosted-analysis passed for commit 6bfcda25ce168a416d4288d5163e1475be8c37db with DeepScan explicitly reporting 0 new issues and CodeFactor reporting no issues found; strict main protection requires both contexts. CI static correctly rejected the generated changelog because pm-e200 remains actively reopened during review. Regenerated CHANGELOG.md through pm-changelog 2026.7.24 so the next head reflects current tracker truth; no hand edit or gate relaxation."
+  "2026-07-24T23:34:00.121Z",claude-code-agent,"Merge closeout: the mandatory exact-head hosted-analysis command and strict main branch requirements for DeepScan plus CodeFactor are implemented in merged main commit a9967d951a6c5fd234ecd62453ba902d81c70693. The maintainer explicitly authorized a one-time administrator merge while six checks/reviews on final PR head 0e7bc05a were still pending. That exception does not weaken the permanent gate. Open unassigned pm-e3g0h6 owns terminal-result inventory and any next-PR remediation."
 learnings[1]{created_at,author,text}:
   "2026-07-24T23:22:45.928Z",claude-code-agent,"Hosted analyzer status must be verified against the full immutable Git SHA and paired with branch-protection policy. A green app result is insufficient if its context is not required; missing, pending, skipped, or ambiguous payloads must fail closed. Run whole-repository coverage serially because concurrent Vitest coverage processes intentionally collide on coverage/.tmp and invalidate evidence."
 files[5]{path,scope,note}:
@@ -40,4 +44,5 @@ tests[4]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/RELEASING.md,project,Mandatory hosted analysis release sequence and branch policy
   docs/TESTING.md,project,Local parity and post-push exact-head workflow
+close_reason: Delivered mandatory DeepScan and CodeFactor exact-head quality gate plus strict branch protection in PR #684 / main a9967d951a6c5fd234ecd62453ba902d81c70693; one-time bypass follow-up is pm-e3g0h6.
 body: ""
