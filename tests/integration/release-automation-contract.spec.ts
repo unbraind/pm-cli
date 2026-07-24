@@ -324,7 +324,7 @@ describe("release automation contract", () => {
       "--help",
     ]);
     expect(pipelineHelp.status).toBe(0);
-    expect(pipelineHelp.stdout).toContain("--allow-same-day-release");
+    expect(pipelineHelp.stdout).not.toContain("--allow-same-day-release");
     expect(pipelineHelp.stdout).toContain("--dry-run");
     expect(pipelineHelp.stdout).toContain("--push");
     expect(pipelineHelp.stdout).toContain("--telemetry-mode");
@@ -375,6 +375,9 @@ describe("release automation contract", () => {
     expect(pipelineSource).toContain(
       "empty_generated_changelog_section_for_target_version",
     );
+    expect(pipelineSource).not.toContain("bumpSameDayOrdinal");
+    expect(pipelineSource).not.toContain("maybeBumpSameDayTargetVersion");
+    expect(pipelineSource).not.toContain('"scripts/release-version.mjs", "next"');
     expect(pipelineSource).toContain(
       'git([\n    "add",\n    "package.json",\n    "CHANGELOG.md",',
     );

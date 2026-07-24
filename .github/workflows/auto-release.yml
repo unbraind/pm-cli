@@ -29,8 +29,9 @@ on:
           - "required"
 
 permissions:
-  # gh run list / gh run watch only read Actions run state.
-  actions: read
+  # Blocker-closure recovery reruns the exact failed tag workflow; it never
+  # creates a replacement same-day version.
+  actions: write
   contents: write
   # The "Alert on blocked scheduled auto-release" step opens/updates a tracking
   # issue when a scheduled release is blocked; without issues:write the alert
@@ -151,6 +152,36 @@ jobs:
             if ! gh issue comment "${ISSUE_NUMBER}" --body "${retry_body}"; then
               echo "Could not record Auto Release retry marker on blocker issue #${ISSUE_NUMBER}; refusing untracked production retry."
               exit 1
+            fi
+            # JavaScript template expressions are intentionally protected from shell expansion.
+            # shellcheck disable=SC2016
+            today_version="$(node --input-type=module -e 'const d = new Date(); console.log(`${d.getUTCFullYear()}.${d.getUTCMonth() + 1}.${d.getUTCDate()}`);')"
+            existing_release_tag="$(git tag --list "v${today_version}" | head -n 1)"
+            if [[ -n "${existing_release_tag}" ]]; then
+              echo "Same-day tag ${existing_release_tag} already exists; retrying its exact Release workflow instead of creating another version."
+              # JavaScript template expressions are intentionally protected from shell expansion.
+              # shellcheck disable=SC2016
+              release_run_state="$(gh run list --workflow Release --event push --branch "${existing_release_tag}" --limit 20 --json databaseId,status,conclusion,headBranch \
+                | node -e 'const fs=require("fs"); const tag=process.argv[1]; const runs=JSON.parse(fs.readFileSync(0,"utf8")); const run=runs.find((entry)=>entry.headBranch===tag); if (run) process.stdout.write(`${run.databaseId}\t${run.status}\t${run.conclusion ?? ""}`);' "${existing_release_tag}")"
+              if [[ -z "${release_run_state}" ]]; then
+                echo "No tag-push Release workflow run exists for ${existing_release_tag}; refusing to create a replacement version."
+                exit 1
+              fi
+              IFS=$'\t' read -r RELEASE_RUN_ID RELEASE_RUN_STATUS RELEASE_RUN_CONCLUSION <<< "${release_run_state}"
+              if [[ "${RELEASE_RUN_STATUS}" == "completed" && "${RELEASE_RUN_CONCLUSION}" == "success" ]]; then
+                echo "Existing Release workflow for ${existing_release_tag} is already successful."
+              else
+                if [[ "${RELEASE_RUN_STATUS}" == "completed" && "${RELEASE_RUN_CONCLUSION}" == "failure" ]]; then
+                  gh run rerun "${RELEASE_RUN_ID}" --failed
+                elif [[ "${RELEASE_RUN_STATUS}" == "completed" ]]; then
+                  gh run rerun "${RELEASE_RUN_ID}"
+                fi
+                gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
+              fi
+              PUBLISHED_SHA="$(git rev-list -n 1 "${existing_release_tag}")"
+              echo "published_tag=${existing_release_tag}" >> "${GITHUB_OUTPUT}"
+              echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"
+              exit 0
             fi
           fi
           if [[ "${INPUT_DRY_RUN}" == "true" && "${INPUT_PUSH}" == "true" ]]; then
