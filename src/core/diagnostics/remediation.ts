@@ -204,6 +204,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary:
       "The committed .gitattributes merge fence no longer matches the active schema's type folders or tracker JSONL stores; rerun pm merge install (and commit .gitattributes) so every tracker artifact keeps its field-aware merge driver.",
   },
+  {
+    code: "validate_storage_tracked_runtime_cache_files",
+    command: "git rm --cached -r -- <tracked-runtime-directories>",
+    summary:
+      "Clone-local tracker runtime artifacts are committed. Run the exact tracked_runtime_cache.remediation_command, commit the index-only removals and managed .gitignore fence, then rerun validation.",
+  },
   // --- pm health (integrity) + pm validate (format_version): item format version ---
   {
     code: "integrity_item_outdated_format_version",
@@ -216,6 +222,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "npm install -g @unbrained/pm-cli@latest",
     summary:
       "An item was written by a newer pm format version than this runtime supports; upgrade pm to read and validate it safely.",
+  },
+  {
+    code: "tracked_runtime_cache_files",
+    command: "git rm --cached -r -- <tracked-runtime-directories>",
+    summary:
+      "Clone-local tracker runtime artifacts are committed. Run the exact tracked_runtime_cache.remediation_command from the integrity check, commit the index-only removals, and keep the managed .gitignore fence.",
   },
   // --- pm health: history_drift ---
   // `pm health` rewrites these commands to `pm history-repair --all` in the

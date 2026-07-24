@@ -2,7 +2,7 @@
 
 This is a task-oriented command guide. For exact flags, use runtime help because extensions and settings can change the active surface:
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), and [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-qd3woa](../.agents/pm/issues/pm-qd3woa.toon), [pm-ypuc39](../.agents/pm/issues/pm-ypuc39.toon), [pm-tz2ikr](../.agents/pm/issues/pm-tz2ikr.toon), and the schema-migration recovery contract [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon).
 
 ```bash
 pm <command> --help
@@ -51,6 +51,7 @@ pm init --workspace ./new-project --defaults
 pm init ./sandbox-tracker --defaults
 pm init --agent-guidance status
 pm init --agent-guidance add
+pm init --no-merge-fence
 pm config project list
 pm health --check-only --summary --json
 pm telemetry status
@@ -64,6 +65,9 @@ same prefix; conflicting values fail with `init_id_prefix_conflict` instead of
 silently choosing one.
 Use `pm init --workspace <dir>` when `<dir>` is a project root; it creates `<dir>/.agents/pm`. A path-like positional remains the advanced tracker-root form and writes tracker files directly at that path. Both explicit target forms return `target.mode`, `target.tracker_root`, and tracker-scoped executable `next_steps` so agents can run the suggestions from any working directory.
 `pm init --agent-guidance ask` is the default behavior: prompt in TTY only when AGENTS/CLAUDE guidance is missing and no decline is recorded.
+Fresh Git-backed trackers also install the semantic merge fence and clone-local
+drivers automatically. `--no-merge-fence` opts out; non-Git targets remain
+valid and return an actionable skip warning.
 Use `--agent-guidance add` to write guidance, `--agent-guidance skip` to persist a decline without writing, and `--agent-guidance status` to inspect guidance state.
 Use `--with-packages` for one-step agent setup when bundled package commands should be active immediately.
 
@@ -925,10 +929,10 @@ pm schema remove-field severity_level
 pm schema apply-preset agile
 pm schema add-type --infer --min-count 10
 pm schema add-type --infer --apply
-pm schema rename-type Spike --to Experiment --migration-id spike-v2 --dry-run
-pm schema rename-type Spike --to Experiment --migration-id spike-v2
-pm schema rename-field severity --to impact --type Issue --migration-id severity-v2 --dry-run
-pm schema remap-status review --to verifying --migration-id review-v2
+pm schema rename-type Spike --to Experiment --dry-run
+pm schema rename-type Spike --to Experiment
+pm schema rename-field severity --to impact --type Issue --dry-run
+pm schema remap-status review --to verifying
 pm create Spike "Investigate retry backoff"
 ```
 
@@ -943,7 +947,7 @@ pm create Spike "Investigate retry backoff"
 - `add-field <key>` registers a custom metadata field in `.agents/pm/schema/fields.json` (shape: `{ "fields": [RuntimeFieldDefinition...] }`). Each custom field dynamically registers a CLI flag on create/update (and any other commands you list) so projects can capture typed project-specific metadata without hand-editing JSON. It is an idempotent UPSERT keyed on the normalized key, and refuses keys that shadow a built-in field. `list-fields` / `show-field <key>` inspect registered fields; `remove-field <key>` drops one and WARNS (non-blocking) with `items_using_field:<N>` when items still carry a value. See [CONFIGURATION.md](CONFIGURATION.md) for the full `schema/fields.json` format.
 - `apply-preset <agile|ops|research>` batch-registers a domain type preset into an already-initialized project (the same vocabulary `pm init --type-preset` seeds); it is idempotent (re-running reports `replaced` entries) and shares its definitions with init.
 - `add-type --infer` scans existing item titles for stable `PREFIX-`/`PREFIX:` conventions and proposes them as custom types. It previews candidates by default (dry-run); pass `--apply` to register the non-shadowing candidates and `--min-count <n>` to tune the per-prefix threshold (default 10). Candidates whose name resolves to a built-in type are reported and skipped.
-- `rename-type`, `rename-field`, and `remap-status` are lossless migration verbs. `--migration-id` is required and must be reused for retries. Start with `--dry-run --json` to inspect the fingerprint, affected count, and ordered per-item changes. Execution stages the target definition, writes immutable history on every affected item and the workspace stream, then retires the source. A field rename refuses any item that already has the target key; `--type <Type>` optionally restricts a field rename.
+- `rename-type`, `rename-field`, and `remap-status` are lossless migration verbs. The runtime derives a deterministic workspace-and-request-bound migration id for resumable retries; `--migration-id` remains an optional authoritative override for external orchestration. Start with `--dry-run --json` to inspect the derived id, fingerprint, affected count, and ordered per-item changes without persisting a plan. Execution stages the target definition, writes immutable history on every affected item and the workspace stream, then retires the source. A field rename refuses any item that already has the target key; `--type <Type>` optionally restricts a field rename.
 - Field flags (`add-field`): `--type <string|number|boolean|string_array>`, `--commands <list>` (repeatable/comma; defaults to create,update), `--cli-flag <flag>`, `--alias <flag>` (extra CLI flag aliases), `--required`, `--required-on-create`, `--no-allow-unset`, `--required-types <list>`.
 - Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), `--role <value>` (repeatable; add-status), `--order <n>` (add-status), migration `--to` / `--migration-id` / `--dry-run`, plus `--author`/`--force` governance flags. Add `--json` for the machine envelope.
 - When `pm create`/`pm update` reject an unknown type, the error now points back here: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).`

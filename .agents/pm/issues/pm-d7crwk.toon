@@ -1,0 +1,48 @@
+id: pm-d7crwk
+title: "PR #673 review hardening: literal Git paths, canonical workspace identity, bounded diagnostics, and recoverable init"
+description: "Address exact-head CodeRabbit feedback across SDK merge/init, schema-migration identity, and tracked-runtime governance without weakening strict gates."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:git","area:governance","area:sdk",code-review,cross-platform
+created_at: "2026-07-24T14:25:01.527Z"
+updated_at: "2026-07-24T14:54:06.351Z"
+closed_at: "2026-07-24T14:54:05.658Z"
+author: codex-root-agent
+estimated_minutes: 180
+acceptance_criteria: Git runtime-cache scans and remediation use literal pathspecs for metacharacter roots; health details bound tracked path lists; fresh init reports actionable merge-fence install failures without losing recovery; public merge-fence SDK converts invalid roots to typed errors; derived schema migration IDs use canonical workspace identity; all review threads are acknowledged and resolved with full exact-head CI proof.
+parent: pm-usfg
+risk: medium
+confidence: high
+reporter: codex-root-agent
+resolution: Implemented and verified all exact-head workspace-integrity review findings without weakening any quality gate.
+expected_result: "Literal Git paths, bounded diagnostics, recoverable init, typed merge-root failures, and canonical migration identities pass local and hosted exact-head verification."
+actual_result: "All requested behaviors implemented; 6,225-test full suite is 100/100/100/100; CI and 7/7 review threads are green/resolved at c5975965."
+component: SDK workspace integrity and governance
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-1w3ljt,related,"2026-07-24T14:25:23.928Z",null,null
+  pm-hcrmye,related,"2026-07-24T14:25:23.928Z",null,null
+  pm-hous,related,"2026-07-24T14:25:23.928Z",null,null
+  pm-lvd647,related,"2026-07-24T14:25:23.928Z",null,null
+  pm-s79kel,related,"2026-07-24T14:25:23.928Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-24T14:25:24.655Z",codex-root-agent,"Duplicate-check evidence: searched all statuses for CodeRabbit, literal Git pathspec, canonical migration scope, and merge-fence install recovery. Existing items own the original feature slices but are closed/released (except the separate performance regression pm-hcrmye); none owns this cross-cutting exact-head review remediation. PR thread IDs: PRRT_kwDORSgRDc6Tk2WL, PRRT_kwDORSgRDc6Tk2WQ, PRRT_kwDORSgRDc6Tk2Wg, PRRT_kwDORSgRDc6Tk2Wu, PRRT_kwDORSgRDc6Tk2W5, plus tracker-language thread PRRT_kwDORSgRDc6Tk2Vt."
+  "2026-07-24T14:47:55.298Z",codex-root-agent,"Implementation evidence: exact-head review remediation now uses Git :(literal) pathspecs for both scans and shell-safe cleanup commands; bounds tracked-runtime diagnostic samples while preserving counts/remediation; makes fresh-init merge-fence failure recoverable only for typed PmCliError paths while propagating unexpected failures; converts inaccessible merge roots to typed merge_root_not_found SDK errors; and derives automatic schema-migration IDs from the canonical tracker realpath. Regression coverage includes bracket/apostrophe tracker roots, config-lock recovery, typed/unexpected init failures, inaccessible roots, bounded health details, and symlink/junction-stable migration identity. Local gates: focused 133-test suite passed; pnpm typecheck passed; pnpm lint/static quality/package boundary/token budget passed; docstring coverage 100/100/100; full sandbox coverage passed 355 files and 6,225 tests at statements 42,747/42,747, branches 30,329/30,329, functions 8,707/8,707, lines 41,549/41,549. Hosted exact-head CI and bot thread resolution remain before closure."
+  "2026-07-24T14:54:04.278Z",codex-root-agent,"Hosted exact-head proof: PR #673 head c59759651b1e858940d30624c82f9f93a20bed11; CI run 30102585369 completed success with Windows 89512261562, Node 22 smoke 89512261608, static/typecheck/compat/smokes/coverage all green. gh pr checks reports 30 successful, 2 intentional skips, 0 pending/failing. Final review inventory at this exact head: 31 comments, 23 reviews, 7 threads, 0 unresolved, 0 bot comments/reviews missing reactions. All seven CodeRabbit findings were individually replied to, up-voted, and resolved; follow-up confirmations and quota/sunset notices were also acknowledged."
+files[10]{path,scope,note}:
+  src/sdk/governance/health.ts,project,Bound tracked cache diagnostic projection
+  src/sdk/governance/tracked-runtime-cache.ts,project,Literal Git pathspec safety
+  src/sdk/init.ts,project,Recoverable fresh merge-fence installation
+  src/sdk/merge/install.ts,project,Typed invalid-root SDK errors
+  src/sdk/schema-migration.ts,project,Canonical derived migration scope
+  tests/unit/commands/health-command.spec.ts,project,Bounded diagnostic projection regression
+  tests/unit/commands/init-command.spec.ts,project,Merge fence recovery regression
+  tests/unit/sdk/merge-safety.spec.ts,project,Typed invalid-root regression
+  tests/unit/sdk/schema-migration.spec.ts,project,Alias-stable migration identity regression
+  tests/unit/sdk/tracked-runtime-cache.spec.ts,project,Literal metacharacter root regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/tracked-runtime-cache.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/init-command.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/schema-migration.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrz21wgn-hekbv2,test,passed,"2026-07-24T14:47:55.916Z","2026-07-24T14:48:17.303Z","2026-07-24T14:48:17.303Z",1,0,0
+close_reason: "CodeRabbit review hardening delivered at c5975965 with exact 100/100/100/100 local coverage, green hosted CI run 30102585369, and all 7 review threads resolved and acknowledged."
+body: "PR: https://github.com/unbraind/pm-cli/pull/673\\n\\nDuplicate check: all-status search for the exact CodeRabbit findings found related closed owners pm-1w3ljt, pm-hous, pm-s79kel, and pm-lvd647 but no active item owning this cross-cutting exact-head review remediation. This item records the follow-up as a single acceptance surface."

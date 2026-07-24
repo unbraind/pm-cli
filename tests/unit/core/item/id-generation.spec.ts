@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import path from "node:path";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
 import {
   clampIdTokenLength,
@@ -81,6 +81,33 @@ describe("id generation and normalization", () => {
       await withTempPmPath(async (context) => {
         await writeFile(path.join(context.pmPath, "tasks", "pm-0000.md"), "{}\n\n", "utf8");
         const id = await generateItemId(context.pmPath, "pm-");
+        expect(id).toBe("pm-1111");
+      });
+    } finally {
+      randomIntSpy.mockRestore();
+    }
+  });
+
+  it("probes extension-defined type folders before returning a candidate", async () => {
+    let call = 0;
+    const randomIntSpy = vi.spyOn(crypto, "randomInt").mockImplementation(() => {
+      const tokenAttempt = Math.floor(call / 4);
+      call += 1;
+      return Math.min(tokenAttempt, 35);
+    });
+
+    try {
+      await withTempPmPath(async (context) => {
+        const experiments = path.join(context.pmPath, "experiments");
+        await mkdir(experiments, { recursive: true });
+        await writeFile(
+          path.join(experiments, "pm-0000.toon"),
+          "{}\n\n",
+          "utf8",
+        );
+        const id = await generateItemId(context.pmPath, "pm-", {
+          typeToFolder: { Task: "tasks", Experiment: "experiments" },
+        });
         expect(id).toBe("pm-1111");
       });
     } finally {

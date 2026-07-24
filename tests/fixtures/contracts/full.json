@@ -2798,6 +2798,9 @@
           "flag": "--with-packages"
         },
         {
+          "flag": "--no-merge-fence"
+        },
+        {
           "flag": "--workspace"
         },
         {
@@ -10287,6 +10290,10 @@
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "mergeFence": {
+            "description": "Install the repository merge-driver fence for a fresh Git-backed tracker; set false to opt out.",
             "type": "boolean"
           },
           "noExtensions": {
@@ -20158,8 +20165,7 @@
             "then": {
               "required": [
                 "name",
-                "to",
-                "migrationId"
+                "to"
               ]
             }
           },
@@ -20177,8 +20183,7 @@
             "then": {
               "required": [
                 "name",
-                "to",
-                "migrationId"
+                "to"
               ]
             }
           },
@@ -20196,8 +20201,7 @@
             "then": {
               "required": [
                 "name",
-                "to",
-                "migrationId"
+                "to"
               ]
             }
           },
@@ -20333,7 +20337,7 @@
             "type": "boolean"
           },
           "migrationId": {
-            "description": "Stable idempotency key used to persist and resume a schema migration plan.",
+            "description": "Optional stable idempotency override used to persist and resume a schema migration plan; omitted values are derived from the workspace and normalized request.",
             "examples": [
               "severity-to-impact-v2"
             ],

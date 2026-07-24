@@ -27,7 +27,26 @@ function loadDatabaseSync(
   }
 }
 
-let RuntimeDatabaseSync = loadDatabaseSync(createRequire(import.meta.url));
+let RuntimeDatabaseSync: DatabaseSyncConstructor | null | undefined;
+
+function loadStableDatabaseSync(
+  nodeVersion: string,
+  loadModule: (specifier: string) => unknown,
+): DatabaseSyncConstructor | null {
+  const nodeMajor = Number.parseInt(nodeVersion, 10);
+  return Number.isFinite(nodeMajor) && nodeMajor >= 23
+    ? loadDatabaseSync(loadModule)
+    : null;
+}
+
+function resolveDatabaseSync(): DatabaseSyncConstructor | null {
+  if (RuntimeDatabaseSync !== undefined) return RuntimeDatabaseSync;
+  RuntimeDatabaseSync = loadStableDatabaseSync(
+    process.versions.node,
+    createRequire(import.meta.url),
+  );
+  return RuntimeDatabaseSync;
+}
 
 /** One light-metadata row projected into the persistent query index. */
 export interface ItemMetadataQueryIndexRow {
@@ -192,7 +211,8 @@ export async function rebuildItemMetadataQueryIndex(options: {
   rows: readonly ItemMetadataQueryIndexRow[];
 }): Promise<void> {
   const targetPath = queryIndexPath(options.pmRoot);
-  if (!RuntimeDatabaseSync) {
+  const Database = resolveDatabaseSync();
+  if (!Database) {
     await fs.rm(targetPath, { force: true });
     return;
   }
@@ -200,7 +220,7 @@ export async function rebuildItemMetadataQueryIndex(options: {
   const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
   let database: DatabaseSync | undefined;
   try {
-    database = new RuntimeDatabaseSync(temporaryPath);
+    database = new Database(temporaryPath);
     createSchema(database);
     database.exec("BEGIN IMMEDIATE");
     writeMetadata(database, "version", QUERY_INDEX_VERSION);
@@ -241,12 +261,13 @@ export async function updateItemMetadataQueryIndex(options: {
   row: ItemMetadataQueryIndexRow | null;
   deletedRelativePaths?: readonly string[];
 }): Promise<boolean> {
-  if (!RuntimeDatabaseSync) return false;
   const indexPath = queryIndexPath(options.pmRoot);
   let database: DatabaseSync | undefined;
   try {
     await fs.access(indexPath);
-    database = new RuntimeDatabaseSync(indexPath);
+    const Database = resolveDatabaseSync();
+    if (!Database) return false;
+    database = new Database(indexPath);
     database.exec("PRAGMA foreign_keys = ON");
     const metadata = readIndexMetadata(database);
     if (
@@ -345,12 +366,13 @@ export async function queryItemMetadataIndex(options: {
   expectedSourceCursor: string;
   query?: ItemMetadataIndexQuery;
 }): Promise<ItemMetadataIndexQueryResult | null> {
-  if (!RuntimeDatabaseSync) return null;
+  const Database = resolveDatabaseSync();
+  if (!Database) return null;
   const query = options.query ?? {};
   const { where, parameters } = buildQueryPredicates(query);
   let database: DatabaseSync | undefined;
   try {
-    database = new RuntimeDatabaseSync(queryIndexPath(options.pmRoot), {
+    database = new Database(queryIndexPath(options.pmRoot), {
       readOnly: true,
     });
     const metadata = readIndexMetadata(database);
@@ -420,6 +442,7 @@ export async function removeItemMetadataQueryIndex(
 /** Test-only dependency seam for runtimes that do not implement node:sqlite. */
 export const _testOnly = {
   loadDatabaseSync,
+  loadStableDatabaseSync,
   /** Replace the optional constructor and return a restoration callback. */
   setDatabaseSync(databaseSync: DatabaseSyncConstructor | null): () => void {
     const previous = RuntimeDatabaseSync;

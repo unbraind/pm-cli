@@ -1,0 +1,49 @@
+id: pm-1w3ljt
+title: "GH-663: fresh init must install and surface the semantic merge fence"
+description: "Make the SDK-backed init lifecycle install the committed .gitattributes merge mappings and clone-local git driver configuration by default, preserve an explicit opt-out, and provide actionable recovery when a raw conflict reveals a missing fence."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:init","area:merge","area:sdk",gh-issue,multi-agent
+created_at: "2026-07-24T12:38:27.541Z"
+updated_at: "2026-07-24T13:48:59.732Z"
+closed_at: "2026-07-24T13:35:02.738Z"
+author: codex-root-agent
+estimated_minutes: 240
+acceptance_criteria: "Public SDK workspace-init primitives own a typed merge-fence policy; CLI init is a thin adapter with an explicit opt-out; fresh git repositories merge concurrent non-overlapping item/history edits without raw conflicts after init; status/read-only init paths do not mutate; missing-fence diagnostics give an exact recovery command; temporary packed-install tests cover custom tracker roots, worktrees/clones, opt-out, idempotence, and conflict recovery."
+parent: pm-dj98
+risk: high
+confidence: high
+reporter: codex-root-agent
+severity: high
+repro_steps: "Initialize a fresh git workspace with pm init, create divergent branch edits to one item, and merge without separately running pm merge install; raw item and history conflicts occur."
+resolution: Fresh Git-backed init installs the semantic merge fence through public SDK primitives by default with explicit opt-out and read-only status behavior.
+expected_result: "Fresh init establishes shared merge attributes and clone-local drivers by default, next steps explain per-clone setup, opt-out is explicit, and reconcile/validate guidance names pm merge install when the fence is absent."
+actual_result: "Fresh init neither installs nor surfaces the merge fence, so the default multi-agent branch workflow hard-conflicts despite complete merge-driver machinery."
+component: workspace initialization and semantic merge safety
+regression: true
+customer_impact: Agents following the default onboarding path can hit raw conflicts and lose the conflict-free multi-agent guarantee.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-g5sx,related,"2026-07-24T12:38:27.541Z",null,null
+  pm-hous,related,"2026-07-24T12:38:27.541Z",null,null
+  pm-iwsj,related,"2026-07-24T12:38:27.541Z",null,null
+  pm-usfg,related,"2026-07-24T12:38:27.541Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-24T12:38:27.541Z",codex-root-agent,"Duplicate-check evidence: searched every status for GH-663, fresh init merge fence, .gitattributes, merge-driver installation, and multi-agent conflict recovery. Closed pm-g5sx/pm-iwsj own the shipped machinery and repo adoption; pm-hous owns ignore-file lifecycle. No item owns default fresh-init fence wiring, so this focused issue is canonical."
+  "2026-07-24T12:40:40.798Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
+  "2026-07-24T13:35:01.779Z",codex-root-agent,"Completion evidence: final packed tarball in fresh Git repos proved default init installs .gitattributes and all clone-local driver definitions, agent-guidance=status leaves .gitignore/.gitattributes byte-identical, custom tracker roots render correct fence paths, and --no-merge-fence leaves .gitattributes absent. A real two-branch semantic merge preserved independent comments and notes on one item and storage_integrity returned ok. Full gate remains 100/100/100/100."
+  "2026-07-24T13:48:59.731Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
+files[5]{path,scope,note}:
+  src/cli/commands/init.ts,project,Thin CLI init adapter
+  src/cli/register-setup.ts,project,Init merge-fence opt-out
+  src/sdk/init.ts,project,Fresh init merge-fence ownership
+  src/sdk/merge/install.ts,project,Explicit-root SDK merge install primitive
+  src/sdk/workspace.ts,project,Public workspace lifecycle primitive
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace tests/integration/init-path-guard.integration.spec.ts,project,300
+docs[2]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Fresh clone and init contract
+  docs/SDK.md,project,Public merge installation primitives
+close_reason: "Closed with SDK-first automatic fresh-init merge fence, explicit opt-out/read-only status behavior, custom-root support, and packed two-branch semantic merge proof."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/663\\n\\nDuplicate check: all-status searches for fresh init, merge fence, gitattributes, driver install, and multi-agent conflicts found the closed merge implementation pm-g5sx and repository-adoption pm-iwsj, but no open item owning default init wiring and recovery. This item extends that canonical lineage rather than replacing it."

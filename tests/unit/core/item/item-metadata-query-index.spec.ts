@@ -51,6 +51,15 @@ describe("item metadata SQLite query index", () => {
         throw new Error("unsupported runtime");
       }),
     ).toBeNull();
+    expect(
+      _testOnly.loadStableDatabaseSync("22.21.1", () => ({ DatabaseSync })),
+    ).toBeNull();
+    expect(
+      _testOnly.loadStableDatabaseSync("invalid", () => ({ DatabaseSync })),
+    ).toBeNull();
+    expect(
+      _testOnly.loadStableDatabaseSync("26.5.0", () => ({ DatabaseSync })),
+    ).toBe(DatabaseSync);
   });
 
   it("falls back without projection writes when node:sqlite is unavailable", async () => {
@@ -64,6 +73,11 @@ describe("item metadata SQLite query index", () => {
         sourceCursor: "cursor-1",
         rows: [],
       });
+      await fs.mkdir(path.join(root, "runtime"), { recursive: true });
+      await fs.writeFile(
+        path.join(root, "runtime", "metadata-query-index.sqlite"),
+        "",
+      );
       expect(
         await updateItemMetadataQueryIndex({
           pmRoot: root,

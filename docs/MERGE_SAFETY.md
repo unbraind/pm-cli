@@ -1,12 +1,17 @@
 # Multi-Branch Tracker Merge Safety
 
-Tracked by [pm-wc1r](../.agents/pm/features/pm-wc1r.toon), with the integrity and concurrency fixes [pm-9q2t](../.agents/pm/issues/pm-9q2t.toon), [pm-cxyv](../.agents/pm/issues/pm-cxyv.toon), [pm-gpo7](../.agents/pm/issues/pm-gpo7.toon), [pm-m3nl](../.agents/pm/issues/pm-m3nl.toon), [pm-wwfd](../.agents/pm/issues/pm-wwfd.toon), and [pm-xdn6](../.agents/pm/issues/pm-xdn6.toon). Fence-coverage completeness and drift detection are tracked by [pm-i4fx](../.agents/pm/issues/pm-i4fx.toon); cross-branch id collision safety by [pm-pibw](../.agents/pm/issues/pm-pibw.toon); post-merge reconciliation by [pm-mfkv92](../.agents/pm/issues/pm-mfkv92.toon); this repository's own adoption by [pm-iwsj](../.agents/pm/chores/pm-iwsj.toon).
+Tracked by [pm-wc1r](../.agents/pm/features/pm-wc1r.toon), with the integrity and concurrency fixes [pm-9q2t](../.agents/pm/issues/pm-9q2t.toon), [pm-cxyv](../.agents/pm/issues/pm-cxyv.toon), [pm-gpo7](../.agents/pm/issues/pm-gpo7.toon), [pm-m3nl](../.agents/pm/issues/pm-m3nl.toon), [pm-wwfd](../.agents/pm/issues/pm-wwfd.toon), and [pm-xdn6](../.agents/pm/issues/pm-xdn6.toon). Fresh-init fence ownership is tracked by [pm-1w3ljt](../.agents/pm/issues/pm-1w3ljt.toon); runtime-cache index governance by [pm-hous](../.agents/pm/issues/pm-hous.toon); local allocation safety by [pm-khdq](../.agents/pm/issues/pm-khdq.toon); fence-coverage completeness and drift detection by [pm-i4fx](../.agents/pm/issues/pm-i4fx.toon); cross-branch id collision safety by [pm-pibw](../.agents/pm/issues/pm-pibw.toon); post-merge reconciliation by [pm-mfkv92](../.agents/pm/issues/pm-mfkv92.toon); this repository's own adoption by [pm-iwsj](../.agents/pm/chores/pm-iwsj.toon).
 
 pm stores project context as reviewable repository files. Concurrent agents can therefore use ordinary branches and worktrees, but tracker artifacts need semantic merge behavior: raw line merging cannot preserve TOON collection counts, JSON object structure, or append-only history hash chains.
 
 ## Install the repository merge contract
 
-Run this once per clone after `pm init`:
+Fresh `pm init` runs this automatically when the tracker is inside a Git
+worktree. It writes the shared fence and configures the current clone before
+returning success. Use `pm init --no-merge-fence` only when another system
+deliberately owns Git merge configuration.
+
+Existing trackers and fresh clones can install or repair the contract directly:
 
 ```bash
 pm merge install
@@ -42,7 +47,7 @@ pm merge install --dry-run --json
 
 When both sides change the same scalar or JSON leaf differently, the driver writes a parseable preferred-side result but exits nonzero. Git keeps the path conflicted so a human or coordinating agent must review the losing value and explicitly `git add` the resolution. Use `--prefer theirs` only when that is the intended resolution policy.
 
-The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `runMergeReconcile`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. Hosts can embed the same semantics without shelling out.
+The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `installMergeFence`, `findGitWorkspaceRoot`, `runMergeReconcile`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. `installMergeFence` accepts explicit tracker and workspace roots, so custom init hosts do not depend on process cwd or CLI globals.
 
 ## Cross-branch id collision safety
 
@@ -50,6 +55,11 @@ Item ids are `<prefix>` plus random base36 characters, and uniqueness is only pr
 
 - **Entropy budget** — `ids.token_length` in `settings.json` (default 4, accepted range 4–12) sets the random token length for newly minted ids. Approximate 1%-birthday-collision workloads per length: 4 chars ≈ 1.68M ids (~184 concurrent unsynced creations), 6 chars ≈ 2.18B (~6.6k), 8 chars ≈ 2.8T (~238k). Multi-agent repositories that fan out many branches between merges should raise it, e.g. `pm config project set ids_token_length 6`.
 - **Post-merge detection** — the `storage_integrity` validate check reports `validate_storage_duplicate_item_ids` whenever one id is claimed by multiple item documents (across type folders or format variants), which is how a same-id/different-item merge materializes. Remediation: keep one document, recreate the other item under a fresh id (`pm copy` then delete the colliding file), and re-point any dependencies.
+
+Within one working tree, create and copy serialize on the candidate id and
+recheck every built-in and extension-defined type folder before the
+authoritative write. A raced collision fails with `item_id_collision` instead
+of replacing the existing document.
 
 ## Required post-merge gate
 
@@ -92,6 +102,16 @@ Never remove conflict markers manually while leaving the authoritative item and 
 ## Runtime receipts and retention
 
 `transactions/` and `checkpoints/` are per-branch crash-recovery state, not shared project context. `pm init` places both below the resolved tracker root in the managed `.gitignore` block, including custom `--pm-path` roots.
+
+Ignore rules do not remove files that were already committed. `pm health`
+(`integrity`) and `pm validate` (`storage_integrity`) therefore scan Git's
+index for tracked files below `runtime/`, `search/`, `locks/`,
+`transactions/`, and `checkpoints/`. A finding includes repository-relative
+paths plus an exact `git rm --cached -r -- ...` command. That command removes
+only the indexed copies; local caches and recovery receipts remain on disk
+under the managed ignore fence. The intentional
+`search/eval-queries.json` relevance-evaluation corpus remains tracked and is
+excluded from this cache diagnostic.
 
 Terminal SDK transaction journals use the same `checkpoints.retention_days` policy as rollback checkpoints. The default GC sweep includes both receipt classes:
 

@@ -143,6 +143,8 @@ export async function runCopy(
   const author = selectAuthor(options.author, settings.author_default);
   const newId = await generateItemId(pmRoot, settings.id_prefix, {
     tokenLength: settings.ids.token_length,
+    typeToFolder: typeRegistry.type_to_folder,
+    probeExisting: false,
   });
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const titleOverride = options.title?.trim();
@@ -209,6 +211,26 @@ export async function runCopy(
       author,
     );
     try {
+      const collision = await locateItem(
+        pmRoot,
+        newId,
+        settings.id_prefix,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+      );
+      if (collision) {
+        throw new PmCliError(
+          `Cannot copy to ${newId}: an item with that id already exists at ${collision.itemPath}. Retry the copy to allocate a new id.`,
+          EXIT_CODE.CONFLICT,
+          {
+            code: "item_id_collision",
+            why: `Allocated id ${newId} already exists at ${collision.itemPath}.`,
+            recovery: {
+              suggested_retry: `pm copy ${located.id}`,
+            },
+          },
+        );
+      }
       await writeFileAtomic(
         itemPath,
         serializeItemDocument(copiedDocument, {

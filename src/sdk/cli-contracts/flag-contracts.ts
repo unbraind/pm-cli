@@ -565,6 +565,7 @@ export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author" },
   { flag: "--agent-guidance" },
   { flag: "--with-packages" },
+  { flag: "--no-merge-fence" },
   { flag: "--workspace" },
   { flag: "--force" },
   { flag: "--verbose" },

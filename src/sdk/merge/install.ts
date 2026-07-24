@@ -7,7 +7,7 @@
  * those attributes effective. Idempotent and re-runnable; schema type
  * mutations refresh the fenced block automatically once it is installed.
  */
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, realpath, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -96,20 +96,29 @@ export interface MergeInstallResult {
   generated_at: string;
 }
 
-async function resolveGitWorkspaceRoot(cwd: string): Promise<string> {
+/** Resolve the enclosing Git worktree root or return null outside Git. */
+export async function findGitWorkspaceRoot(cwd: string): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync(
       "git",
       ["rev-parse", "--show-toplevel"],
       { cwd, encoding: "utf8", windowsHide: true, timeout: 10_000 },
     );
-    return stdout.trim();
+    return await realpath(stdout.trim());
   } catch {
+    return null;
+  }
+}
+
+async function resolveGitWorkspaceRoot(cwd: string): Promise<string> {
+  const workspaceRoot = await findGitWorkspaceRoot(cwd);
+  if (workspaceRoot === null) {
     throw new PmCliError(
       "pm merge install requires a git repository (merge drivers are git configuration).",
       EXIT_CODE.USAGE,
     );
   }
+  return workspaceRoot;
 }
 
 function toPosixRelative(fromPath: string, toPath: string): string {
@@ -382,11 +391,54 @@ export async function runMergeInstall(
       EXIT_CODE.NOT_FOUND,
     );
   }
-  const dryRun = options.dryRun === true;
   const workspaceRoot = await resolveGitWorkspaceRoot(process.cwd());
-  const trackerRelativeRoot = toPosixRelative(
+  return installMergeFence({
+    pmRoot,
     workspaceRoot,
-    path.resolve(pmRoot),
+    dryRun: options.dryRun === true,
+  });
+}
+
+/**
+ * Install merge safety for an initialized tracker without depending on the
+ * caller's cwd or global CLI path resolution. This is the SDK primitive used
+ * by fresh init and by the `pm merge install` adapter.
+ */
+export async function installMergeFence(options: {
+  pmRoot: string;
+  workspaceRoot: string;
+  dryRun?: boolean;
+}): Promise<MergeInstallResult> {
+  const pmRoot = path.resolve(options.pmRoot);
+  const workspaceRoot = path.resolve(options.workspaceRoot);
+  const dryRun = options.dryRun === true;
+  // Git for Windows may report a worktree through an 8.3 short path while
+  // Node resolves the tracker through its long path. Compare filesystem
+  // identities rather than those two equivalent spellings so a valid
+  // in-repository tracker is not rejected as external.
+  let canonicalPmRoot: string;
+  let canonicalWorkspaceRoot: string;
+  try {
+    [canonicalPmRoot, canonicalWorkspaceRoot] = await Promise.all([
+      realpath(pmRoot),
+      realpath(workspaceRoot),
+    ]);
+  } catch (error: unknown) {
+    throw new PmCliError(
+      `Cannot resolve tracker root ${pmRoot} or workspace root ${workspaceRoot}: ${String(error)}`,
+      EXIT_CODE.NOT_FOUND,
+      {
+        code: "merge_root_not_found",
+        nextSteps: [
+          "Initialize the tracker and ensure both paths are accessible.",
+          'Retry "pm merge install" from the repository workspace.',
+        ],
+      },
+    );
+  }
+  const trackerRelativeRoot = toPosixRelative(
+    canonicalWorkspaceRoot,
+    canonicalPmRoot,
   );
   if (isPathOutsideRoot(trackerRelativeRoot)) {
     throw new PmCliError(

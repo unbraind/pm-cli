@@ -76,6 +76,28 @@ export {
 } from "./governance/validate.js";
 export { runExtension } from "./extension.js";
 export {
+  auditMergeAttributeFence,
+  buildMergeAttributePatterns,
+  findGitWorkspaceRoot,
+  installMergeFence,
+  refreshMergeAttributeFenceIfInstalled,
+  runMergeInstall,
+  type MergeFenceAuditResult,
+  type MergeFenceRefreshOutcome,
+  type MergeInstallOptions,
+  type MergeInstallResult,
+} from "./merge/install.js";
+export {
+  deriveSchemaEvolutionMigrationId,
+  formatSchemaEvolutionMigrationHuman,
+  planSchemaEvolutionMigration,
+  runSchemaEvolutionMigration,
+  type PlanSchemaEvolutionMigrationOptions,
+  type SchemaEvolutionFieldChange,
+  type SchemaEvolutionItemPlan,
+  type SchemaEvolutionMigrationPlan,
+} from "./schema-migration.js";
+export {
   runWithActiveExtensions,
   type ActiveExtensionScopeOptions,
 } from "./runtime.js";

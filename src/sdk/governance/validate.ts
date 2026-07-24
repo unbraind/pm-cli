@@ -80,6 +80,7 @@ import type {
 import { collectDanglingDependencyReferences } from "../graph/assembly.js";
 import { auditMergeAttributeFence } from "../merge/install.js";
 import { scanStorageIntegrity } from "./storage-integrity.js";
+import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 import { scanHistoryAuthorAttribution } from "../author-attribution.js";
 import {
   createRelationshipKindRegistry,
@@ -390,8 +391,7 @@ export interface ValidateResult {
 }
 
 /** Validate result returned when `counts: true` omits diagnostic row arrays. */
-export interface ValidateCountsResult
-  extends Omit<ValidateResult, "fixes"> {
+export interface ValidateCountsResult extends Omit<ValidateResult, "fixes"> {
   /** Scalar-only remediation totals, present when remediation was requested. */
   fixes?: ValidateCountsFixesSummary;
 }
@@ -3236,6 +3236,12 @@ async function buildStorageIntegrityCheck(
     );
   }
   const errorCount = warnings.length;
+  const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);
+  if (trackedRuntimeCache.tracked_path_count > 0) {
+    warnings.push(
+      `validate_storage_tracked_runtime_cache_files:${trackedRuntimeCache.tracked_path_count}`,
+    );
+  }
   const fenceAudit = await auditMergeAttributeFence(pmRoot, [
     ...new Set(Object.values(typeToFolder)),
   ]);
@@ -3250,9 +3256,17 @@ async function buildStorageIntegrityCheck(
       // Corruption findings fail the check; fence drift alone is a warning —
       // the workspace data is intact, but future merges of uncovered paths
       // would fall back to git's default text driver.
-      status:
-        errorCount > 0 ? "error" : warnings.length > 0 ? "warn" : "ok",
-      details: { ...scan, merge_fence: fenceAudit },
+      status: errorCount > 0 ? "error" : warnings.length > 0 ? "warn" : "ok",
+      details: {
+        ...scan,
+        merge_fence: fenceAudit,
+        tracked_runtime_cache: {
+          tracker_relative_root: trackedRuntimeCache.tracker_relative_root,
+          tracked_paths: trackedRuntimeCache.tracked_paths,
+          tracked_path_count: trackedRuntimeCache.tracked_path_count,
+          remediation_command: trackedRuntimeCache.remediation_command,
+        },
+      },
     },
     warnings,
   };

@@ -1,0 +1,51 @@
+id: pm-lvd647
+title: "GH-666/GH-667: nightly Node 22 stderr and Windows permission-contract regressions"
+description: Restore the supported nightly matrix by keeping optional SQLite diagnostics out of machine-readable stderr on Node 22 and making unwritable-memory/history tests assert capability outcomes rather than POSIX-only permission behavior on Windows.
+type: Issue
+status: closed
+priority: 1
+tags[7]: "area:ci","area:sdk",cross-platform,gh-issue,nightly,node22,windows
+created_at: "2026-07-24T12:39:52.841Z"
+updated_at: "2026-07-24T14:16:45.201Z"
+closed_at: "2026-07-24T14:16:44.536Z"
+author: codex-root-agent
+estimated_minutes: 180
+acceptance_criteria: "Optional SQLite capability loading does not leak runtime experimental warnings into CLI/MCP machine channels; tests use scoped deterministic failure seams instead of global warning suppression or POSIX chmod assumptions; Node 22 and Windows focused regressions pass; no nightly job, assertion, or supported runtime is removed; GitHub issues #666 and #667 are linked and closed only after exact hosted proof."
+parent: pm-u9d0
+risk: medium
+confidence: high
+reporter: codex-root-agent
+severity: high
+repro_steps: "Inspect scheduled run 30072359707 at db1b7111: Node 22 fails three built-CLI/MCP tests because node:sqlite ExperimentalWarning pollutes stderr; Windows fails workspace-memory and drift-scan permission simulations because chmod does not make paths unreadable."
+resolution: "Optional node:sqlite loading is gated away from Node 22 machine channels; Windows failure tests use deterministic capability seams; Git workspace containment and results canonicalize 8.3/long paths by filesystem identity."
+expected_result: Supported Node and OS matrix tests observe clean machine-readable process channels and deterministic injected filesystem failure semantics; nightly validation passes without silencing unrelated warnings or skipping platform coverage.
+actual_result: "PR run 30099757539 passed Node 22 smoke job 89503618661 and Windows regression rerun job 89503591212 (903 tests), with aggregate 100% coverage and all static/typecheck/compat/smoke gates green at ebf0443e."
+component: cross-runtime SDK and nightly validation
+regression: true
+customer_impact: "Daily validation reports red after otherwise-correct SDK changes, obscuring real release risk and making structured CLI/MCP channels unreliable on Node 22."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-801d,related,"2026-07-24T12:39:52.841Z",null,null
+  pm-cedo0g,related,"2026-07-24T12:39:52.841Z",null,null
+  pm-hcrmye,related,"2026-07-24T12:39:52.841Z",null,null
+  pm-klo8,related,"2026-07-24T12:39:52.841Z",null,null
+comments[8]{created_at,author,text}:
+  "2026-07-24T12:39:52.841Z",codex-root-agent,"Duplicate-check evidence: exact run/error and all-status cross-platform searches found no current item owning this five-test nightly regression. Historical Windows and Bun/SQLite items cover different root failures and remain linked as lineage."
+  "2026-07-24T12:40:42.213Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
+  "2026-07-24T13:35:06.471Z",codex-root-agent,"Local completion evidence pending hosted confirmation: the exact five-file Node 22.21.1 regression set passed 57 tests with clean stderr after stable-runtime SQLite gating; final full suite passed 6220 tests at 100/100/100/100 on Node 26. Windows-targeted tests already use deterministic capability seams rather than chmod assumptions. This remains in progress until the new PR supplies exact hosted Node 22 and Windows proof, per acceptance."
+  "2026-07-24T13:49:02.791Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
+  "2026-07-24T13:57:36.986Z",codex-root-agent,"Hosted Windows finding and repair: PR run 30098423259 job 89498351984 exposed Git's C:\\Users\\RUNNER~1 short-path spelling versus Node's C:\\Users\\runneradmin long-path spelling, causing a false outside-repository rejection. installMergeFence now canonicalizes both existing roots with realpath before containment comparison while preserving caller-facing paths. Added a symlink/junction-equivalent identity regression. Focused SDK/init verification passed 49 tests; typecheck and lint passed. Awaiting replacement hosted Node/Windows proof before closure."
+  "2026-07-24T14:02:31.668Z",codex-root-agent,"Second hosted Windows refinement: replacement run 30099021265 job 89500278101 proved containment now succeeds, but the success-warning assertion exposed Git's 8.3 spelling. findGitWorkspaceRoot now canonicalizes Git's reported root at the discovery boundary, keeping internal checks and public result paths consistent. Re-ran the 49-test SDK/init focus plus typecheck successfully; full coverage command also completed successfully after the first repair."
+  "2026-07-24T14:08:10.503Z",codex-root-agent,"Third hosted Windows refinement: run 30099359545 job 89501419763 showed production containment and canonical output were correct; the test fixture's mkdtemp path remained in 8.3 form while the SDK result used the long canonical form. Updated the assertion to require the exact merge-fence warning and compare the referenced file by realpath identity. Focused 49 tests, typecheck, ESLint, zero-duplicate gate, 100% docstring static gate, package-boundary audit, and token-budget gate all pass."
+  "2026-07-24T14:16:43.704Z",codex-root-agent,"Hosted acceptance complete at PR head ebf0443eaf9ac4d9bcf04332ffb3476d4026fae4: CI run https://github.com/unbraind/pm-cli/actions/runs/30099757539 passed. Ubuntu Node 22 smoke job 89503618661 passed with clean channels; Windows Node 24 regression rerun job 89503591212 passed all 903 tests; all four coverage shards and aggregate 100% coverage, static, typecheck, compatibility, runtime, and smoke gates passed. The first Windows attempt had two unrelated simultaneous 30-second runner timeouts; the unchanged failed-job rerun passed, confirming runner contention rather than a code regression."
+files[3]{path,scope,note}:
+  src/core/store/item-metadata-query-index.ts,project,Optional SQLite capability boundary
+  src/sdk/merge/install.ts,project,Canonical filesystem identity for Git Windows 8.3 paths
+  tests/unit/sdk/merge-safety.spec.ts,project,Equivalent workspace spelling regression
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/create-self-parent.integration.spec.ts tests/integration/extension-host-contracts.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/workspace-memory.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts tests/unit/sdk/workspace-memory.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/init-command.spec.ts,project,300
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Cross-runtime failure injection contract
+close_reason: Cross-runtime nightly failures repaired and proven on hosted Node 22 and Windows at PR head ebf0443e.
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/666 and https://github.com/unbraind/pm-cli/issues/667\\n\\nDuplicate check: all-status searches for run 30072359707, the exact Node 22 SQLite warning, workspace-memory Windows write failure, and workspace history unreadability found historical cross-platform items and the closed Bun release item pm-cedo0g, but no current owner for these exact nightly failures."

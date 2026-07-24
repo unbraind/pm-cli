@@ -1,4 +1,5 @@
 import { mkdtemp, rm } from "node:fs/promises";
+import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -168,6 +169,39 @@ describe("runCopy", () => {
       expect(after.map((item) => item.id).sort((left, right) => left.localeCompare(right))).toEqual(
         before.map((item) => item.id).sort((left, right) => left.localeCompare(right)),
       );
+    });
+  });
+
+  it("fails closed when a generated id becomes occupied before the locked write", async () => {
+    await withTempPmPath(async (context) => {
+      const source = await seedClosedSource(context);
+      await runCreate(
+        {
+          id: "pm-0000",
+          title: "collision sentinel",
+          description: "must survive copy allocation",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      const randomIntSpy = vi
+        .spyOn(crypto, "randomInt")
+        .mockImplementation(() => 0);
+      try {
+        await expect(
+          runCopy(source.id, {}, { path: context.pmPath }),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+          context: expect.objectContaining({ code: "item_id_collision" }),
+        });
+        expect(
+          context.runCli(["get", "pm-0000", "--json"], { expectJson: true })
+            .json,
+        ).toMatchObject({ item: { title: "collision sentinel" } });
+      } finally {
+        randomIntSpy.mockRestore();
+      }
     });
   });
 });

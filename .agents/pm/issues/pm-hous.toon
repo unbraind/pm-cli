@@ -2,34 +2,52 @@ id: pm-hous
 title: "GH-514: pm init writes no .gitignore rules — runtime/search caches churn as tracked files in downstream repos"
 description: "GH-514 reports pm init writing a malformed .gitignore line concatenating .agents/pm/search/ + .agents/pm/runtime/metadata-cache-bodies.json. Source evidence: the block header string ('PM CLI runtime and cache files') has NEVER existed in this repo history (git log -S empty; zero hits in src/dist/packages/plugins) — pm init currently writes NO .gitignore entries at all. The malformed block in the reporting repo (simworld) was authored by external tooling. The real defect this issue surfaces: because pm init owns no ignore rules, repos that version .agents/pm get spurious churn on runtime/metadata-cache*.json and search/ caches with every command, and users/agents hand-write (and garble) ignore blocks. Fix = pm init owns a canonical idempotent fenced block + a health/validate check for already-tracked cache files. Related: pm-4det (this repo untracked its own caches), GH-501/pm-69nl (init discovery)."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: dx,gh-issue,init,onboarding
 created_at: "2026-07-11T18:01:34.472Z"
-updated_at: "2026-07-24T12:05:49.068Z"
+updated_at: "2026-07-24T13:49:01.541Z"
+closed_at: "2026-07-24T13:35:00.288Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Fenced ignore block and tracked-cache warning also cover .agents/pm/locks/ (runtime lock files must never be committed)
 parent: pm-mpbb
 risk: low
 confidence: medium
+resolution: Canonical ignore ownership now pairs with health/validate Git-index detection and an exact index-only remediation for all clone-local tracker artifact classes.
+expected_result: Init ignores runtime artifacts and already-tracked cache files are diagnosed without deleting local data.
+actual_result: "Packed proof detected the indexed cache, emitted a safe command, preserved the local file, and cleared validation after index removal."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-69nl,related,"2026-07-11T18:02:06.291Z",null,null
-comments[4]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-11T23:05:12.110Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
   "2026-07-11T23:15:35.696Z",codex-root,"Progress evidence: implemented and SDK-exported an idempotent fenced .gitignore primitive; pm init applies it in workspace-discovery, explicit workspace, and .agents/pm tracker-path layouts; repair/idempotence/unit/integration and packed-consumer proof pass. Remaining acceptance work: add health/validate detection for already-tracked cache files before closing."
   "2026-07-23T20:35:24.737Z",claude-code-agent,"GitHub intake update (2026-07-23): issue #659 reports the remaining custom --pm-path runtime-cache ignore gap. This is the same canonical lineage as GH #514, with the earlier custom-root bootstrap portion already completed by pm-4uqm. Reusing pm-hous rather than creating a duplicate; the remaining acceptance still covers health/validate detection and runtime-cache ignore ownership."
   "2026-07-24T12:05:49.068Z",claude-code-agent,"Read-only-intent dogfood finding: running pm init --agent-guidance status on current main rewrote the managed .gitignore block by adding the checkpoints path even though the requested subaction was status. The workspace change was reverted after inspection. This belongs to the existing init-owned ignore lineage here: status/reporting paths should not mutate repository files, while explicit init/repair paths remain idempotent owners of the canonical block."
+  "2026-07-24T12:40:40.080Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
+  "2026-07-24T13:27:13.738Z",codex-root-agent,"Implementation evidence: health.integrity and validate.storage_integrity now share a read-only Git index scan covering runtime/, search/, locks/, transactions/, and checkpoints/ under default or custom tracker roots. Findings contain repository-relative paths and an exact index-only git rm --cached remediation, while non-Git workspaces remain clean. Focused functional suite passed: 3 files, 147 tests. Repo lint/static quality/docstring gate and typecheck pass. The attempted focused coverage command correctly failed the repository-wide 100% threshold because it intentionally ran only 3 of 354 files; the authoritative full coverage gate will be rerun after the packed acceptance proof."
+  "2026-07-24T13:34:59.340Z",codex-root-agent,"Completion evidence: final packed package detected one force-indexed runtime artifact through both health and validate, emitted exactly git rm --cached -r -- '.agents/pm/runtime', preserved the local cache after applying the remediation, and cleared the validation warning. The shared scan covers runtime/search/locks/transactions/checkpoints, custom roots, non-Git workspaces, compact health projections, and exact fix hints. Final full gate: 355 files, 6220 tests, 100/100/100/100."
+  "2026-07-24T13:37:24.886Z",codex-root-agent,"Acceptance refinement from self-dogfood: the first live scan correctly surfaced the repository's intentional .agents/pm/search/eval-queries.json corpus. That file is authoritative relevance ground truth, not derived cache state, so the scanner now explicitly excludes it while retaining detection for every other indexed search artifact. Focused regression and live health/validate both pass with zero warnings."
+  "2026-07-24T13:49:01.540Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
 notes[2]{created_at,author,text}:
   "2026-07-12T06:11:43.742Z",maintainer-agent,"PR#520 (merged 2026-07-12) shipped AC halves 1-2: SDK primitives ensurePmGitignore/getPmGitignoreBlock (src/sdk/workspace.ts, re-exported via runtime) + pm init writes/repairs the fenced ignore block at the workspace root in discovered/explicit/tracker-path modes with updated:gitignore:<path> warning; docs/SDK.md + docs/AGENT_GUIDE.md updated. REMAINING scope (why this stays open): AC half 3 — pm validate or pm health warning when tracked .agents/pm runtime/search cache files already exist in git (git rm --cached remediation hint); grep confirms no validate/health implementation on main. Optional: init/getting-started docs coverage beyond AGENT_GUIDE."
   "2026-07-13T09:18:15.456Z",maintainer-agent,"Scope extension (pass #77, 2026-07-13): the fenced ignore block MUST also cover .agents/pm/locks/ — concrete failure: review pass #76's commit (67ccbcf4) accidentally committed .agents/pm/locks/reindex.lock (a live-pid runtime lock) because this repo's .gitignore covered runtime/ and search/ but not locks/. The tracked-cache health warning (AC half 3) should likewise flag tracked lock files. Our own repo's .gitignore gets the locks/ line directly this pass (hygiene fix, pass #77 commit); pm init's fenced block owns it for user repos."
-files[4]{path,scope,note}:
+files[9]{path,scope,note}:
   src/cli/commands/init.ts,project,Apply ignore primitive from all workspace-aware init modes
+  src/core/diagnostics/remediation.ts,project,Machine-executable tracked-cache remediation registry entries
+  src/sdk/governance/health.ts,project,Health integrity warning and structured tracked-cache details
+  src/sdk/governance/tracked-runtime-cache.ts,project,Shared read-only Git index scan for tracked clone-local tracker artifacts
+  src/sdk/governance/validate.ts,project,Storage-integrity tracked-cache warning and fix hints
+  src/sdk/init.ts,project,Read-only guidance status avoids workspace cache policy mutation
   src/sdk/workspace.ts,project,Public workspace customization primitive
   tests/integration/init-path-guard.integration.spec.ts,project,Workspace init integration coverage
   tests/unit/core/workspace/gitignore.spec.ts,project,Create repair and idempotence coverage
-tests[1]{command,scope,timeout_seconds}:
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/unit/core/workspace/gitignore.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/tracked-runtime-cache.spec.ts tests/unit/commands/health-command.spec.ts tests/unit/commands/validate-command.spec.ts,project,240
+docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Document init cache ignore and tracked-cache remediation
+  docs/MERGE_SAFETY.md,project,Index-only removal workflow and runtime-directory policy
+close_reason: Closed with canonical init ignore ownership plus health/validate detection and safe index-only remediation for all clone-local tracker artifact classes.
 body: ""
