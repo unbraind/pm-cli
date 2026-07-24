@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[7]: "area:ci","area:sdk",cross-platform,gh-issue,nightly,node22,windows
 created_at: "2026-07-24T12:39:52.841Z"
-updated_at: "2026-07-24T13:35:06.472Z"
+updated_at: "2026-07-24T13:49:02.791Z"
 assignee: codex-root-agent
 author: codex-root-agent
 estimated_minutes: 180
@@ -27,10 +27,11 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cedo0g,related,"2026-07-24T12:39:52.841Z",null,null
   pm-hcrmye,related,"2026-07-24T12:39:52.841Z",null,null
   pm-klo8,related,"2026-07-24T12:39:52.841Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-24T12:39:52.841Z",codex-root-agent,"Duplicate-check evidence: exact run/error and all-status cross-platform searches found no current item owning this five-test nightly regression. Historical Windows and Bun/SQLite items cover different root failures and remain linked as lineage."
   "2026-07-24T12:40:42.213Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
   "2026-07-24T13:35:06.471Z",codex-root-agent,"Local completion evidence pending hosted confirmation: the exact five-file Node 22.21.1 regression set passed 57 tests with clean stderr after stable-runtime SQLite gating; final full suite passed 6220 tests at 100/100/100/100 on Node 26. Windows-targeted tests already use deterministic capability seams rather than chmod assumptions. This remains in progress until the new PR supplies exact hosted Node 22 and Windows proof, per acceptance."
+  "2026-07-24T13:49:02.791Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
 files[1]{path,scope,note}:
   src/core/store/item-metadata-query-index.ts,project,Optional SQLite capability boundary
 tests[2]{command,scope,timeout_seconds}:

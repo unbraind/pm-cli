@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: concurrency,locking,robustness
 created_at: "2026-07-03T13:25:46.443Z"
-updated_at: "2026-07-24T13:35:26.718Z"
+updated_at: "2026-07-24T13:49:02.118Z"
 closed_at: "2026-07-24T13:34:58.073Z"
 author: claude-code-agent
 estimated_minutes: 120
@@ -19,9 +19,10 @@ expected_result: Two stale-lock contenders yield exactly one lock owner.
 actual_result: Deterministic two-contender regression proves exactly one winner and the full suite remains green.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2muu,related,"2026-07-03T13:25:54.919Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-24T12:40:39.415Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
   "2026-07-24T13:34:57.322Z",codex-root-agent,"Completion evidence after full live reconciliation: the current lock implementation uses an atomic unique .stale-cleanup gate before deleting an observed stale lock, and tests/unit/core/item/core-item-lock-coverage.spec.ts deterministically proves two contenders cannot delete a fresh replacement and exactly one waiter wins. The focused lock suite and final 6220-test 100/100/100/100 coverage gate pass. No additional production edit was necessary because the previously merged pm-2muu implementation already satisfies this item's residual acceptance."
+  "2026-07-24T13:49:02.118Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/item/core-item-lock-coverage.spec.ts,project,300
 close_reason: Closed after verifying the live atomic stale-cleanup takeover implementation and deterministic single-winner race coverage; full repository gate remains 100%.

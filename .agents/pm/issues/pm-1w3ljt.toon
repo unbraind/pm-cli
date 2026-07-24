@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:init","area:merge","area:sdk",gh-issue,multi-agent
 created_at: "2026-07-24T12:38:27.541Z"
-updated_at: "2026-07-24T13:35:27.962Z"
+updated_at: "2026-07-24T13:48:59.732Z"
 closed_at: "2026-07-24T13:35:02.738Z"
 author: codex-root-agent
 estimated_minutes: 240
@@ -28,10 +28,11 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-hous,related,"2026-07-24T12:38:27.541Z",null,null
   pm-iwsj,related,"2026-07-24T12:38:27.541Z",null,null
   pm-usfg,related,"2026-07-24T12:38:27.541Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-24T12:38:27.541Z",codex-root-agent,"Duplicate-check evidence: searched every status for GH-663, fresh init merge fence, .gitattributes, merge-driver installation, and multi-agent conflict recovery. Closed pm-g5sx/pm-iwsj own the shipped machinery and repo adoption; pm-hous owns ignore-file lifecycle. No item owns default fresh-init fence wiring, so this focused issue is canonical."
   "2026-07-24T12:40:40.798Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
   "2026-07-24T13:35:01.779Z",codex-root-agent,"Completion evidence: final packed tarball in fresh Git repos proved default init installs .gitattributes and all clone-local driver definitions, agent-guidance=status leaves .gitignore/.gitattributes byte-identical, custom tracker roots render correct fence paths, and --no-merge-fence leaves .gitattributes absent. A real two-branch semantic merge preserved independent comments and notes on one item and storage_integrity returned ok. Full gate remains 100/100/100/100."
+  "2026-07-24T13:48:59.731Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
 files[5]{path,scope,note}:
   src/cli/commands/init.ts,project,Thin CLI init adapter
   src/cli/register-setup.ts,project,Init merge-fence opt-out

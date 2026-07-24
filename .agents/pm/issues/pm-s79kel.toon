@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:schema","area:sdk",gh-issue,migration
 created_at: "2026-07-24T12:38:52.752Z"
-updated_at: "2026-07-24T13:35:28.604Z"
+updated_at: "2026-07-24T13:49:00.367Z"
 closed_at: "2026-07-24T13:35:05.058Z"
 author: codex-root-agent
 estimated_minutes: 180
@@ -28,10 +28,11 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-klo8,related,"2026-07-24T12:38:52.752Z",null,null
   pm-rxqcp9,related,"2026-07-24T12:38:52.752Z",null,null
   pm-usfg,related,"2026-07-24T12:38:52.752Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-24T12:38:52.752Z",codex-root-agent,"Duplicate-check evidence: searched all statuses for GH-665, migrationId omission, dry-run planning, raw schema assertion, and structured recovery. Existing items shipped the migration engine and boundary classification; none owns this new first-use ergonomics regression."
   "2026-07-24T12:40:41.482Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
   "2026-07-24T13:35:04.133Z",codex-root-agent,"Completion evidence: packed SDK/CLI consumer derived a stable auto- migration id over repeated dry-runs, produced a distinct id for the same request in a second workspace, preserved explicit external-orchestrator-42, applied rename-type without an explicit id, and losslessly rewrote the affected item to the new type. Unit coverage includes all migration kinds, malformed input, runtime/MCP adapters, and dry-run no-write boundaries. Final gate: 355 files / 6220 tests / literal 100/100/100/100."
+  "2026-07-24T13:49:00.366Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
 files[4]{path,scope,note}:
   src/cli/migration-gates.ts,project,Structured optional-id CLI recovery
   src/sdk/cli-contracts/tool-schema.ts,project,Agent schema optional migration id

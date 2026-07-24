@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: concurrency,data-loss,robustness
 created_at: "2026-07-03T13:25:30.308Z"
-updated_at: "2026-07-24T13:35:26.133Z"
+updated_at: "2026-07-24T13:49:00.969Z"
 closed_at: "2026-07-24T13:34:55.976Z"
 author: claude-code-agent
 estimated_minutes: 150
@@ -19,9 +19,10 @@ expected_result: Concurrent create/copy never overwrites another item and extens
 actual_result: Forced collisions fail with item_id_collision while preserving the original file; packed 50-process stress produced 50 unique durable items.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-bgcu,related,"2026-07-04T19:48:22.583Z",maintainer-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-24T12:40:38.702Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
   "2026-07-24T13:34:55.270Z",codex-root-agent,"Completion evidence: create/copy now perform the authoritative collision recheck under the per-id lock, fail with typed item_id_collision instead of overwriting, and generated-id probing covers extension-defined type folders. Deterministic forced-collision regressions preserve the sentinel document. Final packed tarball stress created 50 items with 10 concurrent processes: 50 unique returned ids and 50 durable new item documents. Full repository coverage gate passed 355 files / 6220 tests at literal 100/100/100/100."
+  "2026-07-24T13:49:00.968Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
 notes[1]{created_at,author,text}:
   "2026-07-20T02:36:15.849Z",maintainer-agent,"PR#617 (pm-pibw) shipped two mitigations that bound but do not close this TOCTOU: configurable ids.token_length (4-12, birthday-bound table in MERGE_SAFETY.md) shrinks the collision window probabilistically, and validate --check-storage-integrity now detects duplicate ids across type folders/formats deterministically after the fact. The residual owned here is the local allocation race itself: generateItemId probes existence before writeCreatedItem takes the per-id lock, so a same-process-window duplicate still silently overwrites. Fix direction unchanged: atomic reserve (create the id lock/placeholder at generation time) + idExists covering extension type folders."
 files[3]{path,scope,note}:
