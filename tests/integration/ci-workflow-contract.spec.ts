@@ -397,7 +397,9 @@ describe("GitHub workflow contract", () => {
     ]);
     expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
     expect(releaseWorkflow).not.toContain("Sandboxed PM regression");
-    expect(releaseWorkflow).not.toMatch(/npm publish --access public --provenance\s*$/m);
+    expect(releaseWorkflow).not.toMatch(
+      /^\s*npm publish\b(?![^\n]*--tag\s+latest\b)[^\n]*$/m,
+    );
   });
 
   it("keeps auto-release workflow aligned with one-production-release-per-day policy", async () => {

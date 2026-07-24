@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: "area:ci","area:release",npm,regression
 created_at: "2026-07-24T08:16:03.790Z"
-updated_at: "2026-07-24T08:21:04.328Z"
+updated_at: "2026-07-24T08:35:07.838Z"
 assignee: claude-code-agent
 author: claude-code-agent
 parent: pm-u9d0
@@ -19,10 +19,11 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-24T08:16:03.790Z",null,null
   pm-cedo0g,related,"2026-07-24T08:16:03.790Z",null,null
   pm-ee1k,related,"2026-07-24T08:16:03.790Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-24T08:16:03.790Z",claude-code-agent,"Duplicate check: searched all statuses for npm prerelease explicit tag, release publish tag latest, and same-day release. No item records this exact npm dist-tag contract failure; pm-cedo0g tracks the parent Bun recovery incident and is linked rather than duplicated."
   "2026-07-24T08:17:24.701Z",claude-code-agent,"TDD evidence: the workflow contract first failed against the untagged npm publish command, reproducing the hosted run 30077790348 failure. After adding the explicit latest dist-tag, all 10 workflow contract tests pass; docs links and build also pass."
   "2026-07-24T08:21:04.328Z",claude-code-agent,"Pre-PR evidence: repo-wide static quality passed with 100% source, exported, and member docstring coverage; 354 files and 6,213 tests passed at exact 100/100/100/100 coverage (42,684 statements, 30,277 branches, 8,689 functions, 41,488 lines). Focused workflow contract, docs links, and build also pass."
+  "2026-07-24T08:35:07.838Z",claude-code-agent,"Review remediation: CodeRabbit correctly identified that the negative contract only rejected the original exact untagged command. The assertion now rejects every npm publish line lacking --tag latest, including trailing-flag and duplicate-command variants. Focused 10-test workflow contract and repo-wide static quality pass."
 files[2]{path,scope,note}:
   .github/workflows/release.yml,project,Explicit stable npm dist-tag for every supported calendar release
   tests/integration/ci-workflow-contract.spec.ts,project,Regression contract rejects untagged npm publication
