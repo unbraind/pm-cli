@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: automation,regression,release,security
 created_at: "2026-07-24T15:16:37.435Z"
-updated_at: "2026-07-24T16:03:17.521Z"
+updated_at: "2026-07-24T16:10:36.715Z"
 closed_at: "2026-07-24T16:03:16.797Z"
 author: codex-root-agent
 acceptance_criteria: The release preparation pipeline cannot create an ordinal same-day production version; Any existing UTC-day release tag yields release_already_cut_today before mutation; Legacy same-day override requests fail closed with actionable same-tag recovery guidance; Release documentation explains retrying the existing tag after partial npm or GitHub failures
@@ -20,20 +20,22 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cedo0g,related,"2026-07-24T15:17:28.938Z",null,null
   pm-ee1k,related,"2026-07-24T15:17:28.938Z",null,null
   pm-gis0qo,related,"2026-07-24T15:17:28.938Z",null,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-24T15:16:37.435Z",codex-root-agent,"Duplicate check: searched all statuses for multiple same-day releases, ordinal auto release, and allow-same-day-release; no open canonical defect exists. Related completed incidents pm-cedo0g and pm-gis0qo repaired downstream failures but exposed the still-live pipeline bypass; recurring verification item pm-7zs0 and policy decision pm-ee1k provide lineage."
   "2026-07-24T15:21:09.593Z",codex-root-agent,"TDD evidence: the focused 55-test unit/integration/workflow contract set failed against the retained bypass, then passed after removing ordinal generation, rejecting the legacy override before Git inspection, and routing blocker recovery to the exact existing tag workflow."
   "2026-07-24T15:38:27.009Z",codex-root-agent,"Verification evidence: 355 files / 6,222 tests passed with repository-wide 100% statements (42,725/42,725), branches (30,306/30,306), functions (8,704/8,704), and lines (41,527/41,527). Focused pipeline coverage is independently 100/100/100/100. Static quality, ESLint, jscpd (0 clones), CodeFactor complexity, docstrings (100%), token budgets, package boundary, docs/skills links, TypeScript, secret scan, YAML parse, extracted workflow ShellCheck, compatibility migration, npm pack dry-run, and the 88-command packed package dogfood all passed."
   "2026-07-24T15:45:27.659Z",codex-root-agent,"GitHub linkage: PR #674 implements the fix; closed blocker issue #664 now links back to this canonical PM item and records the root-cause distinction from the downstream Bun and npm dist-tag incidents."
   "2026-07-24T15:53:12.207Z",codex-root-agent,"Review loop 1: CodeRabbit identified two real pre-Git bypasses. Explicit past/future YYYY.M.D targets could avoid today's tag query, and ordinal validation occurred after no-change/tracker-only skip exits. Both are fixed by resolving and validating the target immediately after flag parsing, requiring equality with utcDateKey(), and adding past/future/ordinal no-Git regression cases. Focused suite is now 58 tests and changed pipeline coverage remains 100/100/100/100; full lint/static/docs gates pass."
   "2026-07-24T16:03:15.455Z",codex-root-agent,"Review loop 2 and hosted evidence: CodeRabbit re-reviewed exact head d6eb0a40 and reported no new findings, explicitly confirming both prior P1/P2 fixes and immutable-tag recovery. CI's only failure was an unrelated Claude session-start smoke killed at its existing 6-second timeout after all prior smoke steps passed; rerunning only that failed job succeeded in 3m29s with no code or threshold change. All GitHub Actions checks are now green."
+  "2026-07-24T16:10:36.715Z",codex-root-agent,"Final gate follow-up: closing the tracked item correctly made CHANGELOG.md stale. Regenerated it with the package-owned pnpm changelog:pm command using pm-changelog 2026.7.23; pnpm changelog:pm:check now passes. The entry links pm-4s24d2 under Security. This append clarifies the prior green result: the implementation head was green, while the subsequent tracker closeout required this generated artifact refresh."
 notes[1]{created_at,author,text}:
   "2026-07-24T15:16:37.435Z",codex-root-agent,"Incident snapshot 2026-07-24 UTC: v2026.7.24, v2026.7.24-2, and v2026.7.24-3 tags exist; npm published 2026.7.24 and 2026.7.24-3. The base Release run failed after npm publication, -2 failed during npm publication, and -3 completed. Recovery should have retried the existing tag instead of cutting new ordinal versions."
 learnings[2]{created_at,author,text}:
   "2026-07-24T15:16:37.435Z",codex-root-agent,Removing the workflow input alone is insufficient when the reusable local release pipeline retains the same production bypass. The invariant must be enforced at the lowest mutation-capable boundary.
   "2026-07-24T15:38:27.629Z",codex-root-agent,"Partial-release recovery has two distinct phases: before a tag exists, rerun preparation; after a tag exists, rerun the exact immutable tag workflow. Conflating these phases is what allowed ordinal recovery releases and could also close a blocker without repairing the original tag."
-files[5]{path,scope,note}:
+files[6]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Exact-tag recovery reruns the failed Release workflow without creating another version
+  CHANGELOG.md,project,Generated release-policy entry through pm-changelog 2026.7.23
   scripts/release/run-release-pipeline.mjs,project,Mutation-capable release boundary enforcing the daily invariant
   tests/integration/ci-workflow-contract.spec.ts,project,Workflow recovery and permission contract
   tests/integration/release-automation-contract.spec.ts,project,Release surface contract
