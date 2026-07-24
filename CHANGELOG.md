@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-666/GH-667: nightly Node 22 stderr and Windows permission-contract regressions ([pm-lvd647](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lvd647.toon))
 - GH-665: schema migrations need derived idempotency keys and structured recovery ([pm-s79kel](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s79kel.toon))
 - GH-663: fresh init must install and surface the semantic merge fence ([pm-1w3ljt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1w3ljt.toon))
 - GH-514: pm init writes no .gitignore rules — runtime/search caches churn as tracked files in downstream repos ([pm-hous](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hous.toon))
