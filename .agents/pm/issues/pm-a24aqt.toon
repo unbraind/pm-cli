@@ -1,0 +1,28 @@
+id: pm-a24aqt
+title: "Dependabot alert #43: PostCSS previous source-map path traversal (GHSA-r28c-9q8g-f849)"
+description: "Resolve GitHub Dependabot alert #43 for transitive development dependency postcss 8.5.16, vulnerable through 8.5.17 to arbitrary .map file disclosure when auto-loading previous source maps. Upgrade the lockfile graph to postcss 8.5.18 or newer through the owning Vite/Vitest dependency path, preserve release-age and supply-chain policy, and prove the alert closes without weakening any gate."
+type: Issue
+status: open
+priority: 0
+tags[6]: "area:dependencies","area:security",dependabot,ghsa-r28c-9q8g-f849,high,postcss
+created_at: "2026-07-24T23:35:17.857Z"
+updated_at: "2026-07-24T23:35:17.857Z"
+author: claude-code-agent
+estimated_minutes: 120
+acceptance_criteria: "pnpm why postcss resolves only patched versions >=8.5.18; GitHub Dependabot alert #43 is closed; lockfile supply-chain policy, audit, static analysis, exact coverage, compatibility, package smoke, and exact-head DeepScan/CodeFactor gates pass; fix ships in the next PR and is linked from the alert follow-up lineage."
+parent: pm-qwoy
+severity: high
+environment: pnpm-lock.yaml; transitive development dependency postcss 8.5.16 via vite 7.3.5 and vitest 4.1.10
+repro_steps: "Read GitHub Dependabot alert 43 and run pnpm why postcss; current graph resolves one version, postcss 8.5.16, while the first patched version is 8.5.18."
+expected_result: "The resolved postcss version is at least 8.5.18, Dependabot alert #43 is closed, and the full security/static/coverage/release suite passes."
+actual_result: Main 1847f891 resolves postcss 8.5.16 through vite 7.3.5/vitest 4.1.10; Dependabot alert #43 is open at high severity.
+component: dependency supply chain
+regression: false
+customer_impact: Development-only transitive exposure; crafted sourceMappingURL input processed by affected tooling could disclose arbitrary .map files.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-6ixn,related,"2026-07-24T23:35:17.857Z",null,null
+  pm-e3g0h6,related,"2026-07-24T23:35:17.857Z",null,null
+  pm-pegcmx,related,"2026-07-24T23:35:17.857Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-24T23:35:17.857Z",claude-code-agent,"Duplicate check: searched every status for Dependabot 43, GHSA-r28c-9q8g-f849, PostCSS path traversal, and the advisory summary. No existing item tracks this newly opened alert; prior alert #42 is terminal and the dependency queue remains canonical related lineage. Live evidence at 2026-07-24T23:33:11Z: alert #43 is open/high, affects transitive development postcss <=8.5.17, and identifies 8.5.18 as first patched. The item remains open and unassigned for the next PR."
+body: ""
