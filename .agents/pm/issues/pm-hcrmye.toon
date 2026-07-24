@@ -1,0 +1,34 @@
+id: pm-hcrmye
+title: "10k scale gate regression: CLI create latency and create/claim peak RSS exceed fixed budgets"
+description: The deterministic 10k scale gate fails on current main under Node 26 because CLI create exceeds its latency ceiling and CLI create/claim exceed peak-memory ceilings; product p95 and token budgets still pass.
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:cli","area:performance","area:sdk",regression,scale
+created_at: "2026-07-24T12:02:38.401Z"
+updated_at: "2026-07-24T12:06:04.040Z"
+author: claude-code-agent
+estimated_minutes: 240
+acceptance_criteria: "The unmodified 10k scale gate passes at least three consecutive runs on the supported Node baseline; cli.create best/min is at or below 310 ms; cli.create peak RSS is at or below 115184640 bytes and cli.claim peak RSS is at or below 118031360 bytes; no budget increase, exclusion, iteration reduction, or feature loss; SDK and CLI correctness/token checks remain green; before/after phase and allocation evidence identifies the cause."
+parent: pm-9rxu
+risk: high
+confidence: high
+severity: high
+expected_result: "pnpm benchmark:scale:check passes the committed latency, RSS, correctness, and token budgets without budget relaxation."
+actual_result: Current main fails cli.create latency plus cli.create and cli.claim peak RSS ceilings while all other reported product budgets pass.
+component: performance
+regression: true
+comments[1]{created_at,author,text}:
+  "2026-07-24T12:02:38.401Z",claude-code-agent,"Duplicate-check evidence: all-status search over scale, create, claim, RSS, memory, and benchmark terms found the closed harness pm-mi2x and the living scale epic pm-9rxu, but no open item owning this current fixed-budget regression. Filed as a focused child of pm-9rxu."
+notes[1]{created_at,author,text}:
+  "2026-07-24T12:06:04.040Z",claude-code-agent,"Reproduction environment: current main at d96dfc85, pm 2026.7.24-3, Node v26.5.0, pnpm 11.10.0. The gate failure is evidence of budget drift, not permission to change scripts/bench/scale-budgets.json. Reproduce across supported Node versions before attributing the regression solely to application code."
+files[3]{path,scope,note}:
+  scripts/bench/run-scale-benchmarks.mjs,project,Current deterministic 10k scale gate runner
+  scripts/bench/scale-budgets.json,project,Fixed latency memory correctness and token budgets
+  scripts/bench/scale-workspace.mjs,project,Synthetic scale fixture generator
+tests[1]{command,scope,timeout_seconds}:
+  "pnpm benchmark:scale:check",project,900
+docs[2]{path,scope,note}:
+  docs/PERFORMANCE.md,project,Performance contract and benchmark guidance
+  docs/performance/latest-scale-report.json,project,Current checked-in scale evidence shape
+body: "Current-main evidence: benchmark:scale:check ran the checked-in 10k fixture and preserved the fixed budget manifest. CLI create best/min was 363 ms against 310 ms; create peak RSS was 139,964,416 bytes against 115,184,640; claim peak RSS was 138,199,040 against 118,031,360. Read-path p95 remained below one second and all default outputs stayed below 5k estimated tokens. The implementation must diagnose allocation/startup causes and restore the existing budgets without raising thresholds, excluding paths, weakening iterations, or removing behavior. SDK parity and tiny-project responsiveness are guardrails."

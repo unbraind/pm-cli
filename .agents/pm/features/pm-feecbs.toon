@@ -1,0 +1,36 @@
+id: pm-feecbs
+title: "Official ecosystem conformance gate: shared quality, security, SDK-boundary, duplication, and install-performance policy"
+description: "Turn the ecosystem trust ladder into one reusable, machine-readable conformance gate for every official external pm package and future Verified package, covering source quality through published-artifact runtime proof."
+type: Feature
+status: open
+priority: 1
+tags[6]: ecosystem,packages,quality,sdk,security,verified-tier
+created_at: "2026-07-24T12:02:58.234Z"
+updated_at: "2026-07-24T12:06:04.882Z"
+author: claude-code-agent
+estimated_minutes: 960
+acceptance_criteria: "A machine-readable matrix inventories every official external package and future candidate; a reusable package-owned preset or workflow enforces typecheck, lint, complexity, dead-export analysis, tests, coverage, duplication ratchet, production dependency audit, pack verification, isolated install/activate/doctor, and runtime action-contract smoke; shared maintenance logic is versioned once instead of copied across repositories; intentional shared code is documented and large vendored implementations such as pm-graph inside pm-web are replaced by an explicit package/build dependency or separately justified boundary; public SDK imports only use supported exports and subprocess fallback is limited to explicit process boundaries; package service/renderer ownership produces zero unexplained doctor warnings; install latency is measured with a documented budget and retry/noise policy; published npm artifacts and exact default-branch heads are both proven; no quality threshold is weakened and no package feature is removed."
+parent: pm-o8um
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-92if,related,"2026-07-24T12:03:39.331Z",null,null
+  pm-quzx,related,"2026-07-24T12:03:39.331Z",null,null
+  pm-usfg,related,"2026-07-24T12:03:39.331Z",null,null
+  pm-vnjh,related,"2026-07-24T12:03:39.331Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-24T12:02:58.234Z",claude-code-agent,"Duplicate-check evidence: all-status search found pm-vnjh for the shipped external smoke harness, pm-o8um for the open trust ladder, pm-quzx for dependency ranges and duplicate beads/todos homes, pm-92if for core-repo quality, and pm-usfg for the public SDK boundary. None owns a fleet-wide lint, coverage, duplication, dead-code, security, and install-latency conformance floor, so this focused child extends pm-o8um and relates to those canonical owners."
+notes[1]{created_at,author,text}:
+  "2026-07-24T12:06:04.881Z",claude-code-agent,"Current fleet scope is exactly the 18 public repositories pm-beads, pm-brief, pm-changelog, pm-context, pm-csv, pm-gantt-chart, pm-github, pm-graph, pm-jira, pm-linear, pm-ops, pm-presets, pm-slack, pm-slack-standup, pm-starter, pm-todos, pm-ts-starter, and pm-web. The gate should discover this inventory from authoritative catalog metadata so the list cannot silently drift."
+learnings[1]{created_at,author,text}:
+  "2026-07-24T12:06:03.261Z",claude-code-agent,"Passing isolated install and runtime smoke proves package reachability, not source maintainability. Verified ecosystem trust needs a second layer that evaluates lint, coverage, duplication, dead exports, dependency policy, published artifacts, service ownership, and install cost across repository boundaries."
+files[2]{path,scope,note}:
+  scripts/dogfood-package-first.mjs,project,Host package-first conformance precedent
+  scripts/smoke-external-packages.mjs,project,Existing isolated external package install and runtime smoke substrate
+tests[1]{command,scope,timeout_seconds}:
+  "pnpm smoke:external-packages -- pm-beads@latest pm-brief@latest pm-changelog@latest pm-context@latest pm-csv@latest pm-gantt-chart@latest pm-github@latest pm-graph@latest pm-jira@latest pm-linear@latest pm-ops@latest pm-presets@latest pm-slack@latest pm-slack-standup@latest pm-starter@latest pm-todos@latest pm-ts-starter@latest pm-web@latest",project,1800
+docs[3]{path,scope,note}:
+  docs/EXTENSION_AUTHOR_CONTRACTS.md,project,Package author conformance requirements
+  docs/EXTENSIONS.md,project,Package lifecycle and extension contracts
+  docs/SDK.md,project,Public SDK authoring boundary
+body: "The current 18-repository fleet is release-healthy and every published package passed isolated install, activation, doctor blocking checks, and runtime contract exposure. However, none of the 18 repositories declares a lint script or coverage gate; hand-authored TypeScript uses many explicit any annotations; a cross-repository duplicate scan found 42 clone groups and 2,284 duplicated lines, led by 17 copies of the merge-driver preparation script and a vendored pm-graph implementation inside pm-web; several extensions still emit global renderer/service override warnings; package dependency placement and floors vary; and isolated install time has large outliers. The host already owns reusable smoke and SDK authoring primitives. This feature defines one shared preset/workflow and evidence schema so Community, Verified, and Featured labels reflect reproducible package quality rather than repository-local convention. It must compose with pm-quzx rather than duplicate its beads/todos and dependency-range decisions."
