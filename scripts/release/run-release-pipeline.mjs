@@ -105,6 +105,11 @@ export function resolveVersion(explicitVersion, todayKey) {
       `Unsupported target version "${targetVersion}": expected YYYY.M.D because the release pipeline permits only one production version per UTC day.`,
     );
   }
+  if (targetVersion !== todayKey) {
+    fail(
+      `Unsupported target version "${targetVersion}": the release pipeline target must equal the current UTC date (${todayKey}).`,
+    );
+  }
   return targetVersion;
 }
 
@@ -385,6 +390,8 @@ export function runPipeline() {
   const skipCompatibility = flagBool(flags, "skip-compatibility", false);
   const skipTelemetrySentry = flagBool(flags, "skip-telemetry-sentry", false);
   const explicitVersion = flagString(flags, "version", null);
+  const todayKey = utcDateKey();
+  const targetVersion = resolveVersion(explicitVersion, todayKey);
   const author = flagString(flags, "author", "release-automation");
   const releaseNotesOutput = flagString(
     flags,
@@ -409,14 +416,12 @@ export function runPipeline() {
     return;
   }
 
-  const todayKey = utcDateKey();
   const tagsToday = listTodayTags(todayKey);
   if (maybeSkipForSameDayRelease(tagsToday, todayKey, outputJson)) {
     return;
   }
 
   const previousVersion = readPackageVersion();
-  const targetVersion = resolveVersion(explicitVersion, todayKey);
 
   if (!dryRun) {
     const changelogPreparation = prepareReleaseChangelog({ targetVersion });

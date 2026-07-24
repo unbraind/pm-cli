@@ -42,6 +42,7 @@ function mockUtils(runCommand: ReturnType<typeof vi.fn>, repoRoot?: string): voi
     return {
       ...actual,
       ...(repoRoot ? { repoRoot } : {}),
+      utcDateKey: () => "2026.6.15",
       runCommand,
       fail(message: string, exitCode = 1) {
         throw new Error(`FAIL:${exitCode}:${message}`);
@@ -182,6 +183,15 @@ describe("run-release-pipeline", () => {
       const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
       expect(mod.resolveVersion("2026.6.15", "2026.6.15")).toBe("2026.6.15");
       expect(mod.resolveVersion(null, "2026.6.15")).toBe("2026.6.15");
+      expect(runCommand).not.toHaveBeenCalled();
+    });
+
+    it("rejects explicit past or future calendar targets", async () => {
+      const runCommand = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
+      mockUtils(runCommand);
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(() => mod.resolveVersion("2026.6.14", "2026.6.15")).toThrow(/current UTC date/);
+      expect(() => mod.resolveVersion("2026.6.16", "2026.6.15")).toThrow(/current UTC date/);
       expect(runCommand).not.toHaveBeenCalled();
     });
 
@@ -326,6 +336,21 @@ describe("run-release-pipeline", () => {
       process.argv = ["node", "x", "--allow-same-day-release", "--dry-run"];
       expect(() => mod.runPipeline()).toThrow(/removed.*retry the existing tag/i);
       expect(runCommand).not.toHaveBeenCalled();
+    });
+
+    it("rejects ordinal and different-date targets before successful skip paths or Git inspection", async () => {
+      for (const targetVersion of ["2026.6.15-2", "2026.6.16"]) {
+        vi.resetModules();
+        const runCommand = baseGitMock((command, args) => {
+          if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "0\n", stderr: "" };
+          return undefined;
+        });
+        mockUtils(runCommand);
+        const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+        process.argv = ["node", "x", "--version", targetVersion, "--dry-run"];
+        expect(() => mod.runPipeline()).toThrow(/Unsupported target version/);
+        expect(runCommand).not.toHaveBeenCalled();
+      }
     });
 
     it("dry-run with explicit version emits JSON result", async () => {

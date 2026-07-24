@@ -33,7 +33,8 @@ pnpm version:next
 
 This diagnostic preserves compatibility with historical ordinal tags. Its
 output does not override the production pipeline's one-release-per-UTC-day
-guard.
+guard. An explicit pipeline `--version` must equal the current UTC calendar
+date; past, future, malformed, and ordinal targets fail before Git inspection.
 
 Validate the current package version:
 
