@@ -17,7 +17,7 @@ importers:
   .:
     dependencies:
       '@sentry/node':
-        specifier: ^10.63.0
+        specifier: 10.65.0
         version: 10.65.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.1))
       '@toon-format/toon':
         specifier: ^2.3.0

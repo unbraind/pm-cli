@@ -137,6 +137,16 @@ describe("pm package manifest model", () => {
     });
   });
 
+  it("pins Sentry to a packed-consumer-safe declaration release", async () => {
+    const packageJson = JSON.parse(await readFile(path.join(repoRoot, "package.json"), "utf8")) as {
+      dependencies?: Record<string, unknown>;
+    };
+
+    // Fresh npm consumers do not inherit pnpm-lock.yaml. Keep this exact until
+    // Sentry no longer pins the NodeNext-incompatible transformer declarations.
+    expect(packageJson.dependencies?.["@sentry/node"]).toBe("10.65.0");
+  });
+
   it("reads package.json pm resources as a first-class manifest", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-manifest-"));
     await writeFile(
