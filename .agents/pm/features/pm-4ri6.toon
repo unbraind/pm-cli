@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: data-quality,dedupe,multi-agent,sdk-first
 created_at: "2026-07-07T06:49:49.719Z"
-updated_at: "2026-07-24T22:24:17.026Z"
+updated_at: "2026-07-24T22:26:07.375Z"
 closed_at: "2026-07-24T22:23:07.422Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -21,9 +21,10 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4n1a,related,"2026-07-07T06:49:49.719Z",null,null
   pm-jmld,related,"2026-07-07T06:49:49.719Z",null,null
   pm-khdq,related,"2026-07-07T06:49:49.719Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-24T20:08:26.657Z",claude-code-agent,"Evidence: shared normalize/tokenize/Jaccard/exact-issue-code scorer now powers both create/copy governance and pm-governance-audit; persistent SQLite FTS supplies bounded candidates when warm, with metadata fallback when explicitly enabled without an index. Minimal/default presets remain zero-overhead off; strict preset enforces, and advisory/strict/threshold/limit are discoverable config leaves. CLI and SDK tests pass, including explicit --allow-duplicate and copy-source exclusion."
   "2026-07-24T22:21:50.343Z",claude-code-agent,"Acceptance evidence: clean packed-package proof enabled advisory governance through the public config key, created a duplicate, surfaced likely_duplicates with the canonical item id, and read two ranked matches through @unbrained/pm-cli/sdk. Full release coverage is exact 100/100/100/100. The shared index-first scorer is used by create, copy, and governance-audit; CLI/MCP contracts and docs are updated."
+  "2026-07-24T22:26:07.373Z",claude-code-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/684"
 files[8]{path,scope,note}:
   packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,Shared scorer reuse
   src/cli/commands/copy.ts,project,Copy advisory with source exclusion

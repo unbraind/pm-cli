@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-ux,"area:sdk",composability,long-term,multi-agent
 created_at: "2026-07-06T22:56:13.669Z"
-updated_at: "2026-07-24T22:24:18.596Z"
+updated_at: "2026-07-24T22:26:08.496Z"
 closed_at: "2026-07-24T22:23:09.499Z"
 author: maintainer-agent
 estimated_minutes: 600
@@ -20,10 +20,11 @@ actual_result: "Installed CLI emitted ordered NDJSON create, claim, and update f
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-646c,related,"2026-07-06T22:56:57.915Z",null,null
   pm-801d,related,"2026-07-06T22:56:57.915Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-24T19:31:07.827Z",claude-code-agent,"Implementation evidence: added a persistent derived cross-stream history index, stable query-bound cursors, bounded filterable SDK pages, AbortSignal-aware async subscriptions, and the SDK-backed `pm events` NDJSON CLI. Focused build and 52-test contract/event/history suite passed. A real temporary tracker smoke emitted exactly one filtered create event with its durable cursor. The projection remains derived from authoritative JSONL history and is lazily rebuildable; no daemon or new mutation path was introduced."
   "2026-07-24T22:21:51.241Z",claude-code-agent,"Acceptance evidence: clean packed-package proof produced three ordered create/claim/update events for one item, returned a stable next_cursor, and read the same stream through the installed SDK. Full release coverage is exact 100/100/100/100; history health and drift validation passed. The documented pm-slack migration path remains consumer work, while the required producer primitive is complete."
   "2026-07-24T22:24:18.595Z",claude-code-agent,"Changelog evidence: installed latest registry pm-changelog 2026.7.24 and regenerated CHANGELOG.md from closed tracker state through the package-owned command; no hand editing was used."
+  "2026-07-24T22:26:08.496Z",claude-code-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/684"
 files[7]{path,scope,note}:
   src/cli/main.ts,project,Lazy CLI family routing for events command
   src/cli/register-list-query.ts,project,NDJSON pm events CLI shim over SDK primitive

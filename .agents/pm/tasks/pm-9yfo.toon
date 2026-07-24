@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: "area:history",contracts,pm-cli,quality-gate
 created_at: "2026-07-06T23:08:54.068Z"
-updated_at: "2026-07-24T22:23:12.560Z"
+updated_at: "2026-07-24T22:26:09.586Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "A test enumerates every mutating action from the contracts/register-mutation tables (single source of truth, no hand-maintained list), executes each against a sandbox workspace, and asserts a history entry is appended with correct op and author; item-scope mutations gate immediately; workspace-scope mutations gate once pm-klo8 lands (until then the test asserts the known-unaudited list explicitly so any new unaudited mutation still fails); adding a mutating command without history coverage fails CI; the invariant is documented in the history docs."
@@ -15,10 +15,11 @@ risk: low
 confidence: high
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-klo8,related,"2026-07-06T23:10:05.000Z",maintainer-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-13T21:41:33.254Z",codex-root,"History-completeness audit 2026-07-13: before this audit mutated the tracker, all 1,792 discovered history streams and all 28,195 events were read; integrity checks found zero missing streams, unreadable logs, hash mismatches, chain mismatches, or history drift. Item mutation integrity is therefore currently healthy. Keep this item open because workspace-scoped configuration, schema, profile, initialization, and other non-item mutation paths still need explicit immutable audit coverage and restoration semantics, coordinated with pm-klo8."
   "2026-07-24T05:17:57.275Z",claude-code-agent,"Investigation evidence: the current repository has multiple overlapping mutation inventories (CLI registration families, migration write gates, telemetry roots, MCP action contracts). A truthful contract-driven execute-every-mutation gate requires first consolidating those sources into one executable registration contract; this PR does not pretend a static scope list satisfies that acceptance criterion. Returning this item to open while the three fully implemented mutation-integrity items remain active."
   "2026-07-24T22:21:52.156Z",claude-code-agent,"Partial implementation evidence: PM_MUTATION_ACTION_CONTRACTS now provides one public typed classification of core mutation actions and required item/workspace history scopes, with drift tests and SDK documentation. This does not yet satisfy the item acceptance criterion to execute every classified mutation against a sandbox and assert op/author, so the item will return to open rather than being falsely closed."
+  "2026-07-24T22:26:09.585Z",claude-code-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/684"
 files[2]{path,scope,note}:
   src/sdk/mutation-guard.ts,project,Canonical executable mutation and history-scope contract
   tests/unit/sdk/mutation-guard.spec.ts,project,Contract enumeration and drift regression coverage
