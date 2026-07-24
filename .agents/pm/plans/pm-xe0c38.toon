@@ -2,15 +2,15 @@ id: pm-xe0c38
 title: "Holistic pm CLI, SDK, and ecosystem optimization roadmap"
 description: "Manual whole-system review and deduplicated delivery map for the pm CLI, public SDK, repository architecture, multi-agent storage semantics, agent UX, performance, security, and official external package fleet."
 type: Plan
-status: open
+status: closed
 priority: 0
-tags[6]: audit,changelog-exclude,context-management,ecosystem,planning,roadmap
+tags[5]: audit,context-management,ecosystem,planning,roadmap
 created_at: "2026-07-24T12:06:36.504Z"
-updated_at: "2026-07-24T12:09:37.874Z"
-assignee: claude-code-agent
+updated_at: "2026-07-24T12:17:14.451Z"
+closed_at: "2026-07-24T12:10:45.243Z"
 author: claude-code-agent
 estimated_minutes: 480
-acceptance_criteria: "All current pm items and official packages are evaluated from live state; every finding is mapped to a canonical owner or a duplicate-checked focused item; measured regressions include reproducible evidence and fixed non-weakenable budgets; plan captures sequencing across CLI, SDK, architecture, performance, security, multi-agent safety, and packages; no implementation code or generated changelog is changed; tracker integrity passes; tracker-only commit is pushed directly to main."
+acceptance_criteria: "All current pm items and official packages are evaluated from live state; every finding is mapped to a canonical owner or a duplicate-checked focused item; measured regressions include reproducible evidence and fixed non-weakenable budgets; plan captures sequencing across CLI, SDK, architecture, performance, security, multi-agent safety, and packages; no implementation source, tests, dependencies, workflows, thresholds, or release assets are changed; tracker integrity passes; package-owned generated changelog reflects the closed plan; tracker commit is pushed directly to main."
 goal: project management = context management
 objective: "A deduplicated, evidence-backed roadmap makes pm simpler, faster, safer, more extensible, and easier for agents without feature loss."
 value: Future agents can resume from live canonical owners instead of repeating broad review work or creating overlapping backlog.
@@ -18,6 +18,9 @@ why_now: "The command surface, SDK, tracker corpus, and official package fleet h
 parent: pm-doxj
 risk: medium
 confidence: high
+resolution: Whole-system planning review completed and published as a tracker-only roadmap; future implementation remains in the linked open canonical items.
+expected_result: "A live-state, deduplicated CLI, SDK, architecture, security, performance, multi-agent, and external-package roadmap with no implementation changes."
+actual_result: "Completed plan pm-xe0c38 links all canonical workstreams, records full evidence and sequencing, adds only pm-hcrmye and pm-feecbs, and published the substantive tracker commit directly to main."
 dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-92if,related,"2026-07-24T12:06:36.504Z",null,null
   pm-9rxu,related,"2026-07-24T12:06:36.504Z",null,null
@@ -29,6 +32,10 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-quzx,related,"2026-07-24T12:06:36.504Z",null,null
   pm-ugqx,related,"2026-07-24T12:06:36.504Z",null,null
   pm-usfg,related,"2026-07-24T12:06:36.504Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-24T12:10:41.724Z",claude-code-agent,"Publication evidence: substantive tracker-only roadmap and findings shipped directly to main in b7bb0db6ab8c5cb637425e1ce52b020b02cfe7ae. origin/main matched after fetch; the commit changed only .agents/pm artifacts and GitHub scheduled no workflow run for the exact head."
+  "2026-07-24T12:14:54.015Z",claude-code-agent,"Closeout correction: the published pm-changelog generator intentionally includes closed Plan items and does not consume a changelog-exclude tag. Removed the misleading tag, updated the plan wording, and regenerated CHANGELOG.md only through pnpm changelog:pm; no product implementation changed."
+  "2026-07-24T12:17:14.451Z",claude-code-agent,"Final dedupe refinement: active exact-title and parent-scope audits are clean. The fuzzy audit reports six Semgrep-only clusters (29 items), but full-record sampling shows distinct external finding IDs and distinct argument flows at shared source locations. Recorded the result on canonical parent pm-oz8u and explicitly superseded the earlier zero-fuzzy shorthand; no items were merged or closed."
 files[8]{path,scope,note}:
   package.json,project,Published CLI SDK scripts dependencies and exports
   scripts/bench/run-scale-benchmarks.mjs,project,Scale regression evidence
@@ -73,14 +80,16 @@ docs[8]{path,scope,note}:
   docs/PERFORMANCE.md,project,Latency memory and token budgets
   docs/SDK_PRIMITIVE_INVENTORY.md,project,SDK-first boundary inventory
   docs/SDK.md,project,Public SDK contract
+close_reason: "Completed the whole-system manual review and pm-only roadmap. Reused canonical live owners, documented current evidence, created only focused pm-hcrmye and pm-feecbs, passed tracker integrity and dedupe gates, and published the substantive tracker-only commit directly to main."
 plan_mode: review
 plan_scope: Planning and evidence only; no implementation changes in this session.
 plan_harness: codex
 plan_resume_context: Start with pm context and full live metadata. Treat pm-hcrmye as the current measured performance regression and pm-feecbs as the external-fleet conformance gap. Reuse the linked canonical epics for every other workstream; do not create a new broad umbrella or weaken any gate.
-plan_validation[3]{text,command,expected}:
+plan_validation[4]{text,command,expected}:
   "Core build, typecheck, coverage, lint, static quality, package boundary, token budget, docs/skills, contracts, security scan, production audit, changelog check, package-first dogfood, and exact-head GitHub checks were inspected.","pnpm build; pnpm test:coverage; pnpm lint; pnpm typecheck; pnpm security:scan; pnpm audit --audit-level moderate; pnpm dogfood:package-first",All pass without threshold changes; benchmark failure remains separately recorded.
   Published external package runtime verification completed for the authoritative 18-package fleet.,"pnpm smoke:external-packages -- <all official package specs>","18 tested, zero failed, zero blocking doctor findings, runtime actions exposed."
   "Final pre-publication tracker checks passed: health clean, normalize proposes zero active changes, merge reconciliation dry-run finds zero drift, storage integrity and merge fence clean, exact/fuzzy/parent-scope active duplicates zero, graph has zero active isolates and only informational legacy findings, every mutated history stream verifies.",pm health; pm normalize --dry-run; pm merge reconcile --dry-run; pm graph audit --summary; pm dedupe-audit; pm history --verify --strict-exit,"No actionable integrity, history, graph, or duplicate failures."
+  "Correction and refinement to the earlier duplicate summary: active exact-title and parent-scope audits returned zero clusters; active fuzzy audit returned six Semgrep-only clusters covering 29 items. Manual full-metadata comparison confirms distinct external finding IDs and rule flows, so these are review groups rather than safe automatic duplicates; evidence is recorded on pm-oz8u.",pm dedupe-audit --mode title_exact|title_fuzzy|parent_scope --status open; pm get pm-oz8u; pm get pm-dtn1; pm get pm-y49x,No automatic merge; retain scanner identity and triage the six clusters under pm-oz8u.
 plan_decisions[2]{ts,author,decision,rationale,evidence}:
   "2026-07-24T12:07:20.356Z",claude-code-agent,Reuse living capability epics and focused owners instead of creating a replacement audit umbrella.,"Live all-status search and full metadata show complete canonical coverage for CLI simplification, SDK completeness, quality, architecture, scale, merge safety, security, and dependency policy.","pm-doxj, pm-n7rr, pm-usfg, pm-92if, pm-9rxu, pm-ugqx, pm-quzx and their current children."
   "2026-07-24T12:07:21.012Z",claude-code-agent,Keep the scale failure and external fleet conformance gap as separate focused work.,One is a reproducible current-main regression against fixed host budgets; the other is a cross-repository governance capability. Bundling would obscure acceptance and ownership.,pm-hcrmye and pm-feecbs.
@@ -88,68 +97,13 @@ plan_discoveries[3]{ts,author,text}:
   "2026-07-24T12:07:21.786Z",claude-code-agent,"The core repository has exact 100% all-source coverage and zero configured code clones, yet four infrastructure files are above 99% of the effective-LOC cap and the widest source directory contains 70 direct files."
   "2026-07-24T12:07:22.445Z",claude-code-agent,"Every official published external package passed isolated runtime smoke, but no external repository exposes lint or coverage scripts and shared or vendored source duplication remains material."
   "2026-07-24T12:07:23.082Z",claude-code-agent,"Agent-facing recovery is generally actionable: unsupported search and create flags returned exact ownership hints. Nested positional-action help and read-only init status mutation remain owned by existing help/init lineages."
-plan_steps[8]:
-  - id: plan-step-001
-    order: 1
-    title: "Reconstruct live tracker state, goals, metadata, history, and canonical ownership"
-    status: completed
-    created_at: "2026-07-24T12:06:36.781Z"
-    updated_at: "2026-07-24T12:07:51.142Z"
-    evidence: "Inspected all-status counts, context, open and in-progress sets, full canonical item metadata, comments, notes, learnings, histories, hierarchy, dependencies, activity range, and current GitHub/npm state; reused the living roadmap."
-    completed_at: "2026-07-24T12:07:51.142Z"
-  - id: plan-step-002
-    order: 2
-    title: "Review CLI grammar, agent UX, output token cost, contracts, and customization"
-    status: completed
-    created_at: "2026-07-24T12:06:36.781Z"
-    updated_at: "2026-07-24T12:07:51.840Z"
-    evidence: "Measured 75 root names versus 63 canonical contract summaries, exercised error recovery and help, sampled TOON payload sizes, inspected runtime contracts, schema, profiles, agent guidance, and customization lineages; mapped all simplification work to pm-n7rr."
-    completed_at: "2026-07-24T12:07:51.840Z"
-  - id: plan-step-003
-    order: 3
-    title: "Review public SDK completeness, extension authoring, type boundaries, and exemplars"
-    status: completed
-    created_at: "2026-07-24T12:06:36.781Z"
-    updated_at: "2026-07-24T12:07:52.489Z"
-    evidence: "Verified the zero-private-core presentation boundary, public package exports, SDK-only exemplars, extension lifecycle and authoring docs, typed runtime contracts, and external import paths; maintainability findings map to quality owners rather than missing SDK primitives."
-    completed_at: "2026-07-24T12:07:52.489Z"
-  - id: plan-step-004
-    order: 4
-    title: "Review architecture, source topology, complexity, dead code, duplication, docs, and skills"
-    status: completed
-    created_at: "2026-07-24T12:06:36.781Z"
-    updated_at: "2026-07-24T12:07:53.143Z"
-    evidence: "Inventoried source and test LOC, effective file ceilings, direct-directory fan-out, dependency surface, code and Markdown duplication, dead-export governance, docs topology, skill hashes, complexity suppressions, and legacy compatibility paths; updated pm-yh8r, pm-kb5h, and pm-92if."
-    completed_at: "2026-07-24T12:07:53.143Z"
-  - id: plan-step-005
-    order: 5
-    title: "Review performance, security, dependencies, and multi-agent merge and lock semantics"
-    status: completed
-    created_at: "2026-07-24T12:06:36.781Z"
-    updated_at: "2026-07-24T12:07:53.859Z"
-    evidence: "Ran real-tracker timings, the deterministic scale gate, full quality/security/dependency gates, and reviewed merge drivers, history reconciliation, collision detection, lock races, init behavior, and GitHub security/CI status; created focused regression pm-hcrmye."
-    completed_at: "2026-07-24T12:07:53.859Z"
-  - id: plan-step-006
-    order: 6
-    title: "Inspect every official external package, tracker, source tree, published artifact, and current CI"
-    status: completed
-    created_at: "2026-07-24T12:06:36.781Z"
-    updated_at: "2026-07-24T12:07:54.599Z"
-    evidence: "Inspected all 18 official repositories, their live trackers, manifests, source, CI, npm metadata, package boundaries, duplication, any usage, dependency policy, install timing, doctor output, and runtime actions; created focused conformance feature pm-feecbs."
-    completed_at: "2026-07-24T12:07:54.599Z"
-  - id: plan-step-007
-    order: 7
-    title: Deduplicate findings and record only focused gaps under canonical parents
-    status: completed
-    created_at: "2026-07-24T12:06:36.781Z"
-    updated_at: "2026-07-24T12:07:55.309Z"
-    evidence: "Ran all-status duplicate searches for each candidate and reused pm-n7rr, pm-usfg, pm-yh8r, pm-kb5h, pm-hous, pm-quzx, pm-92if, and security/multi-agent lineages. Only pm-hcrmye and pm-feecbs were net-new focused gaps."
-    completed_at: "2026-07-24T12:07:55.309Z"
-  - id: plan-step-008
-    order: 8
-    title: Validate tracker integrity and publish the tracker-only result directly to main
-    status: in_progress
-    created_at: "2026-07-24T12:06:36.781Z"
-    updated_at: "2026-07-24T12:08:03.216Z"
-    evidence: "Running final tracker, history, graph, duplicate, changelog, diff, and publication checks."
-body: "This plan records the current whole-system review under the philosophy project management = context management. Core behavior is unusually well protected: literal all-source coverage, zero local code clones, public SDK boundary enforcement, contract generation, token budgets, security scans, isolated package dogfood, and merge-aware git storage. The most important delivery principle is simplification without capability loss: consolidate presentation grammar, decompose implementation modules and folders, and single-source package policy while retaining every typed SDK primitive, compatibility alias, storage invariant, and history record.\n\nRecommended delivery order:\n- Restore the fixed 10k latency and RSS budgets through pm-hcrmye; continue pm-801d and the scale program after the regression is understood.\n- Execute the accepted noun-verb grammar and tiered-discovery sequence under pm-n7rr, preserving hidden aliases and contract parity.\n- Decompose saturated files through pm-yh8r and reorganize high-fan-out domain folders through pm-kb5h while keeping public SDK exports stable.\n- Retain pm-usfg as the functional SDK completeness contract; use pm-f4yn, pm-j8vq, and the quality/security lineages for maintainability and analyzer debt.\n- Establish pm-feecbs under the trust ladder, then apply pm-quzx dependency and canonical-package decisions across all official packages.\n- Prioritize open mutation races pm-khdq and pm-zwib plus fresh-init/merge-fence issues before claiming conflict-free multi-agent operation at fleet scale.\n- Preserve authoritative TOON item documents, append-only attributable history, semantic merge drivers, strict reconciliation, bounded context outputs, and SDK-first implementation in every tranche.\n\nNo product source, test, documentation, dependency, workflow, threshold, or release asset is changed by this plan."
+plan_steps[8]{id,order,title,status,created_at,updated_at,evidence,completed_at}:
+  plan-step-001,1,"Reconstruct live tracker state, goals, metadata, history, and canonical ownership",completed,"2026-07-24T12:06:36.781Z","2026-07-24T12:07:51.142Z","Inspected all-status counts, context, open and in-progress sets, full canonical item metadata, comments, notes, learnings, histories, hierarchy, dependencies, activity range, and current GitHub/npm state; reused the living roadmap.","2026-07-24T12:07:51.142Z"
+  plan-step-002,2,"Review CLI grammar, agent UX, output token cost, contracts, and customization",completed,"2026-07-24T12:06:36.781Z","2026-07-24T12:07:51.840Z","Measured 75 root names versus 63 canonical contract summaries, exercised error recovery and help, sampled TOON payload sizes, inspected runtime contracts, schema, profiles, agent guidance, and customization lineages; mapped all simplification work to pm-n7rr.","2026-07-24T12:07:51.840Z"
+  plan-step-003,3,"Review public SDK completeness, extension authoring, type boundaries, and exemplars",completed,"2026-07-24T12:06:36.781Z","2026-07-24T12:07:52.489Z","Verified the zero-private-core presentation boundary, public package exports, SDK-only exemplars, extension lifecycle and authoring docs, typed runtime contracts, and external import paths; maintainability findings map to quality owners rather than missing SDK primitives.","2026-07-24T12:07:52.489Z"
+  plan-step-004,4,"Review architecture, source topology, complexity, dead code, duplication, docs, and skills",completed,"2026-07-24T12:06:36.781Z","2026-07-24T12:07:53.143Z","Inventoried source and test LOC, effective file ceilings, direct-directory fan-out, dependency surface, code and Markdown duplication, dead-export governance, docs topology, skill hashes, complexity suppressions, and legacy compatibility paths; updated pm-yh8r, pm-kb5h, and pm-92if.","2026-07-24T12:07:53.143Z"
+  plan-step-005,5,"Review performance, security, dependencies, and multi-agent merge and lock semantics",completed,"2026-07-24T12:06:36.781Z","2026-07-24T12:07:53.859Z","Ran real-tracker timings, the deterministic scale gate, full quality/security/dependency gates, and reviewed merge drivers, history reconciliation, collision detection, lock races, init behavior, and GitHub security/CI status; created focused regression pm-hcrmye.","2026-07-24T12:07:53.859Z"
+  plan-step-006,6,"Inspect every official external package, tracker, source tree, published artifact, and current CI",completed,"2026-07-24T12:06:36.781Z","2026-07-24T12:07:54.599Z","Inspected all 18 official repositories, their live trackers, manifests, source, CI, npm metadata, package boundaries, duplication, any usage, dependency policy, install timing, doctor output, and runtime actions; created focused conformance feature pm-feecbs.","2026-07-24T12:07:54.599Z"
+  plan-step-007,7,Deduplicate findings and record only focused gaps under canonical parents,completed,"2026-07-24T12:06:36.781Z","2026-07-24T12:07:55.309Z","Ran all-status duplicate searches for each candidate and reused pm-n7rr, pm-usfg, pm-yh8r, pm-kb5h, pm-hous, pm-quzx, pm-92if, and security/multi-agent lineages. Only pm-hcrmye and pm-feecbs were net-new focused gaps.","2026-07-24T12:07:55.309Z"
+  plan-step-008,8,Validate tracker integrity and publish the tracker-only result directly to main,completed,"2026-07-24T12:06:36.781Z","2026-07-24T12:10:40.976Z","All pre-publication checks passed. Tracker-only roadmap commit b7bb0db6ab8c5cb637425e1ce52b020b02cfe7ae was pushed directly to main; after fetch, local HEAD and origin/main matched exactly. GitHub created no workflow run for this tracker-only commit.","2026-07-24T12:10:40.976Z"
+body: "This plan records the current whole-system review under the philosophy project management = context management. Core behavior is unusually well protected: literal all-source coverage, zero local code clones, public SDK boundary enforcement, contract generation, token budgets, security scans, isolated package dogfood, and merge-aware git storage. The most important delivery principle is simplification without capability loss: consolidate presentation grammar, decompose implementation modules and folders, and single-source package policy while retaining every typed SDK primitive, compatibility alias, storage invariant, and history record.\n\nRecommended delivery order:\n- Restore the fixed 10k latency and RSS budgets through pm-hcrmye; continue pm-801d and the scale program after the regression is understood.\n- Execute the accepted noun-verb grammar and tiered-discovery sequence under pm-n7rr, preserving hidden aliases and contract parity.\n- Decompose saturated files through pm-yh8r and reorganize high-fan-out domain folders through pm-kb5h while keeping public SDK exports stable.\n- Retain pm-usfg as the functional SDK completeness contract; use pm-f4yn, pm-j8vq, and the quality/security lineages for maintainability and analyzer debt.\n- Establish pm-feecbs under the trust ladder, then apply pm-quzx dependency and canonical-package decisions across all official packages.\n- Prioritize open mutation races pm-khdq and pm-zwib plus fresh-init/merge-fence issues before claiming conflict-free multi-agent operation at fleet scale.\n- Preserve authoritative TOON item documents, append-only attributable history, semantic merge drivers, strict reconciliation, bounded context outputs, and SDK-first implementation in every tranche.\n\nNo product implementation source, tests, dependencies, workflows, thresholds, or release assets are changed by this plan. The package-owned generator refreshes CHANGELOG.md because closed Plan items are part of the current changelog contract."

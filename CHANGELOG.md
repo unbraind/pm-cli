@@ -6,6 +6,10 @@
 
 - GH-664: published daily release fails Bun node:sqlite verification before GitHub Release ([pm-cedo0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cedo0g.toon))
 
+### Other
+
+- Holistic pm CLI, SDK, and ecosystem optimization roadmap ([pm-xe0c38](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-xe0c38.toon))
+
 ## 2026.7.24-3 - 2026-07-24
 
 ### Fixed
