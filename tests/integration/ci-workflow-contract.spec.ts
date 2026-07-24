@@ -385,7 +385,7 @@ describe("GitHub workflow contract", () => {
       "body_path: ${{ runner.temp }}/release-notes.md",
       PINNED_ACTIONS.setupBun,
       "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
-      "npm publish --access public --provenance",
+      "npm publish --access public --provenance --tag latest",
       "is already published; skipping npm publish.",
       "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-github-release --json",
       "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-package --json",
@@ -397,6 +397,7 @@ describe("GitHub workflow contract", () => {
     ]);
     expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
     expect(releaseWorkflow).not.toContain("Sandboxed PM regression");
+    expect(releaseWorkflow).not.toMatch(/npm publish --access public --provenance\s*$/m);
   });
 
   it("keeps auto-release workflow aligned with one-production-release-per-day policy", async () => {

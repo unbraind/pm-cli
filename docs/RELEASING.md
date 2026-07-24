@@ -185,7 +185,7 @@ git push origin v<version>
 - npm pack dry run and npx tarball smoke test
 - generated release notes from changelog plus sanitized tracker metadata
 - artifact uploads
-- `npm publish --access public --provenance`, skipped on retry when the exact version is already present on npm
+- `npm publish --access public --provenance --tag latest`, skipped on retry when the exact version is already present on npm. The explicit stable dist-tag is required because npm classifies supported same-day ordinal versions such as `2026.7.24-2` as SemVer prereleases even though they are production calendar releases in this project.
 - post-publish npm/npx/bunx verification through `scripts/release/verify-published-release.mjs`
 - GitHub Release creation
 - GitHub Release metadata verification through the same local verification script
