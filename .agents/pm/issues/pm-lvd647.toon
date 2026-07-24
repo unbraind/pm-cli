@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[7]: "area:ci","area:sdk",cross-platform,gh-issue,nightly,node22,windows
 created_at: "2026-07-24T12:39:52.841Z"
-updated_at: "2026-07-24T13:49:02.791Z"
+updated_at: "2026-07-24T13:57:36.986Z"
 assignee: codex-root-agent
 author: codex-root-agent
 estimated_minutes: 180
@@ -27,16 +27,20 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cedo0g,related,"2026-07-24T12:39:52.841Z",null,null
   pm-hcrmye,related,"2026-07-24T12:39:52.841Z",null,null
   pm-klo8,related,"2026-07-24T12:39:52.841Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-24T12:39:52.841Z",codex-root-agent,"Duplicate-check evidence: exact run/error and all-status cross-platform searches found no current item owning this five-test nightly regression. Historical Windows and Bun/SQLite items cover different root failures and remain linked as lineage."
   "2026-07-24T12:40:42.213Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
   "2026-07-24T13:35:06.471Z",codex-root-agent,"Local completion evidence pending hosted confirmation: the exact five-file Node 22.21.1 regression set passed 57 tests with clean stderr after stable-runtime SQLite gating; final full suite passed 6220 tests at 100/100/100/100 on Node 26. Windows-targeted tests already use deterministic capability seams rather than chmod assumptions. This remains in progress until the new PR supplies exact hosted Node 22 and Windows proof, per acceptance."
   "2026-07-24T13:49:02.791Z",codex-root-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/673 (broad SDK workspace mutation and migration primitives)."
-files[1]{path,scope,note}:
+  "2026-07-24T13:57:36.986Z",codex-root-agent,"Hosted Windows finding and repair: PR run 30098423259 job 89498351984 exposed Git's C:\\Users\\RUNNER~1 short-path spelling versus Node's C:\\Users\\runneradmin long-path spelling, causing a false outside-repository rejection. installMergeFence now canonicalizes both existing roots with realpath before containment comparison while preserving caller-facing paths. Added a symlink/junction-equivalent identity regression. Focused SDK/init verification passed 49 tests; typecheck and lint passed. Awaiting replacement hosted Node/Windows proof before closure."
+files[3]{path,scope,note}:
   src/core/store/item-metadata-query-index.ts,project,Optional SQLite capability boundary
-tests[2]{command,scope,timeout_seconds}:
+  src/sdk/merge/install.ts,project,Canonical filesystem identity for Git Windows 8.3 paths
+  tests/unit/sdk/merge-safety.spec.ts,project,Equivalent workspace spelling regression
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/create-self-parent.integration.spec.ts tests/integration/extension-host-contracts.integration.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk/workspace-memory.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts tests/unit/sdk/workspace-memory.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts tests/unit/commands/init-command.spec.ts,project,300
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,Cross-runtime failure injection contract
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/666 and https://github.com/unbraind/pm-cli/issues/667\\n\\nDuplicate check: all-status searches for run 30072359707, the exact Node 22 SQLite warning, workspace-memory Windows write failure, and workspace history unreadability found historical cross-platform items and the closed Bun release item pm-cedo0g, but no current owner for these exact nightly failures."

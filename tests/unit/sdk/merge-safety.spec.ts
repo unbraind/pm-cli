@@ -1,5 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -15,6 +22,7 @@ import {
 } from "../../../src/core/item/item-format.js";
 import {
   auditMergeAttributeFence,
+  installMergeFence,
   mergeHistoryStreams,
   mergeItemDocuments,
   mergeJsonDocuments,
@@ -776,6 +784,33 @@ describe("public merge-safety SDK primitives", () => {
     await expect(
       runMergeInstall({}, { path: path.join(notGit, ".agents", "pm") }),
     ).rejects.toThrow(/not initialized/);
+  });
+
+  it("compares canonical filesystem identities when workspace paths have equivalent spellings", async () => {
+    await withTempPmPath(async (context) => {
+      execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
+      const workspaceAlias = path.join(
+        path.dirname(context.tempRoot),
+        `${path.basename(context.tempRoot)}-alias`,
+      );
+      workspaces.push(workspaceAlias);
+      await symlink(
+        context.tempRoot,
+        workspaceAlias,
+        process.platform === "win32" ? "junction" : "dir",
+      );
+
+      const result = await installMergeFence({
+        pmRoot: context.pmPath,
+        workspaceRoot: workspaceAlias,
+        dryRun: true,
+      });
+
+      expect(result.workspace_root).toBe(workspaceAlias);
+      expect(result.gitattributes.patterns).toContain(
+        '".agents/pm/tasks/*.toon" merge=pm-item-toon',
+      );
+    });
   });
 
   it("selects item formats from paths/settings and rejects an external tracker root", async () => {

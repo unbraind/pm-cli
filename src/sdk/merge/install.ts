@@ -7,7 +7,7 @@
  * those attributes effective. Idempotent and re-runnable; schema type
  * mutations refresh the fenced block automatically once it is installed.
  */
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, realpath, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -412,9 +412,17 @@ export async function installMergeFence(options: {
   const pmRoot = path.resolve(options.pmRoot);
   const workspaceRoot = path.resolve(options.workspaceRoot);
   const dryRun = options.dryRun === true;
+  // Git for Windows may report a worktree through an 8.3 short path while
+  // Node resolves the tracker through its long path. Compare filesystem
+  // identities rather than those two equivalent spellings so a valid
+  // in-repository tracker is not rejected as external.
+  const [canonicalPmRoot, canonicalWorkspaceRoot] = await Promise.all([
+    realpath(pmRoot),
+    realpath(workspaceRoot),
+  ]);
   const trackerRelativeRoot = toPosixRelative(
-    workspaceRoot,
-    pmRoot,
+    canonicalWorkspaceRoot,
+    canonicalPmRoot,
   );
   if (isPathOutsideRoot(trackerRelativeRoot)) {
     throw new PmCliError(
