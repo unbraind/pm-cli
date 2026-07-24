@@ -295,13 +295,22 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
       left.item_id.localeCompare(right.item_id) || left.line - right.line,
   );
   for (const event of uniqueEvents) {
-    const raw = await fs.readFile(
-      path.join(pmRoot, "history", `${event.item_id}.jsonl`),
-      "utf8",
-    );
-    const line = raw.split(/\r?\n/)[event.line - 1];
+    if (
+      !/^[a-z0-9][a-z0-9-]*$/i.test(event.item_id) ||
+      !Number.isSafeInteger(event.line) ||
+      event.line < 1
+    ) {
+      throw new TypeError(
+        `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
+      );
+    }
     let parsed: unknown;
     try {
+      const raw = await fs.readFile(
+        path.join(pmRoot, "history", `${event.item_id}.jsonl`),
+        "utf8",
+      );
+      const line = raw.split(/\r?\n/)[event.line - 1];
       parsed = JSON.parse(line ?? "");
     } catch {
       throw new TypeError(

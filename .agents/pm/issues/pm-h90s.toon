@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:governance",history-integrity
 created_at: "2026-07-17T04:42:36.823Z"
-updated_at: "2026-07-24T06:14:45.887Z"
+updated_at: "2026-07-24T07:45:18.606Z"
 closed_at: "2026-07-24T06:14:45.137Z"
 author: maintainer-agent
 estimated_minutes: 360
@@ -16,7 +16,7 @@ risk: medium
 confidence: high
 resolution: Strict provenance enforcement and audited immutable-event disposition implemented through shared SDK/runtime primitives.
 expected_result: "Unknown mutation authors can be rejected by policy, SDK test-all accepts explicit authors, and the five stranded events become non-actionable without history rewrites."
-actual_result: All three paths shipped; health is green with five acknowledged actionable events and zero remaining actionable unknown-author events.
+actual_result: All three paths shipped; health is green with five acknowledged events and zero actionable unknown-author events.
 dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-17T04:42:36.823Z",null,null
   pm-cpja,related,"2026-07-17T04:42:36.823Z",null,null
@@ -25,11 +25,12 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-wenq,related,"2026-07-17T04:42:36.823Z",null,null
   pm-pim7,related,"2026-07-24T05:18:22.760Z",claude-code-agent,null
   pm-w8q4,related,"2026-07-24T05:18:22.760Z",claude-code-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-19T16:15:16.114Z",codex-wide-sdk-20260719,"2026-07-19 verification: pm health still reports exactly history_unknown_author_events:5 and validate reports no history drift, matching this canonical open issue's documented immutable-event scope. No duplicate item created and no history files were rewritten."
   "2026-07-21T07:57:07.125Z",codex-root-20260721,"2026-07-21 shipping-lane verification: pm health still reports exactly 5 actionable unknown-author events, with 0 history drift, 0 active/stale locks, and storage integrity otherwise clean. This remains the canonical prevention/disposition item; no duplicate was created and immutable history was not rewritten."
   "2026-07-23T05:33:55.569Z",claude-code-agent,"Fresh health evidence 2026-07-23: pm health --check-only reports storage warn with 167 unknown-author events, partitioned into 162 legacy and 5 actionable across 1,925 streams / 32,373 checked events. This is the existing canonical item; no duplicate was created and it was not claimed by the truthful-context PR."
   "2026-07-24T06:14:19.250Z",claude-code-agent,"Evidence 2026-07-24: shipped opt-in strict mutation authorship, explicit TestAllCommandOptions.author parity, and append-only history:author-acknowledge disposition. Reviewed and acknowledged the five exact post-baseline test_run_track events as codex-wide-sdk-20260716 without rewriting immutable streams. Live pm health now reports 167 total unknown events = 162 legacy + 5 acknowledged, 0 actionable, overall ok:true; validate reports 0 history drift. Linked tests passed. Full repository coverage passed 6208 tests at exact 100% statements/branches/functions/lines; lint, typecheck, docs links, contracts, security, and packed-install acceptance passed."
+  "2026-07-24T07:45:18.606Z",claude-code-agent,"CodeRabbit follow-up: hardened the public acknowledgment primitive against traversal-shaped item ids, invalid line numbers, and unreadable/missing history streams; all read/parse failures now return the same contextual typed error. Added regression coverage without rewriting history."
 files[6]{path,scope,note}:
   src/core/history/workspace-history.ts,project,workspace audit event primitive
   src/sdk/author-attribution.ts,project,append-only author disposition SDK

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -132,6 +132,34 @@ describe("stale in-progress SDK governance", () => {
       ).resolves.toMatchObject({
         count: 1,
         items: [{ id: "pm-no-history" }],
+      });
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("degrades corrupt item history to metadata activity", async () => {
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-stale-work-"));
+    try {
+      const historyDirectory = path.join(pmRoot, "history");
+      await mkdir(historyDirectory);
+      await writeFile(
+        path.join(historyDirectory, "pm-corrupt.jsonl"),
+        "not-json\n",
+      );
+      await expect(
+        scanStaleInProgressItems(
+          pmRoot,
+          [item({ id: "pm-corrupt", status: "in_progress" })],
+          {
+            in_progress_status: "in_progress",
+            threshold_hours: 1,
+            now: new Date("2026-07-24T12:00:00.000Z"),
+          },
+        ),
+      ).resolves.toMatchObject({
+        count: 1,
+        items: [{ id: "pm-corrupt" }],
       });
     } finally {
       await rm(pmRoot, { recursive: true, force: true });

@@ -125,10 +125,15 @@ export async function scanStaleInProgressItems(
           (item.assignee?.trim().length ?? 0) === 0,
       )
       .map(async (item) => {
-        const history = await readHistoryEntries(
-          path.join(pmRoot, "history", `${item.id}.jsonl`),
-          item.id,
-        );
+        let history: Awaited<ReturnType<typeof readHistoryEntries>>;
+        try {
+          history = await readHistoryEntries(
+            path.join(pmRoot, "history", `${item.id}.jsonl`),
+            item.id,
+          );
+        } catch {
+          return;
+        }
         const latest = history
           .map((entry) => entry.ts)
           .filter((timestamp) => Number.isFinite(Date.parse(timestamp)))

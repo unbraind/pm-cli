@@ -326,6 +326,13 @@ describe("SDK author attribution primitives", () => {
         author: "unknown",
       })}\n`,
     );
+    await writeFile(
+      path.join(pmRoot, "history", "pm-attributed.jsonl"),
+      `${JSON.stringify({
+        ts: "2026-07-15T09:00:00.000Z",
+        author: "agent",
+      })}\n`,
+    );
     await appendWorkspaceAuditEvent({
       pmRoot,
       op: "review-invalid-author-acknowledgments",
@@ -391,11 +398,21 @@ describe("SDK author attribution primitives", () => {
     ).rejects.toThrow("is not readable");
     await expect(
       acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
-        events: [{ item_id: "_workspace", line: 1 }],
+        events: [{ item_id: "pm-attributed", line: 1 }],
         attributed_author: "original-agent",
         reviewer: "maintainer",
         reason: "not unknown",
       }),
     ).rejects.toThrow("is not an actionable unknown-author event");
+    await expect(
+      acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+        events: [{ item_id: "../outside", line: 1 }],
+        attributed_author: "original-agent",
+        reviewer: "maintainer",
+        reason: "invalid item id",
+      }),
+    ).rejects.toThrow(
+      "Unknown-author acknowledgment target ../outside:1 is not readable",
+    );
   });
 });
