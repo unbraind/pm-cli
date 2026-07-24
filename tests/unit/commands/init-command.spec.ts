@@ -2,6 +2,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  realpath,
   rm,
   stat,
   writeFile,
@@ -2021,9 +2022,15 @@ describe("runInit", () => {
         { path: pmRoot },
         { defaults: true, agentGuidance: "skip" },
       );
-      expect(initialized.warnings).toContain(
-        `updated:merge_fence:${path.join(workspace, ".gitattributes")}`,
+      const mergeFenceWarning = initialized.warnings.find((warning) =>
+        warning.startsWith("updated:merge_fence:"),
       );
+      expect(mergeFenceWarning).toBeDefined();
+      expect(
+        await realpath(
+          mergeFenceWarning?.slice("updated:merge_fence:".length) ?? "",
+        ),
+      ).toBe(await realpath(path.join(workspace, ".gitattributes")));
       expect(await readFile(path.join(workspace, ".gitattributes"), "utf8")).toContain(
         "# pm-cli:merge-drivers:start",
       );
