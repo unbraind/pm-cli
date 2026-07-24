@@ -104,7 +104,7 @@ export async function findGitWorkspaceRoot(cwd: string): Promise<string | null> 
       ["rev-parse", "--show-toplevel"],
       { cwd, encoding: "utf8", windowsHide: true, timeout: 10_000 },
     );
-    return stdout.trim();
+    return await realpath(stdout.trim());
   } catch {
     return null;
   }
