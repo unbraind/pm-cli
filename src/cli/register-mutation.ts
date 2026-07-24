@@ -3,7 +3,7 @@
  *
  * Provides CLI runtime support for Register Mutation.
  */
-import { Option, type Command } from "commander";
+import type { Command } from "commander";
 import {
   type GlobalOptions,
   resolveBodyFileContent,
@@ -91,6 +91,8 @@ const PLAN_CREATE_METADATA_OPTION_TARGETS = new Set<string>([
 import {
   collect,
   applyActiveCommandResultService,
+  addHiddenOption,
+  addHiddenOptions,
   extractUpdateManyMutationOptionSource,
   formatHookWarnings,
   getGlobalOptions,
@@ -102,31 +104,8 @@ import {
   readOptionString,
   writeStdout,
 } from "./registration-helpers.js";
-
-/** Register a flag and hide it from `--help` text while keeping it fully functional as a parse-time alias. The option still appears in `command.options`, so the JSON help payload and shell completion (which read from the contracts/commander option list, not the rendered text) are unchanged — only commander's text `--help` omits it. */
-function addHiddenOption(
-  command: Command,
-  flags: string,
-  description: string,
-  repeatable: boolean,
-  repeatableParser: ((value: string) => string[]) | undefined = undefined,
-): void {
-  const option = new Option(flags, description).hideHelp();
-  if (repeatable) {
-    option.argParser(repeatableParser ?? collect);
-  }
-  command.addOption(option);
-}
-
-function addHiddenOptions(
-  command: Command,
-  aliases: ReadonlyArray<readonly [flags: string, description: string]>,
-  repeatable: boolean,
-): void {
-  for (const [flags, description] of aliases) {
-    addHiddenOption(command, flags, description, repeatable);
-  }
-}
+import type { RegisterMutationCommandsOptions } from "./register-mutation-options.js";
+export type { RegisterMutationCommandsOptions } from "./register-mutation-options.js";
 
 type SchemaCommandModule = typeof import("./commands/schema.js");
 type SchemaCommandResult =
@@ -1635,6 +1614,7 @@ async function runCopyAction(
       title: readOptionString(options, "title"),
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
+      allowDuplicate: options.allowDuplicate === true,
     },
     globalOptions,
   );
@@ -2165,7 +2145,10 @@ async function runDepsAction(
 }
 
 /** Implements register mutation commands for the public runtime surface of this module. */
-export function registerMutationCommands(program: Command): void {
+export function registerMutationCommands(
+  program: Command,
+  registrationOptions: RegisterMutationCommandsOptions = {},
+): void {
   const createCommand = program
     .command("create")
     .argument(
@@ -2197,7 +2180,14 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-reminders", "Clear reminders")
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
+    .option(
+      "--allow-duplicate",
+      "Explicitly create even when strict similarity governance finds likely duplicates",
+    )
     .action(runCreateAction);
+  if (registrationOptions.targetCommandName === "create") {
+    return;
+  }
 
   program
     .command("copy")
@@ -2205,6 +2195,10 @@ export function registerMutationCommands(program: Command): void {
     .option("--title <value>", "Optional title override for the copied item")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
+    .option(
+      "--allow-duplicate",
+      "Explicitly copy even when strict similarity governance finds likely duplicates",
+    )
     .description(
       "Copy an item into a new item id while resetting lifecycle fields.",
     )

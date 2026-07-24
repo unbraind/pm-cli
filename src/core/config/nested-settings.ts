@@ -267,6 +267,30 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     summary: "Age threshold for unclaimed in-progress work surfaced by health.",
   },
   {
+    key: "governance_duplicate_detection_mode",
+    path: "governance.duplicate_detection_mode",
+    kind: "string",
+    choices: ["off", "advisory", "strict"],
+    summary:
+      "Create/copy duplicate governance: off, advisory, or strict explicit-bypass enforcement.",
+  },
+  {
+    key: "governance_duplicate_detection_threshold",
+    path: "governance.duplicate_detection_threshold",
+    kind: "ratio",
+    summary:
+      "Minimum shared similarity score in [0, 1] for create/copy duplicate governance.",
+  },
+  {
+    key: "governance_duplicate_detection_limit",
+    path: "governance.duplicate_detection_limit",
+    kind: "integer",
+    min: 0,
+    max: 20,
+    summary:
+      "Maximum likely duplicates returned by create/copy governance (0-20).",
+  },
+  {
     key: "output_default_format",
     path: "output.default_format",
     kind: "string",

@@ -5,6 +5,7 @@
  * for the governance-audit extension runtime.
  */
 import { EXIT_CODE, PmCliError, PmClient, type ListOptions } from "./sdk.ts";
+export { jaccardSimilarity } from "./sdk.ts";
 
 /** Retain only list filters that the package-owned audit queries may forward. */
 export const buildListQueryFilters = (
@@ -58,19 +59,6 @@ export const compareTimestampStrings = (
   if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs)
     return leftMs - rightMs;
   return left.localeCompare(right);
-};
-
-/** Measure set overlap between two token lists on the inclusive zero-to-one scale. */
-export const jaccardSimilarity = (
-  leftTokens: string[],
-  rightTokens: string[],
-): number => {
-  const left = new Set(leftTokens);
-  const right = new Set(rightTokens);
-  const union = new Set([...left, ...right]);
-  if (union.size === 0) return 1;
-  const intersection = [...left].filter((token) => right.has(token)).length;
-  return intersection / union.size;
 };
 
 /** Trim, lowercase, and collapse internal whitespace for stable audit comparisons. */

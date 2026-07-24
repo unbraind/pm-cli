@@ -211,6 +211,9 @@ export const GOVERNANCE_PRESET_DEFAULTS: Record<
     parent_reference: "strict_error",
     metadata_profile: "core",
     force_required_for_stale_lock: false,
+    duplicate_detection_mode: "off",
+    duplicate_detection_threshold: 0.8,
+    duplicate_detection_limit: 3,
   },
   default: {
     ownership_enforcement: "warn",
@@ -220,6 +223,9 @@ export const GOVERNANCE_PRESET_DEFAULTS: Record<
     parent_reference: "strict_error",
     metadata_profile: "core",
     force_required_for_stale_lock: true,
+    duplicate_detection_mode: "off",
+    duplicate_detection_threshold: 0.8,
+    duplicate_detection_limit: 3,
   },
   strict: {
     ownership_enforcement: "strict",
@@ -229,6 +235,9 @@ export const GOVERNANCE_PRESET_DEFAULTS: Record<
     parent_reference: "strict_error",
     metadata_profile: "strict",
     force_required_for_stale_lock: true,
+    duplicate_detection_mode: "strict",
+    duplicate_detection_threshold: 0.8,
+    duplicate_detection_limit: 3,
   },
 };
 

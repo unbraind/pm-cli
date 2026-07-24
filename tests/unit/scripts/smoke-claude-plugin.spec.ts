@@ -39,6 +39,7 @@ const REQUIRED_TOOLS = [
   "pm_profile",
   "pm_config",
   "pm_plan",
+  "pm_events",
 ];
 
 interface SmokeOverrides {
@@ -103,6 +104,7 @@ describe("smoke-claude-plugin", () => {
     expect(startPluginMcpSmoke).toHaveBeenCalled();
     expect(callTool).toHaveBeenCalledWith("pm_validate", expect.any(Object));
     expect(callTool).toHaveBeenCalledWith("pm_health", expect.any(Object));
+    expect(callTool).toHaveBeenCalledWith("pm_events", expect.any(Object));
     expect(dispose).toHaveBeenCalledTimes(1);
     expect(String(logSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("Claude Code plugin smoke passed");
   });

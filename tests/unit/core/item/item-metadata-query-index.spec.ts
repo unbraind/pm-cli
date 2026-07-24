@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import {
   _testOnly,
   queryItemMetadataIndex,
+  querySimilarItemMetadataIndex,
   rebuildItemMetadataQueryIndex,
   removeItemMetadataQueryIndex,
   updateItemMetadataQueryIndex,
@@ -91,6 +92,14 @@ describe("item metadata SQLite query index", () => {
         await queryItemMetadataIndex({
           pmRoot: root,
           expectedSourceCursor: "cursor-1",
+        }),
+      ).toBeNull();
+      expect(
+        await querySimilarItemMetadataIndex({
+          pmRoot: root,
+          expectedSourceCursor: "cursor-1",
+          query: '"missing"',
+          limit: 1,
         }),
       ).toBeNull();
     } finally {
@@ -184,6 +193,25 @@ describe("item metadata SQLite query index", () => {
         expectedSourceCursor: "stale",
       }),
     ).toBeNull();
+    expect(
+      await querySimilarItemMetadataIndex({
+        pmRoot: root,
+        expectedSourceCursor: "cursor-1",
+        query: '"new"',
+        limit: 2,
+      }),
+    ).toMatchObject({
+      source_cursor: "cursor-1",
+      items: [{ id: "pm-new" }],
+    });
+    await expect(
+      querySimilarItemMetadataIndex({
+        pmRoot: root,
+        expectedSourceCursor: "stale",
+        query: '"new"',
+        limit: 2,
+      }),
+    ).resolves.toBeNull();
   });
 
   it("moves, updates, deletes, replaces, and removes cursor-bound projections", async () => {
@@ -245,8 +273,18 @@ describe("item metadata SQLite query index", () => {
     expect(
       await updateItemMetadataQueryIndex({
         pmRoot: root,
-        contextFingerprint: "wrong",
+        contextFingerprint: "context-1",
         expectedSourceCursor: "cursor-2a",
+        sourceCursor: "cursor-2b",
+        row: null,
+        deletedRelativePaths: ["tasks/missing.toon"],
+      }),
+    ).toBe(true);
+    expect(
+      await updateItemMetadataQueryIndex({
+        pmRoot: root,
+        contextFingerprint: "wrong",
+        expectedSourceCursor: "cursor-2b",
         sourceCursor: "cursor-3",
         row: null,
       }),
@@ -255,7 +293,7 @@ describe("item metadata SQLite query index", () => {
       await updateItemMetadataQueryIndex({
         pmRoot: root,
         contextFingerprint: "context-1",
-        expectedSourceCursor: "cursor-2a",
+        expectedSourceCursor: "cursor-2b",
         sourceCursor: "cursor-3",
         row: null,
         deletedRelativePaths: ["features/pm-a.toon"],

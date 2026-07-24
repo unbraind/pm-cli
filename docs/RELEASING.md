@@ -15,7 +15,8 @@ For local progressive-disclosure routing, install `guide-shell` with `pm install
 - Use `pm guide release --json` for machine-readable release docs routing after `guide-shell` is installed.
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
-[pm-4s24d2](../.agents/pm/issues/pm-4s24d2.toon).
+[pm-4s24d2](../.agents/pm/issues/pm-4s24d2.toon),
+[pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon).
 
 ## Version Policy
 
@@ -174,6 +175,17 @@ If private reliability checks identify repeated user friction, either confirm th
 The build writes `dist/cli-bundle/bundle-manifest.json` atomically with SHA-256 digests for every emitted bundle file. At startup, `pm` reports `bundle_integrity_torn_install` only when a module-loader failure is accompanied by manifest proof that an upgrade or rebuild changed, removed, or corrupted the active bundle. Reinstall `@unbrained/pm-cli` and retry after that diagnostic. Ordinary `ERR_MODULE_NOT_FOUND` and export failures with an intact manifest remain unexpected failures and must continue to block reliability gates.
 
 4. Run the same release pipeline locally.
+
+Push the final implementation commit first, wait for DeepScan and CodeFactor to
+finish on that exact SHA, and run the mandatory local hosted-analysis proof:
+
+```bash
+pnpm quality:hosted-analysis
+```
+
+The gate accepts only DeepScan's explicit zero-new-issue status and
+CodeFactor's explicit no-issues result. Both contexts are required by `main`
+branch protection, and the release pipeline reruns the same exact-head proof.
 
 ```bash
 # Read-only parity check

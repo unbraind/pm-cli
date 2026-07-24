@@ -256,6 +256,13 @@ export {
   type SecretGuardMode,
 } from "./mutation-guard.js";
 export {
+  jaccardSimilarity,
+  normalizeSimilarityText,
+  scoreItemSimilarity,
+  tokenizeSimilarityText,
+  type ItemSimilarityScore,
+} from "./similarity-scoring.js";
+export {
   inspectStaleInProgressItems,
   scanStaleInProgressItems,
   type InspectStaleInProgressOptions,

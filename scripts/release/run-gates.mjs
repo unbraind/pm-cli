@@ -17,6 +17,8 @@ function usage() {
     [--max-telemetry-missing-error-rows 0]
 
 Runs strict release readiness quality gates used by local and CI automation.
+The exact Git HEAD must already be pushed so DeepScan and CodeFactor results
+exist for the hosted-analysis gate.
 `);
 }
 
@@ -149,6 +151,18 @@ function main() {
   } else {
     checks.push({ name: "sentry-telemetry-gate", ok: true, skipped: true });
   }
+
+  const hostedAnalysis = runCheckedStep(
+    "hosted-analysis-gate",
+    process.execPath,
+    ["scripts/release/hosted-analysis-gate.mjs", "--json"],
+    { capture: true },
+  );
+  checks.push({
+    name: "hosted-analysis-gate",
+    ok: true,
+    details: parseJson(hostedAnalysis.stdout, "hosted-analysis-gate"),
+  });
 
   // Greptile review is a best-effort gate: it surfaces the Greptile CLI reviewer
   // in the local pipeline and fails on findings when authenticated, but skips

@@ -60,6 +60,7 @@ const EXPECTED_TOOL_NAMES = [
   "pm_notes",
   "pm_learnings",
   "pm_deps",
+  "pm_events",
   "pm_graph",
   "pm_test",
   "pm_validate",
@@ -120,7 +121,7 @@ describe("MCP protocol handshake", () => {
     expect(result.capabilities).toMatchObject({ tools: {} });
   });
 
-  it("tools/list returns exactly the 30 expected tools including the new narrow tools", async () => {
+  it("tools/list returns exactly the 31 expected tools including the new narrow tools", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",
       id: 2,
@@ -134,7 +135,7 @@ describe("MCP protocol handshake", () => {
     };
 
     const tools = result.tools ?? [];
-    expect(tools).toHaveLength(30);
+    expect(tools).toHaveLength(31);
 
     const names = tools.map((tool) => tool.name);
     expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));

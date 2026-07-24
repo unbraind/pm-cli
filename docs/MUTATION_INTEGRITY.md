@@ -1,6 +1,6 @@
 # Mutation Integrity
 
-Tracker references: [pm-h90s](../.agents/pm/issues/pm-h90s.toon), [pm-pim7](../.agents/pm/features/pm-pim7.toon), [pm-w8q4](../.agents/pm/features/pm-w8q4.toon)
+Tracker references: [pm-h90s](../.agents/pm/issues/pm-h90s.toon), [pm-pim7](../.agents/pm/features/pm-pim7.toon), [pm-w8q4](../.agents/pm/features/pm-w8q4.toon), [pm-9yfo](../.agents/pm/tasks/pm-9yfo.toon)
 
 `pm` treats mutation provenance and content safety as shared SDK policy. CLI,
 MCP, and package hosts can therefore enforce the same rules without duplicating
@@ -68,6 +68,29 @@ const stale = inspectStaleInProgressItems(items, {
 whether a blocking policy was explicitly overridden. `scanMutationSecrets` is
 available separately for package-specific preflight UIs. Cyclic inputs are
 safe; scanner failures fail open with `secret_guard_scan_failed_open`.
+
+### Executable mutation inventory
+
+`PM_MUTATION_ACTION_CONTRACTS` is the public, typed inventory of core mutation
+actions. Each entry identifies whether the action must append item history,
+workspace history, or both. Package hosts and quality gates should derive
+mutation coverage from this contract instead of maintaining a second command
+list.
+
+```ts
+import { PM_MUTATION_ACTION_CONTRACTS } from "@unbrained/pm-cli/sdk";
+
+const itemHistoryActions = PM_MUTATION_ACTION_CONTRACTS.filter(
+  (contract) => contract.historyScopes.includes("item"),
+);
+```
+
+The contract is a classification primitive, not proof that every handler
+actually wrote its required event. The history-completeness release gate must
+execute every classified action against a sandbox and assert the resulting
+operation and author before the repository can treat that invariant as fully
+enforced. Workspace actions remain explicitly classified while that executable
+gate is completed.
 
 ## Unknown-Author Disposition
 

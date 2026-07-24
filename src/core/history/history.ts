@@ -20,6 +20,10 @@ import type {
   HistoryPatchOp,
   ItemDocument,
 } from "../../types/index.js";
+import {
+  removeHistoryEventIndexForHistoryPath,
+  updateHistoryEventIndexAfterAppend,
+} from "./event-index.js";
 
 const EMPTY_LEGACY_HASH_DOCUMENT = {
   front_matter: {},
@@ -247,6 +251,7 @@ export async function appendHistoryEntry(
         historyPath,
         serializeHistoryLine(override.result, entry),
       );
+      await removeHistoryEventIndexForHistoryPath(historyPath);
       return;
     }
     if (typeof override.result === "object" && override.result !== null) {
@@ -268,16 +273,19 @@ export async function appendHistoryEntry(
           nextHistoryPath,
           serializeHistoryLine(record.line, entry),
         );
+        await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
         return;
       }
       await appendLineAtomic(
         nextHistoryPath,
         serializeHistoryLine(record.entry ?? entry, entry),
       );
+      await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
       return;
     }
   }
   await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
+  await updateHistoryEventIndexAfterAppend(historyPath, entry);
 }
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */

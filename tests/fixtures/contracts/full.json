@@ -1879,6 +1879,10 @@
         },
         {
           "flag": "--clear-type-options"
+        },
+        {
+          "flag": "--allow-duplicate",
+          "value_type": "boolean"
         }
       ],
       "provider": "core"
@@ -2094,6 +2098,11 @@
     },
     {
       "command": "event",
+      "flags": [],
+      "provider": "extension"
+    },
+    {
+      "command": "events",
       "flags": [],
       "provider": "extension"
     },
@@ -8634,6 +8643,7 @@
     "docs",
     "eval",
     "event",
+    "events",
     "extension",
     "extension activate",
     "extension adopt",
@@ -9106,6 +9116,10 @@
       "input_schema": {
         "additionalProperties": true,
         "properties": {
+          "allow-duplicate": {
+            "description": "Alias for options.allow_duplicate.",
+            "type": "boolean"
+          },
           "author": {
             "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
             "type": "string"
@@ -9158,6 +9172,10 @@
       "input_schema": {
         "additionalProperties": true,
         "properties": {
+          "allowDuplicate": {
+            "description": "Explicitly create when strict similarity governance finds likely duplicates.",
+            "type": "boolean"
+          },
           "allowMissingParent": {
             "description": "Allow unresolved parent references and emit a validation warning.",
             "type": "boolean"
@@ -9262,6 +9280,77 @@
       "required": [
         "id"
       ]
+    },
+    {
+      "description": "Read a bounded, cursor-resumable page of committed mutation events across item history streams.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "full": {
+            "type": "boolean"
+          },
+          "item": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "limit": {
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "since": {
+            "description": "Durable event cursor or ISO timestamp lower bound.",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_events",
+      "required": []
     },
     {
       "description": "List, add, remove, or validate linked files for a pm item.",
@@ -13054,6 +13143,10 @@
             "description": "Affected Version.",
             "type": "string"
           },
+          "allowDuplicate": {
+            "description": "Explicitly proceed when strict similarity governance finds likely duplicate items.",
+            "type": "boolean"
+          },
           "allowMissingParent": {
             "description": "Allow Missing Parent.",
             "type": "boolean"
@@ -14237,6 +14330,10 @@
           "action": {
             "const": "copy",
             "description": "Tool action to execute."
+          },
+          "allowDuplicate": {
+            "description": "Explicitly proceed when strict similarity governance finds likely duplicate items.",
+            "type": "boolean"
           },
           "author": {
             "description": "Mutation author identity.",
@@ -26296,10 +26393,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.0.7"
+    "x-schema-version": "4.1.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.0.7",
+  "schema_version": "4.1.0",
   "selected": {
     "action": null,
     "availability_only": false,

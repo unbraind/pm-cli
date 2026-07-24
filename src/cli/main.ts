@@ -1263,7 +1263,15 @@ async function registerRuntimeSchemaFieldFlags(
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     return;
   }
-  const settings = await readSettings(pmRoot);
+  const cachedDiscovery =
+    runtimeExtensionDiscoverySnapshotCache?.key ===
+    buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot)
+      ? runtimeExtensionDiscoverySnapshotCache.snapshot
+      : null;
+  const settings =
+    cachedDiscovery === null
+      ? await readSettings(pmRoot)
+      : cachedDiscovery.settings;
   const fieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
   const mappings: Array<{ path: string; command: RuntimeFieldCommand }> = [
     { path: "create", command: "create" },
@@ -2711,6 +2719,7 @@ const LIST_QUERY_COMMAND_NAMES = new Set([
   "aggregate",
   "context",
   "ctx",
+  "events",
   "get",
   "graph",
   "history",
@@ -2949,7 +2958,9 @@ async function registerCoreCommandFamilies(
   }
   if (selection.mutation) {
     const { registerMutationCommands } = await loadMutationRegistrationModule();
-    registerMutationCommands(rootProgram);
+    registerMutationCommands(rootProgram, {
+      targetCommandName: selection.targetCommandName,
+    });
   }
   if (selection.operation) {
     const { registerOperationCommands } =

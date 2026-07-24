@@ -242,7 +242,12 @@ describe("core/store/settings", () => {
         "lifecycle_closure_like_actual_result_patterns",
         "estimate_defaults_by_type",
       ]);
-      expectOrderedObjectKeys(parsed.governance, ["preset"]);
+      expectOrderedObjectKeys(parsed.governance, [
+        "preset",
+        "duplicate_detection_mode",
+        "duplicate_detection_threshold",
+        "duplicate_detection_limit",
+      ]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
       expectOrderedObjectKeys(parsed.testing, ["record_results_to_items"]);
       expectOrderedObjectKeys(parsed.telemetry, [
@@ -789,6 +794,9 @@ describe("core/store/settings", () => {
       metadata_profile: "core",
       force_required_for_stale_lock: false,
       require_close_reason: true,
+      duplicate_detection_mode: "off",
+      duplicate_detection_threshold: 0.8,
+      duplicate_detection_limit: 3,
     });
     expect(resolveGovernanceKnobs({ governance: { preset: "default" } })).toEqual({
       preset: "default",
@@ -799,6 +807,9 @@ describe("core/store/settings", () => {
       metadata_profile: "core",
       force_required_for_stale_lock: true,
       require_close_reason: true,
+      duplicate_detection_mode: "off",
+      duplicate_detection_threshold: 0.8,
+      duplicate_detection_limit: 3,
     });
     expect(resolveGovernanceKnobs({ governance: { preset: "strict" } })).toEqual({
       preset: "strict",
@@ -809,6 +820,9 @@ describe("core/store/settings", () => {
       metadata_profile: "strict",
       force_required_for_stale_lock: true,
       require_close_reason: true,
+      duplicate_detection_mode: "strict",
+      duplicate_detection_threshold: 0.8,
+      duplicate_detection_limit: 3,
     });
     expect(
       resolveGovernanceKnobs({
@@ -827,6 +841,9 @@ describe("core/store/settings", () => {
       metadata_profile: "core",
       force_required_for_stale_lock: false,
       require_close_reason: true,
+      duplicate_detection_mode: "off",
+      duplicate_detection_threshold: 0.8,
+      duplicate_detection_limit: 3,
     });
     expect(
       resolveGovernanceKnobs({

@@ -104,15 +104,33 @@ export {
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
 export {
   evaluateMutationGuard,
+  getMutationActionContract,
   isMutationAction,
   listMutationActions,
+  PM_MUTATION_ACTION_CONTRACTS,
   scanMutationSecrets,
   type EvaluateMutationGuardOptions,
+  type MutationActionContract,
   type MutationGuardResult,
   type MutationGuardSettings,
+  type MutationHistoryScope,
   type SecretGuardFinding,
   type SecretGuardMode,
 } from "./mutation-guard.js";
+export {
+  findSimilarItems,
+  evaluateSimilarityGovernance,
+  similarityAdvisoryWarnings,
+  jaccardSimilarity,
+  normalizeSimilarityText,
+  scoreItemSimilarity,
+  tokenizeSimilarityText,
+  type FindSimilarItemsOptions,
+  type SimilarItemCandidate,
+  type SimilarItemMatch,
+  type SimilarItemsResult,
+  type SimilarityAdvisory,
+} from "./similarity.js";
 export {
   inspectStaleInProgressItems,
   scanStaleInProgressItems,
@@ -347,6 +365,7 @@ export * from "./context-usage.js";
 export * from "./dependency-provenance.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
+export * from "./mutation-events.js";
 export {
   appendWorkspaceAuditEvent,
   appendWorkspaceHistoryChange,

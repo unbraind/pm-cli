@@ -98,6 +98,48 @@ describe("runCopy", () => {
     });
   });
 
+  it("attaches compact duplicate warnings under advisory governance", async () => {
+    await withTempPmPath(async (context) => {
+      const source = await runCreate(
+        {
+          title: "Copy advisory primitive",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      const canonical = await runCreate(
+        {
+          title: "Copy advisory primitive",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(
+        context.runCli([
+          "config",
+          "project",
+          "set",
+          "governance_duplicate_detection_mode",
+          "advisory",
+        ]).code,
+      ).toBe(0);
+      const copied = await runCopy(
+        source.item.id,
+        {},
+        { path: context.pmPath },
+      );
+      expect(copied.warnings).toContain(
+        `likely_duplicates:${canonical.item.id}`,
+      );
+      expect(copied.similarity_advisory).toMatchObject({
+        mode: "advisory",
+        result: { items: [{ id: canonical.item.id }] },
+      });
+    });
+  });
+
   it("normalizes blank title/author/message inputs per copy semantics", async () => {
     await withTempPmPath(async (context) => {
       const source = await seedClosedSource(context);

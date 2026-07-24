@@ -73,6 +73,11 @@ import {
   readSettings,
 } from "../../sdk/runtime-primitives.js";
 import {
+  evaluateSimilarityGovernance,
+  similarityAdvisoryWarnings,
+  type SimilarityAdvisory,
+} from "../../sdk/similarity.js";
+import {
   acquireItemMetadataDerivedIndexLock,
   refreshItemMetadataDerivedIndex,
 } from "../../sdk/item-metadata-index.js";
@@ -188,6 +193,8 @@ export interface CreateCommandOptions
   createMode?: string;
   /** Value that configures or reports schedule preset for this contract. */
   schedulePreset?: string;
+  /** Explicitly permit a likely duplicate when strict governance is enabled. */
+  allowDuplicate?: boolean;
   [key: string]: unknown;
 }
 
@@ -207,6 +214,8 @@ export interface CreateResult {
   // (e.g. `pm start-task <id>`), present only when a richer transition exists.
   /** Value that configures or reports next transition for this contract. */
   next_transition?: LifecycleTransitionSuggestion;
+  /** Likely existing items found before the mutation committed. */
+  similarity_advisory?: SimilarityAdvisory;
 }
 
 type CreateMode = "strict" | "progressive";
@@ -2888,6 +2897,17 @@ export async function runCreate(
   const title = requireStringOption(resolvedOptions.title, "--title");
   const description = resolvedOptions.description ?? "";
   const body = resolvedOptions.body ?? "";
+  const similarityAdvisory = await evaluateSimilarityGovernance(
+    { title, description, body },
+    {
+      pmRoot,
+      mode: settings.governance.duplicate_detection_mode,
+      threshold: settings.governance.duplicate_detection_threshold,
+      limit: settings.governance.duplicate_detection_limit,
+      allowDuplicate: resolvedOptions.allowDuplicate,
+    },
+  );
+  validationWarnings.push(...similarityAdvisoryWarnings(similarityAdvisory));
 
   // GH-249: creating an item directly in the close status must honor
   // governance.require_close_reason, just like `pm close` (errors when missing)
@@ -3053,10 +3073,13 @@ export async function runCreate(
     item: outputItem,
     changed_fields: changedFields,
     warnings: [...validationWarnings, ...hookWarnings],
-    ...(parentSource !== undefined ? { parent_source: parentSource } : {}),
-    ...(nextTransition !== undefined
-      ? { next_transition: nextTransition }
-      : {}),
+    ...Object.fromEntries(
+      [
+        ["parent_source", parentSource],
+        ["next_transition", nextTransition],
+        ["similarity_advisory", similarityAdvisory],
+      ].filter((entry) => entry[1] !== undefined),
+    ),
   };
 }
 

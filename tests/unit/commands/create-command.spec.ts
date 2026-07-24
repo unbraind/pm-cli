@@ -107,6 +107,43 @@ describe("runCreate", () => {
     });
   });
 
+  it("attaches compact duplicate warnings under advisory governance", async () => {
+    await withTempPmPath(async (context) => {
+      const canonical = await runCreate(
+        {
+          title: "Canonical advisory primitive",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(
+        context.runCli([
+          "config",
+          "project",
+          "set",
+          "governance_duplicate_detection_mode",
+          "advisory",
+        ]).code,
+      ).toBe(0);
+      const duplicate = await runCreate(
+        {
+          title: "Canonical advisory primitive",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(duplicate.warnings).toContain(
+        `likely_duplicates:${canonical.item.id}`,
+      );
+      expect(duplicate.similarity_advisory).toMatchObject({
+        mode: "advisory",
+        result: { items: [{ id: canonical.item.id }] },
+      });
+    });
+  });
+
   it("rejects unknown keys in dep/file/doc/reminder/event/type-option seeds (GH-258)", async () => {
     await withTempPmPath(async (context) => {
       const seed = (overrides: Partial<CreateCommandOptions>): CreateCommandOptions => ({

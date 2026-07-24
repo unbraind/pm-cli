@@ -65,6 +65,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   fullChangedFields: { type: "boolean" },
   idOnly: { type: "boolean" },
   allowMissingParent: { type: "boolean" },
+  allowDuplicate: { type: "boolean" },
   duplicateOf: { type: "string" },
   configAction: { type: "string", enum: ["get", "set", "list", "export"] },
   key: { type: "string" },
@@ -788,6 +789,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   allowUnset: {
     description:
       "Whether a custom field may be cleared via --unset (schema add-field); defaults to true.",
+  },
+  allowDuplicate: {
+    description:
+      "Explicitly proceed when strict similarity governance finds likely duplicate items.",
   },
   requiredTypes: {
     description:

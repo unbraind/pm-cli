@@ -232,6 +232,9 @@ export function optionsWithAuthor(
     hoistKey("createMode");
     hoistKey("create_mode");
     hoistKey("allowMissingParent");
+    hoistKey("allowDuplicate");
+  } else if (action === "copy") {
+    hoistKey("allowDuplicate");
   } else if (action === "close") {
     hoistKey("duplicateOf");
   } else if (action === "append") {

@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Create-time near-duplicate advisory: pm create/copy surface similar existing items before new work is filed ([pm-4ri6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4ri6.toon))
+
 ### Fixed
 
+- 10k scale gate regression: CLI create latency and create/claim peak RSS exceed fixed budgets ([pm-hcrmye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hcrmye.toon))
 - PR \#673 review hardening: literal Git paths, canonical workspace identity, bounded diagnostics, and recoverable init ([pm-d7crwk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d7crwk.toon))
 - GH-666/GH-667: nightly Node 22 stderr and Windows permission-contract regressions ([pm-lvd647](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lvd647.toon))
 - GH-665: schema migrations need derived idempotency keys and structured recovery ([pm-s79kel](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s79kel.toon))

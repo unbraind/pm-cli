@@ -2,19 +2,45 @@ id: pm-4ri6
 title: "Create-time near-duplicate advisory: pm create/copy surface similar existing items before new work is filed"
 description: "Advisory duplicate guard at the moment duplicates are born: pm create (and copy) run a bounded similarity probe over existing items (hybrid search + title/issue-code heuristics) and surface likely duplicates as a non-blocking warning, so thousands of parallel agents stop relying on each agent remembering to search first."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: data-quality,dedupe,multi-agent,sdk-first
 created_at: "2026-07-07T06:49:49.719Z"
-updated_at: "2026-07-07T06:49:49.719Z"
+updated_at: "2026-07-24T22:26:07.375Z"
+closed_at: "2026-07-24T22:23:07.422Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "SDK exposes a findSimilarItems(candidate, {limit, threshold}) read primitive reusing the shipped search providers (keyword-only fallback when no vector provider); pm create/copy emit an advisory listing top-N similar items (id + title + status) when the score threshold is crossed; behavior is config-gated (governance key) with off/advisory/strict modes where strict requires --allow-duplicate to proceed; probe is O(query) via the search index — no workspace scan — and adds bounded latency on the create path measured against the pm-cu1i token/latency budgets; MCP pm_create envelope carries the same advisory; dedupe-audit and this probe share one similarity implementation; docs + contracts updated per the new-flag checklist"
 parent: pm-33cw
 risk: medium
 confidence: medium
+resolution: completed
+expected_result: "Create and copy expose bounded SDK-backed duplicate governance with off, advisory, and strict modes while governance-audit reuses the same scorer."
+actual_result: "Installed CLI and SDK proof returned advisory matches and enforced explicit bypass behavior; contracts, MCP, docs, scale budgets, and exact coverage passed."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4n1a,related,"2026-07-07T06:49:49.719Z",null,null
   pm-jmld,related,"2026-07-07T06:49:49.719Z",null,null
   pm-khdq,related,"2026-07-07T06:49:49.719Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-24T20:08:26.657Z",claude-code-agent,"Evidence: shared normalize/tokenize/Jaccard/exact-issue-code scorer now powers both create/copy governance and pm-governance-audit; persistent SQLite FTS supplies bounded candidates when warm, with metadata fallback when explicitly enabled without an index. Minimal/default presets remain zero-overhead off; strict preset enforces, and advisory/strict/threshold/limit are discoverable config leaves. CLI and SDK tests pass, including explicit --allow-duplicate and copy-source exclusion."
+  "2026-07-24T22:21:50.343Z",claude-code-agent,"Acceptance evidence: clean packed-package proof enabled advisory governance through the public config key, created a duplicate, surfaced likely_duplicates with the canonical item id, and read two ranked matches through @unbrained/pm-cli/sdk. Full release coverage is exact 100/100/100/100. The shared index-first scorer is used by create, copy, and governance-audit; CLI/MCP contracts and docs are updated."
+  "2026-07-24T22:26:07.373Z",claude-code-agent,"Delivery PR: https://github.com/unbraind/pm-cli/pull/684"
+files[8]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,Shared scorer reuse
+  src/cli/commands/copy.ts,project,Copy advisory with source exclusion
+  src/cli/commands/create.ts,project,Create advisory and strict enforcement
+  src/core/config/nested-settings.ts,project,Discoverable duplicate governance settings
+  src/core/store/item-metadata-query-index.ts,project,Persistent FTS candidate retrieval
+  src/sdk/similarity-scoring.ts,project,Dependency-light shared deterministic scoring
+  src/sdk/similarity.ts,project,Index-first bounded similarity query and governance enforcement
+  tests/unit/sdk/similarity.spec.ts,project,SDK CLI config and strict bypass regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/similarity.spec.ts tests/unit/core/item/item-metadata-query-index.spec.ts tests/unit/commands/dedupe-audit-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrzia7c2-xrtlo5,test,passed,"2026-07-24T22:22:22.283Z","2026-07-24T22:22:38.498Z","2026-07-24T22:22:38.498Z",1,0,0
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Generated release entry from closed PM lineage by pm-changelog 2026.7.24
+  docs/CONFIGURATION.md,project,Duplicate governance modes threshold and limit configuration
+  docs/SDK_CONTEXT_COORDINATION.md,project,Similarity primitive and create-time governance guidance
+close_reason: "Delivered the shared index-first SDK similarity primitive, create/copy advisory and strict governance, MCP/CLI contracts, governance-audit reuse, documentation, clean installed-package proof, and exact 100% coverage."
 body: "Today duplicate prevention is procedural (agents are told to pm search before pm create) and post-hoc (package-owned dedupe-audit pm-4n1a + dedupe-merge pm-jmld find duplicates after they exist). At thousands of concurrent agents the procedural guard fails statistically: two agents filing the same gap in the same minute both searched, found nothing (the other item did not exist yet), and created twins. The cheapest correction point is create time, where the candidate title/description/body are already in hand.\n\nDesign constraints:\n- SDK-first (ADR pm-muhw): the similarity probe is a public SDK read primitive; CLI/MCP present its result. dedupe-audit refactors onto the same primitive so detection logic exists once.\n- Advisory by default: never blocks automation silently; strict mode is an explicit governance opt-in for high-hygiene workspaces. Exit code stays 0 in advisory mode (pm-psy1 scripting contract).\n- Scale: probe cost must be index-bound (pm-ydp6 hybrid search; pm-801d read index later) and correct at 1M items; on tiny workspaces it degrades to a cheap title scan with zero config (pm-z436 spectrum invariance).\n- Race window honesty: two simultaneous creates can still race past each other; the advisory shrinks the window, dedupe-audit remains the backstop, and pm-khdq fixes the ID-level collision class. This item does NOT claim transactional uniqueness.\n\nDuplicate-check evidence: pm search 'dedupe' -> pm-4n1a/pm-jmld (closed, post-hoc only); pm search 'similar items create advisory' + 'duplicate detection create' -> no create-time coverage; pm-khdq is ID allocation, not content similarity."
