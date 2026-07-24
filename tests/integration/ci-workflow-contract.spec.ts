@@ -397,8 +397,11 @@ describe("GitHub workflow contract", () => {
     ]);
     expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
     expect(releaseWorkflow).not.toContain("Sandboxed PM regression");
-    expect(releaseWorkflow).not.toMatch(
-      /^\s*npm publish\b(?![^\n]*--tag\s+latest\b)[^\n]*$/m,
+    const untaggedNpmPublish =
+      /(?:^|[;&|()]|\b(?:then|do)\b)\s*npm publish\b(?![^;&|\n]*--tag\s+latest\b)/m;
+    expect(releaseWorkflow).not.toMatch(untaggedNpmPublish);
+    expect("if should_publish; then npm publish --access public; fi").toMatch(
+      untaggedNpmPublish,
     );
   });
 
