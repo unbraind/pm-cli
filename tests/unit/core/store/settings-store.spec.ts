@@ -201,6 +201,7 @@ describe("core/store/settings", () => {
         "id_prefix",
         "ids",
         "author_default",
+        "mutation_guard",
         "item_format",
         "locks",
         "checkpoints",
@@ -222,6 +223,11 @@ describe("core/store/settings", () => {
       ]);
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds", "wait_ms"]);
       expectOrderedObjectKeys(parsed.ids, ["token_length"]);
+      expectOrderedObjectKeys(parsed.mutation_guard, [
+        "require_attributed_author",
+        "secret_guard",
+        "stale_in_progress_hours",
+      ]);
       expectOrderedObjectKeys(parsed.checkpoints, ["retention_days"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
       expectOrderedObjectKeys(parsed.history, ["missing_stream", "compact_policy"]);

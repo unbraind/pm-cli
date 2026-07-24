@@ -1,0 +1,28 @@
+id: pm-cedo0g
+title: "GH-664: published daily release fails Bun node:sqlite verification before GitHub Release"
+description: "The 2026-07-24 daily pipeline published @unbrained/pm-cli 2026.7.24 and pushed v2026.7.24, then its downstream Release verification failed because Bun 1.3.14 cannot resolve node:sqlite from the bundled CLI. Restore packed Bun compatibility, make post-publish state reporting truthful, recover the missing GitHub Release, and prove automatic release health end to end."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: "area:compatibility","area:release","github:664","runtime:bun"
+created_at: "2026-07-24T06:30:11.279Z"
+updated_at: "2026-07-24T07:23:04.269Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-u9d0
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-7rlp,related,"2026-07-24T06:30:11.279Z",null,null
+  pm-7zs0,related,"2026-07-24T06:30:11.279Z",null,null
+  pm-f2ne,related,"2026-07-24T06:30:11.279Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-24T06:30:11.279Z",claude-code-agent,"Duplicate check: searched all statuses for the exact Bun node:sqlite release-verification failure. No canonical item exists; pm-7zs0 is the recurring release-health lineage and is linked rather than duplicated."
+  "2026-07-24T06:36:35.623Z",claude-code-agent,"Implementation evidence: the bundled runtime no longer contains an executable static node:sqlite import. Node keeps the persistent SQLite projection; Bun treats it as an optional optimization and falls back to authoritative document reads. Real Bun 1.3.11 executed the built CLI version and contracts commands successfully. Auto Release failure text now distinguishes partial publication and directs operators to inspect tag, npm, and GitHub Release independently."
+  "2026-07-24T07:23:04.269Z",claude-code-agent,"Pre-PR verification evidence: the locally packed 2026.7.24 tarball executes under bunx --bun and reports the expected version. Focused runtime/workflow tests pass; complete coverage passed 6,212 tests at exact 100/100/100/100; aggregate release gates passed build, types, static quality, docstrings, package boundaries, secret scan, packed smoke, 88-command dogfood, npm pack, compatibility, and live Sentry/telemetry thresholds. Local Greptile review alone reported the external free_reviews_limit_reached quota; hosted review remains required before merge."
+files[4]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,Truthful partial-publication blocker diagnostics
+  src/core/store/item-metadata-query-index.ts,project,"Optional node:sqlite runtime capability boundary for Bun-compatible bundle startup"
+  tests/integration/ci-workflow-contract.spec.ts,project,Release alert contract coverage
+  tests/unit/core/item/item-metadata-query-index.spec.ts,project,Optional runtime loader regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-metadata-query-index.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
+body: ""

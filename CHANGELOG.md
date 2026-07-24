@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Stale in-progress detection: validate/health flag in_progress items with no active claim or recent activity ([pm-w8q4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-w8q4.toon))
+
+### Fixed
+
+- Full coverage gate flakes when real all-package install exceeds generic 30-second unit timeout under load ([pm-7x0wqg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7x0wqg.toon))
+- Sentry PM-CLI-2K: schema migration input error crosses CLI boundary as high TypeError ([pm-rxqcp9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rxqcp9.toon))
+- Author attribution enforcement: opt-in strict unknown-author rejection, SDK test-all author parity, and audited disposition for stranded actionable events ([pm-h90s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h90s.toon))
+
+### Security
+
+- Write-time secret detection advisory: mutation paths flag credential-shaped content before it enters the immutable history stream ([pm-pim7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pim7.toon))
+
 ## 2026.7.24 - 2026-07-24
 
 ### Added

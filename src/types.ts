@@ -912,6 +912,8 @@ export interface HistoryEntry {
   after_hash: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Structured audit metadata that does not alter replayed item state. */
+  context?: Record<string, unknown>;
 }
 
 /** Supported values accepted by the context depth contract. */
@@ -1150,6 +1152,15 @@ export interface PmSettings {
   };
   /** Value that configures or reports author default for this contract. */
   author_default: string;
+  /** Shared pre-write provenance, secret, and stale-work policy. */
+  mutation_guard: {
+    /** Reject mutations whose resolved author is `unknown`. */
+    require_attributed_author: boolean;
+    /** Credential-shaped content policy applied before CLI/MCP mutation dispatch. */
+    secret_guard: "off" | "advise" | "block";
+    /** Age threshold for unclaimed in-progress work surfaced by health. */
+    stale_in_progress_hours: number;
+  };
   /** Value that configures or reports item format for this contract. */
   item_format: ItemFormat;
   /** Value that configures or reports locks for this contract. */

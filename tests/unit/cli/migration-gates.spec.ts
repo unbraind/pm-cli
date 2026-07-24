@@ -3,10 +3,60 @@ import {
   collectMandatoryMigrationBlockers,
   decideWriteGate,
   enforceMandatoryMigrationWriteGate,
+  enforceSchemaMigrationInput,
+  normalizedLifecycleStatus,
   resolveMigrationId,
   resolveNormalizedMigrationStatus,
 } from "../../../src/cli/migration-gates.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+
+describe("normalizedLifecycleStatus", () => {
+  it("defaults missing values and normalizes hyphenated active statuses", () => {
+    expect(normalizedLifecycleStatus(undefined)).toBe("in_progress");
+    expect(normalizedLifecycleStatus(" In-Progress ")).toBe("in_progress");
+  });
+});
+
+describe("enforceSchemaMigrationInput", () => {
+  it("ignores unrelated commands and complete migration invocations", () => {
+    expect(() => enforceSchemaMigrationInput("list", [], {})).not.toThrow();
+    expect(() => enforceSchemaMigrationInput("schema", [], {})).not.toThrow();
+    expect(() =>
+      enforceSchemaMigrationInput("schema", ["list"], {}),
+    ).not.toThrow();
+    expect(() =>
+      enforceSchemaMigrationInput(
+        "schema",
+        ["rename-type", "Spike"],
+        { to: "Experiment", migrationId: "spike-v2" },
+      ),
+    ).not.toThrow();
+    expect(() =>
+      enforceSchemaMigrationInput(
+        " SCHEMA ",
+        ["REMAP-STATUS", "review"],
+        { to: "verifying", migration_id: "review-v2" },
+      ),
+    ).not.toThrow();
+  });
+
+  it("reports every missing migration input as a typed usage error", () => {
+    expect(() =>
+      enforceSchemaMigrationInput("schema", ["rename-field", " "], {}),
+    ).toThrowError(
+      expect.objectContaining({
+        exitCode: 2,
+        context: expect.objectContaining({
+          code: "schema_migration_input_required",
+          required: "source,--to,--migration-id",
+          recovery: expect.objectContaining({
+            missing_required_fields: ["source", "--to", "--migration-id"],
+          }),
+        }),
+      }),
+    );
+  });
+});
 
 describe("resolveMigrationId", () => {
   it("returns explicit id when present", () => {

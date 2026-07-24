@@ -55,6 +55,7 @@ describe("SDK execution and diagnostics ownership", () => {
     const batchOptions: TestAllCommandOptions = {
       status: "open",
       failOnSkipped: true,
+      author: "agent",
     };
     const backgroundOptions: StartBackgroundRunCommandOptions = {
       kind: "test",
@@ -77,6 +78,7 @@ describe("SDK execution and diagnostics ownership", () => {
 
     expect(testOptions.autoPmContext).toBe(true);
     expect(batchOptions.failOnSkipped).toBe(true);
+    expect(batchOptions.author).toBe("agent");
     expect(backgroundOptions.kind).toBe("test");
     expect(evalOptions.k).toBe(10);
     expect(telemetryOptions.limit).toBe(20);

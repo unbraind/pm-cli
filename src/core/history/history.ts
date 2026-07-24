@@ -163,6 +163,7 @@ export function createHistoryEntry(params: {
   before: ItemDocument;
   after: ItemDocument;
   message?: string;
+  context?: Record<string, unknown>;
 }): HistoryEntry {
   const beforeHashCanonical = canonicalHashDocument(params.before);
   const afterHashCanonical = canonicalHashDocument(params.after);
@@ -182,6 +183,7 @@ export function createHistoryEntry(params: {
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),
     after_hash: sha256Hex(stableStringify(afterHashCanonical)),
     message: params.message === undefined ? undefined : params.message,
+    ...(params.context === undefined ? {} : { context: params.context }),
   };
 }
 

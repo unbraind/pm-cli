@@ -37,6 +37,8 @@ import {
 
 /** Documents the test all command options payload exchanged by command, SDK, and package integrations. */
 export interface TestAllCommandOptions {
+  /** Explicit author recorded on item test-run tracking events. */
+  author?: string;
   /** Lifecycle state reported for status. */
   status?: string;
   /** Value that configures or reports limit for this contract. */
@@ -628,7 +630,10 @@ const buildTestAllItemRunContext = (params: {
     seenTestKeys: new Set<string>(),
     effectiveTimeoutByKey: buildEffectiveTimeoutByKey(params.itemTests),
     trackingEnabled: params.settings.testing.record_results_to_items === true,
-    trackingAuthor: resolveAuthor(undefined, params.settings.author_default),
+    trackingAuthor: resolveAuthor(
+      params.options.author,
+      params.settings.author_default,
+    ),
     trackingRunId: resolveTrackedRunId(),
     trackingAttempt: resolveTrackingAttempt(),
     trackingResumedFrom: resolveOptionalEnvironmentValue(

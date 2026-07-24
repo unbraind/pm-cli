@@ -16,6 +16,11 @@ import {
   PmCliError,
   toNonEmptyStringOrUndefined,
   printError,
+  evaluateMutationGuard,
+  isMutationAction,
+  resolveAuthor,
+  locateItem,
+  readLocatedItem,
 } from "../sdk/runtime-primitives.js";
 /** Documents the mandatory migration blocker payload exchanged by command, SDK, and package integrations. */
 export interface MandatoryMigrationBlocker {
@@ -130,6 +135,41 @@ const FORCEABLE_MUTATING_COMMANDS = new Set([
 ]);
 const TEXT_APPEND_COMMANDS = new Set(["comments", "notes", "learnings"]);
 const LIST_MUTATION_COMMANDS = new Set(["files", "docs", "test"]);
+const POSITIONAL_MUTATION_VERBS = new Set([
+  "activate",
+  "add",
+  "add-field",
+  "add-status",
+  "add-type",
+  "apply",
+  "compact",
+  "create",
+  "deactivate",
+  "delete",
+  "disable",
+  "edit",
+  "enable",
+  "import",
+  "infer",
+  "install",
+  "materialize",
+  "migrate",
+  "redact",
+  "remove",
+  "remove-field",
+  "remove-status",
+  "remove-type",
+  "remap-status",
+  "rename-field",
+  "rename-type",
+  "repair",
+  "run",
+  "save",
+  "set",
+  "unset",
+  "update",
+  "upgrade",
+]);
 
 /** Implements decide write gate for the public runtime surface of this module. */
 export function decideWriteGate(
@@ -160,6 +200,178 @@ export function decideWriteGate(
     };
   }
   return { isMutation: false, forceCapable: false, forceRequested: false };
+}
+
+function isMutationInvocation(
+  commandPath: string,
+  commandArgs: string[],
+  options: Record<string, unknown>,
+): boolean {
+  if (decideWriteGate(commandPath, options).isMutation) {
+    return true;
+  }
+  const normalizedCommand = commandPath.trim().toLowerCase();
+  if (!isMutationAction(normalizedCommand)) {
+    return false;
+  }
+  if (
+    [
+      "close-many",
+      "close-task",
+      "copy",
+      "delete",
+      "discover",
+      "focus",
+      "pause-task",
+      "start-task",
+      "update-many",
+    ].includes(normalizedCommand)
+  ) {
+    return true;
+  }
+  return commandArgs.some((argument) =>
+    POSITIONAL_MUTATION_VERBS.has(argument.trim().toLowerCase()),
+  );
+}
+
+/** Normalize configured active-status spellings for preflight comparison. */
+export function normalizedLifecycleStatus(
+  value: string | undefined,
+): string {
+  return (value ?? "in_progress").trim().toLowerCase().replaceAll("-", "_");
+}
+
+/** Convert incomplete schema-evolution CLI invocations into typed usage errors. */
+export function enforceSchemaMigrationInput(
+  commandPath: string,
+  commandArgs: string[],
+  options: Record<string, unknown>,
+): void {
+  const subcommand = commandArgs[0]?.trim().toLowerCase() ?? "";
+  if (
+    commandPath.trim().toLowerCase() !== "schema" ||
+    !["rename-type", "rename-field", "remap-status"].includes(subcommand)
+  ) {
+    return;
+  }
+  const missing: string[] = [];
+  if (!toNonEmptyStringOrUndefined(commandArgs[1])) missing.push("source");
+  if (!toNonEmptyStringOrUndefined(options.to)) missing.push("--to");
+  if (
+    !toNonEmptyStringOrUndefined(options.migrationId) &&
+    !toNonEmptyStringOrUndefined(options.migration_id)
+  ) {
+    missing.push("--migration-id");
+  }
+  if (missing.length === 0) {
+    return;
+  }
+  throw new PmCliError(
+    `Schema migration requires ${missing.join(", ")}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "schema_migration_input_required",
+      required: missing.join(","),
+      why: "Schema migrations are resumable and require an explicit source, target, and stable migration id.",
+      recovery: {
+        recovery_mode: "compact",
+        missing_required_fields: missing,
+        suggested_flags: missing.filter((entry) => entry.startsWith("--")),
+        suggested_retry: `pm schema ${subcommand} <source> --to <target> --migration-id <id>`,
+      },
+    },
+  );
+}
+
+async function warnForUnclaimedInProgressUpdate(
+  commandPath: string,
+  commandArgs: string[],
+  options: Record<string, unknown>,
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettingsWithMetadata>>["settings"],
+): Promise<void> {
+  if (
+    commandPath.trim().toLowerCase() !== "update" ||
+    typeof options.status !== "string" ||
+    normalizedLifecycleStatus(options.status) !==
+      normalizedLifecycleStatus(settings.schema.workflow.in_progress_status)
+  ) {
+    return;
+  }
+  const rawId = commandArgs[0];
+  if (!rawId) {
+    return;
+  }
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const located = await locateItem(
+    pmRoot,
+    rawId,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
+  if (!located) {
+    return;
+  }
+  const current = await readLocatedItem(located, { schema: settings.schema });
+  const requestedAssignee =
+    typeof options.assignee === "string" ? options.assignee.trim() : undefined;
+  const prospectiveAssignee =
+    requestedAssignee === undefined
+      ? current.document.metadata.assignee?.trim()
+      : ["", "none", "null", "undefined"].includes(
+            requestedAssignee.toLowerCase(),
+          )
+        ? undefined
+        : requestedAssignee;
+  if (prospectiveAssignee) {
+    return;
+  }
+  printError(
+    `warning:in_progress_item_unclaimed:${located.id}:claim_with=pm claim ${located.id}`,
+  );
+}
+
+/**
+ * Apply SDK-owned provenance and secret policy to one parsed CLI invocation.
+ * Advisory output is stderr-only so JSON/TOON result envelopes stay unchanged.
+ */
+export async function enforceMutationGuardPreflight(
+  commandPath: string,
+  commandArgs: string[],
+  options: Record<string, unknown>,
+  global: { author?: string; force?: boolean; json?: boolean },
+  pmRoot: string,
+): Promise<void> {
+  if (!isMutationInvocation(commandPath, commandArgs, options)) {
+    return;
+  }
+  enforceSchemaMigrationInput(commandPath, commandArgs, options);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return;
+  }
+  const settings = await readSettingsWithMetadata(pmRoot);
+  if (global.json !== true) {
+    await warnForUnclaimedInProgressUpdate(
+      commandPath,
+      commandArgs,
+      options,
+      pmRoot,
+      settings.settings,
+    );
+  }
+  const result = evaluateMutationGuard({
+    author: resolveAuthor(global.author, settings.settings.author_default),
+    payload: { command: commandPath, args: commandArgs, options },
+    settings: settings.settings.mutation_guard,
+    force: global.force === true || options.force === true,
+  });
+  for (const warning of result.warnings) {
+    printError(`warning:${warning}`);
+  }
 }
 
 /** Implements enforce mandatory migration write gate for the public runtime surface of this module. */

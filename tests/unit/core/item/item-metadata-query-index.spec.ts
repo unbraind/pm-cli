@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import {
+  _testOnly,
   queryItemMetadataIndex,
   rebuildItemMetadataQueryIndex,
   removeItemMetadataQueryIndex,
@@ -40,6 +41,49 @@ afterEach(async () => {
 });
 
 describe("item metadata SQLite query index", () => {
+  it("resolves optional node:sqlite constructors without throwing when unavailable", () => {
+    expect(
+      _testOnly.loadDatabaseSync(() => ({ DatabaseSync })),
+    ).toBe(DatabaseSync);
+    expect(_testOnly.loadDatabaseSync(() => ({}))).toBeNull();
+    expect(
+      _testOnly.loadDatabaseSync(() => {
+        throw new Error("unsupported runtime");
+      }),
+    ).toBeNull();
+  });
+
+  it("falls back without projection writes when node:sqlite is unavailable", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-query-no-sqlite-"));
+    roots.push(root);
+    const restoreDatabaseSync = _testOnly.setDatabaseSync(null);
+    try {
+      await rebuildItemMetadataQueryIndex({
+        pmRoot: root,
+        contextFingerprint: "context-1",
+        sourceCursor: "cursor-1",
+        rows: [],
+      });
+      expect(
+        await updateItemMetadataQueryIndex({
+          pmRoot: root,
+          contextFingerprint: "context-1",
+          expectedSourceCursor: "cursor-1",
+          sourceCursor: "cursor-2",
+          row: null,
+        }),
+      ).toBe(false);
+      expect(
+        await queryItemMetadataIndex({
+          pmRoot: root,
+          expectedSourceCursor: "cursor-1",
+        }),
+      ).toBeNull();
+    } finally {
+      restoreDatabaseSync();
+    }
+  });
+
   it("queries bounded default-order windows and scalar index predicates", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-query-index-"));
     roots.push(root);

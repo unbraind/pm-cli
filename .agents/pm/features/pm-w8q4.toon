@@ -2,19 +2,43 @@ id: pm-w8q4
 title: "Stale in-progress detection: validate/health flag in_progress items with no active claim or recent activity"
 description: "Abandoned-work hygiene for multi-agent workspaces: surface in_progress items that no agent is actually working on, so pm next/context and human dashboards reflect true WIP."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:validate",concurrency,governance
 created_at: "2026-07-06T21:40:40.251Z"
-updated_at: "2026-07-14T17:05:16.084Z"
+updated_at: "2026-07-24T07:45:19.581Z"
+closed_at: "2026-07-24T06:14:48.936Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "pm validate (and/or pm health) gains a warn-only check flagging in_progress items that have no active claim AND no history activity within a configurable staleness window (default ~72h); output lists item IDs with last-activity timestamps and a remediation hint (claim, release back to open, or justify); pm update --status in_progress without an existing claim emits a one-line advisory suggesting pm claim; window configurable via settings; docs + tests; zero behavior change for existing green workflows (warn-only)"
 parent: pm-dj98
 risk: low
 confidence: medium
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: Configurable SDK stale-WIP detection and non-disruptive CLI/health advisories implemented for multi-agent ownership honesty.
+expected_result: Old unclaimed active items are listed with timestamps/remediation and direct unclaimed in-progress transitions advise agents to claim work without changing green workflow semantics.
+actual_result: "Health emits deterministic advisory details, human updates advise pm claim, JSON remains parseable, and installed-package acceptance passes."
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-zwib,related,"2026-07-14T17:05:16.062Z",null,null
-comments[1]{created_at,author,text}:
+  pm-h90s,related,"2026-07-24T05:18:24.290Z",claude-code-agent,null
+  pm-pim7,related,"2026-07-24T05:18:24.290Z",claude-code-agent,null
+comments[3]{created_at,author,text}:
   "2026-07-10T21:51:10.369Z",maintainer-agent,"Live evidence 2026-07-10 (first pass with PR#502 caller-aware pm next in place): 9 open items claimed 2026-07-04 by maintainer-agent (docstring umbrella pm-4ak1, gate pm-5566, + 7 module slices pm-m0uc/mswi/uxmf/uwu0/768v/2vb2/qely) sat dormant ~6 days with zero work. Effect measured: anonymous pm next callers saw 8 of them under held_by_others as apparent live lanes and they were excluded from the shared ready pool; with PM_AUTHOR=maintainer-agent the recommender steered the owner to resume pm-5566 instead of frontier work (pm-3mna). A claim-TTL/staleness signal would have surfaced these for release days earlier. Hygiene applied this pass: the 9 claims released (items stay open, statuses untouched). Foreign lanes pm-tnud (codex-agent, 07-07) and pm-92if (claude-code-agent) left alone; pm-92if release-then-reclaim sequence verified consistent, no state defect."
+  "2026-07-24T06:14:22.360Z",claude-code-agent,"Evidence 2026-07-24: shipped public pure/filesystem stale-work SDK scans plus advisory health integration using item and latest valid history activity, configurable default 72h. Direct human pm update <id> --status in_progress now warns when the resulting item is unassigned; --json suppresses presentation advice to preserve parseable machine stderr. Fresh packed-install acceptance observed the warning and passed health/validate. Linked 35-test item gate and full 6208-test exact 100/100/100/100 coverage passed."
+  "2026-07-24T07:45:19.581Z",claude-code-agent,"CodeRabbit follow-up: stale-work scanning now degrades a single corrupt or unreadable item history stream to metadata-only activity instead of failing the whole Promise.all health scan. Added corrupt-JSON regression coverage; focused SDK governance tests pass."
+files[7]{path,scope,note}:
+  src/cli/migration-gates.ts,project,unclaimed active-work advisory
+  src/core/config/nested-settings.ts,project,stale threshold config
+  src/core/store/settings.ts,project,stale threshold persistence
+  src/sdk/governance/health.ts,project,advisory health integration
+  src/sdk/governance/stale-work.ts,project,read-only stale work scanner
+  tests/unit/cli/migration-gates.spec.ts,project,preflight normalization contract
+  tests/unit/sdk/mutation-guard-adapters.spec.ts,project,installed CLI advisory and JSON contract proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/stale-work.spec.ts tests/unit/sdk/stale-work-health.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/cli/migration-gates.spec.ts,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mryinnko-00kkiq,test,passed,"2026-07-24T05:45:10.354Z","2026-07-24T05:45:19.896Z","2026-07-24T05:45:19.896Z",1,0,0
+  test-local-mryjofwx-9xhhxc,test,passed,"2026-07-24T06:13:40.418Z","2026-07-24T06:13:56.241Z","2026-07-24T06:13:56.241Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/MUTATION_INTEGRITY.md,project,stale work policy and remediation
+close_reason: Implemented and verified configurable stale unclaimed-work scans plus human update ownership advice and JSON compatibility.
 body: "## Evidence (review #14, 2026-07-06)\nThe docstring initiative (epic pm-4ak1 + 8 child tasks) was bulk-set to in_progress on 2026-07-04/05 and then abandoned: no claim on any item, no branch, no PR, no commit touches docstrings (verified via git branch -a / gh pr list / git log --grep docstring). For 2 days pm next, pm context, and stats reported 9 phantom active work items.\n\n## Why this matters at scale\nThe scale story (pm-9rxu, pm-g2zz) assumes thousands of concurrent agents; with advisory-only claims and no staleness detection, every crashed or wandering agent permanently poisons the WIP signal. pm claim today has no TTL/expiry and validate has no WIP-accuracy check — status honesty is entirely manual.\n\n## Sketch\n- validate check id: validate_claims_stale_in_progress (warn): in_progress AND no active claim AND last history entry older than window (settings key, default 72h).\n- Advisory on 'pm update --status in_progress' when the item is unclaimed: 'hint: pm claim <id> --author <you> to signal ownership'.\n- Related-not-duplicate: pm-zwib (stale LOCK takeover race — file locks, not work claims), pm-8t5x closed (claim atomicity), pm-114v (claim --next distribution).\n\nDuplicate check: searched stale/abandoned/in_progress/claim/lease/heartbeat — no existing item covers WIP-staleness detection."

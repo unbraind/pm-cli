@@ -2,25 +2,47 @@ id: pm-h90s
 title: "Author attribution enforcement: opt-in strict unknown-author rejection, SDK test-all author parity, and audited disposition for stranded actionable events"
 description: "Production evidence 2026-07-16: the PR#575 lane (codex-wide-sdk-20260716) authored 211 history events correctly but its 'pm test --run' invocations wrote 5 test_run_track events with author 'unknown' (pm-qfdd/pm-cbwg/pm-w89s/pm-9x6e x2, 21:05-21:13Z). Because pm-demq's legacy/actionable split anchors on a fixed baseline timestamp, these post-baseline events are permanently 'actionable' — pm health is now ok:false with history_unknown_author_events:5 and NO remediation path (history is immutable by design; never rewrite). Three gaps, one item: (1) PREVENTION — pm-cpja deliberately shipped attribution as advisory; add opt-in strict enforcement (settings key, e.g. require_attributed_author) that fail-fasts any mutation whose author resolves to 'unknown', so lanes cannot leak unattributed events into permanent history. (2) SDK PARITY — buildTestAllItemRunContext (src/sdk/test/batch.ts:631) hardcodes resolveAuthor(undefined, author_default): TestAllCommandOptions carries no author field, so programmatic SDK runTestAll callers cannot attribute tracking events except via process-global PM_AUTHOR (execution.ts single-run path DOES accept options.author — asymmetric). (3) DISPOSITION — an audited acknowledgment mechanism for stranded actionable unknown-author events (attribute-by-annotation recorded as a NEW history event with evidence, e.g. 'events X..Y attributed to codex-wide-sdk-20260716 by maintainer review', consumed by the health scanner), so health can return to ok truthfully without moving the baseline or editing history."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:governance",history-integrity
 created_at: "2026-07-17T04:42:36.823Z"
-updated_at: "2026-07-23T05:33:55.569Z"
+updated_at: "2026-07-24T07:45:18.606Z"
+closed_at: "2026-07-24T06:14:45.137Z"
 author: maintainer-agent
 estimated_minutes: 360
 acceptance_criteria: "strict mode (opt-in settings key) rejects mutations resolving to author 'unknown' with a typed usage error naming --author/PM_AUTHOR; TestAllCommandOptions accepts author and threads it to appendTrackedTestRunSummary (parity with single-run path); an audited acknowledgment flow dispositions the five 2026-07-16 events and pm health returns ok:true without baseline moves or history rewrites; validate/health docs cover all three; regression specs for each"
 parent: pm-33cw
 risk: medium
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
+resolution: Strict provenance enforcement and audited immutable-event disposition implemented through shared SDK/runtime primitives.
+expected_result: "Unknown mutation authors can be rejected by policy, SDK test-all accepts explicit authors, and the five stranded events become non-actionable without history rewrites."
+actual_result: All three paths shipped; health is green with five acknowledged events and zero actionable unknown-author events.
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-17T04:42:36.823Z",null,null
   pm-cpja,related,"2026-07-17T04:42:36.823Z",null,null
   pm-demq,related,"2026-07-17T04:42:36.823Z",null,null
   pm-u14c,related,"2026-07-17T04:42:36.823Z",null,null
   pm-wenq,related,"2026-07-17T04:42:36.823Z",null,null
-comments[3]{created_at,author,text}:
+  pm-pim7,related,"2026-07-24T05:18:22.760Z",claude-code-agent,null
+  pm-w8q4,related,"2026-07-24T05:18:22.760Z",claude-code-agent,null
+comments[5]{created_at,author,text}:
   "2026-07-19T16:15:16.114Z",codex-wide-sdk-20260719,"2026-07-19 verification: pm health still reports exactly history_unknown_author_events:5 and validate reports no history drift, matching this canonical open issue's documented immutable-event scope. No duplicate item created and no history files were rewritten."
   "2026-07-21T07:57:07.125Z",codex-root-20260721,"2026-07-21 shipping-lane verification: pm health still reports exactly 5 actionable unknown-author events, with 0 history drift, 0 active/stale locks, and storage integrity otherwise clean. This remains the canonical prevention/disposition item; no duplicate was created and immutable history was not rewritten."
   "2026-07-23T05:33:55.569Z",claude-code-agent,"Fresh health evidence 2026-07-23: pm health --check-only reports storage warn with 167 unknown-author events, partitioned into 162 legacy and 5 actionable across 1,925 streams / 32,373 checked events. This is the existing canonical item; no duplicate was created and it was not claimed by the truthful-context PR."
+  "2026-07-24T06:14:19.250Z",claude-code-agent,"Evidence 2026-07-24: shipped opt-in strict mutation authorship, explicit TestAllCommandOptions.author parity, and append-only history:author-acknowledge disposition. Reviewed and acknowledged the five exact post-baseline test_run_track events as codex-wide-sdk-20260716 without rewriting immutable streams. Live pm health now reports 167 total unknown events = 162 legacy + 5 acknowledged, 0 actionable, overall ok:true; validate reports 0 history drift. Linked tests passed. Full repository coverage passed 6208 tests at exact 100% statements/branches/functions/lines; lint, typecheck, docs links, contracts, security, and packed-install acceptance passed."
+  "2026-07-24T07:45:18.606Z",claude-code-agent,"CodeRabbit follow-up: hardened the public acknowledgment primitive against traversal-shaped item ids, invalid line numbers, and unreadable/missing history streams; all read/parse failures now return the same contextual typed error. Added regression coverage without rewriting history."
+files[6]{path,scope,note}:
+  src/core/history/workspace-history.ts,project,workspace audit event primitive
+  src/sdk/author-attribution.ts,project,append-only author disposition SDK
+  src/sdk/index.ts,project,public SDK exports
+  src/sdk/runtime-primitives.ts,project,shared runtime exports
+  src/sdk/test/batch.ts,project,explicit test-all author parity
+  src/types.ts,project,history context and mutation policy contracts
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/test-all-author.spec.ts tests/unit/sdk/execution-diagnostics-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mryin79a-t35wrd,test,passed,"2026-07-24T05:44:48.674Z","2026-07-24T05:44:58.750Z","2026-07-24T05:44:58.750Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/MUTATION_INTEGRITY.md,project,author policy and append-only disposition guide
+close_reason: "Implemented and verified strict author policy, explicit SDK test-all attribution, and append-only disposition with zero actionable unknown-author events."
 body: ""

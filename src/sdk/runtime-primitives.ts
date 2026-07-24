@@ -94,10 +94,12 @@ export {
   hashEmptyDocument,
 } from "../core/history/history.js";
 export {
+  appendWorkspaceAuditEvent,
   appendWorkspaceHistoryChange,
   getWorkspaceHistoryPath,
   WORKSPACE_HISTORY_ID,
   writeWorkspaceJsonWithHistory,
+  type WorkspaceAuditEventOptions,
   type WorkspaceHistoryChange,
   type WorkspaceJsonWriteOptions,
 } from "../core/history/workspace-history.js";
@@ -242,6 +244,24 @@ export {
   setFocusedItem,
 } from "../core/session/session-state.js";
 export { resolveAuthor } from "../core/shared/author.js";
+export {
+  evaluateMutationGuard,
+  isMutationAction,
+  listMutationActions,
+  scanMutationSecrets,
+  type EvaluateMutationGuardOptions,
+  type MutationGuardResult,
+  type MutationGuardSettings,
+  type SecretGuardFinding,
+  type SecretGuardMode,
+} from "./mutation-guard.js";
+export {
+  inspectStaleInProgressItems,
+  scanStaleInProgressItems,
+  type InspectStaleInProgressOptions,
+  type StaleInProgressItem,
+  type StaleInProgressScan,
+} from "./governance/stale-work.js";
 export type { GlobalOptions } from "../core/shared/command-types.js";
 export {
   CREATE_DIRECT_CLOSE_REASON_DEFAULT,
