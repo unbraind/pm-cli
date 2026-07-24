@@ -1175,16 +1175,16 @@ export async function runSchemaEvolutionMigration(
 ): Promise<SchemaEvolutionMigrationResult> {
   const request = normalizedRequest(requestInput);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  const migrationId =
-    options.migrationId === undefined
-      ? deriveSchemaEvolutionMigrationId(request, path.resolve(pmRoot))
-      : requiredMigrationId(options.migrationId);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
       `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
       EXIT_CODE.NOT_FOUND,
     );
   }
+  const migrationId =
+    options.migrationId === undefined
+      ? deriveSchemaEvolutionMigrationId(request, await fs.realpath(pmRoot))
+      : requiredMigrationId(options.migrationId);
   const settings = await readSettings(pmRoot);
   const author = (
     options.author ??

@@ -1198,31 +1198,50 @@ const HEALTH_DETAIL_SUMMARIZERS = {
     unreadable_lock_count: details.unreadable_lock_count,
     unparseable_lock_count: details.unparseable_lock_count,
   }),
-  integrity: (details, limit) => ({
-    checked_item_files: details.checked_item_files,
-    checked_history_streams: details.checked_history_streams,
-    counts: details.counts,
-    item_unreadable: summarizeStringList(details.item_unreadable, limit),
-    item_conflict_markers: summarizeRecordList(
-      details.item_conflict_markers,
-      limit,
-    ),
-    item_parse_failures: summarizeStringList(
-      details.item_parse_failures,
-      limit,
-    ),
-    tracked_runtime_cache: details.tracked_runtime_cache,
-    history_unreadable: summarizeStringList(details.history_unreadable, limit),
-    history_conflict_markers: summarizeRecordList(
-      details.history_conflict_markers,
-      limit,
-    ),
-    history_invalid_json: summarizeRecordList(
-      details.history_invalid_json,
-      limit,
-    ),
-    skipped: details.skipped,
-  }),
+  integrity: (details, limit) => {
+    const trackedRuntimeCache =
+      typeof details.tracked_runtime_cache === "object" &&
+      details.tracked_runtime_cache !== null
+        ? (details.tracked_runtime_cache as Record<string, unknown>)
+        : undefined;
+    return {
+      checked_item_files: details.checked_item_files,
+      checked_history_streams: details.checked_history_streams,
+      counts: details.counts,
+      item_unreadable: summarizeStringList(details.item_unreadable, limit),
+      item_conflict_markers: summarizeRecordList(
+        details.item_conflict_markers,
+        limit,
+      ),
+      item_parse_failures: summarizeStringList(
+        details.item_parse_failures,
+        limit,
+      ),
+      tracked_runtime_cache:
+        trackedRuntimeCache === undefined
+          ? details.tracked_runtime_cache
+          : {
+              ...trackedRuntimeCache,
+              tracked_paths: summarizeStringList(
+                trackedRuntimeCache.tracked_paths,
+                limit,
+              ),
+            },
+      history_unreadable: summarizeStringList(
+        details.history_unreadable,
+        limit,
+      ),
+      history_conflict_markers: summarizeRecordList(
+        details.history_conflict_markers,
+        limit,
+      ),
+      history_invalid_json: summarizeRecordList(
+        details.history_invalid_json,
+        limit,
+      ),
+      skipped: details.skipped,
+    };
+  },
   history_drift: (details, limit) => ({
     checked_items: details.checked_items,
     counts: details.counts,

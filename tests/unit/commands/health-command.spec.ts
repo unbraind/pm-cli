@@ -161,6 +161,32 @@ describe("runHealth", () => {
       sample: ["a", "b"],
       truncated: true,
     });
+    expect(
+      healthInternals.summarizeHealthCheckDetails(
+        {
+          name: "integrity",
+          status: "warn",
+          details: {
+            tracked_runtime_cache: {
+              tracked_paths: ["a", "b", "c"],
+              tracked_path_count: 3,
+              remediation_command: "git rm --cached",
+            },
+          },
+        },
+        2,
+      ),
+    ).toMatchObject({
+      tracked_runtime_cache: {
+        tracked_paths: {
+          count: 3,
+          sample: ["a", "b"],
+          truncated: true,
+        },
+        tracked_path_count: 3,
+        remediation_command: "git rm --cached",
+      },
+    });
     expect(healthInternals.buildCapabilityContractMetadata).toBe(doctorBuildCapabilityContractMetadata);
     expect(healthInternals.collectUnknownCapabilityGuidance).toBe(doctorCollectUnknownCapabilityGuidance);
     expect(healthInternals.buildCapabilityContractMetadata().capabilities.length).toBeGreaterThan(0);

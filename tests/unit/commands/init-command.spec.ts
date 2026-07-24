@@ -2031,9 +2031,9 @@ describe("runInit", () => {
           mergeFenceWarning?.slice("updated:merge_fence:".length) ?? "",
         ),
       ).toBe(await realpath(path.join(workspace, ".gitattributes")));
-      expect(await readFile(path.join(workspace, ".gitattributes"), "utf8")).toContain(
-        "# pm-cli:merge-drivers:start",
-      );
+      expect(
+        await readFile(path.join(workspace, ".gitattributes"), "utf8"),
+      ).toContain("# pm-cli:merge-drivers:start");
       expect(
         execFileSync(
           "git",
@@ -2052,11 +2052,7 @@ describe("runInit", () => {
       expect(await readFile(gitignorePath, "utf8")).toBe("sentinel\n");
 
       const optedOutWorkspace = path.join(tempRoot, "opted-out");
-      const optedOutPmRoot = path.join(
-        optedOutWorkspace,
-        ".agents",
-        "pm",
-      );
+      const optedOutPmRoot = path.join(optedOutWorkspace, ".agents", "pm");
       await mkdir(optedOutWorkspace, { recursive: true });
       execFileSync("git", ["init", "--quiet"], { cwd: optedOutWorkspace });
       await runInit(
@@ -2069,11 +2065,7 @@ describe("runInit", () => {
       ).rejects.toMatchObject({ code: "ENOENT" });
 
       const preFencedWorkspace = path.join(tempRoot, "pre-fenced");
-      const preFencedPmRoot = path.join(
-        preFencedWorkspace,
-        ".agents",
-        "pm",
-      );
+      const preFencedPmRoot = path.join(preFencedWorkspace, ".agents", "pm");
       await mkdir(preFencedWorkspace, { recursive: true });
       execFileSync("git", ["init", "--quiet"], { cwd: preFencedWorkspace });
       await writeFile(
@@ -2108,5 +2100,70 @@ describe("runInit", () => {
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
+  });
+
+  it("returns actionable recovery when fresh merge-fence installation cannot write Git config", async () => {
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-init-merge-recovery-"),
+    );
+    try {
+      const workspace = path.join(tempRoot, "workspace");
+      const pmRoot = path.join(workspace, ".agents", "pm");
+      await mkdir(workspace, { recursive: true });
+      execFileSync("git", ["init", "--quiet"], { cwd: workspace });
+      await writeFile(
+        path.join(workspace, ".git", "config.lock"),
+        "held by init recovery test\n",
+        "utf8",
+      );
+
+      const initialized = await runInit(
+        undefined,
+        { path: pmRoot },
+        { defaults: true, agentGuidance: "skip" },
+      );
+
+      expect(initialized.ok).toBe(true);
+      expect(initialized.warnings).toContainEqual(
+        expect.stringMatching(
+          /^merge_fence_skipped:install_failed:merge_git_config_unwritable:.*run pm merge install/,
+        ),
+      );
+      await expect(
+        readFile(path.join(workspace, ".gitattributes"), "utf8"),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("recovers typed merge-fence failures without masking unexpected errors", async () => {
+    const warnings: string[] = [];
+    await initInternals.installInitMergeFence(
+      "/tracker",
+      "/workspace",
+      warnings,
+      async () => {
+        throw new PmCliError(
+          "planned merge-fence failure",
+          EXIT_CODE.GENERIC_FAILURE,
+        );
+      },
+    );
+    expect(warnings).toContain(
+      "merge_fence_skipped:install_failed:pm_error:planned merge-fence failure:run pm merge install after resolving the Git repository error",
+    );
+
+    const failure = new Error("unexpected merge-fence failure");
+    await expect(
+      initInternals.installInitMergeFence(
+        "/tracker",
+        "/workspace",
+        [],
+        async () => {
+          throw failure;
+        },
+      ),
+    ).rejects.toBe(failure);
   });
 });

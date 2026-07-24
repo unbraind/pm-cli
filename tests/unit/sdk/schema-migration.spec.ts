@@ -1,4 +1,10 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -488,6 +494,38 @@ describe("schema evolution migration planning", () => {
 });
 
 describe("schema evolution migration execution", () => {
+  it("derives one migration identity across workspace aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const workspaceAlias = `${context.tempRoot}-schema-alias`;
+      await symlink(
+        context.tempRoot,
+        workspaceAlias,
+        process.platform === "win32" ? "junction" : "dir",
+      );
+      try {
+        const request = {
+          kind: "rename-type",
+          from: "Task",
+          to: "WorkItem",
+        } as const;
+        const direct = await runSchemaEvolutionMigration(
+          request,
+          { dryRun: true },
+          { path: context.pmPath },
+        );
+        const aliased = await runSchemaEvolutionMigration(
+          request,
+          { dryRun: true },
+          { path: path.join(workspaceAlias, ".agents", "pm") },
+        );
+
+        expect(aliased.migration_id).toBe(direct.migration_id);
+      } finally {
+        await rm(workspaceAlias, { recursive: true, force: true });
+      }
+    });
+  });
+
   it("routes every migration through the generic SDK action surface", async () => {
     await withTempPmPath(async (context) => {
       await expect(

@@ -56,7 +56,7 @@ describe("tracked runtime cache governance", () => {
       });
       expect(scan.git_workspace_root).toBe(context.tempRoot);
       expect(scan.remediation_command).toBe(
-        "git rm --cached -r -- '.agents/pm/runtime' '.agents/pm/search' '.agents/pm/locks' '.agents/pm/transactions' '.agents/pm/checkpoints'",
+        "git rm --cached -r -- ':(literal).agents/pm/runtime' ':(literal).agents/pm/search' ':(literal).agents/pm/locks' ':(literal).agents/pm/transactions' ':(literal).agents/pm/checkpoints'",
       );
 
       const health = await runHealth(
@@ -121,10 +121,10 @@ describe("tracked runtime cache governance", () => {
         tracked_path_count: 0,
         remediation_command: null,
       });
-      const customRoot = path.join(tempRoot, "tracker's pm");
+      const customRoot = path.join(tempRoot, "tracker[cache]'s pm");
       await mkdir(customRoot, { recursive: true });
       expect(await scanTrackedRuntimeCache(customRoot)).toMatchObject({
-        tracker_relative_root: "tracker's pm",
+        tracker_relative_root: "tracker[cache]'s pm",
         tracked_paths: [],
         tracked_path_count: 0,
         remediation_command: null,
@@ -132,10 +132,15 @@ describe("tracked runtime cache governance", () => {
       const trackedPath = path.join(customRoot, "runtime", "state.json");
       await mkdir(path.dirname(trackedPath), { recursive: true });
       await writeFile(trackedPath, "{}\n", "utf8");
-      runGit(tempRoot, ["add", "-f", "--", trackedPath]);
+      runGit(tempRoot, [
+        "add",
+        "-f",
+        "--",
+        `:(literal)${path.relative(tempRoot, trackedPath).replaceAll("\\", "/")}`,
+      ]);
       expect(
         (await scanTrackedRuntimeCache(customRoot)).remediation_command,
-      ).toContain("'tracker'\\''s pm/runtime'");
+      ).toContain("':(literal)tracker[cache]'\\''s pm/runtime'");
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

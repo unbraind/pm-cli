@@ -416,10 +416,26 @@ export async function installMergeFence(options: {
   // Node resolves the tracker through its long path. Compare filesystem
   // identities rather than those two equivalent spellings so a valid
   // in-repository tracker is not rejected as external.
-  const [canonicalPmRoot, canonicalWorkspaceRoot] = await Promise.all([
-    realpath(pmRoot),
-    realpath(workspaceRoot),
-  ]);
+  let canonicalPmRoot: string;
+  let canonicalWorkspaceRoot: string;
+  try {
+    [canonicalPmRoot, canonicalWorkspaceRoot] = await Promise.all([
+      realpath(pmRoot),
+      realpath(workspaceRoot),
+    ]);
+  } catch (error: unknown) {
+    throw new PmCliError(
+      `Cannot resolve tracker root ${pmRoot} or workspace root ${workspaceRoot}: ${String(error)}`,
+      EXIT_CODE.NOT_FOUND,
+      {
+        code: "merge_root_not_found",
+        nextSteps: [
+          "Initialize the tracker and ensure both paths are accessible.",
+          'Retry "pm merge install" from the repository workspace.',
+        ],
+      },
+    );
+  }
   const trackerRelativeRoot = toPosixRelative(
     canonicalWorkspaceRoot,
     canonicalPmRoot,

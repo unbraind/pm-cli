@@ -246,6 +246,7 @@ export const _testOnly = {
   registerInitTypePreset,
   assertExplicitTrackerPathIsNotWorkspaceRoot,
   isLikelyWorkspaceRoot,
+  installInitMergeFence,
 };
 
 type InitReadlineInterface = ReturnType<typeof readline.createInterface>;
@@ -1159,6 +1160,41 @@ function buildInitNextSteps(params: {
   return nextSteps;
 }
 
+/**
+ * Install the fresh-trackers merge fence without making an otherwise
+ * successful initialization irrecoverable when Git configuration is
+ * temporarily unavailable.
+ */
+async function installInitMergeFence(
+  pmRoot: string,
+  gitWorkspaceRoot: string | null,
+  warnings: string[],
+  install: typeof installMergeFence = installMergeFence,
+): Promise<void> {
+  if (gitWorkspaceRoot === null) {
+    warnings.push(
+      "merge_fence_skipped:not_git_repository:run pm merge install after moving the tracker into a Git repository",
+    );
+    return;
+  }
+  try {
+    const mergeFence = await install({
+      pmRoot,
+      workspaceRoot: gitWorkspaceRoot,
+    });
+    if (mergeFence.gitattributes.changed) {
+      warnings.push(`updated:merge_fence:${mergeFence.gitattributes.path}`);
+    }
+  } catch (error: unknown) {
+    if (!(error instanceof PmCliError)) {
+      throw error;
+    }
+    warnings.push(
+      `merge_fence_skipped:install_failed:${error.context.code ?? "pm_error"}:${error.message}:run pm merge install after resolving the Git repository error`,
+    );
+  }
+}
+
 /** Implements run init for the public runtime surface of this module. */
 export async function runInit(
   prefixArg: string | undefined,
@@ -1242,21 +1278,7 @@ export async function runInit(
     options.mergeFence !== false &&
     normalizedOptions.agentGuidanceMode !== "status"
   ) {
-    if (gitWorkspaceRoot) {
-      const mergeFence = await installMergeFence({
-        pmRoot,
-        workspaceRoot: gitWorkspaceRoot,
-      });
-      if (mergeFence.gitattributes.changed) {
-        warnings.push(
-          `updated:merge_fence:${mergeFence.gitattributes.path}`,
-        );
-      }
-    } else {
-      warnings.push(
-        "merge_fence_skipped:not_git_repository:run pm merge install after moving the tracker into a Git repository",
-      );
-    }
+    await installInitMergeFence(pmRoot, gitWorkspaceRoot, warnings);
   }
   const installedPackages = await maybeInstallInitBundledPackages(
     normalizedOptions.installBundledPackages,

@@ -866,6 +866,27 @@ describe("public merge-safety SDK primitives", () => {
     });
   });
 
+  it("returns a typed SDK error when merge roots cannot be resolved", async () => {
+    const missingRoot = path.join(
+      os.tmpdir(),
+      `pm-missing-merge-root-${process.pid}`,
+    );
+    await expect(
+      installMergeFence({
+        pmRoot: path.join(missingRoot, ".agents", "pm"),
+        workspaceRoot: missingRoot,
+      }),
+    ).rejects.toMatchObject({
+      name: "PmCliError",
+      context: {
+        code: "merge_root_not_found",
+        nextSteps: expect.arrayContaining([
+          expect.stringMatching(/Initialize the tracker/),
+        ]),
+      },
+    });
+  });
+
   it("merges relationship event streams with sequence renumbering (pm-i4fx)", () => {
     const event = (
       eventId: string,

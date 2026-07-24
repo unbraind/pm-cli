@@ -78,7 +78,12 @@ export async function scanTrackedRuntimeCache(
   try {
     const { stdout } = await execFileAsync(
       "git",
-      ["ls-files", "-z", "--", ...runtimeDirectories],
+      [
+        "ls-files",
+        "-z",
+        "--",
+        ...runtimeDirectories.map((directory) => `:(literal)${directory}`),
+      ],
       {
         cwd: gitWorkspaceRoot,
         encoding: "utf8",
@@ -117,7 +122,9 @@ export async function scanTrackedRuntimeCache(
         trackedPaths.length === 0
           ? null
           : `git rm --cached -r -- ${trackedRuntimeDirectories
-              .map(quoteShellArgument)
+              .map((directory) =>
+                quoteShellArgument(`:(literal)${directory}`),
+              )
               .join(" ")}`,
     };
   } catch {
