@@ -86,6 +86,10 @@ import {
   buildRegistrationCollisionRemediation,
   collectUnknownCapabilityGuidance,
 } from "../extension/doctor.js";
+import {
+  scanStaleInProgressItems,
+  type StaleInProgressScan,
+} from "./stale-work.js";
 
 const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
@@ -239,7 +243,8 @@ const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
 function isAdvisoryHealthWarning(warning: string): boolean {
   return (
     warning.startsWith("telemetry_") ||
-    warning.startsWith("history_stream_over_compact_threshold:")
+    warning.startsWith("history_stream_over_compact_threshold:") ||
+    warning.startsWith("stale_in_progress_items:")
   );
 }
 
@@ -2376,6 +2381,7 @@ function buildStorageHealthCheck(
   settings: PmSettings,
   historySummary: HistoryStreamSummary,
   authorAttribution: HistoryAuthorAttributionScan,
+  staleInProgress: StaleInProgressScan,
 ): HealthCheck {
   const unknownAuthorEventCount =
     resolveUnknownAuthorEventCount(authorAttribution);
@@ -2383,16 +2389,22 @@ function buildStorageHealthCheck(
     resolveActionableUnknownAuthorEventCount(authorAttribution);
   const hasAuthorEvents = unknownAuthorEventCount > 0;
   const hasActionableAuthorWarnings = actionableUnknownAuthorEventCount > 0;
+  const hasStaleInProgressItems = staleInProgress.count > 0;
   return {
     name: "storage",
     status:
-      historySummary.over_threshold.length === 0 && !hasActionableAuthorWarnings
+      historySummary.over_threshold.length === 0 &&
+      !hasActionableAuthorWarnings &&
+      !hasStaleInProgressItems
         ? "ok"
         : "warn",
     details: {
       items: items.length,
       history_streams: historySummary.count,
       ...(hasAuthorEvents ? { author_attribution: authorAttribution } : {}),
+      ...(hasStaleInProgressItems
+        ? { stale_in_progress: staleInProgress }
+        : {}),
       ...(historySummary.max_entries !== null
         ? {
             compact_policy: {
@@ -2408,6 +2420,15 @@ function buildStorageHealthCheck(
   };
 }
 
+function buildStaleInProgressHealthSummary(scan: StaleInProgressScan): {
+  scan: StaleInProgressScan;
+  warnings: string[];
+} {
+  const warnings =
+    scan.count === 0 ? [] : [`stale_in_progress_items:${scan.count}`];
+  return { scan, warnings };
+}
+
 function collectHealthWarnings(params: {
   directoryState: HealthDirectoryState;
   normalizedSettingsReadWarnings: string[];
@@ -2418,6 +2439,7 @@ function collectHealthWarnings(params: {
   historyPolicyWarnings: string[];
   historySummary: HistoryStreamSummary;
   authorAttributionWarnings: string[];
+  staleInProgressWarnings: string[];
   locksCheck: HealthCheckResult;
   integrityCheck: HealthCheckResult;
   historyDriftCheck: HealthCheckResult;
@@ -2435,6 +2457,7 @@ function collectHealthWarnings(params: {
     ...params.historyPolicyWarnings,
     ...params.historySummary.warnings,
     ...params.authorAttributionWarnings,
+    ...params.staleInProgressWarnings,
     ...params.locksCheck.warnings,
     ...params.integrityCheck.warnings,
     ...params.historyDriftCheck.warnings,
@@ -2461,6 +2484,7 @@ function buildHealthRemediationSources(params: {
   extensionCheck: HealthCheckResult;
   historySummary: HistoryStreamSummary;
   authorAttributionWarnings: string[];
+  staleInProgressWarnings: string[];
   locksCheck: HealthCheckResult;
   integrityCheck: HealthCheckResult;
   historyDriftCheck: HealthCheckResult;
@@ -2479,6 +2503,7 @@ function buildHealthRemediationSources(params: {
         (id) => `history_stream_over_compact_threshold:${id}`,
       ),
       ...params.authorAttributionWarnings,
+      ...params.staleInProgressWarnings,
     ],
     locks: params.locksCheck.warnings,
     integrity: params.integrityCheck.warnings,
@@ -2605,6 +2630,12 @@ export async function runHealth(
     actionableUnknownAuthorEventCount > 0
       ? [`history_unknown_author_events:${actionableUnknownAuthorEventCount}`]
       : [];
+  const staleInProgress = buildStaleInProgressHealthSummary(
+    await scanStaleInProgressItems(pmRoot, items, {
+      in_progress_status: settings.schema.workflow.in_progress_status,
+      threshold_hours: settings.mutation_guard.stale_in_progress_hours,
+    }),
+  );
   const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipPolicy.skipIntegrity
     ? buildSkippedHealthCheck("integrity")
@@ -2636,7 +2667,13 @@ export async function runHealth(
     buildSettingsValuesHealthCheck(settingWarnings),
     telemetryCheck.check,
     extensionCheck.check,
-    buildStorageHealthCheck(items, settings, historySummary, authorAttribution),
+    buildStorageHealthCheck(
+      items,
+      settings,
+      historySummary,
+      authorAttribution,
+      staleInProgress.scan,
+    ),
     locksCheck.check,
     integrityCheck.check,
     historyDriftCheck.check,
@@ -2653,6 +2690,7 @@ export async function runHealth(
     historyPolicyWarnings: historyPolicy.warnings,
     historySummary,
     authorAttributionWarnings,
+    staleInProgressWarnings: staleInProgress.warnings,
     locksCheck,
     integrityCheck,
     historyDriftCheck,
@@ -2668,6 +2706,7 @@ export async function runHealth(
       extensionCheck,
       historySummary,
       authorAttributionWarnings,
+      staleInProgressWarnings: staleInProgress.warnings,
       locksCheck,
       integrityCheck,
       historyDriftCheck,
@@ -2696,6 +2735,7 @@ export async function runHealth(
 export const _testOnlyHealthCommand = {
   buildExtensionHealthTriageSummary,
   buildCapabilityContractMetadata,
+  buildStaleInProgressHealthSummary,
   buildVectorizationProviderDetails,
   collectUnknownCapabilityGuidance,
   isAdvisoryHealthWarning,

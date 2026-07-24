@@ -1,0 +1,25 @@
+id: pm-rxqcp9
+title: "Sentry PM-CLI-2K: schema migration input error crosses CLI boundary as high TypeError"
+description: Expected invalid schema-migration input currently reaches the public SDK requiredText guard and is captured as a handled high-severity TypeError. Add a typed CLI usage boundary while preserving strict SDK validation so expected user errors remain actionable without blocking the release reliability gate.
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: "area:cli","area:schema","area:sdk","area:telemetry","sentry:pm-cli-2k"
+created_at: "2026-07-24T06:30:12.221Z"
+updated_at: "2026-07-24T06:36:36.301Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-usfg
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-dijg,related,"2026-07-24T06:30:12.221Z",null,null
+  pm-nb08,related,"2026-07-24T06:30:12.221Z",null,null
+  pm-w7jq,related,"2026-07-24T06:30:12.221Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-24T06:30:12.221Z",claude-code-agent,"Duplicate check: searched all statuses for PM-CLI-2K and the exact Schema migration migrationId must be non-empty signature. No canonical item exists; related schema-evolution and Sentry-classification lineages are linked."
+  "2026-07-24T06:36:36.300Z",claude-code-agent,"Implementation evidence: schema rename/remap commands now fail at CLI preflight with code schema_migration_input_required, exit 2, compact missing-field recovery, and no raw TypeError. The SDK remains strict. A real temporary tracker confirmed a missing --migration-id returns the typed JSON envelope."
+files[2]{path,scope,note}:
+  src/cli/migration-gates.ts,project,Typed schema migration CLI input boundary
+  tests/unit/cli/migration-gates.spec.ts,project,Schema migration usage-error regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/migration-gates.spec.ts,project,240
+body: ""

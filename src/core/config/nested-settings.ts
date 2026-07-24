@@ -246,6 +246,27 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
       "Default author recorded on mutations when --author is not supplied.",
   },
   {
+    key: "mutation_guard_require_attributed_author",
+    path: "mutation_guard.require_attributed_author",
+    kind: "boolean",
+    summary: "Reject mutations whose effective author resolves to unknown.",
+  },
+  {
+    key: "mutation_guard_secret_guard",
+    path: "mutation_guard.secret_guard",
+    kind: "string",
+    choices: ["off", "advise", "block"],
+    summary:
+      "Detect credential-shaped mutation content: off, advise, or block.",
+  },
+  {
+    key: "mutation_guard_stale_in_progress_hours",
+    path: "mutation_guard.stale_in_progress_hours",
+    kind: "integer",
+    min: 1,
+    summary: "Age threshold for unclaimed in-progress work surfaced by health.",
+  },
+  {
     key: "output_default_format",
     path: "output.default_format",
     kind: "string",

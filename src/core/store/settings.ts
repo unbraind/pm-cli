@@ -1090,6 +1090,10 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     item_format: normalizeSettingsItemFormat(settings, defaults),
     locks: { ...defaults.locks, ...settings.locks },
     ids: { ...defaults.ids, ...settings.ids },
+    mutation_guard: {
+      ...defaults.mutation_guard,
+      ...settings.mutation_guard,
+    },
     checkpoints: { ...defaults.checkpoints, ...settings.checkpoints },
     output: { ...defaults.output, ...settings.output },
     history: {
@@ -1147,6 +1151,10 @@ function orderSerializedSettingsSections(
   ordered.ids = orderObject(ordered.ids as Record<string, unknown>, [
     "token_length",
   ]);
+  ordered.mutation_guard = orderObject(
+    ordered.mutation_guard as Record<string, unknown>,
+    ["require_attributed_author", "secret_guard", "stale_in_progress_hours"],
+  );
   ordered.checkpoints = orderObject(
     ordered.checkpoints as Record<string, unknown>,
     ["retention_days"],
@@ -1373,6 +1381,10 @@ function buildSerializeBaseSettings(settings: PmSettings): PmSettings {
     ...settings,
     locks: valueOrDefault(settings.locks, SETTINGS_DEFAULTS.locks),
     ids: valueOrDefault(settings.ids, SETTINGS_DEFAULTS.ids),
+    mutation_guard: valueOrDefault(
+      settings.mutation_guard,
+      SETTINGS_DEFAULTS.mutation_guard,
+    ),
     checkpoints: valueOrDefault(
       settings.checkpoints,
       SETTINGS_DEFAULTS.checkpoints,
@@ -1577,6 +1589,7 @@ export function serializeSettings(
       "id_prefix",
       "ids",
       "author_default",
+      "mutation_guard",
       "item_format",
       "locks",
       "checkpoints",
@@ -1635,9 +1648,7 @@ export async function readSettingsWithMetadata(
   try {
     raw = await readFileIfExists(settingsPath);
   } catch {
-    return buildFallbackSettingsReadResult(
-      "settings_read_fs_error",
-    );
+    return buildFallbackSettingsReadResult("settings_read_fs_error");
   }
   if (raw === null) {
     const fallback = buildFallbackSettingsReadResult();

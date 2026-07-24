@@ -6,11 +6,28 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { DatabaseSync, type SQLInputValue } from "node:sqlite";
+import { createRequire } from "node:module";
+import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { ItemMetadata } from "../../types/index.js";
 
 const QUERY_INDEX_FILENAME = "metadata-query-index.sqlite";
 const QUERY_INDEX_VERSION = "2";
+type DatabaseSyncConstructor = typeof DatabaseSync;
+
+function loadDatabaseSync(
+  loadModule: (specifier: string) => unknown,
+): DatabaseSyncConstructor | null {
+  try {
+    const loaded = loadModule(["node", "sqlite"].join(":")) as {
+      DatabaseSync?: DatabaseSyncConstructor;
+    };
+    return loaded.DatabaseSync ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const RuntimeDatabaseSync = loadDatabaseSync(createRequire(import.meta.url));
 
 /** One light-metadata row projected into the persistent query index. */
 export interface ItemMetadataQueryIndexRow {
@@ -175,11 +192,15 @@ export async function rebuildItemMetadataQueryIndex(options: {
   rows: readonly ItemMetadataQueryIndexRow[];
 }): Promise<void> {
   const targetPath = queryIndexPath(options.pmRoot);
+  if (!RuntimeDatabaseSync) {
+    await fs.rm(targetPath, { force: true });
+    return;
+  }
   await fs.mkdir(path.dirname(targetPath), { recursive: true });
   const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
   let database: DatabaseSync | undefined;
   try {
-    database = new DatabaseSync(temporaryPath);
+    database = new RuntimeDatabaseSync(temporaryPath);
     createSchema(database);
     database.exec("BEGIN IMMEDIATE");
     writeMetadata(database, "version", QUERY_INDEX_VERSION);
@@ -220,11 +241,12 @@ export async function updateItemMetadataQueryIndex(options: {
   row: ItemMetadataQueryIndexRow | null;
   deletedRelativePaths?: readonly string[];
 }): Promise<boolean> {
+  if (!RuntimeDatabaseSync) return false;
   const indexPath = queryIndexPath(options.pmRoot);
   let database: DatabaseSync | undefined;
   try {
     await fs.access(indexPath);
-    database = new DatabaseSync(indexPath);
+    database = new RuntimeDatabaseSync(indexPath);
     database.exec("PRAGMA foreign_keys = ON");
     const metadata = readIndexMetadata(database);
     if (
@@ -323,11 +345,12 @@ export async function queryItemMetadataIndex(options: {
   expectedSourceCursor: string;
   query?: ItemMetadataIndexQuery;
 }): Promise<ItemMetadataIndexQueryResult | null> {
+  if (!RuntimeDatabaseSync) return null;
   const query = options.query ?? {};
   const { where, parameters } = buildQueryPredicates(query);
   let database: DatabaseSync | undefined;
   try {
-    database = new DatabaseSync(queryIndexPath(options.pmRoot), {
+    database = new RuntimeDatabaseSync(queryIndexPath(options.pmRoot), {
       readOnly: true,
     });
     const metadata = readIndexMetadata(database);
@@ -393,3 +416,6 @@ export async function removeItemMetadataQueryIndex(
 ): Promise<void> {
   await fs.rm(queryIndexPath(pmRoot), { force: true });
 }
+
+/** Test-only dependency seam for runtimes that do not implement node:sqlite. */
+export const _testOnly = { loadDatabaseSync };

@@ -6,10 +6,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  readFileIfExists,
-  writeFileAtomic,
-} from "../fs/fs-utils.js";
+import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../shared/constants.js";
 import { stableStringify } from "../shared/serialization.js";
@@ -78,6 +75,24 @@ export interface WorkspaceJsonWriteOptions {
   recordCreation?: boolean;
 }
 
+/** Options for one append-only workspace audit event that leaves state unchanged. */
+export interface WorkspaceAuditEventOptions {
+  /** Tracker root containing the workspace history stream. */
+  pmRoot: string;
+  /** Stable operation name. */
+  op: string;
+  /** Attributable reviewer or operator. */
+  author: string;
+  /** Structured, non-secret audit metadata. */
+  context: Record<string, unknown>;
+  /** Human-readable rationale. */
+  message: string;
+  /** Lock time-to-live in seconds. */
+  lockTtlSeconds: number;
+  /** Maximum lock wait in milliseconds. */
+  lockWaitMs: number;
+}
+
 interface WorkspaceAuditMetadata extends ItemMetadata {
   documents: Record<string, unknown>;
 }
@@ -101,7 +116,9 @@ function workspaceDocument(
   return { metadata, body: "" };
 }
 
-function replayWorkspaceEntries(entries: readonly HistoryEntry[]): ItemDocument {
+function replayWorkspaceEntries(
+  entries: readonly HistoryEntry[],
+): ItemDocument {
   let replay = cloneEmptyReplayDocument();
   for (const entry of entries) {
     const applied = tryApplyReplayPatch(replay, entry.patch) as {
@@ -121,10 +138,7 @@ async function appendWorkspaceHistoryChangeLocked(
   change: WorkspaceHistoryChange,
 ): Promise<{ entry: HistoryEntry; historyPath: string }> {
   const historyPath = getWorkspaceHistoryPath(change.pmRoot);
-  const entries = await readHistoryEntries(
-    historyPath,
-    WORKSPACE_HISTORY_ID,
-  );
+  const entries = await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID);
   const verification = verifyHistoryChain(entries);
   if (!verification.ok) {
     throw new TypeError(
@@ -163,9 +177,7 @@ async function appendWorkspaceHistoryChangeLocked(
   }
   const afterDocument = workspaceDocument(
     { ...priorDocuments, [change.documentPath]: change.after },
-    entries.length === 0
-      ? timestamp
-      : beforeDocument.metadata.created_at!,
+    entries.length === 0 ? timestamp : beforeDocument.metadata.created_at!,
   );
   const entry = createHistoryEntry({
     nowIso: timestamp,
@@ -201,6 +213,48 @@ export async function appendWorkspaceHistoryChange(
   );
   try {
     return await appendWorkspaceHistoryChangeLocked(change);
+  } finally {
+    await release();
+  }
+}
+
+/** Append a verified no-state-change event to the workspace audit stream. */
+export async function appendWorkspaceAuditEvent(
+  options: WorkspaceAuditEventOptions,
+): Promise<{ entry: HistoryEntry; historyPath: string }> {
+  const release = await acquireLock(
+    options.pmRoot,
+    "workspace-history",
+    options.lockTtlSeconds,
+    options.author,
+    false,
+    false,
+    options.lockWaitMs,
+  );
+  try {
+    const historyPath = getWorkspaceHistoryPath(options.pmRoot);
+    const entries = await readHistoryEntries(historyPath, WORKSPACE_HISTORY_ID);
+    const verification = verifyHistoryChain(entries);
+    if (!verification.ok) {
+      throw new TypeError(
+        `Workspace history verification failed: ${verification.errors.join(", ")}`,
+      );
+    }
+    const beforeDocument: ItemDocument =
+      entries.length === 0
+        ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
+        : replayWorkspaceEntries(entries);
+    const entry = createHistoryEntry({
+      nowIso: new Date().toISOString(),
+      author: options.author,
+      op: options.op,
+      before: beforeDocument,
+      after: beforeDocument,
+      message: options.message,
+      context: options.context,
+    });
+    await appendHistoryEntry(historyPath, entry);
+    return { entry, historyPath };
   } finally {
     await release();
   }

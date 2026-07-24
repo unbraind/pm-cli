@@ -157,6 +157,7 @@ import {
   collectMandatoryMigrationBlockers,
   enforceMandatoryMigrationWriteGate,
   enforceItemFormatWriteGateAndPreflightMigration,
+  enforceMutationGuardPreflight,
   resolveMigrationId,
   resolveNormalizedMigrationStatus,
 } from "./migration-gates.js";
@@ -2527,6 +2528,13 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
         fallbackPmRoot,
         defaultPreflightDecision(),
       );
+      await enforceMutationGuardPreflight(
+        commandPath,
+        commandArgs,
+        commandOptions,
+        globalOptions,
+        fallbackPmRoot,
+      );
       return;
     }
 
@@ -2592,6 +2600,13 @@ function attachProgramLifecycleHooks(rootProgram: Command): void {
       commandOptions,
       runtimeExtensions.pmRoot,
       preflightDecision,
+    );
+    await enforceMutationGuardPreflight(
+      commandPath,
+      commandArgs,
+      commandOptions,
+      globalOptions,
+      runtimeExtensions.pmRoot,
     );
 
     /* c8 ignore next */

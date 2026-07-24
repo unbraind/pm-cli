@@ -4,6 +4,7 @@
 
 ### Added
 
+- Stale in-progress detection: validate/health flag in_progress items with no active claim or recent activity ([pm-w8q4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-w8q4.toon))
 - pm validate needs a counts-only projection so agents can read drift numbers without row-array payloads ([pm-a9mc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-a9mc.toon))
 - GH-445: suppress/factor repeated inherited tags in pm context rows (--no-tags + tag folding) ([pm-ishm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ishm.toon))
 - NDJSON output mode: --format ndjson on list/search/context emits one JSON object per line for grep/jq/xargs pipelines ([pm-646c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-646c.toon))
@@ -15,6 +16,7 @@
 
 ### Fixed
 
+- Author attribution enforcement: opt-in strict unknown-author rejection, SDK test-all author parity, and audited disposition for stranded actionable events ([pm-h90s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h90s.toon))
 - pm deps tree must remain bounded on cyclic deep relationship graphs ([pm-gygna8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gygna8.toon))
 - GH-449: contracts policy_modes advertises 'enforce' but governance config accepts 'strict' (contract drift) ([pm-kjbh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kjbh.toon))
 - Scoped renderer ownership: safe package renderers should not keep isolated package doctor in warning state ([pm-nf7q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nf7q.toon))
@@ -24,6 +26,7 @@
 
 ### Security
 
+- Write-time secret detection advisory: mutation paths flag credential-shaped content before it enters the immutable history stream ([pm-pim7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pim7.toon))
 - Extension install: untrusted manifest dependency specs reach npm install unvalidated (arg injection all-OS; shell command injection on Windows) ([pm-g072](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g072.toon))
 - CodeQL alert 30: polynomial ReDoS in shared path normalization primitive ([pm-v3zd3o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v3zd3o.toon))
 

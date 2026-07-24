@@ -273,6 +273,11 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     token_length: 4,
   },
   author_default: "",
+  mutation_guard: {
+    require_attributed_author: false,
+    secret_guard: "advise",
+    stale_in_progress_hours: 72,
+  },
   item_format: "toon",
   locks: {
     ttl_seconds: 1800,

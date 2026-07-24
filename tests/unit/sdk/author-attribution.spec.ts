@@ -1,9 +1,10 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   applyInvocationAuthorOverride,
+  acknowledgeUnknownAuthorHistoryEvents,
   createPmCliProgram,
   inspectHistoryAuthorStream,
   runConfig,
@@ -18,6 +19,7 @@ import {
 } from "../../../src/cli/bootstrap-args.js";
 import { runHealth } from "../../../src/cli/commands/health.js";
 import { runValidate } from "../../../src/cli/commands/validate.js";
+import { appendWorkspaceAuditEvent } from "../../../src/core/history/workspace-history.js";
 
 const tempRoots: string[] = [];
 
@@ -52,6 +54,7 @@ describe("SDK author attribution primitives", () => {
       unknown_event_count: 2,
       legacy_unknown_event_count: 2,
       actionable_unknown_event_count: 0,
+      acknowledged_actionable_event_count: 0,
       samples: [
         { item_id: "pm-memory", line: 2 },
         { item_id: "pm-memory", line: 3 },
@@ -81,6 +84,7 @@ describe("SDK author attribution primitives", () => {
       `${JSON.stringify({})}\n${JSON.stringify({ author: "  " })}\n`,
     );
     await mkdir(path.join(historyDirectory, "pm-unreadable.jsonl"));
+    await mkdir(path.join(historyDirectory, "_workspace.jsonl"));
 
     await expect(scanHistoryAuthorAttribution(pmRoot, 2)).resolves.toEqual({
       checked_streams: 2,
@@ -88,6 +92,7 @@ describe("SDK author attribution primitives", () => {
       unknown_event_count: 4,
       legacy_unknown_event_count: 3,
       actionable_unknown_event_count: 1,
+      acknowledged_actionable_event_count: 0,
       affected_item_ids: ["pm-a", "pm-b"],
       samples: [
         { item_id: "pm-a", line: 1 },
@@ -108,6 +113,7 @@ describe("SDK author attribution primitives", () => {
       unknown_event_count: 0,
       legacy_unknown_event_count: 0,
       actionable_unknown_event_count: 0,
+      acknowledged_actionable_event_count: 0,
       affected_item_ids: [],
       samples: [],
     });
@@ -289,5 +295,107 @@ describe("SDK author attribution primitives", () => {
     expect((await runValidate({}, { path: pmRoot })).warnings).toContain(
       "validate_history_unknown_author_events:1",
     );
+  });
+
+  it("dispositions actionable unknown authors through append-only workspace history", async () => {
+    const tempRoot = await createTempRoot();
+    const pmRoot = path.join(tempRoot, ".agents", "pm");
+    await runInit(
+      undefined,
+      { path: pmRoot },
+      { defaults: true, agentGuidance: "skip" },
+    );
+    await writeFile(
+      path.join(pmRoot, "history", "pm-actionable.jsonl"),
+      [
+        JSON.stringify({
+          ts: "2026-07-15T07:00:00.000Z",
+          author: "unknown",
+        }),
+        JSON.stringify({
+          ts: "2026-07-15T08:00:00.000Z",
+          author: "unknown",
+        }),
+        "",
+      ].join("\n"),
+    );
+    await writeFile(
+      path.join(pmRoot, "history", "pm-other.jsonl"),
+      `${JSON.stringify({
+        ts: "2026-07-15T09:00:00.000Z",
+        author: "unknown",
+      })}\n`,
+    );
+    await appendWorkspaceAuditEvent({
+      pmRoot,
+      op: "review-invalid-author-acknowledgments",
+      author: "maintainer",
+      context: {
+        author_acknowledgment: {
+          events: [
+            null,
+            "not-an-event",
+            { item_id: 42, line: 1 },
+            { item_id: "pm-actionable", line: 1.5 },
+          ],
+        },
+      },
+      message: "Invalid event shapes must not acknowledge history.",
+      lockTtlSeconds: 30,
+      lockWaitMs: 1000,
+    });
+
+    await expect(
+      acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+        events: [
+          { item_id: "pm-other", line: 1 },
+          { item_id: "pm-actionable", line: 2 },
+          { item_id: "pm-actionable", line: 1 },
+          { item_id: "pm-actionable", line: 1 },
+        ],
+        attributed_author: "original-agent",
+        reviewer: "maintainer",
+        reason: "Reviewed immutable event provenance.",
+      }),
+    ).resolves.toMatchObject({ acknowledged: 3 });
+    const scan = await scanHistoryAuthorAttribution(pmRoot);
+    expect(scan).toMatchObject({
+      unknown_event_count: 3,
+      actionable_unknown_event_count: 0,
+      acknowledged_actionable_event_count: 3,
+      affected_item_ids: ["pm-actionable", "pm-other"],
+      samples: [],
+    });
+    const workspaceHistory = await readFile(
+      path.join(pmRoot, "history", "_workspace.jsonl"),
+      "utf8",
+    );
+    expect(workspaceHistory).toContain('"op":"history:author-acknowledge"');
+    expect(workspaceHistory).toContain('"attributed_author":"original-agent"');
+
+    await expect(
+      acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+        events: [{ item_id: "pm-actionable", line: 1 }],
+        attributed_author: " ",
+        reviewer: "maintainer",
+        reason: "invalid",
+      }),
+    ).rejects.toThrow("Author acknowledgment requires");
+    await expect(
+      acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+        events: [{ item_id: "pm-actionable", line: 99 }],
+        attributed_author: "original-agent",
+        reviewer: "maintainer",
+        reason: "invalid target",
+      }),
+    ).rejects.toThrow("is not readable");
+    await expect(
+      acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+        events: [{ item_id: "_workspace", line: 1 }],
+        attributed_author: "original-agent",
+        reviewer: "maintainer",
+        reason: "not unknown",
+      }),
+    ).rejects.toThrow("is not an actionable unknown-author event");
   });
 });
