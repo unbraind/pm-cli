@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[4]: automation,regression,release,security
 created_at: "2026-07-24T15:16:37.435Z"
-updated_at: "2026-07-24T15:44:32.564Z"
+updated_at: "2026-07-24T15:45:27.659Z"
 assignee: codex-root-agent
 author: codex-root-agent
 acceptance_criteria: The release preparation pipeline cannot create an ordinal same-day production version; Any existing UTC-day release tag yields release_already_cut_today before mutation; Legacy same-day override requests fail closed with actionable same-tag recovery guidance; Release documentation explains retrying the existing tag after partial npm or GitHub failures
@@ -16,10 +16,11 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cedo0g,related,"2026-07-24T15:17:28.938Z",null,null
   pm-ee1k,related,"2026-07-24T15:17:28.938Z",null,null
   pm-gis0qo,related,"2026-07-24T15:17:28.938Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-24T15:16:37.435Z",codex-root-agent,"Duplicate check: searched all statuses for multiple same-day releases, ordinal auto release, and allow-same-day-release; no open canonical defect exists. Related completed incidents pm-cedo0g and pm-gis0qo repaired downstream failures but exposed the still-live pipeline bypass; recurring verification item pm-7zs0 and policy decision pm-ee1k provide lineage."
   "2026-07-24T15:21:09.593Z",codex-root-agent,"TDD evidence: the focused 55-test unit/integration/workflow contract set failed against the retained bypass, then passed after removing ordinal generation, rejecting the legacy override before Git inspection, and routing blocker recovery to the exact existing tag workflow."
   "2026-07-24T15:38:27.009Z",codex-root-agent,"Verification evidence: 355 files / 6,222 tests passed with repository-wide 100% statements (42,725/42,725), branches (30,306/30,306), functions (8,704/8,704), and lines (41,527/41,527). Focused pipeline coverage is independently 100/100/100/100. Static quality, ESLint, jscpd (0 clones), CodeFactor complexity, docstrings (100%), token budgets, package boundary, docs/skills links, TypeScript, secret scan, YAML parse, extracted workflow ShellCheck, compatibility migration, npm pack dry-run, and the 88-command packed package dogfood all passed."
+  "2026-07-24T15:45:27.659Z",codex-root-agent,"GitHub linkage: PR #674 implements the fix; closed blocker issue #664 now links back to this canonical PM item and records the root-cause distinction from the downstream Bun and npm dist-tag incidents."
 notes[1]{created_at,author,text}:
   "2026-07-24T15:16:37.435Z",codex-root-agent,"Incident snapshot 2026-07-24 UTC: v2026.7.24, v2026.7.24-2, and v2026.7.24-3 tags exist; npm published 2026.7.24 and 2026.7.24-3. The base Release run failed after npm publication, -2 failed during npm publication, and -3 completed. Recovery should have retried the existing tag instead of cutting new ordinal versions."
 learnings[2]{created_at,author,text}:
