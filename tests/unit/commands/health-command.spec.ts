@@ -430,6 +430,64 @@ describe("runHealth", () => {
     });
   });
 
+  it("reports stale unclaimed in-progress work as advisory governance data", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createSeedItem(context);
+      expect(
+        context.runCli([
+          "update",
+          id,
+          "--status",
+          "in_progress",
+          "--assignee",
+          "none",
+          "--author",
+          "test-author",
+        ]).code,
+      ).toBe(0);
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const oldTimestamp = "2020-01-01T00:00:00.000Z";
+      await writeFile(
+        itemPath,
+        (await readFile(itemPath, "utf8")).replace(
+          /updated_at: "[^"]+"/,
+          `updated_at: "${oldTimestamp}"`,
+        ),
+        "utf8",
+      );
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      await writeFile(
+        historyPath,
+        (await readFile(historyPath, "utf8")).replaceAll(
+          /"ts":"[^"]+"/g,
+          `"ts":"${oldTimestamp}"`,
+        ),
+        "utf8",
+      );
+
+      const health = await runHealth(
+        { path: context.pmPath },
+        {
+          skipIntegrity: true,
+          skipDrift: true,
+          skipVectors: true,
+        },
+      );
+      expect(health.ok).toBe(true);
+      expect(health.warnings).toContain("stale_in_progress_items:1");
+      expect(health.checks.find((check) => check.name === "storage")).toMatchObject({
+        status: "warn",
+        details: {
+          stale_in_progress: {
+            threshold_hours: 72,
+            count: 1,
+            items: [{ id, last_activity_at: oldTimestamp }],
+          },
+        },
+      });
+    });
+  });
+
   it("reports PM_NO_TELEMETRY as a standalone telemetry opt-out", async () => {
     const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
     const originalNoTelemetry = process.env.PM_NO_TELEMETRY;

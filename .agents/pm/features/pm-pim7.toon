@@ -2,17 +2,43 @@ id: pm-pim7
 title: "Write-time secret detection advisory: mutation paths flag credential-shaped content before it enters the immutable history stream"
 description: "Add an SDK-first configurable pre-write secret scanner across text-bearing CLI and MCP mutations, with advisory, blocking, and disabled modes plus safe failure semantics."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,sdk,security
 created_at: "2026-07-07T07:01:25.465Z"
-updated_at: "2026-07-14T17:05:15.490Z"
+updated_at: "2026-07-24T07:23:04.885Z"
+closed_at: "2026-07-24T06:14:46.886Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "SDK exports a documented secret-scan primitive with deterministic default rules and unit-tested detection for GitHub token prefixes, private keys, AWS keys, and high-entropy assignments; all text-bearing CLI+MCP mutation paths consult it honoring secret_guard advise/block/off config; advise emits a single stderr line and never alters exit code or output shape; block returns a structured error with an explicit override flag; scanner failure never blocks a mutation; docs cover configuration and the remediation path for already-recorded content"
 parent: pm-qwoy
 risk: medium
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+resolution: "Shared mutation secret guard now protects SDK, CLI, and MCP writes with redacted diagnostics and explicit policy/override semantics."
+expected_result: "Credential-shaped content is detected before immutable history writes, configurable as advise/block/off, without leaking matched values or breaking safe mutations."
+actual_result: All configured modes and detectors ship through public SDK primitives; blocked CLI JSON/explain recovery is fully redacted and package-first acceptance passes.
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-klo8,related,"2026-07-14T17:05:15.452Z",null,null
+  pm-h90s,related,"2026-07-24T05:18:23.483Z",claude-code-agent,null
+  pm-w8q4,related,"2026-07-24T05:18:23.483Z",claude-code-agent,null
+comments[2]{created_at,author,text}:
+  "2026-07-24T06:14:20.696Z",claude-code-agent,"Evidence 2026-07-24: shipped SDK-first redacted secret detection across CLI and MCP mutation preflight with off/advise/block modes and explicit force results. Clean packed-install acceptance discovered that generic CLI recovery initially echoed a credential-shaped argument; fixed it with compact redacted recovery metadata and added JSON+--explain regression coverage proving attempted_command and normalized_args never contain the value. Installed artifact blocks safely, SDK force override is explicit, linked tests passed, secret scan found no tracked credentials, and full 6208-test coverage is exact 100/100/100/100."
+  "2026-07-24T07:23:04.885Z",claude-code-agent,"Follow-up verification: credential-detector test fixtures now construct representative token/key shapes from fragments at runtime, so the tests still exercise exact detection semantics while the repository secret gate correctly rejects stored credential-shaped literals. Focused 51-test mutation/runtime set and tracked-file secret scan pass."
+files[8]{path,scope,note}:
+  src/cli/main.ts,project,CLI lifecycle integration
+  src/cli/migration-gates.ts,project,CLI mutation preflight adapter
+  src/core/config/nested-settings.ts,project,config descriptors
+  src/core/shared/constants.ts,project,safe policy defaults
+  src/core/store/settings-validator.ts,project,policy validation
+  src/core/store/settings.ts,project,policy persistence
+  src/mcp/server.ts,project,MCP structured warning integration
+  src/sdk/mutation-guard.ts,project,SDK-first redacted mutation guard
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mryinfns-siluys,test,passed,"2026-07-24T05:44:59.365Z","2026-07-24T05:45:09.640Z","2026-07-24T05:45:09.640Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/MUTATION_INTEGRITY.md,project,secret guard modes and SDK usage
+  docs/README.md,project,documentation routing
+close_reason: "Implemented and verified shared redacted mutation secret guard across SDK, CLI, and MCP including packed recovery-bundle leak regression."
 body: "## Context\nEvery mutating action appends permanently to an item's hash-chained JSONL stream — by design, nothing is silently alterable afterwards. That invariant turns a pasted credential into a permanent artifact: the only remediation is the heavyweight recorded redaction workflow (history-redact), which rewrites and re-anchors the chain. The repo already has credential-shape rules (scripts/check-secrets.mjs, exported scanContent + RULES, hardened in pm-h4zb), but they only guard THIS repository's tracked files in CI. The product itself offers no protection: any agent on any pm workspace can pm create/update/append/notes/comments a live token and only discover the problem after it is chained.\n\n## Proposal\nPromote credential-shape detection to an SDK primitive and run it on the text-bearing mutation write path (create, update, append, close reasons, comments, notes, learnings):\n- SDK: a pure scanContent(text) -> findings primitive with the existing rule set (GitHub token prefixes, private keys, AWS keys, generic high-entropy assignments) as the deterministic default, extension-overridable like other scorer/provider contracts.\n- CLI/MCP: config-controlled mode secret_guard = advise (default; one-line stderr warning naming the rule + offset, mutation proceeds) | block (structured error, mutation refused, --allow-secret override for false positives) | off. Never-block principle: advise mode must add no perceptible latency and never fail the mutation on scanner errors.\n- Error/advisory text points at the redaction workflow for content that already landed.\n\n## Why now\nThe immutable-proof roadmap (portable attestation pm-3z0k, workspace stream pm-klo8, completeness gate pm-9yfo) keeps strengthening permanence guarantees; prevention at the write boundary is the missing complement. At thousands-of-agents scale a single leaked credential in a shared workspace is org-wide exposure."

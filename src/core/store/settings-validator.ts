@@ -37,6 +37,12 @@ export interface ParsedSettings {
   ids?: { token_length?: number };
   /** Value that configures or reports author default for this contract. */
   author_default: string;
+  /** Shared pre-write mutation guard policy. */
+  mutation_guard?: {
+    require_attributed_author?: boolean;
+    secret_guard?: "off" | "advise" | "block";
+    stale_in_progress_hours?: number;
+  };
   /** Value that configures or reports item format for this contract. */
   item_format?: "toon" | "json_markdown";
   /** Value that configures or reports locks for this contract. */
@@ -452,6 +458,15 @@ const settingsCheck = vObject({
     }),
   ),
   author_default: vString,
+  mutation_guard: vOptional(
+    vObject({
+      require_attributed_author: vOptional(vBoolean),
+      secret_guard: vOptional(vLiteral("off", "advise", "block")),
+      stale_in_progress_hours: vOptional(
+        vNumber({ int: true, positive: true }),
+      ),
+    }),
+  ),
   item_format: vOptional(vLiteral("toon", "json_markdown")),
   locks: vObject({
     ttl_seconds: vNumber({ int: true }),

@@ -1,0 +1,31 @@
+id: pm-7x0wqg
+title: Full coverage gate flakes when real all-package install exceeds generic 30-second unit timeout under load
+description: "The extension acceptance that installs all 15 bundled packages is a real filesystem-heavy integration path. It completes in about 10 seconds alone but reaches 28-30 seconds while 354 coverage files run concurrently, causing cleanup cascades and nondeterministic release-gate failures. Give this single broad acceptance an explicit bounded budget without weakening assertions or global timeouts."
+type: Issue
+status: closed
+priority: 2
+tags[3]: "area:packages","area:testing","quality:flake"
+created_at: "2026-07-24T07:01:04.342Z"
+updated_at: "2026-07-24T07:19:53.281Z"
+closed_at: "2026-07-24T07:19:26.623Z"
+author: claude-code-agent
+parent: pm-wo8
+resolution: Assigned the real all-package acceptance a test-local 45-second budget while retaining its full install assertions and the suite-wide 30-second default.
+expected_result: The real 15-package wildcard/all acceptance remains deterministic during parallel full coverage without weakening global timeout policy.
+actual_result: "Owner suite and complete 6,212-test exact coverage pass; the acceptance completed under load without cleanup cascades."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-59gj,related,"2026-07-24T07:01:04.342Z",null,null
+  pm-7rlp,related,"2026-07-24T07:01:04.342Z",null,null
+  pm-cedo0g,related,"2026-07-24T07:01:04.342Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-24T07:01:04.342Z",claude-code-agent,"Duplicate check: searched all statuses for the exact bundled all-package install timeout and extension-command signature. No canonical item exists; related package ecosystem,CI performance,and current release recovery work are linked."
+  "2026-07-24T07:02:23.362Z",claude-code-agent,"Evidence: the unchanged real acceptance still installs all 15 bundled packages through wildcard and all aliases. It passes alone in 8.9-10.1 seconds; two full coverage runs measured 27.9-30.1 seconds under concurrent I/O. A test-local 45-second budget preserves global 30-second hang detection and every functional assertion."
+  "2026-07-24T07:19:25.624Z",claude-code-agent,"Final evidence: linked 134-test extension owner suite passed; three subsequent complete coverage runs passed the unchanged real all-15-package install with the test-local 45-second budget. Final full run: 354 files, 6,212 tests, exact 100/100/100/100. Static quality preserves the global timeout and all assertions."
+files[1]{path,scope,note}:
+  tests/unit/extensions/extension-command.spec.ts,project,Explicit bounded timeout for real all-package install acceptance under full-suite load
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,project,120
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mrym0l5l-0yy4yr,test,passed,"2026-07-24T07:18:47.851Z","2026-07-24T07:19:22.137Z","2026-07-24T07:19:22.137Z",1,0,0
+close_reason: Stabilized the real all-package acceptance with an explicit bounded local timeout; owner suite and complete exact coverage pass without weakening assertions or global policy.
+body: ""

@@ -21,8 +21,10 @@ export {
   type OwnershipConflictGuidance,
 } from "./annotations.js";
 export {
+  acknowledgeUnknownAuthorHistoryEvents,
   inspectHistoryAuthorStream,
   scanHistoryAuthorAttribution,
+  type AcknowledgeUnknownAuthorEventsOptions,
   type HistoryAuthorAttributionScan,
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
@@ -78,6 +80,24 @@ export {
   type ActiveExtensionScopeOptions,
 } from "./runtime.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
+export {
+  evaluateMutationGuard,
+  isMutationAction,
+  listMutationActions,
+  scanMutationSecrets,
+  type EvaluateMutationGuardOptions,
+  type MutationGuardResult,
+  type MutationGuardSettings,
+  type SecretGuardFinding,
+  type SecretGuardMode,
+} from "./mutation-guard.js";
+export {
+  inspectStaleInProgressItems,
+  scanStaleInProgressItems,
+  type InspectStaleInProgressOptions,
+  type StaleInProgressItem,
+  type StaleInProgressScan,
+} from "./governance/stale-work.js";
 export { describeItemOwnershipConflict } from "./ownership-source.js";
 export { discoverNearbyPmRoot } from "./tracker-root-discovery.js";
 export {
@@ -306,10 +326,12 @@ export * from "./dependency-provenance.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
 export {
+  appendWorkspaceAuditEvent,
   appendWorkspaceHistoryChange,
   getWorkspaceHistoryPath,
   WORKSPACE_HISTORY_ID,
   writeWorkspaceJsonWithHistory,
+  type WorkspaceAuditEventOptions,
   type WorkspaceHistoryChange,
   type WorkspaceJsonWriteOptions,
 } from "../core/history/workspace-history.js";

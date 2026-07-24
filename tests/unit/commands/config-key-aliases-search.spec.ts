@@ -54,6 +54,9 @@ const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
   id_prefix: "id_prefix",
   ids_token_length: "ids.token_length",
   author_default: "author_default",
+  mutation_guard_require_attributed_author: "mutation_guard.require_attributed_author",
+  mutation_guard_secret_guard: "mutation_guard.secret_guard",
+  mutation_guard_stale_in_progress_hours: "mutation_guard.stale_in_progress_hours",
   output_default_format: "output.default_format",
   locks_ttl_seconds: "locks.ttl_seconds",
   locks_wait_ms: "locks.wait_ms",
@@ -272,7 +275,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(11);
+    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(14);
   });
 
   it("resolves both kebab-case and snake_case forms of each general alias", () => {
@@ -333,6 +336,30 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
         kind: "string",
         value: "release-bot",
       });
+    });
+  });
+
+  it("round-trips mutation guard author, secret, and stale-work policies", async () => {
+    await withTempRoot("pm-cli-mutation-guard-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const cases = [
+        ["mutation_guard_require_attributed_author", "true", true],
+        ["mutation_guard_secret_guard", "block", "block"],
+        ["mutation_guard_stale_in_progress_hours", "48", 48],
+      ] as const;
+      for (const [key, input, expected] of cases) {
+        const result = await runConfig(
+          "project",
+          "set",
+          key,
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          input,
+        );
+        expect(result.nested_setting).toMatchObject({ key, value: expected });
+      }
     });
   });
 

@@ -9,6 +9,7 @@ import {
 } from "../../../../src/core/history/replay.js";
 import {
   appendWorkspaceHistoryChange,
+  appendWorkspaceAuditEvent,
   getWorkspaceHistoryPath,
   writeWorkspaceJsonWithHistory,
   WORKSPACE_HISTORY_ID,
@@ -24,6 +25,30 @@ import {
 import { runExtension } from "../../../../src/cli/commands/extension.js";
 
 describe("workspace history", () => {
+  it("starts an audit-only workspace stream without changing state", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        appendWorkspaceAuditEvent({
+          pmRoot: context.pmPath,
+          op: "review",
+          author: "workspace-history-test",
+          context: { reviewed: true },
+          message: "Record an initial state-neutral review.",
+          lockTtlSeconds: 30,
+          lockWaitMs: 1000,
+        }),
+      ).resolves.toMatchObject({
+        historyPath: getWorkspaceHistoryPath(context.pmPath),
+      });
+      const entries = await readHistoryEntries(
+        getWorkspaceHistoryPath(context.pmPath),
+        WORKSPACE_HISTORY_ID,
+      );
+      expect(entries).toHaveLength(1);
+      expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
+    });
+  });
+
   it("chains multiple singleton documents and deduplicates retry keys", async () => {
     await withTempPmPath(async (context) => {
       const common = {
@@ -181,9 +206,9 @@ describe("workspace history", () => {
         replay = applied.document;
       }
       expect(JSON.parse(await readFile(filePath, "utf8"))).toEqual(
-        (
-          replay.metadata.documents as Record<string, unknown>
-        )["custom-state.json"],
+        (replay.metadata.documents as Record<string, unknown>)[
+          "custom-state.json"
+        ],
       );
       const beforeFailureRaw = await readFile(filePath, "utf8");
 
@@ -305,6 +330,17 @@ describe("workspace history", () => {
       };
       entry.after_hash = "0".repeat(64);
       await writeFile(historyPath, `${JSON.stringify(entry)}\n`);
+      await expect(
+        appendWorkspaceAuditEvent({
+          pmRoot: context.pmPath,
+          op: "review",
+          author: "workspace-history-test",
+          context: { reviewed: true },
+          message: "Must reject drifted audit stream",
+          lockTtlSeconds: 30,
+          lockWaitMs: 1000,
+        }),
+      ).rejects.toThrow("Workspace history verification failed");
       const drift = await scanHistoryDrift(context.pmPath, []);
       expect(drift.chainMismatches).toContain(WORKSPACE_HISTORY_ID);
       expect(drift.driftedItems).toContain(WORKSPACE_HISTORY_ID);

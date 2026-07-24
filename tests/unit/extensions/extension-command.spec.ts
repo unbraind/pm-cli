@@ -3909,7 +3909,7 @@ describe("extension command runtime", () => {
         installed_count: 15,
       });
     });
-  });
+  }, 45_000);
 
   it("resolves bundled aliases for activate/deactivate lifecycle commands", async () => {
     await withTempPmPath(async (context) => {

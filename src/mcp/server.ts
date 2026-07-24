@@ -14,6 +14,11 @@ import {
   levenshteinDistanceWithinLimit,
   asRecordClone,
   createSerialQueue,
+  evaluateMutationGuard,
+  getSettingsPath,
+  isMutationAction,
+  pathExists,
+  readSettings,
 } from "../sdk/runtime-primitives.js";
 import { pmToolActionNestedOptionKeys } from "../sdk/cli-contracts/tool-schema.js";
 import {
@@ -231,6 +236,45 @@ function resolveInvokedAction(
   return NARROW_TOOL_ACTIONS[toolName];
 }
 
+async function collectMutationGuardWarnings(
+  toolName: string,
+  action: string | undefined,
+  args: Record<string, unknown>,
+): Promise<string[]> {
+  if (toolName !== "pm_mutate" && !isMutationAction(action ?? "")) {
+    return [];
+  }
+  const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
+  const pmRoot = resolvePmRoot(
+    cwd,
+    typeof args.path === "string" ? args.path : undefined,
+  );
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return [];
+  }
+  const settings = await readSettings(pmRoot);
+  const nestedOptions =
+    typeof args.options === "object" &&
+    args.options !== null &&
+    !Array.isArray(args.options)
+      ? (args.options as Record<string, unknown>)
+      : {};
+  const result = evaluateMutationGuard({
+    author: resolveAuthor(
+      typeof args.author === "string"
+        ? args.author
+        : typeof nestedOptions.author === "string"
+          ? nestedOptions.author
+          : undefined,
+      settings.author_default,
+    ),
+    payload: args,
+    settings: settings.mutation_guard,
+    force: args.force === true || nestedOptions.force === true,
+  });
+  return result.warnings;
+}
+
 // pm-upi0: the pm-qxwu top-level detection cannot see inside the `options`
 // object, so a mutation-shaped key on a read tool (pm_deps options.dep) is
 // silently dropped before dispatch and the agent builds on state it never
@@ -358,13 +402,11 @@ export async function handleRequest(
     // pm-qxwu: non-breaking detection of typo'd / unexpected top-level keys.
     // additionalProperties stays true so passthrough still works; we only warn.
     // pm-upi0 extends the same mechanism into the nested options object.
+    const action = resolveInvokedAction(name, args);
     const warnings = [
       ...detectUnexpectedTopLevelKeys(name, args),
-      ...detectUnexpectedOptionKeys(
-        name,
-        resolveInvokedAction(name, args),
-        args,
-      ),
+      ...detectUnexpectedOptionKeys(name, action, args),
+      ...(await collectMutationGuardWarnings(name, action, args)),
     ];
     for (const warning of warnings) {
       console.error(`[pm-mcp] ${warning}`);
@@ -506,6 +548,7 @@ export const _testOnly = {
   },
   detectUnexpectedOptionKeys,
   detectUnexpectedTopLevelKeys,
+  collectMutationGuardWarnings,
   errorContent,
   get extensionOptionsFromArgs() {
     return readRuntimeTestHook("extensionOptionsFromArgs");

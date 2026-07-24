@@ -334,10 +334,10 @@ jobs:
             fi
           fi
           if [[ "${GITHUB_EVENT_NAME}" == "issues" ]]; then
-            failure_intro="The Auto Release retry after blocker resolution failed before publishing, so no release was cut."
+            failure_intro="The Auto Release retry after blocker resolution did not complete. A tag or npm package may already exist if the downstream Release workflow failed after publication; inspect the live tag, npm, and GitHub Release states before retrying."
             release_path_description="the blocker-resolution retry"
           else
-            failure_intro="The scheduled daily Auto Release run failed before publishing, so no release was cut."
+            failure_intro="The scheduled daily Auto Release run did not complete. A tag or npm package may already exist if the downstream Release workflow failed after publication; inspect the live tag, npm, and GitHub Release states before retrying."
             release_path_description="the scheduled production release"
           fi
           detected_cause="Inspect the failed workflow logs for the exact failing command."
@@ -362,8 +362,9 @@ jobs:
           Common causes:
           - \`RELEASE_PAT\` is missing from the release environment, so Auto Release cannot push its checked version commit/tag to protected \`main\`.
           - The Sentry/telemetry reliability gate blocked on an unresolved fatal/error issue inside its recent-activity window (\`--sentry-window-days\`).
+          - Post-publish package execution or GitHub Release verification failed after npm accepted the package.
 
-          Configure the release push token or resolve the gate's \`blocking_short_ids\`, then re-run Auto Release. This issue is auto-updated so blocked daily releases are never silently skipped."
+          Inspect the live release state and failed logs first; then configure the release token, resolve the gate's \`blocking_short_ids\`, or fix post-publish verification as indicated. This issue is auto-updated so blocked daily releases are never silently skipped."
 
           if [[ -n "${existing_issue}" ]]; then
             if ! gh issue comment "${existing_issue}" --body "${body}"; then
