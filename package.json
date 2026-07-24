@@ -141,7 +141,7 @@
     }
   },
   "dependencies": {
-    "@sentry/node": "^10.63.0",
+    "@sentry/node": "10.65.0",
     "@types/node": ">=22",
     "@toon-format/toon": "^2.3.0",
     "commander": "^15.0.0",

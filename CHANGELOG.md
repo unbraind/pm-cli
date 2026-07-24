@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Same-day ordinal npm publish requires an explicit stable dist-tag ([pm-gis0qo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gis0qo.toon))
+
 ## 2026.7.24-2 - 2026-07-24
 
 ### Added
