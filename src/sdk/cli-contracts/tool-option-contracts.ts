@@ -208,6 +208,7 @@ export const TOOL_CREATE_OPTION_CONTRACT_SOURCE = [
   { param: "message", flag: "--message", allowEmpty: true },
   { param: "assignee", flag: "--assignee" },
   { param: "allowMissingParent", flag: "--allow-missing-parent" },
+  { param: "allowDuplicate", flag: "--allow-duplicate", booleanish: true },
   { param: "reminder", flag: "--reminder", repeatable: true },
   { param: "event", flag: "--event", repeatable: true },
   { param: "typeOption", flag: "--type-option", repeatable: true },

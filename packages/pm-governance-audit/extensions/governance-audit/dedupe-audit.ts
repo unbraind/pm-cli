@@ -8,11 +8,13 @@ import {
   PmCliError,
   isTerminalStatus,
   normalizeStatusInput,
+  normalizeSimilarityText,
   nowIso,
   readSettings,
   resolvePmRoot,
   resolveRuntimeStatusRegistry,
   runList,
+  scoreItemSimilarity,
   type GlobalOptions,
   type ItemStatus,
   type ListedItem,
@@ -21,10 +23,7 @@ import {
 import {
   buildListQueryFilters,
   compareTimestampStrings,
-  jaccardSimilarity,
-  normalizeLowercaseWhitespace,
   parseIntegerLimit,
-  tokenizeAlphaNumeric,
 } from "./runtime-utils.ts";
 
 /** Public contract for dedupe audit modes, shared by SDK and presentation-layer consumers. */
@@ -47,7 +46,6 @@ interface DedupeAuditPreparedCandidate {
   created_at: string;
   updated_at: string;
   normalized_title: string;
-  title_tokens: string[];
 }
 
 /** Documents the dedupe audit candidate payload exchanged by command, SDK, and package integrations. */
@@ -301,10 +299,7 @@ const similarityScore = (
   right: DedupeAuditPreparedCandidate,
 ): number => {
   /** Score exact normalized titles first, then fall back to token overlap. */
-  if (left.normalized_title === right.normalized_title) {
-    return 1;
-  }
-  return jaccardSimilarity(left.title_tokens, right.title_tokens);
+  return scoreItemSimilarity(left.title, right.title).score;
 };
 
 const forEachCandidatePair = (
@@ -451,11 +446,7 @@ const unionRoots = (parents: number[], left: number, right: number): void => {
   if (leftRoot === rightRoot) {
     return;
   }
-  if (leftRoot < rightRoot) {
-    parents[rightRoot] = leftRoot;
-  } else {
-    parents[leftRoot] = rightRoot;
-  }
+  parents[Math.max(leftRoot, rightRoot)] = Math.min(leftRoot, rightRoot);
 };
 
 const collectFuzzyTitleClusters = (
@@ -534,8 +525,7 @@ const toPreparedDedupeCandidate = (
     priority: item.priority,
     created_at: item.created_at,
     updated_at: item.updated_at,
-    normalized_title: normalizeLowercaseWhitespace(item.title),
-    title_tokens: tokenizeAlphaNumeric(item.title),
+    normalized_title: normalizeSimilarityText(item.title),
   };
 };
 

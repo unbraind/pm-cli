@@ -11,6 +11,10 @@ import {
   renderRowsAsTable,
 } from "../sdk/runtime-primitives.js";
 import { serializeNdjsonRows } from "../sdk/output.js";
+import {
+  listMutationEvents,
+  subscribeMutationEvents,
+} from "../sdk/mutation-events.js";
 import { runActivity } from "./commands/activity.js";
 import { runAggregate } from "./commands/aggregate.js";
 import {
@@ -682,6 +686,53 @@ async function runHistoryAction(
   }
 }
 
+async function runEventsAction(
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const limit =
+    typeof options.limit === "string"
+      ? Number(options.limit)
+      : undefined;
+  const eventOptions = {
+    pmRoot: globalOptions.path,
+    since: typeof options.since === "string" ? options.since : undefined,
+    type: Array.isArray(options.type) ? (options.type as string[]) : undefined,
+    author: Array.isArray(options.author)
+      ? (options.author as string[])
+      : undefined,
+    item: Array.isArray(options.item) ? (options.item as string[]) : undefined,
+    limit,
+    full: options.full === true,
+  };
+  if (options.follow === true) {
+    const intervalMs =
+      typeof options.intervalMs === "string"
+        ? Number(options.intervalMs)
+        : undefined;
+    for await (const event of subscribeMutationEvents({
+      ...eventOptions,
+      intervalMs,
+    })) {
+      if (!globalOptions.quiet) {
+        writeStdout(`${JSON.stringify(event)}\n`);
+      }
+    }
+    return;
+  }
+  const page = await listMutationEvents(eventOptions);
+  setActiveCommandResult(page);
+  const rendered = serializeNdjsonRows(page.events);
+  if (!globalOptions.quiet && rendered.length > 0) {
+    writeStdout(`${rendered}\n`);
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=events took_ms=${Date.now() - startedAt}`);
+  }
+}
+
 async function runActivityAction(
   options: Record<string, unknown>,
   command: Command,
@@ -1221,6 +1272,44 @@ export function registerListQueryCommands(
       .option("--format <value>", "History output format override: json|toon")
       .description("Show item history entries.")
       .action(runHistoryAction);
+  }
+
+  if (shouldRegister("events")) {
+    program
+      .command("events")
+      .option(
+        "--since <cursor-or-timestamp>",
+        "Resume strictly after a durable cursor, or include events from an ISO timestamp",
+      )
+      .option(
+        "--type <value>",
+        "Filter by mutation operation (repeatable or comma-separated)",
+        collect,
+      )
+      .option(
+        "--author <value>",
+        "Filter by mutation author (repeatable or comma-separated)",
+        collect,
+      )
+      .option(
+        "--item <value>",
+        "Filter by item or workspace stream id (repeatable or comma-separated)",
+        collect,
+      )
+      .option("--limit <n>", "Return at most 1,000 events (default: 100)")
+      .option("--full", "Include each complete authoritative history entry")
+      .option(
+        "--follow",
+        "Continue emitting committed events as newline-delimited JSON",
+      )
+      .option(
+        "--interval-ms <n>",
+        "Empty-read delay while following (minimum: 10ms; default: 250ms)",
+      )
+      .description(
+        "Emit cursor-resumable committed mutation facts as newline-delimited JSON.",
+      )
+      .action(runEventsAction);
   }
 
   if (shouldRegister("activity")) {

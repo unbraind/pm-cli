@@ -1312,7 +1312,7 @@ describe("mutation command actions", () => {
     await runCli("copy", "pm-1", "--title", "Cloned");
     expect(vi.mocked(runCopy)).toHaveBeenCalledWith(
       "pm-1",
-      { title: "Cloned", author: undefined, message: undefined },
+      { title: "Cloned", author: undefined, message: undefined, allowDuplicate: false },
       expect.anything(),
     );
 
@@ -1968,7 +1968,7 @@ describe("mutation command actions", () => {
     await runCli("copy", "pm-1", "--title", "Cloned", "--author", "agent", "--message", "cloned it");
     expect(vi.mocked(runCopy)).toHaveBeenCalledWith(
       "pm-1",
-      { title: "Cloned", author: "agent", message: "cloned it" },
+      { title: "Cloned", author: "agent", message: "cloned it", allowDuplicate: false },
       expect.anything(),
     );
 

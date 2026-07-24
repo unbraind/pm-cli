@@ -94,7 +94,7 @@ const COPY_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> =
       ({ flag }) => [
         flag.slice(2),
         {
-          type: "string",
+          type: flag === "--allow-duplicate" ? "boolean" : "string",
           description: `Alias for options.${flag.slice(2).replaceAll("-", "_")}.`,
         },
       ],
@@ -238,6 +238,37 @@ export const TOOLS: ToolDefinition[] = [
     ),
   },
   {
+    name: "pm_events",
+    description:
+      "Read a bounded, cursor-resumable page of committed mutation events across item history streams.",
+    inputSchema: objectSchema({
+      since: {
+        type: "string",
+        description: "Durable event cursor or ISO timestamp lower bound.",
+      },
+      type: {
+        anyOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } },
+        ],
+      },
+      author: {
+        anyOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } },
+        ],
+      },
+      item: {
+        anyOf: [
+          { type: "string" },
+          { type: "array", items: { type: "string" } },
+        ],
+      },
+      limit: { type: "integer", minimum: 0, maximum: 1000 },
+      full: { type: "boolean" },
+    }),
+  },
+  {
     name: "pm_create",
     description:
       "Create a pm item natively and write pm history. " +
@@ -253,6 +284,11 @@ export const TOOLS: ToolDefinition[] = [
           type: "boolean",
           description:
             "Allow unresolved parent references and emit a validation warning.",
+        },
+        allowDuplicate: {
+          type: "boolean",
+          description:
+            "Explicitly create when strict similarity governance finds likely duplicates.",
         },
         options: {
           type: "object",

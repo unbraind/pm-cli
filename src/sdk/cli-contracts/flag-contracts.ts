@@ -1143,6 +1143,7 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-reminders" },
   { flag: "--clear-events" },
   { flag: "--clear-type-options" },
+  { flag: "--allow-duplicate", value_type: "boolean" },
 ];
 
 /** Atomic item-batch flags shared by contracts, help, and completions. */
@@ -1161,6 +1162,7 @@ export const COPY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--title" },
   { flag: "--author" },
   { flag: "--message" },
+  { flag: "--allow-duplicate", value_type: "boolean" },
 ];
 
 /** Public contract for focus flag contracts, shared by SDK and presentation-layer consumers. */
@@ -1422,6 +1424,18 @@ export const ACTIVITY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--compact" },
   { flag: "--full" },
   { flag: "--stream" },
+];
+
+/** Public contract for mutation event stream flags shared by SDK and CLI consumers. */
+export const EVENTS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--since" },
+  { flag: "--type", repeatable: true },
+  { flag: "--author", repeatable: true },
+  { flag: "--item", repeatable: true },
+  { flag: "--limit", value_type: "number" },
+  { flag: "--full" },
+  { flag: "--follow" },
+  { flag: "--interval-ms", value_type: "number" },
 ];
 
 /** Public contract for context flag contracts, shared by SDK and presentation-layer consumers. */
@@ -1695,6 +1709,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["profile", PROFILE_FLAG_CONTRACTS],
     ["plan", PLAN_FLAG_CONTRACTS],
     ["activity", ACTIVITY_FLAG_CONTRACTS],
+    ["events", EVENTS_FLAG_CONTRACTS],
     ["restore", RESTORE_FLAG_CONTRACTS],
     ["update", UPDATE_FLAG_CONTRACTS],
     ["update-many", UPDATE_MANY_FLAG_CONTRACTS],

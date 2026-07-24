@@ -90,6 +90,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "eval",
   "next",
   "history",
+  "events",
   "history-redact",
   "history-repair",
   "history-compact",

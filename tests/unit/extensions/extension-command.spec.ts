@@ -87,6 +87,29 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
+it("refreshes managed install timestamps when source provenance changes", () => {
+  const existing = {
+    name: "sample",
+    directory: "sample",
+    scope: "project",
+    manifest_version: "1.0.0",
+    installed_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+    source: { kind: "local", input: "/old", location: "/old" },
+  } as const;
+  expect(
+    extensionCommandTestOnly.resolveManagedInstallTimestamps(
+      existing,
+      "1.0.0",
+      { kind: "local", input: "/new", location: "/new" },
+      "2026-07-24T00:00:00.000Z",
+    ),
+  ).toEqual({
+    installed_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-07-24T00:00:00.000Z",
+  });
+});
+
 function runGit(args: string[]): { status: number | null; stdout: string; stderr: string } {
   const completed = spawnSync("git", args, {
     encoding: "utf8",
@@ -3902,6 +3925,24 @@ describe("extension command runtime", () => {
           },
         ],
       });
+      const wildcardPackages = wildcardInstall.details.packages as Array<{
+        alias: string;
+        destination_path: string;
+      }>;
+      expect(
+        wildcardPackages.find((entry) => entry.alias === "audit")
+          ?.destination_path,
+      ).toBe(
+        wildcardPackages.find((entry) => entry.alias === "governance-audit")
+          ?.destination_path,
+      );
+      expect(
+        wildcardPackages.find((entry) => entry.alias === "digital-twin")
+          ?.destination_path,
+      ).toBe(
+        wildcardPackages.find((entry) => entry.alias === "twin")
+          ?.destination_path,
+      );
 
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({

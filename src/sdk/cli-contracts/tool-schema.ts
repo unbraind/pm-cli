@@ -410,7 +410,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       ],
       optional: CREATE_CONTRACT_PARAMETER_KEYS,
     },
-    copy: { required: ["id"], optional: ["title", "author", "message"] },
+    copy: {
+      required: ["id"],
+      optional: ["title", "author", "message", "allowDuplicate"],
+    },
     focus: { optional: ["id", "clear"], mutuallyExclusive: [["id", "clear"]] },
     list: {
       optional: LIST_CONTRACT_PARAMETER_KEYS,
@@ -1289,7 +1292,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and the contract tests all bind to one constant instead of re-typing the `"4.0.2"` literal (pm-r9sz). Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.7" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.1.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

@@ -56,51 +56,83 @@ export interface EvaluateMutationGuardOptions {
   force?: boolean;
 }
 
+/** Audit stream a native mutation must append when it changes durable state. */
+export type MutationHistoryScope =
+  | "item"
+  | "workspace"
+  | "history"
+  | "conditional";
+
+/** Executable provenance contract for one native state-changing action. */
+export interface MutationActionContract {
+  /** Canonical CLI/SDK/MCP action name. */
+  action: string;
+  /** Audit stream required when the action changes durable state. */
+  history_scope: MutationHistoryScope;
+}
+
 const GITHUB_TOKEN_PATTERN =
   /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/;
 const PRIVATE_KEY_PATTERN = /-----BEGIN (?:[A-Z0-9]+ )?PRIVATE KEY-----/;
 const AWS_ACCESS_KEY_PATTERN = /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/;
 const HIGH_ENTROPY_ASSIGNMENT_PATTERN =
   /\b(?:token|secret|password|passwd|api[_-]?key)\s*[:=]\s*["']?([A-Za-z0-9+/=_-]{24,})/gi;
-const MUTATION_ACTIONS = new Set([
-  "append",
-  "claim",
-  "close",
-  "close-many",
-  "close-task",
-  "comments",
-  "config",
-  "copy",
-  "create",
-  "delete",
-  "deps",
-  "discover",
-  "docs",
-  "files",
-  "focus",
-  "gc",
-  "history-compact",
-  "history-redact",
-  "history-repair",
-  "init",
-  "install",
-  "learnings",
-  "notes",
-  "package",
-  "pause-task",
-  "plan",
-  "profile",
-  "release",
-  "restore",
-  "schema",
-  "start-task",
-  "templates",
-  "test",
-  "test-all",
-  "update",
-  "update-many",
-  "upgrade",
-]);
+
+/**
+ * Canonical native mutation inventory shared by guard dispatch, history
+ * completeness gates, and integration hosts. `conditional` actions combine
+ * read/diagnostic and write modes; they require history only when a durable
+ * mutation occurs.
+ */
+export const PM_MUTATION_ACTION_CONTRACTS = [
+  { action: "append", history_scope: "item" },
+  { action: "claim", history_scope: "item" },
+  { action: "close", history_scope: "item" },
+  { action: "close-many", history_scope: "item" },
+  { action: "close-task", history_scope: "item" },
+  { action: "comments", history_scope: "conditional" },
+  { action: "config", history_scope: "conditional" },
+  { action: "copy", history_scope: "item" },
+  { action: "create", history_scope: "item" },
+  { action: "delete", history_scope: "item" },
+  { action: "deps", history_scope: "conditional" },
+  { action: "discover", history_scope: "item" },
+  { action: "docs", history_scope: "conditional" },
+  { action: "files", history_scope: "conditional" },
+  { action: "focus", history_scope: "conditional" },
+  { action: "gc", history_scope: "conditional" },
+  { action: "history-compact", history_scope: "history" },
+  { action: "history-redact", history_scope: "history" },
+  { action: "history-repair", history_scope: "history" },
+  { action: "init", history_scope: "workspace" },
+  { action: "install", history_scope: "conditional" },
+  { action: "learnings", history_scope: "conditional" },
+  { action: "notes", history_scope: "conditional" },
+  { action: "package", history_scope: "conditional" },
+  { action: "pause-task", history_scope: "item" },
+  { action: "plan", history_scope: "conditional" },
+  { action: "profile", history_scope: "conditional" },
+  { action: "release", history_scope: "item" },
+  { action: "restore", history_scope: "item" },
+  { action: "schema", history_scope: "conditional" },
+  { action: "start-task", history_scope: "item" },
+  { action: "templates", history_scope: "conditional" },
+  { action: "test", history_scope: "conditional" },
+  { action: "test-all", history_scope: "conditional" },
+  { action: "update", history_scope: "item" },
+  { action: "update-many", history_scope: "item" },
+  { action: "upgrade", history_scope: "conditional" },
+] as const satisfies readonly MutationActionContract[];
+
+const MUTATION_ACTION_CONTRACTS_BY_NAME: ReadonlyMap<
+  string,
+  MutationActionContract
+> = new Map(
+  PM_MUTATION_ACTION_CONTRACTS.map((contract) => [
+    contract.action,
+    contract as MutationActionContract,
+  ]),
+);
 
 function shannonEntropy(value: string): number {
   const counts = new Map<string, number>();
@@ -268,10 +300,19 @@ export function evaluateMutationGuard(
 
 /** Identify native actions that can persist tracker or workspace state. */
 export function isMutationAction(action: string): boolean {
-  return MUTATION_ACTIONS.has(action.trim().toLowerCase());
+  return MUTATION_ACTION_CONTRACTS_BY_NAME.has(action.trim().toLowerCase());
 }
 
 /** Return the canonical, stable native mutation-action inventory. */
 export function listMutationActions(): string[] {
-  return [...MUTATION_ACTIONS].sort((left, right) => left.localeCompare(right));
+  return [...MUTATION_ACTION_CONTRACTS_BY_NAME.keys()].sort((left, right) =>
+    left.localeCompare(right),
+  );
+}
+
+/** Resolve the history contract for one native mutation action. */
+export function getMutationActionContract(
+  action: string,
+): MutationActionContract | undefined {
+  return MUTATION_ACTION_CONTRACTS_BY_NAME.get(action.trim().toLowerCase());
 }

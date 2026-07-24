@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateMutationGuard,
+  getMutationActionContract,
   isMutationAction,
   listMutationActions,
+  PM_MUTATION_ACTION_CONTRACTS,
   scanMutationSecrets,
 } from "../../../src/sdk/index.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -22,10 +24,26 @@ describe("SDK mutation guard", () => {
   it("publishes a stable mutation inventory without read actions", () => {
     const actions = listMutationActions();
     expect(actions).toEqual([...actions].sort());
+    expect(new Set(actions).size).toBe(PM_MUTATION_ACTION_CONTRACTS.length);
     expect(actions).toContain("create");
     expect(actions).toContain("history-redact");
     expect(actions.every(isMutationAction)).toBe(true);
     expect(isMutationAction(" search ")).toBe(false);
+    expect(getMutationActionContract(" CONFIG ")).toEqual({
+      action: "config",
+      history_scope: "conditional",
+    });
+    expect(getMutationActionContract("search")).toBeUndefined();
+    expect(
+      PM_MUTATION_ACTION_CONTRACTS.filter(
+        (contract) => contract.history_scope === "workspace",
+      ).map((contract) => contract.action),
+    ).toEqual(["init"]);
+    expect(
+      PM_MUTATION_ACTION_CONTRACTS.filter(
+        (contract) => contract.history_scope === "history",
+      ).map((contract) => contract.action),
+    ).toEqual(["history-compact", "history-redact", "history-repair"]);
   });
 
   it("detects credential shapes with redacted object paths only", () => {

@@ -11,7 +11,7 @@ import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { ItemMetadata } from "../../types/index.js";
 
 const QUERY_INDEX_FILENAME = "metadata-query-index.sqlite";
-const QUERY_INDEX_VERSION = "2";
+const QUERY_INDEX_VERSION = "3";
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
 function loadDatabaseSync(
@@ -96,6 +96,14 @@ export interface ItemMetadataIndexQueryResult {
   items: ItemMetadata[];
 }
 
+/** Bounded lexical candidate result from the persistent metadata projection. */
+export interface SimilarItemMetadataIndexResult {
+  /** Effective index source cursor. */
+  source_cursor: string;
+  /** FTS-ranked light metadata candidates. */
+  items: ItemMetadata[];
+}
+
 function queryIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", QUERY_INDEX_FILENAME);
 }
@@ -139,6 +147,13 @@ function createSchema(database: DatabaseSync): void {
     ) STRICT;
     CREATE INDEX item_metadata_keys_key_item
       ON item_metadata_keys(key, item_id);
+    CREATE VIRTUAL TABLE item_search USING fts5(
+      id UNINDEXED,
+      title,
+      description,
+      tags,
+      tokenize = 'unicode61'
+    );
   `);
 }
 
@@ -195,6 +210,17 @@ function insertRow(
   database
     .prepare("DELETE FROM item_metadata_keys WHERE item_id = ?")
     .run(metadata.id);
+  database.prepare("DELETE FROM item_search WHERE id = ?").run(metadata.id);
+  database
+    .prepare(
+      "INSERT INTO item_search(id, title, description, tags) VALUES (?, ?, ?, ?)",
+    )
+    .run(
+      metadata.id,
+      metadata.title,
+      metadata.description,
+      metadata.tags.join(" "),
+    );
   const insertMetadataKey = database.prepare(
     "INSERT INTO item_metadata_keys(item_id, key) VALUES (?, ?)",
   );
@@ -282,8 +308,18 @@ export async function updateItemMetadataQueryIndex(options: {
     const deleteByPath = database.prepare(
       "DELETE FROM items WHERE relative_path = ?",
     );
+    const findIdByPath = database.prepare(
+      "SELECT id FROM items WHERE relative_path = ?",
+    );
+    const deleteSearchById = database.prepare(
+      "DELETE FROM item_search WHERE id = ?",
+    );
     for (const relativePath of options.deletedRelativePaths ?? []) {
+      const deleted = findIdByPath.get(relativePath) as
+        | { id: string }
+        | undefined;
       deleteByPath.run(relativePath);
+      if (deleted) deleteSearchById.run(deleted.id);
     }
     if (options.row) insertRow(database, options.row);
     writeMetadata(database, "source_cursor", options.sourceCursor);
@@ -424,6 +460,55 @@ export async function queryItemMetadataIndex(options: {
     return {
       source_cursor: metadata.source_cursor,
       total: Number(totalRow.count),
+      items,
+    };
+  } catch {
+    database?.close();
+    return null;
+  }
+}
+
+/**
+ * Query FTS-ranked item candidates without materializing the workspace. The
+ * caller owns final similarity scoring and threshold semantics.
+ */
+export async function querySimilarItemMetadataIndex(options: {
+  pmRoot: string;
+  expectedSourceCursor: string;
+  query: string;
+  limit: number;
+}): Promise<SimilarItemMetadataIndexResult | null> {
+  const Database = resolveDatabaseSync();
+  if (!Database) return null;
+  let database: DatabaseSync | undefined;
+  try {
+    database = new Database(queryIndexPath(options.pmRoot), {
+      readOnly: true,
+    });
+    const metadata = readIndexMetadata(database);
+    if (
+      metadata.version !== QUERY_INDEX_VERSION ||
+      metadata.source_cursor !== options.expectedSourceCursor
+    ) {
+      database.close();
+      return null;
+    }
+    const rows = database
+      .prepare(
+        `SELECT items.metadata_json
+         FROM item_search
+         JOIN items ON items.id = item_search.id
+         WHERE item_search MATCH ?
+         ORDER BY bm25(item_search), items.priority, items.updated_at DESC, items.id
+         LIMIT ?`,
+      )
+      .all(options.query, Math.max(0, Math.floor(options.limit)));
+    const items = rows.map(
+      (row) => JSON.parse(String(row.metadata_json)) as ItemMetadata,
+    );
+    database.close();
+    return {
+      source_cursor: metadata.source_cursor,
       items,
     };
   } catch {

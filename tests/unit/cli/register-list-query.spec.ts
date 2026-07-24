@@ -22,6 +22,10 @@ vi.mock("../../../src/cli/commands/next.js", () => ({
 }));
 vi.mock("../../../src/cli/commands/list.js", () => ({ runList: vi.fn() }));
 vi.mock("../../../src/cli/commands/graph.js", () => ({ runGraph: vi.fn() }));
+vi.mock("../../../src/sdk/mutation-events.js", () => ({
+  listMutationEvents: vi.fn(),
+  subscribeMutationEvents: vi.fn(),
+}));
 
 vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../src/cli/registration-helpers.js")>();
@@ -46,6 +50,10 @@ import { renderContextMarkdown, resolveContextOutputFormat, runContext } from ".
 import { renderNextMarkdown, resolveNextOutputFormat, runNext } from "../../../src/cli/commands/next.js";
 import { runList } from "../../../src/cli/commands/list.js";
 import { runGraph } from "../../../src/cli/commands/graph.js";
+import {
+  listMutationEvents,
+  subscribeMutationEvents,
+} from "../../../src/sdk/mutation-events.js";
 import { printActivityJsonStream, printError, printListJsonStream, printResult, writeStdout } from "../../../src/cli/registration-helpers.js";
 import { getActiveCommandResult, setActiveCommandResult } from "../../../src/core/extensions/index.js";
 
@@ -114,6 +122,15 @@ beforeEach(() => {
     edge_count: 0,
     sample_limit: 10,
   } as never);
+  vi.mocked(listMutationEvents).mockResolvedValue({
+    events: [{ item_id: "pm-event", type: "update" }],
+    count: 1,
+    has_more: false,
+    source: "derived_index",
+  } as never);
+  vi.mocked(subscribeMutationEvents).mockImplementation(async function* () {
+    yield { item_id: "pm-follow", type: "claim" } as never;
+  });
   vi.mocked(runList).mockResolvedValue({
     items: [
       { id: "pm-1", status: "open", type: "Task", title: "First" },
@@ -472,6 +489,85 @@ describe("register-list-query activity streaming", () => {
   it("emits a JSON stream when --stream and --json are set", async () => {
     await runProfiled("activity", "--json", "--stream", "rows");
     expect(vi.mocked(printActivityJsonStream)).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("register-list-query mutation events", () => {
+  it("maps every event filter and emits compact NDJSON with profile timing", async () => {
+    await runProfiled(
+      "events",
+      "--since",
+      "2026-07-24T10:00:00.000Z",
+      "--type",
+      "create",
+      "--type",
+      "update",
+      "--author",
+      "agent",
+      "--item",
+      "pm-event",
+      "--limit",
+      "2",
+      "--full",
+    );
+    expect(vi.mocked(listMutationEvents)).toHaveBeenCalledWith({
+      pmRoot: tmpRoot,
+      since: "2026-07-24T10:00:00.000Z",
+      type: ["create", "update"],
+      author: ["agent"],
+      item: ["pm-event"],
+      limit: 2,
+      full: true,
+    });
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+    expect(vi.mocked(printError)).toHaveBeenCalledWith(
+      expect.stringMatching(/^profile:command=events took_ms=\d+$/),
+    );
+    expect(getActiveCommandResult()).toMatchObject({ count: 1 });
+  });
+
+  it("suppresses empty pages and preserves undefined omitted options", async () => {
+    vi.mocked(listMutationEvents).mockResolvedValueOnce({
+      events: [],
+      count: 0,
+      has_more: false,
+      source: "derived_index",
+    });
+    await runRaw("events");
+    expect(vi.mocked(listMutationEvents)).toHaveBeenCalledWith({
+      pmRoot: tmpRoot,
+      since: undefined,
+      type: undefined,
+      author: undefined,
+      item: undefined,
+      limit: undefined,
+      full: false,
+    });
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+  });
+
+  it("writes a non-empty event page when output is enabled", async () => {
+    await runRaw("events");
+    expect(vi.mocked(writeStdout)).toHaveBeenCalledWith(
+      '{"item_id":"pm-event","type":"update"}\n',
+    );
+  });
+
+  it("follows events with explicit and default intervals while respecting quiet output", async () => {
+    await runRaw("events", "--follow", "--interval-ms", "25");
+    expect(vi.mocked(subscribeMutationEvents)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ intervalMs: 25 }),
+    );
+    expect(vi.mocked(writeStdout)).toHaveBeenCalledWith(
+      '{"item_id":"pm-follow","type":"claim"}\n',
+    );
+
+    vi.mocked(writeStdout).mockClear();
+    await runRaw("events", "--follow", "--quiet");
+    expect(vi.mocked(subscribeMutationEvents)).toHaveBeenLastCalledWith(
+      expect.objectContaining({ intervalMs: undefined }),
+    );
+    expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
   });
 });
 

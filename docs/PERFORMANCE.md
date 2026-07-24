@@ -61,6 +61,14 @@ files, stale cursors, and corrupt databases fail closed to the established
 authoritative/JSON path. The SQLite file is optimization state and is safe to
 delete or rebuild with `pm reindex`.
 
+The same database carries bounded FTS candidate retrieval for the opt-in
+create/copy duplicate-governance probe. Minimal/default governance keeps the
+probe off and performs no query on the create path; advisory/strict modes reuse
+one dependency-light SDK scorer with the package-owned dedupe audit. Mutation
+history events use a separate rebuildable ordered SQLite projection so
+`pm events --since <cursor>` catch-up cost follows new history rows instead of
+workspace size. See [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).
+
 SDK hosts that commit authoritative item documents outside the stock mutation
 commands use `acquireItemMetadataDerivedIndexLock` and
 `refreshItemMetadataDerivedIndex` from `@unbrained/pm-cli/sdk` around the same

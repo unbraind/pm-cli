@@ -57,6 +57,9 @@ const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
   mutation_guard_require_attributed_author: "mutation_guard.require_attributed_author",
   mutation_guard_secret_guard: "mutation_guard.secret_guard",
   mutation_guard_stale_in_progress_hours: "mutation_guard.stale_in_progress_hours",
+  governance_duplicate_detection_mode: "governance.duplicate_detection_mode",
+  governance_duplicate_detection_threshold: "governance.duplicate_detection_threshold",
+  governance_duplicate_detection_limit: "governance.duplicate_detection_limit",
   output_default_format: "output.default_format",
   locks_ttl_seconds: "locks.ttl_seconds",
   locks_wait_ms: "locks.wait_ms",
@@ -275,7 +278,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(14);
+    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(17);
   });
 
   it("resolves both kebab-case and snake_case forms of each general alias", () => {

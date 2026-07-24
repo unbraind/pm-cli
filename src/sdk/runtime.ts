@@ -390,6 +390,13 @@ export { EXIT_CODE } from "../core/shared/constants.js";
 export { PmCliError } from "../core/shared/errors.js";
 export { isTimestampLiteral, nowIso } from "../core/shared/time.js";
 export {
+  jaccardSimilarity,
+  normalizeSimilarityText,
+  scoreItemSimilarity,
+  tokenizeSimilarityText,
+  type ItemSimilarityScore,
+} from "./similarity-scoring.js";
+export {
   listAllItemMetadata,
   locateItem,
   readLocatedItem,

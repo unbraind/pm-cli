@@ -13,8 +13,10 @@ import type {
   getActiveExtensionRegistrations as runtimeGetActiveExtensionRegistrations,
   getSettingsPath as runtimeGetSettingsPath,
   isTerminalStatus as runtimeIsTerminalStatus,
+  jaccardSimilarity as runtimeJaccardSimilarity,
   locateItem as runtimeLocateItem,
   normalizeStatusInput as runtimeNormalizeStatusInput,
+  normalizeSimilarityText as runtimeNormalizeSimilarityText,
   nowIso as runtimeNowIso,
   pathExists as runtimePathExists,
   readBooleanOption as runtimeReadBooleanOption,
@@ -28,6 +30,7 @@ import type {
   runClose as runtimeRunClose,
   runList as runtimeRunList,
   runUpdate as runtimeRunUpdate,
+  scoreItemSimilarity as runtimeScoreItemSimilarity,
 } from "@unbrained/pm-cli/sdk/runtime";
 
 /** Typed host-runtime values consumed through the package's dynamic boundary. */
@@ -38,8 +41,10 @@ interface RuntimeSdkModule {
   getActiveExtensionRegistrations: typeof runtimeGetActiveExtensionRegistrations;
   getSettingsPath: typeof runtimeGetSettingsPath;
   isTerminalStatus: typeof runtimeIsTerminalStatus;
+  jaccardSimilarity: typeof runtimeJaccardSimilarity;
   locateItem: typeof runtimeLocateItem;
   normalizeStatusInput: typeof runtimeNormalizeStatusInput;
+  normalizeSimilarityText: typeof runtimeNormalizeSimilarityText;
   nowIso: typeof runtimeNowIso;
   pathExists: typeof runtimePathExists;
   readBooleanOption: typeof runtimeReadBooleanOption;
@@ -53,6 +58,7 @@ interface RuntimeSdkModule {
   runClose: typeof runtimeRunClose;
   runList: typeof runtimeRunList;
   runUpdate: typeof runtimeRunUpdate;
+  scoreItemSimilarity: typeof runtimeScoreItemSimilarity;
 }
 
 const packageRoot = process.env.PM_CLI_PACKAGE_ROOT?.trim();
@@ -84,8 +90,10 @@ export const {
   getActiveExtensionRegistrations,
   getSettingsPath,
   isTerminalStatus,
+  jaccardSimilarity,
   locateItem,
   normalizeStatusInput,
+  normalizeSimilarityText,
   nowIso,
   pathExists,
   readBooleanOption,
@@ -98,6 +106,7 @@ export const {
   resolveRuntimeStatusRegistry,
   runClose,
   runUpdate,
+  scoreItemSimilarity,
 } = runtime;
 
 /** Preserve the host SDK list overloads across the dynamic runtime boundary. */

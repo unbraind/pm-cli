@@ -303,8 +303,25 @@ export function addHiddenOption(
   command: Command,
   flags: string,
   description: string,
+  repeatable = false,
+  repeatableParser: ((value: string) => string[]) | undefined = undefined,
 ): void {
-  command.addOption(new Option(flags, description).hideHelp());
+  const option = new Option(flags, description).hideHelp();
+  if (repeatable) {
+    option.argParser(repeatableParser ?? collect);
+  }
+  command.addOption(option);
+}
+
+/** Adds a group of parseable Commander aliases hidden from human help. */
+export function addHiddenOptions(
+  command: Command,
+  aliases: ReadonlyArray<readonly [flags: string, description: string]>,
+  repeatable: boolean,
+): void {
+  for (const [flags, description] of aliases) {
+    addHiddenOption(command, flags, description, repeatable);
+  }
 }
 
 function anyOptionTrue(
@@ -465,6 +482,7 @@ export function normalizeCreateOptions(
     parent: readCreateString("parent"),
     allowMissingParent:
       optionTrue(commandOptions, "allowMissingParent") === true,
+    allowDuplicate: optionTrue(commandOptions, "allowDuplicate") === true,
     reviewer: readCreateString("reviewer"),
     risk: readCreateString("risk"),
     confidence: readCreateString("confidence"),

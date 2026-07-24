@@ -18,6 +18,8 @@ export {
 } from "../core/store/item-metadata-cache.js";
 export {
   queryItemMetadataIndex,
+  querySimilarItemMetadataIndex,
   type ItemMetadataIndexQuery,
   type ItemMetadataIndexQueryResult,
+  type SimilarItemMetadataIndexResult,
 } from "../core/store/item-metadata-query-index.js";

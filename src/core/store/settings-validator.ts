@@ -391,6 +391,13 @@ const governanceSettings = vOptional(
     force_required_for_stale_lock: vOptional(vBoolean),
     create_default_type: vOptional(vString),
     workflow_enforcement: vOptional(vLiteral("off", "warn", "strict")),
+    duplicate_detection_mode: vOptional(
+      vLiteral("off", "advisory", "strict"),
+    ),
+    duplicate_detection_threshold: vOptional(vNumber({ min: 0, max: 1 })),
+    duplicate_detection_limit: vOptional(
+      vNumber({ int: true, min: 0, max: 20 }),
+    ),
   }),
 );
 

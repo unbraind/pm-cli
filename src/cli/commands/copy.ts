@@ -35,6 +35,11 @@ import {
   readSettings,
 } from "../../sdk/runtime-primitives.js";
 import {
+  evaluateSimilarityGovernance,
+  similarityAdvisoryWarnings,
+  type SimilarityAdvisory,
+} from "../../sdk/similarity.js";
+import {
   acquireItemMetadataDerivedIndexLock,
   refreshItemMetadataDerivedIndex,
 } from "../../sdk/item-metadata-index.js";
@@ -48,6 +53,8 @@ export interface CopyOptions {
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
+  /** Explicitly permit a likely duplicate when strict governance is enabled. */
+  allowDuplicate?: boolean;
 }
 
 /** Documents the copy result payload exchanged by command, SDK, and package integrations. */
@@ -60,6 +67,8 @@ export interface CopyResult {
   changed_fields: string[];
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
+  /** Likely existing items found before the mutation committed. */
+  similarity_advisory?: SimilarityAdvisory;
 }
 
 function selectAuthor(
@@ -175,6 +184,21 @@ export async function runCopy(
     {
       schema: settings.schema,
       extensionFieldNames,
+    },
+  );
+  const similarityAdvisory = await evaluateSimilarityGovernance(
+    {
+      title: copiedDocument.metadata.title,
+      description: copiedDocument.metadata.description,
+      body: copiedDocument.body,
+      excludeIds: [located.id],
+    },
+    {
+      pmRoot,
+      mode: settings.governance.duplicate_detection_mode,
+      threshold: settings.governance.duplicate_detection_threshold,
+      limit: settings.governance.duplicate_detection_limit,
+      allowDuplicate: options.allowDuplicate,
     },
   );
   const changedFields = buildChangedFields(
@@ -306,6 +330,13 @@ export async function runCopy(
     source_id: located.id,
     item: structuredClone(copiedDocument.metadata),
     changed_fields: changedFields,
-    warnings: [...derivedIndexWarnings, ...hookWarnings],
+    warnings: [
+      ...similarityAdvisoryWarnings(similarityAdvisory),
+      ...derivedIndexWarnings,
+      ...hookWarnings,
+    ],
+    ...(similarityAdvisory === undefined
+      ? {}
+      : { similarity_advisory: similarityAdvisory }),
   };
 }

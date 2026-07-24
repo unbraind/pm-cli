@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -67,6 +68,10 @@ function requiredKey(value, label) {
   return value;
 }
 
+function contextEvaluationItemId(scenarioId, key) {
+  return `pm-${createHash("sha256").update(`${scenarioId}:${key}`).digest("hex").slice(0, 12)}`;
+}
+
 /** Convert corpus keys into one SDK scenario after its workspace is seeded. */
 export function mapScenarioDefinition(definition, idByKey) {
   const options = { ...definition.options };
@@ -102,7 +107,11 @@ async function seedWorkspace(definition, workspaceRoot) {
     if (parentKey !== undefined && parent === undefined) {
       fail(`Context evaluation item ${key} references unknown parent key: ${parentKey}`);
     }
-    const created = await client.create({ ...options, ...(parent === undefined ? {} : { parent }) });
+    const created = await client.create({
+      ...options,
+      id: contextEvaluationItemId(definition.id, key),
+      ...(parent === undefined ? {} : { parent }),
+    });
     idByKey.set(key, created.item.id);
   }
   for (const rawGenerator of optionalArray(workspace.generators, `scenario ${definition.id} workspace.generators`)) {
@@ -115,6 +124,7 @@ async function seedWorkspace(definition, workspaceRoot) {
       const suffix = String(index).padStart(3, "0");
       const key = `${generator.key_prefix}${suffix}`;
       const created = await client.create({
+        id: contextEvaluationItemId(definition.id, key),
         title: `${generator.title_prefix} ${suffix}`,
         description: generator.description,
         type: generator.type,

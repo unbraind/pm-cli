@@ -2441,10 +2441,22 @@ const runBundledExtensionInstallAll = async (
     );
   }
   const packages: Array<{ alias: string; result: ExtensionCommandResult }> = [];
+  const installedSources = new Map<string, ExtensionCommandResult>();
   for (const alias of await listBundledPackageAliases()) {
+    const source = await resolveBundledExtensionAliasSource(alias);
+    const sourceKey = path.resolve(source!);
+    let result = installedSources.get(sourceKey);
+    if (result === undefined) {
+      result = await runExtension(
+        alias,
+        { ...options, install: true },
+        global,
+      );
+      installedSources.set(sourceKey, result);
+    }
     packages.push({
       alias,
-      result: await runExtension(alias, { ...options, install: true }, global),
+      result,
     });
   }
   warnings.push(...packages.flatMap((entry) => entry.result.warnings));
@@ -3766,6 +3778,7 @@ export const _testOnly = {
   resolveCommandDiscoveryPackageName,
   resolveGithubOption,
   resolveInstalledExtensionCandidate,
+  resolveManagedInstallTimestamps,
   resolveScope,
   resolveUpdateCheckResolution,
   withExtensionInstallLock,

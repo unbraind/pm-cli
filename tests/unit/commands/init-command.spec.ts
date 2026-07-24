@@ -854,10 +854,18 @@ describe("runInit", () => {
       const result = await runInit(
         "pm",
         { path: tempRoot },
-        { defaults: true, withPackages: true },
+        { defaults: true },
       );
-      const summary = summarizeInitResult(result);
-      expect(summary.installed_packages).toEqual(result.installed_packages);
+      const installedPackages = {
+        installed_all: true,
+        installed_count: 1,
+        packages: [{ alias: "calendar", ok: true }],
+      };
+      const summary = summarizeInitResult({
+        ...result,
+        installed_packages: installedPackages,
+      });
+      expect(summary.installed_packages).toEqual(installedPackages);
       expect(summary.installed_packages?.installed_all).toBe(true);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });

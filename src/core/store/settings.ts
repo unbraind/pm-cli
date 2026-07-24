@@ -54,6 +54,7 @@ import type {
 const SETTINGS_WRITE_OP = "settings:write";
 const SETTINGS_PERSIST_SOURCE_SYMBOL = Symbol("pm.settings.persist_source");
 const MAX_VECTOR_STORE_COLLECTION_NAME_LENGTH = 128;
+const DUPLICATE_DETECTION_MODES = new Set(["off", "advisory", "strict"]);
 
 interface SettingsPersistSourceSnapshot {
   has_source_item_type_definitions: boolean;
@@ -114,7 +115,7 @@ function normalizeGovernancePreset(
   return SETTINGS_DEFAULTS.governance.preset;
 }
 
-// `create_default_type` and `workflow_enforcement` are orthogonal to the
+// Create defaults, workflow enforcement, and duplicate detection are orthogonal to the
 // governance preset (they tune create/update behavior, not the preset knobs),
 // so they must survive a write regardless of preset — otherwise a project on a
 // non-custom preset would silently drop them on every settings write.
@@ -139,6 +140,10 @@ function withGovernanceExtras(
   if (governance.require_close_reason === false) {
     base.require_close_reason = false;
   }
+  base.duplicate_detection_mode = governance.duplicate_detection_mode;
+  base.duplicate_detection_threshold =
+    governance.duplicate_detection_threshold;
+  base.duplicate_detection_limit = governance.duplicate_detection_limit;
   return base;
 }
 
@@ -174,7 +179,12 @@ function resolveGovernanceExtras(
 ): Partial<
   Pick<
     GovernanceSettings,
-    "create_default_type" | "workflow_enforcement" | "require_close_reason"
+    | "create_default_type"
+    | "workflow_enforcement"
+    | "require_close_reason"
+    | "duplicate_detection_mode"
+    | "duplicate_detection_threshold"
+    | "duplicate_detection_limit"
   >
 > {
   const createDefaultType =
@@ -184,7 +194,12 @@ function resolveGovernanceExtras(
   const extras: Partial<
     Pick<
       GovernanceSettings,
-      "create_default_type" | "workflow_enforcement" | "require_close_reason"
+      | "create_default_type"
+      | "workflow_enforcement"
+      | "require_close_reason"
+      | "duplicate_detection_mode"
+      | "duplicate_detection_threshold"
+      | "duplicate_detection_limit"
     >
   > = {};
   if (createDefaultType && createDefaultType.length > 0) {
@@ -199,6 +214,38 @@ function resolveGovernanceExtras(
   }
   if (typeof rawGovernance.require_close_reason === "boolean") {
     extras.require_close_reason = rawGovernance.require_close_reason;
+  }
+  if (
+    DUPLICATE_DETECTION_MODES.has(
+      String(rawGovernance.duplicate_detection_mode),
+    )
+  ) {
+    extras.duplicate_detection_mode =
+      rawGovernance.duplicate_detection_mode as GovernanceSettings["duplicate_detection_mode"];
+  }
+  const threshold = rawGovernance.duplicate_detection_threshold;
+  if (
+    [
+      typeof threshold === "number",
+      Number.isFinite(threshold),
+      Number(threshold) >= 0,
+      Number(threshold) <= 1,
+    ].every(Boolean)
+  ) {
+    extras.duplicate_detection_threshold =
+      threshold;
+  }
+  const limit = rawGovernance.duplicate_detection_limit;
+  if (
+    [
+      typeof limit === "number",
+      Number.isSafeInteger(limit),
+      Number(limit) >= 0,
+      Number(limit) <= 20,
+    ].every(Boolean)
+  ) {
+    extras.duplicate_detection_limit =
+      limit;
   }
   return extras;
 }
@@ -234,6 +281,15 @@ export function resolveGovernanceKnobs(
         baseline.force_required_for_stale_lock,
       ...extras,
       require_close_reason: requireCloseReason,
+      duplicate_detection_mode:
+        extras.duplicate_detection_mode ??
+        baseline.duplicate_detection_mode,
+      duplicate_detection_threshold:
+        extras.duplicate_detection_threshold ??
+        baseline.duplicate_detection_threshold,
+      duplicate_detection_limit:
+        extras.duplicate_detection_limit ??
+        baseline.duplicate_detection_limit,
     };
   }
   const baseline = resolveGovernanceKnobsFromPreset(preset);
@@ -315,20 +371,24 @@ function normalizeVectorStoreCollectionName(value: unknown): string {
     : SETTINGS_DEFAULTS.vector_store.collection_name;
 }
 
+function cloneOptionalArray<T>(value: T[] | undefined): {
+  present: boolean;
+  values: T[];
+} {
+  return {
+    present: Array.isArray(value),
+    values: Array.isArray(value) ? structuredClone(value) : [],
+  };
+}
+
 function buildSettingsPersistSourceSnapshot(
   parsedSettings: ParsedSettings,
   runtimeSettings: PmSettings,
 ): SettingsPersistSourceSnapshot {
   const sourceSchema = parsedSettings.schema;
-  const sourceStatuses = Array.isArray(sourceSchema?.statuses)
-    ? sourceSchema?.statuses
-    : undefined;
-  const sourceFields = Array.isArray(sourceSchema?.fields)
-    ? sourceSchema?.fields
-    : undefined;
-  const sourceTypeWorkflows = Array.isArray(sourceSchema?.type_workflows)
-    ? sourceSchema?.type_workflows
-    : undefined;
+  const sourceStatuses = cloneOptionalArray(sourceSchema?.statuses);
+  const sourceFields = cloneOptionalArray(sourceSchema?.fields);
+  const sourceTypeWorkflows = cloneOptionalArray(sourceSchema?.type_workflows);
   return {
     has_source_item_type_definitions: Array.isArray(
       parsedSettings.item_types?.definitions,
@@ -336,16 +396,12 @@ function buildSettingsPersistSourceSnapshot(
     source_item_type_definitions: normalizeItemTypeDefinitions(
       parsedSettings.item_types?.definitions,
     ),
-    has_source_schema_statuses: sourceStatuses !== undefined,
-    source_schema_statuses: sourceStatuses
-      ? structuredClone(sourceStatuses)
-      : [],
-    has_source_schema_fields: sourceFields !== undefined,
-    source_schema_fields: sourceFields ? structuredClone(sourceFields) : [],
-    has_source_schema_type_workflows: sourceTypeWorkflows !== undefined,
-    source_schema_type_workflows: sourceTypeWorkflows
-      ? structuredClone(sourceTypeWorkflows)
-      : [],
+    has_source_schema_statuses: sourceStatuses.present,
+    source_schema_statuses: sourceStatuses.values,
+    has_source_schema_fields: sourceFields.present,
+    source_schema_fields: sourceFields.values,
+    has_source_schema_type_workflows: sourceTypeWorkflows.present,
+    source_schema_type_workflows: sourceTypeWorkflows.values,
     runtime_item_type_definitions: normalizeItemTypeDefinitions(
       runtimeSettings.item_types?.definitions,
     ),
@@ -1193,6 +1249,9 @@ function orderSerializedSettingsSections(
       "force_required_for_stale_lock",
       "create_default_type",
       "workflow_enforcement",
+      "duplicate_detection_mode",
+      "duplicate_detection_threshold",
+      "duplicate_detection_limit",
     ],
   );
   ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, [
