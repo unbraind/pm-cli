@@ -186,7 +186,7 @@ function dispatchSchemaMigration(
     {
       migrationId:
         readOptionString(inputs.options, "migrationId") ??
-        readOptionString(inputs.options, "migration_id")!,
+        readOptionString(inputs.options, "migration_id"),
       dryRun: inputs.options.dryRun === true,
       author: inputs.author,
       force: inputs.force,

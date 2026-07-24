@@ -3345,7 +3345,7 @@ function runMcpSchemaMigrationAction(
     readString(ctx.args, "migrationId") ??
     readString(ctx.args, "migration_id") ??
     readString(ctx.options, "migrationId") ??
-    readRequiredString(ctx.options, "migration_id");
+    readString(ctx.options, "migration_id");
   const fieldTypeScope =
     readString(ctx.args, "fieldTypeScope") ??
     readString(ctx.options, "fieldTypeScope") ??

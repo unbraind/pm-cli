@@ -47,6 +47,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   verbose: { type: "boolean" },
   agentGuidance: { type: "string", enum: ["ask", "add", "skip", "status"] },
   withPackages: { type: "boolean" },
+  mergeFence: { type: "boolean" },
   scope: { type: "string", enum: ["project", "global"] },
   allOver: { type: "number" },
   minEntries: { type: "number" },
@@ -761,7 +762,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   migrationId: {
     description:
-      "Stable idempotency key used to persist and resume a schema migration plan.",
+      "Optional stable idempotency override used to persist and resume a schema migration plan; omitted values are derived from the workspace and normalized request.",
     examples: ["severity-to-impact-v2"],
   },
   commands: {
@@ -824,6 +825,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   withPackages: {
     description:
       "Install all bundled first-party pm packages during initialization.",
+  },
+  mergeFence: {
+    description:
+      "Install the repository merge-driver fence for a fresh Git-backed tracker; set false to opt out.",
   },
   createMode: {
     description: "Create required-option policy mode.",

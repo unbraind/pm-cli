@@ -60,6 +60,10 @@ import {
   type InitAgentGuidanceMode,
   type InitAgentGuidanceSummary,
 } from "./init-agent-guidance.js";
+import {
+  findGitWorkspaceRoot,
+  installMergeFence,
+} from "./merge/install.js";
 
 /** Documents the init installed packages summary payload exchanged by command, SDK, and package integrations. */
 export interface InitInstalledPackagesSummary {
@@ -144,6 +148,8 @@ export interface InitCommandOptions {
   author?: string;
   /** Value that configures or reports with packages for this contract. */
   withPackages?: boolean;
+  /** Install the repository merge fence for a fresh Git-backed tracker. */
+  mergeFence?: boolean;
   /** Value that configures or reports agent guidance for this contract. */
   agentGuidance?: string;
   /** Value that configures or reports type preset for this contract. */
@@ -1194,7 +1200,11 @@ export async function runInit(
   });
   let { settings } = settingsResolution;
 
-  const workspaceRoot = resolveInitWorkspaceRoot(invocation.target);
+  const configuredWorkspaceRoot = resolveInitWorkspaceRoot(invocation.target);
+  const gitWorkspaceRoot = await findGitWorkspaceRoot(
+    configuredWorkspaceRoot ?? path.dirname(pmRoot),
+  );
+  const workspaceRoot = configuredWorkspaceRoot ?? gitWorkspaceRoot;
   const agentGuidance = await applyInitAgentGuidance({
     pmRoot,
     cwd: workspaceRoot ?? cwd,
@@ -1218,10 +1228,34 @@ export async function runInit(
   }
 
   await ensureInitTypeDirectories({ pmRoot, settings, createdDirs, warnings });
-  if (workspaceRoot) {
+  if (
+    workspaceRoot &&
+    normalizedOptions.agentGuidanceMode !== "status"
+  ) {
     const gitignore = await ensurePmGitignore(workspaceRoot, { pmRoot });
     if (gitignore.changed) {
       warnings.push(`updated:gitignore:${gitignore.path}`);
+    }
+  }
+  if (
+    !settingsExists &&
+    options.mergeFence !== false &&
+    normalizedOptions.agentGuidanceMode !== "status"
+  ) {
+    if (gitWorkspaceRoot) {
+      const mergeFence = await installMergeFence({
+        pmRoot,
+        workspaceRoot: gitWorkspaceRoot,
+      });
+      if (mergeFence.gitattributes.changed) {
+        warnings.push(
+          `updated:merge_fence:${mergeFence.gitattributes.path}`,
+        );
+      }
+    } else {
+      warnings.push(
+        "merge_fence_skipped:not_git_repository:run pm merge install after moving the tracker into a Git repository",
+      );
     }
   }
   const installedPackages = await maybeInstallInitBundledPackages(

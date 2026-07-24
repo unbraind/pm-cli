@@ -1643,11 +1643,14 @@ async function resolveCreateParentWithWarnings(params: {
 async function resolveCreateItemId(params: {
   pmRoot: string;
   settings: PmSettings;
+  typeRegistry: ItemTypeRegistry;
   explicitId: unknown;
 }): Promise<string> {
   if (params.explicitId === undefined) {
     return generateItemId(params.pmRoot, params.settings.id_prefix, {
       tokenLength: params.settings.ids.token_length,
+      typeToFolder: params.typeRegistry.type_to_folder,
+      probeExisting: false,
     });
   }
   if (typeof params.explicitId !== "string") {
@@ -2636,6 +2639,7 @@ export async function runCreate(
   const id = await resolveCreateItemId({
     pmRoot,
     settings,
+    typeRegistry,
     explicitId: resolvedOptions.id,
   });
   let status =

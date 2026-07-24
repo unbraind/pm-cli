@@ -90,6 +90,7 @@ import {
   scanStaleInProgressItems,
   type StaleInProgressScan,
 } from "./stale-work.js";
+import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 
 const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
@@ -446,6 +447,7 @@ async function buildIntegrityCheck(
     }
   }
   const formatVersionScan = scanItemFormatVersions(formatVersionEntries);
+  const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);
 
   const historyDir = path.join(pmRoot, "history");
   const historyUnreadable: string[] = [];
@@ -526,6 +528,11 @@ async function buildIntegrityCheck(
     ...formatVersionScan.ahead.map(
       (entry) => `integrity_item_ahead_format_version:${entry}`,
     ),
+    ...(trackedRuntimeCache.tracked_path_count > 0
+      ? [
+          `tracked_runtime_cache_files:${trackedRuntimeCache.tracked_path_count}`,
+        ]
+      : []),
   ];
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
     left.localeCompare(right),
@@ -547,6 +554,7 @@ async function buildIntegrityCheck(
           history_invalid_json: historyInvalidJson.length,
           item_outdated_format_version: formatVersionScan.outdated.length,
           item_ahead_format_version: formatVersionScan.ahead.length,
+          tracked_runtime_cache_files: trackedRuntimeCache.tracked_path_count,
         },
         item_unreadable: itemUnreadable,
         item_conflict_markers: itemConflictMarkers,
@@ -556,6 +564,12 @@ async function buildIntegrityCheck(
         history_unreadable: historyUnreadable,
         history_conflict_markers: historyConflictMarkers,
         history_invalid_json: historyInvalidJson,
+        tracked_runtime_cache: {
+          tracker_relative_root: trackedRuntimeCache.tracker_relative_root,
+          tracked_paths: trackedRuntimeCache.tracked_paths,
+          tracked_path_count: trackedRuntimeCache.tracked_path_count,
+          remediation_command: trackedRuntimeCache.remediation_command,
+        },
       },
     },
     warnings: normalizedWarnings,
@@ -1197,6 +1211,7 @@ const HEALTH_DETAIL_SUMMARIZERS = {
       details.item_parse_failures,
       limit,
     ),
+    tracked_runtime_cache: details.tracked_runtime_cache,
     history_unreadable: summarizeStringList(details.history_unreadable, limit),
     history_conflict_markers: summarizeRecordList(
       details.history_conflict_markers,

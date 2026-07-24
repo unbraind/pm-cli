@@ -257,12 +257,6 @@ export function enforceSchemaMigrationInput(
   const missing: string[] = [];
   if (!toNonEmptyStringOrUndefined(commandArgs[1])) missing.push("source");
   if (!toNonEmptyStringOrUndefined(options.to)) missing.push("--to");
-  if (
-    !toNonEmptyStringOrUndefined(options.migrationId) &&
-    !toNonEmptyStringOrUndefined(options.migration_id)
-  ) {
-    missing.push("--migration-id");
-  }
   if (missing.length === 0) {
     return;
   }
@@ -272,12 +266,12 @@ export function enforceSchemaMigrationInput(
     {
       code: "schema_migration_input_required",
       required: missing.join(","),
-      why: "Schema migrations are resumable and require an explicit source, target, and stable migration id.",
+      why: "Schema migrations require a source and target. A workspace-bound stable migration id is derived automatically when --migration-id is omitted.",
       recovery: {
         recovery_mode: "compact",
         missing_required_fields: missing,
         suggested_flags: missing.filter((entry) => entry.startsWith("--")),
-        suggested_retry: `pm schema ${subcommand} <source> --to <target> --migration-id <id>`,
+        suggested_retry: `pm schema ${subcommand} <source> --to <target>`,
       },
     },
   );

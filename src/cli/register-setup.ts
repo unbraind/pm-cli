@@ -937,6 +937,7 @@ async function runInitCommandAction(
     typePreset:
       typeof options.typePreset === "string" ? options.typePreset : undefined,
     withPackages: options.withPackages === true,
+    mergeFence: options.mergeFence !== false,
     force: options.force === true,
     workspace:
       typeof options.workspace === "string" ? options.workspace : undefined,
@@ -1098,6 +1099,10 @@ export function registerSetupCommands(program: Command): void {
     .option(
       "--with-packages",
       "Install all bundled first-party packages during initialization",
+    )
+    .option(
+      "--no-merge-fence",
+      "Skip automatic merge-driver installation for a fresh Git-backed tracker",
     )
     .option(
       "--workspace <dir>",

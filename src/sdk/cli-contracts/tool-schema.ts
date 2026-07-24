@@ -365,6 +365,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "author",
         "agentGuidance",
         "withPackages",
+        "mergeFence",
         "force",
         "verbose",
       ],
@@ -539,17 +540,17 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         {
           property: "subcommand",
           value: "rename-type",
-          required: ["name", "to", "migrationId"],
+          required: ["name", "to"],
         },
         {
           property: "subcommand",
           value: "rename-field",
-          required: ["name", "to", "migrationId"],
+          required: ["name", "to"],
         },
         {
           property: "subcommand",
           value: "remap-status",
-          required: ["name", "to", "migrationId"],
+          required: ["name", "to"],
         },
         // apply-preset passes the preset name as `typePreset`.
         {

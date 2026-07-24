@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- GH-665: schema migrations need derived idempotency keys and structured recovery ([pm-s79kel](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s79kel.toon))
+- GH-663: fresh init must install and surface the semantic merge fence ([pm-1w3ljt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1w3ljt.toon))
+- GH-514: pm init writes no .gitignore rules — runtime/search caches churn as tracked files in downstream repos ([pm-hous](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hous.toon))
+- Stale-lock takeover race in acquireLock: two waiters can both remove the stale lock and both believe they own the item ([pm-zwib](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zwib.toon))
+- Create/copy ID allocation TOCTOU: duplicate generated id silently overwrites the other item's file; idExists misses extension type folders ([pm-khdq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-khdq.toon))
 - GH-664: published daily release fails Bun node:sqlite verification before GitHub Release ([pm-cedo0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cedo0g.toon))
 
 ### Other

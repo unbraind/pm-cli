@@ -1,0 +1,47 @@
+id: pm-s79kel
+title: "GH-665: schema migrations need derived idempotency keys and structured recovery"
+description: "Make SDK schema-evolution planning ergonomic and deterministic when callers omit a migration id, allow side-effect-free dry-run planning, and route invalid migration input through the standard typed CLI recovery envelope."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:schema","area:sdk",gh-issue,migration
+created_at: "2026-07-24T12:38:52.752Z"
+updated_at: "2026-07-24T13:35:28.604Z"
+closed_at: "2026-07-24T13:35:05.058Z"
+author: codex-root-agent
+estimated_minutes: 180
+acceptance_criteria: "Public SDK accepts an optional migration id and derives a deterministic workspace-and-operation-bound key; explicit ids preserve resume semantics; dry-run performs no workspace or journal write; CLI help/contracts describe the behavior; structured JSON and TOON recovery name the exact fix; packed consumer tests cover all migration kinds, repeated plans, explicit override, malformed input, and cross-workspace collision resistance."
+parent: pm-dijg
+risk: medium
+confidence: high
+reporter: codex-root-agent
+severity: medium
+repro_steps: "In a fresh workspace, run schema rename-type, rename-field, or remap-status without --migration-id, including --dry-run; the command emits a raw internal assertion and refuses to plan."
+resolution: Schema evolution derives deterministic workspace/request-bound migration ids when omitted while preserving explicit orchestration ids.
+expected_result: "SDK planning deterministically derives a stable idempotency key when omitted, explicit ids remain authoritative for resume, dry-run is side-effect-free, and invalid input returns the standard typed actionable error envelope."
+actual_result: "The nominally optional migration id is de facto required and omission surfaces the raw string Schema migration migrationId must be non-empty, including for dry-run."
+component: schema evolution SDK and CLI adapter
+regression: true
+customer_impact: Agents cannot discover or self-correct the headline schema-evolution workflow from runtime contracts and structured errors.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-8jdc,related,"2026-07-24T12:38:52.752Z",null,null
+  pm-klo8,related,"2026-07-24T12:38:52.752Z",null,null
+  pm-rxqcp9,related,"2026-07-24T12:38:52.752Z",null,null
+  pm-usfg,related,"2026-07-24T12:38:52.752Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-24T12:38:52.752Z",codex-root-agent,"Duplicate-check evidence: searched all statuses for GH-665, migrationId omission, dry-run planning, raw schema assertion, and structured recovery. Existing items shipped the migration engine and boundary classification; none owns this new first-use ergonomics regression."
+  "2026-07-24T12:40:41.482Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
+  "2026-07-24T13:35:04.133Z",codex-root-agent,"Completion evidence: packed SDK/CLI consumer derived a stable auto- migration id over repeated dry-runs, produced a distinct id for the same request in a second workspace, preserved explicit external-orchestrator-42, applied rename-type without an explicit id, and losslessly rewrote the affected item to the new type. Unit coverage includes all migration kinds, malformed input, runtime/MCP adapters, and dry-run no-write boundaries. Final gate: 355 files / 6220 tests / literal 100/100/100/100."
+files[4]{path,scope,note}:
+  src/cli/migration-gates.ts,project,Structured optional-id CLI recovery
+  src/sdk/cli-contracts/tool-schema.ts,project,Agent schema optional migration id
+  src/sdk/runtime.ts,project,Optional MCP migration identity
+  src/sdk/schema-migration.ts,project,Public schema evolution plan and apply primitives
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema-migration.spec.ts tests/unit/cli/migration-gates.spec.ts tests/unit/commands/schema-command.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/schema-migration.spec.ts tests/unit/commands/schema-command.spec.ts,project,300
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI migration recovery contract
+  docs/SDK.md,project,Migration idempotency and dry-run contract
+close_reason: "Closed with deterministic workspace/request-bound migration identity, authoritative explicit overrides, typed recovery/contracts, packed apply proof, and complete coverage."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/665\\n\\nDuplicate check: all-status searches found the completed schema-evolution owner pm-dijg and the closed boundary-hardening issue pm-rxqcp9, but no open item owns optional-id derivation and dry-run/structured-error ergonomics. This is a focused regression child of the shipped feature."

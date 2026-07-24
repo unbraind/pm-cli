@@ -105,8 +105,10 @@ export interface SchemaEvolutionMigrationPlan {
 
 /** Options for deterministic schema evolution planning. */
 export interface PlanSchemaEvolutionMigrationOptions {
-  /** Stable idempotency key retained across retries. */
-  migrationId: string;
+  /** Optional stable idempotency override retained across retries. */
+  migrationId?: string;
+  /** Stable scope mixed into an automatically derived migration identity. */
+  migrationScope?: string;
   /** Schema change to plan. */
   request: SchemaEvolutionMigrationRequest;
   /** Item ids durably completed by a previous attempt. */
@@ -115,8 +117,8 @@ export interface PlanSchemaEvolutionMigrationOptions {
 
 /** Runtime controls for planning or applying one schema migration. */
 export interface RunSchemaEvolutionMigrationOptions {
-  /** Stable idempotency key retained across retries. */
-  migrationId: string;
+  /** Optional stable idempotency override retained across retries. */
+  migrationId?: string;
   /** Attributable actor written to item and workspace history. */
   author?: string;
   /** Return the complete plan without writing schema or item state. */
@@ -171,6 +173,23 @@ function requiredMigrationId(value: unknown): string {
     );
   }
   return migrationId;
+}
+
+/**
+ * Derive a compact idempotency key from the normalized request and workspace
+ * scope. The workspace scope prevents unrelated trackers with the same schema
+ * change from sharing recovery identity in orchestration systems.
+ */
+export function deriveSchemaEvolutionMigrationId(
+  requestInput: SchemaEvolutionMigrationRequest,
+  migrationScope: string,
+): string {
+  const request = normalizedRequest(requestInput);
+  const scope = requiredText(migrationScope, "migrationScope");
+  return `auto-${createHash("sha256")
+    .update(JSON.stringify({ scope, request }))
+    .digest("hex")
+    .slice(0, 20)}`;
 }
 
 function normalizedRequest(
@@ -599,8 +618,11 @@ export function planSchemaEvolutionMigration(
   items: readonly ItemMetadata[],
   options: PlanSchemaEvolutionMigrationOptions,
 ): SchemaEvolutionMigrationPlan {
-  const migrationId = requiredMigrationId(options.migrationId);
   const request = normalizedRequest(options.request);
+  const migrationId =
+    options.migrationId === undefined
+      ? deriveSchemaEvolutionMigrationId(request, options.migrationScope ?? "plan")
+      : requiredMigrationId(options.migrationId);
   const completeItems = items
     .map((item) => planItem(item, request))
     .filter((entry): entry is SchemaEvolutionItemPlan => entry !== null)
@@ -1151,9 +1173,12 @@ export async function runSchemaEvolutionMigration(
   options: RunSchemaEvolutionMigrationOptions,
   global: GlobalOptions,
 ): Promise<SchemaEvolutionMigrationResult> {
-  const migrationId = requiredMigrationId(options.migrationId);
   const request = normalizedRequest(requestInput);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const migrationId =
+    options.migrationId === undefined
+      ? deriveSchemaEvolutionMigrationId(request, path.resolve(pmRoot))
+      : requiredMigrationId(options.migrationId);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
       `Tracker is not initialized at ${pmRoot}. Run pm init first.`,

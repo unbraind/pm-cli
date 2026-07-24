@@ -35,7 +35,7 @@ describe("enforceSchemaMigrationInput", () => {
       enforceSchemaMigrationInput(
         " SCHEMA ",
         ["REMAP-STATUS", "review"],
-        { to: "verifying", migration_id: "review-v2" },
+        { to: "verifying" },
       ),
     ).not.toThrow();
   });
@@ -48,9 +48,9 @@ describe("enforceSchemaMigrationInput", () => {
         exitCode: 2,
         context: expect.objectContaining({
           code: "schema_migration_input_required",
-          required: "source,--to,--migration-id",
+          required: "source,--to",
           recovery: expect.objectContaining({
-            missing_required_fields: ["source", "--to", "--migration-id"],
+            missing_required_fields: ["source", "--to"],
           }),
         }),
       }),

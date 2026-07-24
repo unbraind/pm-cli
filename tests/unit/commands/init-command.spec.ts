@@ -1,4 +1,12 @@
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import * as readline from "node:readline/promises";
@@ -17,6 +25,7 @@ import {
 import {
   EXIT_CODE,
   PM_REQUIRED_SUBDIRS,
+  TYPE_TO_FOLDER,
 } from "../../../src/core/shared/constants.js";
 import {
   clearActiveExtensionHooks,
@@ -26,6 +35,12 @@ import {
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import { renderPmCommand } from "../../../src/sdk/command-line.js";
+import {
+  buildMergeAttributePatterns,
+  PM_GITATTRIBUTES_END,
+  PM_GITATTRIBUTES_START,
+} from "../../../src/sdk/merge/install.js";
+import { getPmGitignoreBlock } from "../../../src/sdk/workspace.js";
 
 describe("runInit", () => {
   beforeEach(() => {
@@ -1988,6 +2003,101 @@ describe("runInit", () => {
       });
       expect(secondAdd.summary.applied).toBe(false);
       expect(secondAdd.summary.present).toBe(true);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("installs fresh Git merge safety by default, supports opt-out, and keeps status reporting read-only", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-merge-"));
+    try {
+      const workspace = path.join(tempRoot, "workspace");
+      const pmRoot = path.join(workspace, ".agents", "pm");
+      await mkdir(workspace, { recursive: true });
+      execFileSync("git", ["init", "--quiet"], { cwd: workspace });
+
+      const initialized = await runInit(
+        undefined,
+        { path: pmRoot },
+        { defaults: true, agentGuidance: "skip" },
+      );
+      expect(initialized.warnings).toContain(
+        `updated:merge_fence:${path.join(workspace, ".gitattributes")}`,
+      );
+      expect(await readFile(path.join(workspace, ".gitattributes"), "utf8")).toContain(
+        "# pm-cli:merge-drivers:start",
+      );
+      expect(
+        execFileSync(
+          "git",
+          ["config", "--local", "--get", "merge.pm-history.driver"],
+          { cwd: workspace, encoding: "utf8" },
+        ),
+      ).toContain("pm merge driver history");
+
+      const gitignorePath = path.join(workspace, ".gitignore");
+      await writeFile(gitignorePath, "sentinel\n", "utf8");
+      await runInit(
+        undefined,
+        { path: pmRoot },
+        { defaults: true, agentGuidance: "status" },
+      );
+      expect(await readFile(gitignorePath, "utf8")).toBe("sentinel\n");
+
+      const optedOutWorkspace = path.join(tempRoot, "opted-out");
+      const optedOutPmRoot = path.join(
+        optedOutWorkspace,
+        ".agents",
+        "pm",
+      );
+      await mkdir(optedOutWorkspace, { recursive: true });
+      execFileSync("git", ["init", "--quiet"], { cwd: optedOutWorkspace });
+      await runInit(
+        undefined,
+        { path: optedOutPmRoot },
+        { defaults: true, agentGuidance: "skip", mergeFence: false },
+      );
+      await expect(
+        readFile(path.join(optedOutWorkspace, ".gitattributes"), "utf8"),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+
+      const preFencedWorkspace = path.join(tempRoot, "pre-fenced");
+      const preFencedPmRoot = path.join(
+        preFencedWorkspace,
+        ".agents",
+        "pm",
+      );
+      await mkdir(preFencedWorkspace, { recursive: true });
+      execFileSync("git", ["init", "--quiet"], { cwd: preFencedWorkspace });
+      await writeFile(
+        path.join(preFencedWorkspace, ".gitattributes"),
+        `${[
+          PM_GITATTRIBUTES_START,
+          ...buildMergeAttributePatterns(
+            ".agents/pm",
+            [...new Set(Object.values(TYPE_TO_FOLDER))].sort((left, right) =>
+              left.localeCompare(right),
+            ),
+          ),
+          PM_GITATTRIBUTES_END,
+        ].join("\n")}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(preFencedWorkspace, ".gitignore"),
+        `${getPmGitignoreBlock()}\n`,
+        "utf8",
+      );
+      const preFenced = await runInit(
+        undefined,
+        { path: preFencedPmRoot },
+        { defaults: true, agentGuidance: "skip" },
+      );
+      expect(
+        preFenced.warnings.some((warning) =>
+          warning.startsWith("updated:merge_fence:"),
+        ),
+      ).toBe(false);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

@@ -2,6 +2,7 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
+  deriveSchemaEvolutionMigrationId,
   formatSchemaEvolutionMigrationHuman,
   planSchemaEvolutionMigration,
   runSchemaEvolutionMigration,
@@ -155,6 +156,31 @@ describe("schema evolution migration planning", () => {
     expect(complete.items.map((entry) => entry.id)).toEqual(["pm-a", "pm-b"]);
     expect(resumed.items.map((entry) => entry.id)).toEqual(["pm-b"]);
     expect(resumed.skipped_completed_count).toBe(1);
+  });
+
+  it("derives deterministic request and scope-bound migration identities", () => {
+    const request = {
+      kind: "rename-type",
+      from: "Task",
+      to: "WorkItem",
+    } as const;
+    const first = deriveSchemaEvolutionMigrationId(request, "/workspace/a");
+    expect(first).toMatch(/^auto-[a-f0-9]{20}$/);
+    expect(deriveSchemaEvolutionMigrationId(request, "/workspace/a")).toBe(
+      first,
+    );
+    expect(deriveSchemaEvolutionMigrationId(request, "/workspace/b")).not.toBe(
+      first,
+    );
+    expect(
+      planSchemaEvolutionMigration([item("pm-a")], {
+        request,
+        migrationScope: "/workspace/a",
+      }).migration_id,
+    ).toBe(first);
+    expect(
+      planSchemaEvolutionMigration([item("pm-a")], { request }).migration_id,
+    ).toBe(deriveSchemaEvolutionMigrationId(request, "plan"));
   });
 
   it("rejects empty identities and no-op mappings", () => {
@@ -477,6 +503,20 @@ describe("schema evolution migration execution", () => {
       ).resolves.toMatchObject({
         action: "rename-type",
         applied: false,
+      });
+      await expect(
+        runAction({
+          action: "schema",
+          path: context.pmPath,
+          subcommand: "rename-type",
+          name: "Legacy",
+          to: "WorkItem",
+          dryRun: true,
+        }),
+      ).resolves.toMatchObject({
+        action: "rename-type",
+        applied: false,
+        migration_id: expect.stringMatching(/^auto-[a-f0-9]{20}$/),
       });
       await expect(
         runAction({

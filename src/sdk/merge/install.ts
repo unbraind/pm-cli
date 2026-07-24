@@ -96,7 +96,8 @@ export interface MergeInstallResult {
   generated_at: string;
 }
 
-async function resolveGitWorkspaceRoot(cwd: string): Promise<string> {
+/** Resolve the enclosing Git worktree root or return null outside Git. */
+export async function findGitWorkspaceRoot(cwd: string): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync(
       "git",
@@ -105,11 +106,19 @@ async function resolveGitWorkspaceRoot(cwd: string): Promise<string> {
     );
     return stdout.trim();
   } catch {
+    return null;
+  }
+}
+
+async function resolveGitWorkspaceRoot(cwd: string): Promise<string> {
+  const workspaceRoot = await findGitWorkspaceRoot(cwd);
+  if (workspaceRoot === null) {
     throw new PmCliError(
       "pm merge install requires a git repository (merge drivers are git configuration).",
       EXIT_CODE.USAGE,
     );
   }
+  return workspaceRoot;
 }
 
 function toPosixRelative(fromPath: string, toPath: string): string {
@@ -382,11 +391,30 @@ export async function runMergeInstall(
       EXIT_CODE.NOT_FOUND,
     );
   }
-  const dryRun = options.dryRun === true;
   const workspaceRoot = await resolveGitWorkspaceRoot(process.cwd());
+  return installMergeFence({
+    pmRoot,
+    workspaceRoot,
+    dryRun: options.dryRun === true,
+  });
+}
+
+/**
+ * Install merge safety for an initialized tracker without depending on the
+ * caller's cwd or global CLI path resolution. This is the SDK primitive used
+ * by fresh init and by the `pm merge install` adapter.
+ */
+export async function installMergeFence(options: {
+  pmRoot: string;
+  workspaceRoot: string;
+  dryRun?: boolean;
+}): Promise<MergeInstallResult> {
+  const pmRoot = path.resolve(options.pmRoot);
+  const workspaceRoot = path.resolve(options.workspaceRoot);
+  const dryRun = options.dryRun === true;
   const trackerRelativeRoot = toPosixRelative(
     workspaceRoot,
-    path.resolve(pmRoot),
+    pmRoot,
   );
   if (isPathOutsideRoot(trackerRelativeRoot)) {
     throw new PmCliError(

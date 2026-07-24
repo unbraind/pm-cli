@@ -42,17 +42,18 @@ function randomToken(length: number): string {
   return token;
 }
 
-async function idExists(pmRoot: string, id: string): Promise<boolean> {
-  const checks = Object.values(TYPE_TO_FOLDER).flatMap((folder) => [
+async function idExists(
+  pmRoot: string,
+  id: string,
+  typeToFolder: Readonly<Record<string, string>>,
+): Promise<boolean> {
+  const checks = [...new Set(Object.values(typeToFolder))].flatMap((folder) => [
     path.join(pmRoot, folder, `${id}.md`),
     path.join(pmRoot, folder, `${id}.toon`),
   ]);
-  for (const target of checks) {
-    if (await pathExists(target)) {
-      return true;
-    }
-  }
-  return false;
+  return (await Promise.all(checks.map((target) => pathExists(target)))).some(
+    Boolean,
+  );
 }
 
 /** Bounds accepted for the configurable random id token length (`ids.token_length`). */
@@ -84,7 +85,11 @@ export function clampIdTokenLength(value: number | undefined): number {
 export async function generateItemId(
   pmRoot: string,
   prefix: string,
-  options: { tokenLength?: number } = {},
+  options: {
+    tokenLength?: number;
+    typeToFolder?: Readonly<Record<string, string>>;
+    probeExisting?: boolean;
+  } = {},
 ): Promise<string> {
   let tokenLength = clampIdTokenLength(options.tokenLength);
   const maxTokenLength = Math.min(
@@ -96,7 +101,10 @@ export async function generateItemId(
   while (tokenLength <= maxTokenLength) {
     for (let i = 0; i < 32; i += 1) {
       const id = `${normalizePrefix(prefix)}${randomToken(tokenLength)}`;
-      if (!(await idExists(pmRoot, id))) {
+      if (
+        options.probeExisting === false ||
+        !(await idExists(pmRoot, id, options.typeToFolder ?? TYPE_TO_FOLDER))
+      ) {
         return id;
       }
       attempts += 1;
