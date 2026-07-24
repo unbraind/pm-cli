@@ -190,14 +190,15 @@ export async function findSimilarItems(
         })
       : null;
   const candidates =
-    indexed?.items ??
-    (await listAllItemMetadataLight(
-      pmRoot,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-      undefined,
-      settings.schema,
-    ));
+    indexed === null
+      ? await listAllItemMetadataLight(
+          pmRoot,
+          settings.item_format,
+          typeRegistry.type_to_folder,
+          undefined,
+          settings.schema,
+        )
+      : indexed.items;
   const items = rankSimilarItems(
     title,
     candidates,

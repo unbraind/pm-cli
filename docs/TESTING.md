@@ -2,7 +2,7 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon).
 
 ## Agent Quick Context
 
@@ -42,6 +42,21 @@ CodeFactor-parity complexity scan for shipped source, package, and script files
 so PR-local CodeFactor maintainability annotations fail locally before commit or
 push. Existing legacy high-complexity test fixtures are tracked separately and
 must not be used as precedent for new changed production/script code.
+
+The local parity rules catch analyzer classes before push. The mandatory
+exact-head hosted proof runs after the final commit is pushed and both apps have
+finished:
+
+```bash
+pnpm quality:hosted-analysis
+```
+
+This command reads commit-scoped GitHub results for `git rev-parse HEAD`. It
+passes only when DeepScan explicitly reports `0 new` issues and CodeFactor
+completes successfully with `No issues found.` Missing, pending, failed,
+skipped, stale, and ambiguous results all fail. `pnpm release:gates` includes
+the same non-skippable verification, so run it only after the pushed head's
+hosted analyzers are terminal.
 
 ## Focused Test Runs
 

@@ -1268,7 +1268,10 @@ async function registerRuntimeSchemaFieldFlags(
     buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot)
       ? runtimeExtensionDiscoverySnapshotCache.snapshot
       : null;
-  const settings = cachedDiscovery?.settings ?? (await readSettings(pmRoot));
+  const settings =
+    cachedDiscovery === null
+      ? await readSettings(pmRoot)
+      : cachedDiscovery.settings;
   const fieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
   const mappings: Array<{ path: string; command: RuntimeFieldCommand }> = [
     { path: "create", command: "create" },

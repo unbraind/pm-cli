@@ -18,10 +18,15 @@ describe("scripts/release/run-gates", () => {
     await harness.importModule("scripts/release/run-gates.mjs", "runGatesHelp");
     expect(spawnSync).not.toHaveBeenCalled();
     expect(String(helpLog.mock.calls.at(-1)?.[0] ?? "")).toContain("--skip-compatibility");
+    expect(String(helpLog.mock.calls.at(-1)?.[0] ?? "")).toContain("exact Git HEAD");
   });
 
   it("marks dogfood/compatibility/sentry checks skipped and emits a JSON summary", async () => {
-    const spawnSync = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
+    const spawnSync = vi.fn((_command: string, args: string[]) => ({
+      status: 0,
+      stdout: args.includes("scripts/release/hosted-analysis-gate.mjs") ? '{"ok":true}' : "",
+      stderr: "",
+    }));
     vi.doMock("node:child_process", () => ({ spawnSync }));
     process.argv = [
       "node",
@@ -42,6 +47,7 @@ describe("scripts/release/run-gates", () => {
     expect(payload.checks.some((entry) => entry.name === "compatibility-check" && entry.skipped === true)).toBe(true);
     expect(payload.checks.some((entry) => entry.name === "greptile-review" && entry.skipped === true)).toBe(true);
     expect(payload.checks.some((entry) => entry.name === "sentry-telemetry-gate" && entry.skipped === true)).toBe(true);
+    expect(payload.checks.some((entry) => entry.name === "hosted-analysis-gate" && entry.skipped !== true)).toBe(true);
     expect(spawnSync).toHaveBeenCalled();
   });
 
@@ -56,6 +62,13 @@ describe("scripts/release/run-gates", () => {
       }
       if (joined.includes("greptile-review-gate.mjs")) {
         return { status: 0, stdout: '{"ok":true,"skipped":false,"findings":0}', stderr: "" };
+      }
+      if (joined.includes("hosted-analysis-gate.mjs")) {
+        return {
+          status: 0,
+          stdout: '{"ok":true,"analyzers":{"deepscan":{"new_issues":0},"codefactor":{"new_issues":0}}}',
+          stderr: "",
+        };
       }
       return { status: 0, stdout: "", stderr: "" };
     });
@@ -79,6 +92,12 @@ describe("scripts/release/run-gates", () => {
       spawnSync.mock.calls.some((c) => {
         const args = (c[1] as string[] | undefined) ?? [];
         return [c[0], ...args].join(" ").includes("greptile-review-gate.mjs");
+      }),
+    ).toBe(true);
+    expect(
+      spawnSync.mock.calls.some((c) => {
+        const args = (c[1] as string[] | undefined) ?? [];
+        return [c[0], ...args].join(" ").includes("hosted-analysis-gate.mjs");
       }),
     ).toBe(true);
     expect(
@@ -185,6 +204,9 @@ describe("scripts/release/run-gates", () => {
         return { status: 0, stdout: "not-json", stderr: "" };
       }
       if (joined.includes("sentry-telemetry-gate.mjs")) {
+        return { status: 0, stdout: '{"ok":true}', stderr: "" };
+      }
+      if (joined.includes("hosted-analysis-gate.mjs")) {
         return { status: 0, stdout: '{"ok":true}', stderr: "" };
       }
       return { status: 0, stdout: "", stderr: "" };
