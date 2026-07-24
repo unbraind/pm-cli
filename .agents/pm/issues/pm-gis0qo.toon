@@ -2,24 +2,26 @@ id: pm-gis0qo
 title: Same-day ordinal npm publish requires an explicit stable dist-tag
 description: "The release workflow accepts calendar follow-up versions such as 2026.7.24-2, but npm 11 refuses to publish any hyphenated semver without --tag. Select the stable dist-tag explicitly for every supported calendar version, prove the workflow contract, and recover the failed same-day release without manual npm publication."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:ci","area:release",npm,regression
 created_at: "2026-07-24T08:16:03.790Z"
-updated_at: "2026-07-24T08:58:03.485Z"
-assignee: claude-code-agent
+updated_at: "2026-07-24T09:04:55.411Z"
+closed_at: "2026-07-24T09:04:40.278Z"
 author: claude-code-agent
 parent: pm-u9d0
 severity: high
 repro_steps: Push supported tag v2026.7.24-2 and inspect Release run 30077790348 Publish to npm.
+resolution: Fixed by explicit stable npm dist-tag publication and an every-publish workflow contract.
 expected_result: Tag-triggered Release publishes supported same-day ordinal versions and updates the stable npm channel.
 actual_result: "npm publish exits 1: You must specify a tag using --tag when publishing a prerelease version."
 affected_version: 2026.7.24-2
+fixed_version: 2026.7.24-3
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-24T08:16:03.790Z",null,null
   pm-cedo0g,related,"2026-07-24T08:16:03.790Z",null,null
   pm-ee1k,related,"2026-07-24T08:16:03.790Z",null,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-24T08:16:03.790Z",claude-code-agent,"Duplicate check: searched all statuses for npm prerelease explicit tag, release publish tag latest, and same-day release. No item records this exact npm dist-tag contract failure; pm-cedo0g tracks the parent Bun recovery incident and is linked rather than duplicated."
   "2026-07-24T08:17:24.701Z",claude-code-agent,"TDD evidence: the workflow contract first failed against the untagged npm publish command, reproducing the hosted run 30077790348 failure. After adding the explicit latest dist-tag, all 10 workflow contract tests pass; docs links and build also pass."
   "2026-07-24T08:21:04.328Z",claude-code-agent,"Pre-PR evidence: repo-wide static quality passed with 100% source, exported, and member docstring coverage; 354 files and 6,213 tests passed at exact 100/100/100/100 coverage (42,684 statements, 30,277 branches, 8,689 functions, 41,488 lines). Focused workflow contract, docs links, and build also pass."
@@ -27,6 +29,7 @@ comments[7]{created_at,author,text}:
   "2026-07-24T08:41:02.345Z",claude-code-agent,"Second review remediation: CodeRabbit verified the production publish path and identified an inline-shell bypass in the negative contract. The matcher now recognizes npm publish at shell command boundaries and includes an explicit inline if/then regression case. Focused workflow tests and static quality pass."
   "2026-07-24T08:51:44.409Z",claude-code-agent,"Review-loop evidence: CodeRabbit identified brace-group shell syntax as the final bypass of the release-workflow every-publish invariant. Exact-head fix expands the command-boundary matcher to include braces and adds a direct '{ npm publish --access public; }' regression assertion. Verification passed: 10/10 focused CI workflow contract tests and the complete repo-wide quality:static gate (100% docstring/export/member requirements, package boundary, and token-budget checks). The prior hosted smoke failure was independently rerun once; all packed-package, 88-command dogfood, MCP/plugin, runtime, coverage, typecheck, compatibility, and static jobs are green, confirming a transient session-start timeout."
   "2026-07-24T08:58:03.484Z",claude-code-agent,"Final prefix remediation: CodeRabbit's exact-head review confirmed stable-channel semantics and found Bash's logical-negation prefix as one remaining command-boundary form. The contract now rejects '! npm publish --access public' without --tag latest through an explicit regression assertion. Focused workflow contract remains 10/10 green and repo-wide quality:static passes in full."
+  "2026-07-24T09:04:37.643Z",claude-code-agent,"Merge evidence: PR #670 merged to main at fa4c0441 after exact-head 4e9dfd125476ed6cdac6472c17b67414ca34b83a passed every hosted check. Review inventory had zero unresolved threads; all actionable CodeRabbit findings were fixed, reacted to, and answered. The final requested rerun was externally rate-limited, with no new code finding. This item closes for the merged workflow/contract fix; pm-cedo0g remains active for production release recovery."
 files[2]{path,scope,note}:
   .github/workflows/release.yml,project,Explicit stable npm dist-tag for every supported calendar release
   tests/integration/ci-workflow-contract.spec.ts,project,Regression contract rejects untagged npm publication
@@ -34,4 +37,5 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Document npm SemVer prerelease interpretation of same-day ordinal production releases
+close_reason: "Merged PR #670 establishes explicit --tag latest publication for same-day calendar ordinal versions, documents stable-channel intent, and enforces shell-boundary regressions. Exact coverage, static quality, packed smoke, 88-command dogfood, security, cross-platform, and review gates passed."
 body: ""
