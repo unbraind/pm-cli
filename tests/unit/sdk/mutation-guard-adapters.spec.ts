@@ -12,6 +12,9 @@ import {
 } from "../../../src/sdk/runtime-primitives.js";
 
 const tempRoots: string[] = [];
+const GITHUB_TOKEN_SAMPLE = ["gh", "p_", "123456789012345678901234567890"].join(
+  "",
+);
 
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -45,7 +48,7 @@ describe("CLI and MCP mutation guard adapters", () => {
       enforceMutationGuardPreflight(
         "search",
         [],
-        { query: "ghp_123456789012345678901234567890" },
+        { query: GITHUB_TOKEN_SAMPLE },
         {},
         path.join(tempRoot, ".agents", "pm"),
       ),
@@ -107,13 +110,13 @@ describe("CLI and MCP mutation guard adapters", () => {
         path: pmRoot,
         author: "agent",
         title: "Credential",
-        description: "ghp_123456789012345678901234567890",
+        description: GITHUB_TOKEN_SAMPLE,
       }),
     ).resolves.toEqual(["secret_guard_detected:1:rules=github_token"]);
     await expect(
       mcpTestOnly.collectMutationGuardWarnings("pm_search", "search", {
         path: pmRoot,
-        query: "ghp_123456789012345678901234567890",
+        query: GITHUB_TOKEN_SAMPLE,
       }),
     ).resolves.toEqual([]);
   });
@@ -123,7 +126,7 @@ describe("CLI and MCP mutation guard adapters", () => {
     const settings = await readSettings(pmRoot);
     settings.mutation_guard.secret_guard = "block";
     await writeSettings(pmRoot, settings, "test:blocking-secret-guard");
-    const credential = "ghp_123456789012345678901234567890";
+    const credential = GITHUB_TOKEN_SAMPLE;
     const result = spawnSync(
       process.execPath,
       [

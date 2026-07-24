@@ -12,6 +12,11 @@ const settings = {
   secret_guard: "advise" as const,
   stale_in_progress_hours: 72,
 };
+const GITHUB_TOKEN_SAMPLE = ["gh", "p_", "123456789012345678901234567890"].join(
+  "",
+);
+const AWS_ACCESS_KEY_SAMPLE = ["AK", "IA1234567890ABCDEF"].join("");
+const PRIVATE_KEY_SAMPLE = ["-----BEGIN ", "PRIVATE KEY-----"].join("");
 
 describe("SDK mutation guard", () => {
   it("publishes a stable mutation inventory without read actions", () => {
@@ -26,9 +31,9 @@ describe("SDK mutation guard", () => {
   it("detects credential shapes with redacted object paths only", () => {
     expect(
       scanMutationSecrets({
-        github: "ghp_123456789012345678901234567890",
-        aws: "AKIA1234567890ABCDEF",
-        key: "-----BEGIN PRIVATE KEY-----",
+        github: GITHUB_TOKEN_SAMPLE,
+        aws: AWS_ACCESS_KEY_SAMPLE,
+        key: PRIVATE_KEY_SAMPLE,
         nested: { value: "api_key=AbCdEfGhIjKlMnOpQrStUvWxYz012345" },
       }),
     ).toEqual([
@@ -45,7 +50,7 @@ describe("SDK mutation guard", () => {
   });
 
   it("advises, blocks, overrides, and disables through one contract", () => {
-    const payload = { token: "ghp_123456789012345678901234567890" };
+    const payload = { token: GITHUB_TOKEN_SAMPLE };
     expect(
       evaluateMutationGuard({ author: "agent", payload, settings }),
     ).toMatchObject({

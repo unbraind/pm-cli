@@ -247,10 +247,10 @@ export function enforceSchemaMigrationInput(
   commandArgs: string[],
   options: Record<string, unknown>,
 ): void {
-  const subcommand = commandArgs[0]?.trim().toLowerCase();
+  const subcommand = commandArgs[0]?.trim().toLowerCase() ?? "";
   if (
     commandPath.trim().toLowerCase() !== "schema" ||
-    !["rename-type", "rename-field", "remap-status"].includes(subcommand ?? "")
+    !["rename-type", "rename-field", "remap-status"].includes(subcommand)
   ) {
     return;
   }
@@ -277,7 +277,7 @@ export function enforceSchemaMigrationInput(
         recovery_mode: "compact",
         missing_required_fields: missing,
         suggested_flags: missing.filter((entry) => entry.startsWith("--")),
-        suggested_retry: `pm schema ${subcommand ?? "rename-type"} <source> --to <target> --migration-id <id>`,
+        suggested_retry: `pm schema ${subcommand} <source> --to <target> --migration-id <id>`,
       },
     },
   );

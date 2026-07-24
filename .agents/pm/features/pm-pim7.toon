@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,sdk,security
 created_at: "2026-07-07T07:01:25.465Z"
-updated_at: "2026-07-24T06:14:47.889Z"
+updated_at: "2026-07-24T07:23:04.885Z"
 closed_at: "2026-07-24T06:14:46.886Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -21,8 +21,9 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-klo8,related,"2026-07-14T17:05:15.452Z",null,null
   pm-h90s,related,"2026-07-24T05:18:23.483Z",claude-code-agent,null
   pm-w8q4,related,"2026-07-24T05:18:23.483Z",claude-code-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-24T06:14:20.696Z",claude-code-agent,"Evidence 2026-07-24: shipped SDK-first redacted secret detection across CLI and MCP mutation preflight with off/advise/block modes and explicit force results. Clean packed-install acceptance discovered that generic CLI recovery initially echoed a credential-shaped argument; fixed it with compact redacted recovery metadata and added JSON+--explain regression coverage proving attempted_command and normalized_args never contain the value. Installed artifact blocks safely, SDK force override is explicit, linked tests passed, secret scan found no tracked credentials, and full 6208-test coverage is exact 100/100/100/100."
+  "2026-07-24T07:23:04.885Z",claude-code-agent,"Follow-up verification: credential-detector test fixtures now construct representative token/key shapes from fragments at runtime, so the tests still exercise exact detection semantics while the repository secret gate correctly rejects stored credential-shaped literals. Focused 51-test mutation/runtime set and tracked-file secret scan pass."
 files[8]{path,scope,note}:
   src/cli/main.ts,project,CLI lifecycle integration
   src/cli/migration-gates.ts,project,CLI mutation preflight adapter

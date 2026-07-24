@@ -20,6 +20,7 @@ describe("normalizedLifecycleStatus", () => {
 describe("enforceSchemaMigrationInput", () => {
   it("ignores unrelated commands and complete migration invocations", () => {
     expect(() => enforceSchemaMigrationInput("list", [], {})).not.toThrow();
+    expect(() => enforceSchemaMigrationInput("schema", [], {})).not.toThrow();
     expect(() =>
       enforceSchemaMigrationInput("schema", ["list"], {}),
     ).not.toThrow();

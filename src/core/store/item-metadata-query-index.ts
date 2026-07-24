@@ -27,7 +27,7 @@ function loadDatabaseSync(
   }
 }
 
-const RuntimeDatabaseSync = loadDatabaseSync(createRequire(import.meta.url));
+let RuntimeDatabaseSync = loadDatabaseSync(createRequire(import.meta.url));
 
 /** One light-metadata row projected into the persistent query index. */
 export interface ItemMetadataQueryIndexRow {
@@ -418,4 +418,14 @@ export async function removeItemMetadataQueryIndex(
 }
 
 /** Test-only dependency seam for runtimes that do not implement node:sqlite. */
-export const _testOnly = { loadDatabaseSync };
+export const _testOnly = {
+  loadDatabaseSync,
+  /** Replace the optional constructor and return a restoration callback. */
+  setDatabaseSync(databaseSync: DatabaseSyncConstructor | null): () => void {
+    const previous = RuntimeDatabaseSync;
+    RuntimeDatabaseSync = databaseSync;
+    return () => {
+      RuntimeDatabaseSync = previous;
+    };
+  },
+};

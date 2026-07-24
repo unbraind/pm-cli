@@ -53,6 +53,37 @@ describe("item metadata SQLite query index", () => {
     ).toBeNull();
   });
 
+  it("falls back without projection writes when node:sqlite is unavailable", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-query-no-sqlite-"));
+    roots.push(root);
+    const restoreDatabaseSync = _testOnly.setDatabaseSync(null);
+    try {
+      await rebuildItemMetadataQueryIndex({
+        pmRoot: root,
+        contextFingerprint: "context-1",
+        sourceCursor: "cursor-1",
+        rows: [],
+      });
+      expect(
+        await updateItemMetadataQueryIndex({
+          pmRoot: root,
+          contextFingerprint: "context-1",
+          expectedSourceCursor: "cursor-1",
+          sourceCursor: "cursor-2",
+          row: null,
+        }),
+      ).toBe(false);
+      expect(
+        await queryItemMetadataIndex({
+          pmRoot: root,
+          expectedSourceCursor: "cursor-1",
+        }),
+      ).toBeNull();
+    } finally {
+      restoreDatabaseSync();
+    }
+  });
+
   it("queries bounded default-order windows and scalar index predicates", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-query-index-"));
     roots.push(root);
