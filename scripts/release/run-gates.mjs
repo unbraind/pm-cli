@@ -2,6 +2,9 @@
 
 import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
 
+const releasePolicyToken = process.env.RELEASE_POLICY_TOKEN?.trim() ?? "";
+delete process.env.RELEASE_POLICY_TOKEN;
+
 function usage() {
   console.log(`Usage:
   node scripts/release/run-gates.mjs [--json]
@@ -156,7 +159,10 @@ function main() {
     "hosted-analysis-gate",
     process.execPath,
     ["scripts/release/hosted-analysis-gate.mjs", "--json"],
-    { capture: true },
+    {
+      capture: true,
+      env: releasePolicyToken ? { GH_TOKEN: releasePolicyToken } : undefined,
+    },
   );
   checks.push({
     name: "hosted-analysis-gate",

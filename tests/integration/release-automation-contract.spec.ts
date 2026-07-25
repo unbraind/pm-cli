@@ -202,13 +202,26 @@ describe("release automation contract", () => {
     expect(buildIndex).toBeLessThan(pipelineIndex);
   });
 
-  it("authenticates release policy reads with the protected-main release token", async () => {
+  it("scopes protected-main credentials to release policy analysis", async () => {
     const workflow = await readFile(
       path.join(repoRoot, ".github/workflows/auto-release.yml"),
       "utf8",
     );
-    expect(workflow).toContain(
-      "GH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}",
+    const pipeline = await readFile(
+      path.join(repoRoot, "scripts/release/run-release-pipeline.mjs"),
+      "utf8",
+    );
+    const gates = await readFile(
+      path.join(repoRoot, "scripts/release/run-gates.mjs"),
+      "utf8",
+    );
+    expect(workflow).toContain("RELEASE_POLICY_TOKEN: ${{ secrets.RELEASE_PAT }}");
+    expect(workflow).toContain("GH_TOKEN: ${{ github.token }}");
+    expect(workflow).not.toContain("GH_TOKEN: ${{ secrets.RELEASE_PAT");
+    expect(pipeline).toContain("delete process.env.RELEASE_POLICY_TOKEN");
+    expect(gates).toContain("delete process.env.RELEASE_POLICY_TOKEN");
+    expect(gates).toMatch(
+      /hosted-analysis-gate[\s\S]*?env: releasePolicyToken \? \{ GH_TOKEN: releasePolicyToken \} : undefined/,
     );
   });
 

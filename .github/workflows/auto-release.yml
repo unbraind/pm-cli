@@ -113,11 +113,10 @@ jobs:
           INPUT_TELEMETRY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.telemetry_mode || 'off' }}
           RELEASE_PAT_CONFIGURED: ${{ secrets.RELEASE_PAT != '' }}
           RELEASE_PUSH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}
-          # The exact-head hosted-analysis gate reads main branch protection,
-          # which the installation-scoped workflow token cannot access. Reuse
-          # the configured release PAT already required for protected-main
-          # delivery; fall back only for non-production diagnostics.
-          GH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}
+          # The pipeline consumes and removes this dedicated input before
+          # launching any gate. Only hosted-analysis receives it as GH_TOKEN.
+          RELEASE_POLICY_TOKEN: ${{ secrets.RELEASE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
           ISSUE_CREATED_AT: ${{ github.event.issue.created_at || '' }}

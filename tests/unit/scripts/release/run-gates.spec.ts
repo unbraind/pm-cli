@@ -51,6 +51,35 @@ describe("scripts/release/run-gates", () => {
     expect(spawnSync).toHaveBeenCalled();
   });
 
+  it("passes the elevated token only to hosted analysis", async () => {
+    process.env.RELEASE_POLICY_TOKEN = "policy-token";
+    const spawnSync = vi.fn((_command: string, args: string[]) => ({
+      status: 0,
+      stdout: args.includes("scripts/release/hosted-analysis-gate.mjs") ? '{"ok":true}' : "",
+      stderr: "",
+    }));
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    process.argv = [
+      "node",
+      "scripts/release/run-gates.mjs",
+      "--skip-dogfood",
+      "--skip-compatibility",
+      "--skip-greptile",
+      "--skip-telemetry-sentry",
+    ];
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    await harness.importModule("scripts/release/run-gates.mjs", "scopedPolicyToken");
+
+    expect(process.env.RELEASE_POLICY_TOKEN).toBeUndefined();
+    const hostedCall = spawnSync.mock.calls.find((call) =>
+      ((call[1] as string[] | undefined) ?? []).includes("scripts/release/hosted-analysis-gate.mjs"),
+    );
+    expect(hostedCall?.[2]).toMatchObject({ env: expect.objectContaining({ GH_TOKEN: "policy-token" }) });
+    for (const call of spawnSync.mock.calls.filter((entry) => entry !== hostedCall)) {
+      expect(call[2]).toMatchObject({ env: expect.not.objectContaining({ GH_TOKEN: "policy-token" }) });
+    }
+  });
+
   it("runs every gate including dogfood + sentry and prints the success line", async () => {
     const spawnSync = vi.fn((command: string, args: string[]) => {
       const joined = [command, ...args].join(" ");
