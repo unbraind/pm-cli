@@ -153,7 +153,9 @@ describe("SDK entrypoint import-cost calculations", () => {
       measureEntrypointProcess(null, { executablePath: "missing-node-binary" }),
     ).rejects.toThrow();
     await expect(
-      measureEntrypointProcess(null, { executablePath: "/bin/false" }),
+      measureEntrypointProcess(null, {
+        env: { ...process.env, NODE_OPTIONS: "--pm-invalid-node-option" },
+      }),
     ).rejects.toThrow("bare node");
   });
 

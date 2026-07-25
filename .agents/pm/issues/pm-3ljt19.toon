@@ -6,22 +6,24 @@ status: in_progress
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",extensions,gh-issue
 created_at: "2026-07-25T09:20:04.202Z"
-updated_at: "2026-07-25T11:31:35.052Z"
+updated_at: "2026-07-25T11:48:24.790Z"
 assignee: "harness:codex"
 author: unknown
 parent: pm-ugqx
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-s1w0sf,related,"2026-07-25T09:20:04.202Z",null,null
   pm-yffj,related,"2026-07-25T09:20:04.202Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-25T09:20:04.202Z",unknown,"Duplicate-check evidence: closed pm-yffj surfaced activation diagnostics in install/explore and closed pm-s1w0sf validates descriptors,but GH-704 reproduces missing point-of-use recovery,false activate success,and unmatchable long-name acceptance. This is follow-up scope,not a duplicate of completed work."
   "2026-07-25T11:31:35.052Z","harness:codex","Evidence: unknown-command, activate, explore, and doctor paths return bounded actionable activation failures. Both linked test groups passed: 132/132 host/error tests and 138/138 recovery/extension lifecycle tests."
-files[8]{path,scope,note}:
+  "2026-07-25T11:48:24.790Z","harness:codex","CI repair evidence: regenerated the full CLI/SDK contract snapshot after the shared automatic-author description changed across mutation inputs. pnpm contracts:check, pnpm typecheck, and pnpm lint pass; the fixture now makes the public contract change explicit and deterministic."
+files[9]{path,scope,note}:
   src/cli/commander-usage.ts,project,structured failure rendering
   src/cli/extension-recovery.ts,project,bounded parse-time activation recovery
   src/cli/main.ts,project,unknown command activation diagnostics
   src/sdk/extension.ts,project,activate and doctor runtime truth
   src/sdk/extension/doctor.ts,project,bounded doctor failures
+  tests/fixtures/contracts/full.json,project,Generated full-contract fixture records the automatic harness-author description across SDK mutation inputs
   tests/integration/extension-host-contracts.integration.spec.ts,project,activation failure boundaries
   tests/unit/cli/recovery-context-usage.spec.ts,project,Unknown-command recovery failure rendering coverage
   tests/unit/extensions/extension-command.spec.ts,project,Extension activation lifecycle diagnostics coverage
