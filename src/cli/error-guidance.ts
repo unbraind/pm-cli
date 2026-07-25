@@ -740,13 +740,13 @@ function buildOwnershipConflictGuidance(
         "Run as the assigned owner, claim the item when appropriate, or use --force only for an approved override.",
       why: "Ownership checks prevent accidental concurrent mutations on claimed items and protect against conflicting writes.",
       examples: [
-        'pm claim pm-a1b2 --author "codex-agent"',
+        "pm claim pm-a1b2",
         "pm update pm-a1b2 --status in_progress --force",
       ],
       nextSteps: [
         "Use --force for approved systematic metadata updates performed by leads or maintainers.",
         "Use --force when correcting known stale metadata after coordinating ownership changes.",
-        'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',
+        'For non-terminal reassignment, prefer "pm claim <ID>" before running other mutations.',
       ],
     }),
     rawMessage,
@@ -771,7 +771,7 @@ function buildLockConflictGuidance(
         "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
       why: "Locking protects item files from concurrent write races.",
       examples: [
-        'pm update pm-a1b2 --status in_progress --force --author "codex-agent"',
+        "pm update pm-a1b2 --status in_progress --force",
       ],
     }),
     rawMessage,
@@ -810,7 +810,7 @@ function buildPmMissingRequiredOptionGuidance(
       why: "Required options define command intent and enforce deterministic write contracts.",
       examples: [
         'pm create --title "Task title" --description "Task details" --type Task --create-mode progressive',
-        'pm create --title "Task title" --description "Task details" --type Task --status open --priority 1 --message "Create task" --dep "id=pm-epic01,kind=parent,author=codex-agent,created_at=now" --comment "author=codex-agent,created_at=now,text=Why this task exists." --note "author=codex-agent,created_at=now,text=Initial implementation note." --learning "author=codex-agent,created_at=now,text=Durable lesson placeholder." --file "path=src/example.ts,scope=project" --test "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240" --doc "path=README.md,scope=project"',
+        'pm create --title "Task title" --description "Task details" --type Task --status open --priority 1 --message "Create task" --dep "id=pm-epic01,kind=parent,created_at=now" --comment "created_at=now,text=Why this task exists." --note "created_at=now,text=Initial implementation note." --learning "created_at=now,text=Durable lesson placeholder." --file "path=src/example.ts,scope=project" --test "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240" --doc "path=README.md,scope=project"',
       ],
       nextSteps: [
         'Run "pm <command> --help" to view required and recommended flags.',

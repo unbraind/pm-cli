@@ -5,7 +5,13 @@ Tracker references: [pm-z9x1r2](../.agents/pm/features/pm-z9x1r2.toon),
 [pm-954h0o](../.agents/pm/issues/pm-954h0o.toon),
 [pm-j4ac9a](../.agents/pm/issues/pm-j4ac9a.toon),
 [pm-1exil1](../.agents/pm/issues/pm-1exil1.toon), and
-[pm-s1w0sf](../.agents/pm/issues/pm-s1w0sf.toon).
+[pm-s1w0sf](../.agents/pm/issues/pm-s1w0sf.toon), plus the structured identity
+bundle [pm-qwuber](../.agents/pm/decisions/pm-qwuber.toon),
+[pm-03pq3o](../.agents/pm/features/pm-03pq3o.toon),
+[pm-6uxhe0](../.agents/pm/issues/pm-6uxhe0.toon),
+[pm-zqsrt5](../.agents/pm/issues/pm-zqsrt5.toon),
+[pm-sx52hr](../.agents/pm/issues/pm-sx52hr.toon), and
+[pm-brxdct](../.agents/pm/tasks/pm-brxdct.toon).
 
 `pm` treats project management as context management. These primitives keep
 mutation provenance, source-workspace identity, extension flags, and bounded
@@ -28,24 +34,77 @@ The stable resolution order is:
 5. `unknown`.
 
 Every newly created `HistoryEntry` records `author_source` as `asserted`,
-`configured`, `detected`, or `unknown`. Detection is a pure, bounded signal
-match: it does not launch a subprocess, traverse an unbounded process tree,
-emit environment values, or send telemetry.
+`configured`, `detected`, or `unknown`. Author selection and agent observation
+are independent: even an explicit, environment, or configured author retains
+the observed `agent_harness`, `agent_model`, and `agent_model_source` fields.
+Older history remains valid because all agent fields are optional.
+
+Detection is a pure, bounded signal match: it does not launch a subprocess,
+traverse an unbounded process tree, execute user regexes, emit environment
+values, or make network requests. Session signals are transient invocation
+context: they are never persisted to history or exported to telemetry.
+Non-minimal telemetry hashes harness/model with the installation id; minimal
+telemetry emits presence booleans only.
 
 SDK hosts can preflight the same behavior:
 
 ```ts
 import {
+  detectAgentIdentity,
   detectHarnessIdentity,
   resolveAuthorIdentity,
 } from "@unbrained/pm-cli/sdk";
 
+const agent = detectAgentIdentity({
+  env: process.env,
+  argv: process.argv,
+});
 const harness = detectHarnessIdentity({
   env: process.env,
   argv: process.argv,
 });
 const identity = resolveAuthorIdentity(undefined, configuredAuthor);
 ```
+
+`PM_AGENT_MODEL` is the explicit model observation override. Built-in
+harness-specific model and session variables are evaluated next, followed by
+MCP client metadata and `--model` argv tokens. Missing model/session signals
+remain absent rather than guessed.
+
+## Custom harness descriptors
+
+Packages can append pure signal definitions with
+`registerHarnessSignalDescriptors()` and dispose them during deactivation.
+Embedded hosts can scope workspace settings with
+`runWithWorkspaceHarnessSignalDescriptors()`. The CLI and MCP adapters do this
+automatically using `settings.agent_identity.harness_signals`.
+
+```json
+{
+  "agent_identity": {
+    "harness_signals": [
+      {
+        "harness": "acme-agent",
+        "environment_keys": ["ACME_AGENT"],
+        "model_environment_keys": ["ACME_MODEL"],
+        "session_environment_keys": ["ACME_SESSION"],
+        "argv_markers": ["acme-agent"],
+        "client_names": ["acme-agent"]
+      }
+    ]
+  }
+}
+```
+
+Descriptors are literal, length-bounded data. Built-in namespaces cannot be
+overridden; duplicate package/workspace namespaces fail with a deterministic
+collision error. Precedence is built-ins, registered packages, then the active
+workspace. Registration performs no filesystem, process, or network access.
+
+MCP captures `clientInfo.name` and `clientInfo.version` during initialize and
+scopes all later tool calls to that client signal. Optional host-provided
+`model` and `session` fields are supported, but version is not misclassified as
+a model or session.
 
 ## Unknown-author remediation
 

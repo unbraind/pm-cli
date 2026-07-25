@@ -353,7 +353,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       'pm create --title "Harden lock flow" --description "Improve stale lock handling" --type Task --status open --priority 1 --message "Create lock hardening task" --create-mode progressive',
       'pm create --title "Weekly planning sync" --description "Recurring coordination meeting" --type Meeting --schedule-preset lightweight',
-      'pm create --title "Asset: Hero model" --description "Track playable model asset" --type Asset --status open --priority 1 --message "Create asset item" --type-option category=Character --dep "id=pm-epic01,kind=parent,author=codex-agent,created_at=now" --comment "author=codex-agent,created_at=now,text=Why this asset item exists." --note "author=codex-agent,created_at=now,text=Initial implementation note." --learning "author=codex-agent,created_at=now,text=Durable lesson placeholder." --file "path=src/assets/hero.glb,note=tracked asset" --test "command=node scripts/run-tests.mjs test,timeout_seconds=240" --doc "path=README.md,note=asset docs"',
+      'pm create --title "Asset: Hero model" --description "Track playable model asset" --type Asset --status open --priority 1 --message "Create asset item" --type-option category=Character --dep "id=pm-epic01,kind=parent,created_at=now" --comment "created_at=now,text=Why this asset item exists." --note "created_at=now,text=Initial implementation note." --learning "created_at=now,text=Durable lesson placeholder." --file "path=src/assets/hero.glb,note=tracked asset" --test "command=node scripts/run-tests.mjs test,timeout_seconds=240" --doc "path=README.md,note=asset docs"',
     ],
     tips: [
       "Use --schedule-preset lightweight for Reminder/Meeting/Event when you want minimal required create inputs.",
@@ -439,7 +439,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Lists active items with deterministic filtering and ordering.",
     examples: [
       "pm list --limit 20",
-      "pm list --type Task --priority 0 --tag release --assignee codex-agent",
+      "pm list --type Task --priority 0 --tag release --status in_progress",
       "pm list --compact --sort deadline --order asc",
       "pm list --fields id,title,parent,type --sort parent --order asc",
     ],
@@ -457,7 +457,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   "list-in-progress": {
     why: "Tracks active execution and owner progress.",
-    examples: ["pm list-in-progress --assignee codex-agent --limit 20"],
+    examples: ["pm list-in-progress --priority 0 --limit 20"],
   },
   "list-blocked": {
     why: "Surfaces blocked work that needs intervention.",
@@ -505,7 +505,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Provides deadline/reminder/event scheduling views for planning and coordination.",
     examples: [
       "pm calendar",
-      "pm calendar --view agenda --from +0d --to +7d --assignee codex-agent",
+      "pm calendar --view agenda --from +0d --to +7d --tag release",
       "pm calendar --view week --date 2026-04-06 --full-period --include deadlines,events",
       "pm calendar --view month --tag release --format json",
     ],
@@ -519,7 +519,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       "pm context",
       "pm ctx --depth standard --limit 10",
-      "pm ctx --depth deep --assignee codex-agent",
+      "pm ctx --depth deep --tag release",
       "pm ctx --section hierarchy --section progress --section blockers",
       "pm context --depth standard --activity-limit 20 --stale-threshold 14d",
       "pm context --from +0d --to +7d --format markdown --depth deep",
@@ -539,7 +539,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm next --json",
       "pm next --limit 3 --ready-only",
       "pm next --parent pm-mpbb",
-      "pm next --assignee codex-agent --format markdown",
+      "pm next --tag release --format markdown",
     ],
     tips: [
       "Ready = active status, no open blockers, and no open children (a concrete leaf); the recommendation resumes in-progress work before starting new work.",
@@ -612,9 +612,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Compacts long history streams into a synthetic checkpoint while preserving replay integrity. Pass an item id for one stream, or a bulk selector (--ids/--all-over/--closed/--all-streams) to sweep many.",
     examples: [
       "pm history-compact pm-a1b2 --dry-run",
-      'pm history-compact pm-a1b2 --before 25 --author codex-agent --message "Compact early history"',
+      'pm history-compact pm-a1b2 --before 25 --message "Compact early history"',
       "pm history-compact --all-over 500 --dry-run",
-      "pm history-compact --closed --author codex-agent",
+      "pm history-compact --closed",
       "pm history-compact --ids pm-a1b2,pm-c3d4 --dry-run",
     ],
   },
@@ -623,7 +623,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       "pm activity --limit 50",
       "pm activity --full --id pm-a1b2 --limit 50",
-      "pm activity --id pm-a1b2 --op update --author codex-agent --from -7d --to now",
+      "pm activity --id pm-a1b2 --op update --from -7d --to now",
       "pm activity --json --stream rows --limit 200",
     ],
     tips: [
@@ -633,13 +633,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   restore: {
     why: "Restores an item to a prior timestamp/version with history replay safety.",
     examples: [
-      'pm restore pm-a1b2 2026-04-01T00:00:00.000Z --author "codex-agent" --message "Rollback to known-good state"',
+      'pm restore pm-a1b2 2026-04-01T00:00:00.000Z --message "Rollback to known-good state"',
     ],
   },
   close: {
     why: "Transitions work to terminal closed state with explicit rationale.",
     examples: [
-      'pm close pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close after verification"',
+      'pm close pm-a1b2 "All acceptance criteria met" --message "Close after verification"',
       'pm close pm-a1b2 "Done" --validate-close',
       'pm close pm-a1b2 "Done" --validate-close off',
       'pm close pm-a1b2 "Done" --validate-close strict',
@@ -648,7 +648,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   delete: {
     why: "Removes an item while preserving history evidence and lock/ownership checks.",
     examples: [
-      'pm delete pm-a1b2 --author "codex-agent" --message "Remove duplicate item"',
+      'pm delete pm-a1b2 --message "Remove duplicate item"',
     ],
   },
   append: {
@@ -663,9 +663,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm comments pm-a1b2 "Verified fix on Linux and macOS"',
       'pm comments pm-a1b2 --add "Verified fix on Linux and macOS"',
       'printf "%s\\n" "## Verification" "- linux pass" "- mac pass" | pm comments pm-a1b2 --stdin',
-      'pm comments pm-a1b2 --file docs/release-evidence.md --author "codex-agent"',
+      "pm comments pm-a1b2 --file docs/release-evidence.md",
       'pm comments pm-a1b2 --add "text: verification note with commas, key-like words, and parser details"',
-      'pm comments pm-a1b2 --add "Follow-up needed after review" --author "codex-agent" --force',
+      'pm comments pm-a1b2 --add "Follow-up needed after review" --force',
       "pm comments pm-a1b2 --limit 10",
     ],
     tips: [
@@ -793,35 +793,37 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   claim: {
     why: "Claims an item to signal active ownership and reduce conflicts.",
     examples: [
-      'pm claim pm-a1b2 --author "codex-agent" --message "Claim for implementation"',
-      'pm claim pm-a1b2 --force --author "codex-agent" --message "Take over terminal item"',
+      'pm claim pm-a1b2 --message "Claim for implementation"',
+      'pm claim pm-a1b2 --force --message "Take over terminal item"',
+      'pm claim pm-a1b2 --author "release-service" --message "Explicit non-agent identity override"',
     ],
     tips: [
       "Claim takeover for non-terminal items does not require --force; --force is reserved for terminal/lock overrides.",
+      "Harness identity is automatic; use --author only to assert an intentional external principal.",
     ],
   },
   release: {
     why: "Releases an active claim when paused, handed off, or completed.",
     examples: [
-      'pm release pm-a1b2 --author "codex-agent" --message "Release after closure"',
+      'pm release pm-a1b2 --message "Release after closure"',
     ],
   },
   "start-task": {
     why: "Lifecycle alias that claims an item and sets status to in_progress.",
     examples: [
-      'pm start-task pm-a1b2 --author "codex-agent" --message "Start implementation"',
+      'pm start-task pm-a1b2 --message "Start implementation"',
     ],
   },
   "pause-task": {
     why: "Lifecycle alias that sets status to open and releases active assignment.",
     examples: [
-      'pm pause-task pm-a1b2 --author "codex-agent" --message "Pause for dependency unblock"',
+      'pm pause-task pm-a1b2 --message "Pause for dependency unblock"',
     ],
   },
   "close-task": {
     why: "Lifecycle alias that closes with reason text and clears assignment metadata.",
     examples: [
-      'pm close-task pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close and handoff"',
+      'pm close-task pm-a1b2 "All acceptance criteria met" --message "Close and handoff"',
     ],
   },
   meet: {

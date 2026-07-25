@@ -4,6 +4,7 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { BUILTIN_HARNESS_SIGNAL_DESCRIPTORS } from "../../../../src/core/shared/author.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import {
   _testOnly,
@@ -157,20 +158,40 @@ describe("core/telemetry/runtime", () => {
   });
 
   it("derives a stable, installation-keyed author_context_hash from PM_AUTHOR", () => {
+    const originalArgv = process.argv;
     const originalAuthor = process.env.PM_AUTHOR;
+    const originalAgentModel = process.env.PM_AGENT_MODEL;
+    const originalHarnessEnvironment = new Map(
+      BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.flatMap((descriptor) =>
+        [
+          ...(descriptor.environment_keys ?? []),
+          ...(descriptor.model_environment_keys ?? []),
+          ...(descriptor.session_environment_keys ?? []),
+        ].map((key) => [key, process.env[key]] as const),
+      ),
+    );
     try {
+      process.argv = [process.execPath, "pm"];
+      for (const key of originalHarnessEnvironment.keys()) {
+        delete process.env[key];
+      }
+      delete process.env.PM_AGENT_MODEL;
       // Minimal capture exposes only the boolean, never a hash.
       process.env.PM_AUTHOR = "claude-code-agent";
       expect(_testOnly.buildAuthorContextPayloadFields("minimal", "install-a")).toEqual({
         has_author_context: true,
+        has_agent_context: false,
       });
       delete process.env.PM_AUTHOR;
       expect(_testOnly.buildAuthorContextPayloadFields("minimal", "install-a")).toEqual({
         has_author_context: false,
+        has_agent_context: false,
       });
       // A blank/whitespace PM_AUTHOR is treated as unset.
       process.env.PM_AUTHOR = "   ";
-      expect(_testOnly.buildAuthorContextPayloadFields("redacted", "install-a")).toEqual({});
+      expect(
+        _testOnly.buildAuthorContextPayloadFields("redacted", "install-a"),
+      ).not.toHaveProperty("author_context_hash");
 
       // Non-minimal capture attaches the hash; same author + same installation is
       // stable, while a different installation id produces a different hash.
@@ -188,11 +209,56 @@ describe("core/telemetry/runtime", () => {
       expect(repeat.author_context_hash).toBe(first.author_context_hash);
       expect(otherInstall.author_context_hash).not.toBe(first.author_context_hash);
       expect(first.author_context_hash).not.toContain("claude-code-agent");
+
+      delete process.env.PM_AUTHOR;
+      process.env.CODEX_HOME = "/tmp/codex";
+      process.env.CODEX_MODEL = "gpt-5.6-sol";
+      process.env.CODEX_THREAD_ID = "never-export-this-session";
+      expect(_testOnly.buildAuthorContextPayloadFields("minimal", "install-a")).toEqual({
+        has_author_context: false,
+        has_agent_context: true,
+      });
+      const agentFields = _testOnly.buildAuthorContextPayloadFields(
+        "redacted",
+        "install-a",
+      ) as Record<string, unknown>;
+      expect(agentFields.agent_harness_hash).toMatch(/^[0-9a-f]{64}$/);
+      expect(agentFields.agent_model_hash).toMatch(/^[0-9a-f]{64}$/);
+      expect(agentFields.agent_model_source).toBe("environment");
+      expect(JSON.stringify(agentFields)).not.toContain(
+        "never-export-this-session",
+      );
+      expect(agentFields).not.toHaveProperty("agent_session");
+
+      for (const key of originalHarnessEnvironment.keys()) {
+        delete process.env[key];
+      }
+      delete process.env.CODEX_MODEL;
+      process.env.PM_AGENT_MODEL = "operator-only-model";
+      const modelOnlyFields = _testOnly.buildAuthorContextPayloadFields(
+        "redacted",
+        "install-a",
+      );
+      expect(modelOnlyFields).not.toHaveProperty("agent_harness_hash");
+      expect(modelOnlyFields.agent_model_hash).toMatch(/^[0-9a-f]{64}$/);
+      expect(modelOnlyFields.agent_model_source).toBe("override");
+
+      delete process.env.PM_AGENT_MODEL;
+      expect(
+        _testOnly.buildAuthorContextPayloadFields("redacted", "install-a"),
+      ).toEqual({});
     } finally {
-      if (originalAuthor === undefined) {
-        delete process.env.PM_AUTHOR;
-      } else {
-        process.env.PM_AUTHOR = originalAuthor;
+      process.argv = originalArgv;
+      for (const [key, value] of [
+        ["PM_AUTHOR", originalAuthor],
+        ["PM_AGENT_MODEL", originalAgentModel],
+      ] as const) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+      for (const [key, value] of originalHarnessEnvironment) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
       }
     }
   });

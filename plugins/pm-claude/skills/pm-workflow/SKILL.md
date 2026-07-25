@@ -23,7 +23,7 @@ Use this skill for all pm-tracked work. Prefer native MCP tools over shell `pm` 
 
 1. **Orient** — run `pm_context`, `pm_search`, and `pm_list` before creating new work.
 2. **Reuse** — claim an existing item when one matches instead of creating a duplicate.
-3. **Claim** — call `pm_claim` with `author: "claude-code-agent"` before substantial edits.
+3. **Claim** — call `pm_claim` before substantial edits.
 4. **Sync TUI** — after claiming, call `TaskCreate` to mirror the item in Claude Code's task panel (see Hybrid TUI Sync below).
 5. **Link evidence** — call `pm_files`, `pm_docs`, `pm_test` as work progresses.
 6. **Add comments** — `pm_comments` for progress notes and verification results.
@@ -71,7 +71,6 @@ Most tools accept `cwd`, `author`, and `options`:
 ```json
 {
   "cwd": "/path/to/repo",
-  "author": "claude-code-agent",
   "options": { "limit": "10" }
 }
 ```
@@ -102,7 +101,6 @@ Most tools accept `cwd`, `author`, and `options`:
 {
   "tool": "pm_create",
   "args": {
-    "author": "claude-code-agent",
     "options": {
       "title": "Item title",
       "description": "What this item tracks.",
@@ -121,7 +119,6 @@ Most tools accept `cwd`, `author`, and `options`:
   "tool": "pm_files",
   "args": {
     "id": "pm-xxxx",
-    "author": "claude-code-agent",
     "options": { "add": ["path=src/file.ts,scope=project,note=implementation"] }
   }
 }
@@ -133,8 +130,7 @@ Most tools accept `cwd`, `author`, and `options`:
   "tool": "pm_close",
   "args": {
     "id": "pm-xxxx",
-    "reason": "All acceptance criteria met. Tests pass.",
-    "author": "claude-code-agent"
+    "reason": "All acceptance criteria met. Tests pass."
   }
 }
 ```

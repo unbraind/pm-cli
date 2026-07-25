@@ -246,6 +246,9 @@ export {
 export {
   readAuthorEnvironment,
   resolveAuthor,
+  runWithHarnessDetectionSignals,
+  runWithWorkspaceHarnessSignalDescriptors,
+  type AgentClientInfo,
   writeAuthorEnvironment,
 } from "../core/shared/author.js";
 export {

@@ -256,9 +256,9 @@ function buildLifecycleMutationOptions(options: Record<string, unknown>): {
       {
         code: "conflicting_lifecycle_owner",
         examples: [
-          "pm claim pm-123 --author codex-agent",
-          "pm claim pm-123 --assignee codex-agent",
-          "pm start-task pm-123 --author codex-agent",
+          "pm claim pm-123",
+          "pm start-task pm-123",
+          "pm release pm-123",
         ],
       },
     );

@@ -46,40 +46,46 @@ TaskUpdate: { taskId: <saved>, status: "completed" }
 ## Step-by-Step MCP Calls
 
 ### 1. Orient
+
 ```json
 { "tool": "pm_context", "args": { "options": { "limit": "10" } } }
 { "tool": "pm_search", "args": { "query": "task keywords", "options": { "limit": "10" } } }
 ```
 
 ### 2. Claim
+
 ```json
-{ "tool": "pm_claim", "args": { "id": "pm-xxxx", "author": "claude-code-agent" } }
-{ "tool": "pm_update", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "status": "in_progress" } } }
+{ "tool": "pm_claim", "args": { "id": "pm-xxxx" } }
+{ "tool": "pm_update", "args": { "id": "pm-xxxx", "options": { "status": "in_progress" } } }
 ```
 
 Then immediately: `TaskCreate` → `TaskUpdate(in_progress)` as shown above.
 
 ### 3. Link Evidence (during implementation)
+
 ```json
-{ "tool": "pm_files", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": ["path=src/file.ts,scope=project,note=implementation"] } } }
-{ "tool": "pm_docs", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": ["path=docs/GUIDE.md,scope=project,note=updated"] } } }
-{ "tool": "pm_test", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": ["command=node scripts/run-tests.mjs test -- tests/unit/foo.spec.ts,scope=project,timeout_seconds=240"] } } }
+{ "tool": "pm_files", "args": { "id": "pm-xxxx", "options": { "add": ["path=src/file.ts,scope=project,note=implementation"] } } }
+{ "tool": "pm_docs", "args": { "id": "pm-xxxx", "options": { "add": ["path=docs/GUIDE.md,scope=project,note=updated"] } } }
+{ "tool": "pm_test", "args": { "id": "pm-xxxx", "options": { "add": ["command=node scripts/run-tests.mjs test -- tests/unit/foo.spec.ts,scope=project,timeout_seconds=240"] } } }
 ```
 
 ### 4. Validate
+
 ```json
 { "tool": "pm_validate", "args": { "options": { "checkResolution": true, "checkHistoryDrift": true } } }
 ```
 
 ### 5. Add Evidence Comment
+
 ```json
-{ "tool": "pm_comments", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": "Evidence: changed src/foo.ts. All tests pass. pm validate ok." } } }
+{ "tool": "pm_comments", "args": { "id": "pm-xxxx", "options": { "add": "Evidence: changed src/foo.ts. All tests pass. pm validate ok." } } }
 ```
 
 ### 6. Close
+
 ```json
-{ "tool": "pm_close", "args": { "id": "pm-xxxx", "reason": "Implementation complete. Acceptance criteria met.", "author": "claude-code-agent" } }
-{ "tool": "pm_release", "args": { "id": "pm-xxxx", "author": "claude-code-agent" } }
+{ "tool": "pm_close", "args": { "id": "pm-xxxx", "reason": "Implementation complete. Acceptance criteria met." } }
+{ "tool": "pm_release", "args": { "id": "pm-xxxx" } }
 ```
 
 Then: `TaskUpdate: { taskId: <saved>, status: "completed" }`
@@ -87,6 +93,7 @@ Then: `TaskUpdate: { taskId: <saved>, status: "completed" }`
 ## Verification Defaults
 
 Run these before closing any implementation item:
+
 - `pnpm build` (or project build command)
 - `node scripts/run-tests.mjs test -- <target>` (targeted test)
 - `node scripts/run-tests.mjs coverage` (coverage gate)
@@ -95,11 +102,11 @@ Run these before closing any implementation item:
 ## Create When Needed
 
 When no existing item matches:
+
 ```json
 {
   "tool": "pm_create",
   "args": {
-    "author": "claude-code-agent",
     "options": {
       "title": "Fix: concise description of the problem",
       "description": "Root cause and approach.",

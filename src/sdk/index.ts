@@ -29,12 +29,21 @@ export {
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
 export {
+  BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
+  detectAgentIdentity,
   detectHarnessIdentity,
   readAuthorEnvironment,
+  registerHarnessSignalDescriptors,
   resolveAuthorIdentity,
+  runWithHarnessDetectionSignals,
+  runWithWorkspaceHarnessSignalDescriptors,
   writeAuthorEnvironment,
+  type AgentClientInfo,
+  type AgentModelSource,
   type AuthorSource,
+  type DetectedAgentIdentity,
   type HarnessDetectionSignals,
+  type HarnessSignalDescriptor,
   type ResolvedAuthorIdentity,
 } from "../core/shared/author.js";
 export { createPmCliProgram } from "./cli-program.js";

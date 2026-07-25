@@ -8,7 +8,7 @@ Run the full pm release workflow using native MCP tools. Argument: `$ARGUMENTS` 
    - `pm_search` with query "release" to find existing release items.
    - If `$ARGUMENTS` is a pm ID: `pm_get` it directly.
    - If no match: `pm_create` with `type: "Chore"`, `title: "Release <version>"`, `priority: "0"`.
-2. **Claim** with `pm_claim` and `author: "claude-code-agent"`.
+2. **Claim** with `pm_claim`.
 3. **Sync to Claude Code task panel**:
    ```
    TaskCreate:

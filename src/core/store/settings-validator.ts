@@ -37,6 +37,17 @@ export interface ParsedSettings {
   ids?: { token_length?: number };
   /** Value that configures or reports author default for this contract. */
   author_default: string;
+  /** Declarative workspace additions to agent identity detection. */
+  agent_identity?: {
+    harness_signals: Array<{
+      harness: string;
+      environment_keys?: string[];
+      model_environment_keys?: string[];
+      session_environment_keys?: string[];
+      argv_markers?: string[];
+      client_names?: string[];
+    }>;
+  };
   /** Shared pre-write mutation guard policy. */
   mutation_guard?: {
     require_attributed_author?: boolean;
@@ -216,9 +227,12 @@ function vLiteral<const T extends string>(...allowed: readonly T[]): Check<T> {
       : FAIL;
 }
 
-function vArray<T>(item: Check<T>): Check<T[]> {
+function vArray<T>(item: Check<T>, maxLength?: number): Check<T[]> {
   return (input) => {
-    if (!Array.isArray(input)) {
+    if (
+      !Array.isArray(input) ||
+      (maxLength !== undefined && input.length > maxLength)
+    ) {
       return FAIL;
     }
     const value: T[] = [];
@@ -231,6 +245,26 @@ function vArray<T>(item: Check<T>): Check<T[]> {
     }
     return { ok: true, value };
   };
+}
+
+/**
+ * Accept a non-blank, already-trimmed string with a bounded serialized size.
+ *
+ * The optional pattern is evaluated against the original value so settings
+ * that would require runtime normalization fail before they reach the store.
+ */
+function vBoundedNormalizedString(
+  maxLength: number,
+  pattern?: RegExp,
+): Check<string> {
+  return (input) =>
+    typeof input === "string" &&
+    input.length > 0 &&
+    input.length <= maxLength &&
+    input === input.trim() &&
+    (pattern === undefined || pattern.test(input))
+      ? { ok: true, value: input }
+      : FAIL;
 }
 
 function vOptional<T>(inner: Check<T>): Check<T | undefined> {
@@ -391,9 +425,7 @@ const governanceSettings = vOptional(
     force_required_for_stale_lock: vOptional(vBoolean),
     create_default_type: vOptional(vString),
     workflow_enforcement: vOptional(vLiteral("off", "warn", "strict")),
-    duplicate_detection_mode: vOptional(
-      vLiteral("off", "advisory", "strict"),
-    ),
+    duplicate_detection_mode: vOptional(vLiteral("off", "advisory", "strict")),
     duplicate_detection_threshold: vOptional(vNumber({ min: 0, max: 1 })),
     duplicate_detection_limit: vOptional(
       vNumber({ int: true, min: 0, max: 20 }),
@@ -456,6 +488,16 @@ const extensionPolicy = vOptional(
   }),
 );
 
+const harnessSignalLiteral = vBoundedNormalizedString(128);
+const harnessSignalDescriptor = vObject({
+  harness: vBoundedNormalizedString(128, /^[a-z0-9]+(?:-[a-z0-9]+)*$/u),
+  environment_keys: vOptional(vArray(harnessSignalLiteral, 64)),
+  model_environment_keys: vOptional(vArray(harnessSignalLiteral, 64)),
+  session_environment_keys: vOptional(vArray(harnessSignalLiteral, 64)),
+  argv_markers: vOptional(vArray(harnessSignalLiteral, 64)),
+  client_names: vOptional(vArray(harnessSignalLiteral, 64)),
+});
+
 const settingsCheck = vObject({
   version: vNumber({ int: true }),
   id_prefix: vString,
@@ -465,6 +507,11 @@ const settingsCheck = vObject({
     }),
   ),
   author_default: vString,
+  agent_identity: vOptional(
+    vObject({
+      harness_signals: vArray(harnessSignalDescriptor),
+    }),
+  ),
   mutation_guard: vOptional(
     vObject({
       require_attributed_author: vOptional(vBoolean),

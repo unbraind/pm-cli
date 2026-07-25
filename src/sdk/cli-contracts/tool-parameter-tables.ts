@@ -926,20 +926,19 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description: "Acceptance criteria text.",
   },
   author: {
-    description: "Mutation author identity.",
-    examples: ["codex-agent"],
+    description:
+      "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
   },
   attributedAuthor: {
     description:
       "Principal attributed to the immutable unknown-author history events after review.",
-    examples: ["codex-agent"],
+    examples: ["reviewed-principal"],
   },
   message: {
     description: "History message for mutation audit trail.",
   },
   assignee: {
     description: "Assignee identity.",
-    examples: ["codex-agent"],
   },
   assigneeFilter: {
     description:

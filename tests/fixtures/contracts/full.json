@@ -10396,10 +10396,7 @@
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "defaults": {
@@ -13187,16 +13184,10 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "blockedBy": {
@@ -14370,10 +14361,7 @@
             "type": "boolean"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "fullChangedFields": {
@@ -14618,9 +14606,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -15096,9 +15081,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -15574,9 +15556,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -16052,9 +16031,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -16530,9 +16506,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -17008,9 +16981,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -17486,9 +17456,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -17964,9 +17931,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -18353,9 +18317,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -18551,9 +18512,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -18811,9 +18769,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -19185,9 +19140,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "compact": {
@@ -19509,9 +19461,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -19793,10 +19742,7 @@
             "description": "Tool action to execute."
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "dryRun": {
@@ -19940,10 +19886,7 @@
             "type": "boolean"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "dryRun": {
@@ -20031,10 +19974,7 @@
             "type": "boolean"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "before": {
@@ -20136,7 +20076,7 @@
           "attributedAuthor": {
             "description": "Principal attributed to the immutable unknown-author history events after review.",
             "examples": [
-              "codex-agent"
+              "reviewed-principal"
             ],
             "type": "string"
           },
@@ -20466,10 +20406,7 @@
             "type": "boolean"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "cliFlag": {
@@ -20759,10 +20696,7 @@
             "description": "Tool action to execute."
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "dryRun": {
@@ -20841,10 +20775,7 @@
             "description": "Tool action to execute."
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "compact": {
@@ -20973,10 +20904,7 @@
             "description": "Tool action to execute."
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "force": {
@@ -21108,16 +21036,10 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "blockedBy": {
@@ -21651,16 +21573,10 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "blockedBy": {
@@ -22351,10 +22267,7 @@
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "closeReason": {
@@ -22477,10 +22390,7 @@
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "dryRun": {
@@ -22781,10 +22691,7 @@
             "description": "Tool action to execute."
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "dryRun": {
@@ -22861,10 +22768,7 @@
             "description": "Tool action to execute."
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "body": {
@@ -22953,10 +22857,7 @@
             "type": "array"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "delete": {
@@ -23075,16 +22976,10 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "blockedBy": {
@@ -23786,10 +23681,7 @@
             "type": "array"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "delete": {
@@ -23898,10 +23790,7 @@
             "type": "array"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "delete": {
@@ -24055,10 +23944,7 @@
             "type": "boolean"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "discover": {
@@ -24211,10 +24097,7 @@
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "force": {
@@ -24721,10 +24604,7 @@
             "type": "array"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "autoPmContext": {
@@ -25947,9 +25827,6 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "assigneeFilter": {
@@ -25965,10 +25842,7 @@
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "blockedLimit": {
@@ -26168,16 +26042,10 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "force": {
@@ -26251,16 +26119,10 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "force": {
@@ -26334,16 +26196,10 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "force": {
@@ -26417,16 +26273,10 @@
           },
           "assignee": {
             "description": "Assignee identity.",
-            "examples": [
-              "codex-agent"
-            ],
             "type": "string"
           },
           "author": {
-            "description": "Mutation author identity.",
-            "examples": [
-              "codex-agent"
-            ],
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
           "force": {

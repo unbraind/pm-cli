@@ -2,11 +2,12 @@ id: pm-03pq3o
 title: "Model-aware agent identity: detection resolves harness, model, and session so an agent never types an identity flag and history still records which model acted"
 description: "Today src/core/shared/author.ts:detectHarnessIdentity returns only a harness slug from bounded env and argv signals, and resolveAuthorIdentity stamps author 'harness:<slug>'. The model is never captured on any path. The consequence is that the entire fleet collapses into seven author values, and history cannot answer which model wrote a decision, produced a defect, or held a claim. This item extends the resolved identity to a structured value — harness, model, model_source, session — resolved by the same pure, bounded, non-blocking detector, and threads it into the history entry as first-class provenance beside the existing author_source discriminator. Signal sources, in precedence order: an explicit PM_AGENT_MODEL override; harness-specific environment (for example ANTHROPIC_MODEL, AIDER_MODEL, CODEX_MODEL, OPENCODE_MODEL, PI_MODEL); MCP initialize clientInfo name and version for MCP-hosted callers, which is the only reliable channel when the harness runs pm out-of-process; and a bounded argv scan. Absence must be silent: an undetectable model yields provenance without a model field and must never degrade the author to unknown. Detection stays pure and bounded per the pm-z9x1r2 contract — no process traversal, no subprocess, no network — so the mutation hot path keeps its startup budget."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:mcp","area:sdk",author,identity,provenance
 created_at: "2026-07-25T12:25:00.960Z"
-updated_at: "2026-07-25T12:41:50.313Z"
+updated_at: "2026-07-25T20:06:44.528Z"
+closed_at: "2026-07-25T20:06:43.416Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "The public SDK resolver returns a structured identity carrying harness, model, model_source, and session alongside the existing author and source, and the CLI and MCP hosts both consume it; A mutation run under a supported harness with no PM_AUTHOR, no --author, and no author_default records the detected harness AND the detected model in its history entry; An undetectable model records provenance without a model field and never degrades the author to unknown, proven by an explicit negative test; Detection remains a pure function of caller-supplied bounded signals with no process traversal, subprocess launch, or network access, and the mutation-path latency budget is asserted in CI; MCP-hosted invocations resolve identity from the initialize clientInfo handshake when environment markers are absent; The provenance fields match the shape decided in the identity ADR exactly, and a contract test fails if the SDK emits a field the ADR does not define; Telemetry receives only the hashed identity dimensions the ADR permits, asserted by a test that inspects the exported event payload"
@@ -19,11 +20,13 @@ why_now: The harness half shipped and closed on 2026-07-25; capturing the model 
 parent: pm-mpbb
 risk: medium
 confidence: 70
-dependencies[15]{id,kind,created_at,author,source_kind}:
+resolution: "Delivered public structured agent identity types, pure detection, invocation/workspace scoping, MCP client provenance, and supported SDK exports."
+expected_result: Packages and embedding hosts can customize automatic harness/model provenance without PM_AUTHOR or private runtime probing.
+actual_result: Packed unrelated-directory consumer proved custom SDK descriptors and installed CLI automatic provenance; session data is absent from durable history.
+dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-3oqjnc,related,"2026-07-25T12:25:00.960Z",null,null
   pm-42p9nk,related,"2026-07-25T12:25:00.960Z",null,null
   pm-j82fd3,related,"2026-07-25T12:25:00.960Z",null,null
-  pm-qwuber,blocked_by,"2026-07-25T12:25:00.960Z",null,null
   pm-u14c,related,"2026-07-25T12:25:00.960Z",null,null
   pm-w7ccmv,related,"2026-07-25T12:25:00.960Z",null,null
   pm-z9x1r2,related,"2026-07-25T12:25:00.960Z",null,null
@@ -35,6 +38,33 @@ dependencies[15]{id,kind,created_at,author,source_kind}:
   pm-sx52hr,related,"2026-07-25T12:34:58.859Z",null,null
   pm-szv11n,related,"2026-07-25T12:34:58.859Z",null,null
   pm-zqsrt5,related,"2026-07-25T12:34:58.859Z",null,null
+comments[6]{created_at,author,text}:
+  "2026-07-25T18:18:19.318Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
+  "2026-07-25T19:14:51.252Z","harness:codex","Implementation evidence: SDK now exports structured agent/model provenance types, pure detection, invocation signal scoping, workspace descriptor scoping, history provenance lookup, and collision-safe package registration. MCP initialization contributes bounded client name/version/model/session signals. Packed isolated consumer proved the public SDK configures a custom harness and the installed CLI persists model provenance without PM_AUTHOR. Full 6,376-test suite and exact 100/100/100/100 coverage passed."
+  "2026-07-25T19:26:50.893Z","harness:codex","Release-gate evidence: repository-owned release pipeline passed type tests, docs/skills, strict static/docstring/token/API gates, exact 100% coverage, version policy, version sync, secret scan, packed npx smoke, and 88-command package-first dogfood. The only pre-push failure is hosted-analysis-gate because DeepScan cannot have an exact-commit status for the current uncommitted main-derived SHA; this gate will be rerun against the pushed PR head."
+  "2026-07-25T19:36:56.149Z","harness:codex","CI round 1 triage: static failed only because the generated full CLI/MCP contract fixture had not been refreshed; updated it with package-owned pnpm contracts:update and contracts:check now passes. Coverage shard 2 and Windows regression shared one platform-sensitive telemetry assertion: hosted runners expose CI as a built-in harness, so a model-only test now snapshots, clears, and restores every built-in environment/model/session signal instead of assuming a Codex-only environment. CI=1 focused telemetry (44/44), exact shard 2, contracts check, and strict static gates all pass locally."
+  "2026-07-25T19:51:56.473Z","harness:codex","Review amendment: session identifiers are transient host context only and are no longer serialized to durable history or telemetry. Exact branch-local history streams were scrubbed of the mistakenly persisted top-level field. Additional review hardening covers bounded settings validation, executable-basename argv matching, inherited environment values, cached descriptor normalization, deterministic telemetry tests, and failure-safe registration cleanup."
+  "2026-07-25T20:06:41.844Z","harness:codex","Final evidence: PR #713 exact head 446d00ae passed all 6,376 tests and 100/100/100/100 coverage (44,010 statements, 31,205 branches, 8,996 functions, 42,752 lines); strict 100% docstring/static/token/API gates; packed unrelated-directory SDK and CLI acceptance; CodeQL, DeepScan with zero findings, Semgrep, Trivy, TruffleHog, CodeFactor, Hound, Windows, compatibility, smokes, and benchmarks. All 13 CodeRabbit findings were individually fixed/dispositioned/reacted and every thread is resolved. Follow-up CodeRabbit and Greptile requests reached external free-review limits after the complete first review."
 learnings[1]{created_at,author,text}:
   "2026-07-25T12:41:50.313Z","harness:claude-code","Treating an observation as a fallback is a design error that keeps recurring in identity code. resolveAuthorIdentity returns early as soon as a higher-precedence branch supplies an author, so detected harness — and soon the detected model — is computed only when nothing else answered. Precedence over WHICH value is authoritative is a separate question from whether an observation is worth recording: the assertion decides the author, the observation decides the provenance, and both belong in the entry. The general rule for any future precedence chain in this codebase: resolve the authoritative value by precedence, but record every cheap observation unconditionally, and keep a discriminator saying which is which."
+files[10]{path,scope,note}:
+  src/core/history/history.ts,project,history provenance persistence
+  src/core/shared/author.ts,project,structured detector and registry
+  src/core/telemetry/runtime.ts,project,hashed harness and model telemetry dimensions
+  src/mcp/server.ts,project,MCP client model provenance
+  src/sdk/core.ts,project,supported SDK exports
+  src/sdk/index.ts,project,main SDK exports
+  src/sdk/runtime-primitives.ts,project,host runtime exports
+  src/types.ts,project,public history and settings contracts
+  tests/fixtures/contracts/full.json,project,Generated CLI/MCP contract snapshot for automatic author guidance
+  tests/fixtures/sdk/public-surface.json,project,Generated public SDK surface contract for identity exports
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test,project,1200
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+  "pnpm quality:static",project,1200
+docs[2]{path,scope,note}:
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,structured SDK usage and field semantics
+  docs/SDK_CUSTOMIZATION_PRIMITIVES.md,project,automatic attribution usage
+close_reason: "Implemented and verified in PR #713 with complete local, packed-consumer, hosted-gate, and review evidence."
 body: ""

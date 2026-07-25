@@ -37,7 +37,7 @@ Also use Claude Code's built-in `TaskCreate` and `TaskUpdate` tools for TUI pane
 
 1. Call `pm_context` first for orientation.
 2. Call `pm_search` before creating new items to avoid duplicates.
-3. Set `author: "claude-code-agent"` on all mutations.
+3. Rely on automatic MCP harness identity for mutations.
 4. Mirror claimed items to Claude Code's task panel with `TaskCreate`.
 5. Return a structured summary of what you did and what pm items were affected.
 

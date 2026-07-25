@@ -11,9 +11,14 @@ import {
 } from "../../../src/core/extensions/index.js";
 import { createHistoryEntry } from "../../../src/core/history/history.js";
 import {
+  detectAgentIdentity,
   detectHarnessIdentity,
+  registerHarnessSignalDescriptors,
   resolveAuthor,
   resolveAuthorIdentity,
+  resolveHistoryAgentIdentity,
+  runWithHarnessDetectionSignals,
+  runWithWorkspaceHarnessSignalDescriptors,
 } from "../../../src/core/shared/author.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../../../src/core/shared/constants.js";
 import { runClose } from "../../../src/cli/commands/close.js";
@@ -75,15 +80,177 @@ describe("agent runtime SDK primitives", () => {
     expect(
       detectHarnessIdentity({ env: {}, argv: ["node", "script.js"] }),
     ).toBeUndefined();
+    expect(
+      detectHarnessIdentity({
+        env: {},
+        argv: ["node", "pm", "comments", "pm-item", "claude-code-agent"],
+      }),
+    ).toBeUndefined();
     expect(detectHarnessIdentity({ argv: [] })).toBeUndefined();
+  });
+
+  it("resolves model-aware agent provenance from environment, argv, and client signals", () => {
+    expect(
+      detectAgentIdentity({
+        env: {
+          CODEX_HOME: "/tmp/codex",
+          CODEX_MODEL: "gpt-5.6-sol",
+          CODEX_THREAD_ID: "thread-123",
+        },
+      }),
+    ).toEqual({
+      harness: "codex",
+      model: "gpt-5.6-sol",
+      model_source: "environment",
+      session: "thread-123",
+    });
+    expect(
+      detectAgentIdentity({
+        env: { PM_AGENT_MODEL: "operator-model" },
+        argv: ["codex", "--model", "argv-model"],
+      }),
+    ).toEqual({
+      harness: "codex",
+      model: "operator-model",
+      model_source: "override",
+    });
+    expect(
+      detectAgentIdentity({
+        env: {},
+        client_info: {
+          name: "Claude Code",
+          version: "1.2.3",
+          model: "claude-opus",
+          session: "mcp-session",
+        },
+      }),
+    ).toEqual({
+      harness: "claude-code",
+      model: "claude-opus",
+      model_source: "mcp_client",
+      session: "mcp-session",
+    });
+    expect(
+      detectAgentIdentity({
+        env: {},
+        argv: ["opencode", "--model=qwen-coder"],
+      }),
+    ).toEqual({
+      harness: "opencode",
+      model: "qwen-coder",
+      model_source: "argv",
+    });
+  });
+
+  it("appends declarative harness descriptors with collision-safe cleanup", () => {
+    const descriptor = {
+      harness: "synthetic-agent",
+      environment_keys: ["SYNTHETIC_AGENT"],
+      model_environment_keys: ["SYNTHETIC_MODEL"],
+      session_environment_keys: ["SYNTHETIC_SESSION"],
+      argv_markers: ["synthetic-agent"],
+      client_names: ["synthetic-client"],
+    };
+    const disposers: Array<() => void> = [];
+    try {
+      disposers.push(registerHarnessSignalDescriptors([descriptor]));
+      disposers.push(registerHarnessSignalDescriptors([descriptor]));
+      expect(
+        detectAgentIdentity({
+          env: {
+            SYNTHETIC_AGENT: "1",
+            SYNTHETIC_MODEL: "test-model",
+            SYNTHETIC_SESSION: "session-1",
+          },
+        }),
+      ).toEqual({
+        harness: "synthetic-agent",
+        model: "test-model",
+        model_source: "environment",
+        session: "session-1",
+      });
+      expect(() =>
+        registerHarnessSignalDescriptors([
+          { harness: "codex", environment_keys: ["OTHER_CODEX"] },
+        ]),
+      ).toThrowError(/Harness signal descriptor collision.*codex/u);
+      expect(() =>
+        registerHarnessSignalDescriptors([{ harness: "Invalid Namespace" }]),
+      ).toThrowError(/Invalid harness signal descriptor namespace/u);
+      expect(() =>
+        registerHarnessSignalDescriptors([
+          {
+            harness: "synthetic-agent",
+            environment_keys: ["DIFFERENT_SYNTHETIC_AGENT"],
+          },
+        ]),
+      ).toThrowError(/Harness signal descriptor collision.*synthetic-agent/u);
+      expect(() =>
+        runWithWorkspaceHarnessSignalDescriptors([descriptor], () => undefined),
+      ).toThrowError(/Harness signal descriptor collision.*synthetic-agent/u);
+      disposers[0]!();
+      expect(
+        detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } }),
+      ).toBe("synthetic-agent");
+      disposers[0]!();
+      disposers[1]!();
+      expect(
+        detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } }),
+      ).toBeUndefined();
+    } finally {
+      for (const dispose of disposers.reverse()) dispose();
+    }
+  });
+
+  it("supports minimal workspace descriptors and literal client and argv signals", () => {
+    const descriptor = { harness: "minimal-agent" };
+    expect(
+      runWithWorkspaceHarnessSignalDescriptors([descriptor], () =>
+        detectHarnessIdentity({
+          env: {},
+          argv: ["node"],
+          client_info: { name: "unrelated" },
+        }),
+      ),
+    ).toBeUndefined();
+    expect(
+      detectAgentIdentity({
+        env: {},
+        argv: ["codex", "--model"],
+      }),
+    ).toEqual({ harness: "codex" });
+    expect(
+      detectAgentIdentity({ env: {}, argv: ["/home/pi/project", "status"] }),
+    ).toEqual({});
+    expect(
+      detectAgentIdentity({
+        env: Object.create({ constructor: () => "not-an-env-value" }) as Record<
+          string,
+          string
+        >,
+        descriptors: [
+          { harness: "prototype-safe", environment_keys: ["constructor"] },
+        ],
+      }),
+    ).toEqual({});
   });
 
   it("resolves author precedence and records provenance on new history", () => {
     expect(
       resolveAuthorIdentity(" explicit ", "configured", {
-        env: { PM_AUTHOR: "environment", CODEX_HOME: "/tmp/codex" },
+        env: {
+          PM_AUTHOR: "environment",
+          CODEX_HOME: "/tmp/codex",
+          CODEX_MODEL: "gpt-5.6-sol",
+        },
       }),
-    ).toEqual({ author: "explicit", source: "asserted" });
+    ).toEqual({
+      author: "explicit",
+      source: "asserted",
+      harness: "codex",
+      model: "gpt-5.6-sol",
+      model_source: "environment",
+    });
     expect(
       resolveAuthorIdentity(undefined, "configured", {
         env: { PM_AUTHOR: "environment" },
@@ -93,7 +260,11 @@ describe("agent runtime SDK primitives", () => {
       resolveAuthorIdentity(undefined, " configured ", {
         env: { CODEX_HOME: "/tmp/codex" },
       }),
-    ).toEqual({ author: "configured", source: "configured" });
+    ).toEqual({
+      author: "configured",
+      source: "configured",
+      harness: "codex",
+    });
     expect(
       resolveAuthorIdentity(undefined, "", {
         env: { CODEX_HOME: "/tmp/codex" },
@@ -107,22 +278,41 @@ describe("agent runtime SDK primitives", () => {
       author: "unknown",
       source: "unknown",
     });
+    expect(resolveHistoryAgentIdentity("harness:opencode")).toEqual({
+      harness: "opencode",
+    });
 
     delete process.env.PM_AUTHOR;
     const author = resolveAuthor(undefined, "configured-agent");
     const emptyDocument = EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument;
     expect(
-      createHistoryEntry({
-        nowIso: "2026-07-25T00:00:00.000Z",
-        author,
-        op: "test",
-        before: emptyDocument,
-        after: emptyDocument,
-      }),
+      runWithHarnessDetectionSignals(
+        {
+          env: {
+            CODEX_HOME: "/tmp/codex",
+            CODEX_MODEL: "gpt-5.6-sol",
+            CODEX_THREAD_ID: "thread-456",
+          },
+        },
+        () => {
+          const contextualAuthor = resolveAuthor(undefined, "configured-agent");
+          return createHistoryEntry({
+            nowIso: "2026-07-25T00:00:00.000Z",
+            author: contextualAuthor,
+            op: "test",
+            before: emptyDocument,
+            after: emptyDocument,
+          });
+        },
+      ),
     ).toMatchObject({
       author: "configured-agent",
       author_source: "configured",
+      agent_harness: "codex",
+      agent_model: "gpt-5.6-sol",
+      agent_model_source: "environment",
     });
+    expect(author).toBe("configured-agent");
   });
 
   it("attributes update and close mutations to the detected harness", async () => {
@@ -196,6 +386,7 @@ describe("agent runtime SDK primitives", () => {
           op: "update",
           author: "harness:codex",
           author_source: "detected",
+          agent_harness: "codex",
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),
@@ -205,6 +396,7 @@ describe("agent runtime SDK primitives", () => {
           op: "close",
           author: "harness:codex",
           author_source: "detected",
+          agent_harness: "codex",
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),

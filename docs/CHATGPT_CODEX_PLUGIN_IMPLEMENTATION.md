@@ -262,10 +262,12 @@ attestations.
 
 ### Identity and authorization gap
 
-The local `.mcp.json` sets `PM_AUTHOR=codex-agent`. That gives local history a stable fallback author, but it is
-not end-user identity or authorization. A hosted multi-user app must derive the actor from authenticated server
-context, authorize the selected repository and operation on every request, and prevent callers from spoofing
-another history author through tool arguments.
+The local MCP runtime derives agent provenance from its initialize handshake
+and bounded runtime signals. That local observation is not end-user identity
+or authorization. A hosted multi-user app must derive the actor from
+authenticated server context, authorize the selected repository and operation
+on every request, and prevent callers from spoofing another history author
+through tool arguments.
 
 ## Target Architecture
 
@@ -380,10 +382,7 @@ with a companion:
   "mcpServers": {
     "pm-mcp": {
       "command": "node",
-      "args": ["./runtime/pm-mcp-server.mjs"],
-      "env": {
-        "PM_AUTHOR": "codex-agent"
-      }
+      "args": ["./runtime/pm-mcp-server.mjs"]
     }
   }
 }
@@ -473,7 +472,7 @@ workspaces. That is a new product surface, not a packaging tweak. It must define
 - concurrent mutation and locking semantics;
 - storage lifetime and deletion;
 - secret management and OAuth scopes;
-- audit identity and mapping to `PM_AUTHOR`;
+- authenticated audit identity and mapping to pm's asserted-author contract;
 - job limits, process execution, sandboxing, and egress;
 - reconciliation when remote Git changes during a session; and
 - observability, incident response, support, privacy, and data residency.

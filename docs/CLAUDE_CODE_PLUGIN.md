@@ -66,14 +66,16 @@ Add to the project's `.mcp.json`:
   "mcpServers": {
     "pm-mcp": {
       "command": "node",
-      "args": ["./plugins/pm-claude/scripts/pm-mcp-server.mjs"],
-      "env": { "PM_AUTHOR": "claude-code-agent" }
+      "args": ["./plugins/pm-claude/scripts/pm-mcp-server.mjs"]
     }
   }
 }
 ```
 
-The repo root `.mcp.json` uses this approach — activates automatically when Claude Code opens this repository.
+The repo root `.mcp.json` uses this approach and activates automatically when
+Claude Code opens this repository. The MCP initialize handshake supplies the
+client name/version to pm's bounded identity detector, so normal agent
+mutations do not need a hard-wired `PM_AUTHOR`.
 
 ## MCP Server Launcher
 

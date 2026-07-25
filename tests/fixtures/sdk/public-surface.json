@@ -19,6 +19,28 @@
       ],
       "package_version": "2026.7.25",
       "reason": "Additive deterministic duplicate-cluster verification seams for the 2026.7.25 release"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HarnessDetectionSignals",
+        "signature ./sdk:PmSettings",
+        "signature ./sdk:ResolvedAuthorIdentity",
+        "signature ./sdk/core:HarnessDetectionSignals",
+        "signature ./sdk/core:PmSettings",
+        "signature ./sdk/core:ResolvedAuthorIdentity",
+        "signature ./sdk/runtime:PmSettings"
+      ],
+      "package_version": "2026.7.25",
+      "reason": "Additive optional agent provenance and required default-backed settings registry contract tracked by pm-qwuber and pm-03pq3o"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmSettings",
+        "signature ./sdk/core:PmSettings",
+        "signature ./sdk/runtime:PmSettings"
+      ],
+      "package_version": "2026.7.25",
+      "reason": "Add optional structured agent provenance and workspace harness registry contracts tracked by pm-qwuber and pm-03pq3o"
     }
   ],
   "entrypoints": {
@@ -180,6 +202,18 @@
           "kind": "interface",
           "name": "AfterCommandHookContext",
           "signature": "export interface AfterCommandHookContext extends BeforeCommandHookContext { ok: boolean; error?: string; result?: unknown; affected?: AfterCommandAffectedItem[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentClientInfo",
+          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AgentModelSource",
+          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\";"
         },
         {
           "classification": "supported",
@@ -738,6 +772,12 @@
           "kind": "function",
           "name": "buildWorkspaceMemorySnapshot",
           "signature": "(items: readonly ItemMetadata[], options: { statusRegistry: RuntimeStatusRegistry; sourceCursor: string; now: string; }) => WorkspaceMemorySnapshot | calls: (items: readonly ItemMetadata[], options: { statusRegistry: RuntimeStatusRegistry; sourceCursor: string; now: string; }) => WorkspaceMemorySnapshot"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "BUILTIN_HARNESS_SIGNAL_DESCRIPTORS",
+          "signature": "readonly HarnessSignalDescriptor[]"
         },
         {
           "classification": "supported",
@@ -2184,6 +2224,18 @@
           "kind": "function",
           "name": "describeUnknownError",
           "signature": "(error: unknown) => string | calls: (error: unknown) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "detectAgentIdentity",
+          "signature": "(signals?: HarnessDetectionSignals) => DetectedAgentIdentity | calls: (signals?: HarnessDetectionSignals) => DetectedAgentIdentity"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DetectedAgentIdentity",
+          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; }"
         },
         {
           "classification": "supported",
@@ -3635,7 +3687,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessDetectionSignals",
-          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; }"
+          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; descriptors?: readonly HarnessSignalDescriptor[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HarnessSignalDescriptor",
+          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -5897,7 +5955,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "contract_data",
@@ -6698,6 +6756,12 @@
           "signature": "export type RegisteredVectorStoreAdapterExpectation = NamedRegistrationExpectation<\"adapter\", string, { extensionName?: string; }>;"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "registerHarnessSignalDescriptors",
+          "signature": "(descriptors: readonly HarnessSignalDescriptor[]) => () => void | calls: (descriptors: readonly HarnessSignalDescriptor[]) => () => void"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "REINDEX_FLAG_CONTRACTS",
@@ -7409,7 +7473,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ResolvedAuthorIdentity",
-          "signature": "export interface ResolvedAuthorIdentity { author: string; source: AuthorSource; harness?: string; }"
+          "signature": "export interface ResolvedAuthorIdentity extends DetectedAgentIdentity { author: string; source: AuthorSource; }"
         },
         {
           "classification": "supported",
@@ -8184,6 +8248,18 @@
           "kind": "function",
           "name": "runWithActiveExtensions",
           "signature": "<T>(options: ActiveExtensionScopeOptions, run: () => Promise<T>) => Promise<T> | calls: <T>(options: ActiveExtensionScopeOptions, run: () => Promise<T>) => Promise<T>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runWithHarnessDetectionSignals",
+          "signature": "<T>(signals: HarnessDetectionSignals, callback: () => T) => T | calls: <T>(signals: HarnessDetectionSignals, callback: () => T) => T"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runWithWorkspaceHarnessSignalDescriptors",
+          "signature": "<T>(descriptors: readonly HarnessSignalDescriptor[], callback: () => T) => T | calls: <T>(descriptors: readonly HarnessSignalDescriptor[], callback: () => T) => T"
         },
         {
           "classification": "advanced_export",
@@ -12219,6 +12295,18 @@
       "symbols": [
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "AgentClientInfo",
+          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AgentModelSource",
+          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\";"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "aggregate",
           "signature": "(options?: AggregateOptions, clientOptions?: PmClientOptions) => Promise<AggregateResult> | calls: (options?: AggregateOptions, clientOptions?: PmClientOptions) => Promise<AggregateResult>"
@@ -12270,6 +12358,12 @@
           "kind": "value",
           "name": "BASELINE_ITEM_FORMAT_VERSION",
           "signature": "1"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "BUILTIN_HARNESS_SIGNAL_DESCRIPTORS",
+          "signature": "readonly HarnessSignalDescriptor[]"
         },
         {
           "classification": "supported",
@@ -12448,6 +12542,18 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "detectAgentIdentity",
+          "signature": "(signals?: HarnessDetectionSignals) => DetectedAgentIdentity | calls: (signals?: HarnessDetectionSignals) => DetectedAgentIdentity"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DetectedAgentIdentity",
+          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "detectHarnessIdentity",
           "signature": "(signals?: HarnessDetectionSignals) => string | undefined | calls: (signals?: HarnessDetectionSignals) => string | undefined"
         },
@@ -12563,7 +12669,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessDetectionSignals",
-          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; }"
+          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; descriptors?: readonly HarnessSignalDescriptor[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HarnessSignalDescriptor",
+          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -12767,13 +12879,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "readAuthorEnvironment",
           "signature": "() => string | undefined | calls: () => string | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "registerHarnessSignalDescriptors",
+          "signature": "(descriptors: readonly HarnessSignalDescriptor[]) => () => void | calls: (descriptors: readonly HarnessSignalDescriptor[]) => () => void"
         },
         {
           "classification": "supported",
@@ -12797,7 +12915,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ResolvedAuthorIdentity",
-          "signature": "export interface ResolvedAuthorIdentity { author: string; source: AuthorSource; harness?: string; }"
+          "signature": "export interface ResolvedAuthorIdentity extends DetectedAgentIdentity { author: string; source: AuthorSource; }"
         },
         {
           "classification": "supported",
@@ -12822,6 +12940,18 @@
           "kind": "function",
           "name": "runAction",
           "signature": "(args: PmActionInput) => Promise<unknown> | calls: (args: PmActionInput) => Promise<unknown>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runWithHarnessDetectionSignals",
+          "signature": "<T>(signals: HarnessDetectionSignals, callback: () => T) => T | calls: <T>(signals: HarnessDetectionSignals, callback: () => T) => T"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runWithWorkspaceHarnessSignalDescriptors",
+          "signature": "<T>(descriptors: readonly HarnessSignalDescriptor[], callback: () => T) => T | calls: <T>(descriptors: readonly HarnessSignalDescriptor[], callback: () => T) => T"
         },
         {
           "classification": "supported",
@@ -16985,7 +17115,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "advanced_export",

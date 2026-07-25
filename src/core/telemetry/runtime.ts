@@ -21,7 +21,10 @@ import {
   type TelemetryErrorCategory,
 } from "../shared/constants.js";
 import { nowIso } from "../shared/time.js";
-import { readAuthorEnvironment } from "../shared/author.js";
+import {
+  detectAgentIdentity,
+  readAuthorEnvironment,
+} from "../shared/author.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
 import {
@@ -751,7 +754,7 @@ function hashWithInstallationId(installationId: string, value: string): string {
 }
 
 /**
- * Builds the agent-identity dimension for a telemetry payload from `PM_AUTHOR`.
+ * Builds privacy-bounded author and agent dimensions for a telemetry payload.
  *
  * The raw `PM_AUTHOR` value (e.g. `claude-code-agent`) is never emitted. At
  * non-minimal capture levels a stable `author_context_hash` is attached — the
@@ -759,19 +762,57 @@ function hashWithInstallationId(installationId: string, value: string): string {
  * agent-driven invocations can be segmented in Sentry/dashboards while the same
  * author hashes differently across installations. Because the field is a one-way
  * hash, it intentionally bypasses the {@link SENSITIVE_KEYWORDS} redaction path.
- * At minimal capture only a `has_author_context` boolean is surfaced.
+ * Harness and model values use the same installation-keyed one-way hashing.
+ * Model source is a fixed enum and can be emitted directly. The local
+ * invocation/session identifier is deliberately excluded at every capture
+ * level. At minimal capture only presence booleans are surfaced.
  */
 function buildAuthorContextPayloadFields(
   captureLevel: TelemetryCaptureLevel,
   installationId: string,
 ): Record<string, unknown> {
   const author = (readAuthorEnvironment() ?? "").trim();
+  const agent = detectAgentIdentity({
+    env: process.env,
+    argv: process.argv,
+  });
+  const hasAgentContext =
+    agent.harness !== undefined || agent.model !== undefined;
   if (captureLevel === "minimal") {
-    return { has_author_context: author.length > 0 };
+    return {
+      has_author_context: author.length > 0,
+      has_agent_context: hasAgentContext,
+    };
   }
-  return author.length > 0
-    ? { author_context_hash: hashWithInstallationId(installationId, author) }
-    : {};
+  return {
+    ...(author.length > 0
+      ? {
+          author_context_hash: hashWithInstallationId(
+            installationId,
+            author,
+          ),
+        }
+      : {}),
+    ...(agent.harness
+      ? {
+          agent_harness_hash: hashWithInstallationId(
+            installationId,
+            agent.harness,
+          ),
+        }
+      : {}),
+    ...(agent.model
+      ? {
+          agent_model_hash: hashWithInstallationId(
+            installationId,
+            agent.model,
+          ),
+        }
+      : {}),
+    ...(agent.model_source
+      ? { agent_model_source: agent.model_source }
+      : {}),
+  };
 }
 
 function normalizeForHash(value: unknown, depth = 0): unknown {
@@ -1317,6 +1358,10 @@ function buildCommandErrorPayload(params: {
     errorCode,
     errorMessage,
   );
+  const authorContextFields = buildAuthorContextPayloadFields(
+    captureLevel,
+    installationId,
+  );
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
@@ -1334,6 +1379,7 @@ function buildCommandErrorPayload(params: {
       exit_code: exitCode,
       error: sanitizeString(errorMessage, "redacted"),
       error_fingerprint: errorFingerprint,
+      ...authorContextFields,
     };
   }
 
@@ -1345,6 +1391,7 @@ function buildCommandErrorPayload(params: {
     command_taxonomy: commandTaxonomy,
     command_resolution: commandResolution,
     resolution_stage: resolutionStage,
+    ...authorContextFields,
     attempted_command: sanitizeString(command, captureLevel),
     attempted_command_digest: attemptedCommandDigest,
     attempted_args: sanitizeCommandArgs(args, captureLevel),

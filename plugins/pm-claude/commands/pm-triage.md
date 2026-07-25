@@ -15,7 +15,6 @@ Use native pm MCP tools to triage a request into pm tracking. Request: `$ARGUMEN
    {
      "tool": "pm_create",
      "args": {
-       "author": "claude-code-agent",
        "options": {
          "title": "Concise, action-oriented title",
          "description": "What and why, one paragraph.",

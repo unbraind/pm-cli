@@ -19,7 +19,6 @@ Create a new pm item using native MCP tools. Input: `$ARGUMENTS`
    {
      "tool": "pm_create",
      "args": {
-       "author": "claude-code-agent",
        "options": {
          "title": "<from $ARGUMENTS>",
          "description": "<inferred or from input>",

@@ -48,10 +48,7 @@ Add to your project's `.mcp.json`:
   "mcpServers": {
     "pm-mcp": {
       "command": "npx",
-      "args": ["-y", "@unbrained/pm-cli@latest", "pm-mcp"],
-      "env": {
-        "PM_AUTHOR": "claude-code-agent"
-      }
+      "args": ["-y", "@unbrained/pm-cli@latest", "pm-mcp"]
     }
   }
 }
@@ -210,7 +207,8 @@ Use pm_context tool or /pm-status for full details.
 ## Safety
 
 - Never pass `path` during real repository tracking — only use it for sandbox/test runs.
-- Set `author: "claude-code-agent"` on all mutations.
+- Let the MCP handshake supply automatic harness identity; pass `author` only
+  for an intentional external-principal override.
 - Run `pm_validate` before closing items.
 - For tests, pass a sandbox `cwd` and set `PM_GLOBAL_PATH` to an isolated path.
 
