@@ -4,12 +4,15 @@ import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const harness = createScriptHarness();
 const SHA = "a61cdc0c58252072456661a4c08f4b431625f274";
+const PARENT_SHA = "b61cdc0c58252072456661a4c08f4b431625f275";
 
 interface GatePayload {
   ok: boolean;
   reason?: string;
   repository?: string;
   sha?: string;
+  analyzed_sha?: string;
+  analysis_source?: string;
   analyzers?: {
     deepscan: { new_issues: number };
     codefactor: { new_issues: number };
@@ -134,6 +137,207 @@ describe("scripts/release/hosted-analysis-gate", () => {
     await harness.importModule("scripts/release/hosted-analysis-gate.mjs", "hostedAnalysisDefaults");
     expect(String(logSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("DeepScan 0 new issues");
     expect(process.exitCode).toBe(0);
+  });
+
+  it("reuses reviewed analyzer evidence only from an identical-tree merge parent", async () => {
+    const parentSha = PARENT_SHA;
+    const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
+    const spawnSync = vi.fn((_command: string, args: string[]) => {
+      const target = String(args[1] ?? "");
+      if (args[0] === "rev-parse") {
+        if (target.endsWith("^2")) return { status: 0, stdout: `${parentSha}\n`, stderr: "" };
+        if (target.endsWith("^{tree}")) return { status: 0, stdout: `${treeSha}\n`, stderr: "" };
+        return { status: 0, stdout: `${SHA}\n`, stderr: "" };
+      }
+      if (target.endsWith("/protection")) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            required_status_checks: {
+              strict: true,
+              contexts: ["DeepScan"],
+              checks: [{ context: "CodeFactor" }],
+            },
+          }),
+          stderr: "",
+        };
+      }
+      if (target.includes(`/commits/${parentSha}/status`)) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            statuses: [{ context: "DeepScan", state: "success", description: "0 new issues" }],
+          }),
+          stderr: "",
+        };
+      }
+      if (target.includes(`/commits/${parentSha}/check-runs`)) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            check_runs: [
+              {
+                name: "CodeFactor",
+                status: "completed",
+                conclusion: "success",
+                output: { title: "No issues found." },
+              },
+            ],
+          }),
+          stderr: "",
+        };
+      }
+      if (target.endsWith("/status")) {
+        return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
+      }
+      if (target.includes("/check-runs")) {
+        return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+      }
+      return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+
+    const payload = await runJson([], "hostedAnalysisMergeTreeFallback");
+    expect(payload).toMatchObject({
+      ok: true,
+      sha: SHA,
+      analyzed_sha: parentSha,
+      analysis_source: "identical_tree_merge_parent",
+    });
+    expect(process.exitCode).toBe(0);
+  });
+
+  it.each([
+    { label: "missing merge parent", parentStatus: 1, parentValue: PARENT_SHA, exactTreeStatus: 0, parentTreeStatus: 0, parentTree: SHA },
+    { label: "invalid merge parent", parentStatus: 0, parentValue: "main", exactTreeStatus: 0, parentTreeStatus: 0, parentTree: SHA },
+    { label: "missing exact tree", parentStatus: 0, parentValue: PARENT_SHA, exactTreeStatus: 1, parentTreeStatus: 0, parentTree: SHA },
+    { label: "missing parent tree", parentStatus: 0, parentValue: PARENT_SHA, exactTreeStatus: 0, parentTreeStatus: 1, parentTree: SHA },
+    {
+      label: "different parent tree",
+      parentStatus: 0,
+      parentValue: PARENT_SHA,
+      exactTreeStatus: 0,
+      parentTreeStatus: 0,
+      parentTree: "d61cdc0c58252072456661a4c08f4b431625f277",
+    },
+  ])(
+    "rejects $label as analyzer evidence",
+    async ({ label, parentStatus, parentValue, exactTreeStatus, parentTreeStatus, parentTree }) => {
+      const exactTree = "c61cdc0c58252072456661a4c08f4b431625f276";
+      const spawnSync = vi.fn((_command: string, args: string[]) => {
+        const target = String(args[1] ?? "");
+        if (args[0] === "rev-parse") {
+          if (target.endsWith("^2")) {
+            return { status: parentStatus, stdout: `${parentValue}\n`, stderr: "" };
+          }
+          if (target === `${SHA}^{tree}`) {
+            return { status: exactTreeStatus, stdout: `${exactTree}\n`, stderr: "" };
+          }
+          if (target.endsWith("^{tree}")) {
+            return { status: parentTreeStatus, stdout: `${parentTree}\n`, stderr: "" };
+          }
+          return { status: 0, stdout: `${SHA}\n`, stderr: "" };
+        }
+        if (target.endsWith("/protection")) {
+          return {
+            status: 0,
+            stdout: JSON.stringify({
+              required_status_checks: {
+                strict: true,
+                contexts: ["DeepScan"],
+                checks: [{ context: "CodeFactor" }],
+              },
+            }),
+            stderr: "",
+          };
+        }
+        if (target.endsWith("/status")) {
+          return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
+        }
+        if (target.includes("/check-runs")) {
+          return {
+            status: 0,
+            stdout: JSON.stringify({
+              check_runs: [
+                {
+                  name: "CodeFactor",
+                  status: "completed",
+                  conclusion: "success",
+                  output: { title: "No issues found." },
+                },
+              ],
+            }),
+            stderr: "",
+          };
+        }
+        return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+      });
+      vi.doMock("node:child_process", () => ({ spawnSync }));
+
+      const payload = await runJson([], `hostedAnalysisRejectedMergeFallback-${label}`);
+      expect(payload).toMatchObject({
+        ok: false,
+        reason: "DeepScan status is missing for the exact commit",
+      });
+      expect(process.exitCode).toBe(1);
+    },
+  );
+
+  it("fails closed when identical-tree parent analyzer evidence cannot be read", async () => {
+    const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
+    let statusReads = 0;
+    const spawnSync = vi.fn((_command: string, args: string[]) => {
+      const target = String(args[1] ?? "");
+      if (args[0] === "rev-parse") {
+        if (target.endsWith("^2")) return { status: 0, stdout: `${PARENT_SHA}\n`, stderr: "" };
+        if (target.endsWith("^{tree}")) return { status: 0, stdout: `${treeSha}\n`, stderr: "" };
+        return { status: 0, stdout: `${SHA}\n`, stderr: "" };
+      }
+      if (target.endsWith("/protection")) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            required_status_checks: {
+              strict: true,
+              contexts: ["DeepScan"],
+              checks: [{ context: "CodeFactor" }],
+            },
+          }),
+          stderr: "",
+        };
+      }
+      if (target.endsWith("/status")) {
+        statusReads += 1;
+        return statusReads === 1
+          ? { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" }
+          : { status: 1, stdout: "", stderr: "unavailable" };
+      }
+      if (target.includes("/check-runs")) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            check_runs: [
+              {
+                name: "CodeFactor",
+                status: "completed",
+                conclusion: "success",
+                output: { title: "No issues found." },
+              },
+            ],
+          }),
+          stderr: "",
+        };
+      }
+      return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+
+    const payload = await runJson([], "hostedAnalysisUnreadableMergeParentEvidence");
+    expect(payload).toMatchObject({
+      ok: false,
+      reason: "DeepScan status is missing for the exact commit",
+    });
+    expect(process.exitCode).toBe(1);
   });
 
   it.each([
