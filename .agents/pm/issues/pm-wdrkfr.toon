@@ -1,0 +1,26 @@
+id: pm-wdrkfr
+title: "GH-708: make retained delete tombstones discoverable and policy-controlled"
+description: "Expose history streams retained after pm delete as intentional tombstones through supported health/list output, explain retention in delete results/help, and define explicit opt-in retention or garbage-collection policy without weakening append-only audit defaults."
+type: Issue
+status: open
+priority: 1
+tags[9]: agent-ux,"area:history","area:storage",delete,gc,gh-issue,"gh:unbraind/pm-cli#708",multi-agent,observability
+created_at: "2026-07-25T12:10:49.472Z"
+updated_at: "2026-07-25T12:11:51.508Z"
+author: "harness:codex"
+acceptance_criteria: "pm health or an equivalent supported command reports a bounded count/list of history streams without live item files and distinguishes valid delete tombstones from corruption; pm delete output and help explicitly state that the history stream is retained; an opt-in tombstone retention or gc policy is documented and cannot silently remove append-only proof; SDK/CLI contracts expose the same structured tombstone state; sandboxed delete, health, history, gc, and merge regression tests preserve 100% coverage"
+objective: "Deleted-item audit streams are visible, explainable, and bounded by an explicit retention policy"
+value: Agents can distinguish intentional audit proof from orphaned residue and can manage long-lived multi-agent workspace growth without raw filesystem inspection
+parent: pm-o2kc
+risk: medium
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-4yl0,related,"2026-07-25T12:11:51.320Z",null,null
+  pm-9yfo,related,"2026-07-25T12:11:51.320Z",null,null
+  pm-l709,related,"2026-07-25T12:11:51.320Z",null,null
+  pm-o79o,related,"2026-07-25T12:11:51.320Z",null,null
+  pm-tqel,related,"2026-07-25T12:11:51.320Z",null,null
+  pm-wwfd,related,"2026-07-25T12:11:51.320Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-25T12:10:49.472Z","harness:codex","Duplicate-check evidence: all-status search and full metadata review covered closed delete implementation pm-4yl0,closed storage observability plan pm-l709,open history namespace work pm-tqel,open mutation-completeness gate pm-9yfo,parent epic pm-o2kc,and closed delete/modify merge fix pm-wwfd. Those items own delete execution,generic storage stats,command naming,append completeness,durability,and resurrection detection respectively; none owns enumeration/explanation/retention policy for legitimate history-only tombstones. GH-708 is the canonical new owner."
+body: ""
