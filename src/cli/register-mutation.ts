@@ -2414,7 +2414,10 @@ export function registerMutationCommands(
     .option("--affected-version <value>", "Set affected version identifier")
     .option("--fixed-version <value>", "Set fixed version identifier")
     .option("--component <value>", "Set issue component ownership")
-    .option("--regression <value>", "Set regression marker: true|false|1|0")
+    .option(
+      "--regression [value]",
+      "Set regression marker; bare flag means true, or pass true|false|1|0",
+    )
     .option("--customer-impact <value>", "Set customer impact summary")
     .option(
       "--dep <value>",

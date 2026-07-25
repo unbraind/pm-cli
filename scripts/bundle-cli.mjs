@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { lstat, mkdir, readdir, readFile, rename, rm, stat, unlink, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
 const repoRoot = process.cwd();
-// CLI and SDK entrypoints share one esbuild invocation so their common code
+// CLI and compatibility SDK entrypoints share one esbuild invocation so their common code
 // lands in shared chunks: installed extensions import `@unbrained/pm-cli/sdk`
 // through the package `exports`, and resolving that to the same chunk graph the
 // running CLI already loaded keeps per-command extension activation cheap
@@ -17,6 +27,18 @@ const entryPoints = {
   sdk: path.join(repoRoot, "dist", "sdk", "index.js"),
   "sdk-runtime": path.join(repoRoot, "dist", "sdk", "runtime.js"),
   "sdk-testing": path.join(repoRoot, "dist", "sdk", "testing.js"),
+};
+// Focused public entrypoints share a second chunk graph. Keeping them out of the
+// executable graph prevents additional package entrypoints from fragmenting the
+// CLI's eager module graph and raising every cold-process invocation floor.
+const focusedEntryPoints = {
+  "sdk-authoring": path.join(repoRoot, "dist", "sdk", "authoring.js"),
+  "sdk-contracts": path.join(repoRoot, "dist", "sdk", "contracts.js"),
+  "sdk-core": path.join(repoRoot, "dist", "sdk", "core.js"),
+  "sdk-governance": path.join(repoRoot, "dist", "sdk", "governance.js"),
+  "sdk-graph": path.join(repoRoot, "dist", "sdk", "graph.js"),
+  "sdk-merge": path.join(repoRoot, "dist", "sdk", "merge.js"),
+  "sdk-query": path.join(repoRoot, "dist", "sdk", "query.js"),
 };
 const outputDir = path.join(repoRoot, "dist", "cli-bundle");
 const lockDir = path.join(repoRoot, "dist", ".cli-bundle-build.lock");
@@ -34,9 +56,9 @@ export function sleep(ms) {
 export function hasErrorCode(error, codes) {
   return Boolean(
     error &&
-      typeof error === "object" &&
-      "code" in error &&
-      codes.includes(String(error.code)),
+    typeof error === "object" &&
+    "code" in error &&
+    codes.includes(String(error.code)),
   );
 }
 
@@ -85,7 +107,9 @@ export async function acquireBundleBuildLock() {
         continue;
       }
       if (Date.now() - startedAt > lockTimeoutMs) {
-        throw new Error(`Timed out waiting for bundle build lock at ${lockDir}`);
+        throw new Error(
+          `Timed out waiting for bundle build lock at ${lockDir}`,
+        );
       }
       await sleep(lockRetryMs);
     }
@@ -93,17 +117,24 @@ export async function acquireBundleBuildLock() {
 }
 
 export async function collectFiles(directory) {
-  const entries = await readdir(directory, { withFileTypes: true }).catch((error) => {
-    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-      return [];
-    }
-    throw error;
-  });
+  const entries = await readdir(directory, { withFileTypes: true }).catch(
+    (error) => {
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return [];
+      }
+      throw error;
+    },
+  );
   const files = [];
   for (const entry of entries) {
     const absolutePath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
-      files.push(...await collectFiles(absolutePath));
+      files.push(...(await collectFiles(absolutePath)));
       continue;
     }
     if (entry.isFile() || entry.isSymbolicLink()) {
@@ -115,7 +146,9 @@ export async function collectFiles(directory) {
 
 export async function removeStaleBundleFiles(outputs) {
   const expectedFiles = new Set(
-    Object.keys(outputs).map((outputPath) => path.resolve(repoRoot, outputPath)),
+    Object.keys(outputs).map((outputPath) =>
+      path.resolve(repoRoot, outputPath),
+    ),
   );
   const existingFiles = await collectFiles(outputDir);
   const now = Date.now();
@@ -134,12 +167,17 @@ export async function removeStaleBundleFiles(outputs) {
 
 export async function writeBundleManifest(outputs) {
   const files = [];
-  for (const outputPath of Object.keys(outputs).sort((left, right) => left.localeCompare(right))) {
+  for (const outputPath of Object.keys(outputs).sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     const absolutePath = path.resolve(repoRoot, outputPath);
     if (!absolutePath.startsWith(`${outputDir}${path.sep}`)) {
       continue;
     }
-    const relativePath = path.relative(outputDir, absolutePath).split(path.sep).join("/");
+    const relativePath = path
+      .relative(outputDir, absolutePath)
+      .split(path.sep)
+      .join("/");
     const contents = await readFile(absolutePath);
     files.push({
       path: relativePath,
@@ -158,32 +196,46 @@ export async function writeBundleManifest(outputs) {
   await rename(temporaryPath, bundleManifestPath);
 }
 
+/** Build the shared esbuild settings for one isolated entrypoint graph. */
+function bundleOptions(selectedEntryPoints, chunkNames) {
+  return {
+    entryPoints: selectedEntryPoints,
+    outdir: outputDir,
+    bundle: true,
+    splitting: true,
+    format: "esm",
+    platform: "node",
+    target: ["node22"],
+    packages: "external",
+    minifySyntax: true,
+    minifyWhitespace: true,
+    minifyIdentifiers: true,
+    sourcemap: true,
+    metafile: true,
+    entryNames: "[name]",
+    chunkNames,
+    logLevel: "warning",
+  };
+}
+
 export async function main() {
   // Do not delete the live bundle before rebuilding. Agents often run docs,
   // dogfood, and build gates concurrently in one checkout; removing this folder
   // creates a transient broken `dist/cli.js` runtime.
   const releaseBundleBuildLock = await acquireBundleBuildLock();
   try {
-    const buildResult = await build({
-      entryPoints,
-      outdir: outputDir,
-      bundle: true,
-      splitting: true,
-      format: "esm",
-      platform: "node",
-      target: ["node22"],
-      packages: "external",
-      minifySyntax: true,
-      minifyWhitespace: true,
-      minifyIdentifiers: true,
-      sourcemap: true,
-      metafile: true,
-      entryNames: "[name]",
-      chunkNames: "chunks/[name]-[hash]",
-      logLevel: "warning",
-    });
-    await removeStaleBundleFiles(buildResult.metafile.outputs);
-    await writeBundleManifest(buildResult.metafile.outputs);
+    const primaryBuildResult = await build(
+      bundleOptions(entryPoints, "chunks/[name]-[hash]"),
+    );
+    const focusedBuildResult = await build(
+      bundleOptions(focusedEntryPoints, "focused-chunks/[name]-[hash]"),
+    );
+    const outputs = {
+      ...primaryBuildResult.metafile.outputs,
+      ...focusedBuildResult.metafile.outputs,
+    };
+    await removeStaleBundleFiles(outputs);
+    await writeBundleManifest(outputs);
   } finally {
     await releaseBundleBuildLock();
   }
@@ -196,13 +248,18 @@ export async function main() {
   }
   const bundledBinSource = binSource.replace(sourceImport, bundledImport);
   if (bundledBinSource === binSource) {
-    throw new Error("Unable to rewrite dist/cli.js to use the bundled CLI entrypoint.");
+    throw new Error(
+      "Unable to rewrite dist/cli.js to use the bundled CLI entrypoint.",
+    );
   }
   await writeFile(binPath, bundledBinSource, "utf8");
 }
 
 /* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   await main();
 }
 /* c8 ignore stop */

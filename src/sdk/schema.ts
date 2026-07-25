@@ -5,10 +5,8 @@
  */
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
-import {
-  pathExists,
-  readFileIfExists,
-} from "../core/fs/fs-utils.js";
+import { resolveAuthor } from "../core/shared/author.js";
+import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
 import { writeWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { acquireLock } from "../core/lock/lock.js";
 import { refreshMergeAttributeFenceIfInstalled } from "./merge/install.js";
@@ -592,15 +590,6 @@ export type SchemaInspectResult =
   | SchemaListFieldsResult
   | SchemaShowFieldResult;
 
-function toAuthor(
-  candidate: string | undefined,
-  defaultAuthor: string,
-): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
-  const trimmed = resolved.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
-}
-
 /* c8 ignore start -- schema command mutation/inspection branches are covered by broader schema integration workflows. */
 /** Implements run schema add type for the public runtime surface of this module. */
 export async function runSchemaAddType(
@@ -636,7 +625,7 @@ export async function runSchemaAddType(
   );
 
   const warnings: string[] = [];
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
   const releaseLock = await acquireLock(
@@ -915,7 +904,7 @@ export async function runSchemaRemoveType(
   );
 
   const warnings: string[] = [];
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
   const releaseLock = await acquireLock(
@@ -1172,7 +1161,7 @@ export async function runSchemaAddStatus(
   );
 
   const warnings: string[] = [];
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
   const releaseLock = await acquireLock(
@@ -1259,7 +1248,7 @@ export async function runSchemaRemoveStatus(
   const statusesPath = statusesPathFor(pmRoot, schema);
 
   const warnings: string[] = [];
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
   const releaseLock = await acquireLock(
@@ -1662,7 +1651,7 @@ export async function runSchemaAddField(
   const fieldsPath = fieldsPathFor(pmRoot, schema);
 
   const warnings: string[] = [];
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
   const releaseLock = await acquireLock(
@@ -1767,7 +1756,7 @@ export async function runSchemaRemoveField(
   const fieldsPath = fieldsPathFor(pmRoot, schema);
 
   const warnings: string[] = [];
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
   const releaseLock = await acquireLock(
@@ -1933,7 +1922,7 @@ export async function runSchemaApplyPreset(
   const typesPath = typesPathFor(pmRoot, schema);
 
   const warnings: string[] = [];
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
   const registered: string[] = [];
@@ -2083,7 +2072,7 @@ export async function runSchemaInferTypes(
     };
   }
 
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
   const releaseLock = await acquireLock(
     pmRoot,
@@ -2441,6 +2430,5 @@ export { buildInvalidTypeHint };
 
 /** Public contract for test only schema command, shared by SDK and presentation-layer consumers. */
 export const _testOnlySchemaCommand = {
-  toAuthor,
   workflowSlotsReferencing,
 };

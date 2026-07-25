@@ -30,6 +30,41 @@
       "import": "./dist/cli-bundle/sdk.js",
       "default": "./dist/cli-bundle/sdk.js"
     },
+    "./sdk/authoring": {
+      "types": "./dist/sdk/authoring.d.ts",
+      "import": "./dist/cli-bundle/sdk-authoring.js",
+      "default": "./dist/cli-bundle/sdk-authoring.js"
+    },
+    "./sdk/contracts": {
+      "types": "./dist/sdk/contracts.d.ts",
+      "import": "./dist/cli-bundle/sdk-contracts.js",
+      "default": "./dist/cli-bundle/sdk-contracts.js"
+    },
+    "./sdk/core": {
+      "types": "./dist/sdk/core.d.ts",
+      "import": "./dist/cli-bundle/sdk-core.js",
+      "default": "./dist/cli-bundle/sdk-core.js"
+    },
+    "./sdk/governance": {
+      "types": "./dist/sdk/governance.d.ts",
+      "import": "./dist/cli-bundle/sdk-governance.js",
+      "default": "./dist/cli-bundle/sdk-governance.js"
+    },
+    "./sdk/graph": {
+      "types": "./dist/sdk/graph.d.ts",
+      "import": "./dist/cli-bundle/sdk-graph.js",
+      "default": "./dist/cli-bundle/sdk-graph.js"
+    },
+    "./sdk/merge": {
+      "types": "./dist/sdk/merge.d.ts",
+      "import": "./dist/cli-bundle/sdk-merge.js",
+      "default": "./dist/cli-bundle/sdk-merge.js"
+    },
+    "./sdk/query": {
+      "types": "./dist/sdk/query.d.ts",
+      "import": "./dist/cli-bundle/sdk-query.js",
+      "default": "./dist/cli-bundle/sdk-query.js"
+    },
     "./sdk/runtime": {
       "types": "./dist/sdk/runtime.d.ts",
       "import": "./dist/cli-bundle/sdk-runtime.js",
@@ -80,7 +115,7 @@
     "lint:complexity:baseline": "eslint . --suppress-rule complexity --suppress-rule sonarjs/cognitive-complexity",
     "lint:duplicates": "jscpd --config .jscpd.json",
     "lint:codefactor": "pnpm quality:static",
-    "quality:static": "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 146 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
+    "quality:static": "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 144 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
     "quality:token-budget": "node scripts/release/token-budget-gate.mjs",
     "quality:context-eval": "node scripts/release/context-eval-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
@@ -89,8 +124,14 @@
     "benchmark:scale:generate": "node scripts/bench/scale-workspace.mjs",
     "benchmark:scale": "node scripts/bench/run-scale-benchmarks.mjs",
     "benchmark:scale:check": "node scripts/bench/run-scale-benchmarks.mjs --items ci --iterations 3 --transport both --check --output .cache/scale-local-report.json",
+    "benchmark:sdk-entrypoints:update": "pnpm build && node scripts/bench/sdk-entrypoint-costs.mjs --update",
+    "benchmark:sdk-entrypoints:check": "pnpm build && node scripts/bench/sdk-entrypoint-costs.mjs --check",
+    "benchmark:transport:update": "pnpm build && node scripts/bench/cli-transport-floor.mjs --update",
+    "benchmark:transport:check": "pnpm build && node scripts/bench/cli-transport-floor.mjs --check",
     "contracts:update": "node scripts/contracts-snapshot.mjs --update",
     "contracts:check": "node scripts/contracts-snapshot.mjs --check",
+    "sdk:surface:update": "pnpm build && node scripts/sdk-surface-snapshot.mjs --update",
+    "sdk:surface:check": "pnpm build && node scripts/sdk-surface-snapshot.mjs --check",
     "dogfood:package-first": "node scripts/dogfood-package-first.mjs",
     "smoke:external-packages": "node scripts/smoke-external-packages.mjs",
     "smoke:codex-plugin": "node scripts/smoke-codex-plugin-mcp.mjs",

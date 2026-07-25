@@ -217,7 +217,9 @@ export async function runClaimNext(
   nextOptions: NextOptions = {},
 ): Promise<ClaimNextResult> {
   const maxAttempts = parseClaimNextAttempts(options.maxAttempts);
-  const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
+  const settings = await readSettings(
+    resolvePmRoot(process.cwd(), global.path),
+  );
   const claimOptions = {
     ...options,
     author: resolveAuthor(options.author, settings.author_default),
@@ -245,7 +247,9 @@ export async function runClaimNext(
 }
 
 /** Parses the bounded candidate walk used by `claim --next`. */
-export function parseClaimNextAttempts(raw: string | number | undefined): number {
+export function parseClaimNextAttempts(
+  raw: string | number | undefined,
+): number {
   if (raw === undefined) return 10;
   const parsed = Number(raw);
   if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 100) {
@@ -275,7 +279,12 @@ export async function claimNextFromRecommendations(
         global,
         options,
       );
-      const result = { ...claimed, recommendation, attempts, available: true as const };
+      const result = {
+        ...claimed,
+        recommendation,
+        attempts,
+        available: true as const,
+      };
       if (!claimed.skipped) return result;
     } catch (error: unknown) {
       if (!isAlreadyClaimedError(error)) throw error;
@@ -285,7 +294,7 @@ export async function claimNextFromRecommendations(
     return {
       available: false,
       item: null,
-      claimed_by: options.author ?? process.env.PM_AUTHOR ?? "unknown",
+      claimed_by: resolveAuthor(options.author, ""),
       previous_assignee: null,
       forced: force,
       skipped: true,
@@ -331,9 +340,11 @@ export async function runRelease(
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
   const ownershipReleaseBypass =
-    (options as ReleaseMutationOptions & {
-      ownershipReleaseBypass?: boolean;
-    }).ownershipReleaseBypass === true;
+    (
+      options as ReleaseMutationOptions & {
+        ownershipReleaseBypass?: boolean;
+      }
+    ).ownershipReleaseBypass === true;
   let previousAssignee: string | null = null;
 
   let result: Awaited<ReturnType<typeof mutateItem>>;

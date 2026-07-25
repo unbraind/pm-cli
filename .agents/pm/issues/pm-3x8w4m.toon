@@ -1,0 +1,35 @@
+id: pm-3x8w4m
+title: "GH-700/GH-701/GH-702: nightly Node 22 and cross-platform regression bundle"
+description: Restore the scheduled matrix after Node 22 derived-index coverage and macOS/Windows filesystem identity/failure-seam assertions regressed in run 30147320142.
+type: Issue
+status: closed
+priority: 1
+tags[6]: cross-platform,gh-issue,macos,nightly,node22,windows
+created_at: "2026-07-25T09:19:45.181Z"
+updated_at: "2026-07-25T11:58:32.678Z"
+closed_at: "2026-07-25T11:58:31.674Z"
+author: unknown
+parent: pm-u9d0
+resolution: Restored Node 22 derived-index support and portable Windows/macOS filesystem and cache failure seams.
+expected_result: "Scheduled and PR matrices pass on Node 22/24 across Ubuntu, Windows, and macOS without platform-specific identity assumptions."
+actual_result: "Exact PR head passed Ubuntu Node 22/24, Windows Node 24, and macOS Node 24 jobs plus 32 focused regression tests."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-801d,related,"2026-07-25T09:19:45.181Z",null,null
+  pm-lvd647,related,"2026-07-25T09:19:45.181Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-25T09:19:45.181Z",unknown,"Duplicate-check evidence: exact all-status searches for GH-700/701/702 and run 30147320142 found no current owner. Closed pm-lvd647 repaired the previous Node 22/Windows failure class and is canonical lineage,but its stable-runtime SQLite exclusion now conflicts with newer Node 22 derived-index tests; this is a distinct regression bundle."
+  "2026-07-25T11:31:36.222Z","harness:codex","Evidence: Node 22 sqlite derived-index paths and portable filesystem/cache seams passed 32/32 linked tests; Node 22 local scale run resolved the Node 26 RSS variance. GitHub nightly matrix remains the authoritative clean-runner proof for GH-700/701/702."
+  "2026-07-25T11:57:41.946Z","harness:codex","Exact-head delivery evidence: PR #707 head 7c1921db passed every required GitHub check, including static quality, Windows Node 24, Ubuntu Node 22/24 and macOS smokes, typecheck, compatibility, all four coverage shards plus the 100% coverage gate, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, docs/skills, package smokes, and benchmarks. Manual packed Node/Bun consumer acceptance and telemetry/Sentry gates also passed. Automated review returned no inline findings; CodeRabbit/Sourcery/Gemini/Greptile limitations are documented on the PR and Greptile quota is linked to canonical pm-e02lgu."
+files[6]{path,scope,note}:
+  .github/workflows/ci.yml,project,nightly platform matrix
+  src/core/history/event-index.ts,project,Node 22 sqlite support
+  src/core/store/item-metadata-query-index.ts,project,Node 22 sqlite support
+  src/sdk/governance/tracked-runtime-cache.ts,project,canonical cross-platform cache identity
+  tests/unit/core/history/drift-scan.spec.ts,project,portable filesystem classification
+  tests/unit/sdk/workspace-memory.spec.ts,project,portable warning seam
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/item/item-metadata-query-index.spec.ts tests/unit/core/history/drift-scan.spec.ts tests/unit/sdk/tracked-runtime-cache.spec.ts tests/unit/sdk/workspace-memory.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms09sioj-4a03xc,test,passed,"2026-07-25T11:12:31.436Z","2026-07-25T11:12:42.643Z","2026-07-25T11:12:42.643Z",1,0,0
+close_reason: "Delivered in PR #707 exact head 7c1921db with linked local, packed-consumer, full-coverage, cross-platform, security, performance, and GitHub CI evidence."
+body: ""

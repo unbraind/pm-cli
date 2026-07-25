@@ -32,7 +32,7 @@ describe("release automation contract", () => {
       "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 146 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs",
+      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 144 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",
@@ -215,7 +215,9 @@ describe("release automation contract", () => {
       path.join(repoRoot, "scripts/release/run-gates.mjs"),
       "utf8",
     );
-    expect(workflow).toContain("RELEASE_POLICY_TOKEN: ${{ secrets.RELEASE_PAT }}");
+    expect(workflow).toContain(
+      "RELEASE_POLICY_TOKEN: ${{ secrets.RELEASE_PAT }}",
+    );
     expect(workflow).toContain("GH_TOKEN: ${{ github.token }}");
     expect(workflow).not.toContain("GH_TOKEN: ${{ secrets.RELEASE_PAT");
     expect(pipeline).toContain("delete process.env.RELEASE_POLICY_TOKEN");
@@ -400,7 +402,9 @@ describe("release automation contract", () => {
     );
     expect(pipelineSource).not.toContain("bumpSameDayOrdinal");
     expect(pipelineSource).not.toContain("maybeBumpSameDayTargetVersion");
-    expect(pipelineSource).not.toContain('"scripts/release-version.mjs", "next"');
+    expect(pipelineSource).not.toContain(
+      '"scripts/release-version.mjs", "next"',
+    );
     expect(pipelineSource).toContain(
       'git([\n    "add",\n    "package.json",\n    "CHANGELOG.md",',
     );

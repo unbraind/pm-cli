@@ -48,6 +48,7 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 
@@ -286,9 +287,7 @@ export const _testOnly = {
   upsertReindexVectors,
 };
 
-function resolveExtensionSearchEmbedding(
-  settings: PmSettings,
-): {
+function resolveExtensionSearchEmbedding(settings: PmSettings): {
   name: string;
   embedBatch?: ExtensionEmbedBatch;
   embed?: ExtensionEmbedOne;
@@ -1371,7 +1370,7 @@ export async function runReindex(
       pmRoot,
       REINDEX_LOCK_ID,
       settings.locks.ttl_seconds,
-      process.env.PM_AUTHOR ?? "pm-reindex",
+      resolveAuthor(undefined, "pm-reindex"),
       false,
       settings.governance.force_required_for_stale_lock,
       settings.locks.wait_ms,

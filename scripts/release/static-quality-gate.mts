@@ -37,13 +37,17 @@ export function loadText(absolutePath) {
 }
 
 export function collectTypeScriptFiles() {
-  const roots = ["src", "tests", "packages"].map((segment) => path.join(repoRoot, segment));
-  const matchesTs = (absolutePath) => absolutePath.endsWith(".ts") && !absolutePath.endsWith(".d.ts");
+  const roots = ["src", "tests", "packages"].map((segment) =>
+    path.join(repoRoot, segment),
+  );
+  const matchesTs = (absolutePath) =>
+    absolutePath.endsWith(".ts") && !absolutePath.endsWith(".d.ts");
   const files = roots
     .filter((root) => existsSync(root))
     .flatMap((root) =>
       walkFiles(root, matchesTs, [], {
-        shouldSkipDirectory: (absolutePath) => path.basename(absolutePath) === "node_modules",
+        shouldSkipDirectory: (absolutePath) =>
+          path.basename(absolutePath) === "node_modules",
       }),
     );
   return files.sort((left, right) => left.localeCompare(right));
@@ -57,8 +61,12 @@ export function checkFileLength(files, maxSrcLines, maxTestLines) {
     // Measure implementation size. Public TSDoc has its own mandatory 100%
     // gates, so counting comment-only and blank lines here would make the two
     // quality contracts conflict and incentivize less useful documentation.
-    const lineCount = physicalLines.filter((line) => normalizeLine(line).length > 0).length;
-    const maxLines = relativePath.startsWith("tests/") ? maxTestLines : maxSrcLines;
+    const lineCount = physicalLines.filter(
+      (line) => normalizeLine(line).length > 0,
+    ).length;
+    const maxLines = relativePath.startsWith("tests/")
+      ? maxTestLines
+      : maxSrcLines;
     if (lineCount > maxLines) {
       violations.push({
         path: relativePath,
@@ -106,14 +114,22 @@ export function normalizeLine(rawLine) {
   return trimmed.replaceAll(/\s+/g, " ");
 }
 
-export function checkDuplicateChunks(files, duplicateWindowLines, maxDuplicateChunks) {
+export function checkDuplicateChunks(
+  files,
+  duplicateWindowLines,
+  maxDuplicateChunks,
+) {
   const windowMap = new Map();
   const duplicates = [];
 
   for (const absolutePath of files) {
     const relativePath = relativeToRepo(absolutePath);
     const lines = loadText(absolutePath).split(/\r?\n/).map(normalizeLine);
-    for (let index = 0; index <= lines.length - duplicateWindowLines; index += 1) {
+    for (
+      let index = 0;
+      index <= lines.length - duplicateWindowLines;
+      index += 1
+    ) {
       const windowLines = lines.slice(index, index + duplicateWindowLines);
       if (windowLines.some((line) => line.length === 0)) {
         continue;
@@ -135,8 +151,10 @@ export function checkDuplicateChunks(files, duplicateWindowLines, maxDuplicateCh
         (entry) =>
           entry.first.path === first.path &&
           entry.second.path === current.path &&
-          Math.abs(entry.first.start_line - first.start_line) < duplicateWindowLines &&
-          Math.abs(entry.second.start_line - current.start_line) < duplicateWindowLines,
+          Math.abs(entry.first.start_line - first.start_line) <
+            duplicateWindowLines &&
+          Math.abs(entry.second.start_line - current.start_line) <
+            duplicateWindowLines,
       );
       if (isOverlappingDuplicate) {
         continue;
@@ -186,7 +204,9 @@ export function resolveRelativeImport(fromAbsolute, specifier) {
 }
 
 export function sourceFilesOnly(files) {
-  return files.filter((absolutePath) => relativeToRepo(absolutePath).startsWith("src/"));
+  return files.filter((absolutePath) =>
+    relativeToRepo(absolutePath).startsWith("src/"),
+  );
 }
 
 // Documentation scope for the docstring-coverage gates: every hand-authored,
@@ -199,7 +219,10 @@ export function sourceFilesOnly(files) {
 export function documentedSourceFiles(files) {
   return files.filter((absolutePath) => {
     const relativePath = relativeToRepo(absolutePath).replace(/\\/g, "/");
-    if (!relativePath.startsWith("src/") && !relativePath.startsWith("packages/")) {
+    if (
+      !relativePath.startsWith("src/") &&
+      !relativePath.startsWith("packages/")
+    ) {
       return false;
     }
     return !/\.(?:spec|test)\.[cm]?tsx?$/u.test(relativePath);
@@ -220,7 +243,10 @@ export function hasModuleDocstring(sourceText) {
 
 function formatCoveragePercent(coveragePercent, minCoveragePercent) {
   const fractionalPart = String(minCoveragePercent).split(".")[1] ?? "";
-  const displayPrecision = Math.max(2, fractionalPart.replace(/0+$/u, "").length + 1);
+  const displayPrecision = Math.max(
+    2,
+    fractionalPart.replace(/0+$/u, "").length + 1,
+  );
   return Number(coveragePercent.toFixed(displayPrecision));
 }
 
@@ -229,23 +255,34 @@ export function checkSourceDocstringCoverage(files, minCoveragePercent) {
   const missing = [];
   for (const absolutePath of sourceFiles) {
     if (!hasModuleDocstring(loadText(absolutePath))) {
-      missing.push({ path: relativeToRepo(absolutePath), reason: "missing_module_docstring" });
+      missing.push({
+        path: relativeToRepo(absolutePath),
+        reason: "missing_module_docstring",
+      });
     }
   }
   const documented = sourceFiles.length - missing.length;
-  const coveragePercent = sourceFiles.length === 0 ? 100 : (documented / sourceFiles.length) * 100;
+  const coveragePercent =
+    sourceFiles.length === 0 ? 100 : (documented / sourceFiles.length) * 100;
   return {
     ok: coveragePercent >= minCoveragePercent,
     total: sourceFiles.length,
     documented,
     missing: missing.sort((left, right) => left.path.localeCompare(right.path)),
-    coverage_percent: formatCoveragePercent(coveragePercent, minCoveragePercent),
+    coverage_percent: formatCoveragePercent(
+      coveragePercent,
+      minCoveragePercent,
+    ),
     min_coverage_percent: minCoveragePercent,
   };
 }
 
 function hasExportModifier(node) {
-  return node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) === true;
+  return (
+    node.modifiers?.some(
+      (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+    ) === true
+  );
 }
 
 function exportedDocstringTarget(node) {
@@ -272,9 +309,13 @@ function exportedDocstringTarget(node) {
 function declarationName(node) {
   if (ts.isVariableStatement(node)) {
     const declaration = node.declarationList.declarations[0];
-    return ts.isIdentifier(declaration.name) ? declaration.name.text : "exported_value";
+    return ts.isIdentifier(declaration.name)
+      ? declaration.name.text
+      : "exported_value";
   }
-  return node.name && ts.isIdentifier(node.name) ? node.name.text : "exported_declaration";
+  return node.name && ts.isIdentifier(node.name)
+    ? node.name.text
+    : "exported_declaration";
 }
 
 // Returns the declaration's OWN `/** ... */` docstring comment text, or null.
@@ -285,9 +326,13 @@ function declarationName(node) {
 function nodeOwnDocstringComment(sourceFile, node) {
   const fullText = sourceFile.getFullText();
   const strippedText = stripShebang(fullText);
-  const moduleDocRelativeStart = strippedText.trimStart().startsWith("/**") ? strippedText.indexOf("/**") : -1;
+  const moduleDocRelativeStart = strippedText.trimStart().startsWith("/**")
+    ? strippedText.indexOf("/**")
+    : -1;
   const moduleDocStart =
-    moduleDocRelativeStart === -1 ? -1 : fullText.length - strippedText.length + moduleDocRelativeStart;
+    moduleDocRelativeStart === -1
+      ? -1
+      : fullText.length - strippedText.length + moduleDocRelativeStart;
   const ranges = ts.getLeadingCommentRanges(fullText, node.pos) ?? [];
   for (const range of ranges) {
     const comment = fullText.slice(range.pos, range.end);
@@ -311,7 +356,12 @@ export function checkExportedDocstringCoverage(files, minCoveragePercent) {
   let documented = 0;
   for (const absolutePath of documentedSourceFiles(files)) {
     const sourceText = loadText(absolutePath);
-    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      sourceText,
+      ts.ScriptTarget.Latest,
+      true,
+    );
     for (const node of sourceFile.statements) {
       const target = exportedDocstringTarget(node);
       if (!target) {
@@ -322,7 +372,9 @@ export function checkExportedDocstringCoverage(files, minCoveragePercent) {
         documented += 1;
         continue;
       }
-      const start = sourceFile.getLineAndCharacterOfPosition(target.getStart(sourceFile));
+      const start = sourceFile.getLineAndCharacterOfPosition(
+        target.getStart(sourceFile),
+      );
       missing.push({
         path: relativeToRepo(absolutePath),
         line: start.line + 1,
@@ -336,8 +388,14 @@ export function checkExportedDocstringCoverage(files, minCoveragePercent) {
     ok: coveragePercent >= minCoveragePercent,
     total,
     documented,
-    missing: missing.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line),
-    coverage_percent: formatCoveragePercent(coveragePercent, minCoveragePercent),
+    missing: missing.sort(
+      (left, right) =>
+        left.path.localeCompare(right.path) || left.line - right.line,
+    ),
+    coverage_percent: formatCoveragePercent(
+      coveragePercent,
+      minCoveragePercent,
+    ),
     min_coverage_percent: minCoveragePercent,
   };
 }
@@ -352,17 +410,30 @@ export function checkDocstringBoilerplate(files) {
   const violations = [];
   for (const absolutePath of documentedSourceFiles(files)) {
     const sourceText = loadText(absolutePath);
-    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
-    const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, sourceText);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      sourceText,
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const scanner = ts.createScanner(
+      ts.ScriptTarget.Latest,
+      false,
+      ts.LanguageVariant.Standard,
+      sourceText,
+    );
     let token = scanner.scan();
     while (token !== ts.SyntaxKind.EndOfFileToken) {
       if (token === ts.SyntaxKind.MultiLineCommentTrivia) {
         const commentStart = scanner.getTokenPos();
         const comment = sourceText.slice(commentStart, scanner.getTextPos());
         if (comment.startsWith("/**")) {
-          const matched = BOILERPLATE_DOCSTRING_PATTERNS.find((pattern) => pattern.test(comment));
+          const matched = BOILERPLATE_DOCSTRING_PATTERNS.find((pattern) =>
+            pattern.test(comment),
+          );
           if (matched) {
-            const start = sourceFile.getLineAndCharacterOfPosition(commentStart);
+            const start =
+              sourceFile.getLineAndCharacterOfPosition(commentStart);
             violations.push({
               path: relativeToRepo(absolutePath),
               line: start.line + 1,
@@ -374,11 +445,16 @@ export function checkDocstringBoilerplate(files) {
       token = scanner.scan();
     }
   }
-  return violations.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line);
+  return violations.sort(
+    (left, right) =>
+      left.path.localeCompare(right.path) || left.line - right.line,
+  );
 }
 
 function ownerDisplayName(node) {
-  return node.name && ts.isIdentifier(node.name) ? node.name.text : "exported_declaration";
+  return node.name && ts.isIdentifier(node.name)
+    ? node.name.text
+    : "exported_declaration";
 }
 
 function simpleMemberName(sourceFile, member) {
@@ -389,7 +465,9 @@ function simpleMemberName(sourceFile, member) {
   // has confirmed they carry a name, so `member.name` is always defined. Plain
   // identifiers use their text directly; string/numeric/computed member names
   // fall back to their verbatim source text.
-  return ts.isIdentifier(member.name) ? member.name.text : member.name.getText(sourceFile);
+  return ts.isIdentifier(member.name)
+    ? member.name.text
+    : member.name.getText(sourceFile);
 }
 
 // A class member is out of the public-documentation scope when it is explicitly
@@ -399,9 +477,13 @@ function isNonPublicClassMember(member) {
   const hasNonPublicModifier =
     member.modifiers?.some(
       (modifier) =>
-        modifier.kind === ts.SyntaxKind.PrivateKeyword || modifier.kind === ts.SyntaxKind.ProtectedKeyword,
+        modifier.kind === ts.SyntaxKind.PrivateKeyword ||
+        modifier.kind === ts.SyntaxKind.ProtectedKeyword,
     ) === true;
-  return hasNonPublicModifier || (member.name !== undefined && ts.isPrivateIdentifier(member.name));
+  return (
+    hasNonPublicModifier ||
+    (member.name !== undefined && ts.isPrivateIdentifier(member.name))
+  );
 }
 
 // The documented members of an exported declaration: every interface member,
@@ -442,17 +524,27 @@ function collectExportedMemberTargets(node) {
 function isDocumentableMemberOwner(node) {
   return (
     hasExportModifier(node) &&
-    (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node) || ts.isClassDeclaration(node))
+    (ts.isInterfaceDeclaration(node) ||
+      ts.isTypeAliasDeclaration(node) ||
+      ts.isClassDeclaration(node))
   );
 }
 
-export function checkExportedMemberDocstringCoverage(files, minCoveragePercent) {
+export function checkExportedMemberDocstringCoverage(
+  files,
+  minCoveragePercent,
+) {
   const missing = [];
   let total = 0;
   let documented = 0;
   for (const absolutePath of documentedSourceFiles(files)) {
     const sourceText = loadText(absolutePath);
-    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      sourceText,
+      ts.ScriptTarget.Latest,
+      true,
+    );
     for (const node of sourceFile.statements) {
       if (!isDocumentableMemberOwner(node)) {
         continue;
@@ -464,7 +556,9 @@ export function checkExportedMemberDocstringCoverage(files, minCoveragePercent) 
           documented += 1;
           continue;
         }
-        const start = sourceFile.getLineAndCharacterOfPosition(member.getStart(sourceFile));
+        const start = sourceFile.getLineAndCharacterOfPosition(
+          member.getStart(sourceFile),
+        );
         missing.push({
           path: relativeToRepo(absolutePath),
           line: start.line + 1,
@@ -479,8 +573,14 @@ export function checkExportedMemberDocstringCoverage(files, minCoveragePercent) 
     ok: coveragePercent >= minCoveragePercent,
     total,
     documented,
-    missing: missing.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line),
-    coverage_percent: formatCoveragePercent(coveragePercent, minCoveragePercent),
+    missing: missing.sort(
+      (left, right) =>
+        left.path.localeCompare(right.path) || left.line - right.line,
+    ),
+    coverage_percent: formatCoveragePercent(
+      coveragePercent,
+      minCoveragePercent,
+    ),
     min_coverage_percent: minCoveragePercent,
   };
 }
@@ -490,16 +590,41 @@ export function checkExportedMemberDocstringCoverage(files, minCoveragePercent) 
 // symbol's own name tokens restates the identifier instead of explaining it. The
 // set is intentionally tiny so the check fires only on genuinely empty prose.
 const DOCSTRING_FILLER_WORDS = new Set([
-  "the", "a", "an", "of", "for", "to", "and", "or", "is", "are", "be", "this", "that",
-  "these", "those", "it", "its", "in", "on", "by", "with", "as", "from", "into",
-  "value", "values",
+  "the",
+  "a",
+  "an",
+  "of",
+  "for",
+  "to",
+  "and",
+  "or",
+  "is",
+  "are",
+  "be",
+  "this",
+  "that",
+  "these",
+  "those",
+  "it",
+  "its",
+  "in",
+  "on",
+  "by",
+  "with",
+  "as",
+  "from",
+  "into",
+  "value",
+  "values",
 ]);
 
 // Reduces a docstring comment to its plain prose: drops the `/** */` fences, the
 // per-line leading `*`, and TSDoc tag markers (`@param`, `{@link}`) while keeping
 // the words around them, so a tag-only docstring is still judged on its content.
 export function extractDocstringProse(comment) {
-  const withoutFences = comment.replace(/^\/\*\*/u, "").replace(/\*\/\s*$/u, "");
+  const withoutFences = comment
+    .replace(/^\/\*\*/u, "")
+    .replace(/\*\/\s*$/u, "");
   const joined = withoutFences
     .split(/\r?\n/u)
     .map((line) => line.replace(/^\s*\*?\s?/u, ""))
@@ -533,7 +658,9 @@ export function isTrivialDocstring(comment, symbolName) {
     .replace(/[^a-z0-9]+/gu, " ")
     .split(/\s+/u)
     .filter(Boolean)
-    .filter((word) => !DOCSTRING_FILLER_WORDS.has(word) && !nameTokens.has(word));
+    .filter(
+      (word) => !DOCSTRING_FILLER_WORDS.has(word) && !nameTokens.has(word),
+    );
   return meaningful.length === 0;
 }
 
@@ -541,13 +668,20 @@ export function checkTrivialDocstrings(files) {
   const violations = [];
   for (const absolutePath of documentedSourceFiles(files)) {
     const sourceText = loadText(absolutePath);
-    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      sourceText,
+      ts.ScriptTarget.Latest,
+      true,
+    );
     const inspect = (node, reportName, triviaName) => {
       const comment = nodeOwnDocstringComment(sourceFile, node);
       if (comment === null || !isTrivialDocstring(comment, triviaName)) {
         return;
       }
-      const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      const start = sourceFile.getLineAndCharacterOfPosition(
+        node.getStart(sourceFile),
+      );
       violations.push({
         path: relativeToRepo(absolutePath),
         line: start.line + 1,
@@ -570,7 +704,10 @@ export function checkTrivialDocstrings(files) {
       }
     }
   }
-  return violations.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line);
+  return violations.sort(
+    (left, right) =>
+      left.path.localeCompare(right.path) || left.line - right.line,
+  );
 }
 
 export function checkOrphanSourceModules(files) {
@@ -578,14 +715,23 @@ export function checkOrphanSourceModules(files) {
   const incoming = new Map(sourceFiles.map((file) => [file, 0]));
 
   for (const absolutePath of sourceFiles) {
-    const sourceFile = ts.createSourceFile(absolutePath, loadText(absolutePath), ts.ScriptTarget.Latest, true);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      loadText(absolutePath),
+      ts.ScriptTarget.Latest,
+      true,
+    );
     for (const statement of sourceFile.statements) {
       if (
-        (ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)) &&
+        (ts.isImportDeclaration(statement) ||
+          ts.isExportDeclaration(statement)) &&
         statement.moduleSpecifier &&
         ts.isStringLiteral(statement.moduleSpecifier)
       ) {
-        const resolved = resolveRelativeImport(absolutePath, statement.moduleSpecifier.text);
+        const resolved = resolveRelativeImport(
+          absolutePath,
+          statement.moduleSpecifier.text,
+        );
         if (resolved && incoming.has(resolved)) {
           incoming.set(resolved, incoming.get(resolved) + 1);
         }
@@ -638,7 +784,9 @@ function isSdkBoundarySource(relativePath) {
 }
 
 export function collectSdkBoundarySourceFiles(files) {
-  return files.filter((absolutePath) => isSdkBoundarySource(relativeToRepo(absolutePath)));
+  return files.filter((absolutePath) =>
+    isSdkBoundarySource(relativeToRepo(absolutePath)),
+  );
 }
 
 function moduleSpecifierText(node) {
@@ -646,7 +794,11 @@ function moduleSpecifierText(node) {
 }
 
 function isRequireCallExpression(node) {
-  return ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "require";
+  return (
+    ts.isCallExpression(node) &&
+    ts.isIdentifier(node.expression) &&
+    node.expression.text === "require"
+  );
 }
 
 function importModuleSpecifier(node) {
@@ -663,10 +815,7 @@ function importModuleSpecifier(node) {
   ) {
     return moduleSpecifierText(node.moduleReference.expression);
   }
-  if (
-    isRequireCallExpression(node) &&
-    node.arguments.length === 1
-  ) {
+  if (isRequireCallExpression(node) && node.arguments.length === 1) {
     return moduleSpecifierText(node.arguments[0]);
   }
   if (
@@ -680,14 +829,21 @@ function importModuleSpecifier(node) {
 }
 
 function isDynamicImportExpression(node) {
-  return ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword;
+  return (
+    ts.isCallExpression(node) &&
+    node.expression.kind === ts.SyntaxKind.ImportKeyword
+  );
 }
 
 export function collectUnsupportedDynamicImportExpressions(files) {
-  return collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(collectSdkBoundarySourceFiles(files));
+  return collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(
+    collectSdkBoundarySourceFiles(files),
+  );
 }
 
-function collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(boundarySourceFiles) {
+function collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(
+  boundarySourceFiles,
+) {
   const violations = [];
   for (const absolutePath of boundarySourceFiles) {
     if (!existsSync(absolutePath)) {
@@ -695,11 +851,22 @@ function collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(boundarySou
     }
     const relativeSource = relativeToRepo(absolutePath);
     const sourceText = loadText(absolutePath);
-    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      sourceText,
+      ts.ScriptTarget.Latest,
+      true,
+    );
     const visit = (node) => {
       if (isDynamicImportExpression(node)) {
-        if (node.arguments.length < 1 || node.arguments.length > 2 || moduleSpecifierText(node.arguments[0]) === null) {
-          const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+        if (
+          node.arguments.length < 1 ||
+          node.arguments.length > 2 ||
+          moduleSpecifierText(node.arguments[0]) === null
+        ) {
+          const start = sourceFile.getLineAndCharacterOfPosition(
+            node.getStart(sourceFile),
+          );
           violations.push({
             source: relativeSource,
             line: start.line + 1,
@@ -709,9 +876,12 @@ function collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(boundarySou
       }
       if (
         isRequireCallExpression(node) &&
-        (node.arguments.length !== 1 || moduleSpecifierText(node.arguments[0]) === null)
+        (node.arguments.length !== 1 ||
+          moduleSpecifierText(node.arguments[0]) === null)
       ) {
-        const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+        const start = sourceFile.getLineAndCharacterOfPosition(
+          node.getStart(sourceFile),
+        );
         violations.push({
           source: relativeSource,
           line: start.line + 1,
@@ -722,11 +892,16 @@ function collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(boundarySou
     };
     visit(sourceFile);
   }
-  return violations.sort((left, right) => left.source.localeCompare(right.source) || left.line - right.line);
+  return violations.sort(
+    (left, right) =>
+      left.source.localeCompare(right.source) || left.line - right.line,
+  );
 }
 
 export function collectPrivateCoreImportEdges(files) {
-  return collectPrivateCoreImportEdgesFromBoundaryFiles(collectSdkBoundarySourceFiles(files));
+  return collectPrivateCoreImportEdgesFromBoundaryFiles(
+    collectSdkBoundarySourceFiles(files),
+  );
 }
 
 function collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles) {
@@ -737,7 +912,12 @@ function collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles) {
       continue;
     }
     const relativeSource = relativeToRepo(absolutePath);
-    const sourceFile = ts.createSourceFile(absolutePath, loadText(absolutePath), ts.ScriptTarget.Latest, true);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      loadText(absolutePath),
+      ts.ScriptTarget.Latest,
+      true,
+    );
     const visit = (node) => {
       const specifier = importModuleSpecifier(node);
       if (specifier === null) {
@@ -763,7 +943,9 @@ function collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles) {
     visit(sourceFile);
   }
   return edges.sort(
-    (left, right) => left.source.localeCompare(right.source) || left.import_path.localeCompare(right.import_path),
+    (left, right) =>
+      left.source.localeCompare(right.source) ||
+      left.import_path.localeCompare(right.import_path),
   );
 }
 
@@ -774,8 +956,12 @@ function importEdgeKey(edge) {
 
 export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
   const boundarySourceFiles = collectSdkBoundarySourceFiles(files);
-  const actualEdges = collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles);
-  const unsupportedDynamicImports = collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(boundarySourceFiles);
+  const actualEdges =
+    collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles);
+  const unsupportedDynamicImports =
+    collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(
+      boundarySourceFiles,
+    );
   return {
     ok: actualEdges.length === 0 && unsupportedDynamicImports.length === 0,
     scanned_file_count: boundarySourceFiles.length,
@@ -813,7 +999,9 @@ export function functionLikeName(node, sourceFile) {
   if ("name" in node && node.name && ts.isIdentifier(node.name)) {
     return node.name.text;
   }
-  const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+  const position = sourceFile.getLineAndCharacterOfPosition(
+    node.getStart(sourceFile),
+  );
   return `<anonymous@${position.line + 1}>`;
 }
 
@@ -831,7 +1019,12 @@ export function checkFunctionComplexity(files, maxComplexity) {
   const violations = [];
   for (const absolutePath of files) {
     const sourceText = loadText(absolutePath);
-    const sourceFile = ts.createSourceFile(absolutePath, sourceText, ts.ScriptTarget.Latest, true);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      sourceText,
+      ts.ScriptTarget.Latest,
+      true,
+    );
     const visit = (node) => {
       if (
         ts.isFunctionDeclaration(node) ||
@@ -841,7 +1034,9 @@ export function checkFunctionComplexity(files, maxComplexity) {
       ) {
         const complexity = computeFunctionComplexity(node);
         if (complexity > maxComplexity) {
-          const start = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+          const start = sourceFile.getLineAndCharacterOfPosition(
+            node.getStart(sourceFile),
+          );
           violations.push({
             path: relativeToRepo(absolutePath),
             function_name: functionLikeName(node, sourceFile),
@@ -877,17 +1072,33 @@ function firstGitLine(args) {
 
 function resolveOriginDefaultBranchRef() {
   try {
-    const branchRef = firstGitLine(["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"]);
+    const branchRef = firstGitLine([
+      "symbolic-ref",
+      "--quiet",
+      "--short",
+      "refs/remotes/origin/HEAD",
+    ]);
     return branchRef?.startsWith("origin/") ? branchRef : null;
   } catch {
     return null;
   }
 }
 
-const CODEFACTOR_BASE_REF_FALLBACKS = ["origin/main", "main", "origin/master", "master", "origin/develop", "develop"];
+const CODEFACTOR_BASE_REF_FALLBACKS = [
+  "origin/main",
+  "main",
+  "origin/master",
+  "master",
+  "origin/develop",
+  "develop",
+];
 
 function resolveCodeFactorBaseRef() {
-  const candidates = new Set([resolveOriginDefaultBranchRef(), ...CODEFACTOR_BASE_REF_FALLBACKS].filter(Boolean));
+  const candidates = new Set(
+    [resolveOriginDefaultBranchRef(), ...CODEFACTOR_BASE_REF_FALLBACKS].filter(
+      Boolean,
+    ),
+  );
   for (const candidate of candidates) {
     try {
       const mergeBase = firstGitLine(["merge-base", "HEAD", candidate]);
@@ -909,7 +1120,12 @@ function collectChangedRelativePaths() {
   try {
     const baseRef = resolveCodeFactorBaseRef();
     if (baseRef) {
-      for (const filePath of gitLines(["diff", "--name-only", "--diff-filter=ACMR", `${baseRef}...HEAD`])) {
+      for (const filePath of gitLines([
+        "diff",
+        "--name-only",
+        "--diff-filter=ACMR",
+        `${baseRef}...HEAD`,
+      ])) {
         changed.add(filePath);
       }
     }
@@ -929,9 +1145,16 @@ function collectChangedRelativePaths() {
       };
     }
   } catch {
-    return { ok: false, files: [], error: "Unable to inspect git changed files for CodeFactor parity." };
+    return {
+      ok: false,
+      files: [],
+      error: "Unable to inspect git changed files for CodeFactor parity.",
+    };
   }
-  return { ok: true, files: [...changed].sort((left, right) => left.localeCompare(right)) };
+  return {
+    ok: true,
+    files: [...changed].sort((left, right) => left.localeCompare(right)),
+  };
 }
 
 function isCodeFactorParityPath(relativePath) {
@@ -952,18 +1175,26 @@ function isCodeFactorParityPath(relativePath) {
   );
 }
 
-export function collectCodeFactorParityFiles(changedPaths = collectChangedRelativePaths()) {
+export function collectCodeFactorParityFiles(
+  changedPaths = collectChangedRelativePaths(),
+) {
   if (!changedPaths.ok) {
     return changedPaths;
   }
   const files = changedPaths.files
     .filter(isCodeFactorParityPath)
     .map((relativePath) => path.join(repoRoot, relativePath))
-    .filter((absolutePath) => existsSync(absolutePath) && statSync(absolutePath).isFile());
+    .filter(
+      (absolutePath) =>
+        existsSync(absolutePath) && statSync(absolutePath).isFile(),
+    );
   return { ok: true, files };
 }
 
-export function checkCodeFactorComplexity(maxComplexity, changedPaths = collectChangedRelativePaths()) {
+export function checkCodeFactorComplexity(
+  maxComplexity,
+  changedPaths = collectChangedRelativePaths(),
+) {
   const parityFiles = collectCodeFactorParityFiles(changedPaths);
   if (!parityFiles.ok) {
     return {
@@ -991,7 +1222,7 @@ export function checkCodeFactorComplexity(maxComplexity, changedPaths = collectC
 // gate and its pre-existing violations are grandfathered in the same change
 // (as with sonarjs/cognitive-complexity <= 16, re-baselined 104 -> 180; the
 // burn-down of that slice is tracked on the pm-92if epic).
-export const MAX_ESLINT_SUPPRESSIONS = 146;
+export const MAX_ESLINT_SUPPRESSIONS = 144;
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -1003,26 +1234,42 @@ export function countEslintSuppressions(suppressionsPath) {
     raw = readFileSync(suppressionsPath, "utf8");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Unable to read ESLint suppressions budget file ${suppressionsPath}: ${message}`, { cause: error });
+    throw new Error(
+      `Unable to read ESLint suppressions budget file ${suppressionsPath}: ${message}`,
+      { cause: error },
+    );
   }
   let parsed;
   try {
     parsed = JSON.parse(raw);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: ${message}`, { cause: error });
+    throw new Error(
+      `Invalid ESLint suppressions budget file ${suppressionsPath}: ${message}`,
+      { cause: error },
+    );
   }
   if (!isRecord(parsed)) {
-    throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected an object.`);
+    throw new Error(
+      `Invalid ESLint suppressions budget file ${suppressionsPath}: expected an object.`,
+    );
   }
   let total = 0;
   for (const rules of Object.values(parsed)) {
     if (!isRecord(rules)) {
-      throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected rule objects.`);
+      throw new Error(
+        `Invalid ESLint suppressions budget file ${suppressionsPath}: expected rule objects.`,
+      );
     }
     for (const entry of Object.values(rules)) {
-      if (!isRecord(entry) || !Number.isInteger(entry.count) || entry.count < 0) {
-        throw new Error(`Invalid ESLint suppressions budget file ${suppressionsPath}: expected non-negative integer counts.`);
+      if (
+        !isRecord(entry) ||
+        !Number.isInteger(entry.count) ||
+        entry.count < 0
+      ) {
+        throw new Error(
+          `Invalid ESLint suppressions budget file ${suppressionsPath}: expected non-negative integer counts.`,
+        );
       }
       total += entry.count;
     }
@@ -1065,7 +1312,14 @@ export const MAX_JSCPD_IGNORE_PRAGMAS = 0;
 
 // Pragma-bearing surfaces: every directory ESLint lints, coverage measures, or
 // jscpd scans. Roots are skipped when absent so sparse fixtures still scan.
-const PRAGMA_SCAN_ROOTS = ["src", "tests", "packages", "scripts", "plugins", "docs/examples"];
+const PRAGMA_SCAN_ROOTS = [
+  "src",
+  "tests",
+  "packages",
+  "scripts",
+  "plugins",
+  "docs/examples",
+];
 
 export function collectPragmaScanFiles() {
   const matcher = (absolutePath) =>
@@ -1078,18 +1332,24 @@ export function collectPragmaScanFiles() {
     .filter((root) => existsSync(root))
     .flatMap((root) =>
       walkFiles(root, matcher, [], {
-        shouldSkipDirectory: (absolutePath) => path.basename(absolutePath) === "node_modules",
+        shouldSkipDirectory: (absolutePath) =>
+          path.basename(absolutePath) === "node_modules",
       }),
     );
   return files.sort((left, right) => left.localeCompare(right));
 }
 
 export function readPragmaScanTexts(files) {
-  return files.map((absolutePath) => ({ path: absolutePath, text: loadText(absolutePath) }));
+  return files.map((absolutePath) => ({
+    path: absolutePath,
+    text: loadText(absolutePath),
+  }));
 }
 
 export function countPragmaMatchesInTexts(scanTexts, pattern) {
-  const globalPattern = pattern.global ? pattern : new RegExp(pattern.source, `${pattern.flags}g`);
+  const globalPattern = pattern.global
+    ? pattern
+    : new RegExp(pattern.source, `${pattern.flags}g`);
   let total = 0;
   for (const scanText of scanTexts) {
     const matches = scanText.text.match(globalPattern);
@@ -1102,7 +1362,10 @@ export function countPragmaMatchesInTexts(scanTexts, pattern) {
 
 // Pattern sources are assembled from fragments so this gate and its spec
 // fixtures never count their own pattern literals as pragma usage.
-export function checkInlinePragmaBudgets(budgets = {}, files = collectPragmaScanFiles()) {
+export function checkInlinePragmaBudgets(
+  budgets = {},
+  files = collectPragmaScanFiles(),
+) {
   const resolvedBudgets = budgets ?? {};
   const checks = [
     [
@@ -1140,7 +1403,10 @@ export function checkInlinePragmaBudgets(budgets = {}, files = collectPragmaScan
     return report;
   }
   for (const [key, patternSource, max] of checks) {
-    const total = countPragmaMatchesInTexts(scanTexts, new RegExp(patternSource, "g"));
+    const total = countPragmaMatchesInTexts(
+      scanTexts,
+      new RegExp(patternSource, "g"),
+    );
     const ok = total <= max;
     report.ok = report.ok && ok;
     report.budgets[key] = { ok, total, max };
@@ -1196,18 +1462,50 @@ function parseQualityThresholds(flags) {
     maxSrcLines: parseNumberFlag(flags, "max-lines", 3400),
     maxTestLines: parseNumberFlag(flags, "max-lines-tests", 7000),
     maxComplexity: parseNumberFlag(flags, "max-complexity", 260),
-    maxCodeFactorComplexity: parseNumberFlag(flags, "max-codefactor-complexity", 16),
+    maxCodeFactorComplexity: parseNumberFlag(
+      flags,
+      "max-codefactor-complexity",
+      16,
+    ),
     maxFilesPerDirectory: parseNumberFlag(flags, "max-files-per-dir", 120),
     duplicateWindow: parseNumberFlag(flags, "duplicate-window", 24),
     maxDuplicateChunks: parseNumberFlag(flags, "max-duplicate-chunks", 8),
     minDocstringCoverage: parseNumberFlag(flags, "min-docstring-coverage", 100),
-    minExportedDocstringCoverage: parseNumberFlag(flags, "min-exported-docstring-coverage", 100),
-    minMemberDocstringCoverage: parseNumberFlag(flags, "min-member-docstring-coverage", 100),
-    maxEslintSuppressions: parseNumberFlag(flags, "max-eslint-suppressions", MAX_ESLINT_SUPPRESSIONS),
-    maxInlineEslintDisables: parseNumberFlag(flags, "max-inline-lint-disables", MAX_INLINE_ESLINT_DISABLES),
-    maxBroadEslintDisables: parseNumberFlag(flags, "max-broad-lint-disables", MAX_BROAD_ESLINT_DISABLES),
-    maxCoverageIgnorePragmas: parseNumberFlag(flags, "max-coverage-ignore-pragmas", MAX_COVERAGE_IGNORE_PRAGMAS),
-    maxJscpdIgnorePragmas: parseNumberFlag(flags, "max-jscpd-ignore-pragmas", MAX_JSCPD_IGNORE_PRAGMAS),
+    minExportedDocstringCoverage: parseNumberFlag(
+      flags,
+      "min-exported-docstring-coverage",
+      100,
+    ),
+    minMemberDocstringCoverage: parseNumberFlag(
+      flags,
+      "min-member-docstring-coverage",
+      100,
+    ),
+    maxEslintSuppressions: parseNumberFlag(
+      flags,
+      "max-eslint-suppressions",
+      MAX_ESLINT_SUPPRESSIONS,
+    ),
+    maxInlineEslintDisables: parseNumberFlag(
+      flags,
+      "max-inline-lint-disables",
+      MAX_INLINE_ESLINT_DISABLES,
+    ),
+    maxBroadEslintDisables: parseNumberFlag(
+      flags,
+      "max-broad-lint-disables",
+      MAX_BROAD_ESLINT_DISABLES,
+    ),
+    maxCoverageIgnorePragmas: parseNumberFlag(
+      flags,
+      "max-coverage-ignore-pragmas",
+      MAX_COVERAGE_IGNORE_PRAGMAS,
+    ),
+    maxJscpdIgnorePragmas: parseNumberFlag(
+      flags,
+      "max-jscpd-ignore-pragmas",
+      MAX_JSCPD_IGNORE_PRAGMAS,
+    ),
   };
   if (thresholds.duplicateWindow < 5) {
     fail("--duplicate-window must be >= 5.");
@@ -1216,23 +1514,46 @@ function parseQualityThresholds(flags) {
 }
 
 function buildQualityReport(files, duplicateScopeFiles, thresholds) {
-  const fileLengthViolations = checkFileLength(files, thresholds.maxSrcLines, thresholds.maxTestLines);
-  const directoryViolations = checkDirectoryLoad(files, thresholds.maxFilesPerDirectory);
+  const fileLengthViolations = checkFileLength(
+    files,
+    thresholds.maxSrcLines,
+    thresholds.maxTestLines,
+  );
+  const directoryViolations = checkDirectoryLoad(
+    files,
+    thresholds.maxFilesPerDirectory,
+  );
   const duplicateViolations = checkDuplicateChunks(
     duplicateScopeFiles,
     thresholds.duplicateWindow,
     thresholds.maxDuplicateChunks,
   );
   const orphanViolations = checkOrphanSourceModules(files);
-  const complexityViolations = checkFunctionComplexity(files, thresholds.maxComplexity);
-  const sourceDocstringCoverage = checkSourceDocstringCoverage(files, thresholds.minDocstringCoverage);
-  const exportedDocstringCoverage = checkExportedDocstringCoverage(files, thresholds.minExportedDocstringCoverage);
-  const memberDocstringCoverage = checkExportedMemberDocstringCoverage(files, thresholds.minMemberDocstringCoverage);
+  const complexityViolations = checkFunctionComplexity(
+    files,
+    thresholds.maxComplexity,
+  );
+  const sourceDocstringCoverage = checkSourceDocstringCoverage(
+    files,
+    thresholds.minDocstringCoverage,
+  );
+  const exportedDocstringCoverage = checkExportedDocstringCoverage(
+    files,
+    thresholds.minExportedDocstringCoverage,
+  );
+  const memberDocstringCoverage = checkExportedMemberDocstringCoverage(
+    files,
+    thresholds.minMemberDocstringCoverage,
+  );
   const boilerplateDocstringViolations = checkDocstringBoilerplate(files);
   const trivialDocstringViolations = checkTrivialDocstrings(files);
-  const eslintSuppressionsBudget = checkEslintSuppressionsBudget(thresholds.maxEslintSuppressions);
+  const eslintSuppressionsBudget = checkEslintSuppressionsBudget(
+    thresholds.maxEslintSuppressions,
+  );
   const inlinePragmaBudgets = checkInlinePragmaBudgets(thresholds);
-  const codeFactorComplexity = checkCodeFactorComplexity(thresholds.maxCodeFactorComplexity);
+  const codeFactorComplexity = checkCodeFactorComplexity(
+    thresholds.maxCodeFactorComplexity,
+  );
   const sdkImportBoundary = checkSdkImportBoundary(files);
   return {
     ok:
@@ -1255,9 +1576,12 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       duplicate_scope_file_count: duplicateScopeFiles.length,
       sdk_boundary_file_count: sdkImportBoundary.scanned_file_count,
       duplicate_window_lines: thresholds.duplicateWindow,
-      source_docstring_coverage_percent: sourceDocstringCoverage.coverage_percent,
-      exported_docstring_coverage_percent: exportedDocstringCoverage.coverage_percent,
-      member_docstring_coverage_percent: memberDocstringCoverage.coverage_percent,
+      source_docstring_coverage_percent:
+        sourceDocstringCoverage.coverage_percent,
+      exported_docstring_coverage_percent:
+        exportedDocstringCoverage.coverage_percent,
+      member_docstring_coverage_percent:
+        memberDocstringCoverage.coverage_percent,
     },
     thresholds: {
       max_src_lines: thresholds.maxSrcLines,
@@ -1272,8 +1596,10 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       max_coverage_ignore_pragmas: thresholds.maxCoverageIgnorePragmas,
       max_jscpd_ignore_pragmas: thresholds.maxJscpdIgnorePragmas,
       min_docstring_coverage_percent: thresholds.minDocstringCoverage,
-      min_exported_docstring_coverage_percent: thresholds.minExportedDocstringCoverage,
-      min_member_docstring_coverage_percent: thresholds.minMemberDocstringCoverage,
+      min_exported_docstring_coverage_percent:
+        thresholds.minExportedDocstringCoverage,
+      min_member_docstring_coverage_percent:
+        thresholds.minMemberDocstringCoverage,
     },
     violations: {
       file_length: fileLengthViolations,
@@ -1289,7 +1615,8 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       codefactor_complexity: codeFactorComplexity.violations,
       sdk_import_boundary: {
         new_private_core_imports: sdkImportBoundary.new_private_core_imports,
-        unsupported_dynamic_imports: sdkImportBoundary.unsupported_dynamic_imports,
+        unsupported_dynamic_imports:
+          sdkImportBoundary.unsupported_dynamic_imports,
       },
     },
     source_docstrings: sourceDocstringCoverage,
@@ -1322,7 +1649,9 @@ function printEslintSuppressionsFailure(eslintSuppressions) {
     return;
   }
   if (eslintSuppressions.error) {
-    console.error(`- eslint_suppressions budget failed: ${eslintSuppressions.error}`);
+    console.error(
+      `- eslint_suppressions budget failed: ${eslintSuppressions.error}`,
+    );
     return;
   }
   console.error(
@@ -1349,16 +1678,34 @@ function printInlinePragmaFailures(inlinePragmas) {
 function printQualityFailureSummary(report) {
   console.error("Static quality gate failed.");
   printViolationCount("file_length", report.violations.file_length.length);
-  printViolationCount("directory_load", report.violations.directory_load.length);
-  if (report.violations.duplicate_chunks.length > report.thresholds.max_duplicate_chunks) {
-    printViolationCount("duplicate_chunks", report.violations.duplicate_chunks.length);
+  printViolationCount(
+    "directory_load",
+    report.violations.directory_load.length,
+  );
+  if (
+    report.violations.duplicate_chunks.length >
+    report.thresholds.max_duplicate_chunks
+  ) {
+    printViolationCount(
+      "duplicate_chunks",
+      report.violations.duplicate_chunks.length,
+    );
   }
-  printViolationCount("orphan_modules", report.violations.orphan_modules.length);
+  printViolationCount(
+    "orphan_modules",
+    report.violations.orphan_modules.length,
+  );
   printViolationCount("complexity", report.violations.complexity.length);
   printDocstringCoverageFailure("source_docstring", report.source_docstrings);
-  printDocstringCoverageFailure("exported_docstring", report.exported_docstrings);
+  printDocstringCoverageFailure(
+    "exported_docstring",
+    report.exported_docstrings,
+  );
   printDocstringCoverageFailure("member_docstring", report.member_docstrings);
-  printViolationCount("boilerplate_docstring", report.violations.boilerplate_docstrings.length);
+  printViolationCount(
+    "boilerplate_docstring",
+    report.violations.boilerplate_docstrings.length,
+  );
   if (report.violations.trivial_docstrings.length > 0) {
     console.error(
       `- trivial_docstring violations: ${report.violations.trivial_docstrings.length} ` +
@@ -1366,9 +1713,14 @@ function printQualityFailureSummary(report) {
     );
   }
   if (report.codefactor_complexity.error) {
-    console.error(`- codefactor_complexity scan failed: ${report.codefactor_complexity.error}`);
+    console.error(
+      `- codefactor_complexity scan failed: ${report.codefactor_complexity.error}`,
+    );
   } else {
-    printViolationCount("codefactor_complexity", report.violations.codefactor_complexity.length);
+    printViolationCount(
+      "codefactor_complexity",
+      report.violations.codefactor_complexity.length,
+    );
   }
   printViolationCount(
     "sdk_import_boundary private_core_import",
@@ -1405,7 +1757,11 @@ export function main() {
   const files = collectTypeScriptFiles();
   const duplicateScopeFiles = files.filter((absolutePath) => {
     const relative = relativeToRepo(absolutePath);
-    return relative.startsWith("src/core/") || relative.startsWith("src/sdk/") || relative.startsWith("src/cli/");
+    return (
+      relative.startsWith("src/core/") ||
+      relative.startsWith("src/sdk/") ||
+      relative.startsWith("src/cli/")
+    );
   });
   const report = buildQualityReport(files, duplicateScopeFiles, thresholds);
   printQualityReport(report, outputJson);
@@ -1416,7 +1772,10 @@ export function main() {
 }
 
 /* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   main();
 }
 /* c8 ignore stop */

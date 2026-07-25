@@ -1138,7 +1138,7 @@ export function registerSetupCommands(program: Command): void {
     .argument("[action]", "Config action: get|set|list|export")
     .argument(
       "[key]",
-      "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|lifecycle-stale-blocker-reason-patterns|lifecycle-closure-like-blocked-reason-patterns|lifecycle-closure-like-resolution-patterns|lifecycle-closure-like-actual-result-patterns|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-require-close-reason|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|test-result-tracking|telemetry-tracking|context",
+      "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|lifecycle-stale-blocker-reason-patterns|lifecycle-closure-like-blocked-reason-patterns|lifecycle-closure-like-resolution-patterns|lifecycle-closure-like-actual-result-patterns|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-require-close-reason|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|governance-duplicate-detection-mode|governance-duplicate-detection-threshold|governance-duplicate-detection-limit|test-result-tracking|telemetry-tracking|context",
     )
     .argument(
       "[value]",
@@ -1156,11 +1156,11 @@ export function registerSetupCommands(program: Command): void {
     .option("--format <value>", "Item format for item-format key: toon")
     .option(
       "--policy <value>",
-      "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; governance-preset=minimal|default|strict|custom; governance-ownership-enforcement=none|warn|strict; governance-create-mode-default=progressive|strict; governance-close-validation-default=off|warn|strict; governance-require-close-reason=enabled|disabled; governance-parent-reference-policy=warn|strict_error; governance-metadata-validation-profile=core|strict|custom; governance-force-required-for-stale-lock=enabled|disabled; test-result-tracking=enabled|disabled; telemetry-tracking=enabled|disabled",
+      "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; governance-preset=minimal|default|strict|custom; governance-ownership-enforcement=none|warn|strict; governance-create-mode-default=progressive|strict; governance-close-validation-default=off|warn|strict; governance-require-close-reason=enabled|disabled; governance-parent-reference-policy=warn|strict_error; governance-metadata-validation-profile=core|strict|custom; governance-force-required-for-stale-lock=enabled|disabled; governance-duplicate-detection-mode=off|advisory|strict; test-result-tracking=enabled|disabled; telemetry-tracking=enabled|disabled",
     )
     .option(
       "--value <value>",
-      "Value for nested leaf settings keys (search_provider, search_mutation_refresh_policy, search_query_expansion_enabled, search_rerank_enabled, openai_base_url, ollama_model, vector_store_adapter, vector_store_collection_name, qdrant_url, lancedb_path, etc.). Equivalent to the positional value.",
+      "Value for nested leaf settings keys (kebab-case preferred; underscore aliases remain accepted), including governance-duplicate-detection-threshold, governance-duplicate-detection-limit, search-provider, search-mutation-refresh-policy, openai-base-url, vector-store-adapter, and others. Equivalent to the positional value.",
     )
     .option(
       "--default-depth <value>",

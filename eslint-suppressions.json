@@ -153,11 +153,6 @@
       "count": 1
     }
   },
-  "src/core/extensions/loader.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    }
-  },
   "src/core/fs/fs-utils.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1

@@ -403,8 +403,9 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     {
       target: "regression",
       keys: ["regression"],
-      option: "--regression <value>",
-      description: "Regression marker: true|false|1|0",
+      option: "--regression [value]",
+      description:
+        "Regression marker; bare flag means true, or pass true|false|1|0",
     },
     {
       target: "customerImpact",
@@ -932,8 +933,9 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     {
       target: "regression",
       keys: ["regression"],
-      option: "--regression <value>",
-      description: "Set regression marker: true|false|1|0",
+      option: "--regression [value]",
+      description:
+        "Set regression marker; bare flag means true, or pass true|false|1|0",
     },
     {
       target: "customerImpact",

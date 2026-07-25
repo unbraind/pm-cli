@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Author-resolution bypass class: create/copy and the context, next, and usage-feedback paths re-implement author precedence without harness detection, stamping author 'unknown' on new items ([pm-42p9nk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-42p9nk.toon))
+
+### Changed
+
+- Public SDK surface snapshot and breaking-change gate: the exported API is a reviewed artifact, and an unintended removal or signature change cannot merge ([pm-e6tm5c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e6tm5c.toon))
+
+### Fixed
+
+- GH-706: accept bare conventional forms for create/update boolean metadata flags ([pm-ulb3rc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ulb3rc.toon))
+- GH-700/GH-701/GH-702: nightly Node 22 and cross-platform regression bundle ([pm-3x8w4m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3x8w4m.toon))
+- GH-704: make extension activation failures actionable at command and lifecycle boundaries ([pm-3ljt19](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3ljt19.toon))
+- GH-705: make duplicate governance discoverable and advisory by default ([pm-de3foa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-de3foa.toon))
+- GH-703: populate portable workspace coordinates in extension CommandHandlerContext ([pm-fc9gm4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fc9gm4.toon))
+
+### Other
+
+- Public SDK surface shape: 881 exports behind one flat entrypoint with no capability tiering and a 250ms eager import cost ([pm-38bskj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-38bskj.toon))
+- CLI transport overhead budget: gate the per-invocation bootstrap floor and the CLI-vs-SDK delta, not just absolute scale numbers ([pm-yse5dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yse5dt.toon))
+- ADR: Startup-latency strategy (prebuilt JS, lazy per-command imports, external deps, no single bundle) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
+
 ## 2026.7.25 - 2026-07-25
 
 ### Added
@@ -1309,7 +1333,6 @@
 
 - Governance test: enforce manifest pm_min_version and manifest_version on all first-party packages ([pm-exrw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-exrw.toon))
 - Ecosystem PM living-map audit & reorganization methodology ([pm-knqw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-knqw.toon))
-- ADR: Startup-latency strategy (prebuilt JS, lazy per-command imports, external deps, no single bundle) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
 - Verify living-map: ecosystem coverage gaps ([pm-xmhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmhn.toon))
 - ADR: Stable CLI exit-code contract (0 success, 1 generic, 2 usage, 3 not_found, 4 conflict, 5 dependency_failed) ([pm-x1z3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-x1z3.toon))
 - Ecosystem-wide PM living-context map: audit, ADRs, roadmap, and forward backlog (2026-05-31) ([pm-w7f2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-w7f2.toon))

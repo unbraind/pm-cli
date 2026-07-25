@@ -76,6 +76,7 @@ import {
   collectUnknownCapabilityGuidance,
   buildCapabilityContractMetadata,
   buildDoctorConsistencySummary,
+  summarizeExtensionFailures,
 } from "./extension/doctor.js";
 import {
   copyExtensionDirectoryForInstall,
@@ -2925,7 +2926,7 @@ const runExtensionUninstallAction = async (
 const runExtensionActivateDeactivateAction = async (
   ctx: ExtensionActionContext,
 ): Promise<ExtensionCommandResult> => {
-  const { action, resolvedRoots, withResult } = ctx;
+  const { action, resolvedRoots, warnings, global, withResult } = ctx;
   const { settings, candidate } = await resolveRequiredInstalledExtension(ctx);
 
   const settingsChanged =
@@ -2940,18 +2941,41 @@ const runExtensionActivateDeactivateAction = async (
     );
   }
 
-  return withResult({
-    extension: {
-      name: candidate.name,
-      directory: candidate.directory,
+  const activationFailure =
+    action === "activate"
+      ? await probeRuntimeCommandPathsForInstall(
+          resolvedRoots.pm_root,
+          settings,
+          [candidate],
+          global,
+        ).then((probe) => {
+          warnings.push(...probe.warnings);
+          return findActivationFailureByName(
+            candidate.name,
+            probe.activation_failures,
+            ctx.scope,
+          );
+        })
+      : undefined;
+  if (activationFailure) warnings.push(`extension_activate_failed:${ctx.scope}:${candidate.name}`);
+
+  return withResult(
+    {
+      extension: {
+        name: candidate.name,
+        directory: candidate.directory,
+      },
+      active: action === "activate" && activationFailure === undefined,
+      runtime_active: action === "activate" && activationFailure === undefined,
+      activation_failure: activationFailure ?? null,
+      settings_changed: settingsChanged,
+      settings: {
+        enabled: [...settings.extensions.enabled],
+        disabled: [...settings.extensions.disabled],
+      },
     },
-    active: action === "activate",
-    settings_changed: settingsChanged,
-    settings: {
-      enabled: [...settings.extensions.enabled],
-      disabled: [...settings.extensions.disabled],
-    },
-  });
+    activationFailure === undefined,
+  );
 };
 
 /** Assemble the doctor remediation hints: the triage remediations, vocabulary-aware advice to inspect load failures and activation failures, and a note when a managed-state fix adopted entries. Blank entries are trimmed and the list is de-duplicated. */
@@ -3310,6 +3334,8 @@ const runExtensionDoctorAction = async (
     ).length,
     load_failure_count: loadResult.failed.length,
     activation_failure_count: activationResult.failed.length,
+    load_failures: summarizeExtensionFailures(loadResult.failed),
+    activation_failures: summarizeExtensionFailures(activationResult.failed),
     blocking_failure_count:
       loadResult.failed.length + activationResult.failed.length,
     has_blocking_failures:

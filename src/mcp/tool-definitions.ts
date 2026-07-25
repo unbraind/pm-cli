@@ -43,7 +43,7 @@ const TOOL_SCHEMA_BASE = {
     author: {
       type: "string",
       description:
-        "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+        "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
     },
   },
   additionalProperties: true,

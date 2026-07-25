@@ -79,6 +79,29 @@
             "max_estimated_tokens": 294
           }
         }
+      },
+      "transport_overhead": {
+        "list": {
+          "max_cli_minus_sdk_ms": 567
+        },
+        "get": {
+          "max_cli_minus_sdk_ms": 460
+        },
+        "next": {
+          "max_cli_minus_sdk_ms": 648
+        },
+        "context": {
+          "max_cli_minus_sdk_ms": 579
+        },
+        "search": {
+          "max_cli_minus_sdk_ms": 579
+        },
+        "create": {
+          "max_cli_minus_sdk_ms": 488
+        },
+        "claim": {
+          "max_cli_minus_sdk_ms": 450
+        }
       }
     },
     "100000": {
@@ -157,6 +180,29 @@
             "max_peak_rss_bytes": 1572439040,
             "max_estimated_tokens": 294
           }
+        }
+      },
+      "transport_overhead": {
+        "list": {
+          "max_cli_minus_sdk_ms": 2335
+        },
+        "get": {
+          "max_cli_minus_sdk_ms": 1593
+        },
+        "next": {
+          "max_cli_minus_sdk_ms": 4655
+        },
+        "context": {
+          "max_cli_minus_sdk_ms": 4650
+        },
+        "search": {
+          "max_cli_minus_sdk_ms": 4330
+        },
+        "create": {
+          "max_cli_minus_sdk_ms": 853
+        },
+        "claim": {
+          "max_cli_minus_sdk_ms": 1017
         }
       }
     }

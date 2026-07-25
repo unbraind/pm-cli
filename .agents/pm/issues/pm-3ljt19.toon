@@ -1,0 +1,40 @@
+id: pm-3ljt19
+title: "GH-704: make extension activation failures actionable at command and lifecycle boundaries"
+description: "Carry precise activation diagnostics into unknown-command recovery, explore/doctor summaries, activate results, and validate extension flag long names."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:cli","area:sdk",extensions,gh-issue
+created_at: "2026-07-25T09:20:04.202Z"
+updated_at: "2026-07-25T11:58:30.574Z"
+closed_at: "2026-07-25T11:58:29.727Z"
+author: unknown
+parent: pm-ugqx
+resolution: "Propagated bounded activation diagnostics into command recovery and extension lifecycle responses, with validated long-option contracts."
+expected_result: "Extension activation failures identify the failed extension and remediation at the command, activate, explore, and doctor boundaries."
+actual_result: All lifecycle and recovery boundaries return actionable structured diagnostics; full contract snapshot and 270 linked tests verify the behavior.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-s1w0sf,related,"2026-07-25T09:20:04.202Z",null,null
+  pm-yffj,related,"2026-07-25T09:20:04.202Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-25T09:20:04.202Z",unknown,"Duplicate-check evidence: closed pm-yffj surfaced activation diagnostics in install/explore and closed pm-s1w0sf validates descriptors,but GH-704 reproduces missing point-of-use recovery,false activate success,and unmatchable long-name acceptance. This is follow-up scope,not a duplicate of completed work."
+  "2026-07-25T11:31:35.052Z","harness:codex","Evidence: unknown-command, activate, explore, and doctor paths return bounded actionable activation failures. Both linked test groups passed: 132/132 host/error tests and 138/138 recovery/extension lifecycle tests."
+  "2026-07-25T11:48:24.790Z","harness:codex","CI repair evidence: regenerated the full CLI/SDK contract snapshot after the shared automatic-author description changed across mutation inputs. pnpm contracts:check, pnpm typecheck, and pnpm lint pass; the fixture now makes the public contract change explicit and deterministic."
+  "2026-07-25T11:57:41.203Z","harness:codex","Exact-head delivery evidence: PR #707 head 7c1921db passed every required GitHub check, including static quality, Windows Node 24, Ubuntu Node 22/24 and macOS smokes, typecheck, compatibility, all four coverage shards plus the 100% coverage gate, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, docs/skills, package smokes, and benchmarks. Manual packed Node/Bun consumer acceptance and telemetry/Sentry gates also passed. Automated review returned no inline findings; CodeRabbit/Sourcery/Gemini/Greptile limitations are documented on the PR and Greptile quota is linked to canonical pm-e02lgu."
+files[9]{path,scope,note}:
+  src/cli/commander-usage.ts,project,structured failure rendering
+  src/cli/extension-recovery.ts,project,bounded parse-time activation recovery
+  src/cli/main.ts,project,unknown command activation diagnostics
+  src/sdk/extension.ts,project,activate and doctor runtime truth
+  src/sdk/extension/doctor.ts,project,bounded doctor failures
+  tests/fixtures/contracts/full.json,project,Generated full-contract fixture records the automatic harness-author description across SDK mutation inputs
+  tests/integration/extension-host-contracts.integration.spec.ts,project,activation failure boundaries
+  tests/unit/cli/recovery-context-usage.spec.ts,project,Unknown-command recovery failure rendering coverage
+  tests/unit/extensions/extension-command.spec.ts,project,Extension activation lifecycle diagnostics coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/cli/recovery-context-usage.spec.ts tests/unit/extensions/extension-command.spec.ts,project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms09s9k9-ebwzv1,test,passed,"2026-07-25T11:11:46.331Z","2026-07-25T11:12:30.825Z","2026-07-25T11:12:30.825Z",2,0,0
+close_reason: "Delivered in PR #707 exact head 7c1921db with linked local, packed-consumer, full-coverage, cross-platform, security, performance, and GitHub CI evidence."
+body: ""

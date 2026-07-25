@@ -1,11 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runHealth } from "../../../src/cli/commands/health.js";
 import { runValidate } from "../../../src/cli/commands/validate.js";
-import { scanTrackedRuntimeCache } from "../../../src/sdk/governance/tracked-runtime-cache.js";
+import {
+  resolveCanonicalTrackerRoot,
+  scanTrackedRuntimeCache,
+} from "../../../src/sdk/governance/tracked-runtime-cache.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 function runGit(cwd: string, args: string[]): string {
@@ -17,6 +20,14 @@ function runGit(cwd: string, args: string[]): string {
 }
 
 describe("tracked runtime cache governance", () => {
+  it("falls back to an absolute root when canonicalization fails", async () => {
+    await expect(
+      resolveCanonicalTrackerRoot("relative/tracker", async () => {
+        throw new Error("missing");
+      }),
+    ).resolves.toBe(path.resolve("relative/tracker"));
+  });
+
   it("reports every tracked clone-local directory through health and validate", async () => {
     await withTempPmPath(async (context) => {
       runGit(context.tempRoot, ["init"]);
@@ -116,7 +127,7 @@ describe("tracked runtime cache governance", () => {
       });
       runGit(tempRoot, ["init"]);
       expect(await scanTrackedRuntimeCache(tempRoot)).toMatchObject({
-        git_workspace_root: tempRoot,
+        git_workspace_root: await realpath(tempRoot),
         tracker_relative_root: null,
         tracked_path_count: 0,
         remediation_command: null,

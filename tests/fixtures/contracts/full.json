@@ -8871,7 +8871,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "body": {
@@ -8915,7 +8915,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -8953,7 +8953,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9004,7 +9004,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9039,7 +9039,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "configAction": {
@@ -9097,7 +9097,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9124,7 +9124,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9155,7 +9155,7 @@
             "type": "boolean"
           },
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9215,7 +9215,7 @@
             "type": "boolean"
           },
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9251,7 +9251,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9286,7 +9286,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9392,7 +9392,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9427,7 +9427,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "clear": {
@@ -9463,7 +9463,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9499,7 +9499,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9559,7 +9559,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9586,7 +9586,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9621,7 +9621,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9678,7 +9678,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "createCompensation": {
@@ -9763,7 +9763,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9790,7 +9790,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9825,7 +9825,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9919,7 +9919,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -9961,7 +9961,7 @@
             "type": "string"
           },
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -10036,7 +10036,7 @@
             "type": "boolean"
           },
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cliFlag": {
@@ -10181,7 +10181,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -10242,7 +10242,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -10277,7 +10277,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {
@@ -10318,7 +10318,7 @@
         "additionalProperties": true,
         "properties": {
           "author": {
-            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
           },
           "cwd": {

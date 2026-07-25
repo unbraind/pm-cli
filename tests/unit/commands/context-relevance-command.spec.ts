@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -34,7 +34,10 @@ function relevanceItem(
 
 function createContextRankingItems(context: TempPmContext): string[] {
   const createdIds: string[] = [];
-  for (const [title, priority] of [["Baseline", "3"], ["Urgent", "0"]]) {
+  for (const [title, priority] of [
+    ["Baseline", "3"],
+    ["Urgent", "0"],
+  ]) {
     const created = context.runCli(
       [
         "create",
@@ -60,11 +63,13 @@ function createContextRankingItems(context: TempPmContext): string[] {
 
 describe("context relevance command integration", () => {
   it("keeps feature-store diagnostics optional for SDK summary callers", () => {
-    expect(toContextRankingSummary({
-      model: "default-weighted-v1",
-      available_signals: [],
-      ranked: [],
-    })).not.toHaveProperty("feature_store");
+    expect(
+      toContextRankingSummary({
+        model: "default-weighted-v1",
+        available_signals: [],
+        ranked: [],
+      }),
+    ).not.toHaveProperty("feature_store");
   });
 
   it("derives normalized metadata signals for diverse project items", () => {
@@ -79,7 +84,11 @@ describe("context relevance command integration", () => {
         parent: "pm-parent",
         comments: [{ text: "one" }] as never,
         notes: [{ text: "two" }] as never,
-        learnings: [{ text: "three" }, { text: "four" }, { text: "five" }] as never,
+        learnings: [
+          { text: "three" },
+          { text: "four" },
+          { text: "five" },
+        ] as never,
         updated_at: "2026-07-03T00:00:00.000Z",
       }),
       relevanceItem("pm-medium", {
@@ -91,9 +100,16 @@ describe("context relevance command integration", () => {
       relevanceItem("pm-low", { risk: "low" }),
       relevanceItem("pm-none", { risk: undefined, deadline: "not-a-date" }),
     ];
-    const candidates = buildItemContextRelevanceCandidates(items, { statusRegistry: registry, now, author: "codex-root", usageAffinity: { "pm-critical": 0.8 } });
+    const candidates = buildItemContextRelevanceCandidates(items, {
+      statusRegistry: registry,
+      now,
+      author: "codex-root",
+      usageAffinity: { "pm-critical": 0.8 },
+    });
 
-    expect(candidates.map((entry) => entry.id)).toEqual(items.map((item) => item.id));
+    expect(candidates.map((entry) => entry.id)).toEqual(
+      items.map((item) => item.id),
+    );
     expect(candidates[0]?.signals).toMatchObject({
       graph_proximity: 0.3,
       claim_focus: 1,
@@ -105,32 +121,72 @@ describe("context relevance command integration", () => {
       recency: 1,
       usage_affinity: 0.8,
     });
-    expect(candidates[1]?.signals).toMatchObject({ claim_focus: 0.75, risk_pressure: 0.5, author_affinity: 1 });
+    expect(candidates[1]?.signals).toMatchObject({
+      claim_focus: 0.75,
+      risk_pressure: 0.5,
+      author_affinity: 1,
+    });
     expect(candidates[1]?.signals?.deadline_pressure).toBeCloseTo(0.5);
     expect(candidates[2]?.signals?.risk_pressure).toBe(0.1);
-    expect(candidates[3]?.signals).toMatchObject({ claim_focus: 0, risk_pressure: 0, deadline_pressure: 0 });
-    expect(buildItemContextRelevanceCandidates([items[0] as ItemMetadata], { statusRegistry: registry, now })[0]?.signals?.recency).toBe(1);
-    expect(buildItemContextRelevanceCandidates([
-      relevanceItem("pm-invalid-runtime", { priority: undefined as never, deadline: "2026-08-09" }),
-    ], { statusRegistry: registry, now: "invalid-now" })[0]?.signals).toMatchObject({ priority_pressure: 0, deadline_pressure: 0 });
-    expect(buildItemContextRelevanceCandidates([
-      relevanceItem("pm-string-priority", { priority: "2" as never }),
-    ], { statusRegistry: registry, now })[0]?.signals?.priority_pressure).toBe(0.5);
-    const tied = buildItemContextRelevanceCandidates([
-      relevanceItem("pm-b"),
-      relevanceItem("pm-a"),
-    ], { statusRegistry: registry, now });
+    expect(candidates[3]?.signals).toMatchObject({
+      claim_focus: 0,
+      risk_pressure: 0,
+      deadline_pressure: 0,
+    });
+    expect(
+      buildItemContextRelevanceCandidates([items[0] as ItemMetadata], {
+        statusRegistry: registry,
+        now,
+      })[0]?.signals?.recency,
+    ).toBe(1);
+    expect(
+      buildItemContextRelevanceCandidates(
+        [
+          relevanceItem("pm-invalid-runtime", {
+            priority: undefined as never,
+            deadline: "2026-08-09",
+          }),
+        ],
+        { statusRegistry: registry, now: "invalid-now" },
+      )[0]?.signals,
+    ).toMatchObject({ priority_pressure: 0, deadline_pressure: 0 });
+    expect(
+      buildItemContextRelevanceCandidates(
+        [relevanceItem("pm-string-priority", { priority: "2" as never })],
+        { statusRegistry: registry, now },
+      )[0]?.signals?.priority_pressure,
+    ).toBe(0.5);
+    const tied = buildItemContextRelevanceCandidates(
+      [relevanceItem("pm-b"), relevanceItem("pm-a")],
+      { statusRegistry: registry, now },
+    );
     expect(tied.find((entry) => entry.id === "pm-a")?.signals?.recency).toBe(1);
   });
 
   it("normalizes defensive runtime metadata shapes without invalid signals", () => {
     const registry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
-    const runtimeShapes = buildItemContextRelevanceCandidates([
-      relevanceItem("pm-date-deadline", { deadline: new Date("2026-07-09T00:00:00.000Z") as never, risk: " High " as never }),
-      relevanceItem("pm-number-deadline", { deadline: Date.parse("2026-08-09T00:00:00.000Z") as never, assignee: 42 as never }),
-    ], { statusRegistry: registry, now: "2026-07-10T00:00:00.000Z", author: "codex-root" });
+    const runtimeShapes = buildItemContextRelevanceCandidates(
+      [
+        relevanceItem("pm-date-deadline", {
+          deadline: new Date("2026-07-09T00:00:00.000Z") as never,
+          risk: " High " as never,
+        }),
+        relevanceItem("pm-number-deadline", {
+          deadline: Date.parse("2026-08-09T00:00:00.000Z") as never,
+          assignee: 42 as never,
+        }),
+      ],
+      {
+        statusRegistry: registry,
+        now: "2026-07-10T00:00:00.000Z",
+        author: "codex-root",
+      },
+    );
 
-    expect(runtimeShapes[0]?.signals).toMatchObject({ deadline_pressure: 1, risk_pressure: 1 });
+    expect(runtimeShapes[0]?.signals).toMatchObject({
+      deadline_pressure: 1,
+      risk_pressure: 1,
+    });
     expect(runtimeShapes[1]?.signals?.deadline_pressure).toBeCloseTo(0.5);
     expect(runtimeShapes[1]?.signals?.author_affinity).toBe(0);
   });
@@ -140,41 +196,84 @@ describe("context relevance command integration", () => {
       createContextRankingItems(context);
 
       const compact = await runContext({}, { path: context.pmPath });
-      const explainedContext = await runContext({ explainRanking: true }, { path: context.pmPath });
-      const explainedNext = await runNext({ explainRanking: true }, { path: context.pmPath });
-      const contextAlias = context.runCli(["context", "--json", "--explain_ranking"], { expectJson: true });
-      const nextAlias = context.runCli(["next", "--json", "--explain_ranking"], { expectJson: true });
+      const explainedContext = await runContext(
+        { explainRanking: true },
+        { path: context.pmPath },
+      );
+      const explainedNext = await runNext(
+        { explainRanking: true },
+        { path: context.pmPath },
+      );
+      const contextAlias = context.runCli(
+        ["context", "--json", "--explain_ranking"],
+        { expectJson: true },
+      );
+      const nextAlias = context.runCli(
+        ["next", "--json", "--explain_ranking"],
+        { expectJson: true },
+      );
       const budgetAliases = [
-        context.runCli(["context", "--json", "--explain-ranking", "--token_budget", "64"], { expectJson: true }),
-        context.runCli(["next", "--json", "--explain-ranking", "--token_budget", "64"], { expectJson: true }),
+        context.runCli(
+          ["context", "--json", "--explain-ranking", "--token_budget", "64"],
+          { expectJson: true },
+        ),
+        context.runCli(
+          ["next", "--json", "--explain-ranking", "--token_budget", "64"],
+          { expectJson: true },
+        ),
       ];
 
       expect(compact.ranking).toBeUndefined();
       expect(compact.packing).toBeUndefined();
-      expect(explainedContext.packing).toMatchObject({ profile: "context", token_budget: 1600, selection_complete: true });
+      expect(explainedContext.packing).toMatchObject({
+        profile: "context",
+        token_budget: 1600,
+        selection_complete: true,
+      });
       expect(explainedContext.ranking?.feature_store).toMatchObject({
         source: "derived_index",
         cache_status: "fresh",
       });
       expect(explainedContext.ranking?.model).toBe("default-weighted-v1");
-      expect(explainedContext.ranking?.available_signals).toContain("priority_pressure");
-      expect(explainedNext.ranking?.items.map((entry) => entry.id)).toEqual(
-        [explainedNext.recommended?.id, ...explainedNext.ready.map((entry) => entry.id)].filter(Boolean),
+      expect(explainedContext.ranking?.available_signals).toContain(
+        "priority_pressure",
       );
-      expect(explainedNext.ranking?.items[0]?.contributions.priority_pressure).toBeGreaterThan(0);
-      expect(explainedNext.packing).toMatchObject({ profile: "next", token_budget: 640, selection_complete: true });
+      expect(explainedNext.ranking?.items.map((entry) => entry.id)).toEqual(
+        [
+          explainedNext.recommended?.id,
+          ...explainedNext.ready.map((entry) => entry.id),
+        ].filter(Boolean),
+      );
+      expect(
+        explainedNext.ranking?.items[0]?.contributions.priority_pressure,
+      ).toBeGreaterThan(0);
+      expect(explainedNext.packing).toMatchObject({
+        profile: "next",
+        token_budget: 640,
+        selection_complete: true,
+      });
       expect(explainedNext.ranking?.feature_store).toMatchObject({
         source: "derived_index",
         cache_status: "rebuilt",
       });
-      const boundedContext = await runContext({ explainRanking: true, tokenBudget: "64" }, { path: context.pmPath });
-      const boundedNext = await runNext({ explainRanking: true, tokenBudget: "64" }, { path: context.pmPath });
+      const boundedContext = await runContext(
+        { explainRanking: true, tokenBudget: "64" },
+        { path: context.pmPath },
+      );
+      const boundedNext = await runNext(
+        { explainRanking: true, tokenBudget: "64" },
+        { path: context.pmPath },
+      );
       expect(boundedContext.packing?.token_budget).toBe(64);
       expect(boundedNext.packing?.token_budget).toBe(64);
       expect(contextAlias.code).toBe(0);
-      expect(contextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
+      expect(contextAlias.json).toMatchObject({
+        ranking: { model: "default-weighted-v1" },
+      });
       expect(nextAlias.code).toBe(0);
-      expect(nextAlias.json).toMatchObject({ ranking: { model: "default-weighted-v1" } });
+      expect(nextAlias.json).toMatchObject({
+        ranking: { model: "default-weighted-v1" },
+      });
       for (const result of budgetAliases) {
         expect(result.code).toBe(0);
         expect(result.json).toMatchObject({
@@ -182,22 +281,21 @@ describe("context relevance command integration", () => {
           packing: { token_budget: 64 },
         });
       }
-      await expect(runContext({ tokenBudget: "0" }, { path: context.pmPath })).rejects.toThrow(
-        "--token-budget must be a positive integer",
-      );
-      await expect(runContext({ tokenBudget: "-1" }, { path: context.pmPath })).rejects.toThrow(
-        "--token-budget must be a positive integer",
-      );
-      await expect(runContext({ tokenBudget: "1.5" }, { path: context.pmPath })).rejects.toThrow(
-        "--token-budget must be a positive integer",
-      );
-      await expect(runContext({ tokenBudget: "" }, { path: context.pmPath })).rejects.toThrow(
-        "--token-budget must be a positive integer",
-      );
-      await expect(runNext({ tokenBudget: 1.5 }, { path: context.pmPath })).rejects.toThrow(
-        "--token-budget must be a positive integer",
-      );
-
+      await expect(
+        runContext({ tokenBudget: "0" }, { path: context.pmPath }),
+      ).rejects.toThrow("--token-budget must be a positive integer");
+      await expect(
+        runContext({ tokenBudget: "-1" }, { path: context.pmPath }),
+      ).rejects.toThrow("--token-budget must be a positive integer");
+      await expect(
+        runContext({ tokenBudget: "1.5" }, { path: context.pmPath }),
+      ).rejects.toThrow("--token-budget must be a positive integer");
+      await expect(
+        runContext({ tokenBudget: "" }, { path: context.pmPath }),
+      ).rejects.toThrow("--token-budget must be a positive integer");
+      await expect(
+        runNext({ tokenBudget: 1.5 }, { path: context.pmPath }),
+      ).rejects.toThrow("--token-budget must be a positive integer");
     });
   });
 
@@ -205,20 +303,40 @@ describe("context relevance command integration", () => {
     await withTempPmPath(async (context) => {
       const createdIds = createContextRankingItems(context);
       await runContext({}, { path: context.pmPath });
-      const read = context.runCli(["get", createdIds[1]!, "--json"], { expectJson: true });
+      const read = context.runCli(["get", createdIds[1]!, "--json"], {
+        expectJson: true,
+      });
       expect(read.code).toBe(0);
-      const touched = context.runCli(["update", createdIds[0]!, "--priority", "2", "--json"], { expectJson: true });
+      const touched = context.runCli(
+        ["update", createdIds[0]!, "--priority", "2", "--json"],
+        { expectJson: true },
+      );
       expect(touched.code).toBe(0);
-      const feedbackNext = await runNext({ explainRanking: true }, { path: context.pmPath });
-      expect(feedbackNext.ranking?.available_signals).toContain("usage_affinity");
-      expect(feedbackNext.ranking?.items.find((entry) => entry.id === createdIds[0])?.contributions.usage_affinity).toBeGreaterThan(0);
-      expect(feedbackNext.ranking?.items.find((entry) => entry.id === createdIds[1])?.contributions.usage_affinity).toBeGreaterThan(0);
+      const feedbackNext = await runNext(
+        { explainRanking: true },
+        { path: context.pmPath },
+      );
+      expect(feedbackNext.ranking?.available_signals).toContain(
+        "usage_affinity",
+      );
+      expect(
+        feedbackNext.ranking?.items.find((entry) => entry.id === createdIds[0])
+          ?.contributions.usage_affinity,
+      ).toBeGreaterThan(0);
+      expect(
+        feedbackNext.ranking?.items.find((entry) => entry.id === createdIds[1])
+          ?.contributions.usage_affinity,
+      ).toBeGreaterThan(0);
 
       const previousAuthor = process.env.PM_AUTHOR;
       delete process.env.PM_AUTHOR;
       try {
-        await expect(runContext({}, { path: context.pmPath })).resolves.toBeDefined();
-        await expect(runNext({}, { path: context.pmPath })).resolves.toBeDefined();
+        await expect(
+          runContext({}, { path: context.pmPath }),
+        ).resolves.toBeDefined();
+        await expect(
+          runNext({}, { path: context.pmPath }),
+        ).resolves.toBeDefined();
       } finally {
         if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
         else process.env.PM_AUTHOR = previousAuthor;
@@ -228,27 +346,48 @@ describe("context relevance command integration", () => {
 
   it("contains derived usage-write failures without breaking context or next", async () => {
     await withTempPmPath(async (context) => {
-      const created = context.runCli([
-        "create", "--json", "--title", "Feedback resilience", "--description",
-        "Exercises derived usage failure containment", "--type", "Task", "--status", "open",
-      ], { expectJson: true });
+      const created = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Feedback resilience",
+          "--description",
+          "Exercises derived usage failure containment",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
       expect(created.code).toBe(0);
 
-      const previousAuthor = process.env.PM_AUTHOR;
-      process.env.PM_AUTHOR = " ";
+      const runtimePath = path.join(context.pmPath, "runtime");
+      await rm(runtimePath, { recursive: true, force: true });
+      await writeFile(runtimePath, "blocks derived usage storage\n", "utf8");
       try {
         const contextResult = await runContext({}, { path: context.pmPath });
         const nextResult = await runNext({}, { path: context.pmPath });
-        expect(contextResult.warnings).toContain("context_usage_feedback_write_failed");
-        expect(nextResult.warnings).toContain("context_usage_feedback_write_failed");
+        expect(contextResult.warnings).toContain(
+          "context_usage_feedback_write_failed",
+        );
+        expect(nextResult.warnings).toContain(
+          "context_usage_feedback_write_failed",
+        );
 
-        await writeFile(path.join(context.pmPath, "tasks", "invalid-usage-warning.toon"), "not valid item metadata\n", "utf8");
+        await writeFile(
+          path.join(context.pmPath, "tasks", "invalid-usage-warning.toon"),
+          "not valid item metadata\n",
+          "utf8",
+        );
         const warnedNext = await runNext({}, { path: context.pmPath });
-        expect(warnedNext.warnings).toContain("context_usage_feedback_write_failed");
+        expect(warnedNext.warnings).toContain(
+          "context_usage_feedback_write_failed",
+        );
         expect(warnedNext.warnings?.length).toBeGreaterThan(1);
       } finally {
-        if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
-        else process.env.PM_AUTHOR = previousAuthor;
+        await rm(runtimePath, { force: true });
       }
     });
   });

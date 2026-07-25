@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   benchmarkOptionsFromFlags,
   buildTierBudget,
+  buildTransportOverheadReport,
   compareScaleBudgets,
   estimateTokens,
   main,
@@ -32,6 +33,7 @@ function sampleReport() {
         },
       },
     },
+    transport_overhead: null,
   };
 }
 
@@ -44,8 +46,18 @@ describe("scale benchmark runner", () => {
     expect(() => nearestRank([], 50)).toThrow(/empty sample/);
     expect(
       summarizeSamples([
-        { duration_ms: 10.4, peak_rss_bytes: undefined, output_bytes: 8, estimated_tokens: 2 },
-        { duration_ms: 20.6, peak_rss_bytes: undefined, output_bytes: 12, estimated_tokens: 3 },
+        {
+          duration_ms: 10.4,
+          peak_rss_bytes: undefined,
+          output_bytes: 8,
+          estimated_tokens: 2,
+        },
+        {
+          duration_ms: 20.6,
+          peak_rss_bytes: undefined,
+          output_bytes: 12,
+          estimated_tokens: 3,
+        },
       ]),
     ).toEqual({
       runs: 2,
@@ -102,21 +114,43 @@ describe("scale benchmark runner", () => {
       transport: "cli",
       keepWorkspace: true,
     });
-    expect(resolveBenchmarkPathFlag(new Map(), "output", "/default")).toBe("/default");
-    expect(resolveBenchmarkPathFlag(new Map([["output", true]]), "output", "/default")).toBe("/default");
-    expect(resolveBenchmarkPathFlag(new Map([["output", "relative.json"]]), "output", "/default")).toBe(
-      path.resolve("relative.json"),
+    expect(resolveBenchmarkPathFlag(new Map(), "output", "/default")).toBe(
+      "/default",
     );
+    expect(
+      resolveBenchmarkPathFlag(
+        new Map([["output", true]]),
+        "output",
+        "/default",
+      ),
+    ).toBe("/default");
+    expect(
+      resolveBenchmarkPathFlag(
+        new Map([["output", "relative.json"]]),
+        "output",
+        "/default",
+      ),
+    ).toBe(path.resolve("relative.json"));
   });
 
   it("reports non-Linux RSS fallback and real failing CLI stderr", async () => {
-    await expect(readLinuxRssBytes(process.pid, "win32")).resolves.toBeUndefined();
-    await expect(readLinuxRssBytes(undefined, "linux")).resolves.toBeUndefined();
-    await expect(readLinuxRssBytes(Number.MAX_SAFE_INTEGER, "linux")).resolves.toBeUndefined();
+    await expect(
+      readLinuxRssBytes(process.pid, "win32"),
+    ).resolves.toBeUndefined();
+    await expect(
+      readLinuxRssBytes(undefined, "linux"),
+    ).resolves.toBeUndefined();
+    await expect(
+      readLinuxRssBytes(Number.MAX_SAFE_INTEGER, "linux"),
+    ).resolves.toBeUndefined();
     await expect(
       measureCliProcess(["definitely-not-a-command"], {
         workspaceRoot: process.cwd(),
-        env: { ...process.env, PM_SENTRY_DISABLED: "1", PM_TELEMETRY_DISABLED: "1" },
+        env: {
+          ...process.env,
+          PM_SENTRY_DISABLED: "1",
+          PM_TELEMETRY_DISABLED: "1",
+        },
       }),
     ).rejects.toThrow(/Benchmark command failed.*definitely-not-a-command/s);
     await expect(
@@ -143,10 +177,14 @@ describe("scale benchmark runner", () => {
         },
       },
     });
-    expect(compareScaleBudgets(report, { tiers: {} })).toEqual(["missing regression budget for 10 items"]);
-    expect(compareScaleBudgets(report, { tiers: { 10: { transports: { cli: {} } } } })).toEqual([
-      "cli.list: missing budget",
+    expect(compareScaleBudgets(report, { tiers: {} })).toEqual([
+      "missing regression budget for 10 items",
     ]);
+    expect(
+      compareScaleBudgets(report, {
+        tiers: { 10: { transports: { cli: {} } } },
+      }),
+    ).toEqual(["cli.list: missing budget"]);
     expect(
       compareScaleBudgets(report, {
         tiers: {
@@ -171,8 +209,12 @@ describe("scale benchmark runner", () => {
     expect(compareScaleBudgets(report, { tiers: { 10: budget } })).toEqual([]);
     const noRssReport = structuredClone(report);
     noRssReport.transports.cli.list.max_peak_rss_bytes = null;
-    expect(buildTierBudget(noRssReport).transports.cli.list.max_peak_rss_bytes).toBeNull();
-    expect(compareScaleBudgets(noRssReport, { tiers: { 10: budget } })).toEqual([]);
+    expect(
+      buildTierBudget(noRssReport).transports.cli.list.max_peak_rss_bytes,
+    ).toBeNull();
+    expect(compareScaleBudgets(noRssReport, { tiers: { 10: budget } })).toEqual(
+      [],
+    );
 
     const microOperationReport = structuredClone(report);
     microOperationReport.transports.cli.list.min_ms = 5;
@@ -182,7 +224,9 @@ describe("scale benchmark runner", () => {
 
     const tailReport = structuredClone(report);
     tailReport.transports.cli.list.runs = 20;
-    expect(buildTierBudget(tailReport).transports.cli.list.max_latency_ms).toBe(125);
+    expect(buildTierBudget(tailReport).transports.cli.list.max_latency_ms).toBe(
+      125,
+    );
     expect(
       compareScaleBudgets(tailReport, {
         tiers: {
@@ -202,6 +246,41 @@ describe("scale benchmark runner", () => {
     ).toContain("cli.list: p95 100ms > 99ms");
   });
 
+  it("derives and gates CLI-minus-SDK transport overhead", () => {
+    const transports = {
+      cli: {
+        get: { min_ms: 300, p50_ms: 320, p95_ms: 350 },
+      },
+      sdk: {
+        get: { min_ms: 20, p50_ms: 22, p95_ms: 25 },
+      },
+    };
+    expect(buildTransportOverheadReport(transports)).toEqual({
+      get: {
+        min_cli_minus_sdk_ms: 280,
+        p50_cli_minus_sdk_ms: 298,
+        p95_cli_minus_sdk_ms: 325,
+      },
+    });
+    expect(buildTransportOverheadReport({ cli: transports.cli })).toBeNull();
+    const report = {
+      fixture: { item_count: 10 },
+      transports,
+      transport_overhead: buildTransportOverheadReport(transports),
+    };
+    const budget = buildTierBudget(report, 1);
+    expect(budget.transport_overhead.get.max_cli_minus_sdk_ms).toBe(280);
+    expect(compareScaleBudgets(report, { tiers: { 10: budget } })).toEqual([]);
+    budget.transport_overhead.get.max_cli_minus_sdk_ms = 200;
+    expect(compareScaleBudgets(report, { tiers: { 10: budget } })).toContain(
+      "transport_overhead.get: best delta 280ms > 225ms",
+    );
+    delete budget.transport_overhead.get;
+    expect(compareScaleBudgets(report, { tiers: { 10: budget } })).toContain(
+      "transport_overhead.get: missing budget",
+    );
+  });
+
   it("runs real isolated CLI and SDK operations and reports every hot path", async () => {
     const report = await runScaleBenchmarks({
       itemCount: 100,
@@ -210,7 +289,10 @@ describe("scale benchmark runner", () => {
       mode: "direct",
       seed: 23,
     });
-    expect(report).toMatchObject({ iterations: 1, fixture: { item_count: 100, seed: 23 } });
+    expect(report).toMatchObject({
+      iterations: 1,
+      fixture: { item_count: 100, seed: 23 },
+    });
     expect(Object.keys(report.transports.cli)).toEqual([
       "list",
       "get",
@@ -220,8 +302,13 @@ describe("scale benchmark runner", () => {
       "create",
       "claim",
     ]);
-    expect(Object.keys(report.transports.sdk)).toEqual(Object.keys(report.transports.cli));
+    expect(Object.keys(report.transports.sdk)).toEqual(
+      Object.keys(report.transports.cli),
+    );
     expect(report.product_target.commands).toHaveLength(14);
+    expect(Object.keys(report.transport_overhead)).toEqual(
+      Object.keys(report.transports.cli),
+    );
   }, 30_000);
 
   it("supports caller-owned workspaces and transport selection and validates limits", async () => {
@@ -244,11 +331,15 @@ describe("scale benchmark runner", () => {
       expect(sdk.transports).toHaveProperty("sdk");
       expect(sdk.transports).not.toHaveProperty("cli");
     });
-    await expect(runScaleBenchmarks({ itemCount: 100, transport: "invalid" })).rejects.toThrow(
-      /transport/,
-    );
-    await expect(runScaleBenchmarks({ itemCount: 100, iterations: 101 })).rejects.toThrow(/<= 100/);
-    await expect(runScaleBenchmarks({ itemCount: 1, iterations: 2 })).rejects.toThrow(/open items/);
+    await expect(
+      runScaleBenchmarks({ itemCount: 100, transport: "invalid" }),
+    ).rejects.toThrow(/transport/);
+    await expect(
+      runScaleBenchmarks({ itemCount: 100, iterations: 101 }),
+    ).rejects.toThrow(/<= 100/);
+    await expect(
+      runScaleBenchmarks({ itemCount: 1, iterations: 2 }),
+    ).rejects.toThrow(/open items/);
   }, 30_000);
 
   it("updates and checks a custom budget manifest through the real CLI entrypoint", async () => {
@@ -271,7 +362,9 @@ describe("scale benchmark runner", () => {
         "100",
       ]);
       expect(updated.outputPath).toBe(reportPath);
-      expect(JSON.parse(await readFile(manifestPath, "utf8"))).toHaveProperty("tiers.100");
+      expect(JSON.parse(await readFile(manifestPath, "utf8"))).toHaveProperty(
+        "tiers.100",
+      );
       await expect(
         main([
           "--items",
@@ -320,7 +413,11 @@ describe("scale benchmark runner", () => {
       ]);
       const strictManifest = JSON.parse(await readFile(manifestPath, "utf8"));
       strictManifest.tiers[100].transports.sdk.list.max_estimated_tokens = 0;
-      await writeFile(manifestPath, `${JSON.stringify(strictManifest)}\n`, "utf8");
+      await writeFile(
+        manifestPath,
+        `${JSON.stringify(strictManifest)}\n`,
+        "utf8",
+      );
       await expect(
         main([
           "--items",
@@ -340,7 +437,10 @@ describe("scale benchmark runner", () => {
   }, 30_000);
 
   it("runs executable entrypoint success, failure, and import outcomes", async () => {
-    const scriptPath = path.resolve(process.cwd(), "scripts/bench/run-scale-benchmarks.mjs");
+    const scriptPath = path.resolve(
+      process.cwd(),
+      "scripts/bench/run-scale-benchmarks.mjs",
+    );
     await withTempDir("pm-scale-benchmark-entrypoint-", async (tempRoot) => {
       const write = vi.fn();
       await expect(
@@ -369,7 +469,9 @@ describe("scale benchmark runner", () => {
           onError,
         }),
       ).resolves.toBe(false);
-      expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: "benchmark failed" }));
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "benchmark failed" }),
+      );
       await expect(
         runScaleBenchmarkEntrypoint({ argv: [process.execPath] }),
       ).resolves.toBe(false);
@@ -414,7 +516,9 @@ describe("scale benchmark runner", () => {
       const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
         throw new Error("EXIT:1");
       }) as never);
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      const errorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
       await expect(
         runScaleBenchmarkEntrypoint({
           argv: [process.execPath, scriptPath],

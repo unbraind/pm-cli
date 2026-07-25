@@ -243,7 +243,11 @@ export {
   getFocusedItem,
   setFocusedItem,
 } from "../core/session/session-state.js";
-export { resolveAuthor } from "../core/shared/author.js";
+export {
+  readAuthorEnvironment,
+  resolveAuthor,
+  writeAuthorEnvironment,
+} from "../core/shared/author.js";
 export {
   evaluateMutationGuard,
   isMutationAction,

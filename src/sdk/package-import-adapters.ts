@@ -30,6 +30,7 @@ import {
 import { runActiveOnWriteHooks } from "../core/extensions/index.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
 import type {
   Dependency,
@@ -325,21 +326,12 @@ export function toImportLinkedTests(
   return entries.length > 0 ? entries : undefined;
 }
 
-/** Resolves the effective import author: explicit flag, PM_AUTHOR, then settings, falling back to "unknown". */
+/** Resolves the effective import author through the canonical CLI and SDK precedence contract. */
 export function selectImportAuthor(
   explicitAuthor: string | undefined,
   settingsAuthor: string,
 ): string {
-  const explicit = explicitAuthor?.trim();
-  if (explicit && explicit.length > 0) {
-    return explicit;
-  }
-  const envAuthor = process.env.PM_AUTHOR?.trim();
-  if (envAuthor && envAuthor.length > 0) {
-    return envAuthor;
-  }
-  const settings = settingsAuthor.trim();
-  return settings.length > 0 ? settings : "unknown";
+  return resolveAuthor(explicitAuthor, settingsAuthor);
 }
 
 function isImportRecord(value: unknown): value is Record<string, unknown> {

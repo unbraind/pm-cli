@@ -122,7 +122,7 @@ describe("runCreate", () => {
           "config",
           "project",
           "set",
-          "governance_duplicate_detection_mode",
+          "governance-duplicate-detection-mode",
           "advisory",
         ]).code,
       ).toBe(0);
@@ -140,6 +140,33 @@ describe("runCreate", () => {
       expect(duplicate.similarity_advisory).toMatchObject({
         mode: "advisory",
         result: { items: [{ id: canonical.item.id }] },
+      });
+      expect(
+        context.runCli([
+          "config",
+          "project",
+          "set",
+          "governance-duplicate-detection-mode",
+          "off",
+        ]).code,
+      ).toBe(0);
+      expect(
+        context.runCli(
+          [
+            "config",
+            "project",
+            "get",
+            "governance-duplicate-detection-mode",
+            "--json",
+          ],
+          { expectJson: true },
+        ).json,
+      ).toMatchObject({
+        key: "governance_duplicate_detection_mode",
+        nested_setting: {
+          path: "governance.duplicate_detection_mode",
+          value: "off",
+        },
       });
     });
   });

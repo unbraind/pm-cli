@@ -12,9 +12,9 @@ bounded at scale without shelling out from an SDK host.
   requesting whole-workspace context.
 - Persist the returned cursor and resume with `--since`; cursors are bound to
   their filters and cannot be reused for a different query accidentally.
-- Duplicate governance is opt-in for the minimal and default presets. Configure
-  `advisory` to report likely matches or `strict` to require an explicit
-  `--allow-duplicate` bypass.
+- Duplicate governance is disabled by the minimal preset, advisory by default,
+  and strict under the strict preset. Configure `advisory` to report likely
+  matches or `strict` to require an explicit `--allow-duplicate` bypass.
 - Authoritative TOON item documents and JSONL history remain the source of
   truth. SQLite indexes are rebuildable projections.
 
@@ -98,14 +98,14 @@ create-time and post-hoc duplicate detection cannot drift.
 Configure create/copy behavior with discoverable scalar settings:
 
 ```bash
-pm config project set governance_duplicate_detection_mode advisory
-pm config project set governance_duplicate_detection_threshold 0.8
-pm config project set governance_duplicate_detection_limit 3
+pm config project set governance-duplicate-detection-mode advisory
+pm config project set governance-duplicate-detection-threshold 0.8
+pm config project set governance-duplicate-detection-limit 3
 ```
 
 Modes:
 
-- `off`: no create-path query; this is the minimal/default preset behavior.
+- `off`: no create-path query; this is the minimal preset behavior.
 - `advisory`: create/copy succeeds and reports the top matches in warnings and
   the structured `similarity_advisory` result.
 - `strict`: a threshold match rejects the mutation unless the caller supplies
@@ -115,6 +115,9 @@ The strict governance preset enables strict duplicate detection. The bypass is
 deliberate and visible at the mutation boundary; it does not claim
 transactional content uniqueness, so post-hoc dedupe remains useful for truly
 simultaneous creates.
+
+The documented config spelling is kebab-case. Underscore spellings remain
+accepted aliases for existing automation.
 
 ## Scale contract
 

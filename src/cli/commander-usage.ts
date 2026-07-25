@@ -32,6 +32,7 @@ import { getCommandPath } from "./registration-helpers.js";
 import {
   EXECUTABLE_COMMAND_ALIASES,
   normalizeBootstrapInvocation,
+  parseBootstrapHelpRequest,
   parseBootstrapGlobalOptions,
   parseBootstrapCommandName,
 } from "./bootstrap-args.js";
@@ -117,6 +118,51 @@ export interface CommanderUsageContext extends CommanderGuidanceContext {
   commandName: string | undefined;
   /** Value that configures or reports allowed types for this contract. */
   allowedTypes: string;
+}
+
+/** Bounded extension activation failure appended to unknown-command guidance. */
+export interface CommanderExtensionFailure {
+  /** Extension resolution layer that produced the failure. */
+  layer: string;
+  /** Installed extension identity. */
+  name: string;
+  /** Actionable activation error without raw extension state. */
+  error: string;
+}
+
+/** Append extension activation failures to text or JSON Commander usage output. */
+export function appendCommanderExtensionFailures(
+  renderedUsage: string,
+  json: boolean,
+  failures: CommanderExtensionFailure[],
+): string {
+  if (failures.length === 0) {
+    return renderedUsage;
+  }
+  if (json) {
+    return JSON.stringify(
+      {
+        ...(JSON.parse(renderedUsage) as Record<string, unknown>),
+        failed_extensions: failures,
+      },
+      null,
+      2,
+    );
+  }
+  const details = failures
+    .map((entry) => `- ${entry.layer}:${entry.name}: ${entry.error}`)
+    .join("\n");
+  return `${renderedUsage}\nExtension activation failures:\n${details}`;
+}
+
+/** Resolve the unknown command token from help or ordinary invocation syntax. */
+export function resolveUnknownCommanderToken(invocationArgv: string[]): string {
+  const helpRequest = parseBootstrapHelpRequest(invocationArgv);
+  return (
+    helpRequest.commandPathTokens[0] ??
+    parseBootstrapCommandName(invocationArgv) ??
+    "<command>"
+  );
 }
 
 /** Implements collect runtime command paths for the public runtime surface of this module. */

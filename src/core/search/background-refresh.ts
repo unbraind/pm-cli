@@ -14,11 +14,9 @@ import {
 } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
-import {
-  readSettings,
-  readSettingsWithMetadata,
-} from "../store/settings.js";
+import { readSettings, readSettingsWithMetadata } from "../store/settings.js";
 import { toErrorMessage } from "../shared/primitives.js";
+import { resolveAuthor } from "../shared/author.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
 
 /** Shared lock id for any process that rewrites the local vector store. Reindex and the background mutation-refresh worker both acquire this so they never write concurrently and corrupt the store. Exported so `pm reindex` reuses the same id rather than duplicating the literal. */
@@ -308,7 +306,7 @@ export async function runSemanticRefreshWorker(
       pmRoot,
       REINDEX_LOCK_ID,
       settings.locks.ttl_seconds,
-      process.env.PM_AUTHOR ?? "pm-search-refresh",
+      resolveAuthor(undefined, "pm-search-refresh"),
       false,
       settings.governance.force_required_for_stale_lock,
       settings.locks.wait_ms,

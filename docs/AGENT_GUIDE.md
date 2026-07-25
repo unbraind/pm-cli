@@ -41,7 +41,7 @@ pm create --create-mode progressive \
   --type Epic \
   --status open \
   --priority high \
-  --comment "author=$PM_AUTHOR,created_at=now,text=Duplicate check evidence: ..."
+  --comment "created_at=now,text=Duplicate check evidence: ..."
 ```
 
 Priority accepts either numeric `0..4` or named aliases `critical`, `high`, `medium`, `low`, and `minimal`.
@@ -183,7 +183,8 @@ Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI
 
 Use these defaults unless the task requires otherwise:
 
-- `PM_AUTHOR=<stable-agent-name>` for mutations.
+- Automatic supported-harness attribution for mutations; use `--author` only
+  when an explicit override is required.
 - `node scripts/run-tests.mjs test` and `node scripts/run-tests.mjs coverage` for tests.
 - `pm validate --check-resolution --check-history-drift` before closing broad work.
 - `pm history-redact <id> --dry-run` before rewriting sensitive history payloads, then rerun without `--dry-run` once scope is confirmed.

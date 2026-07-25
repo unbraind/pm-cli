@@ -89,8 +89,7 @@ export interface MutationEventPage {
 }
 
 /** Follow controls accepted by {@link subscribeMutationEvents}. */
-export interface SubscribeMutationEventsOptions
-  extends ListMutationEventsOptions {
+export interface SubscribeMutationEventsOptions extends ListMutationEventsOptions {
   /** Delay between empty catch-up reads. */
   intervalMs?: number;
   /** Cancellation signal for a long-lived subscription. */
@@ -167,11 +166,9 @@ function decodeMutationEventCursor(
     normalized.length > 4_096 ||
     !MUTATION_EVENT_CURSOR_PATTERN.test(normalized)
   ) {
-    throw new PmCliError(
-      "Invalid mutation event cursor.",
-      EXIT_CODE.USAGE,
-      { code: "invalid_event_cursor" },
-    );
+    throw new PmCliError("Invalid mutation event cursor.", EXIT_CODE.USAGE, {
+      code: "invalid_event_cursor",
+    });
   }
   let parsed: unknown;
   try {
@@ -179,11 +176,9 @@ function decodeMutationEventCursor(
       Buffer.from(normalized, "base64url").toString("utf8"),
     ) as unknown;
   } catch {
-    throw new PmCliError(
-      "Invalid mutation event cursor.",
-      EXIT_CODE.USAGE,
-      { code: "invalid_event_cursor" },
-    );
+    throw new PmCliError("Invalid mutation event cursor.", EXIT_CODE.USAGE, {
+      code: "invalid_event_cursor",
+    });
   }
   if (!isMutationEventCursorEnvelope(parsed, fingerprint)) {
     throw new PmCliError(
@@ -197,11 +192,7 @@ function decodeMutationEventCursor(
 
 function parseMutationEventLimit(value: number | undefined): number {
   const limit = value ?? DEFAULT_EVENT_LIMIT;
-  if (
-    !Number.isSafeInteger(limit) ||
-    limit < 0 ||
-    limit > MAX_EVENT_LIMIT
-  ) {
+  if (!Number.isSafeInteger(limit) || limit < 0 || limit > MAX_EVENT_LIMIT) {
     throw new PmCliError(
       `Mutation event limit must be an integer from 0 to ${MAX_EVENT_LIMIT}.`,
       EXIT_CODE.USAGE,
@@ -274,7 +265,7 @@ export async function listMutationEvents(
   if (indexed === null) {
     if (!(await rebuildHistoryEventIndex(pmRoot))) {
       throw new PmCliError(
-        "Mutation events require a runtime with stable node:sqlite support.",
+        "Mutation events require a runtime with node:sqlite DatabaseSync support.",
         EXIT_CODE.GENERIC_FAILURE,
         { code: "event_index_unavailable" },
       );

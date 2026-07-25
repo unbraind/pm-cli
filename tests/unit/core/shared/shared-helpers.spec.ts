@@ -1,6 +1,9 @@
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { resolveAuthor } from "../../../../src/core/shared/author.js";
+import {
+  resolveAuthor,
+  resolveHistoryAuthorSource,
+} from "../../../../src/core/shared/author.js";
 import {
   findFirstMergeConflictMarker,
   findMergeConflictMarkers,
@@ -76,6 +79,13 @@ describe("core/shared/author: resolveAuthor", () => {
         process.env.CODEX_THREAD_ID = previousCodexThread;
       }
     }
+  });
+
+  it("derives history provenance when no matching active resolution exists", () => {
+    resolveAuthor("asserted-agent", "fallback");
+    expect(resolveHistoryAuthorSource("harness:codex")).toBe("detected");
+    expect(resolveHistoryAuthorSource("unknown")).toBe("unknown");
+    expect(resolveHistoryAuthorSource("other-agent")).toBe("asserted");
   });
 });
 

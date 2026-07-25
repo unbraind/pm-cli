@@ -71,6 +71,7 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import {
   evaluateSimilarityGovernance,
@@ -1349,18 +1350,6 @@ export function requireStringOption(
   return normalized;
 }
 
-function selectAuthor(
-  explicitAuthor: string | undefined,
-  settingsAuthor: string,
-): string {
-  const candidate =
-    parseOptionalString(explicitAuthor) ??
-    process.env.PM_AUTHOR ??
-    settingsAuthor;
-  const trimmed = candidate.trim();
-  return trimmed || "unknown";
-}
-
 function ensurePriority(rawPriority: string | number): 0 | 1 | 2 | 3 | 4 {
   return resolvePriority(rawPriority);
 }
@@ -2565,7 +2554,10 @@ export async function runCreate(
     clearOptionKeys,
   );
   const nowValue = nowIso();
-  const author = selectAuthor(resolvedOptions.author, settings.author_default);
+  const author = resolveAuthor(
+    parseOptionalString(resolvedOptions.author),
+    settings.author_default,
+  );
 
   const dependencies = parseDependencies(
     resolvedOptions.dep,

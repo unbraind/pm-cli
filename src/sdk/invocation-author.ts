@@ -5,6 +5,10 @@
  */
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import {
+  readAuthorEnvironment,
+  writeAuthorEnvironment,
+} from "../core/shared/author.js";
 
 /** Apply an optional author override and return an idempotent environment restorer. */
 export function applyInvocationAuthorOverride(
@@ -24,8 +28,8 @@ export function applyInvocationAuthorOverride(
       },
     );
   }
-  const previousAuthor = process.env.PM_AUTHOR;
-  process.env.PM_AUTHOR = normalizedAuthor;
+  const previousAuthor = readAuthorEnvironment();
+  writeAuthorEnvironment(normalizedAuthor);
   let restored = false;
   return () => {
     if (restored) {
@@ -33,9 +37,9 @@ export function applyInvocationAuthorOverride(
     }
     restored = true;
     if (previousAuthor === undefined) {
-      delete process.env.PM_AUTHOR;
+      writeAuthorEnvironment(undefined);
     } else {
-      process.env.PM_AUTHOR = previousAuthor;
+      writeAuthorEnvironment(previousAuthor);
     }
   };
 }

@@ -157,6 +157,9 @@ export async function runCommandHandler(
       options: cloneContextSnapshot(context.options),
       global: cloneContextSnapshot(context.global),
       pm_root: context.pm_root,
+      source_workspace_root: context.source_workspace_root,
+      repo_root: context.repo_root,
+      pm_root_rel: context.pm_root_rel,
       ...(context.sdk === undefined ? {} : { sdk: context.sdk }),
     });
     return {
@@ -198,6 +201,9 @@ export async function runParserOverride(
         options: cloneCommandOptionsSnapshot(context.options),
         global: cloneGlobalOptionsSnapshot(context.global),
         pm_root: context.pm_root,
+        source_workspace_root: context.source_workspace_root,
+        repo_root: context.repo_root,
+        pm_root_rel: context.pm_root_rel,
       },
       warnings: [],
     };
@@ -215,6 +221,9 @@ export async function runParserOverride(
         options: cloneCommandOptionsSnapshot(context.options),
         global: cloneGlobalOptionsSnapshot(context.global),
         pm_root: context.pm_root,
+        source_workspace_root: context.source_workspace_root,
+        repo_root: context.repo_root,
+        pm_root_rel: context.pm_root_rel,
       },
       warnings: [],
     };
@@ -229,6 +238,9 @@ export async function runParserOverride(
           options: cloneCommandOptionsSnapshot(context.options),
           global: cloneGlobalOptionsSnapshot(context.global),
           pm_root: context.pm_root,
+          source_workspace_root: context.source_workspace_root,
+          repo_root: context.repo_root,
+          pm_root_rel: context.pm_root_rel,
         }),
       )) ?? {};
     const nextArgs = Array.isArray(delta.args)
@@ -248,6 +260,9 @@ export async function runParserOverride(
         options: nextOptions,
         global: nextGlobal,
         pm_root: context.pm_root,
+        source_workspace_root: context.source_workspace_root,
+        repo_root: context.repo_root,
+        pm_root_rel: context.pm_root_rel,
       },
       warnings: [],
     };
@@ -260,6 +275,9 @@ export async function runParserOverride(
         options: cloneCommandOptionsSnapshot(context.options),
         global: cloneGlobalOptionsSnapshot(context.global),
         pm_root: context.pm_root,
+        source_workspace_root: context.source_workspace_root,
+        repo_root: context.repo_root,
+        pm_root_rel: context.pm_root_rel,
       },
       warnings: [
         `extension_parser_override_failed:${matched.layer}:${matched.name}:${matched.command}`,
@@ -280,6 +298,9 @@ export async function runPreflightOverride(
     options: cloneCommandOptionsSnapshot(context.options),
     global: cloneGlobalOptionsSnapshot(context.global),
     pm_root: context.pm_root,
+    source_workspace_root: context.source_workspace_root,
+    repo_root: context.repo_root,
+    pm_root_rel: context.pm_root_rel,
   };
   const baseDecision: PreflightRuntimeDecision = cloneContextSnapshot(
     context.decision,
@@ -302,6 +323,9 @@ export async function runPreflightOverride(
           options: cloneCommandOptionsSnapshot(baseContext.options),
           global: cloneGlobalOptionsSnapshot(baseContext.global),
           pm_root: baseContext.pm_root,
+          source_workspace_root: baseContext.source_workspace_root,
+          repo_root: baseContext.repo_root,
+          pm_root_rel: baseContext.pm_root_rel,
           decision: cloneContextSnapshot(baseDecision),
         }),
       )) ?? {};
@@ -317,6 +341,9 @@ export async function runPreflightOverride(
         ? cloneGlobalOptionsSnapshot(delta.global)
         : baseContext.global,
       pm_root: baseContext.pm_root,
+      source_workspace_root: baseContext.source_workspace_root,
+      repo_root: baseContext.repo_root,
+      pm_root_rel: baseContext.pm_root_rel,
     };
     const nextDecision: PreflightRuntimeDecision = {
       enforce_item_format_gate:
@@ -387,6 +414,9 @@ function buildServiceOverrideContext(context: ServiceOverrideContext) {
       ? cloneGlobalOptionsSnapshot(context.global)
       : undefined,
     pm_root: context.pm_root,
+    source_workspace_root: context.source_workspace_root,
+    repo_root: context.repo_root,
+    pm_root_rel: context.pm_root_rel,
     payload: cloneContextSnapshot(context.payload),
   };
 }
@@ -513,6 +543,9 @@ export function runCommandOverride(
       options: overrideOptions,
       global: overrideGlobal,
       pm_root: context.pm_root,
+      source_workspace_root: context.source_workspace_root,
+      repo_root: context.repo_root,
+      pm_root_rel: context.pm_root_rel,
       result: cloneContextSnapshot(context.result),
     });
     if (overrideResult instanceof Promise) {
@@ -600,6 +633,9 @@ export function runRendererOverride(
       options: rendererOptions,
       global: rendererGlobal,
       pm_root: rendererPmRoot,
+      source_workspace_root: context.source_workspace_root,
+      repo_root: context.repo_root,
+      pm_root_rel: context.pm_root_rel,
       result: cloneContextSnapshot(context.result),
     });
     if (rendered === null || rendered === undefined) {

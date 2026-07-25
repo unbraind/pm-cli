@@ -4,7 +4,10 @@ The supported programmatic surface is `@unbrained/pm-cli/sdk`.
 
 Current SDK initialization and migration additions are tracked by
 [pm-1w3ljt](../.agents/pm/issues/pm-1w3ljt.toon) and
-[pm-s79kel](../.agents/pm/issues/pm-s79kel.toon).
+[pm-s79kel](../.agents/pm/issues/pm-s79kel.toon). Tiered entrypoints and the
+public-surface compatibility gate are tracked by
+[pm-38bskj](../.agents/pm/tasks/pm-38bskj.toon) and
+[pm-e6tm5c](../.agents/pm/tasks/pm-e6tm5c.toon).
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
@@ -35,18 +38,62 @@ npm install --save-dev typescript
 import { defineExtension } from "@unbrained/pm-cli/sdk";
 ```
 
-Supported package exports:
+Choose the narrowest stable entrypoint that owns the capability you need. This
+keeps package startup and memory proportional to its purpose while the aggregate
+barrel remains source-compatible:
 
-- `@unbrained/pm-cli/sdk` - stable extension and package authoring API plus CLI contract exports.
-- `@unbrained/pm-cli/sdk/runtime` - runtime helpers for packages that need command implementations without private imports.
-- `@unbrained/pm-cli/sdk/testing` - lightweight assertion helpers for package/extension tests.
-- `@unbrained/pm-cli/cli` - runtime CLI module entrypoint for package resolution, not a typed library API.
+| Package export                     | Intended capability family                                                 |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| `@unbrained/pm-cli/sdk/authoring`  | Extension blueprints, builders, manifests, and package-author helpers      |
+| `@unbrained/pm-cli/sdk/contracts`  | Static CLI command/action contracts and expected-error protocol            |
+| `@unbrained/pm-cli/sdk/core`       | Broad item, schema, profile, transaction, and runtime primitives           |
+| `@unbrained/pm-cli/sdk/governance` | Validation, health, garbage collection, and transaction cleanup            |
+| `@unbrained/pm-cli/sdk/graph`      | Relationship stores, graph assembly, traversal, analytics, and remediation |
+| `@unbrained/pm-cli/sdk/merge`      | VCS-neutral tracker merge contracts                                        |
+| `@unbrained/pm-cli/sdk/query`      | List/search engines, filtering, pagination, and query rendering            |
+| `@unbrained/pm-cli/sdk/runtime`    | Embedded command execution and package runtime helpers                     |
+| `@unbrained/pm-cli/sdk/testing`    | Package and extension assertion/invocation helpers                         |
+| `@unbrained/pm-cli/sdk`            | Compatibility aggregate containing every supported SDK export              |
+
+`@unbrained/pm-cli/cli` remains the runtime CLI module entrypoint for package
+resolution, not a typed library API. The committed
+[entrypoint import-cost table](performance/sdk-entrypoint-import-costs.md)
+records fresh-process latency, RSS, and reduction versus the aggregate barrel.
+Every narrow entrypoint is bundled and type-tested independently.
+
+### Public-surface compatibility
+
+[`tests/fixtures/sdk/public-surface.json`](../tests/fixtures/sdk/public-surface.json)
+is the semantic public API snapshot for every supported SDK entrypoint. It
+records exported names, declaration kinds, normalized signatures and type
+parameters, support classification, and stable SDK error codes. Run:
+
+```bash
+pnpm sdk:surface:check
+```
+
+The gate classifies new exports as additive, declaration-kind-preserving
+signature evolution as compatible only when the semantic signature is
+unchanged, and removals or signature changes as breaking. Intentional additive
+changes use `pnpm sdk:surface:update`. An intentional breaking change must use
+`pnpm sdk:surface:update -- --acknowledge-breaking "<release rationale>"`;
+the reason, affected surface, package version, and date remain reviewable in the
+snapshot. Breaking SDK changes require a date-based release and matching
+package compatibility bounds or migration guidance. Never refresh the snapshot
+merely to silence an unexplained diff.
 
 ## Public Exports
 
 Source of truth:
 
 - [`src/sdk/index.ts`](../src/sdk/index.ts)
+- [`src/sdk/authoring.ts`](../src/sdk/authoring.ts)
+- [`src/sdk/contracts.ts`](../src/sdk/contracts.ts)
+- [`src/sdk/core.ts`](../src/sdk/core.ts)
+- [`src/sdk/governance.ts`](../src/sdk/governance.ts)
+- [`src/sdk/graph.ts`](../src/sdk/graph.ts)
+- [`src/sdk/merge.ts`](../src/sdk/merge.ts)
+- [`src/sdk/query.ts`](../src/sdk/query.ts)
 - [`src/sdk/runtime.ts`](../src/sdk/runtime.ts)
 - [`src/sdk/annotations.ts`](../src/sdk/annotations.ts)
 - [`src/sdk/linked-artifacts.ts`](../src/sdk/linked-artifacts.ts)
@@ -1821,11 +1868,9 @@ rendering. Prefer declarative ownership so the host never calls it for unrelated
 output:
 
 ```ts
-api.registerRenderer(
-  "toon",
-  (result) => `archive: ${JSON.stringify(result)}`,
-  { commands: ["archive show"] },
-);
+api.registerRenderer("toon", (result) => `archive: ${JSON.stringify(result)}`, {
+  commands: ["archive show"],
+});
 ```
 
 `commands` are normalized command paths. `resultDiscriminator` can additionally

@@ -76,7 +76,7 @@ function loadStableDatabaseSync(
   loadModule: (specifier: string) => unknown,
 ): DatabaseSyncConstructor | null {
   const nodeMajor = Number.parseInt(nodeVersion, 10);
-  return Number.isFinite(nodeMajor) && nodeMajor >= 23
+  return Number.isFinite(nodeMajor) && nodeMajor >= 22
     ? loadDatabaseSync(loadModule)
     : null;
 }
@@ -121,10 +121,7 @@ function createSchema(database: DatabaseSync): void {
     .run(EVENT_INDEX_VERSION);
 }
 
-function insertEvent(
-  database: DatabaseSync,
-  event: IndexedHistoryEvent,
-): void {
+function insertEvent(database: DatabaseSync, event: IndexedHistoryEvent): void {
   database
     .prepare(
       `INSERT INTO events(
@@ -142,12 +139,15 @@ function insertEvent(
 }
 
 /** Rebuild the complete optional event projection from authoritative streams. */
-export async function rebuildHistoryEventIndex(pmRoot: string): Promise<boolean> {
+export async function rebuildHistoryEventIndex(
+  pmRoot: string,
+): Promise<boolean> {
   const Database = resolveDatabaseSync();
   if (!Database) return false;
   const historyRoot = path.join(pmRoot, "history");
-  const entries = await fs.readdir(historyRoot, { withFileTypes: true }).catch(
-    (error: unknown) => {
+  const entries = await fs
+    .readdir(historyRoot, { withFileTypes: true })
+    .catch((error: unknown) => {
       if (
         typeof error === "object" &&
         error !== null &&
@@ -157,8 +157,7 @@ export async function rebuildHistoryEventIndex(pmRoot: string): Promise<boolean>
         return [];
       }
       throw error;
-    },
-  );
+    });
   const historyFiles = entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".jsonl"))
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -326,7 +325,7 @@ export async function queryHistoryEventIndex(
   }
 }
 
-/** Test-only dependency seam for runtimes without stable `node:sqlite`. */
+/** Test-only dependency seam for runtimes without `node:sqlite`. */
 export const _testOnly = {
   loadDatabaseSync,
   loadStableDatabaseSync,

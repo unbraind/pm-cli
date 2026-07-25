@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "policy": "Cold-start upper bounds may only decrease unless a reviewed platform correction is documented.",
+  "operations": {
+    "get": {
+      "max_latency_ms": 337,
+      "max_peak_rss_bytes": 157568000
+    },
+    "list": {
+      "max_latency_ms": 394,
+      "max_peak_rss_bytes": 158438400
+    },
+    "context": {
+      "max_latency_ms": 408,
+      "max_peak_rss_bytes": 158310400
+    },
+    "next": {
+      "max_latency_ms": 415,
+      "max_peak_rss_bytes": 168652800
+    },
+    "create": {
+      "max_latency_ms": 373,
+      "max_peak_rss_bytes": 160686080
+    },
+    "claim": {
+      "max_latency_ms": 390,
+      "max_peak_rss_bytes": 157783040
+    }
+  }
+}

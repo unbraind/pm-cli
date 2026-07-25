@@ -54,6 +54,9 @@ describe("history mutation event index", () => {
     ).toBeNull();
     expect(
       _testOnly.loadStableDatabaseSync("22.0.0", () => ({ DatabaseSync })),
+    ).toBe(DatabaseSync);
+    expect(
+      _testOnly.loadStableDatabaseSync("21.7.3", () => ({ DatabaseSync })),
     ).toBeNull();
     expect(
       _testOnly.loadStableDatabaseSync("invalid", () => ({ DatabaseSync })),
@@ -73,14 +76,23 @@ describe("history mutation event index", () => {
       await fs.writeFile(
         path.join(historyRoot, "pm-a.jsonl"),
         [
-          historyEntry("2026-07-24T09:00:00.000Z", "alpha", "create", "created"),
+          historyEntry(
+            "2026-07-24T09:00:00.000Z",
+            "alpha",
+            "create",
+            "created",
+          ),
           historyEntry("2026-07-24T10:00:00.000Z", "alpha", "claim"),
-        ].map((entry) => JSON.stringify(entry)).join("\n"),
+        ]
+          .map((entry) => JSON.stringify(entry))
+          .join("\n"),
       );
       await fs.writeFile(path.join(historyRoot, "ignored.txt"), "ignored\n");
       await fs.mkdir(path.join(historyRoot, "ignored.jsonl"));
 
-      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(true);
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        true,
+      );
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 1 }),
       ).resolves.toMatchObject({
@@ -105,7 +117,9 @@ describe("history mutation event index", () => {
         }),
       ).resolves.toMatchObject({
         has_more: false,
-        events: [{ stream_id: "pm-a", stream_offset: 1, entry: { op: "claim" } }],
+        events: [
+          { stream_id: "pm-a", stream_offset: 1, entry: { op: "claim" } },
+        ],
       });
       await expect(
         queryHistoryEventIndex(context.pmPath, {
@@ -127,9 +141,17 @@ describe("history mutation event index", () => {
 
   it("updates existing projections, ignores absent ones, and removes rewritten projections", async () => {
     await withTempPmPath(async (context) => {
-      const historyPath = path.join(context.pmPath, "history", "pm-update.jsonl");
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-update.jsonl",
+      );
       const first = historyEntry("2026-07-24T09:00:00.000Z", "agent", "create");
-      const second = historyEntry("2026-07-24T10:00:00.000Z", "agent", "update");
+      const second = historyEntry(
+        "2026-07-24T10:00:00.000Z",
+        "agent",
+        "update",
+      );
       await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
 
       await updateHistoryEventIndexAfterAppend(historyPath, first);
@@ -157,14 +179,18 @@ describe("history mutation event index", () => {
         recursive: true,
         force: true,
       });
-      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(true);
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        true,
+      );
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toEqual({ events: [], has_more: false });
 
       restoreDatabaseSync?.();
       restoreDatabaseSync = _testOnly.setDatabaseSync(null);
-      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(false);
+      await expect(rebuildHistoryEventIndex(context.pmPath)).resolves.toBe(
+        false,
+      );
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
@@ -179,14 +205,20 @@ describe("history mutation event index", () => {
 
   it("invalidates corrupt and incompatible projections instead of serving stale rows", async () => {
     await withTempPmPath(async (context) => {
-      const historyPath = path.join(context.pmPath, "history", "pm-invalid.jsonl");
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        "pm-invalid.jsonl",
+      );
       const indexPath = path.join(context.pmPath, "runtime", INDEX_FILENAME);
       const entry = historyEntry("2026-07-24T10:00:00.000Z", "agent", "update");
       await fs.writeFile(historyPath, `${JSON.stringify(entry)}\n`);
       await rebuildHistoryEventIndex(context.pmPath);
 
       const database = new DatabaseSync(indexPath);
-      database.prepare("UPDATE metadata SET value = 'old' WHERE key = 'version'").run();
+      database
+        .prepare("UPDATE metadata SET value = 'old' WHERE key = 'version'")
+        .run();
       database.close();
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
@@ -206,7 +238,10 @@ describe("history mutation event index", () => {
   it("cleans temporary projections when rebuild input or database creation fails", async () => {
     await withTempPmPath(async (context) => {
       const historyRoot = path.join(context.pmPath, "history");
-      await fs.writeFile(path.join(historyRoot, "pm-bad.jsonl"), "{bad json}\n");
+      await fs.writeFile(
+        path.join(historyRoot, "pm-bad.jsonl"),
+        "{bad json}\n",
+      );
       await expect(rebuildHistoryEventIndex(context.pmPath)).rejects.toThrow(
         /invalid JSON/,
       );

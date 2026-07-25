@@ -1,18 +1,6 @@
 import { spawnSync } from "node:child_process";
 import fsPromises from "node:fs/promises";
-import {
-  chmod,
-  cp as fsPromisesCp,
-  mkdtemp,
-  mkdir,
-  readFile,
-  readdir,
-  realpath,
-  rm,
-  symlink,
-  utimes,
-  writeFile,
-} from "node:fs/promises";
+import { chmod, cp as fsPromisesCp, mkdtemp, mkdir, readFile, readdir, realpath, rm, symlink, utimes, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -28,14 +16,7 @@ import {
   resolveCanonicalExtensionInstallDestination,
   validateExtensionDirectory,
 } from "../../../src/cli/commands/extension.js";
-import {
-  createEmptyManagedExtensionState,
-  managedExtensionSourcesEquivalent,
-  normalizeManagedState,
-  sortManagedEntries,
-  upsertManagedEntry,
-  writeManagedExtensionState,
-} from "../../../src/sdk/extension/managed-state.js";
+import { createEmptyManagedExtensionState, managedExtensionSourcesEquivalent, normalizeManagedState, sortManagedEntries, upsertManagedEntry, writeManagedExtensionState } from "../../../src/sdk/extension/managed-state.js";
 import { SCAFFOLD_PM_MIN_VERSION } from "../../../src/cli/commands/extension/scaffold.js";
 import {
   buildNpmNotFoundRecovery,
@@ -97,20 +78,17 @@ it("refreshes managed install timestamps when source provenance changes", () => 
     updated_at: "2026-01-01T00:00:00.000Z",
     source: { kind: "local", input: "/old", location: "/old" },
   } as const;
-  expect(
-    extensionCommandTestOnly.resolveManagedInstallTimestamps(
-      existing,
-      "1.0.0",
-      { kind: "local", input: "/new", location: "/new" },
-      "2026-07-24T00:00:00.000Z",
-    ),
-  ).toEqual({
+  expect(extensionCommandTestOnly.resolveManagedInstallTimestamps(existing, "1.0.0", { kind: "local", input: "/new", location: "/new" }, "2026-07-24T00:00:00.000Z")).toEqual({
     installed_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-07-24T00:00:00.000Z",
   });
 });
 
-function runGit(args: string[]): { status: number | null; stdout: string; stderr: string } {
+function runGit(args: string[]): {
+  status: number | null;
+  stdout: string;
+  stderr: string;
+} {
   const completed = spawnSync("git", args, {
     encoding: "utf8",
     env: {
@@ -137,10 +115,7 @@ function expectBestEffortCleanup(sampleTest: string): void {
   expect(sampleTest).toContain("await ext.deactivate();");
 }
 
-async function withWidgetPackageRoot(
-  tempPrefix: string,
-  callback: (paths: { packageRoot: string; tempRoot: string }) => Promise<void>,
-): Promise<void> {
+async function withWidgetPackageRoot(tempPrefix: string, callback: (paths: { packageRoot: string; tempRoot: string }) => Promise<void>): Promise<void> {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), tempPrefix));
   const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
   process.env[PM_PACKAGE_ROOT_ENV] = tempRoot;
@@ -163,7 +138,10 @@ async function withWidgetPackageRoot(
       ),
       "utf8",
     );
-    await writeTestExtension({ root: path.join(packageRoot, "extensions", "widget"), name: "widget-ext" });
+    await writeTestExtension({
+      root: path.join(packageRoot, "extensions", "widget"),
+      name: "widget-ext",
+    });
     await callback({ packageRoot, tempRoot });
   } finally {
     if (previousPackageRoot === undefined) {
@@ -186,10 +164,7 @@ async function withWidgetPackageRoot(
  * import), types the `activate` parameter against the SDK contract, and emits
  * a documented `deactivate` teardown stub so the full lifecycle is modelled.
  */
-async function expectScaffoldedStrictManifestAndTypedEntry(
-  scaffoldPath: string,
-  options: { name: string; manifestExtras?: Record<string, unknown> },
-): Promise<string> {
+async function expectScaffoldedStrictManifestAndTypedEntry(scaffoldPath: string, options: { name: string; manifestExtras?: Record<string, unknown> }): Promise<string> {
   const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
   expect(manifest).toMatchObject({
     name: options.name,
@@ -208,7 +183,7 @@ async function expectScaffoldedStrictManifestAndTypedEntry(
     ...options.manifestExtras,
   });
   const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
-  expect(entry).not.toContain('import { defineExtension }');
+  expect(entry).not.toContain("import { defineExtension }");
   expect(entry).not.toContain("@param");
   expect(entry).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
   expect(entry).toContain("export function activate(api: ExtensionApi): void {");
@@ -226,27 +201,40 @@ describe("extension command runtime", () => {
     expect(extensionCommandTestOnly.resolveAction("list", {})).toBe("explore");
     expect(extensionCommandTestOnly.resolveAction("", {})).toBe("explore");
     expect(extensionCommandTestOnly.resolveAction(undefined, {})).toBe("explore");
-    expect(() => extensionCommandTestOnly.resolveAction("target", { install: true, manage: true })).toThrow(/mutually exclusive/);
+    expect(() =>
+      extensionCommandTestOnly.resolveAction("target", {
+        install: true,
+        manage: true,
+      }),
+    ).toThrow(/mutually exclusive/);
     expect(() => extensionCommandTestOnly.resolveAction("target", {})).toThrow(/One action flag is required/);
-    expect(() => extensionCommandTestOnly.resolveAction("install", { vocabulary: "extension" })).toThrow(
-      'Unknown extension lifecycle action "install". Did you mean "--install"?',
-    );
-    expect(() => extensionCommandTestOnly.resolveAction("descirbe", { vocabulary: "extension" })).toThrow(
-      'Unknown extension lifecycle action "descirbe". Did you mean "--describe"?',
-    );
-    expect(() => extensionCommandTestOnly.resolveAction("insta", { vocabulary: "package" })).toThrow(
-      'Unknown package lifecycle action "insta". Did you mean "--install"?',
-    );
-    expect(() => extensionCommandTestOnly.resolveAction("lis", { vocabulary: "package" })).toThrow(
-      'Unknown package lifecycle action "lis". Did you mean "--explore"?',
-    );
-    expect(() => extensionCommandTestOnly.resolveAction("unistall", { vocabulary: "extension" })).toThrow(
-      'Unknown extension lifecycle action "unistall". Did you mean "--uninstall"?',
-    );
+    expect(() =>
+      extensionCommandTestOnly.resolveAction("install", {
+        vocabulary: "extension",
+      }),
+    ).toThrow('Unknown extension lifecycle action "install". Did you mean "--install"?');
+    expect(() =>
+      extensionCommandTestOnly.resolveAction("descirbe", {
+        vocabulary: "extension",
+      }),
+    ).toThrow('Unknown extension lifecycle action "descirbe". Did you mean "--describe"?');
+    expect(() =>
+      extensionCommandTestOnly.resolveAction("insta", {
+        vocabulary: "package",
+      }),
+    ).toThrow('Unknown package lifecycle action "insta". Did you mean "--install"?');
+    expect(() => extensionCommandTestOnly.resolveAction("lis", { vocabulary: "package" })).toThrow('Unknown package lifecycle action "lis". Did you mean "--explore"?');
+    expect(() =>
+      extensionCommandTestOnly.resolveAction("unistall", {
+        vocabulary: "extension",
+      }),
+    ).toThrow('Unknown extension lifecycle action "unistall". Did you mean "--uninstall"?');
 
     let unknownPackageActionError: unknown;
     try {
-      extensionCommandTestOnly.resolveAction("catalogx", { vocabulary: "package" });
+      extensionCommandTestOnly.resolveAction("catalogx", {
+        vocabulary: "package",
+      });
     } catch (error) {
       unknownPackageActionError = error;
     }
@@ -274,7 +262,9 @@ describe("extension command runtime", () => {
     expect(() => extensionCommandTestOnly.requireTarget(" ", "install")).toThrow(/requires extension source input/);
     let missingPackageInstallTargetError: unknown;
     try {
-      extensionCommandTestOnly.requireTarget(undefined, "install", { vocabulary: "package" });
+      extensionCommandTestOnly.requireTarget(undefined, "install", {
+        vocabulary: "package",
+      });
     } catch (error) {
       missingPackageInstallTargetError = error;
     }
@@ -296,39 +286,72 @@ describe("extension command runtime", () => {
     });
     expect(extensionCommandTestOnly.requireTarget(" package ", "install")).toBe("package");
 
-    expect(extensionCommandTestOnly.resolveGithubOption({ gh: " owner/repo ", github: "owner/repo" })).toBe("owner/repo");
+    expect(
+      extensionCommandTestOnly.resolveGithubOption({
+        gh: " owner/repo ",
+        github: "owner/repo",
+      }),
+    ).toBe("owner/repo");
     expect(extensionCommandTestOnly.resolveGithubOption({ github: " owner/repo " })).toBe("owner/repo");
     expect(extensionCommandTestOnly.resolveGithubOption({ gh: " " })).toBeUndefined();
-    expect(() => extensionCommandTestOnly.resolveGithubOption({ gh: "one", github: "two" })).toThrow(/must match/);
+    expect(() =>
+      extensionCommandTestOnly.resolveGithubOption({
+        gh: "one",
+        github: "two",
+      }),
+    ).toThrow(/must match/);
 
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({
         source: { kind: "local", input: "./local", location: "/tmp/local" },
       }),
-    ).toEqual({ status: "skipped_non_github", reason: "managed_source_kind_local" });
+    ).toEqual({
+      status: "skipped_non_github",
+      reason: "managed_source_kind_local",
+    });
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({
-        source: { kind: "github", input: "owner/repo", location: ".", repository: "repo" },
+        source: {
+          kind: "github",
+          input: "owner/repo",
+          location: ".",
+          repository: "repo",
+        },
         update_error: "network_down",
       }),
     ).toEqual({ status: "failed", reason: "network_down" });
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({
-        source: { kind: "github", input: "owner/repo", location: ".", repository: "repo" },
+        source: {
+          kind: "github",
+          input: "owner/repo",
+          location: ".",
+          repository: "repo",
+        },
         last_update_check_at: "2026-01-01T00:00:00.000Z",
         update_available: true,
       }),
     ).toEqual({ status: "checked", reason: "update_available" });
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({
-        source: { kind: "github", input: "owner/repo", location: ".", repository: "repo" },
+        source: {
+          kind: "github",
+          input: "owner/repo",
+          location: ".",
+          repository: "repo",
+        },
         last_update_check_at: "2026-01-01T00:00:00.000Z",
         update_available: false,
       }),
     ).toEqual({ status: "checked", reason: "up_to_date" });
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({
-        source: { kind: "github", input: "owner/repo", location: ".", repository: "repo" },
+        source: {
+          kind: "github",
+          input: "owner/repo",
+          location: ".",
+          repository: "repo",
+        },
         last_update_check_at: "2026-01-01T00:00:00.000Z",
       }),
     ).toEqual({ status: "checked", reason: "checked_without_commit_baseline" });
@@ -349,13 +372,7 @@ describe("extension command runtime", () => {
         name: " guide-shell ",
       }),
     ).toBe("guide-shell");
-    expect(
-      extensionCommandTestOnly.buildInstallCommandDiscovery(
-        "fallback",
-        { kind: "local", input: "./ext", location: "/tmp/ext" },
-        { command_paths: ["z", "a"], action_paths: ["b"] },
-      ),
-    ).toMatchObject({
+    expect(extensionCommandTestOnly.buildInstallCommandDiscovery("fallback", { kind: "local", input: "./ext", location: "/tmp/ext" }, { command_paths: ["z", "a"], action_paths: ["b"] })).toMatchObject({
       package_name: "fallback",
       extension_name: "fallback",
       command_paths: ["z", "a"],
@@ -366,7 +383,12 @@ describe("extension command runtime", () => {
       "fallback",
       { kind: "local", input: "./ext", location: "/tmp/ext" },
       { command_paths: ["fallback ping"], action_paths: ["fallback-ping"] },
-      { layer: "project", name: "fallback", entry_path: "/tmp/ext/index.js", error: "Cannot find @unbrained/pm-cli" },
+      {
+        layer: "project",
+        name: "fallback",
+        entry_path: "/tmp/ext/index.js",
+        error: "Cannot find @unbrained/pm-cli",
+      },
     );
     expect(missingSdkDiscovery).toMatchObject({
       help_commands: ["pm fallback ping --help"],
@@ -374,17 +396,26 @@ describe("extension command runtime", () => {
     });
     expect(
       extensionCommandTestOnly.collectGlobalOutputOverrideDoctorWarnings({
-        services: { overrides: [{ service: "output_format", layer: "project", name: "svc" }, { service: "other" }] },
-        renderers: { overrides: [{ format: "json", layer: "global", name: "renderer" }] },
+        services: {
+          overrides: [{ service: "output_format", layer: "project", name: "svc" }, { service: "other" }],
+        },
+        renderers: {
+          overrides: [{ format: "json", layer: "global", name: "renderer" }],
+        },
       }),
-    ).toEqual([
-      "extension_output_renderer_override_global:json:global:renderer",
-      "extension_output_service_override_global:output_format:project:svc",
-    ]);
+    ).toEqual(["extension_output_renderer_override_global:json:global:renderer", "extension_output_service_override_global:output_format:project:svc"]);
 
     expect(extensionCommandTestOnly.isRetriableExtensionInstallCopyError("plain")).toBe(false);
-    expect(extensionCommandTestOnly.isRetriableExtensionInstallCopyError({ code: "ENOENT" })).toBe(true);
-    expect(extensionCommandTestOnly.isRetriableExtensionInstallCopyError({ code: "EACCES" })).toBe(false);
+    expect(
+      extensionCommandTestOnly.isRetriableExtensionInstallCopyError({
+        code: "ENOENT",
+      }),
+    ).toBe(true);
+    expect(
+      extensionCommandTestOnly.isRetriableExtensionInstallCopyError({
+        code: "EACCES",
+      }),
+    ).toBe(false);
     expect(extensionCommandTestOnly.isErrnoCode({ code: "EEXIST" }, "EEXIST")).toBe(true);
     expect(extensionCommandTestOnly.isErrnoCode(null, "EEXIST")).toBe(false);
 
@@ -448,7 +479,11 @@ describe("extension command runtime", () => {
     });
     expect(extensionCommandTestOnly.buildExtensionPolicyDetails(undefined).extension_overrides).toEqual([]);
     expect(extensionCommandTestOnly.buildExtensionPolicyDetails(null).trusted_extensions).toEqual([]);
-    expect(extensionCommandTestOnly.buildExtensionPolicyDetails({ extension_overrides: null } as never).extension_overrides).toEqual([]);
+    expect(
+      extensionCommandTestOnly.buildExtensionPolicyDetails({
+        extension_overrides: null,
+      } as never).extension_overrides,
+    ).toEqual([]);
     expect(extensionCommandTestOnly.projectExtensionUpdateCheck(undefined)).toEqual({
       update_check_status: null,
       update_check_reason: null,
@@ -458,30 +493,31 @@ describe("extension command runtime", () => {
         update_check_status: "checked",
         update_check_reason: "up_to_date",
       } as never),
-    ).toEqual({ update_check_status: "checked", update_check_reason: "up_to_date" });
-    expect(
-      extensionCommandTestOnly.buildAdoptedExtensionSource(
-        "owner/repo/extensions/example",
-        "example",
-        "/tmp/example",
-        "main",
-      ),
-    ).toMatchObject({ kind: "github", location: "extensions/example", subpath: "extensions/example" });
-    expect(
-      extensionCommandTestOnly.buildAdoptedExtensionSource("owner/repo", "example", "/tmp/example", undefined),
-    ).toMatchObject({ kind: "github", location: "." });
+    ).toEqual({
+      update_check_status: "checked",
+      update_check_reason: "up_to_date",
+    });
+    expect(extensionCommandTestOnly.buildAdoptedExtensionSource("owner/repo/extensions/example", "example", "/tmp/example", "main")).toMatchObject({
+      kind: "github",
+      location: "extensions/example",
+      subpath: "extensions/example",
+    });
+    expect(extensionCommandTestOnly.buildAdoptedExtensionSource("owner/repo", "example", "/tmp/example", undefined)).toMatchObject({
+      kind: "github",
+      location: ".",
+    });
 
     expect(_testOnlyBundledCatalog.parsePackageCatalogFields(undefined)).toBeUndefined();
-    expect(_testOnlyBundledCatalog.parsePackageCatalogFields("alias, category,display_name")).toEqual([
-      "alias",
-      "category",
-      "display_name",
-    ]);
+    expect(_testOnlyBundledCatalog.parsePackageCatalogFields("alias, category,display_name")).toEqual(["alias", "category", "display_name"]);
     expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields(" ")).toThrow(/requires a comma-separated/);
     expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields("alias,nope")).toThrow(/Unknown package catalog/);
     expect(
       _testOnlyBundledCatalog.projectPackageCatalogEntry(
-        { alias: "guide", catalog: { category: "ops", display_name: "Guide" }, package_name: "@unbrained/pm-guide" },
+        {
+          alias: "guide",
+          catalog: { category: "ops", display_name: "Guide" },
+          package_name: "@unbrained/pm-guide",
+        },
         ["alias", "category", "display_name", "package_name", "missing"],
       ),
     ).toEqual({
@@ -514,38 +550,55 @@ describe("extension command runtime", () => {
       {
         loaded: [
           // item-type contributor with narrow activation.commands -> warned.
-          { layer: "project", name: "Footgun", activation: { commands: ["footgun ping"] } },
+          {
+            layer: "project",
+            name: "Footgun",
+            activation: { commands: ["footgun ping"] },
+          },
           // item-field contributor with narrow activation.commands -> warned.
-          { layer: "global", name: "field-foot", activation: { commands: ["field-foot ping"] } },
+          {
+            layer: "global",
+            name: "field-foot",
+            activation: { commands: ["field-foot ping"] },
+          },
           // Correct schema shape: registers a type but omits activation.commands
           // (empty list) -> skipped before the contributor lookup.
           { layer: "project", name: "clean", activation: { commands: [] } },
           // No activation block at all -> the ?.commands ?? [] fallback skips it.
           { layer: "project", name: "no-activation" },
           // Command-only package with activation.commands but no schema -> not warned.
-          { layer: "project", name: "cmd-only", activation: { commands: ["cmd-only ping"] } },
+          {
+            layer: "project",
+            name: "cmd-only",
+            activation: { commands: ["cmd-only ping"] },
+          },
         ],
       },
       {
         registrations: {
           item_types: [
-            { layer: "project", name: "Footgun", types: [{ name: "footgun" }] },
+            {
+              layer: "project",
+              name: "Footgun",
+              types: [{ name: "footgun" }],
+            },
             { layer: "project", name: "clean", types: [{ name: "clean" }] },
             // Empty types array is not a schema contribution.
             { layer: "global", name: "empty-types", types: [] },
           ],
           item_fields: [
-            { layer: "global", name: "field-foot", fields: [{ name: "note" }] },
+            {
+              layer: "global",
+              name: "field-foot",
+              fields: [{ name: "note" }],
+            },
             // Empty fields array is not a schema contribution.
             { layer: "project", name: "empty-fields", fields: [] },
           ],
         },
       },
     );
-    expect(warnings).toEqual([
-      "extension_schema_narrow_activation:global:field-foot",
-      "extension_schema_narrow_activation:project:Footgun",
-    ]);
+    expect(warnings).toEqual(["extension_schema_narrow_activation:global:field-foot", "extension_schema_narrow_activation:project:Footgun"]);
   });
 
   it("covers extension helper fallback and lock edge branches", async () => {
@@ -619,7 +672,7 @@ describe("extension command runtime", () => {
       const sourceDir = path.join(tempRoot, "source");
       const destinationDir = path.join(tempRoot, "destination");
       await mkdir(sourceDir, { recursive: true });
-      await writeFile(path.join(sourceDir, "manifest.json"), "{\"name\":\"copy\"}\n", "utf8");
+      await writeFile(path.join(sourceDir, "manifest.json"), '{"name":"copy"}\n', "utf8");
       await expect(
         copyExtensionDirectoryForInstall(sourceDir, destinationDir, async () => {
           throw new Error("copy boom");
@@ -652,12 +705,7 @@ describe("extension command runtime", () => {
       expect(sortableSettings.extensions.enabled).toEqual(["alpha", "gamma"]);
       expect(sortableSettings.extensions.disabled).toEqual(["alpha", "delta"]);
 
-      const listResult = await extensionCommandTestOnly.listInstalledExtensions(
-        path.join(tempRoot, "missing-extensions-root"),
-        "project",
-        mutableSettings as never,
-        createEmptyManagedExtensionState(),
-      );
+      const listResult = await extensionCommandTestOnly.listInstalledExtensions(path.join(tempRoot, "missing-extensions-root"), "project", mutableSettings as never, createEmptyManagedExtensionState());
       expect(listResult.extensions).toEqual([]);
       expect(listResult.warnings).toEqual([]);
 
@@ -730,12 +778,7 @@ describe("extension command runtime", () => {
           return "tag-object\trefs/tags/v1.0.0\npeeled-commit\trefs/tags/v1.0.0^{}\n";
         },
       );
-      expect(githubRunnerArgs).toEqual([
-        "ls-remote",
-        "https://example.test/repo.git",
-        "v1.0.0",
-        "v1.0.0^{}",
-      ]);
+      expect(githubRunnerArgs).toEqual(["ls-remote", "https://example.test/repo.git", "v1.0.0", "v1.0.0^{}"]);
       expect(githubRunnerTimeout).toBe(10_000);
       expect(annotatedTag).toMatchObject({
         available: false,
@@ -790,9 +833,7 @@ describe("extension command runtime", () => {
         const readonlyLockRoot = path.join(readonlyRoot, "runtime", "extension-install-locks");
         await mkdir(readonlyLockRoot, { recursive: true });
         await chmod(readonlyLockRoot, 0o555);
-        await expect(
-          extensionCommandTestOnly.withExtensionInstallLock(readonlyRoot, "denied-ext", async () => "nope"),
-        ).rejects.toBeTruthy();
+        await expect(extensionCommandTestOnly.withExtensionInstallLock(readonlyRoot, "denied-ext", async () => "nope")).rejects.toBeTruthy();
         await chmod(readonlyLockRoot, 0o755);
       }
 
@@ -800,15 +841,10 @@ describe("extension command runtime", () => {
       const busyLockPath = path.join(busyRoot, "runtime", "extension-install-locks", "scope.lock");
       await mkdir(busyLockPath, { recursive: true });
       await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(
-          busyRoot,
-          "busy-ext",
-          async () => "never",
-          {
-            attempts: 2,
-            delay_ms: 1,
-          },
-        ),
+        extensionCommandTestOnly.withExtensionInstallLock(busyRoot, "busy-ext", async () => "never", {
+          attempts: 2,
+          delay_ms: 1,
+        }),
       ).rejects.toThrow(/Timed out waiting for extension install lock/);
 
       const cleanupRoot = path.join(tempRoot, "cleanup-root");
@@ -832,25 +868,13 @@ describe("extension command runtime", () => {
     await withTempPmPath(async (context) => {
       const brokenLoadDirectory = path.join(context.pmPath, "extensions", "broken-load");
       await mkdir(brokenLoadDirectory, { recursive: true });
-      await writeFile(
-        path.join(brokenLoadDirectory, "manifest.json"),
-        `${JSON.stringify({ name: "broken-load", version: "1.0.0", entry: "index.js", capabilities: [] }, null, 2)}\n`,
-        "utf8",
-      );
+      await writeFile(path.join(brokenLoadDirectory, "manifest.json"), `${JSON.stringify({ name: "broken-load", version: "1.0.0", entry: "index.js", capabilities: [] }, null, 2)}\n`, "utf8");
       await writeFile(path.join(brokenLoadDirectory, "index.js"), "export const broken = ;\n", "utf8");
 
       const brokenActivationDirectory = path.join(context.pmPath, "extensions", "broken-activation");
       await mkdir(brokenActivationDirectory, { recursive: true });
-      await writeFile(
-        path.join(brokenActivationDirectory, "manifest.json"),
-        `${JSON.stringify({ name: "broken-activation", version: "1.0.0", entry: "index.js", capabilities: [] }, null, 2)}\n`,
-        "utf8",
-      );
-      await writeFile(
-        path.join(brokenActivationDirectory, "index.js"),
-        "module.exports = { activate() { throw new Error('activation boom'); } };\n",
-        "utf8",
-      );
+      await writeFile(path.join(brokenActivationDirectory, "manifest.json"), `${JSON.stringify({ name: "broken-activation", version: "1.0.0", entry: "index.js", capabilities: [] }, null, 2)}\n`, "utf8");
+      await writeFile(path.join(brokenActivationDirectory, "index.js"), "module.exports = { activate() { throw new Error('activation boom'); } };\n", "utf8");
 
       const brokenManifestDirectory = path.join(context.pmPath, "extensions", "broken-manifest");
       await mkdir(brokenManifestDirectory, { recursive: true });
@@ -916,10 +940,7 @@ describe("extension command runtime", () => {
       };
       expect(positionalReload.action).toBe("reload");
       expect(reloadDetails.failed_count ?? reloadDetails.failed_extensions?.length ?? 0).toBeGreaterThan(0);
-      expect(
-        (reloadDetails.failed_count ?? reloadDetails.failed_extensions?.length ?? 0) +
-          (reloadDetails.activation_failed_count ?? reloadDetails.activation_failures?.length ?? 0),
-      ).toBeGreaterThan(0);
+      expect((reloadDetails.failed_count ?? reloadDetails.failed_extensions?.length ?? 0) + (reloadDetails.activation_failed_count ?? reloadDetails.activation_failures?.length ?? 0)).toBeGreaterThan(0);
 
       await expect(runExtension("missing-extension", { adopt: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
@@ -942,9 +963,7 @@ describe("extension command runtime", () => {
 
       const adoptAll = await runExtension(undefined, { adoptAll: true, project: true }, { path: context.pmPath });
       expect(adoptAll.action).toBe("adopt-all");
-      const adoptedDirectories = (
-        adoptAll.details as { extensions?: Array<{ directory?: string }> }
-      ).extensions?.map((entry) => entry.directory) ?? [];
+      const adoptedDirectories = (adoptAll.details as { extensions?: Array<{ directory?: string }> }).extensions?.map((entry) => entry.directory) ?? [];
       expect(adoptedDirectories).toEqual(["alpha-dir", "beta-dir"]);
 
       const managed = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
@@ -962,16 +981,9 @@ describe("extension command runtime", () => {
     try {
       const legacyOnlyPath = path.join(tempRoot, ".agents", "pm", "extensions", "beads");
       await mkdir(legacyOnlyPath, { recursive: true });
-      await writeFile(
-        path.join(legacyOnlyPath, "manifest.json"),
-        `${JSON.stringify({ name: "legacy-beads", version: "1.0.0", entry: "index.js" }, null, 2)}\n`,
-        "utf8",
-      );
+      await writeFile(path.join(legacyOnlyPath, "manifest.json"), `${JSON.stringify({ name: "legacy-beads", version: "1.0.0", entry: "index.js" }, null, 2)}\n`, "utf8");
       const legacyResolved = await resolveBundledExtensionAliasSource("beads");
-      expect([
-        legacyOnlyPath,
-        path.join(process.cwd(), "packages", "pm-beads"),
-      ]).toContain(legacyResolved);
+      expect([legacyOnlyPath, path.join(process.cwd(), "packages", "pm-beads")]).toContain(legacyResolved);
 
       const packageRoot = path.join(tempRoot, "packages", "pm-beads");
       await mkdir(packageRoot, { recursive: true });
@@ -991,7 +1003,10 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeTestExtension({ root: path.join(packageRoot, "extensions", "beads-custom"), name: "beads-custom-ext" });
+      await writeTestExtension({
+        root: path.join(packageRoot, "extensions", "beads-custom"),
+        name: "beads-custom-ext",
+      });
       const aliases = await listBundledPackageAliases();
       expect(aliases).toEqual(expect.arrayContaining(["beads", "beads-custom"]));
     } finally {
@@ -1021,29 +1036,39 @@ describe("extension command runtime", () => {
         context: expect.objectContaining({
           code: "local_source_not_found_bare_name",
           nextSteps: expect.arrayContaining([expect.stringContaining("widget")]),
-          recovery: expect.objectContaining({ next_best_command: "pm install npm:pm-surely-not-a-local-dir" }),
+          recovery: expect.objectContaining({
+            next_best_command: "pm install npm:pm-surely-not-a-local-dir",
+          }),
         }),
       });
       await expect(resolveInstallSource(parseExtensionInstallSource("@somescope/pm-surely-not-a-local-dir"))).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
-        context: expect.objectContaining({ code: "local_source_not_found_bare_name" }),
+        context: expect.objectContaining({
+          code: "local_source_not_found_bare_name",
+        }),
       });
 
       process.env[PM_PACKAGE_ROOT_ENV] = "   ";
       await expect(resolveInstallSource(parseExtensionInstallSource("pm-blank-env-root-miss"))).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
-        context: expect.objectContaining({ code: "local_source_not_found_bare_name" }),
+        context: expect.objectContaining({
+          code: "local_source_not_found_bare_name",
+        }),
       });
     });
     await expect(resolveInstallSource(parseExtensionInstallSource("./pm-surely-not-a-local-dir"))).rejects.toMatchObject({
       exitCode: EXIT_CODE.NOT_FOUND,
-      context: expect.not.objectContaining({ code: "local_source_not_found_bare_name" }),
+      context: expect.not.objectContaining({
+        code: "local_source_not_found_bare_name",
+      }),
     });
     const tempRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "pm-bare-name-miss-")));
     try {
       await expect(resolveInstallSource(parseExtensionInstallSource(path.join(tempRoot, "missing")))).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
-        context: expect.not.objectContaining({ code: "local_source_not_found_bare_name" }),
+        context: expect.not.objectContaining({
+          code: "local_source_not_found_bare_name",
+        }),
       });
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
@@ -1073,22 +1098,13 @@ describe("extension command runtime", () => {
       runtime_active: false,
     });
 
-    const invalidLayerRemediation = buildRegistrationCollisionRemediation(
-      ["extension_command_handler_collision:surface:invalid-layer:alpha:project:beta"],
-      {
-        deactivate: "pm extension --deactivate <name> --project",
-        doctor: "pm extension --doctor --project --detail deep --trace",
-      },
-    );
+    const invalidLayerRemediation = buildRegistrationCollisionRemediation(["extension_command_handler_collision:surface:invalid-layer:alpha:project:beta"], {
+      deactivate: "pm extension --deactivate <name> --project",
+      doctor: "pm extension --doctor --project --detail deep --trace",
+    });
     expect(invalidLayerRemediation === null || invalidLayerRemediation.includes("Extension registration collisions")).toBe(true);
 
-    expect(
-      classifyDoctorActivationFailureWarnings([
-        null as never,
-        { name: "ext-z", trace: { capability: "search" } },
-        { name: "ext-a", trace: { missing_capability: "schema" } },
-      ]),
-    ).toEqual([
+    expect(classifyDoctorActivationFailureWarnings([null as never, { name: "ext-z", trace: { capability: "search" } }, { name: "ext-a", trace: { missing_capability: "schema" } }])).toEqual([
       "extension_capability_missing:ext-a:schema",
       "extension_capability_missing:ext-z:search",
     ]);
@@ -1096,10 +1112,7 @@ describe("extension command runtime", () => {
 
     const triage = buildExtensionTriageSummary(
       "project",
-      [
-        "extension_command_handler_collision:cmd:project:ext-a:global:ext-b",
-        "extension_command_handler_collision:cmd2:project:ext-a:global:ext-c",
-      ],
+      ["extension_command_handler_collision:cmd:project:ext-a:global:ext-b", "extension_command_handler_collision:cmd2:project:ext-a:global:ext-c"],
       [
         {
           name: "ext-a",
@@ -1140,41 +1153,23 @@ describe("extension command runtime", () => {
     expect(triage.unmanaged_expected_extensions).toEqual(["ext-b", "ext-c"]);
     expect(triage.remediation.some((entry) => entry.includes("collisions"))).toBe(true);
 
-    const globalCollisionTriage = buildExtensionTriageSummary(
-      "global",
-      ["extension_command_handler_collision:cmd:global:unknown-a:project:unknown-b"],
-      [] as never,
-      {},
-    );
-    const collisionPlan = (globalCollisionTriage as {
-      collision_plan?: {
-        next_best_command?: string;
-        remediation_candidates?: unknown[];
-      };
-    }).collision_plan;
+    const globalCollisionTriage = buildExtensionTriageSummary("global", ["extension_command_handler_collision:cmd:global:unknown-a:project:unknown-b"], [] as never, {});
+    const collisionPlan = (
+      globalCollisionTriage as {
+        collision_plan?: {
+          next_best_command?: string;
+          remediation_candidates?: unknown[];
+        };
+      }
+    ).collision_plan;
     expect(collisionPlan?.next_best_command?.includes("--global") ?? true).toBe(true);
     if (collisionPlan?.remediation_candidates) {
-      expect(collisionPlan.remediation_candidates).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ extension: "unknown-a" }),
-          expect.objectContaining({ extension: "unknown-b" }),
-        ]),
-      );
+      expect(collisionPlan.remediation_candidates).toEqual(expect.arrayContaining([expect.objectContaining({ extension: "unknown-a" }), expect.objectContaining({ extension: "unknown-b" })]));
     }
 
-    const blockedPolicyTriage = buildExtensionTriageSummary(
-      "project",
-      ["extension_policy_blocked_capability:ext-a:search"],
-      [] as never,
-      {},
-    );
+    const blockedPolicyTriage = buildExtensionTriageSummary("project", ["extension_policy_blocked_capability:ext-a:search"], [] as never, {});
     expect(blockedPolicyTriage.policy_blocked_count).toBe(1);
-    const neutralPolicyTriage = buildExtensionTriageSummary(
-      "project",
-      ["extension_policy_notice:ext-a"],
-      [] as never,
-      {},
-    );
+    const neutralPolicyTriage = buildExtensionTriageSummary("project", ["extension_policy_notice:ext-a"], [] as never, {});
     expect(neutralPolicyTriage.policy_warning_count).toBe(1);
   });
 
@@ -1213,11 +1208,7 @@ describe("extension command runtime", () => {
         },
       },
     ] as never);
-    expect(diagnostics.map((entry: { layer: string; name: string }) => `${entry.layer}:${entry.name}`)).toEqual([
-      "global:alpha",
-      "project:beta",
-      "project:zeta",
-    ]);
+    expect(diagnostics.map((entry: { layer: string; name: string }) => `${entry.layer}:${entry.name}`)).toEqual(["global:alpha", "project:beta", "project:zeta"]);
     expect(diagnostics[0]).toMatchObject({
       missing_capability: "schema",
       hint: "Add schema capability.",
@@ -1238,8 +1229,18 @@ describe("extension command runtime", () => {
 
   it("matches activation failures by name and optional scope", () => {
     const failures = [
-      { layer: "project", name: "same-name", entry_path: "/tmp/project", error: "project fail" },
-      { layer: "global", name: "same-name", entry_path: "/tmp/global", error: "global fail" },
+      {
+        layer: "project",
+        name: "same-name",
+        entry_path: "/tmp/project",
+        error: "project fail",
+      },
+      {
+        layer: "global",
+        name: "same-name",
+        entry_path: "/tmp/global",
+        error: "global fail",
+      },
     ] as never;
     expect(extensionCommandTestOnly.findActivationFailureByName("same-name", failures, "project")).toMatchObject({
       layer: "project",
@@ -1260,25 +1261,21 @@ describe("extension command runtime", () => {
         activation_status: "not_loaded",
       },
     ] as never;
+    expect(extensionCommandTestOnly.resolveInstallRuntimeActivationStatus("runtime-status-ext", "project", runtimeInstalled, undefined)).toBe("not_loaded");
     expect(
       extensionCommandTestOnly.resolveInstallRuntimeActivationStatus(
-        "runtime-status-ext",
+        "missing-ext",
         "project",
-        runtimeInstalled,
-        undefined,
+        [] as never,
+        {
+          layer: "project",
+          name: "missing-ext",
+          entry_path: "/tmp/missing-ext",
+          error: "failed",
+        } as never,
       ),
-    ).toBe("not_loaded");
-    expect(
-      extensionCommandTestOnly.resolveInstallRuntimeActivationStatus("missing-ext", "project", [] as never, {
-        layer: "project",
-        name: "missing-ext",
-        entry_path: "/tmp/missing-ext",
-        error: "failed",
-      } as never),
     ).toBe("failed");
-    expect(
-      extensionCommandTestOnly.resolveInstallRuntimeActivationStatus("missing-ext", "project", [] as never, undefined),
-    ).toBe("unknown");
+    expect(extensionCommandTestOnly.resolveInstallRuntimeActivationStatus("missing-ext", "project", [] as never, undefined)).toBe("unknown");
   });
 
   it("parses, validates, coerces, and strips loose extension command options", () => {
@@ -1286,33 +1283,21 @@ describe("extension command runtime", () => {
       { long: "--count", short: "-c", value_type: "number", required: true },
       { long: "--enabled", value_type: "boolean", default: "true" },
       { long: "--label", type: "string", default: 42 },
-      { long: "--tag", short: "-t", value_type: "string", list: true, default: "triage, coverage" },
+      {
+        long: "--tag",
+        short: "-t",
+        value_type: "string",
+        list: true,
+        default: "triage, coverage",
+      },
       { long: "--disabled", enabled: false },
       { long: "--constructor" },
       { short: "-x", value_type: "number" },
     ];
 
-    expect(collectLooseCommandOptionKeysForDefinitions(definitions)).toEqual(
-      new Set(["count", "c", "enabled", "label", "tag", "t", "disabled", "x"]),
-    );
+    expect(collectLooseCommandOptionKeysForDefinitions(definitions)).toEqual(new Set(["count", "c", "enabled", "label", "tag", "t", "disabled", "x"]));
 
-    const parsed = parseLooseCommandOptions([
-      "--count",
-      "2",
-      "-t=alpha,beta",
-      "--tag",
-      "gamma",
-      "-t",
-      "delta",
-      "--no-enabled",
-      "-x",
-      "5",
-      "--constructor",
-      "ignored",
-      "--",
-      "--label",
-      "positional",
-    ]);
+    const parsed = parseLooseCommandOptions(["--count", "2", "-t=alpha,beta", "--tag", "gamma", "-t", "delta", "--no-enabled", "-x", "5", "--constructor", "ignored", "--", "--label", "positional"]);
     expect(parsed).toMatchObject({
       count: "2",
       tag: "gamma",
@@ -1340,34 +1325,20 @@ describe("extension command runtime", () => {
       tag: ["one", "two", "three"],
     });
     expect(Object.hasOwn(defaulted, "t")).toBe(false);
-    expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: ["one"], t: ["two"] }, definitions).tag).toEqual([
-      "one",
-      "two",
-    ]);
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: ["one"], t: ["two"] }, definitions).tag).toEqual(["one", "two"]);
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: undefined, t: "two" }, definitions).tag).toEqual(["two"]);
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ tag: "one", t: null }, definitions).tag).toEqual(["one"]);
     const scalarAlias = coerceLooseCommandOptionsWithFlagDefinitions({ count: "3", c: "4" }, definitions);
     expect(scalarAlias.count).toBe(3);
     expect(scalarAlias).not.toHaveProperty("c");
 
-    expect(
-      stripLooseCommandOptionTokens(
-        ["run", "--count", "9", "--enabled", "positional", "--tag=one,two", "-x", "7", "--", "--count", "kept"],
-        definitions,
-      ),
-    ).toEqual(["run", "positional", "--count", "kept"]);
+    expect(stripLooseCommandOptionTokens(["run", "--count", "9", "--enabled", "positional", "--tag=one,two", "-x", "7", "--", "--count", "kept"], definitions)).toEqual(["run", "positional", "--count", "kept"]);
     expect(stripLooseCommandOptionTokens(["--count", "1"], [])).toEqual(["--count", "1"]);
     expect(stripLooseCommandOptionTokens(["--other", "value"], [{ long: "--constructor" }])).toEqual(["--other", "value"]);
 
-    expect(() => validateLooseCommandOptionsWithFlagDefinitions({ missing: true }, definitions, "demo run")).toThrow(
-      /Unknown option '--missing'/,
-    );
-    expect(() => validateLooseCommandOptionsWithFlagDefinitions({ disabled: true, count: 1 }, definitions, "demo run")).toThrow(
-      /Option '--disabled' is disabled/,
-    );
-    expect(() => validateLooseCommandOptionsWithFlagDefinitions({}, definitions, "demo run")).toThrow(
-      /Missing required option '--count'/,
-    );
+    expect(() => validateLooseCommandOptionsWithFlagDefinitions({ missing: true }, definitions, "demo run")).toThrow(/Unknown option '--missing'/);
+    expect(() => validateLooseCommandOptionsWithFlagDefinitions({ disabled: true, count: 1 }, definitions, "demo run")).toThrow(/Option '--disabled' is disabled/);
+    expect(() => validateLooseCommandOptionsWithFlagDefinitions({}, definitions, "demo run")).toThrow(/Missing required option '--count'/);
     expect(() => validateLooseCommandOptionsWithFlagDefinitions({ count: 1 }, definitions, "demo run")).not.toThrow();
   });
 
@@ -1384,7 +1355,13 @@ describe("extension command runtime", () => {
     expect(coerceLooseCommandOptionsWithFlagDefinitions(noDefinitionsOptions, [])).toBe(noDefinitionsOptions);
     expect(
       coerceLooseCommandOptionsWithFlagDefinitions(
-        { plain: "value", count: Number.POSITIVE_INFINITY, active: "0", maybe: "false", emptyNumber: "" },
+        {
+          plain: "value",
+          count: Number.POSITIVE_INFINITY,
+          active: "0",
+          maybe: "false",
+          emptyNumber: "",
+        },
         [
           { long: "--plain" },
           { long: "--count", value_type: "number" },
@@ -1404,10 +1381,13 @@ describe("extension command runtime", () => {
     });
 
     expect(
-      stripLooseCommandOptionTokens(["--enabled", "kept", "--name", "removed"], [
-        { long: "--enabled", value_type: "boolean" },
-        { long: "--name", value_type: "string" },
-      ]),
+      stripLooseCommandOptionTokens(
+        ["--enabled", "kept", "--name", "removed"],
+        [
+          { long: "--enabled", value_type: "boolean" },
+          { long: "--name", value_type: "string" },
+        ],
+      ),
     ).toEqual(["kept"]);
   });
 
@@ -1421,14 +1401,21 @@ describe("extension command runtime", () => {
       capabilities: ["schema", "commands", "commands"],
       installed_at: "2026-01-01T00:00:00.000Z",
       updated_at: "2026-01-01T00:00:00.000Z",
-      source: { kind: "local" as const, input: "./alpha", location: "/tmp/alpha" },
+      source: {
+        kind: "local" as const,
+        input: "./alpha",
+        location: "/tmp/alpha",
+      },
     };
 
     const normalized = normalizeManagedState({
       version: 1,
       entries: [
         "bad",
-        { ...baseEntry, source: { kind: "bad", input: "./bad", location: "/tmp/bad" } },
+        {
+          ...baseEntry,
+          source: { kind: "bad", input: "./bad", location: "/tmp/bad" },
+        },
         { ...baseEntry, name: "Alpha", directory: "a-dir" },
       ],
     });
@@ -1440,24 +1427,19 @@ describe("extension command runtime", () => {
       }),
     ]);
 
+    expect(managedExtensionSourcesEquivalent({ kind: "local", input: "one", location: "/tmp/one" }, { kind: "local", input: "two", location: "/tmp/one" })).toBe(false);
     expect(
       managedExtensionSourcesEquivalent(
-        { kind: "local", input: "one", location: "/tmp/one" },
-        { kind: "local", input: "two", location: "/tmp/one" },
-      ),
-    ).toBe(false);
-    expect(
-      managedExtensionSourcesEquivalent(
-        { kind: "builtin", input: "guide", location: "builtin", name: "guide-shell" },
+        {
+          kind: "builtin",
+          input: "guide",
+          location: "builtin",
+          name: "guide-shell",
+        },
         { kind: "builtin", input: "guide", location: "builtin", name: "other" },
       ),
     ).toBe(false);
-    expect(
-      managedExtensionSourcesEquivalent(
-        { kind: "local", input: "same", location: "/tmp/same" },
-        { kind: "local", input: "same", location: "/tmp/same" },
-      ),
-    ).toBe(true);
+    expect(managedExtensionSourcesEquivalent({ kind: "local", input: "same", location: "/tmp/same" }, { kind: "local", input: "same", location: "/tmp/same" })).toBe(true);
   });
 
   it("parses local and GitHub install sources deterministically", () => {
@@ -1465,9 +1447,7 @@ describe("extension command runtime", () => {
     expect(local.kind).toBe("local");
     expect(local.absolute_path).toBe(path.resolve(process.cwd(), "./extensions/sample"));
 
-    const githubTree = parseExtensionInstallSource(
-      "https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/sample",
-    );
+    const githubTree = parseExtensionInstallSource("https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/sample");
     expect(githubTree).toMatchObject({
       kind: "github",
       owner: "unbraind",
@@ -1484,7 +1464,10 @@ describe("extension command runtime", () => {
       subpath: "sample",
     });
 
-    const githubFlag = parseExtensionInstallSource("unbraind/pm-cli/sample", { forceGithub: true, ref: "main" });
+    const githubFlag = parseExtensionInstallSource("unbraind/pm-cli/sample", {
+      forceGithub: true,
+      ref: "main",
+    });
     expect(githubFlag).toMatchObject({
       kind: "github",
       owner: "unbraind",
@@ -1501,27 +1484,19 @@ describe("extension command runtime", () => {
   });
 
   it("returns usage errors for invalid forced GitHub shorthand", () => {
-    expect(() => parseExtensionInstallSource("not-a-repo", { forceGithub: true })).toThrowError(
-      /Invalid GitHub shorthand/,
-    );
+    expect(() => parseExtensionInstallSource("not-a-repo", { forceGithub: true })).toThrowError(/Invalid GitHub shorthand/);
   });
 
   it("validates unsupported URL host and empty source inputs", () => {
     expect(() => parseExtensionInstallSource("")).toThrowError(/Extension source is required/);
-    expect(() => parseExtensionInstallSource("https://example.com/owner/repo")).toThrowError(
-      /Unsupported extension source URL/,
-    );
+    expect(() => parseExtensionInstallSource("https://example.com/owner/repo")).toThrowError(/Unsupported extension source URL/);
     expect(() => parseExtensionInstallSource("github.com/only-owner")).toThrowError(/Invalid GitHub source/);
   });
 
   it("covers install-source and manifest parser edge cases without network access", async () => {
     expect(() => parseExtensionInstallSource("npm:")).toThrowError(/must include a package spec/);
-    expect(() => parseExtensionInstallSource("npm:pm-example", { forceGithub: true })).toThrowError(
-      /cannot be combined with npm:/,
-    );
-    expect(() => parseExtensionInstallSource("npm:pm-example", { ref: "main" })).toThrowError(
-      /cannot be combined with npm:/,
-    );
+    expect(() => parseExtensionInstallSource("npm:pm-example", { forceGithub: true })).toThrowError(/cannot be combined with npm:/);
+    expect(() => parseExtensionInstallSource("npm:pm-example", { ref: "main" })).toThrowError(/cannot be combined with npm:/);
     expect(parseExtensionInstallSource("github.com/unbraind/pm-cli/tree/main/extensions/demo", { ref: "release" })).toMatchObject({
       kind: "github",
       repo: "pm-cli",
@@ -1533,15 +1508,42 @@ describe("extension command runtime", () => {
     expect(parseExtensionManifest({ name: "", version: "1.0.0", entry: "index.js" })).toBeNull();
     expect(parseExtensionManifest({ name: "demo", version: "", entry: "index.js" })).toBeNull();
     expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "" })).toBeNull();
-    expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "index.js", priority: 1.5 })).toBeNull();
-    expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "index.js", capabilities: "commands" })).toBeNull();
-    expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "index.js", capabilities: ["commands", 1] })).toBeNull();
-    expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "index.js", capabilities: ["Commands", "commands", ""] }))
-      .toMatchObject({
+    expect(
+      parseExtensionManifest({
         name: "demo",
-        priority: 100,
-        capabilities: ["commands"],
-      });
+        version: "1.0.0",
+        entry: "index.js",
+        priority: 1.5,
+      }),
+    ).toBeNull();
+    expect(
+      parseExtensionManifest({
+        name: "demo",
+        version: "1.0.0",
+        entry: "index.js",
+        capabilities: "commands",
+      }),
+    ).toBeNull();
+    expect(
+      parseExtensionManifest({
+        name: "demo",
+        version: "1.0.0",
+        entry: "index.js",
+        capabilities: ["commands", 1],
+      }),
+    ).toBeNull();
+    expect(
+      parseExtensionManifest({
+        name: "demo",
+        version: "1.0.0",
+        entry: "index.js",
+        capabilities: ["Commands", "commands", ""],
+      }),
+    ).toMatchObject({
+      name: "demo",
+      priority: 100,
+      capabilities: ["commands"],
+    });
     expect(normalizeManagedDirectoryName(" Demo Extension! ")).toBe("demo-extension");
     expect(() => normalizeManagedDirectoryName("!!!")).toThrow(/non-empty directory name/);
     expect(() => normalizeManagedDirectoryName(".")).toThrow(/must not resolve/);
@@ -1566,7 +1568,11 @@ describe("extension command runtime", () => {
       await mkdir(missingEntryDir, { recursive: true });
       await writeFile(
         path.join(missingEntryDir, "manifest.json"),
-        JSON.stringify({ name: "missing-entry", version: "1.0.0", entry: "index.js" }),
+        JSON.stringify({
+          name: "missing-entry",
+          version: "1.0.0",
+          entry: "index.js",
+        }),
         "utf8",
       );
       await expect(validateExtensionDirectory(missingEntryDir)).rejects.toThrow(/Extension entry file is missing/);
@@ -1575,7 +1581,11 @@ describe("extension command runtime", () => {
       await mkdir(outsideEntryDir, { recursive: true });
       await writeFile(
         path.join(outsideEntryDir, "manifest.json"),
-        JSON.stringify({ name: "outside-entry", version: "1.0.0", entry: "../escape.js" }),
+        JSON.stringify({
+          name: "outside-entry",
+          version: "1.0.0",
+          entry: "../escape.js",
+        }),
         "utf8",
       );
       await expect(validateExtensionDirectory(outsideEntryDir)).rejects.toThrow(/resolves outside extension directory/);
@@ -1616,12 +1626,19 @@ describe("extension command runtime", () => {
         "utf8",
       );
 
-      expect(_testOnlyInstallSources.runtimeDependencyInstallSpecs({ dependencies: "bad" })).toEqual([]);
+      expect(
+        _testOnlyInstallSources.runtimeDependencyInstallSpecs({
+          dependencies: "bad",
+        }),
+      ).toEqual([]);
       expect(
         _testOnlyInstallSources.runtimeDependencyInstallSpecs({
           dependencies: { leftpad: " 1.0.0 ", skipped: "", bad: 1 },
           optionalDependencies: { leftpad: "2.0.0", optional: "^3.0.0" },
-          peerDependencies: { peer: "~4.0.0", "@unbrained/pm-cli": ">=2026.6.7" },
+          peerDependencies: {
+            peer: "~4.0.0",
+            "@unbrained/pm-cli": ">=2026.6.7",
+          },
         }),
       ).toEqual(["leftpad@1.0.0", "optional@^3.0.0", "peer@~4.0.0"]);
       expect(
@@ -1629,7 +1646,11 @@ describe("extension command runtime", () => {
           peerDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
         }),
       ).toBe(true);
-      expect(_testOnlyInstallSources.hasHostedPmCliDependency({ dependencies: { other: "1.0.0" } })).toBe(false);
+      expect(
+        _testOnlyInstallSources.hasHostedPmCliDependency({
+          dependencies: { other: "1.0.0" },
+        }),
+      ).toBe(false);
       expect(_testOnlyInstallSources.resolveDirectorySymlinkType("win32")).toBe("junction");
       expect(_testOnlyInstallSources.resolveDirectorySymlinkType("linux")).toBe("dir");
       const manifestWithHostedPmCli = {
@@ -1638,7 +1659,9 @@ describe("extension command runtime", () => {
         peerDependencies: { "@unbrained/pm-cli": ">=2026.6.7" },
       };
       _testOnlyInstallSources.removeHostedPmCliDependency(manifestWithHostedPmCli);
-      expect(manifestWithHostedPmCli).toEqual({ dependencies: { runtime: "1.0.0" } });
+      expect(manifestWithHostedPmCli).toEqual({
+        dependencies: { runtime: "1.0.0" },
+      });
       expect(wrapNpmPackResolutionError("pm-helper-package", new Error("permission denied"))).toBeNull();
       expect(_testOnlyInstallSources.npmPackageNameFromSpec("@scope/pkg@1.2.3")).toBe("@scope/pkg");
       expect(_testOnlyInstallSources.npmPackageNameFromSpec("alias@file:../pkg")).toBe("alias");
@@ -1646,16 +1669,18 @@ describe("extension command runtime", () => {
       expect(_testOnlyInstallSources.npmPackageNameFromSpec("   ")).toBe("");
       expect(isNpmNotFoundError("npm ERR! code E404 404 Not Found")).toBe(true);
       expect(isNpmPackNotFoundError("resource was NOT FOUND")).toBe(true);
-      expect(buildNpmNotFoundRecovery("pm-helper-package").context.recovery?.next_best_command).toBe(
-        "pm install --project github.com/unbraind/pm-helper-package",
-      );
+      expect(buildNpmNotFoundRecovery("pm-helper-package").context.recovery?.next_best_command).toBe("pm install --project github.com/unbraind/pm-helper-package");
       expect(() => parseExtensionInstallSource("owner/.git", { forceGithub: true })).toThrow(/GitHub/);
 
       await expect(
-        runGitCommand(["status"], async (_file, _args, options) => {
-          expect(options).toMatchObject({ encoding: "utf8", timeout: 321 });
-          return { stdout: undefined, stderr: "" } as never;
-        }, 321),
+        runGitCommand(
+          ["status"],
+          async (_file, _args, options) => {
+            expect(options).toMatchObject({ encoding: "utf8", timeout: 321 });
+            return { stdout: undefined, stderr: "" } as never;
+          },
+          321,
+        ),
       ).resolves.toBe("");
       await expect(
         runGitCommand(["status"], async () => {
@@ -1667,7 +1692,11 @@ describe("extension command runtime", () => {
       await mkdir(runtimeDepRoot, { recursive: true });
       await writeFile(
         path.join(runtimeDepRoot, "package.json"),
-        JSON.stringify({ name: "runtime-dep", version: "1.0.0", main: "index.js" }),
+        JSON.stringify({
+          name: "runtime-dep",
+          version: "1.0.0",
+          main: "index.js",
+        }),
         "utf8",
       );
       await writeFile(path.join(runtimeDepRoot, "index.js"), "module.exports = { ok: true };\n", "utf8");
@@ -1685,18 +1714,13 @@ describe("extension command runtime", () => {
       await writeFile(path.join(packageRoot, "package-lock.json"), "{}\n", "utf8");
       await writeFile(path.join(packageRoot, "npm-shrinkwrap.json"), "{}\n", "utf8");
       await _testOnlyInstallSources.installNpmPackageRuntimeDependencies(packageRoot);
-      const rewrittenPackageJson = JSON.parse(await readFile(path.join(packageRoot, "package.json"), "utf8")) as Record<
-        string,
-        unknown
-      >;
+      const rewrittenPackageJson = JSON.parse(await readFile(path.join(packageRoot, "package.json"), "utf8")) as Record<string, unknown>;
       expect(rewrittenPackageJson.devDependencies).toBeUndefined();
-      expect(rewrittenPackageJson.peerDependencies).toEqual({ "@unbrained/pm-cli": ">=2026.6.7" });
-      await expect(readdir(path.join(packageRoot, "node_modules", "runtime-dep"))).resolves.toEqual(
-        expect.arrayContaining(["index.js", "package.json"]),
-      );
-      await expect(realpath(path.join(packageRoot, "node_modules", "@unbrained", "pm-cli"))).resolves.toBe(
-        await realpath(process.cwd()),
-      );
+      expect(rewrittenPackageJson.peerDependencies).toEqual({
+        "@unbrained/pm-cli": ">=2026.6.7",
+      });
+      await expect(readdir(path.join(packageRoot, "node_modules", "runtime-dep"))).resolves.toEqual(expect.arrayContaining(["index.js", "package.json"]));
+      await expect(realpath(path.join(packageRoot, "node_modules", "@unbrained", "pm-cli"))).resolves.toBe(await realpath(process.cwd()));
       await expect(readFile(path.join(packageRoot, "package-lock.json"), "utf8")).rejects.toThrow();
       await expect(readFile(path.join(packageRoot, "npm-shrinkwrap.json"), "utf8")).rejects.toThrow();
 
@@ -1712,9 +1736,7 @@ describe("extension command runtime", () => {
         "utf8",
       );
       await _testOnlyInstallSources.installNpmPackageRuntimeDependencies(peerOnlyPackageRoot);
-      await expect(realpath(path.join(peerOnlyPackageRoot, "node_modules", "@unbrained", "pm-cli"))).resolves.toBe(
-        await realpath(process.cwd()),
-      );
+      await expect(realpath(path.join(peerOnlyPackageRoot, "node_modules", "@unbrained", "pm-cli"))).resolves.toBe(await realpath(process.cwd()));
 
       const dependencyOnlyPackageRoot = path.join(tempRoot, "dependency-only-package");
       await mkdir(dependencyOnlyPackageRoot, { recursive: true });
@@ -1728,13 +1750,13 @@ describe("extension command runtime", () => {
         "utf8",
       );
       await _testOnlyInstallSources.installNpmPackageRuntimeDependencies(dependencyOnlyPackageRoot);
-      await expect(readdir(path.join(dependencyOnlyPackageRoot, "node_modules", "runtime-dep"))).resolves.toEqual(
-        expect.arrayContaining(["index.js", "package.json"]),
-      );
+      await expect(readdir(path.join(dependencyOnlyPackageRoot, "node_modules", "runtime-dep"))).resolves.toEqual(expect.arrayContaining(["index.js", "package.json"]));
       await expect(readFile(path.join(dependencyOnlyPackageRoot, "node_modules", "@unbrained", "pm-cli", "package.json"), "utf8")).rejects.toThrow();
 
       const failingLinkPackageRoot = path.join(tempRoot, "failing-link-package");
-      await mkdir(path.join(failingLinkPackageRoot, "node_modules"), { recursive: true });
+      await mkdir(path.join(failingLinkPackageRoot, "node_modules"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(failingLinkPackageRoot, "package.json"),
         JSON.stringify({
@@ -1747,10 +1769,10 @@ describe("extension command runtime", () => {
       );
       await writeFile(path.join(failingLinkPackageRoot, "node_modules", "@unbrained"), "blocked scope directory\n", "utf8");
       await expect(_testOnlyInstallSources.installNpmPackageRuntimeDependencies(failingLinkPackageRoot)).rejects.toThrow();
-      const restoredAfterLinkFailure = JSON.parse(
-        await readFile(path.join(failingLinkPackageRoot, "package.json"), "utf8"),
-      ) as Record<string, unknown>;
-      expect(restoredAfterLinkFailure.peerDependencies).toEqual({ "@unbrained/pm-cli": ">=2026.6.7" });
+      const restoredAfterLinkFailure = JSON.parse(await readFile(path.join(failingLinkPackageRoot, "package.json"), "utf8")) as Record<string, unknown>;
+      expect(restoredAfterLinkFailure.peerDependencies).toEqual({
+        "@unbrained/pm-cli": ">=2026.6.7",
+      });
       expect(restoredAfterLinkFailure.devDependencies).toBeUndefined();
 
       const missingManifestRoot = path.join(tempRoot, "missing-package-json");
@@ -1769,12 +1791,7 @@ describe("extension command runtime", () => {
 
       expect(_testOnlyInstallSources.npmPackageNameFromSpec("@scope/pkg@file:../pkg")).toBe("@scope/pkg");
       expect(_testOnlyInstallSources.npmPackageNameFromSpec("plain@1.0.0")).toBe("plain");
-      expect(
-        _testOnlyInstallSources.parsePackedNpmPackage(
-          JSON.stringify([{ filename: "pkg-1.0.0.tgz", name: "pkg", version: "1.0.0" }]),
-          tempRoot,
-        ),
-      ).toEqual({
+      expect(_testOnlyInstallSources.parsePackedNpmPackage(JSON.stringify([{ filename: "pkg-1.0.0.tgz", name: "pkg", version: "1.0.0" }]), tempRoot)).toEqual({
         tarball: path.join(tempRoot, "pkg-1.0.0.tgz"),
         package: "pkg",
         version: "1.0.0",
@@ -1782,33 +1799,15 @@ describe("extension command runtime", () => {
       expect(_testOnlyInstallSources.parsePackedNpmPackage("npm notice\nlegacy.tgz\n", tempRoot)).toEqual({
         tarball: path.join(tempRoot, "legacy.tgz"),
       });
-      expect(
-        _testOnlyInstallSources.parsePackedNpmPackage(
-          JSON.stringify({ filename: "not-an-array.tgz" }),
-          tempRoot,
-        ),
-      ).toEqual({
+      expect(_testOnlyInstallSources.parsePackedNpmPackage(JSON.stringify({ filename: "not-an-array.tgz" }), tempRoot)).toEqual({
         tarball: path.join(tempRoot, '{"filename":"not-an-array.tgz"}'),
       });
-      expect(
-        _testOnlyInstallSources.parsePackedNpmPackage(
-          JSON.stringify([{ filename: "pkg-2.0.0.tgz", name: 42, version: false }]),
-          tempRoot,
-        ),
-      ).toEqual({
+      expect(_testOnlyInstallSources.parsePackedNpmPackage(JSON.stringify([{ filename: "pkg-2.0.0.tgz", name: 42, version: false }]), tempRoot)).toEqual({
         tarball: path.join(tempRoot, "pkg-2.0.0.tgz"),
       });
       expect(() => _testOnlyInstallSources.parsePackedNpmPackage("\n", tempRoot)).toThrow(/did not report/);
-      await expect(_testOnlyInstallSources.runNpmCommand(["--version"], path.join(tempRoot, "missing-cwd"))).rejects.toThrow(
-        /npm command failed:/,
-      );
-      await expect(
-        _testOnlyInstallSources.runNpmCommand(
-          ["--version"],
-          undefined,
-          async () => ({ stdout: undefined, stderr: "" } as never),
-        ),
-      ).resolves.toBe("");
+      await expect(_testOnlyInstallSources.runNpmCommand(["--version"], path.join(tempRoot, "missing-cwd"))).rejects.toThrow(/npm command failed:/);
+      await expect(_testOnlyInstallSources.runNpmCommand(["--version"], undefined, async () => ({ stdout: undefined, stderr: "" }) as never)).resolves.toBe("");
       await expect(
         _testOnlyInstallSources.runNpmCommand(["--version"], undefined, async () => {
           throw "npm-string-error";
@@ -1820,9 +1819,7 @@ describe("extension command runtime", () => {
         directory: "extensions/only",
         manifestOverrides: { name: "only-ext" },
       });
-      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(packageRoot, "pkg")).resolves.toBe(
-        path.join(packageRoot, "extensions/only"),
-      );
+      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(packageRoot, "pkg")).resolves.toBe(path.join(packageRoot, "extensions/only"));
       const localResolved = await _testOnlyInstallSources.resolveNpmSourceDirectory({
         kind: "npm",
         input: `npm:${packageRoot}`,
@@ -1847,9 +1844,7 @@ describe("extension command runtime", () => {
 
       const emptyPackageRoot = path.join(tempRoot, "empty-package");
       await mkdir(emptyPackageRoot, { recursive: true });
-      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(emptyPackageRoot, "empty")).rejects.toThrow(
-        /Unable to locate a pm extension manifest/,
-      );
+      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(emptyPackageRoot, "empty")).rejects.toThrow(/Unable to locate a pm extension manifest/);
 
       const multiPackageRoot = path.join(tempRoot, "multi-package");
       await writeTestExtension({
@@ -1862,9 +1857,7 @@ describe("extension command runtime", () => {
         directory: "extensions/a",
         manifestOverrides: { name: "a-ext" },
       });
-      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(multiPackageRoot, "multi")).rejects.toThrow(
-        /Candidates: extensions\/a, extensions\/b/,
-      );
+      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(multiPackageRoot, "multi")).rejects.toThrow(/Candidates: extensions\/a, extensions\/b/);
 
       const cwd = process.cwd();
       process.chdir(tempRoot);
@@ -1874,42 +1867,28 @@ describe("extension command runtime", () => {
         // not survive into the literal path npm opens (GH-363).
         const resolvedRelativePackSpec = await _testOnlyInstallSources.resolveNpmPackSpec("./package-root");
         await expect(realpath(resolvedRelativePackSpec)).resolves.toBe(await realpath(packageRoot));
-        await expect(_testOnlyInstallSources.resolveNpmPackSpec("./missing-package-root")).resolves.toBe(
-          "./missing-package-root",
-        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("./missing-package-root")).resolves.toBe("./missing-package-root");
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file:")).resolves.toBe("alias@file:");
-        await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file://server/share")).resolves.toBe(
-          "alias@file://server/share",
-        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file://server/share")).resolves.toBe("alias@file://server/share");
         const resolvedFileUrlPackSpec = await _testOnlyInstallSources.resolveNpmPackSpec(pathToFileURL(packageRoot).href);
         await expect(realpath(resolvedFileUrlPackSpec)).resolves.toBe(await realpath(packageRoot));
         const missingFileUrlSpec = pathToFileURL(path.join(tempRoot, "missing-file-url-package")).href;
         await expect(_testOnlyInstallSources.resolveNpmPackSpec(missingFileUrlSpec)).resolves.toBe(missingFileUrlSpec);
-        await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file:./package-root")).resolves.toBe(
-          `alias@${packageRoot}`,
-        );
-        expect(normalizeNpmLocalFileAliasSpec("alias@file:/tmp/pm-absolute-path")).toBe(
-          "alias@/tmp/pm-absolute-path",
-        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file:./package-root")).resolves.toBe(`alias@${packageRoot}`);
+        expect(normalizeNpmLocalFileAliasSpec("alias@file:/tmp/pm-absolute-path")).toBe("alias@/tmp/pm-absolute-path");
         // GH-363 regression: a percent-encoded file URL alias (a space, or the
         // Windows 8.3 `~` short name pathToFileURL escapes to %7E) must decode to
         // a native path so npm pack opens a real file instead of failing ENOENT.
         // The decode is platform-independent (no fileURLToPath, which throws on a
         // driveless absolute path under Windows), so the expected literal holds
         // on every OS; the drive-letter form drops the file-URL leading slash.
-        expect(normalizeNpmLocalFileAliasSpec("alias@file:///opt/pm%20space%7Eshort/pkg")).toBe(
-          "alias@/opt/pm space~short/pkg",
-        );
-        expect(normalizeNpmLocalFileAliasSpec("alias@file:///C:/Temp/pm%7Eshort/pkg")).toBe(
-          "alias@C:/Temp/pm~short/pkg",
-        );
+        expect(normalizeNpmLocalFileAliasSpec("alias@file:///opt/pm%20space%7Eshort/pkg")).toBe("alias@/opt/pm space~short/pkg");
+        expect(normalizeNpmLocalFileAliasSpec("alias@file:///C:/Temp/pm%7Eshort/pkg")).toBe("alias@C:/Temp/pm~short/pkg");
         expect(normalizeNpmLocalFileAliasSpec("alias@file:///opt/pm%20space%7Eshort/pkg")).not.toContain("%");
         // Malformed percent-encoding must not crash the resolver — leave the spec
         // for npm to surface a clear error (decodeURIComponent throws URIError).
         expect(normalizeNpmLocalFileAliasSpec("alias@file:///bad/%ZZ/pkg")).toBe("alias@file:///bad/%ZZ/pkg");
-        await expect(_testOnlyInstallSources.resolveNpmPackSpec("https://registry.example/pkg.tgz")).resolves.toBe(
-          "https://registry.example/pkg.tgz",
-        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("https://registry.example/pkg.tgz")).resolves.toBe("https://registry.example/pkg.tgz");
         await expect(_testOnlyInstallSources.resolveNpmPackSpec("pm-package")).resolves.toBe("pm-package");
       } finally {
         process.chdir(cwd);
@@ -1982,7 +1961,11 @@ describe("extension command runtime", () => {
         );
         await writeFile(
           path.join(extensionRoot, "manifest.json"),
-          JSON.stringify({ name: "wave-extension", version: "1.0.0", entry: "./index.js" }),
+          JSON.stringify({
+            name: "wave-extension",
+            version: "1.0.0",
+            entry: "./index.js",
+          }),
           "utf8",
         );
         await writeFile(path.join(extensionRoot, "index.js"), "export function activate() {}\n", "utf8");
@@ -1994,15 +1977,24 @@ describe("extension command runtime", () => {
 
         // A bundled package whose package.json lacks a name yields a null npm name.
         const namelessPackageRoot = path.join(packageRoot, "packages", "pm-ghost");
-        await mkdir(path.join(namelessPackageRoot, "extensions", "ghost"), { recursive: true });
+        await mkdir(path.join(namelessPackageRoot, "extensions", "ghost"), {
+          recursive: true,
+        });
         await writeFile(
           path.join(namelessPackageRoot, "package.json"),
-          JSON.stringify({ version: "0.0.1", pm: { aliases: ["ghost"], extensions: ["extensions/ghost"] } }),
+          JSON.stringify({
+            version: "0.0.1",
+            pm: { aliases: ["ghost"], extensions: ["extensions/ghost"] },
+          }),
           "utf8",
         );
         await writeFile(
           path.join(namelessPackageRoot, "extensions", "ghost", "manifest.json"),
-          JSON.stringify({ name: "ghost-extension", version: "1.0.0", entry: "./index.js" }),
+          JSON.stringify({
+            name: "ghost-extension",
+            version: "1.0.0",
+            entry: "./index.js",
+          }),
           "utf8",
         );
         await writeFile(path.join(namelessPackageRoot, "extensions", "ghost", "index.js"), "export function activate() {}\n", "utf8");
@@ -2026,21 +2018,31 @@ describe("extension command runtime", () => {
         const beadsSource = await resolveBundledExtensionAliasSource("beads");
         expect([legacyPackageRoot, path.join(process.cwd(), "packages", "pm-beads")]).toContain(beadsSource);
 
-        await mkdir(path.join(packageRoot, "packages", "not-a-bundle"), { recursive: true });
+        await mkdir(path.join(packageRoot, "packages", "not-a-bundle"), {
+          recursive: true,
+        });
         await writeFile(path.join(packageRoot, "packages", "pm-no-manifest"), "not a directory", "utf8");
-        await mkdir(path.join(packageRoot, "packages", "pm-empty-package"), { recursive: true });
+        await mkdir(path.join(packageRoot, "packages", "pm-empty-package"), {
+          recursive: true,
+        });
         const legacyExtensionRoot = path.join(packageRoot, ".agents", "pm", "extensions", "todos");
         await mkdir(legacyExtensionRoot, { recursive: true });
         await writeFile(
           path.join(legacyExtensionRoot, "manifest.json"),
-          JSON.stringify({ name: "todos-extension", version: "1.0.0", entry: "index.js" }),
+          JSON.stringify({
+            name: "todos-extension",
+            version: "1.0.0",
+            entry: "index.js",
+          }),
           "utf8",
         );
         const todosSource = await resolveBundledExtensionAliasSource("todos");
         expect([legacyExtensionRoot, path.join(process.cwd(), "packages", "pm-todos")]).toContain(todosSource);
         await expect(resolveBundledExtensionAliasSource("unknown-alias")).resolves.toBeNull();
 
-        const beforeInstall = await buildBundledPackageCatalog("project", { path: context.pmPath });
+        const beforeInstall = await buildBundledPackageCatalog("project", {
+          path: context.pmPath,
+        });
         expect(beforeInstall.packages).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -2060,7 +2062,9 @@ describe("extension command runtime", () => {
             }),
           ]),
         );
-        const globalCatalog = await buildBundledPackageCatalog("global", { path: context.pmPath });
+        const globalCatalog = await buildBundledPackageCatalog("global", {
+          path: context.pmPath,
+        });
         expect(globalCatalog.scope).toBe("global");
         expect(globalCatalog.packages).toEqual(
           expect.arrayContaining([
@@ -2083,14 +2087,19 @@ describe("extension command runtime", () => {
               capabilities: [],
               installed_at: "2026-01-01T00:00:00.000Z",
               updated_at: "2026-01-01T00:00:00.000Z",
-              source: { kind: "builtin", input: "wave", location: "wave", name: "wave" },
+              source: {
+                kind: "builtin",
+                input: "wave",
+                location: "wave",
+                name: "wave",
+              },
             },
           ],
         });
-        const afterInstall = await buildBundledPackageCatalog("project", { path: context.pmPath });
-        expect(afterInstall.packages).toEqual(
-          expect.arrayContaining([expect.objectContaining({ alias: "wave", installed: true })]),
-        );
+        const afterInstall = await buildBundledPackageCatalog("project", {
+          path: context.pmPath,
+        });
+        expect(afterInstall.packages).toEqual(expect.arrayContaining([expect.objectContaining({ alias: "wave", installed: true })]));
       } finally {
         if (previousPackageRoot === undefined) {
           delete process.env[PM_PACKAGE_ROOT_ENV];
@@ -2148,13 +2157,24 @@ describe("extension command runtime", () => {
     );
 
     expect(extensions).toEqual([
-      expect.objectContaining({ name: "blank-command-ext", runtime_active: true, activation_status: "ok" }),
-      expect.objectContaining({ name: "disabled-ext", runtime_active: false, activation_status: "not_loaded" }),
+      expect.objectContaining({
+        name: "blank-command-ext",
+        runtime_active: true,
+        activation_status: "ok",
+      }),
+      expect.objectContaining({
+        name: "disabled-ext",
+        runtime_active: false,
+        activation_status: "not_loaded",
+      }),
     ]);
 
     const contract = buildCapabilityContractMetadata();
     expect(contract.capabilities).toEqual(expect.arrayContaining(["commands", "schema"]));
-    expect(contract.legacy_aliases).toMatchObject({ migration: "schema", validation: "schema" });
+    expect(contract.legacy_aliases).toMatchObject({
+      migration: "schema",
+      validation: "schema",
+    });
 
     const triage = buildExtensionTriageSummary(
       "project",
@@ -2172,13 +2192,9 @@ describe("extension command runtime", () => {
       { doctor: true },
     );
 
-    expect(triage.warning_codes).toEqual(expect.arrayContaining([
-      "extension_capability_legacy_alias",
-      "extension_command_definition_legacy_handler_alias",
-      "extension_manager_state_invalid_json",
-      "extension_pm_min_version_unsatisfied",
-      "extension_update_check_failed",
-    ]));
+    expect(triage.warning_codes).toEqual(
+      expect.arrayContaining(["extension_capability_legacy_alias", "extension_command_definition_legacy_handler_alias", "extension_manager_state_invalid_json", "extension_pm_min_version_unsatisfied", "extension_update_check_failed"]),
+    );
     expect(triage.remediation).toEqual(
       expect.arrayContaining([
         expect.stringContaining("Legacy extension capability aliases"),
@@ -2192,24 +2208,24 @@ describe("extension command runtime", () => {
 
   it("rejects strict doctor flags when --doctor is not selected", async () => {
     await withTempPmPath(async (context) => {
-      await expect(
-        runExtension(undefined, { manage: true, project: true, strictExit: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
-      await expect(
-        runExtension(undefined, { explore: true, project: true, failOnWarn: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
-      await expect(
-        runExtension(undefined, { manage: true, project: true, trace: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
-      await expect(
-        runExtension(undefined, { doctor: true, project: true, runtimeProbe: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
-      await expect(
-        runExtension(undefined, { explore: true, project: true, fixManagedState: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
-      await expect(
-        runExtension(undefined, { explore: true, project: true, watch: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(runExtension(undefined, { manage: true, project: true, strictExit: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runExtension(undefined, { explore: true, project: true, failOnWarn: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runExtension(undefined, { manage: true, project: true, trace: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runExtension(undefined, { doctor: true, project: true, runtimeProbe: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runExtension(undefined, { explore: true, project: true, fixManagedState: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runExtension(undefined, { explore: true, project: true, watch: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -2236,9 +2252,7 @@ describe("extension command runtime", () => {
       });
       const loadedCount = (reloaded.details as { loaded_count?: number }).loaded_count ?? 0;
       expect(loadedCount).toBeGreaterThan(0);
-      expect(reloaded.warnings).toEqual(
-        expect.arrayContaining(["extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only"]),
-      );
+      expect(reloaded.warnings).toEqual(expect.arrayContaining(["extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only"]));
     });
   });
 
@@ -2278,9 +2292,7 @@ describe("extension command runtime", () => {
       // emits the typed source + tsconfig but no test.
       const scaffoldedFiles = (scaffold.details as { files?: Array<{ path: string }> }).files ?? [];
       expect(scaffoldedFiles.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
-      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
-        expect.stringContaining('npm install -D typescript @types/node @unbrained/pm-cli'),
-      );
+      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(expect.stringContaining("npm install -D typescript @types/node @unbrained/pm-cli"));
       await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
         code: "ENOENT",
       });
@@ -2298,11 +2310,15 @@ describe("extension command runtime", () => {
   it("scaffolds package-root metadata via package init while keeping installable extension resources", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-package");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        vocabulary: "package",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          vocabulary: "package",
+        },
+        { path: context.pmPath },
+      );
       expect(scaffold.action).toBe("init");
       expect(scaffold.details).toMatchObject({
         extension: {
@@ -2316,23 +2332,11 @@ describe("extension command runtime", () => {
 
       // ADR pm-2c28 / pm-m1uz: package mode emits TypeScript source + colocated test
       // + tsconfig + typecheck/test scripts; pm loads the .ts entry directly (no build).
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
-        "package.json",
-        "manifest.json",
-        "index.ts",
-        "index.test.ts",
-        "tsconfig.json",
-        ".gitignore",
-        "README.md",
-      ]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["package.json", "manifest.json", "index.ts", "index.test.ts", "tsconfig.json", ".gitignore", "README.md"]);
       // No `&&` / subshell chaining: Windows PowerShell 5.1 rejects `&&`, so the
       // hint gives a bare `cd` then names the commands with a forward-slashed path.
-      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
-        expect.stringContaining('cd '),
-      );
-      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(
-        expect.stringContaining('run "npm run typecheck" and "npm test"'),
-      );
+      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(expect.stringContaining("cd "));
+      expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(expect.stringContaining('run "npm run typecheck" and "npm test"'));
 
       const packageJson = JSON.parse(await readFile(path.join(scaffoldPath, "package.json"), "utf8")) as Record<string, unknown>;
       expect(packageJson).toMatchObject({
@@ -2468,11 +2472,7 @@ describe("extension command runtime", () => {
     if (!isPosix) return;
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-$(touch injected)-`id`");
-      const scaffold = await runExtension(
-        scaffoldPath,
-        { init: true, project: true },
-        { path: context.pmPath },
-      );
+      const scaffold = await runExtension(scaffoldPath, { init: true, project: true }, { path: context.pmPath });
       const nextSteps = (scaffold.details as { next_steps?: string[] }).next_steps ?? [];
       expect(nextSteps.join("\n")).toContain("\\$(touch injected)");
       expect(nextSteps.join("\n")).toContain("\\`id\\`");
@@ -2482,12 +2482,16 @@ describe("extension command runtime", () => {
   it("scaffolds a declarative composeExtension package that installs and dispatches end to end", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-declarative");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        vocabulary: "package",
-        declarative: true,
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          vocabulary: "package",
+          declarative: true,
+        },
+        { path: context.pmPath },
+      );
       expect(scaffold.action).toBe("init");
       expect(scaffold.details).toMatchObject({
         capability: "commands",
@@ -2498,9 +2502,7 @@ describe("extension command runtime", () => {
         },
         created_directory: true,
       });
-      expect(scaffold.details.next_steps).toEqual(
-        expect.arrayContaining([expect.stringContaining("target workspace can resolve @unbrained/pm-cli")]),
-      );
+      expect(scaffold.details.next_steps).toEqual(expect.arrayContaining([expect.stringContaining("target workspace can resolve @unbrained/pm-cli")]));
 
       // The declarative entrypoint is the composeExtension blueprint loop.
       const entry = await readFile(path.join(scaffoldPath, "index.ts"), "utf8");
@@ -2537,15 +2539,15 @@ describe("extension command runtime", () => {
       // Developer Mode, while a junction (over the absolute cwd) does not. Node
       // ignores the type argument on POSIX, so Linux/macOS get an ordinary symlink.
       await symlink(process.cwd(), path.join(sdkLinkDir, "pm-cli"), "junction");
-      const invoked = spawnSync(
-        process.execPath,
-        [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "declarative", "ping", "--json"],
-        {
-          cwd: context.pmPath,
-          encoding: "utf8",
-          env: { ...process.env, PM_TELEMETRY_DISABLED: "1", PM_SENTRY_DISABLED: "1" },
+      const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "declarative", "ping", "--json"], {
+        cwd: context.pmPath,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PM_TELEMETRY_DISABLED: "1",
+          PM_SENTRY_DISABLED: "1",
         },
-      );
+      });
       expect(invoked.status).toBe(0);
       expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
         ok: true,
@@ -2560,13 +2562,17 @@ describe("extension command runtime", () => {
       // The declarative loop generalizes past commands: scaffold the search
       // capability and prove its composeExtension blueprint installs and dispatches.
       const scaffoldPath = path.join(context.tempRoot, "starter-decl-search");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        vocabulary: "package",
-        capability: "search",
-        declarative: true,
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          vocabulary: "package",
+          capability: "search",
+          declarative: true,
+        },
+        { path: context.pmPath },
+      );
       expect(scaffold.details).toMatchObject({
         capability: "search",
         style: "declarative",
@@ -2598,15 +2604,15 @@ describe("extension command runtime", () => {
       const sdkLinkDir = path.join(context.pmPath, "node_modules", "@unbrained");
       await mkdir(sdkLinkDir, { recursive: true });
       await symlink(process.cwd(), path.join(sdkLinkDir, "pm-cli"), "junction");
-      const invoked = spawnSync(
-        process.execPath,
-        [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "decl", "search", "ping", "--json"],
-        {
-          cwd: context.pmPath,
-          encoding: "utf8",
-          env: { ...process.env, PM_TELEMETRY_DISABLED: "1", PM_SENTRY_DISABLED: "1" },
+      const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter", "decl", "search", "ping", "--json"], {
+        cwd: context.pmPath,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PM_TELEMETRY_DISABLED: "1",
+          PM_SENTRY_DISABLED: "1",
         },
-      );
+      });
       expect(invoked.status).toBe(0);
       expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
         ok: true,
@@ -2620,26 +2626,26 @@ describe("extension command runtime", () => {
     await withTempPmPath(async (context) => {
       // composeExtension is a runtime SDK import, so the declarative starter is
       // package-mode only — extension-mode is rejected before any file is written.
-      await expect(
-        runExtension(path.join(context.tempRoot, "decl-ext"), { init: true, project: true, declarative: true }, { path: context.pmPath }),
-      ).rejects.toThrow(/--declarative scaffolds a package-mode blueprint starter/);
+      await expect(runExtension(path.join(context.tempRoot, "decl-ext"), { init: true, project: true, declarative: true }, { path: context.pmPath })).rejects.toThrow(/--declarative scaffolds a package-mode blueprint starter/);
 
       // --declarative is a scaffold-only flag.
-      await expect(
-        runExtension(undefined, { explore: true, project: true, declarative: true }, { path: context.pmPath }),
-      ).rejects.toThrow(/--declarative is only valid with --init\/--scaffold/);
+      await expect(runExtension(undefined, { explore: true, project: true, declarative: true }, { path: context.pmPath })).rejects.toThrow(/--declarative is only valid with --init\/--scaffold/);
     });
   });
 
   it("scaffolds hook-capability packages with runnable SDK hook tests", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-hooks");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        vocabulary: "package",
-        capability: "HOOKS",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          vocabulary: "package",
+          capability: "HOOKS",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "hooks",
@@ -2674,12 +2680,16 @@ describe("extension command runtime", () => {
   it("scaffolds search-capability packages with runnable SDK search tests", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-search");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        vocabulary: "package",
-        capability: "search",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          vocabulary: "package",
+          capability: "search",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "search",
@@ -2711,7 +2721,7 @@ describe("extension command runtime", () => {
       expect(sampleTest).toContain('operation: "query"');
       expect(sampleTest).toContain("const query = await ext.runSearchProvider({");
       expect(sampleTest).toContain("const vectorHits = await ext.runVectorStoreAdapter({");
-      expect(sampleTest).toContain('assert.deepEqual(embedding, [3]);');
+      expect(sampleTest).toContain("assert.deepEqual(embedding, [3]);");
       expect(sampleTest).toContain('assert.deepEqual(vectorHits, [{ id: "starter-vector-hit", score: 2 }]);');
       expectBestEffortCleanup(sampleTest);
 
@@ -2725,12 +2735,16 @@ describe("extension command runtime", () => {
   it("scaffolds importers-capability packages with runnable SDK import/export tests", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-importers");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        vocabulary: "package",
-        capability: "importers",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          vocabulary: "package",
+          capability: "importers",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "importers",
@@ -2774,12 +2788,16 @@ describe("extension command runtime", () => {
   it("scaffolds schema-capability packages with runnable SDK schema tests", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-schema");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        vocabulary: "package",
-        capability: "schema",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          vocabulary: "package",
+          capability: "schema",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "schema",
@@ -2840,12 +2858,16 @@ describe("extension command runtime", () => {
   it("scaffolds profile-capability packages with runnable SDK profile tests", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-profile");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        vocabulary: "package",
-        capability: "profile",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          vocabulary: "package",
+          capability: "profile",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "profile",
@@ -2894,11 +2916,15 @@ describe("extension command runtime", () => {
   it("scaffolds hook-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-hook-ext");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        capability: "hooks",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          capability: "hooks",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "hooks",
@@ -2907,13 +2933,7 @@ describe("extension command runtime", () => {
           command: "starter hook ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
-        "manifest.json",
-        "index.ts",
-        "package.json",
-        "tsconfig.json",
-        "README.md",
-      ]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "hooks"]);
@@ -2930,11 +2950,15 @@ describe("extension command runtime", () => {
   it("scaffolds search-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-search-ext");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        capability: "search",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          capability: "search",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "search",
@@ -2943,13 +2967,7 @@ describe("extension command runtime", () => {
           command: "starter starter search ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
-        "manifest.json",
-        "index.ts",
-        "package.json",
-        "tsconfig.json",
-        "README.md",
-      ]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "search"]);
@@ -2968,11 +2986,15 @@ describe("extension command runtime", () => {
   it("scaffolds importers-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-importers-ext");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        capability: "importers",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          capability: "importers",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "importers",
@@ -2981,13 +3003,7 @@ describe("extension command runtime", () => {
           command: "starter importers ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
-        "manifest.json",
-        "index.ts",
-        "package.json",
-        "tsconfig.json",
-        "README.md",
-      ]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "schema", "importers"]);
@@ -3006,11 +3022,15 @@ describe("extension command runtime", () => {
   it("scaffolds schema-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-schema-ext");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        capability: "schema",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          capability: "schema",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "schema",
@@ -3019,13 +3039,7 @@ describe("extension command runtime", () => {
           command: "starter starter schema ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
-        "manifest.json",
-        "index.ts",
-        "package.json",
-        "tsconfig.json",
-        "README.md",
-      ]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "schema"]);
@@ -3048,11 +3062,15 @@ describe("extension command runtime", () => {
   it("scaffolds profile-capability standalone extensions without package test files", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-profile-ext");
-      const scaffold = await runExtension(scaffoldPath, {
-        init: true,
-        project: true,
-        capability: "profile",
-      }, { path: context.pmPath });
+      const scaffold = await runExtension(
+        scaffoldPath,
+        {
+          init: true,
+          project: true,
+          capability: "profile",
+        },
+        { path: context.pmPath },
+      );
 
       expect(scaffold.details).toMatchObject({
         capability: "profile",
@@ -3061,13 +3079,7 @@ describe("extension command runtime", () => {
           command: "starter starter profile ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual([
-        "manifest.json",
-        "index.ts",
-        "package.json",
-        "tsconfig.json",
-        "README.md",
-      ]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "schema"]);
@@ -3090,11 +3102,15 @@ describe("extension command runtime", () => {
       const scaffoldPath = path.join(context.tempRoot, "starter-invalid-capability");
 
       await expect(
-        runExtension(scaffoldPath, {
-          init: true,
-          project: true,
-          capability: "migration",
-        }, { path: context.pmPath }),
+        runExtension(
+          scaffoldPath,
+          {
+            init: true,
+            project: true,
+            capability: "migration",
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -3107,20 +3123,28 @@ describe("extension command runtime", () => {
   it("rejects scaffold capability selection on non-init actions", async () => {
     await withTempPmPath(async (context) => {
       await expect(
-        runExtension(undefined, {
-          explore: true,
-          project: true,
-          capability: "hooks",
-        }, { path: context.pmPath }),
+        runExtension(
+          undefined,
+          {
+            explore: true,
+            project: true,
+            capability: "hooks",
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runExtension(undefined, {
-          explore: true,
-          project: true,
-          capability: "",
-        }, { path: context.pmPath }),
+        runExtension(
+          undefined,
+          {
+            explore: true,
+            project: true,
+            capability: "",
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -3162,7 +3186,12 @@ describe("extension command runtime", () => {
       const kanbanInstall = await runExtension("kanban", { install: true, project: true }, { path: context.pmPath });
       expect(kanbanInstall.details).toMatchObject({
         extension: { name: "builtin-kanban-profile" },
-        source: { kind: "builtin", input: "kanban", location: "kanban", name: "kanban" },
+        source: {
+          kind: "builtin",
+          input: "kanban",
+          location: "kanban",
+          name: "kanban",
+        },
         activated: true,
       });
       // The Card type's folder is scaffolded on install (matching add-type and
@@ -3243,10 +3272,30 @@ describe("extension command runtime", () => {
       const managedState = await readManagedExtensionState(path.join(context.pmPath, "extensions"));
       expect(managedState.state.entries.map((entry) => entry.source)).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ kind: "builtin", name: "beads", input: "beads", location: "beads" }),
-          expect.objectContaining({ kind: "builtin", name: "todos", input: "todos", location: "todos" }),
-          expect.objectContaining({ kind: "builtin", name: "calendar", input: "calendar", location: "calendar" }),
-          expect.objectContaining({ kind: "builtin", name: "templates", input: "templates", location: "templates" }),
+          expect.objectContaining({
+            kind: "builtin",
+            name: "beads",
+            input: "beads",
+            location: "beads",
+          }),
+          expect.objectContaining({
+            kind: "builtin",
+            name: "todos",
+            input: "todos",
+            location: "todos",
+          }),
+          expect.objectContaining({
+            kind: "builtin",
+            name: "calendar",
+            input: "calendar",
+            location: "calendar",
+          }),
+          expect.objectContaining({
+            kind: "builtin",
+            name: "templates",
+            input: "templates",
+            location: "templates",
+          }),
         ]),
       );
       for (const entry of managedState.state.entries) {
@@ -3261,7 +3310,9 @@ describe("extension command runtime", () => {
   it("activates the command-kit exemplar package and surfaces its command/flag/parser registrations", async () => {
     const commandKitModule = await import("../../../packages/pm-command-kit/extensions/command-kit/index.ts");
     const { activate: activateCommandKit, manifest: commandKitManifest, rewriteEchoOptions, runEchoCommand } = commandKitModule;
-    expect(commandKitModule.default).toMatchObject({ manifest: commandKitManifest });
+    expect(commandKitModule.default).toMatchObject({
+      manifest: commandKitManifest,
+    });
     expect(commandKitManifest).toMatchObject({
       name: "builtin-command-kit",
       capabilities: ["commands", "schema", "parser"],
@@ -3272,7 +3323,10 @@ describe("extension command runtime", () => {
 
     const commands: Array<Record<string, unknown>> = [];
     const parsers: Array<{ command: string; override: unknown }> = [];
-    const flagRegistrations: Array<{ target: string; flags: Array<Record<string, unknown>> }> = [];
+    const flagRegistrations: Array<{
+      target: string;
+      flags: Array<Record<string, unknown>>;
+    }> = [];
     activateCommandKit({
       registerCommand: (definition: Record<string, unknown>) => commands.push(definition),
       registerParser: (command: string, override: unknown) => parsers.push({ command, override }),
@@ -3289,14 +3343,14 @@ describe("extension command runtime", () => {
       run: expect.any(Function),
     });
     expect(echoDefinition.arguments).toEqual([
-      { name: "message", required: true, variadic: true, description: expect.any(String) },
+      {
+        name: "message",
+        required: true,
+        variadic: true,
+        description: expect.any(String),
+      },
     ]);
-    expect((echoDefinition.flags as Array<{ long?: string }>).map((flag) => flag.long)).toEqual([
-      "--upper",
-      "--shout",
-      "--repeat",
-      "--decorations",
-    ]);
+    expect((echoDefinition.flags as Array<{ long?: string }>).map((flag) => flag.long)).toEqual(["--upper", "--shout", "--repeat", "--decorations"]);
     expect(echoDefinition.examples).toHaveLength(3);
     expect(echoDefinition.failure_hints).toHaveLength(2);
 
@@ -3315,7 +3369,11 @@ describe("extension command runtime", () => {
       global: {},
       pm_root: "/tmp",
     });
-    expect(parserDelta.options).toMatchObject({ upper: true, repeat: 2, decorations: ["star", "spark"] });
+    expect(parserDelta.options).toMatchObject({
+      upper: true,
+      repeat: 2,
+      decorations: ["star", "spark"],
+    });
     expect(parserDelta.options).not.toHaveProperty("shout");
 
     // Invalid/out-of-range --repeat falls back to 1 (toPositiveInteger guard),
@@ -3342,7 +3400,10 @@ describe("extension command runtime", () => {
     });
     expect(noShoutDelta.options).not.toHaveProperty("upper");
     expect(noShoutDelta.options).not.toHaveProperty("shout");
-    expect(noShoutDelta.options).toMatchObject({ repeat: 3, decorations: ["a", "b"] });
+    expect(noShoutDelta.options).toMatchObject({
+      repeat: 3,
+      decorations: ["a", "b"],
+    });
 
     const negativeRepeatResult = runEchoCommand({
       command: "command-kit echo",
@@ -3351,7 +3412,12 @@ describe("extension command runtime", () => {
       global: {},
       pm_root: "/tmp",
     });
-    expect(negativeRepeatResult).toMatchObject({ repeat: 1, upper: true, message: "HI", decorations: [] });
+    expect(negativeRepeatResult).toMatchObject({
+      repeat: 1,
+      upper: true,
+      message: "HI",
+      decorations: [],
+    });
 
     // No repeat option (nullish -> String(value ?? "") arm), decorations as a
     // comma-string (split arm), and upper unset (lowercase passthrough arm).
@@ -3378,7 +3444,12 @@ describe("extension command runtime", () => {
       global: {},
       pm_root: "/tmp",
     });
-    expect(arrayOptionsResult).toMatchObject({ message: "solo", repeat: 1, upper: false, decorations: [] });
+    expect(arrayOptionsResult).toMatchObject({
+      message: "solo",
+      repeat: 1,
+      upper: false,
+      decorations: [],
+    });
 
     const numericDecorations = runEchoCommand({
       command: "command-kit echo",
@@ -3404,11 +3475,21 @@ describe("extension command runtime", () => {
       upper: true,
     });
     expect(() =>
-      runEchoCommand({ command: "command-kit echo", args: [" "], options: {}, global: {}, pm_root: "/tmp" }),
+      runEchoCommand({
+        command: "command-kit echo",
+        args: [" "],
+        options: {},
+        global: {},
+        pm_root: "/tmp",
+      }),
     ).toThrow(/requires a message argument/);
-    expect(() => runEchoCommand({ command: "command-kit echo", args: null, options: null } as never)).toThrow(
-      /requires a message argument/,
-    );
+    expect(() =>
+      runEchoCommand({
+        command: "command-kit echo",
+        args: null,
+        options: null,
+      } as never),
+    ).toThrow(/requires a message argument/);
 
     await withTempPmPath(async (context) => {
       const install = await runExtension("command-kit", { install: true, project: true }, { path: context.pmPath });
@@ -3434,7 +3515,10 @@ describe("extension command runtime", () => {
         expectJson: true,
       });
       expect(echoWithLeadingBooleanFlag.code).toBe(0);
-      expect(echoWithLeadingBooleanFlag.json).toMatchObject({ message: "HELLO", upper: true });
+      expect(echoWithLeadingBooleanFlag.json).toMatchObject({
+        message: "HELLO",
+        upper: true,
+      });
     });
   });
 
@@ -3607,17 +3691,36 @@ describe("extension command runtime", () => {
           },
         ],
       });
-      const beforeInstallPackages = (beforeInstall.details as { packages?: Array<{ alias?: string; catalog?: { links?: { npm?: string } } }> }).packages ?? [];
+      const beforeInstallPackages =
+        (
+          beforeInstall.details as {
+            packages?: Array<{
+              alias?: string;
+              catalog?: { links?: { npm?: string } };
+            }>;
+          }
+        ).packages ?? [];
       expect(beforeInstallPackages.find((entry) => entry.alias === "calendar")?.catalog?.links?.npm).toBeUndefined();
       expect(beforeInstallPackages.find((entry) => entry.alias === "templates")?.catalog?.links?.npm).toBeUndefined();
       expect(beforeInstallPackages.some((entry) => Object.prototype.hasOwnProperty.call(entry, "package_root"))).toBe(false);
 
       const compactCatalog = await runExtension(
         undefined,
-        { catalog: true, project: true, vocabulary: "package", fields: "alias,installed,install_command,category" },
+        {
+          catalog: true,
+          project: true,
+          vocabulary: "package",
+          fields: "alias,installed,install_command,category",
+        },
         { path: context.pmPath },
       );
-      expect((compactCatalog.details as { packages?: Array<Record<string, unknown>> }).packages?.[0]).toEqual({
+      expect(
+        (
+          compactCatalog.details as {
+            packages?: Array<Record<string, unknown>>;
+          }
+        ).packages?.[0],
+      ).toEqual({
         alias: "audit",
         installed: false,
         install_command: "pm install audit --project",
@@ -3626,7 +3729,12 @@ describe("extension command runtime", () => {
 
       await runExtension("todos", { install: true, project: true }, { path: context.pmPath });
       const afterInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
-      const packages = (afterInstall.details as { packages?: Array<{ alias?: string; installed?: boolean }> }).packages ?? [];
+      const packages =
+        (
+          afterInstall.details as {
+            packages?: Array<{ alias?: string; installed?: boolean }>;
+          }
+        ).packages ?? [];
       expect(packages.find((entry) => entry.alias === "todos")?.installed).toBe(true);
       expect(packages.find((entry) => entry.alias === "beads")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "calendar")?.installed).toBe(false);
@@ -3645,11 +3753,18 @@ describe("extension command runtime", () => {
 
   it("validates package catalog field projection and doctor consistency summaries", async () => {
     await withTempPmPath(async (context) => {
+      await expect(runExtension(undefined, { catalog: true, project: true, vocabulary: "package", fields: "," }, { path: context.pmPath })).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       await expect(
-        runExtension(undefined, { catalog: true, project: true, vocabulary: "package", fields: "," }, { path: context.pmPath }),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
-      await expect(
-        runExtension(undefined, { catalog: true, project: true, vocabulary: "package", fields: "alias,unknown" }, { path: context.pmPath }),
+        runExtension(
+          undefined,
+          {
+            catalog: true,
+            project: true,
+            vocabulary: "package",
+            fields: "alias,unknown",
+          },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
         context: {
@@ -3659,7 +3774,12 @@ describe("extension command runtime", () => {
 
       const projected = await runExtension(
         undefined,
-        { catalog: true, project: true, vocabulary: "package", fields: "alias,display_name,package_version" },
+        {
+          catalog: true,
+          project: true,
+          vocabulary: "package",
+          fields: "alias,display_name,package_version",
+        },
         { path: context.pmPath },
       );
       expect((projected.details as { packages?: Array<Record<string, unknown>> }).packages?.[0]).toEqual({
@@ -3679,11 +3799,7 @@ describe("extension command runtime", () => {
     });
     const consistency = buildDoctorConsistencySummary(
       "project",
-      [
-        { name: "Beta", directory: "beta", active: true } as never,
-        { name: "Alpha", directory: "alpha", active: true } as never,
-        { name: "Disabled", directory: "disabled", active: false } as never,
-      ],
+      [{ name: "Beta", directory: "beta", active: true } as never, { name: "Alpha", directory: "alpha", active: true } as never, { name: "Disabled", directory: "disabled", active: false } as never],
       [{ layer: "project", name: "beta" }],
       [{ name: "missing-but-failed" }],
       false,
@@ -3701,10 +3817,7 @@ describe("extension command runtime", () => {
     expect(
       buildDoctorConsistencySummary(
         "project",
-        [
-          { name: "Gamma", directory: "gamma", active: true } as never,
-          { name: "Alpha", directory: "alpha", active: true } as never,
-        ],
+        [{ name: "Gamma", directory: "gamma", active: true } as never, { name: "Alpha", directory: "alpha", active: true } as never],
         [
           { layer: "global", name: "ignored" },
           { layer: "project", name: "gamma" },
@@ -3722,24 +3835,19 @@ describe("extension command runtime", () => {
       },
     });
     expect(
-      classifyDoctorActivationFailureWarnings([
-        { name: "NeedsCapability", trace: { missing_capability: " Schema " } },
-        { name: "NeedsCapability", trace: { capability: "schema" } },
-        { name: "NoTrace", trace: {} },
-        null as never,
-      ]),
+      classifyDoctorActivationFailureWarnings([{ name: "NeedsCapability", trace: { missing_capability: " Schema " } }, { name: "NeedsCapability", trace: { capability: "schema" } }, { name: "NoTrace", trace: {} }, null as never]),
     ).toEqual(["extension_capability_missing:NeedsCapability:schema"]);
     expect(
       classifyDoctorLoadFailureWarnings([
-        { name: "sdk", error: "Cannot find package '@unbrained/pm-cli' imported from extension" },
+        {
+          name: "sdk",
+          error: "Cannot find package '@unbrained/pm-cli' imported from extension",
+        },
         { name: "esm", error: "Cannot use import statement outside a module" },
         { name: "esm", error: "Must use import to load ES Module" },
         { name: "other", error: "runtime failed" },
       ]),
-    ).toEqual([
-      "extension_load_failed_module_mode_mismatch:esm",
-      "extension_load_failed_sdk_dependency_missing:sdk",
-    ]);
+    ).toEqual(["extension_load_failed_module_mode_mismatch:esm", "extension_load_failed_sdk_dependency_missing:sdk"]);
     expect(
       collectUnknownCapabilityGuidance([
         "extension_capability_unknown:project:demo:widgets:allowed=commands,schema:suggested=none",
@@ -3757,21 +3865,13 @@ describe("extension command runtime", () => {
       status: "warn",
       warning_codes: ["plain_warning"],
     });
-    expect(
-      classifyDoctorActivationFailureWarnings([
-        { name: "OtherTrace", trace: { capability: " Hooks " } },
-        { name: "BlankCapability", trace: { missing_capability: " " } },
-        { name: "NoTrace" },
-      ]),
-    ).toEqual(["extension_capability_missing:OtherTrace:hooks"]);
+    expect(classifyDoctorActivationFailureWarnings([{ name: "OtherTrace", trace: { capability: " Hooks " } }, { name: "BlankCapability", trace: { missing_capability: " " } }, { name: "NoTrace" }])).toEqual([
+      "extension_capability_missing:OtherTrace:hooks",
+    ]);
     expect(
       buildDoctorConsistencySummary(
         "project",
-        [
-          { name: "Zulu", directory: "zulu", active: true } as never,
-          { name: "Alpha", directory: "alpha", active: true } as never,
-          { name: "Loaded", directory: "loaded", active: true } as never,
-        ],
+        [{ name: "Zulu", directory: "zulu", active: true } as never, { name: "Alpha", directory: "alpha", active: true } as never, { name: "Loaded", directory: "loaded", active: true } as never],
         [{ layer: "project", name: "loaded" }],
         [],
         false,
@@ -3806,17 +3906,20 @@ describe("extension command runtime", () => {
           priority: 0,
           entry_path: "",
           capabilities: ["commands", "schema", "search"],
-          module: { activate: (api: ExtensionApi) => api.registerCommand({ name: "over-declarer cmd", run: () => ({}) }) },
+          module: {
+            activate: (api: ExtensionApi) =>
+              api.registerCommand({
+                name: "over-declarer cmd",
+                run: () => ({}),
+              }),
+          },
         },
       ],
     };
     const activationResult = await activateExtensions(loadResult);
     expect(activationResult.failed).toEqual([]);
     const warnings = classifyUnusedCapabilityWarnings(loadResult, activationResult);
-    expect(warnings).toEqual([
-      "extension_capability_unused:project:over-declarer:schema",
-      "extension_capability_unused:project:over-declarer:search",
-    ]);
+    expect(warnings).toEqual(["extension_capability_unused:project:over-declarer:schema", "extension_capability_unused:project:over-declarer:search"]);
 
     const triage = buildExtensionTriageSummary("project", warnings, []);
     expect(triage.status).toBe("warn");
@@ -3929,20 +4032,8 @@ describe("extension command runtime", () => {
         alias: string;
         destination_path: string;
       }>;
-      expect(
-        wildcardPackages.find((entry) => entry.alias === "audit")
-          ?.destination_path,
-      ).toBe(
-        wildcardPackages.find((entry) => entry.alias === "governance-audit")
-          ?.destination_path,
-      );
-      expect(
-        wildcardPackages.find((entry) => entry.alias === "digital-twin")
-          ?.destination_path,
-      ).toBe(
-        wildcardPackages.find((entry) => entry.alias === "twin")
-          ?.destination_path,
-      );
+      expect(wildcardPackages.find((entry) => entry.alias === "audit")?.destination_path).toBe(wildcardPackages.find((entry) => entry.alias === "governance-audit")?.destination_path);
+      expect(wildcardPackages.find((entry) => entry.alias === "digital-twin")?.destination_path).toBe(wildcardPackages.find((entry) => entry.alias === "twin")?.destination_path);
 
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
@@ -4012,7 +4103,10 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeTestExtension({ root: bundledBeadsDir, name: "env-beads-ext" });
+      await writeTestExtension({
+        root: bundledBeadsDir,
+        name: "env-beads-ext",
+      });
 
       const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
       process.env[PM_PACKAGE_ROOT_ENV] = tempPackageRoot;
@@ -4066,7 +4160,10 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeTestExtension({ root: bundledExtension, name: "custom-package-ext" });
+      await writeTestExtension({
+        root: bundledExtension,
+        name: "custom-package-ext",
+      });
 
       const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
       process.env[PM_PACKAGE_ROOT_ENV] = tempPackageRoot;
@@ -4142,19 +4239,38 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeTestExtension({ root: bundledExtension, name: "local-catalog-ext" });
+      await writeTestExtension({
+        root: bundledExtension,
+        name: "local-catalog-ext",
+      });
       await mkdir(multiPackage, { recursive: true });
       await writeFile(
         path.join(multiPackage, "package.json"),
-        JSON.stringify({ name: "@example/pm-multi-catalog", version: "1.0.0", pm: { aliases: ["multi-catalog"] } }),
+        JSON.stringify({
+          name: "@example/pm-multi-catalog",
+          version: "1.0.0",
+          pm: { aliases: ["multi-catalog"] },
+        }),
         "utf8",
       );
-      await writeTestExtension({ root: path.join(multiPackage, "extensions", "one"), name: "multi-one" });
-      await writeTestExtension({ root: path.join(multiPackage, "extensions", "two"), name: "multi-two" });
-      await mkdir(path.join(invalidPackage, "extensions", "invalid"), { recursive: true });
+      await writeTestExtension({
+        root: path.join(multiPackage, "extensions", "one"),
+        name: "multi-one",
+      });
+      await writeTestExtension({
+        root: path.join(multiPackage, "extensions", "two"),
+        name: "multi-two",
+      });
+      await mkdir(path.join(invalidPackage, "extensions", "invalid"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(invalidPackage, "package.json"),
-        JSON.stringify({ name: "@example/pm-invalid-catalog", version: "1.0.0", pm: { aliases: ["invalid-catalog"] } }),
+        JSON.stringify({
+          name: "@example/pm-invalid-catalog",
+          version: "1.0.0",
+          pm: { aliases: ["invalid-catalog"] },
+        }),
         "utf8",
       );
       await writeFile(path.join(invalidPackage, "extensions", "invalid", "manifest.json"), '{"name":""}\n', "utf8");
@@ -4169,7 +4285,11 @@ describe("extension command runtime", () => {
         capabilities: ["commands"],
         installed_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
-        source: { kind: "local", input: bundledPackage, location: bundledPackage },
+        source: {
+          kind: "local",
+          input: bundledPackage,
+          location: bundledPackage,
+        },
       });
       await writeManagedExtensionState(extensionsRoot, installedState);
 
@@ -4182,7 +4302,9 @@ describe("extension command runtime", () => {
         await expect(resolveBundledAliasManifestName("invalid-catalog")).resolves.toBeNull();
         await expect(resolveBundledAliasManifestName("missing-catalog")).resolves.toBeNull();
 
-        const catalog = await buildBundledPackageCatalog("project", { path: context.pmPath });
+        const catalog = await buildBundledPackageCatalog("project", {
+          path: context.pmPath,
+        });
         expect(catalog.packages).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -4328,14 +4450,16 @@ describe("extension command runtime", () => {
           capabilities: ["schema"],
           installed_at: "2026-01-01T00:00:00.000Z",
           updated_at: "2026-01-01T00:00:00.000Z",
-          source: { kind: "builtin", input: "alpha", location: "alpha", name: "alpha" },
+          source: {
+            kind: "builtin",
+            input: "alpha",
+            location: "alpha",
+            name: "alpha",
+          },
         },
       ],
     });
-    expect(normalized?.entries.map((entry) => `${entry.scope}:${entry.name}:${entry.directory}`)).toEqual([
-      "global:Alpha:alpha-dir",
-      "project:Zeta:zeta-dir",
-    ]);
+    expect(normalized?.entries.map((entry) => `${entry.scope}:${entry.name}:${entry.directory}`)).toEqual(["global:Alpha:alpha-dir", "project:Zeta:zeta-dir"]);
     expect(normalized?.entries[1]?.capabilities).toEqual(["commands"]);
     expect(normalized?.entries[1]?.source).toMatchObject({
       kind: "github",
@@ -4344,25 +4468,76 @@ describe("extension command runtime", () => {
       commit: "abc123",
     });
 
-    const firstSource = { kind: "npm", input: "npm:pm-demo", location: "pm-demo", package: "pm-demo", version: "1.0.0" } as const;
+    const firstSource = {
+      kind: "npm",
+      input: "npm:pm-demo",
+      location: "pm-demo",
+      package: "pm-demo",
+      version: "1.0.0",
+    } as const;
     expect(managedExtensionSourcesEquivalent(firstSource, { ...firstSource })).toBe(true);
-    expect(managedExtensionSourcesEquivalent(firstSource, { ...firstSource, version: "2.0.0" })).toBe(false);
+    expect(
+      managedExtensionSourcesEquivalent(firstSource, {
+        ...firstSource,
+        version: "2.0.0",
+      }),
+    ).toBe(false);
     expect(
       managedExtensionSourcesEquivalent(
-        { kind: "github", input: "owner/repo", location: "repo", repository: "repo", ref: "main" },
-        { kind: "github", input: "owner/repo", location: "repo", repository: "repo", ref: "next" },
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: "repo",
+          repository: "repo",
+          ref: "main",
+        },
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: "repo",
+          repository: "repo",
+          ref: "next",
+        },
       ),
     ).toBe(false);
     expect(
       managedExtensionSourcesEquivalent(
-        { kind: "github", input: "owner/repo", location: "repo", repository: "repo", ref: "main", subpath: "ext/a" },
-        { kind: "github", input: "owner/repo", location: "repo", repository: "repo", ref: "main", subpath: "ext/b" },
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: "repo",
+          repository: "repo",
+          ref: "main",
+          subpath: "ext/a",
+        },
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: "repo",
+          repository: "repo",
+          ref: "main",
+          subpath: "ext/b",
+        },
       ),
     ).toBe(false);
     expect(
       managedExtensionSourcesEquivalent(
-        { kind: "github", input: "owner/repo", location: "repo", repository: "repo", ref: "main", commit: "abc" },
-        { kind: "github", input: "owner/repo", location: "repo", repository: "repo", ref: "main", commit: "def" },
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: "repo",
+          repository: "repo",
+          ref: "main",
+          commit: "abc",
+        },
+        {
+          kind: "github",
+          input: "owner/repo",
+          location: "repo",
+          repository: "repo",
+          ref: "main",
+          commit: "def",
+        },
       ),
     ).toBe(false);
     expect(managedExtensionSourcesEquivalent({ kind: "builtin", input: "alpha", location: "alpha", name: "alpha" }, { kind: "builtin", input: "alpha", location: "alpha", name: "beta" })).toBe(false);
@@ -4406,24 +4581,33 @@ describe("extension command runtime", () => {
       const emptyPackage = path.join(tempRoot, "empty-package");
       await mkdir(emptyPackage, { recursive: true });
       await writeFile(path.join(emptyPackage, "package.json"), JSON.stringify({ name: "pm-empty" }), "utf8");
-      await expect(resolveInstallSource(parseExtensionInstallSource(emptyPackage))).rejects.toThrow(
-        /Unable to locate a pm extension manifest/,
-      );
+      await expect(resolveInstallSource(parseExtensionInstallSource(emptyPackage))).rejects.toThrow(/Unable to locate a pm extension manifest/);
 
       const multiPackage = path.join(tempRoot, "multi-package");
       await mkdir(multiPackage, { recursive: true });
       await writeFile(path.join(multiPackage, "package.json"), JSON.stringify({ name: "pm-multi" }), "utf8");
-      await writeTestExtension({ root: path.join(multiPackage, "extensions", "a"), name: "multi-a" });
-      await writeTestExtension({ root: path.join(multiPackage, "extensions", "b"), name: "multi-b" });
-      await expect(resolveInstallSource(parseExtensionInstallSource(multiPackage))).rejects.toThrow(
-        /contains multiple extension manifests/,
-      );
+      await writeTestExtension({
+        root: path.join(multiPackage, "extensions", "a"),
+        name: "multi-a",
+      });
+      await writeTestExtension({
+        root: path.join(multiPackage, "extensions", "b"),
+        name: "multi-b",
+      });
+      await expect(resolveInstallSource(parseExtensionInstallSource(multiPackage))).rejects.toThrow(/contains multiple extension manifests/);
 
       const directExtension = path.join(tempRoot, "direct-extension");
-      await writeTestExtension({ root: directExtension, name: "direct-extension" });
+      await writeTestExtension({
+        root: directExtension,
+        name: "direct-extension",
+      });
       await expect(resolveInstallSource(parseExtensionInstallSource(directExtension))).resolves.toMatchObject({
         directory: directExtension,
-        source: { kind: "local", input: directExtension, absolute_path: directExtension },
+        source: {
+          kind: "local",
+          input: directExtension,
+          absolute_path: directExtension,
+        },
       });
 
       const fileUrlPackage = path.join(tempRoot, "file-url-package");
@@ -4431,10 +4615,21 @@ describe("extension command runtime", () => {
       await mkdir(fileUrlPackage, { recursive: true });
       await writeFile(
         path.join(fileUrlPackage, "package.json"),
-        JSON.stringify({ name: "pm-file-url-package", version: "0.3.0", pm: { extensions: ["extensions/file-url"] } }, null, 2),
+        JSON.stringify(
+          {
+            name: "pm-file-url-package",
+            version: "0.3.0",
+            pm: { extensions: ["extensions/file-url"] },
+          },
+          null,
+          2,
+        ),
         "utf8",
       );
-      await writeTestExtension({ root: fileUrlExtension, name: "file-url-ext" });
+      await writeTestExtension({
+        root: fileUrlExtension,
+        name: "file-url-ext",
+      });
       const resolved = await resolveInstallSource(parseExtensionInstallSource(`npm:${pathToFileURL(fileUrlPackage).href}`));
       expect(resolved).toMatchObject({
         directory: fileUrlExtension,
@@ -4580,7 +4775,10 @@ describe("extension command runtime", () => {
     try {
       const packageRoot = path.join(tempRoot, "packages", "file-alias-package");
       const extensionRoot = path.join(packageRoot, "extensions", "file-alias-package");
-      await writeTestExtension({ root: extensionRoot, name: "file-alias-package" });
+      await writeTestExtension({
+        root: extensionRoot,
+        name: "file-alias-package",
+      });
       await writeFile(
         path.join(packageRoot, "package.json"),
         `${JSON.stringify(
@@ -4601,9 +4799,7 @@ describe("extension command runtime", () => {
       process.chdir(tempRoot);
       // The alias resolves to a NATIVE absolute path (never a percent-encoded
       // file URL) so npm pack opens a real path on every platform (GH-363).
-      expect(normalizeNpmLocalFileAliasSpec("pm-file-alias-package@file:packages/file-alias-package")).toMatch(
-        /^pm-file-alias-package@.*[/\\]packages[/\\]file-alias-package$/,
-      );
+      expect(normalizeNpmLocalFileAliasSpec("pm-file-alias-package@file:packages/file-alias-package")).toMatch(/^pm-file-alias-package@.*[/\\]packages[/\\]file-alias-package$/);
       const source = parseExtensionInstallSource("npm:pm-file-alias-package@file:packages/file-alias-package");
       expect(source.kind).toBe("npm");
       const resolved = await resolveInstallSource(source);
@@ -4628,24 +4824,15 @@ describe("extension command runtime", () => {
   });
 
   it("classifies missing first-party npm package installs with deterministic fallback recovery", () => {
-    const error = wrapNpmPackResolutionError(
-      "pm-definitely-missing-for-fallback-test-zzzzzz",
-      new Error("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/package"),
-    );
+    const error = wrapNpmPackResolutionError("pm-definitely-missing-for-fallback-test-zzzzzz", new Error("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/package"));
     expect(error).toMatchObject({
       exitCode: EXIT_CODE.NOT_FOUND,
       context: {
         code: "npm_package_not_found",
         recovery: {
-          attempted_command:
-            "pm install --project npm:pm-definitely-missing-for-fallback-test-zzzzzz",
-          normalized_args: [
-            "install",
-            "--project",
-            "npm:pm-definitely-missing-for-fallback-test-zzzzzz",
-          ],
-          next_best_command:
-            "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+          attempted_command: "pm install --project npm:pm-definitely-missing-for-fallback-test-zzzzzz",
+          normalized_args: ["install", "--project", "npm:pm-definitely-missing-for-fallback-test-zzzzzz"],
+          next_best_command: "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
           fallback_candidates: [
             {
               source: "github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
@@ -4659,10 +4846,7 @@ describe("extension command runtime", () => {
   });
 
   it("does not emit first-party fallback candidates for third-party npm 404s", () => {
-    const error = wrapNpmPackResolutionError(
-      "left-pad-private-missing",
-      new Error("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/package"),
-    );
+    const error = wrapNpmPackResolutionError("left-pad-private-missing", new Error("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/package"));
     expect(error).toMatchObject({
       exitCode: EXIT_CODE.NOT_FOUND,
       context: {
@@ -4709,9 +4893,7 @@ describe("extension command runtime", () => {
       // Installs into CommonJS host projects need a module-type marker next to
       // the ESM entrypoint (pm-r0m4): install writes one when the source ships
       // no package.json of its own.
-      const installedMarker = JSON.parse(
-        await readFile(path.join(context.pmPath, "extensions", "sample-ext", "package.json"), "utf8"),
-      ) as Record<string, unknown>;
+      const installedMarker = JSON.parse(await readFile(path.join(context.pmPath, "extensions", "sample-ext", "package.json"), "utf8")) as Record<string, unknown>;
       expect(installedMarker).toEqual({ type: "module" });
 
       const explore = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
@@ -4879,9 +5061,7 @@ describe("extension command runtime", () => {
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
       expect(install.action).toBe("install");
 
-      const installedMarker = JSON.parse(
-        await readFile(path.join(context.pmPath, "extensions", "marker-ext", "package.json"), "utf8"),
-      ) as Record<string, unknown>;
+      const installedMarker = JSON.parse(await readFile(path.join(context.pmPath, "extensions", "marker-ext", "package.json"), "utf8")) as Record<string, unknown>;
       expect(installedMarker).toEqual(shippedPackageJson);
     });
   });
@@ -4914,11 +5094,7 @@ describe("extension command runtime", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(
-        path.join(sourceDir, "index.js"),
-        "export default { version: 'replacement' };\n",
-        "utf8",
-      );
+      await writeFile(path.join(sourceDir, "index.js"), "export default { version: 'replacement' };\n", "utf8");
 
       const originalWriteFile = fsPromises.writeFile;
       let rejectedManagedStateWrite = false;
@@ -4930,9 +5106,7 @@ describe("extension command runtime", () => {
         return originalWriteFile(file, data, options);
       });
       try {
-        await expect(
-          runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath }),
-        ).rejects.toThrow("managed state persistence failed");
+        await expect(runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath })).rejects.toThrow("managed state persistence failed");
       } finally {
         writeFileSpy.mockRestore();
       }
@@ -4941,11 +5115,7 @@ describe("extension command runtime", () => {
       await expect(readFile(destinationEntry, "utf8")).resolves.toBe(before.entry);
       await expect(readFile(managedStatePath, "utf8")).resolves.toBe(before.managedState);
       await expect(readFile(settingsPath, "utf8")).resolves.toBe(before.settings);
-      await expect(
-        readdir(path.join(context.pmPath, "extensions")),
-      ).resolves.not.toEqual(
-        expect.arrayContaining([expect.stringContaining(".pm-extension-install-backup-")]),
-      );
+      await expect(readdir(path.join(context.pmPath, "extensions"))).resolves.not.toEqual(expect.arrayContaining([expect.stringContaining(".pm-extension-install-backup-")]));
     });
   });
 
@@ -4971,19 +5141,17 @@ describe("extension command runtime", () => {
         return originalWriteFile(file, data, options);
       });
       try {
-        await expect(
-          runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath }),
-        ).rejects.toThrow(
+        await expect(runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath })).rejects.toThrow(
           "Extension install failed: Error: fresh managed state persistence failed; rollback failed: Error: rollback settings restoration failed",
         );
       } finally {
         writeFileSpy.mockRestore();
       }
       expect(rejectedRollbackWrite).toBe(true);
-      await expect(
-        readFile(path.join(context.pmPath, "extensions", "fresh-rollback-ext", "index.js"), "utf8"),
-      ).rejects.toMatchObject({ code: "ENOENT" });
-      await expect(readFile(managedStatePath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(path.join(context.pmPath, "extensions", "fresh-rollback-ext", "index.js"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(managedStatePath, "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
       await expect(readFile(settingsPath, "utf8")).resolves.toBe(originalSettings);
     });
   });
@@ -4991,7 +5159,10 @@ describe("extension command runtime", () => {
   it("does not fail a completed install when backup cleanup is unavailable", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "cleanup-warning-source-ext");
-      await writeTestExtension({ root: sourceDir, name: "cleanup-warning-ext" });
+      await writeTestExtension({
+        root: sourceDir,
+        name: "cleanup-warning-ext",
+      });
       const originalRm = fsPromises.rm;
       let rejectedBackupCleanup = false;
       const rmSpy = vi.spyOn(fsPromises, "rm").mockImplementation(async (target, options) => {
@@ -5002,16 +5173,20 @@ describe("extension command runtime", () => {
         return originalRm(target, options);
       });
       try {
-        await expect(
-          runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath }),
-        ).resolves.toMatchObject({ action: "install", ok: true });
+        await expect(runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath })).resolves.toMatchObject({
+          action: "install",
+          ok: true,
+        });
       } finally {
         rmSpy.mockRestore();
       }
       expect(rejectedBackupCleanup).toBe(true);
       const extensionEntries = await readdir(path.join(context.pmPath, "extensions"));
       for (const entry of extensionEntries.filter((name) => name.startsWith(".pm-extension-install-backup-"))) {
-        await rm(path.join(context.pmPath, "extensions", entry), { recursive: true, force: true });
+        await rm(path.join(context.pmPath, "extensions", entry), {
+          recursive: true,
+          force: true,
+        });
       }
     });
   });
@@ -5068,12 +5243,11 @@ describe("extension command runtime", () => {
       const result = await extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "lock-ext", async () => "locked");
       expect(result).toBe("locked");
       await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(
-          tempRoot,
-          "defaulted-lock-ext",
-          async () => "defaulted",
-          { attempts: undefined, delay_ms: undefined, stale_ms: undefined } as never,
-        ),
+        extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "defaulted-lock-ext", async () => "defaulted", {
+          attempts: undefined,
+          delay_ms: undefined,
+          stale_ms: undefined,
+        } as never),
       ).resolves.toBe("defaulted");
       await expect(readdir(path.join(tempRoot, "runtime", "extension-install-locks"))).resolves.toEqual([]);
     } finally {
@@ -5084,39 +5258,24 @@ describe("extension command runtime", () => {
   it("preserves non-missing metadata snapshot read failures", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "pm-extension-metadata-read-"));
     try {
-      await expect(
-        extensionCommandTestOnly.readOptionalMetadataFile(directory),
-      ).rejects.toBeTruthy();
+      await expect(extensionCommandTestOnly.readOptionalMetadataFile(directory)).rejects.toBeTruthy();
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
   });
 
   it("rejects non-finite and unsafe extension lock lease timings", async () => {
-    const invalidOptions = [
-      { attempts: Number.POSITIVE_INFINITY },
-      { delay_ms: Number.NaN },
-      { stale_ms: 0 },
-      { stale_ms: 10, heartbeat_ms: 10 },
-      { stale_ms: 10, heartbeat_ms: -1 },
-    ];
+    const invalidOptions = [{ attempts: Number.POSITIVE_INFINITY }, { delay_ms: Number.NaN }, { stale_ms: 0 }, { stale_ms: 10, heartbeat_ms: 10 }, { stale_ms: 10, heartbeat_ms: -1 }];
     for (const [index, options] of invalidOptions.entries()) {
-      await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(
-          path.join(os.tmpdir(), `pm-extension-invalid-lock-${process.pid}-${index}`),
-          "invalid-lock",
-          async () => "unreachable",
-          options,
-        ),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(extensionCommandTestOnly.withExtensionInstallLock(path.join(os.tmpdir(), `pm-extension-invalid-lock-${process.pid}-${index}`), "invalid-lock", async () => "unreachable", options)).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
     }
   });
 
   it("maps extension update work through a fixed concurrency pool", async () => {
     for (const invalidConcurrency of [0, -1, 1.5, Number.NaN]) {
-      await expect(
-        extensionCommandTestOnly.mapWithFixedConcurrency([], invalidConcurrency, async (value) => value),
-      ).rejects.toThrow("concurrency must be a positive integer");
+      await expect(extensionCommandTestOnly.mapWithFixedConcurrency([], invalidConcurrency, async (value) => value)).rejects.toThrow("concurrency must be a positive integer");
     }
     let active = 0;
     let maximumActive = 0;
@@ -5139,9 +5298,7 @@ describe("extension command runtime", () => {
     const realpathSpy = vi.spyOn(fsPromises, "realpath").mockRejectedValueOnce(new Error("root unavailable"));
     try {
       const root = path.parse(process.cwd()).root;
-      await expect(resolveCanonicalExtensionInstallDestination(path.join(root, "missing", "extension"))).resolves.toBe(
-        path.join(root, "missing", "extension"),
-      );
+      await expect(resolveCanonicalExtensionInstallDestination(path.join(root, "missing", "extension"))).resolves.toBe(path.join(root, "missing", "extension"));
     } finally {
       realpathSpy.mockRestore();
     }
@@ -5176,15 +5333,7 @@ describe("extension command runtime", () => {
   it("reclaims stale scope locks without a valid owner token", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-invalid-owner-"));
     try {
-      const invalidOwners = [
-        null,
-        JSON.stringify("owner"),
-        JSON.stringify(null),
-        JSON.stringify({}),
-        JSON.stringify({ token: 1 }),
-        JSON.stringify({ token: "" }),
-        "{",
-      ];
+      const invalidOwners = [null, JSON.stringify("owner"), JSON.stringify(null), JSON.stringify({}), JSON.stringify({ token: 1 }), JSON.stringify({ token: "" }), "{"];
       for (const [index, ownerContents] of invalidOwners.entries()) {
         const settingsRoot = path.join(tempRoot, String(index));
         const lockPath = path.join(settingsRoot, "runtime", "extension-install-locks", "scope.lock");
@@ -5195,14 +5344,7 @@ describe("extension command runtime", () => {
         const staleDate = new Date(Date.now() - 10 * 60 * 1000);
         await utimes(lockPath, staleDate, staleDate);
 
-        await expect(
-          extensionCommandTestOnly.withExtensionInstallLock(
-            settingsRoot,
-            "recovered-ext",
-            async () => "recovered",
-            { attempts: 1, delay_ms: 0, stale_ms: 3 },
-          ),
-        ).resolves.toBe("recovered");
+        await expect(extensionCommandTestOnly.withExtensionInstallLock(settingsRoot, "recovered-ext", async () => "recovered", { attempts: 1, delay_ms: 0, stale_ms: 3 })).resolves.toBe("recovered");
       }
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
@@ -5220,17 +5362,8 @@ describe("extension command runtime", () => {
     readError.code = "EACCES";
     const readFileSpy = vi.spyOn(fsPromises, "readFile").mockRejectedValueOnce(readError);
     try {
-      await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(
-          tempRoot,
-          "protected-ext",
-          async () => "unreachable",
-          { attempts: 1, delay_ms: 0, stale_ms: 3 },
-        ),
-      ).rejects.toThrow("owner metadata temporarily unreadable");
-      await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain(
-        '"token":"active-owner"',
-      );
+      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "protected-ext", async () => "unreachable", { attempts: 1, delay_ms: 0, stale_ms: 3 })).rejects.toThrow("owner metadata temporarily unreadable");
+      await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain('"token":"active-owner"');
     } finally {
       readFileSpy.mockRestore();
       await rm(tempRoot, { recursive: true, force: true });
@@ -5241,9 +5374,7 @@ describe("extension command runtime", () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-owner-write-"));
     const writeFileSpy = vi.spyOn(fsPromises, "writeFile").mockRejectedValueOnce(new Error("owner write failed"));
     try {
-      await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "write-failure-ext", async () => "unreachable"),
-      ).rejects.toThrow("owner write failed");
+      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "write-failure-ext", async () => "unreachable")).rejects.toThrow("owner write failed");
       await expect(readdir(path.join(tempRoot, "runtime", "extension-install-locks"))).resolves.toEqual([]);
     } finally {
       writeFileSpy.mockRestore();
@@ -5256,9 +5387,7 @@ describe("extension command runtime", () => {
     const writeFileSpy = vi.spyOn(fsPromises, "writeFile").mockRejectedValueOnce(new Error("owner write failed"));
     const rmSpy = vi.spyOn(fsPromises, "rm").mockRejectedValueOnce(new Error("cleanup failed"));
     try {
-      await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "double-failure-ext", async () => "unreachable"),
-      ).rejects.toThrow("owner write failed");
+      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "double-failure-ext", async () => "unreachable")).rejects.toThrow("owner write failed");
     } finally {
       writeFileSpy.mockRestore();
       rmSpy.mockRestore();
@@ -5271,14 +5400,7 @@ describe("extension command runtime", () => {
     try {
       const lockPath = path.join(tempRoot, "runtime", "extension-install-locks", "scope.lock");
       await mkdir(lockPath, { recursive: true });
-      await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(
-          tempRoot,
-          "busy-ext",
-          async () => "never-acquired",
-          { attempts: 1, delay_ms: 0, stale_ms: 60_000 },
-        ),
-      ).rejects.toMatchObject({
+      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "busy-ext", async () => "never-acquired", { attempts: 1, delay_ms: 0, stale_ms: 60_000 })).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
       });
     } finally {
@@ -5294,12 +5416,11 @@ describe("extension command runtime", () => {
       await mkdir(lockRoot, { recursive: true });
       await symlink(path.join(lockRoot, "does-not-exist"), lockPath);
       await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(
-          tempRoot,
-          "missing-stat-ext",
-          async () => "unreachable",
-          { attempts: 1, delay_ms: 0, stale_ms: 60_000 },
-        ),
+        extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "missing-stat-ext", async () => "unreachable", {
+          attempts: 1,
+          delay_ms: 0,
+          stale_ms: 60_000,
+        }),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
       });
@@ -5324,14 +5445,7 @@ describe("extension command runtime", () => {
         "utf8",
       );
 
-      await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(
-          tempRoot,
-          "second-ext",
-          async () => "unreachable",
-          { attempts: 1, delay_ms: 0, stale_ms: 60_000 },
-        ),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
+      await expect(extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "second-ext", async () => "unreachable", { attempts: 1, delay_ms: 0, stale_ms: 60_000 })).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -5363,12 +5477,12 @@ describe("extension command runtime", () => {
       await delay(90);
 
       await expect(
-        extensionCommandTestOnly.withExtensionInstallLock(
-          tempRoot,
-          "competing-ext",
-          async () => "unreachable",
-          { attempts: 1, delay_ms: 0, stale_ms: 50, heartbeat_ms: 5 },
-        ),
+        extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "competing-ext", async () => "unreachable", {
+          attempts: 1,
+          delay_ms: 0,
+          stale_ms: 50,
+          heartbeat_ms: 5,
+        }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT });
       releaseOwner();
       await expect(ownerRun).resolves.toBe("owner-finished");
@@ -5426,9 +5540,7 @@ describe("extension command runtime", () => {
       );
 
       expect(result).toBe("replacement-installed");
-      await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain(
-        '"token":"replacement-owner"',
-      );
+      await expect(readFile(path.join(lockPath, "owner.json"), "utf8")).resolves.toContain('"token":"replacement-owner"');
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -5495,7 +5607,10 @@ describe("extension command runtime", () => {
   it("marks unmanaged discovered extensions as skipped_unmanaged during manage", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-unmanaged");
-      await writeTestExtension({ root: unmanagedDir, name: "manual-unmanaged" });
+      await writeTestExtension({
+        root: unmanagedDir,
+        name: "manual-unmanaged",
+      });
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       const extensions = (manage.details.extensions as Array<Record<string, unknown>>) ?? [];
@@ -5535,7 +5650,10 @@ describe("extension command runtime", () => {
   it("treats bundled-style unmanaged extensions as informational by default", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "builtin-informational");
-      await writeTestExtension({ root: unmanagedDir, name: "builtin-informational-ext" });
+      await writeTestExtension({
+        root: unmanagedDir,
+        name: "builtin-informational-ext",
+      });
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       const triage = manage.details.triage as {
@@ -5553,20 +5671,21 @@ describe("extension command runtime", () => {
   it("adopts unmanaged extensions via manage --fix-managed-state", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-fix-managed");
-      await writeTestExtension({ root: unmanagedDir, name: "manual-fix-managed" });
+      await writeTestExtension({
+        root: unmanagedDir,
+        name: "manual-fix-managed",
+      });
 
-      const manage = await runExtension(
-        undefined,
-        { manage: true, project: true, fixManagedState: true },
-        { path: context.pmPath },
-      );
+      const manage = await runExtension(undefined, { manage: true, project: true, fixManagedState: true }, { path: context.pmPath });
       const managedStateFix = manage.details.managed_state_fix as {
         requested: boolean;
         applied: boolean;
         adopted_count: number;
         adopted_extensions: string[];
       };
-      const triage = manage.details.triage as { update_health_partial: boolean };
+      const triage = manage.details.triage as {
+        update_health_partial: boolean;
+      };
       const extensions = (manage.details.extensions as Array<Record<string, unknown>>) ?? [];
       expect(managedStateFix).toMatchObject({
         requested: true,
@@ -5639,7 +5758,10 @@ describe("extension command runtime", () => {
   it("returns already_managed when adopt targets a managed extension", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-repeat");
-      await writeTestExtension({ root: unmanagedDir, name: "manual-adopt-repeat" });
+      await writeTestExtension({
+        root: unmanagedDir,
+        name: "manual-adopt-repeat",
+      });
 
       await runExtension("manual-adopt-repeat", { adopt: true, project: true }, { path: context.pmPath });
       const secondAdopt = await runExtension("manual-adopt-repeat", { adopt: true, project: true }, { path: context.pmPath });
@@ -5658,11 +5780,7 @@ describe("extension command runtime", () => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-gh");
       await writeTestExtension({ root: unmanagedDir, name: "manual-adopt-gh" });
 
-      const adopt = await runExtension(
-        "manual-adopt-gh",
-        { adopt: true, project: true, gh: "owner/repo/path", ref: "main" },
-        { path: context.pmPath },
-      );
+      const adopt = await runExtension("manual-adopt-gh", { adopt: true, project: true, gh: "owner/repo/path", ref: "main" }, { path: context.pmPath });
       expect(adopt.details).toMatchObject({
         adopted: true,
         source: {
@@ -5696,11 +5814,19 @@ describe("extension command runtime", () => {
     await withTempPmPath(async (context) => {
       const firstUnmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-all-a");
       const secondUnmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-all-b");
-      await writeTestExtension({ root: firstUnmanagedDir, name: "manual-adopt-all-a" });
-      await writeTestExtension({ root: secondUnmanagedDir, name: "manual-adopt-all-b" });
+      await writeTestExtension({
+        root: firstUnmanagedDir,
+        name: "manual-adopt-all-a",
+      });
+      await writeTestExtension({
+        root: secondUnmanagedDir,
+        name: "manual-adopt-all-b",
+      });
 
       const manageBefore = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
-      const triageBefore = manageBefore.details.triage as { update_health_partial?: unknown };
+      const triageBefore = manageBefore.details.triage as {
+        update_health_partial?: unknown;
+      };
       expect(triageBefore.update_health_partial).toBe(true);
 
       const adoptAll = await runExtension(undefined, { adoptAll: true, project: true }, { path: context.pmPath });
@@ -5713,16 +5839,19 @@ describe("extension command runtime", () => {
         update_health_partial: false,
         update_health_coverage: "full",
       });
-      expect((adoptAll.details.extensions as Array<Record<string, unknown>>).map((entry) => entry.name)).toEqual([
-        "manual-adopt-all-a",
-        "manual-adopt-all-b",
-      ]);
+      expect((adoptAll.details.extensions as Array<Record<string, unknown>>).map((entry) => entry.name)).toEqual(["manual-adopt-all-a", "manual-adopt-all-b"]);
 
       const managedState = await readManagedExtensionState(path.join(context.pmPath, "extensions"));
       expect(managedState.state.entries).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ name: "manual-adopt-all-a", source: expect.objectContaining({ kind: "local" }) }),
-          expect.objectContaining({ name: "manual-adopt-all-b", source: expect.objectContaining({ kind: "local" }) }),
+          expect.objectContaining({
+            name: "manual-adopt-all-a",
+            source: expect.objectContaining({ kind: "local" }),
+          }),
+          expect.objectContaining({
+            name: "manual-adopt-all-b",
+            source: expect.objectContaining({ kind: "local" }),
+          }),
         ]),
       );
 
@@ -5744,8 +5873,7 @@ describe("extension command runtime", () => {
         manifestOverrides: {
           capabilities: ["schema"],
         },
-        entrySource:
-          "export function activate(api) { api.registerItemTypes([{ name: \"DoctorAsset\", folder: \"doctor-assets\" }]); }\n",
+        entrySource: 'export function activate(api) { api.registerItemTypes([{ name: "DoctorAsset", folder: "doctor-assets" }]); }\n',
       });
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
@@ -5797,9 +5925,7 @@ describe("extension command runtime", () => {
       await expect(runExtension(undefined, { doctor: true, detail: "verbose" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(
-        runExtension(undefined, { doctor: true, detail: "summary", trace: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({
+      await expect(runExtension(undefined, { doctor: true, detail: "summary", trace: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -5819,8 +5945,12 @@ describe("extension command runtime", () => {
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
       const deepDoctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
-      const activationWithoutTrace = (deepDoctor.details.deep as { activation?: { failed?: Array<Record<string, unknown>> } }).activation
-        ?.failed ?? [];
+      const activationWithoutTrace =
+        (
+          deepDoctor.details.deep as {
+            activation?: { failed?: Array<Record<string, unknown>> };
+          }
+        ).activation?.failed ?? [];
       expect(activationWithoutTrace).toEqual([
         expect.objectContaining({
           name: "doctor-failing-ext",
@@ -5833,8 +5963,12 @@ describe("extension command runtime", () => {
       });
 
       const tracedDoctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep", trace: true }, { path: context.pmPath });
-      const activationWithTrace = (tracedDoctor.details.deep as { activation?: { failed?: Array<Record<string, unknown>> } }).activation
-        ?.failed ?? [];
+      const activationWithTrace =
+        (
+          tracedDoctor.details.deep as {
+            activation?: { failed?: Array<Record<string, unknown>> };
+          }
+        ).activation?.failed ?? [];
       expect(activationWithTrace[0]).toHaveProperty("trace");
       expect(tracedDoctor.details.trace_enabled).toBe(true);
     });
@@ -5844,7 +5978,10 @@ describe("extension command runtime", () => {
     await withTempPmPath(async (context) => {
       const extensionsRoot = path.join(context.pmPath, "extensions");
       const extensionDir = path.join(extensionsRoot, "github-update-failed");
-      await writeTestExtension({ root: extensionDir, name: "github-update-failed" });
+      await writeTestExtension({
+        root: extensionDir,
+        name: "github-update-failed",
+      });
       const state = upsertManagedEntry(createEmptyManagedExtensionState(), {
         name: "github-update-failed",
         directory: "github-update-failed",
@@ -5880,9 +6017,7 @@ describe("extension command runtime", () => {
 
   it("rejects doctor action when an explicit extension target is provided", async () => {
     await withTempPmPath(async (context) => {
-      await expect(
-        runExtension("sample-ext", { doctor: true, project: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({
+      await expect(runExtension("sample-ext", { doctor: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -5891,7 +6026,9 @@ describe("extension command runtime", () => {
   it("reports warning codes and remediation in doctor deep mode", async () => {
     await withTempPmPath(async (context) => {
       const extensionsRoot = path.join(context.pmPath, "extensions");
-      await mkdir(path.join(extensionsRoot, "missing-manifest"), { recursive: true });
+      await mkdir(path.join(extensionsRoot, "missing-manifest"), {
+        recursive: true,
+      });
 
       const invalidJsonDir = path.join(extensionsRoot, "invalid-json");
       await mkdir(invalidJsonDir, { recursive: true });
@@ -5910,14 +6047,10 @@ describe("extension command runtime", () => {
 
       expect(summary.status).toBe("warn");
       expect(summary.warning_count).toBeGreaterThanOrEqual(2);
-      expect(summary.warning_codes).toEqual(
-        expect.arrayContaining(["extension_manifest_invalid_json", "extension_manifest_missing"]),
-      );
+      expect(summary.warning_codes).toEqual(expect.arrayContaining(["extension_manifest_invalid_json", "extension_manifest_missing"]));
       expect(summary.blocking_failure_count).toBe(0);
       expect(summary.has_blocking_failures).toBe(false);
-      expect(summary.remediation).toEqual(
-        expect.arrayContaining([expect.stringContaining("pm extension --explore --project")]),
-      );
+      expect(summary.remediation).toEqual(expect.arrayContaining([expect.stringContaining("pm extension --explore --project")]));
       expect(Array.isArray(deep.warning_codes)).toBe(true);
     });
   });
@@ -5931,13 +6064,9 @@ describe("extension command runtime", () => {
         manifestOverrides: {
           capabilities: ["services", "renderers"],
         },
-        entrySource: [
-          "export function activate(api) {",
-          "  api.registerService('output_format', () => ({ format: 'toon' }));",
-          "  api.registerRenderer('json', () => JSON.stringify({ rendered_by: 'output-footgun-ext' }));",
-          "}",
-          "",
-        ].join("\n"),
+        entrySource: ["export function activate(api) {", "  api.registerService('output_format', () => ({ format: 'toon' }));", "  api.registerRenderer('json', () => JSON.stringify({ rendered_by: 'output-footgun-ext' }));", "}", ""].join(
+          "\n",
+        ),
       });
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
@@ -5947,12 +6076,7 @@ describe("extension command runtime", () => {
         remediation: string[];
       };
 
-      expect(summary.warning_codes).toEqual(
-        expect.arrayContaining([
-          "extension_output_renderer_override_global",
-          "extension_output_service_override_global",
-        ]),
-      );
+      expect(summary.warning_codes).toEqual(expect.arrayContaining(["extension_output_renderer_override_global", "extension_output_service_override_global"]));
       expect(summary.remediation.join(" ")).toContain("return context.payload/null/undefined");
       expect(JSON.stringify(doctor)).not.toContain("__pm_native_output");
     });
@@ -5980,42 +6104,34 @@ describe("extension command runtime", () => {
       const nonIsolated = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
       const nonIsolatedSummary = nonIsolated.details.summary as {
         warning_codes: string[];
-        isolation?: { isolated?: boolean; global_diagnostics_present?: boolean; pm_global_path_recipe?: string };
+        isolation?: {
+          isolated?: boolean;
+          global_diagnostics_present?: boolean;
+          pm_global_path_recipe?: string;
+        };
         remediation: string[];
       };
-      expect(nonIsolatedSummary.warning_codes).toEqual(
-        expect.arrayContaining([
-          "extension_output_renderer_override_global",
-          "extension_output_service_override_global",
-        ]),
-      );
+      expect(nonIsolatedSummary.warning_codes).toEqual(expect.arrayContaining(["extension_output_renderer_override_global", "extension_output_service_override_global"]));
       expect(nonIsolatedSummary.isolation).toMatchObject({
         isolated: false,
         global_diagnostics_present: true,
       });
       expect(nonIsolatedSummary.remediation.join(" ")).toContain("pm extension doctor --project --isolated");
       expect(nonIsolatedSummary.remediation.join(" ")).toContain("hermetic extension smoke tests");
-      expect(nonIsolatedSummary.isolation?.pm_global_path_recipe).toBe(
-        "PM_GLOBAL_PATH=$(mktemp -d) pm extension doctor --project --detail deep --trace",
-      );
+      expect(nonIsolatedSummary.isolation?.pm_global_path_recipe).toBe("PM_GLOBAL_PATH=$(mktemp -d) pm extension doctor --project --detail deep --trace");
 
-      const packageDoctor = await runExtension(
-        undefined,
-        { doctor: true, project: true, detail: "deep", vocabulary: "package" },
-        { path: context.pmPath },
-      );
+      const packageDoctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep", vocabulary: "package" }, { path: context.pmPath });
       const packageDoctorSummary = packageDoctor.details.summary as {
-        isolation?: { rerun_command?: string | null; pm_global_path_recipe?: string };
+        isolation?: {
+          rerun_command?: string | null;
+          pm_global_path_recipe?: string;
+        };
         remediation: string[];
       };
-      expect(packageDoctorSummary.isolation?.rerun_command).toBe(
-        "pm package doctor --project --isolated --detail deep --trace",
-      );
+      expect(packageDoctorSummary.isolation?.rerun_command).toBe("pm package doctor --project --isolated --detail deep --trace");
       expect(packageDoctorSummary.remediation.join(" ")).toContain("pm package doctor --project --isolated");
       expect(packageDoctorSummary.remediation.join(" ")).toContain("hermetic package smoke tests");
-      expect(packageDoctorSummary.isolation?.pm_global_path_recipe).toBe(
-        "PM_GLOBAL_PATH=$(mktemp -d) pm package doctor --project --detail deep --trace",
-      );
+      expect(packageDoctorSummary.isolation?.pm_global_path_recipe).toBe("PM_GLOBAL_PATH=$(mktemp -d) pm package doctor --project --detail deep --trace");
 
       const globalDoctor = await runExtension(undefined, { doctor: true, global: true, detail: "deep" }, { path: context.pmPath });
       const globalDoctorSummary = globalDoctor.details.summary as {
@@ -6029,16 +6145,17 @@ describe("extension command runtime", () => {
       expect(globalDoctorSummary.isolation?.rerun_command).toBeNull();
       expect(globalDoctorSummary.isolation?.pm_global_path_recipe).toBeNull();
 
-      const isolated = await runExtension(
-        undefined,
-        { doctor: true, project: true, detail: "deep", isolated: true },
-        { path: context.pmPath },
-      );
+      const isolated = await runExtension(undefined, { doctor: true, project: true, detail: "deep", isolated: true }, { path: context.pmPath });
       const isolatedSummary = isolated.details.summary as {
         warning_codes: string[];
-        isolation?: { isolated?: boolean; global_diagnostics_present?: boolean };
+        isolation?: {
+          isolated?: boolean;
+          global_diagnostics_present?: boolean;
+        };
       };
-      const isolatedDeep = isolated.details.deep as { load?: { loaded?: Array<{ layer: string; name: string }> } };
+      const isolatedDeep = isolated.details.deep as {
+        load?: { loaded?: Array<{ layer: string; name: string }> };
+      };
       expect(isolatedSummary.warning_codes).not.toContain("extension_output_renderer_override_global");
       expect(isolatedSummary.warning_codes).not.toContain("extension_output_service_override_global");
       expect(isolatedSummary.isolation).toMatchObject({
@@ -6047,9 +6164,7 @@ describe("extension command runtime", () => {
       });
       expect((isolatedDeep.load?.loaded ?? []).some((entry) => entry.layer === "global")).toBe(false);
 
-      await expect(
-        runExtension(undefined, { doctor: true, global: true, isolated: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({
+      await expect(runExtension(undefined, { doctor: true, global: true, isolated: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -6146,14 +6261,7 @@ describe("extension command runtime", () => {
       { vocabulary: "package" },
     );
 
-    expect(summary.warning_codes).toEqual(
-      expect.arrayContaining([
-        "extension_command_handler_collision",
-        "extension_command_override_handler_overlap",
-        "extension_preflight_override_collision",
-        "extension_renderer_collision",
-      ]),
-    );
+    expect(summary.warning_codes).toEqual(expect.arrayContaining(["extension_command_handler_collision", "extension_command_override_handler_overlap", "extension_preflight_override_collision", "extension_renderer_collision"]));
     expect(summary.remediation.join(" ")).toContain("Conflicting extensions: pm-starter, pm-ts-starter");
     expect(summary.remediation.join(" ")).not.toContain("Conflicting extensions: project");
     expect(summary.remediation.join(" ")).toContain("pm package --deactivate <name> --project");
@@ -6178,17 +6286,11 @@ describe("extension command runtime", () => {
         },
       ],
     });
-    expect(summary.collision_plan?.collisions.map((entry) => entry.surface)).toEqual(
-      expect.arrayContaining(["acme:sync", "json", "global"]),
-    );
+    expect(summary.collision_plan?.collisions.map((entry) => entry.surface)).toEqual(expect.arrayContaining(["acme:sync", "json", "global"]));
 
     const ranked = buildExtensionTriageSummary(
       "project",
-      [
-        "extension_command_handler_collision:alpha:project:many:project:light",
-        "extension_command_handler_collision:beta:project:many:project:heavy",
-        "extension_command_handler_collision:gamma:project:heavy:project:light",
-      ],
+      ["extension_command_handler_collision:alpha:project:many:project:light", "extension_command_handler_collision:beta:project:many:project:heavy", "extension_command_handler_collision:gamma:project:heavy:project:light"],
       [
         {
           ...baseExtension,
@@ -6208,11 +6310,7 @@ describe("extension command runtime", () => {
       ],
       { vocabulary: "extension" },
     );
-    expect(ranked.collision_plan?.remediation_candidates.map((entry) => entry.extension)).toEqual([
-      "light",
-      "many",
-      "heavy",
-    ]);
+    expect(ranked.collision_plan?.remediation_candidates.map((entry) => entry.extension)).toEqual(["light", "many", "heavy"]);
   });
 
   it("reports extension governance policy diagnostics in doctor output", async () => {
@@ -6235,17 +6333,7 @@ describe("extension command runtime", () => {
       );
       await writeFile(
         path.join(sourceDir, "index.js"),
-        [
-          "export default {",
-          "  activate(api) {",
-          "    api.registerCommand({",
-          "      name: 'doctor policy run',",
-          "      run: () => ({ ok: true }),",
-          "    });",
-          "  },",
-          "};",
-          "",
-        ].join("\n"),
+        ["export default {", "  activate(api) {", "    api.registerCommand({", "      name: 'doctor policy run',", "      run: () => ({ ok: true }),", "    });", "  },", "};", ""].join("\n"),
         "utf8",
       );
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
@@ -6290,7 +6378,9 @@ describe("extension command runtime", () => {
   it("surfaces unknown capability guidance in doctor diagnostics", async () => {
     await withTempPmPath(async (context) => {
       const extensionsRoot = path.join(context.pmPath, "extensions");
-      await mkdir(path.join(extensionsRoot, "unknown-capability"), { recursive: true });
+      await mkdir(path.join(extensionsRoot, "unknown-capability"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(extensionsRoot, "unknown-capability", "manifest.json"),
         `${JSON.stringify(
@@ -6354,7 +6444,9 @@ describe("extension command runtime", () => {
   it("surfaces legacy capability alias guidance in doctor diagnostics", async () => {
     await withTempPmPath(async (context) => {
       const extensionsRoot = path.join(context.pmPath, "extensions");
-      await mkdir(path.join(extensionsRoot, "legacy-capability"), { recursive: true });
+      await mkdir(path.join(extensionsRoot, "legacy-capability"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(extensionsRoot, "legacy-capability", "manifest.json"),
         `${JSON.stringify(
@@ -6408,11 +6500,7 @@ describe("extension command runtime", () => {
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
       const installedEntryPath = path.join(context.pmPath, "extensions", "doctor-broken-load-ext", "index.js");
-      await writeFile(
-        installedEntryPath,
-        "throw new Error(\"Cannot find package '@unbrained/pm-cli' imported from doctor-broken-load-ext/index.js. Cannot use import statement outside a module.\");\n",
-        "utf8",
-      );
+      await writeFile(installedEntryPath, "throw new Error(\"Cannot find package '@unbrained/pm-cli' imported from doctor-broken-load-ext/index.js. Cannot use import statement outside a module.\");\n", "utf8");
 
       const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
       const summary = doctor.details.summary as {
@@ -6453,7 +6541,12 @@ describe("extension command runtime", () => {
 
       const doctor = await runExtension(
         undefined,
-        { doctor: true, project: true, detail: "summary", fixManagedState: true },
+        {
+          doctor: true,
+          project: true,
+          detail: "summary",
+          fixManagedState: true,
+        },
         { path: context.pmPath },
       );
       const managedStateFix = doctor.details.managed_state_fix as {
@@ -6461,7 +6554,9 @@ describe("extension command runtime", () => {
         applied: boolean;
         adopted_count: number;
       };
-      const triage = doctor.details.triage as { update_health_partial: boolean };
+      const triage = doctor.details.triage as {
+        update_health_partial: boolean;
+      };
       expect(managedStateFix).toMatchObject({
         requested: true,
         applied: true,
@@ -6489,25 +6584,10 @@ describe("extension command runtime", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(
-        path.join(sourceDir, "index.js"),
-        [
-          "export default {",
-          "  activate(api) {",
-          "    api.registerCommand({ name: 'trace broken command' });",
-          "  },",
-          "};",
-          "",
-        ].join("\n"),
-        "utf8",
-      );
+      await writeFile(path.join(sourceDir, "index.js"), ["export default {", "  activate(api) {", "    api.registerCommand({ name: 'trace broken command' });", "  },", "};", ""].join("\n"), "utf8");
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
-      const doctor = await runExtension(
-        undefined,
-        { doctor: true, project: true, detail: "deep", trace: true },
-        { path: context.pmPath },
-      );
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep", trace: true }, { path: context.pmPath });
       const summary = doctor.details.summary as { trace_enabled?: boolean };
       const deep = doctor.details.deep as {
         activation?: { failed?: Array<Record<string, unknown>> };
@@ -6547,26 +6627,14 @@ describe("extension command runtime", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(
-        path.join(sourceDir, "index.js"),
-        [
-          "export default {",
-          "  activate(api) {",
-          "    api.registerPreflight(() => ({ ok: true }));",
-          "  },",
-          "};",
-          "",
-        ].join("\n"),
-        "utf8",
-      );
+      await writeFile(path.join(sourceDir, "index.js"), ["export default {", "  activate(api) {", "    api.registerPreflight(() => ({ ok: true }));", "  },", "};", ""].join("\n"), "utf8");
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
-      const doctor = await runExtension(
-        undefined,
-        { doctor: true, project: true, detail: "deep", trace: true },
-        { path: context.pmPath },
-      );
-      const triage = doctor.details.triage as { warning_codes?: string[]; remediation?: string[] };
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep", trace: true }, { path: context.pmPath });
+      const triage = doctor.details.triage as {
+        warning_codes?: string[];
+        remediation?: string[];
+      };
       const deep = doctor.details.deep as {
         trace?: { activation_failures?: Array<Record<string, unknown>> };
       };
@@ -6592,9 +6660,7 @@ describe("extension command runtime", () => {
     const bareResult = await runExtension(undefined, {}, { path: ".agents/pm" });
     expect(bareResult.action).toBe("explore");
     expect(bareResult.ok).toBe(true);
-    await expect(
-      runExtension(undefined, { install: true, uninstall: true }, { path: ".agents/pm" }),
-    ).rejects.toMatchObject({
+    await expect(runExtension(undefined, { install: true, uninstall: true }, { path: ".agents/pm" })).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
     await expect(runExtension(undefined, { uninstall: true }, { path: ".agents/pm" })).rejects.toMatchObject({
@@ -6619,7 +6685,16 @@ describe("extension command runtime", () => {
       exitCode: EXIT_CODE.USAGE,
     });
     await expect(
-      runExtension(undefined, { install: true, project: true, gh: "owner/repo/ext", github: "owner/repo/other" }, { path: ".agents/pm" }),
+      runExtension(
+        undefined,
+        {
+          install: true,
+          project: true,
+          gh: "owner/repo/ext",
+          github: "owner/repo/other",
+        },
+        { path: ".agents/pm" },
+      ),
     ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
@@ -6642,14 +6717,10 @@ describe("extension command runtime", () => {
 
   it("returns not-found for uninstalling unknown extensions", async () => {
     await withTempPmPath(async (context) => {
-      await expect(
-        runExtension("missing-ext", { uninstall: true, project: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({
+      await expect(runExtension("missing-ext", { uninstall: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
-      await expect(
-        runExtension("missing-ext", { deactivate: true, project: true }, { path: context.pmPath }),
-      ).rejects.toMatchObject({
+      await expect(runExtension("missing-ext", { deactivate: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
     });
@@ -6787,7 +6858,9 @@ describe("extension command runtime", () => {
   it("reports malformed discovered extension warnings during explore", async () => {
     await withTempPmPath(async (context) => {
       const extensionsRoot = path.join(context.pmPath, "extensions");
-      await mkdir(path.join(extensionsRoot, "missing-manifest"), { recursive: true });
+      await mkdir(path.join(extensionsRoot, "missing-manifest"), {
+        recursive: true,
+      });
 
       const invalidJsonDir = path.join(extensionsRoot, "invalid-json");
       await mkdir(invalidJsonDir, { recursive: true });
@@ -6798,13 +6871,7 @@ describe("extension command runtime", () => {
       await writeFile(path.join(invalidSchemaDir, "manifest.json"), JSON.stringify({ name: "oops" }, null, 2), "utf8");
 
       const result = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
-      expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          "extension_manifest_missing:project:missing-manifest",
-          "extension_manifest_invalid_json:project:invalid-json",
-          "extension_manifest_invalid:project:invalid-schema",
-        ]),
-      );
+      expect(result.warnings).toEqual(expect.arrayContaining(["extension_manifest_missing:project:missing-manifest", "extension_manifest_invalid_json:project:invalid-json", "extension_manifest_invalid:project:invalid-schema"]));
       const triage = result.details.triage as {
         status: string;
         warning_count: number;
@@ -6872,11 +6939,7 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeFile(
-        path.join(sourceDir, "index.js"),
-        "export default { activate() { throw new Error('runtime probe activation failure'); } };",
-        "utf8",
-      );
+      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() { throw new Error('runtime probe activation failure'); } };", "utf8");
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
       const manageDefault = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
@@ -6895,11 +6958,7 @@ describe("extension command runtime", () => {
         executed: false,
       });
 
-      const manageProbe = await runExtension(
-        undefined,
-        { manage: true, project: true, runtimeProbe: true },
-        { path: context.pmPath },
-      );
+      const manageProbe = await runExtension(undefined, { manage: true, project: true, runtimeProbe: true }, { path: context.pmPath });
       const probeExtensions = (manageProbe.details.extensions as Array<Record<string, unknown>>) ?? [];
       expect(probeExtensions).toEqual(
         expect.arrayContaining([
@@ -6954,17 +7013,7 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeFile(
-        path.join(sourceDir, "index.js"),
-        [
-          "export function activate(api) {",
-          "  api.registerCommand('activation-diag ping', () => ({ ok: true }));",
-          "  api.registerItemFields([]);",
-          "}",
-          "",
-        ].join("\n"),
-        "utf8",
-      );
+      await writeFile(path.join(sourceDir, "index.js"), ["export function activate(api) {", "  api.registerCommand('activation-diag ping', () => ({ ok: true }));", "  api.registerItemFields([]);", "}", ""].join("\n"), "utf8");
 
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
       expect(install.ok).toBe(false);
@@ -6986,9 +7035,16 @@ describe("extension command runtime", () => {
           }),
         },
       });
+      const activation = await runExtension("activation-diag-ext", { activate: true, project: true }, { path: context.pmPath });
+      expect(activation.warnings).toContain("extension_activate_failed:project:activation-diag-ext");
 
-      const installedFailure = (install.details as { activation_diagnostics?: { installed_extension_failed?: { hint?: unknown } } })
-        .activation_diagnostics?.installed_extension_failed;
+      const installedFailure = (
+        install.details as {
+          activation_diagnostics?: {
+            installed_extension_failed?: { hint?: unknown };
+          };
+        }
+      ).activation_diagnostics?.installed_extension_failed;
       const installedFailureHint = installedFailure?.hint;
       expect(typeof installedFailureHint).toBe("string");
       expect((installedFailureHint as string).toLowerCase()).toContain("schema");
@@ -7022,17 +7078,17 @@ describe("extension command runtime", () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "missing-sdk-source");
       await mkdir(sourceDir, { recursive: true });
-      await writeFile(path.join(sourceDir, "manifest.json"), JSON.stringify({
-        name: "missing-sdk-ext",
-        version: "1.0.0",
-        entry: "index.js",
-        capabilities: ["commands"],
-      }), "utf8");
       await writeFile(
-        path.join(sourceDir, "index.js"),
-        'throw new Error("Cannot find package \'@unbrained/pm-cli\' imported from extension");\n',
+        path.join(sourceDir, "manifest.json"),
+        JSON.stringify({
+          name: "missing-sdk-ext",
+          version: "1.0.0",
+          entry: "index.js",
+          capabilities: ["commands"],
+        }),
         "utf8",
       );
+      await writeFile(path.join(sourceDir, "index.js"), "throw new Error(\"Cannot find package '@unbrained/pm-cli' imported from extension\");\n", "utf8");
 
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
@@ -7046,7 +7102,9 @@ describe("extension command runtime", () => {
         },
         activation_diagnostics: {
           failed_count: 1,
-          installed_extension_failed: expect.objectContaining({ name: "missing-sdk-ext" }),
+          installed_extension_failed: expect.objectContaining({
+            name: "missing-sdk-ext",
+          }),
         },
       });
     });
@@ -7070,16 +7128,7 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeFile(
-        path.join(sourceDir, "index.js"),
-        [
-          "export function activate(api) {",
-          "  api.registerCommand('runtime-status ping', () => ({ ok: true }));",
-          "}",
-          "",
-        ].join("\n"),
-        "utf8",
-      );
+      await writeFile(path.join(sourceDir, "index.js"), ["export function activate(api) {", "  api.registerCommand('runtime-status ping', () => ({ ok: true }));", "}", ""].join("\n"), "utf8");
 
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath, noExtensions: true });
       expect(install.ok).toBe(false);
@@ -7120,19 +7169,7 @@ describe("extension command runtime", () => {
       expect(runGit(["init", repoDir]).status).toBe(0);
       await writeFile(path.join(repoDir, "README.md"), "remote", "utf8");
       expect(runGit(["-C", repoDir, "add", "README.md"]).status).toBe(0);
-      expect(
-        runGit([
-          "-C",
-          repoDir,
-          "-c",
-          "user.name=Test",
-          "-c",
-          "user.email=test@example.com",
-          "commit",
-          "-m",
-          "init",
-        ]).status,
-      ).toBe(0);
+      expect(runGit(["-C", repoDir, "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "init"]).status).toBe(0);
       const revParse = runGit(["-C", repoDir, "rev-parse", "HEAD"]);
       expect(revParse.status).toBe(0);
       const remoteCommit = revParse.stdout.trim();
@@ -7253,9 +7290,7 @@ describe("extension command runtime", () => {
       await runExtension("beta-ext", { deactivate: true, project: true }, { path: context.pmPath });
 
       const explore = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
-      const listedNames = ((explore.details.extensions as Array<Record<string, unknown>>) ?? [])
-        .map((entry) => String(entry.name))
-        .sort((left, right) => left.localeCompare(right));
+      const listedNames = ((explore.details.extensions as Array<Record<string, unknown>>) ?? []).map((entry) => String(entry.name)).sort((left, right) => left.localeCompare(right));
       expect(listedNames).toEqual(["alpha-ext", "beta-ext"]);
 
       const managedPath = path.join(context.pmPath, "extensions", ".managed-extensions.json");

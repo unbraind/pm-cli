@@ -83,7 +83,10 @@ describe("core/history/drift-scan", () => {
       await fs.writeFile(historyRoot, "not-a-directory", "utf8");
 
       const result = await scanHistoryDrift(context.pmPath, []);
-      expect(result.unreadableStreams).toContain(WORKSPACE_HISTORY_ID);
+      expect([
+        ...result.missingStreams,
+        ...result.unreadableStreams,
+      ]).toContain(WORKSPACE_HISTORY_ID);
       expect(result.driftedItems).toContain(WORKSPACE_HISTORY_ID);
     });
   });

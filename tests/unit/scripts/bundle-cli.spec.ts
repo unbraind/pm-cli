@@ -29,7 +29,9 @@ function mockBundleFs(impl: Record<string, unknown>) {
     writeFile: vi.fn(async () => {}),
     ...impl,
   }));
-  vi.doMock("esbuild", () => ({ build: vi.fn(async () => ({ metafile: { outputs: {} } })) }));
+  vi.doMock("esbuild", () => ({
+    build: vi.fn(async () => ({ metafile: { outputs: {} } })),
+  }));
 }
 
 interface MainMocks {
@@ -37,26 +39,45 @@ interface MainMocks {
   stat?: (target: string) => Promise<{ mtimeMs: number }>;
   rename?: (source: string, destination: string) => Promise<void>;
   rm?: (target: string) => Promise<void>;
-  readdir?: (target: string) => Promise<Array<{ name: string; isDirectory(): boolean; isFile(): boolean; isSymbolicLink(): boolean }>>;
+  readdir?: (
+    target: string,
+  ) => Promise<
+    Array<{
+      name: string;
+      isDirectory(): boolean;
+      isFile(): boolean;
+      isSymbolicLink(): boolean;
+    }>
+  >;
   lstat?: (target: string) => Promise<{ mtimeMs: number } | null>;
   unlink?: (target: string) => Promise<void>;
   readFile?: (target: string, encoding: string) => Promise<string>;
-  writeFile?: (target: string, content: string, encoding: string) => Promise<void>;
-  build?: () => Promise<{ metafile: { outputs: Record<string, Record<string, unknown>> } }>;
+  writeFile?: (
+    target: string,
+    content: string,
+    encoding: string,
+  ) => Promise<void>;
+  build?: () => Promise<{
+    metafile: { outputs: Record<string, Record<string, unknown>> };
+  }>;
 }
 
 async function runMainScenario(mocks: MainMocks = {}) {
   const mkdir = vi.fn(async (target: string) => {
     if (mocks.mkdir) await mocks.mkdir(target);
   });
-  const stat = vi.fn(async (target: string) => (mocks.stat ? mocks.stat(target) : { mtimeMs: Date.now() }));
+  const stat = vi.fn(async (target: string) =>
+    mocks.stat ? mocks.stat(target) : { mtimeMs: Date.now() },
+  );
   const rename = vi.fn(async (source: string, destination: string) => {
     if (mocks.rename) await mocks.rename(source, destination);
   });
   const rm = vi.fn(async (target: string) => {
     if (mocks.rm) await mocks.rm(target);
   });
-  const readdir = vi.fn(async (target: string) => (mocks.readdir ? mocks.readdir(target) : []));
+  const readdir = vi.fn(async (target: string) =>
+    mocks.readdir ? mocks.readdir(target) : [],
+  );
   const lstat = vi.fn(async (target: string) =>
     mocks.lstat ? mocks.lstat(target) : { mtimeMs: Date.now() - 20 * 60_000 },
   );
@@ -64,15 +85,31 @@ async function runMainScenario(mocks: MainMocks = {}) {
     if (mocks.unlink) await mocks.unlink(target);
   });
   const readFile = vi.fn(async (target: string, encoding: string) =>
-    mocks.readFile ? mocks.readFile(target, encoding) : '#!/usr/bin/env node\nawait import("./cli/main.js")\n',
+    mocks.readFile
+      ? mocks.readFile(target, encoding)
+      : '#!/usr/bin/env node\nawait import("./cli/main.js")\n',
   );
-  const writeFile = vi.fn(async (target: string, content: string, encoding: string) => {
-    if (mocks.writeFile) await mocks.writeFile(target, content, encoding);
-  });
-  vi.doMock("node:fs/promises", () => ({ lstat, mkdir, readdir, readFile, rename, rm, stat, unlink, writeFile }));
+  const writeFile = vi.fn(
+    async (target: string, content: string, encoding: string) => {
+      if (mocks.writeFile) await mocks.writeFile(target, content, encoding);
+    },
+  );
+  vi.doMock("node:fs/promises", () => ({
+    lstat,
+    mkdir,
+    readdir,
+    readFile,
+    rename,
+    rm,
+    stat,
+    unlink,
+    writeFile,
+  }));
 
-  const build = vi.fn(async () =>
-    mocks.build ? mocks.build() : { metafile: { outputs: { "dist/cli-bundle/main.js": {} } } },
+  const build = vi.fn(async (_options?: unknown) =>
+    mocks.build
+      ? mocks.build()
+      : { metafile: { outputs: { "dist/cli-bundle/main.js": {} } } },
   );
   vi.doMock("esbuild", () => ({ build }));
 
@@ -85,7 +122,19 @@ async function runMainScenario(mocks: MainMocks = {}) {
     failure = error;
   }
   exitSpy.mockRestore();
-  return { failure, mkdir, stat, rename, rm, readdir, lstat, unlink, readFile, writeFile, build };
+  return {
+    failure,
+    mkdir,
+    stat,
+    rename,
+    rm,
+    readdir,
+    lstat,
+    unlink,
+    readFile,
+    writeFile,
+    build,
+  };
 }
 
 describe("bundle-cli main()", () => {
@@ -102,42 +151,76 @@ describe("bundle-cli main()", () => {
       },
       stat: async () => ({ mtimeMs: Date.now() - 11 * 60_000 }),
       readdir: async () => [
-        { name: "main.js", isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
-        { name: "obsolete.js", isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+        {
+          name: "main.js",
+          isDirectory: () => false,
+          isFile: () => true,
+          isSymbolicLink: () => false,
+        },
+        {
+          name: "obsolete.js",
+          isDirectory: () => false,
+          isFile: () => true,
+          isSymbolicLink: () => false,
+        },
       ],
-      lstat: async (target) => ({ mtimeMs: target.endsWith("obsolete.js") ? Date.now() - 11 * 60_000 : Date.now() }),
-      build: async () => ({ metafile: { outputs: { "dist/cli-bundle/main.js": {} } } }),
-      readFile: async () => '#!/usr/bin/env node\nawait import("./cli/main.js")\n',
+      lstat: async (target) => ({
+        mtimeMs: target.endsWith("obsolete.js")
+          ? Date.now() - 11 * 60_000
+          : Date.now(),
+      }),
+      build: async () => ({
+        metafile: { outputs: { "dist/cli-bundle/main.js": {} } },
+      }),
+      readFile: async () =>
+        '#!/usr/bin/env node\nawait import("./cli/main.js")\n',
     });
 
     expect(scenario.failure).toBeNull();
+    expect(scenario.build).toHaveBeenCalledTimes(2);
+    expect(scenario.build.mock.calls[0]?.[0]).toMatchObject({
+      chunkNames: "chunks/[name]-[hash]",
+    });
+    expect(scenario.build.mock.calls[1]?.[0]).toMatchObject({
+      chunkNames: "focused-chunks/[name]-[hash]",
+    });
     expect(scenario.rename).toHaveBeenCalled();
-    expect(scenario.unlink).toHaveBeenCalledWith(expect.stringContaining("obsolete.js"));
+    expect(scenario.unlink).toHaveBeenCalledWith(
+      expect.stringContaining("obsolete.js"),
+    );
     expect(scenario.writeFile).toHaveBeenCalledWith(
       expect.stringContaining(path.join("dist", "cli.js")),
       expect.stringContaining('await import("./cli-bundle/main.js")'),
       "utf8",
     );
-    expect(scenario.rm.mock.calls.some((call) => String(call[0]).includes(".cli-bundle-build.lock"))).toBe(true);
+    expect(
+      scenario.rm.mock.calls.some((call) =>
+        String(call[0]).includes(".cli-bundle-build.lock"),
+      ),
+    ).toBe(true);
   });
 
   it("exits early when the cli is already bundled and never rewrites", async () => {
     const alreadyBundled = await runMainScenario({
-      readFile: async () => '#!/usr/bin/env node\nawait import("./cli-bundle/main.js")\n',
+      readFile: async () =>
+        '#!/usr/bin/env node\nawait import("./cli-bundle/main.js")\n',
     });
     expect(String(alreadyBundled.failure ?? "")).toContain("EXIT:0");
     expect(
-      alreadyBundled.writeFile.mock.calls.some(
-        ([target]) => String(target).endsWith(path.join("dist", "cli.js")),
+      alreadyBundled.writeFile.mock.calls.some(([target]) =>
+        String(target).endsWith(path.join("dist", "cli.js")),
       ),
     ).toBe(false);
   });
 
   it("throws when the rewrite marker is missing from the cli source", async () => {
     const missingMarker = await runMainScenario({
-      readFile: async () => '#!/usr/bin/env node\nconsole.log("missing marker")\n',
+      readFile: async () =>
+        '#!/usr/bin/env node\nconsole.log("missing marker")\n',
     });
-    expect(String(missingMarker.failure ?? "")).toContain("Unable to rewrite dist/cli.js");
+    expect(String(missingMarker.failure ?? "")).toContain(
+      "Unable to rewrite dist/cli.js",
+    );
   });
 });
 
@@ -181,7 +264,9 @@ describe("bundle-cli helpers", () => {
       "chunks/chunk-A.js",
       "main.js",
     ]);
-    expect(manifest.files?.every((entry) => /^[a-f0-9]{64}$/.test(entry.sha256))).toBe(true);
+    expect(
+      manifest.files?.every((entry) => /^[a-f0-9]{64}$/.test(entry.sha256)),
+    ).toBe(true);
     expect(rename).toHaveBeenCalledWith(
       expect.stringContaining("bundle-manifest.json.tmp-"),
       expect.stringMatching(/bundle-manifest\.json$/),
@@ -230,7 +315,8 @@ describe("bundle-cli helpers", () => {
       mkdir: vi.fn(async (target: string) => {
         if (String(target).endsWith(".cli-bundle-build.lock")) {
           attempts += 1;
-          if (attempts === 1) throw Object.assign(new Error("exists"), { code: "EEXIST" });
+          if (attempts === 1)
+            throw Object.assign(new Error("exists"), { code: "EEXIST" });
         }
       }),
       stat: vi.fn(async () => {
@@ -265,7 +351,8 @@ describe("bundle-cli helpers", () => {
       mkdir: vi.fn(async (target: string) => {
         if (String(target).endsWith(".cli-bundle-build.lock")) {
           attempts += 1;
-          if (attempts === 1) throw Object.assign(new Error("exists"), { code: "EEXIST" });
+          if (attempts === 1)
+            throw Object.assign(new Error("exists"), { code: "EEXIST" });
         }
       }),
       stat: vi.fn(async () => ({ mtimeMs: Date.now() - 11 * 60_000 })),
@@ -283,7 +370,8 @@ describe("bundle-cli helpers", () => {
       mkdir: vi.fn(async (target: string) => {
         if (String(target).endsWith(".cli-bundle-build.lock")) {
           attempts += 1;
-          if (attempts === 1) throw Object.assign(new Error("exists"), { code: "EEXIST" });
+          if (attempts === 1)
+            throw Object.assign(new Error("exists"), { code: "EEXIST" });
         }
       }),
       stat: vi.fn(async () => ({ mtimeMs: Date.now() - 11 * 60_000 })),
@@ -328,7 +416,9 @@ describe("bundle-cli helpers", () => {
       stat: vi.fn(async () => ({ mtimeMs: virtual })),
     });
     const mod = await harness.importModuleStable<BundleModule>(SCRIPT);
-    await expect(mod.acquireBundleBuildLock()).rejects.toThrow(/Timed out waiting for bundle build lock/);
+    await expect(mod.acquireBundleBuildLock()).rejects.toThrow(
+      /Timed out waiting for bundle build lock/,
+    );
     dateSpy.mockRestore();
   });
 
@@ -336,17 +426,45 @@ describe("bundle-cli helpers", () => {
     mockBundleFs({
       readdir: vi.fn(async (dir: string) => {
         const s = String(dir);
-        if (s.endsWith("missing")) throw Object.assign(new Error("gone"), { code: "ENOENT" });
+        if (s.endsWith("missing"))
+          throw Object.assign(new Error("gone"), { code: "ENOENT" });
         if (s.endsWith("root")) {
           return [
-            { name: "sub", isDirectory: () => true, isFile: () => false, isSymbolicLink: () => false },
-            { name: "a.js", isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
-            { name: "link.js", isDirectory: () => false, isFile: () => false, isSymbolicLink: () => true },
-            { name: "weird", isDirectory: () => false, isFile: () => false, isSymbolicLink: () => false },
+            {
+              name: "sub",
+              isDirectory: () => true,
+              isFile: () => false,
+              isSymbolicLink: () => false,
+            },
+            {
+              name: "a.js",
+              isDirectory: () => false,
+              isFile: () => true,
+              isSymbolicLink: () => false,
+            },
+            {
+              name: "link.js",
+              isDirectory: () => false,
+              isFile: () => false,
+              isSymbolicLink: () => true,
+            },
+            {
+              name: "weird",
+              isDirectory: () => false,
+              isFile: () => false,
+              isSymbolicLink: () => false,
+            },
           ];
         }
         if (s.endsWith("sub")) {
-          return [{ name: "b.js", isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false }];
+          return [
+            {
+              name: "b.js",
+              isDirectory: () => false,
+              isFile: () => true,
+              isSymbolicLink: () => false,
+            },
+          ];
         }
         return [];
       }),
@@ -376,10 +494,30 @@ describe("bundle-cli helpers", () => {
     });
     mockBundleFs({
       readdir: vi.fn(async () => [
-        { name: "main.js", isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
-        { name: "old.js", isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
-        { name: "recent.js", isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
-        { name: "nostat.js", isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false },
+        {
+          name: "main.js",
+          isDirectory: () => false,
+          isFile: () => true,
+          isSymbolicLink: () => false,
+        },
+        {
+          name: "old.js",
+          isDirectory: () => false,
+          isFile: () => true,
+          isSymbolicLink: () => false,
+        },
+        {
+          name: "recent.js",
+          isDirectory: () => false,
+          isFile: () => true,
+          isSymbolicLink: () => false,
+        },
+        {
+          name: "nostat.js",
+          isDirectory: () => false,
+          isFile: () => true,
+          isSymbolicLink: () => false,
+        },
       ]),
       lstat: vi.fn(async (p: string) => {
         const s = String(p);

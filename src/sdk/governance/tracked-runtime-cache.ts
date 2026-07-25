@@ -6,6 +6,7 @@
  * repository-relative paths so health and validation output stays portable.
  */
 import { execFile } from "node:child_process";
+import { realpath } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { PM_GITIGNORE_RUNTIME_DIRECTORIES } from "../workspace.js";
@@ -40,6 +41,14 @@ function quoteShellArgument(value: string): string {
   return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
+/** Resolves a tracker root while retaining a deterministic fallback for missing paths. */
+export async function resolveCanonicalTrackerRoot(
+  pmRoot: string,
+  resolver: typeof realpath = realpath,
+): Promise<string> {
+  return resolver(pmRoot).catch(() => path.resolve(pmRoot));
+}
+
 /**
  * Find tracked files below every clone-local tracker directory.
  *
@@ -60,8 +69,9 @@ export async function scanTrackedRuntimeCache(
       remediation_command: null,
     };
   }
+  const canonicalPmRoot = await resolveCanonicalTrackerRoot(pmRoot);
   const trackerRelativeRoot = toPosixPath(
-    path.relative(gitWorkspaceRoot, path.resolve(pmRoot)),
+    path.relative(gitWorkspaceRoot, canonicalPmRoot),
   );
   if (trackerRelativeRoot.length === 0) {
     return {
@@ -122,9 +132,7 @@ export async function scanTrackedRuntimeCache(
         trackedPaths.length === 0
           ? null
           : `git rm --cached -r -- ${trackedRuntimeDirectories
-              .map((directory) =>
-                quoteShellArgument(`:(literal)${directory}`),
-              )
+              .map((directory) => quoteShellArgument(`:(literal)${directory}`))
               .join(" ")}`,
     };
   } catch {

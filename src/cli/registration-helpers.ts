@@ -501,7 +501,10 @@ export function normalizeCreateOptions(
     affectedVersion: readCreateString("affectedVersion"),
     fixedVersion: readCreateString("fixedVersion"),
     component: readCreateString("component"),
-    regression: readCreateString("regression"),
+    regression:
+      commandOptions.regression === true
+        ? "true"
+        : readCreateString("regression"),
     customerImpact: readCreateString("customerImpact"),
     dep: readCreateList("dep"),
     comment: readCreateList("comment"),
@@ -609,7 +612,10 @@ export function normalizeUpdateOptions(
     affectedVersion: readUpdateString("affectedVersion"),
     fixedVersion: readUpdateString("fixedVersion"),
     component: readUpdateString("component"),
-    regression: readUpdateString("regression"),
+    regression:
+      commandOptions.regression === true
+        ? "true"
+        : readUpdateString("regression"),
     customerImpact: readUpdateString("customerImpact"),
     dep: readUpdateList("dep"),
     depRemove: readUpdateList("depRemove"),

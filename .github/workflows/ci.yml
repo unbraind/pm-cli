@@ -199,6 +199,7 @@ jobs:
           pnpm version:check
           pnpm changelog:pm:check
           pnpm contracts:check
+          pnpm sdk:surface:check
           pnpm security:scan
           pnpm lint
           npm pack --dry-run

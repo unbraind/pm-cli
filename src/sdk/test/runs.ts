@@ -8,6 +8,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { readAuthorEnvironment } from "../../core/shared/author.js";
 import {
   type BackgroundLogStream,
   type BackgroundTestRunKind,
@@ -85,7 +86,7 @@ function resolveRequestedBy(
 ): string {
   const candidates = [
     author,
-    process.env.PM_AUTHOR,
+    readAuthorEnvironment(),
     fallback,
     process.env.USER,
     process.env.LOGNAME,
