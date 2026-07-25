@@ -132,6 +132,10 @@ describe("core/store/settings-validator", () => {
     for (const harnessSignals of [
       [{ harness: "missing-arrays", environment_keys: [1] }],
       [{ harness: 1, environment_keys: ["VALID"] }],
+      [{ harness: "Invalid-Namespace" }],
+      [{ harness: " padded" }],
+      [{ harness: "oversized", argv_markers: ["x".repeat(129)] }],
+      [{ harness: "too-many-signals", environment_keys: Array.from({ length: 65 }, (_, index) => `K${index}`) }],
       "not-an-array",
     ]) {
       const invalid = minimalValidSettings();

@@ -198,9 +198,6 @@ export function createHistoryEntry(params: {
     ...(agentIdentity.model_source
       ? { agent_model_source: agentIdentity.model_source }
       : {}),
-    ...(agentIdentity.session
-      ? { agent_session: agentIdentity.session }
-      : {}),
     op: params.op,
     patch,
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),

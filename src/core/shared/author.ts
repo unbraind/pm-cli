@@ -53,7 +53,7 @@ export interface DetectedAgentIdentity {
   model?: string;
   /** Signal class that supplied `model`. */
   model_source?: AgentModelSource;
-  /** Invocation/session identifier retained in local history only. */
+  /** Transient invocation/session identifier available only to the current host. */
   session?: string;
 }
 
@@ -82,8 +82,9 @@ export interface HarnessDetectionSignals {
 const authorIdentityStorage = new AsyncLocalStorage<ResolvedAuthorIdentity>();
 const harnessDetectionStorage =
   new AsyncLocalStorage<HarnessDetectionSignals>();
-const workspaceHarnessSignalsStorage =
-  new AsyncLocalStorage<readonly HarnessSignalDescriptor[]>();
+const workspaceHarnessSignalsStorage = new AsyncLocalStorage<
+  readonly NormalizedHarnessSignalDescriptor[]
+>();
 
 /** Built-in agent descriptors evaluated before package and workspace additions. */
 export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescriptor[] =
@@ -164,14 +165,12 @@ const registeredHarnessSignalDescriptors = new Map<
 
 const HARNESS_NAMESPACE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
-function nonBlank(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
+function nonBlank(value: unknown): string | undefined {
+  const trimmed = typeof value === "string" ? value.trim() : undefined;
   return trimmed && trimmed.length > 0 ? trimmed : undefined;
 }
 
-function boundedUniqueStrings(
-  values: readonly string[] | undefined,
-): string[] {
+function boundedUniqueStrings(values: readonly string[] | undefined): string[] {
   return [
     ...new Set(
       (values ?? [])
@@ -210,6 +209,9 @@ function normalizeHarnessSignalDescriptor(
   };
 }
 
+const NORMALIZED_BUILTIN_HARNESS_SIGNAL_DESCRIPTORS =
+  BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.map(normalizeHarnessSignalDescriptor);
+
 function descriptorEquals(
   left: NormalizedHarnessSignalDescriptor,
   right: NormalizedHarnessSignalDescriptor,
@@ -230,13 +232,13 @@ function currentHarnessSignalDescriptors(
   localDescriptors: readonly HarnessSignalDescriptor[] = [],
 ): readonly NormalizedHarnessSignalDescriptor[] {
   const descriptors = [
-    ...BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
+    ...NORMALIZED_BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
     ...[...registeredHarnessSignalDescriptors.values()].map(
       (entry) => entry.descriptor,
     ),
     ...(workspaceHarnessSignalsStorage.getStore() ?? []),
-    ...localDescriptors,
-  ].map(normalizeHarnessSignalDescriptor);
+    ...localDescriptors.map(normalizeHarnessSignalDescriptor),
+  ];
   const seen = new Set<string>();
   for (const descriptor of descriptors) {
     if (seen.has(descriptor.harness)) {
@@ -281,7 +283,7 @@ function effectiveHarnessDetectionSignals(
   return (
     harnessDetectionStorage.getStore() ?? {
       env: process.env,
-      argv: [process.execPath, ...process.argv],
+      argv: process.argv,
     }
   );
 }
@@ -296,7 +298,13 @@ function descriptorMatchesSignals(
     (key) => nonBlank(env[key]) !== undefined,
   );
   const argvMatch = descriptor.argv_markers.some((marker) =>
-    labels.some((label) => literalSignalMatches(label, marker)),
+    labels.some((label) => {
+      const normalizedPath = label.replaceAll("\\", "/");
+      return literalSignalMatches(
+        normalizedPath.slice(normalizedPath.lastIndexOf("/") + 1),
+        marker,
+      );
+    }),
   );
   const clientMatch = descriptor.client_names.some(
     (name) => clientName === name || literalSignalMatches(clientName, name),
@@ -318,10 +326,7 @@ function resolveAgentModel(
       source: "override",
     },
     {
-      value: firstEnvironmentValue(
-        env,
-        descriptor?.model_environment_keys,
-      ),
+      value: firstEnvironmentValue(env, descriptor?.model_environment_keys),
       source: "environment",
     },
     {
@@ -334,9 +339,7 @@ function resolveAgentModel(
     },
   ];
   return candidates.find(
-    (
-      candidate,
-    ): candidate is { value: string; source: AgentModelSource } =>
+    (candidate): candidate is { value: string; source: AgentModelSource } =>
       candidate.value !== undefined,
   );
 }
@@ -353,9 +356,9 @@ export function registerHarnessSignalDescriptors(
 ): () => void {
   const normalized = descriptors.map(normalizeHarnessSignalDescriptor);
   const builtins = new Map(
-    BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.map((descriptor) => [
+    NORMALIZED_BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.map((descriptor) => [
       descriptor.harness,
-      normalizeHarnessSignalDescriptor(descriptor),
+      descriptor,
     ]),
   );
   const seen = new Set<string>();
@@ -445,9 +448,7 @@ export function detectAgentIdentity(
   const session =
     firstEnvironmentValue(env, descriptor?.session_environment_keys) ??
     nonBlank(signals.client_info?.session)?.slice(0, 256);
-  const entries: Array<
-    [keyof DetectedAgentIdentity, string | undefined]
-  > = [
+  const entries: Array<[keyof DetectedAgentIdentity, string | undefined]> = [
     ["harness", descriptor?.harness],
     ["model", modelCandidate?.value],
     ["model_source", modelCandidate?.source],

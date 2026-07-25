@@ -405,7 +405,7 @@ async function handleToolCall(
   return runWithHarnessDetectionSignals(
     {
       env: process.env,
-      argv: [process.execPath, ...process.argv],
+      argv: process.argv,
       ...(activeMcpClientInfo ? { client_info: activeMcpClientInfo } : {}),
     },
     async () => {

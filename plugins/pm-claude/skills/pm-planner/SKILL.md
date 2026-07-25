@@ -63,21 +63,25 @@ Call `TaskUpdate(completed)` when the planning item is closed.
 Then for each child feature/task, set `parent: "pm-xxxx"` via `pm_update`.
 
 ### Prioritize the Backlog
+
 ```json
 { "tool": "pm_list", "args": { "options": { "status": "open", "limit": "30" } } }
 { "tool": "pm_update", "args": { "id": "pm-xxxx", "options": { "priority": "0" } } }
 ```
 
 ### Link Parent
+
 ```json
 { "tool": "pm_update", "args": { "id": "pm-child", "options": { "parent": "pm-epic" } } }
 ```
 
 ### Run Dedupe Audit After Batch Work
+
 ```json
 ```
 
 ### Validate After Batch Creates
+
 ```json
 { "tool": "pm_validate", "args": { "options": { "checkResolution": true } } }
 ```

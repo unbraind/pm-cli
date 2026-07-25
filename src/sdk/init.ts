@@ -929,7 +929,7 @@ async function createNewInitSettings(params: {
   const environmentAuthor = readAuthorEnvironment()?.trim() || undefined;
   const detectedHarness = detectHarnessIdentity({
     env: process.env,
-    argv: [process.execPath, ...process.argv],
+    argv: process.argv,
   });
   settings.author_default =
     params.normalizedOptions.authorFromOption ??

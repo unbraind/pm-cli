@@ -151,50 +151,55 @@ describe("agent runtime SDK primitives", () => {
       argv_markers: ["synthetic-agent"],
       client_names: ["synthetic-client"],
     };
-    const dispose = registerHarnessSignalDescriptors([descriptor]);
-    const disposeDuplicate = registerHarnessSignalDescriptors([descriptor]);
-    expect(
-      detectAgentIdentity({
-        env: {
-          SYNTHETIC_AGENT: "1",
-          SYNTHETIC_MODEL: "test-model",
-          SYNTHETIC_SESSION: "session-1",
-        },
-      }),
-    ).toEqual({
-      harness: "synthetic-agent",
-      model: "test-model",
-      model_source: "environment",
-      session: "session-1",
-    });
-    expect(() =>
-      registerHarnessSignalDescriptors([
-        { harness: "codex", environment_keys: ["OTHER_CODEX"] },
-      ]),
-    ).toThrowError(/Harness signal descriptor collision.*codex/u);
-    expect(() =>
-      registerHarnessSignalDescriptors([{ harness: "Invalid Namespace" }]),
-    ).toThrowError(/Invalid harness signal descriptor namespace/u);
-    expect(() =>
-      registerHarnessSignalDescriptors([
-        {
-          harness: "synthetic-agent",
-          environment_keys: ["DIFFERENT_SYNTHETIC_AGENT"],
-        },
-      ]),
-    ).toThrowError(/Harness signal descriptor collision.*synthetic-agent/u);
-    expect(() =>
-      runWithWorkspaceHarnessSignalDescriptors([descriptor], () => undefined),
-    ).toThrowError(/Harness signal descriptor collision.*synthetic-agent/u);
-    dispose();
-    expect(
-      detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } }),
-    ).toBe("synthetic-agent");
-    dispose();
-    disposeDuplicate();
-    expect(
-      detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } }),
-    ).toBeUndefined();
+    const disposers: Array<() => void> = [];
+    try {
+      disposers.push(registerHarnessSignalDescriptors([descriptor]));
+      disposers.push(registerHarnessSignalDescriptors([descriptor]));
+      expect(
+        detectAgentIdentity({
+          env: {
+            SYNTHETIC_AGENT: "1",
+            SYNTHETIC_MODEL: "test-model",
+            SYNTHETIC_SESSION: "session-1",
+          },
+        }),
+      ).toEqual({
+        harness: "synthetic-agent",
+        model: "test-model",
+        model_source: "environment",
+        session: "session-1",
+      });
+      expect(() =>
+        registerHarnessSignalDescriptors([
+          { harness: "codex", environment_keys: ["OTHER_CODEX"] },
+        ]),
+      ).toThrowError(/Harness signal descriptor collision.*codex/u);
+      expect(() =>
+        registerHarnessSignalDescriptors([{ harness: "Invalid Namespace" }]),
+      ).toThrowError(/Invalid harness signal descriptor namespace/u);
+      expect(() =>
+        registerHarnessSignalDescriptors([
+          {
+            harness: "synthetic-agent",
+            environment_keys: ["DIFFERENT_SYNTHETIC_AGENT"],
+          },
+        ]),
+      ).toThrowError(/Harness signal descriptor collision.*synthetic-agent/u);
+      expect(() =>
+        runWithWorkspaceHarnessSignalDescriptors([descriptor], () => undefined),
+      ).toThrowError(/Harness signal descriptor collision.*synthetic-agent/u);
+      disposers[0]!();
+      expect(
+        detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } }),
+      ).toBe("synthetic-agent");
+      disposers[0]!();
+      disposers[1]!();
+      expect(
+        detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } }),
+      ).toBeUndefined();
+    } finally {
+      for (const dispose of disposers.reverse()) dispose();
+    }
   });
 
   it("supports minimal workspace descriptors and literal client and argv signals", () => {
@@ -214,6 +219,20 @@ describe("agent runtime SDK primitives", () => {
         argv: ["codex", "--model"],
       }),
     ).toEqual({ harness: "codex" });
+    expect(
+      detectAgentIdentity({ env: {}, argv: ["/home/pi/project", "status"] }),
+    ).toEqual({});
+    expect(
+      detectAgentIdentity({
+        env: Object.create({ constructor: () => "not-an-env-value" }) as Record<
+          string,
+          string
+        >,
+        descriptors: [
+          { harness: "prototype-safe", environment_keys: ["constructor"] },
+        ],
+      }),
+    ).toEqual({});
   });
 
   it("resolves author precedence and records provenance on new history", () => {
@@ -292,7 +311,6 @@ describe("agent runtime SDK primitives", () => {
       agent_harness: "codex",
       agent_model: "gpt-5.6-sol",
       agent_model_source: "environment",
-      agent_session: "thread-456",
     });
     expect(author).toBe("configured-agent");
   });
@@ -369,7 +387,6 @@ describe("agent runtime SDK primitives", () => {
           author: "harness:codex",
           author_source: "detected",
           agent_harness: "codex",
-          agent_session: "runtime-mutation-parity",
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),
@@ -380,7 +397,6 @@ describe("agent runtime SDK primitives", () => {
           author: "harness:codex",
           author_source: "detected",
           agent_harness: "codex",
-          agent_session: "runtime-mutation-parity",
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),

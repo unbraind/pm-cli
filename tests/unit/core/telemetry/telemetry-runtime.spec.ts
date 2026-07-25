@@ -158,6 +158,7 @@ describe("core/telemetry/runtime", () => {
   });
 
   it("derives a stable, installation-keyed author_context_hash from PM_AUTHOR", () => {
+    const originalArgv = process.argv;
     const originalAuthor = process.env.PM_AUTHOR;
     const originalAgentModel = process.env.PM_AGENT_MODEL;
     const originalHarnessEnvironment = new Map(
@@ -170,17 +171,21 @@ describe("core/telemetry/runtime", () => {
       ),
     );
     try {
+      process.argv = [process.execPath, "pm"];
+      for (const key of originalHarnessEnvironment.keys()) {
+        delete process.env[key];
+      }
+      delete process.env.PM_AGENT_MODEL;
       // Minimal capture exposes only the boolean, never a hash.
       process.env.PM_AUTHOR = "claude-code-agent";
-      delete process.env.CODEX_HOME;
       expect(_testOnly.buildAuthorContextPayloadFields("minimal", "install-a")).toEqual({
         has_author_context: true,
-        has_agent_context: expect.any(Boolean),
+        has_agent_context: false,
       });
       delete process.env.PM_AUTHOR;
       expect(_testOnly.buildAuthorContextPayloadFields("minimal", "install-a")).toEqual({
         has_author_context: false,
-        has_agent_context: expect.any(Boolean),
+        has_agent_context: false,
       });
       // A blank/whitespace PM_AUTHOR is treated as unset.
       process.env.PM_AUTHOR = "   ";
@@ -243,6 +248,7 @@ describe("core/telemetry/runtime", () => {
         _testOnly.buildAuthorContextPayloadFields("redacted", "install-a"),
       ).toEqual({});
     } finally {
+      process.argv = originalArgv;
       for (const [key, value] of [
         ["PM_AUTHOR", originalAuthor],
         ["PM_AGENT_MODEL", originalAgentModel],

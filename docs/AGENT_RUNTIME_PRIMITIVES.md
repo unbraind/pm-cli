@@ -36,15 +36,15 @@ The stable resolution order is:
 Every newly created `HistoryEntry` records `author_source` as `asserted`,
 `configured`, `detected`, or `unknown`. Author selection and agent observation
 are independent: even an explicit, environment, or configured author retains
-the observed `agent_harness`, `agent_model`, `agent_model_source`, and
-`agent_session` fields. Older history remains valid because all agent fields
-are optional.
+the observed `agent_harness`, `agent_model`, and `agent_model_source` fields.
+Older history remains valid because all agent fields are optional.
 
 Detection is a pure, bounded signal match: it does not launch a subprocess,
 traverse an unbounded process tree, execute user regexes, emit environment
-values, or make network requests. `agent_session` stays in local history and
-is never exported to telemetry. Non-minimal telemetry hashes harness/model
-with the installation id; minimal telemetry emits presence booleans only.
+values, or make network requests. Session signals are transient invocation
+context: they are never persisted to history or exported to telemetry.
+Non-minimal telemetry hashes harness/model with the installation id; minimal
+telemetry emits presence booleans only.
 
 SDK hosts can preflight the same behavior:
 

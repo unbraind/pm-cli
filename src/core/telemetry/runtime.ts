@@ -774,7 +774,7 @@ function buildAuthorContextPayloadFields(
   const author = (readAuthorEnvironment() ?? "").trim();
   const agent = detectAgentIdentity({
     env: process.env,
-    argv: [process.execPath, ...process.argv],
+    argv: process.argv,
   });
   const hasAgentContext =
     agent.harness !== undefined || agent.model !== undefined;

@@ -919,8 +919,6 @@ export interface HistoryEntry {
   agent_model?: string;
   /** Bounded signal class that supplied `agent_model`. */
   agent_model_source?: "override" | "environment" | "mcp_client" | "argv";
-  /** Observed invocation/session identifier; never exported to telemetry. */
-  agent_session?: string;
   /** Value that configures or reports op for this contract. */
   op: string;
   /** Value that configures or reports patch for this contract. */

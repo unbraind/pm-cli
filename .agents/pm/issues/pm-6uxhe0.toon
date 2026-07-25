@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[7]: agent-ux,"area:sdk",author,defect,governance,identity,provenance
 created_at: "2026-07-25T12:25:02.243Z"
-updated_at: "2026-07-25T19:26:50.123Z"
+updated_at: "2026-07-25T19:51:58.501Z"
 assignee: "harness:codex"
 author: "harness:claude-code"
 estimated_minutes: 180
@@ -30,14 +30,18 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-gw6uyq,related,"2026-07-25T12:35:00.176Z",null,null
   pm-w7ccmv,related,"2026-07-25T12:35:00.176Z",null,null
   pm-zqsrt5,related,"2026-07-25T12:35:00.176Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-25T18:18:21.916Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
   "2026-07-25T19:14:52.009Z","harness:codex","Implementation evidence: resolveAuthorIdentity always performs bounded harness/model observation before selecting explicit, PM_AUTHOR, configured, detected, or unknown author precedence. Tests prove a configured author remains author_source=configured while agent_harness/model remain observable in history. Full suite, 100% coverage, static gates, and packed consumer acceptance passed."
+  "2026-07-25T19:51:58.501Z","harness:codex","Review amendment: session identifiers are transient host context only and are no longer serialized to durable history or telemetry. Exact branch-local history streams were scrubbed of the mistakenly persisted top-level field. Additional review hardening covers bounded settings validation, executable-basename argv matching, inherited environment values, cached descriptor normalization, deterministic telemetry tests, and failure-safe registration cleanup."
 files[2]{path,scope,note}:
   src/core/history/history.ts,project,independent observation persistence
   src/core/shared/author.ts,project,always-run observation across author precedence
-tests[1]{command,scope,timeout_seconds}:
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test,project,1200
   node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+  "pnpm quality:static",project,1200
 docs[1]{path,scope,note}:
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,Documents independent author precedence and observed harness/model provenance
 body: ""

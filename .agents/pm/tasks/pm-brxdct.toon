@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[6]: agent-ux,"area:sdk",author,customization,extensibility,identity
 created_at: "2026-07-25T12:26:06.033Z"
-updated_at: "2026-07-25T19:16:26.385Z"
+updated_at: "2026-07-25T19:52:04.036Z"
 assignee: "harness:codex"
 author: "harness:claude-code"
 estimated_minutes: 300
@@ -30,10 +30,11 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-j82fd3,related,"2026-07-25T12:35:01.440Z",null,null
   pm-t4d7nz,related,"2026-07-25T12:35:01.440Z",null,null
   pm-zqsrt5,related,"2026-07-25T12:35:01.440Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-25T18:18:28.969Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
   "2026-07-25T19:14:54.167Z","harness:codex","Implementation evidence: added declarative built-in and workspace/package harness signal registries with literal bounded environment, argv, process-label, and MCP client matching; model/session key precedence; normalized collision handling; identical-registration reference counting; settings validation, sparse persistence, CLI and MCP wiring; and SDK exports. Arbitrary commands, regex execution, filesystem probing, and network lookup are excluded. Packed isolated acceptance proved a workspace-defined harness end to end; full suite and 100% coverage passed."
   "2026-07-25T19:16:26.384Z","harness:codex","Acceptance finding and fix: a tracker evidence comment containing a harness name exposed that scanning every CLI argument could misclassify ordinary free text as a harness signal. Detection now bounds argv identity/model markers to the executable launch prefix (first three tokens); explicit process_labels remain the host-controlled extension seam. A regression test proves a later claude-code-agent comment value cannot spoof detection."
+  "2026-07-25T19:52:04.036Z","harness:codex","Review amendment: session identifiers are transient host context only and are no longer serialized to durable history or telemetry. Exact branch-local history streams were scrubbed of the mistakenly persisted top-level field. Additional review hardening covers bounded settings validation, executable-basename argv matching, inherited environment values, cached descriptor normalization, deterministic telemetry tests, and failure-safe registration cleanup."
 files[6]{path,scope,note}:
   src/cli/main.ts,project,CLI invocation scoping
   src/core/shared/author.ts,project,declarative built-in and package registry
@@ -41,8 +42,11 @@ files[6]{path,scope,note}:
   src/core/store/settings-validator.ts,project,workspace descriptor validation
   src/core/store/settings.ts,project,sparse descriptor persistence
   src/types.ts,project,workspace registry contract
-tests[1]{command,scope,timeout_seconds}:
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test,project,1200
   node scripts/run-tests.mjs test -- tests/unit/core/store/settings-validator.spec.ts tests/unit/core/store/settings-sparse-persistence.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+  "pnpm quality:static",project,1200
 docs[1]{path,scope,note}:
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,package and workspace descriptor registry
 body: ""
