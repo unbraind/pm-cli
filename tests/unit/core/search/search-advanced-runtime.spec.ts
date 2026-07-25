@@ -116,6 +116,16 @@ describe("search-advanced package runtime", () => {
       expect(defaultSearch.mode).toBe("keyword");
       expect(defaultSearch.query).toBe("calendar package");
 
+      const repeatedFieldsSearch = await runtime.runAdvancedSearchPackage(
+        ["calendar package", "--fields", "id,title", "--fields", "score"],
+        { fields: ["id,title", "score"] },
+        global,
+      );
+      expect(repeatedFieldsSearch.projection).toEqual({
+        mode: "fields",
+        fields: ["id", "title", "score"],
+      });
+
       const compactSearch = await runtime.runAdvancedSearchPackage(
         ["calendar package", "--compact", "--limit", "5"],
         { compact: true, limit: "5" },

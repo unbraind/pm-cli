@@ -62,18 +62,35 @@ export function readBooleanOption(
   return undefined;
 }
 
-/** Splits a comma-separated string option into trimmed, non-empty entries. */
+/**
+ * Normalizes a comma-separated or Commander-accumulated list option.
+ *
+ * Repeatable extension flags arrive as string arrays while legacy and direct
+ * SDK callers may still provide one comma-separated string. Supporting both
+ * shapes lets package runtimes consume canonical `list` flag contracts without
+ * reimplementing option coercion.
+ */
 export function readCsvListOption(
   options: Record<string, unknown>,
   key: string,
   aliases: string[] = [],
 ): string[] {
-  const value = readStringOption(options, key, aliases);
-  if (!value) {
-    return [];
+  for (const candidate of [key, ...aliases]) {
+    const value = options[candidate];
+    const entries =
+      typeof value === "string"
+        ? value.split(",")
+        : Array.isArray(value)
+          ? value.flatMap((entry) =>
+              typeof entry === "string" ? entry.split(",") : [],
+            )
+          : [];
+    const normalized = entries
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+    if (normalized.length > 0) {
+      return normalized;
+    }
   }
-  return value
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
+  return [];
 }

@@ -381,7 +381,7 @@ describe("extension scaffold define builder guidance", () => {
     expect(scaffold[".gitignore"]).not.toContain("*.d.ts");
   });
 
-  it("scaffolds standalone extensions as TypeScript with a tsconfig and build guidance", () => {
+  it("scaffolds extension vocabulary as the same publishable TypeScript package", () => {
     const scaffold = buildStarterExtensionScaffoldFiles("local-ext", "local ext ping", "extension", "commands");
     const readme = scaffold["README.md"] ?? "";
     const entrypoint = scaffold["index.ts"] ?? "";
@@ -389,17 +389,20 @@ describe("extension scaffold define builder guidance", () => {
       pm_min_version?: string;
     };
 
-    expect(readme).not.toContain("## Authoring With define* Builders");
-    // Standalone extensions are still authored in TypeScript: typed entrypoint +
-    // a tsconfig, with the README documenting the compile step.
+    expect(readme).toContain("## Authoring With define* Builders");
+    // Extension and package vocabulary now share one complete authoring artifact:
+    // typed entrypoint, package metadata, colocated test, and strict tsconfig.
     expect(entrypoint).toContain('import type { ExtensionApi } from "@unbrained/pm-cli/sdk";');
     expect(entrypoint).toContain("export function activate(api: ExtensionApi): void {");
     expect(manifest.pm_min_version).toBe(SCAFFOLD_PM_MIN_VERSION);
     expect(readme).toContain(`Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\``);
     expect(scaffold["tsconfig.json"]).toBeTruthy();
+    expect(scaffold["package.json"]).toBeTruthy();
+    expect(scaffold["index.test.ts"]).toContain("createExtensionTestHarness");
+    expect(scaffold[".gitignore"]).toContain("node_modules/");
     expect(scaffold["index.js"]).toBeUndefined();
-    expect(readme).toContain("npm install -D typescript @types/node @unbrained/pm-cli");
-    expect(readme).toContain("npx tsc");
+    expect(readme).toContain("npm install");
+    expect(readme).toContain("npm test");
   });
 });
 
@@ -492,13 +495,13 @@ describe("declarative composeExtension package scaffold", () => {
     expect(manifest.activation).toEqual({ commands: ["kit ping"] });
   });
 
-  it("ignores the declarative flag for extension-mode scaffolds (handled by scaffoldExtensionProject)", () => {
-    // buildStarterExtensionScaffoldFiles only consumes `declarative` in the
-    // package branch; extension-mode passes through to the imperative starter.
-    // scaffoldExtensionProject rejects extension-mode + declarative before this.
-    const entry = buildStarterExtensionScaffoldFiles("local-ext", "local ext ping", "extension", "commands", true)["index.ts"] ?? "";
-    expect(entry).toContain("export function activate(api: ExtensionApi): void {");
-    expect(entry).not.toContain("composeExtension(blueprint)");
+  it("keeps declarative artifact generation vocabulary-independent", () => {
+    // scaffoldExtensionProject owns the user-facing extension-mode rejection;
+    // the pure file builder produces one artifact for either vocabulary.
+    const extension = buildStarterExtensionScaffoldFiles("local-ext", "local ext ping", "extension", "commands", true);
+    const packageArtifact = buildStarterExtensionScaffoldFiles("local-ext", "local ext ping", "package", "commands", true);
+    expect(extension).toEqual(packageArtifact);
+    expect(extension["index.ts"]).toContain("composeExtension(blueprint)");
   });
 
   // The full capability matrix: every --capability variant emits its

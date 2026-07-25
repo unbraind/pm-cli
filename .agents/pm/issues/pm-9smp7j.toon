@@ -2,18 +2,40 @@ id: pm-9smp7j
 title: pm extension --init and pm package init are divergent scaffold generators behind the same grammar; the extension path emits no tests and an unpublishable manifest
 description: "Two scaffold generators are reachable through near-identical grammar and produce materially different quality. Verified against dist build 2026.7.25 by running both with identical arguments.\n\npm extension --init <path> --capability commands emits 5 files: index.ts, manifest.json, package.json, README.md, tsconfig.json. Its package.json is the single line {\"type\": \"module\"} with no name, version, license, scripts, engines, peerDependencies or pm block. There is no test file and no .gitignore.\n\npm package --init <path> --capability commands emits 7 files: the same five plus .gitignore and index.test.ts, and its package.json is a complete publishable manifest with name, version, keywords, engines, typecheck/test scripts, peerDependencies on @unbrained/pm-cli, devDependencies, and the full pm block (aliases, extensions, docs, examples, catalog with display_name/category/summary/tags). The generated manifests are byte-identical apart from the name, and index.ts differs.\n\nConsequence for the stated goal of making package creation as easy as possible: an agent or author who reasons 'I am building an extension' reaches for the extension noun, which is also where --capability is documented in pm extension --help, and lands on the degraded generator. Its next_steps never mention that pm package init exists or that it produces the fuller starter, so nothing routes the author to the better path. docs/EXTENSIONS.md describes the rich behaviour (per-capability starters with a colocated node:test suite built on the SDK assertRegistered*/runRegistered*ForTest helpers) under the package noun, so the extension path silently diverges from its own documentation. The result is a starter with zero tests in a project that enforces 100% coverage internally and publishes a dedicated @unbrained/pm-cli/sdk/testing subpath, and a package.json that cannot be published or installed as a pm package without being hand-rewritten to the shape every real unbraind pm-* repository uses.\n\nRelated evidence for pm-quzx: the good generator itself mints an unbounded peer range, peerDependencies {\"@unbrained/pm-cli\": \">=2026.6.24\"}, so the scaffold is an upstream source of the unbounded-range pattern that item already tracks."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: "area:extensions",dx,scaffold
 created_at: "2026-07-25T21:13:51.838Z"
-updated_at: "2026-07-25T21:13:51.838Z"
+updated_at: "2026-07-25T23:37:16.233Z"
+closed_at: "2026-07-25T23:36:15.515Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The extension and package scaffold paths share one generator so identical arguments produce identical output, or the extension path is explicitly narrowed to a documented sub-case and its output and next_steps state which fuller path to use instead. Every scaffold path that produces an installable artifact emits a colocated test built on the public SDK testing helpers and a package.json that pm install accepts without hand editing. Documentation in docs/EXTENSIONS.md matches the behaviour of both nouns. A regression test asserts scaffold parity between the two entry points for every --capability value."
 parent: pm-ugqx
 risk: low
 confidence: high
+resolution: Unified package and extension scaffold generation behind one publishable TypeScript artifact builder for all ten capabilities.
+expected_result: "Both init spellings emit installable, testable, publishable packages with identical metadata and runtime behavior."
+actual_result: "Both spellings emit the same seven-file artifact, generated tests/typechecks pass, and independently packed consumer installs and dispatches both forms."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-8mxg,related,"2026-07-25T21:13:51.838Z",null,null
   pm-quzx,related,"2026-07-25T21:13:51.838Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-25T22:35:03.905Z","harness:codex","Implementation evidence: extension and package init now emit the same publishable seven-file TypeScript package artifact for all ten capabilities, with colocated runtime tests and identical manifests/package metadata."
+  "2026-07-25T22:45:43.797Z","harness:codex","Coverage triage: repository coverage run was invalidated by ENOSPC in shared /tmp (175 suites failed during transform). Two legitimate stale guidance expectations were updated to the unified package artifact; no coverage threshold or test gate was changed."
+  "2026-07-25T23:27:33.340Z","harness:codex","Evidence: unified package/extension scaffolding and all first-party package installation paths passed the full sandboxed coverage gate (371 files, 6,388 tests, 100/100/100/100). Fresh module-graph verification for search-advanced also passes after consuming the shared canonical runtime contracts."
+  "2026-07-25T23:33:32.235Z","harness:codex","Acceptance evidence: independent packed consumer generated `pm-agent-workflow` through package init and `pm-agent-hooks` through extension init; both emitted publishable TypeScript packages whose generated typecheck/test scripts passed, installed successfully, dispatched their commands, and passed isolated deep strict doctor."
+files[4]{path,scope,note}:
+  src/sdk/extension/scaffold.ts,project,Unified extension/package scaffold artifact
+  tests/unit/extensions/extension-command.spec.ts,project,Lifecycle scaffold acceptance coverage
+  tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,Unified artifact authoring guidance acceptance
+  tests/unit/sdk/extension-authoring-contracts.spec.ts,project,All-capability vocabulary parity coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/extension-authoring-contracts.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms10akhf-01q3rk,test,passed,"2026-07-25T23:34:03.993Z","2026-07-25T23:34:34.804Z","2026-07-25T23:34:34.804Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated release entry for scaffold parity fix
+  docs/EXTENSIONS.md,project,Unified scaffold documentation
+close_reason: "Unified both init spellings; full coverage, linked tests, and packed-consumer acceptance passed."
 body: ""

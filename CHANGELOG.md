@@ -9,11 +9,14 @@
 
 ### Changed
 
+- Dependabot update queue 2026-07-21: PRs \#618-\#621 ([pm-pegcmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pegcmx.toon))
 - Harness signal registry: identity detection becomes declared data that a config entry or a package can extend without a code change ([pm-brxdct](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-brxdct.toon))
 - Public SDK surface snapshot and breaking-change gate: the exported API is a reviewed artifact, and an unintended removal or signature change cannot merge ([pm-e6tm5c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e6tm5c.toon))
 
 ### Fixed
 
+- pm package init doubles the pm- prefix and mints an unusable pm pm ... command path when given the package name every real pm package actually uses ([pm-c5f0gh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c5f0gh.toon))
+- pm extension --init and pm package init are divergent scaffold generators behind the same grammar; the extension path emits no tests and an unpublishable manifest ([pm-9smp7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9smp7j.toon))
 - Built-in help examples teach an explicit --author on dozens of commands, training every agent to suppress its own detected identity and pay tokens for it ([pm-sx52hr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sx52hr.toon))
 - Shipped MCP manifests and MCP tool guidance hardwire a static author, overriding the automatic identity of every plugin-hosted agent ([pm-zqsrt5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqsrt5.toon))
 - A configured author_default suppresses harness detection entirely, so any workspace that sets a default author records no harness and no model provenance ([pm-6uxhe0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6uxhe0.toon))

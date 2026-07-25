@@ -10,6 +10,8 @@ export {
   getPmGitignoreBlock,
   type EnsurePmGitignoreResult,
 } from "./workspace.js";
+export { SEARCH_EXTENSION_FLAG_DEFINITIONS } from "./extension-contracts.js";
+export type { FlagDefinition } from "../core/extensions/loader.js";
 import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import {

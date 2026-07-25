@@ -37,6 +37,11 @@ pm reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-querie
 
 Without `--mode`, `--semantic`, or `--hybrid`, `search-advanced` stays keyword-first for fast agent reads.
 
+The command registers its shared search options from
+`SEARCH_EXTENSION_FLAG_DEFINITIONS`, the public SDK authoring adapter over pm's
+canonical search contracts. This keeps package aliases and value semantics in
+lockstep with the core CLI without a copied flag table.
+
 ## Reindex eval harness
 
 `pm reindex --eval` runs a golden-query relevance harness after the reindex pass and appends a deterministic `eval` object to JSON output:
