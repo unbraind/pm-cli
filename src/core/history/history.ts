@@ -16,6 +16,7 @@ import {
 } from "../shared/serialization.js";
 import { nowIso } from "../shared/time.js";
 import {
+  resolveHistoryAgentIdentity,
   resolveHistoryAuthorSource,
   type AuthorSource,
 } from "../shared/author.js";
@@ -183,12 +184,23 @@ export function createHistoryEntry(params: {
     afterPatchCanonical,
   ) as HistoryPatchOp[];
   const patch = normalizeHistoryPatchOps(beforePatchCanonical, rawPatch);
+  const agentIdentity = resolveHistoryAgentIdentity(params.author);
 
   return {
     ts: params.nowIso,
     author: params.author,
     author_source:
       params.authorSource ?? resolveHistoryAuthorSource(params.author),
+    ...(agentIdentity.harness
+      ? { agent_harness: agentIdentity.harness }
+      : {}),
+    ...(agentIdentity.model ? { agent_model: agentIdentity.model } : {}),
+    ...(agentIdentity.model_source
+      ? { agent_model_source: agentIdentity.model_source }
+      : {}),
+    ...(agentIdentity.session
+      ? { agent_session: agentIdentity.session }
+      : {}),
     op: params.op,
     patch,
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),

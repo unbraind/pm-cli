@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { _testOnly, firstExampleOrEmpty } from "../../../src/cli/help-content.js";
+import {
+  _testOnly,
+  firstExampleOrEmpty,
+  resolveHelpNarrative,
+} from "../../../src/cli/help-content.js";
 
 describe("help-content.firstExampleOrEmpty", () => {
   it("returns only the first example when examples are present", () => {
@@ -27,5 +31,37 @@ describe("help-content rendering helpers", () => {
         examples: ["pm list --help"],
       }),
     ).not.toContain("Tips:");
+  });
+
+  it("keeps agent-facing examples free of redundant identity flags", () => {
+    const commands = [
+      "create",
+      "list",
+      "list-in-progress",
+      "calendar",
+      "context",
+      "next",
+      "history-compact",
+      "activity",
+      "restore",
+      "close",
+      "delete",
+      "comments",
+      "claim",
+      "release",
+      "start-task",
+      "pause-task",
+      "close-task",
+    ];
+    const examples = commands.flatMap(
+      (command) => resolveHelpNarrative(command, "detailed").examples,
+    );
+    expect(examples.filter((example) => example.includes("--author"))).toEqual([
+      expect.stringContaining("Explicit non-agent identity override"),
+    ]);
+    expect(examples.some((example) => example.includes("--assignee"))).toBe(
+      false,
+    );
+    expect(examples.some((example) => example.includes("author="))).toBe(false);
   });
 });

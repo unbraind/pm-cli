@@ -32,11 +32,12 @@ The barrel also exports the corresponding option and result contracts, including
 Every command accepts a root-level author override:
 
 ```bash
-pm --author release-agent create --title "Prepare release" --type Task
-pm update <id> --author review-agent --message "Address review feedback"
+pm --author release-service create --title "Prepare release" --type Task
 ```
 
 The override applies to every mutation performed during that invocation, including nested SDK-backed operations and extension hooks. Embedded hosts can use `applyInvocationAuthorOverride(author)` and call the returned idempotent restore function in `finally`; this prevents one request's identity from leaking into the next request in a long-lived process.
+Normal agent invocations omit the flag; explicit author is for intentional
+external principals or compatibility overrides.
 
 Author precedence is:
 

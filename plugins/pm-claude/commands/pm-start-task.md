@@ -9,7 +9,7 @@ Use native pm MCP tools to start a tracked task. Argument: `$ARGUMENTS` (item ID
    - If `$ARGUMENTS` looks like an ID (starts with `pm-`): call `pm_get` with that ID.
    - If `$ARGUMENTS` has keywords: call `pm_search` with those keywords.
    - If empty: call `pm_list` to show open items and ask the user which to start.
-3. **Claim** the selected item with `pm_claim` and `author: "claude-code-agent"`.
+3. **Claim** the selected item with `pm_claim`.
 4. **Update status** with `pm_update` to `status: "in_progress"`.
 5. **Sync to Claude Code task panel** — call `TaskCreate`:
    ```

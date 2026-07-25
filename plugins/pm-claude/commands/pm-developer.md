@@ -13,7 +13,7 @@ Run the full pm developer loop using native MCP tools. Argument: `$ARGUMENTS` (i
    - If `$ARGUMENTS` is a pm ID: `pm_get` it directly.
    - If keywords: pick the best match from search or ask the user.
    - If no match: `pm_create` with progressive mode.
-3. **Claim** with `pm_claim` and `author: "claude-code-agent"`, then set `status: "in_progress"` with `pm_update`.
+3. **Claim** with `pm_claim`, then set `status: "in_progress"` with `pm_update`.
 4. **Sync to Claude Code task panel**:
    ```
    TaskCreate:

@@ -28,7 +28,7 @@ Output: pm item ID + acceptance criteria for Phase 2.
 
 ## Phase 2: Claim and Implement
 
-1. `pm_claim` with `author: "claude-code-agent"`
+1. `pm_claim`
 2. `pm_update` to `status: "in_progress"`
 3. Sync Claude Code task panel:
    ```
@@ -83,6 +83,6 @@ At completion, report:
 
 - Always triage before implementing — never skip Phase 1
 - Always verify before closing — never skip Phase 3
-- Set `author: "claude-code-agent"` on all pm mutations
+- Rely on automatic MCP harness identity for pm mutations
 - Do not pass `path` during real repository tracking
 - Create at most one pm item per delivery — decompose large requests first

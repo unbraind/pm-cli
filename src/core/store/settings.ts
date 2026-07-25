@@ -1154,6 +1154,11 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     item_format: normalizeSettingsItemFormat(settings, defaults),
     locks: { ...defaults.locks, ...settings.locks },
     ids: { ...defaults.ids, ...settings.ids },
+    agent_identity: {
+      harness_signals: structuredClone(
+        settings.agent_identity?.harness_signals ?? [],
+      ),
+    },
     mutation_guard: {
       ...defaults.mutation_guard,
       ...settings.mutation_guard,
@@ -1208,6 +1213,23 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
 function orderSerializedSettingsSections(
   ordered: Record<string, unknown>,
 ): void {
+  ordered.agent_identity = orderObject(
+    ordered.agent_identity as Record<string, unknown>,
+    ["harness_signals"],
+  );
+  (ordered.agent_identity as Record<string, unknown>).harness_signals =
+    arrayOrEmpty(
+      (ordered.agent_identity as Record<string, unknown>).harness_signals,
+    ).map((entry) =>
+      orderObject(recordOrEmpty(entry), [
+        "harness",
+        "environment_keys",
+        "model_environment_keys",
+        "session_environment_keys",
+        "argv_markers",
+        "client_names",
+      ]),
+    );
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, [
     "ttl_seconds",
     "wait_ms",
@@ -1448,6 +1470,10 @@ function buildSerializeBaseSettings(settings: PmSettings): PmSettings {
     ...settings,
     locks: valueOrDefault(settings.locks, SETTINGS_DEFAULTS.locks),
     ids: valueOrDefault(settings.ids, SETTINGS_DEFAULTS.ids),
+    agent_identity: valueOrDefault(
+      settings.agent_identity,
+      SETTINGS_DEFAULTS.agent_identity,
+    ),
     mutation_guard: valueOrDefault(
       settings.mutation_guard,
       SETTINGS_DEFAULTS.mutation_guard,
@@ -1675,6 +1701,7 @@ const SETTINGS_TOP_LEVEL_KEY_ORDER = [
   "id_prefix",
   "ids",
   "author_default",
+  "agent_identity",
   "mutation_guard",
   "item_format",
   "locks",

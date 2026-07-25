@@ -913,6 +913,14 @@ export interface HistoryEntry {
   author: string;
   /** Provenance of the author selected for this event. Absent only on legacy entries. */
   author_source?: "asserted" | "configured" | "detected" | "unknown";
+  /** Observed agent harness, independent from the effective author precedence. */
+  agent_harness?: string;
+  /** Observed agent model identifier, retained in local history. */
+  agent_model?: string;
+  /** Bounded signal class that supplied `agent_model`. */
+  agent_model_source?: "override" | "environment" | "mcp_client" | "argv";
+  /** Observed invocation/session identifier; never exported to telemetry. */
+  agent_session?: string;
   /** Value that configures or reports op for this contract. */
   op: string;
   /** Value that configures or reports patch for this contract. */
@@ -1169,6 +1177,24 @@ export interface PmSettings {
   };
   /** Value that configures or reports author default for this contract. */
   author_default: string;
+  /** Declarative workspace additions to the built-in agent identity registry. */
+  agent_identity?: {
+    /** Pure, bounded harness signal descriptors evaluated after built-ins. */
+    harness_signals: Array<{
+      /** Stable lowercase harness namespace. */
+      harness: string;
+      /** Environment keys whose non-blank presence identifies the harness. */
+      environment_keys?: string[];
+      /** Environment keys checked in order for a model identifier. */
+      model_environment_keys?: string[];
+      /** Environment keys checked in order for a session identifier. */
+      session_environment_keys?: string[];
+      /** Literal executable or argument markers. */
+      argv_markers?: string[];
+      /** Literal MCP client-name markers. */
+      client_names?: string[];
+    }>;
+  };
   /** Shared pre-write provenance, secret, and stale-work policy. */
   mutation_guard: {
     /** Reject mutations whose resolved author is `unknown`. */

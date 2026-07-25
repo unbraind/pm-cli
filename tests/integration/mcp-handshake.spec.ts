@@ -74,6 +74,7 @@ const EXPECTED_TOOL_NAMES = [
 
 describe("MCP protocol handshake", () => {
   it("handles ping with an empty result payload", async () => {
+    expect(mcpServerTestOnly.getMcpClientInfo()).toBeUndefined();
     await expect(
       handleRequest({
         jsonrpc: "2.0",
@@ -118,6 +119,12 @@ describe("MCP protocol handshake", () => {
     expect(result.instructions).toContain("pm_schema");
     expect(result.instructions).toContain("pm_config");
     expect(result.instructions).toContain("pm_append");
+    expect(result.instructions).toContain("automatically");
+    expect(result.instructions).not.toContain("claude-code-agent");
+    expect(mcpServerTestOnly.getMcpClientInfo()).toEqual({
+      name: "handshake-test",
+      version: "1.0.0",
+    });
     expect(result.capabilities).toMatchObject({ tools: {} });
   });
 

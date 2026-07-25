@@ -30,7 +30,6 @@ Initialize pm project tracking using native MCP tools. Argument: `$ARGUMENTS` (o
    {
      "tool": "pm_create",
      "args": {
-       "author": "claude-code-agent",
        "options": {
          "title": "<project name> — initial setup",
          "type": "Epic",

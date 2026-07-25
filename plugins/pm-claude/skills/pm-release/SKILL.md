@@ -48,8 +48,8 @@ TaskUpdate: { taskId: <saved>, status: "completed" }
 
 ### Link Release Artifacts
 ```json
-{ "tool": "pm_docs", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": ["path=CHANGELOG.md,scope=project,note=release-notes"] } } }
-{ "tool": "pm_files", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": ["path=package.json,scope=project,note=version"] } } }
+{ "tool": "pm_docs", "args": { "id": "pm-xxxx", "options": { "add": ["path=CHANGELOG.md,scope=project,note=release-notes"] } } }
+{ "tool": "pm_files", "args": { "id": "pm-xxxx", "options": { "add": ["path=package.json,scope=project,note=version"] } } }
 ```
 
 ### Record Evidence
@@ -58,7 +58,6 @@ TaskUpdate: { taskId: <saved>, status: "completed" }
   "tool": "pm_comments",
   "args": {
     "id": "pm-xxxx",
-    "author": "claude-code-agent",
     "options": {
       "add": "Release evidence: build ok. Tests pass. 100% coverage. pm validate ok. GitHub CI green. npm publish ok."
     }

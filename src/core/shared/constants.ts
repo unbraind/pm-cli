@@ -282,6 +282,9 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     token_length: 4,
   },
   author_default: "",
+  agent_identity: {
+    harness_signals: [],
+  },
   mutation_guard: {
     require_attributed_author: false,
     secret_guard: "advise",

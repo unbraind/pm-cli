@@ -19,6 +19,9 @@ import {
   isMutationAction,
   pathExists,
   readSettings,
+  runWithHarnessDetectionSignals,
+  runWithWorkspaceHarnessSignalDescriptors,
+  type AgentClientInfo,
 } from "../sdk/runtime-primitives.js";
 import { pmToolActionNestedOptionKeys } from "../sdk/cli-contracts/tool-schema.js";
 import {
@@ -62,6 +65,7 @@ if (
 // build serving requests (was hard-coded "1.0.0"; see pm-2nvw).
 const PM_MCP_SERVER_VERSION =
   resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
+let activeMcpClientInfo: AgentClientInfo | undefined;
 
 // Tool definitions (TOOLS) live in ./tool-definitions.ts so the `pm contracts`
 // golden-file snapshot can import the surface without loading the server
@@ -374,6 +378,87 @@ function errorContent(error: unknown): Record<string, unknown> {
   };
 }
 
+function readMcpClientInfo(
+  params: Record<string, unknown> | undefined,
+): AgentClientInfo | undefined {
+  const clientInfo = asRecordClone(params?.clientInfo);
+  const clientName =
+    typeof clientInfo.name === "string" ? clientInfo.name.trim() : "";
+  if (clientName.length === 0) return undefined;
+  const optionalValues = [
+    ["version", clientInfo.version, 128],
+    ["model", clientInfo.model, 256],
+    ["session", clientInfo.session, 256],
+  ] as const;
+  const result: AgentClientInfo = { name: clientName.slice(0, 128) };
+  for (const [key, value, limit] of optionalValues) {
+    if (typeof value === "string" && value.trim().length > 0) {
+      result[key] = value.trim().slice(0, limit);
+    }
+  }
+  return result;
+}
+
+async function handleToolCall(
+  paramsInput: Record<string, unknown> | undefined,
+): Promise<Record<string, unknown>> {
+  return runWithHarnessDetectionSignals(
+    {
+      env: process.env,
+      argv: [process.execPath, ...process.argv],
+      ...(activeMcpClientInfo ? { client_info: activeMcpClientInfo } : {}),
+    },
+    async () => {
+      const params = asRecordClone(paramsInput);
+      const name = readRequiredString(params, "name");
+      const handler = Object.prototype.hasOwnProperty.call(HANDLERS, name)
+        ? HANDLERS[name]
+        : undefined;
+      if (!handler) {
+        throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
+      }
+      // pm-ydkl: defensive HTML-entity decode for free-text fields. Claude / the
+      // Anthropic MCP SDK HTML-encodes `<` / `>` (and friends) in tool arguments
+      // before they reach pm-cli, which would otherwise leak `&lt;type&gt;` into
+      // stored pm comments / notes / item bodies. Direct CLI calls are not
+      // affected; decoding at the MCP boundary normalizes the agent path while
+      // leaving normal text untouched.
+      const args = decodeHtmlEntitiesInOptions(
+        asRecordClone(params.arguments),
+      );
+      const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
+      const pmRoot = resolvePmRoot(
+        cwd,
+        typeof args.path === "string" ? args.path : undefined,
+      );
+      const workspaceDescriptors = (await pathExists(getSettingsPath(pmRoot)))
+        ? (await readSettings(pmRoot)).agent_identity!.harness_signals
+        : [];
+      return runWithWorkspaceHarnessSignalDescriptors(
+        workspaceDescriptors,
+        async () => {
+          // pm-qxwu: non-breaking detection of typo'd / unexpected top-level keys.
+          // additionalProperties stays true so passthrough still works; we only warn.
+          // pm-upi0 extends the same mechanism into the nested options object.
+          const action = resolveInvokedAction(name, args);
+          const warnings = [
+            ...detectUnexpectedTopLevelKeys(name, args),
+            ...detectUnexpectedOptionKeys(name, action, args),
+            ...(await collectMutationGuardWarnings(name, action, args)),
+          ];
+          for (const warning of warnings) {
+            console.error(`[pm-mcp] ${warning}`);
+          }
+          // cwd is applied inside the serialized activation cycle (see withActiveExtensions),
+          // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
+          const result = await handler(args);
+          return resultContent(result, warnings);
+        },
+      );
+    },
+  );
+}
+
 /** Implements handle request for the public runtime surface of this module. */
 export async function handleRequest(
   request: JsonRpcRequest,
@@ -385,6 +470,7 @@ export async function handleRequest(
     return {};
   }
   if (request.method === "initialize") {
+    activeMcpClientInfo = readMcpClientInfo(request.params);
     return {
       protocolVersion: "2025-06-18",
       capabilities: { tools: {} },
@@ -397,7 +483,7 @@ export async function handleRequest(
         "Use pm_schema and pm_config for workspace configuration: pm_schema manages custom item types/statuses and pm_config reads or writes settings keys. " +
         "Use pm_run with an explicit action for active package-owned operations, plus activity, aggregate, history, stats, test-all, and gc. " +
         "Use history-redact for audited history-stream redaction workflows, history-repair to re-anchor a drifted history chain, and history-compact to checkpoint/prune long history streams while preserving replay integrity. " +
-        "Set author to 'claude-code-agent' on all mutations. " +
+        "Agent harness and model provenance are detected automatically; pass author only for an intentional identity override. " +
         "Do not pass path during real repository tracking — only pass path for sandbox or test runs.",
     };
   }
@@ -405,37 +491,7 @@ export async function handleRequest(
     return { tools: TOOLS };
   }
   if (request.method === "tools/call") {
-    const params = asRecordClone(request.params);
-    const name = readRequiredString(params, "name");
-    const handler = Object.prototype.hasOwnProperty.call(HANDLERS, name)
-      ? HANDLERS[name]
-      : undefined;
-    if (!handler) {
-      throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
-    }
-    // pm-ydkl: defensive HTML-entity decode for free-text fields. Claude / the
-    // Anthropic MCP SDK HTML-encodes `<` / `>` (and friends) in tool arguments
-    // before they reach pm-cli, which would otherwise leak `&lt;type&gt;` into
-    // stored pm comments / notes / item bodies. Direct CLI calls are not
-    // affected; decoding at the MCP boundary normalizes the agent path while
-    // leaving normal text untouched.
-    const args = decodeHtmlEntitiesInOptions(asRecordClone(params.arguments));
-    // pm-qxwu: non-breaking detection of typo'd / unexpected top-level keys.
-    // additionalProperties stays true so passthrough still works; we only warn.
-    // pm-upi0 extends the same mechanism into the nested options object.
-    const action = resolveInvokedAction(name, args);
-    const warnings = [
-      ...detectUnexpectedTopLevelKeys(name, args),
-      ...detectUnexpectedOptionKeys(name, action, args),
-      ...(await collectMutationGuardWarnings(name, action, args)),
-    ];
-    for (const warning of warnings) {
-      console.error(`[pm-mcp] ${warning}`);
-    }
-    // cwd is applied inside the serialized activation cycle (see withActiveExtensions),
-    // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
-    const result = await handler(args);
-    return resultContent(result, warnings);
+    return handleToolCall(request.params);
   }
   throw new PmCliError(
     `Unsupported MCP method: ${request.method ?? "(missing)"}`,
@@ -571,6 +627,8 @@ export const _testOnly = {
   detectUnexpectedTopLevelKeys,
   collectMutationGuardWarnings,
   errorContent,
+  getMcpClientInfo: () =>
+    activeMcpClientInfo ? { ...activeMcpClientInfo } : undefined,
   get extensionOptionsFromArgs() {
     return readRuntimeTestHook("extensionOptionsFromArgs");
   },

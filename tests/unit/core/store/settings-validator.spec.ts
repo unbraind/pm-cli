@@ -107,6 +107,39 @@ describe("core/store/settings-validator", () => {
     expect(validateSettings(raw).success).toBe(true);
   });
 
+  it("validates declarative agent identity harness signals", () => {
+    const raw = minimalValidSettings();
+    raw.agent_identity = {
+      harness_signals: [
+        {
+          harness: "synthetic-agent",
+          environment_keys: ["SYNTHETIC_AGENT"],
+          model_environment_keys: ["SYNTHETIC_MODEL"],
+          session_environment_keys: ["SYNTHETIC_SESSION"],
+          argv_markers: ["synthetic-agent"],
+          client_names: ["synthetic-client"],
+        },
+      ],
+    };
+    const result = validateSettings(raw);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.agent_identity?.harness_signals[0]?.harness).toBe(
+        "synthetic-agent",
+      );
+    }
+
+    for (const harnessSignals of [
+      [{ harness: "missing-arrays", environment_keys: [1] }],
+      [{ harness: 1, environment_keys: ["VALID"] }],
+      "not-an-array",
+    ]) {
+      const invalid = minimalValidSettings();
+      invalid.agent_identity = { harness_signals: harnessSignals };
+      expect(validateSettings(invalid).success).toBe(false);
+    }
+  });
+
   it("accepts non-negative lock waits and rejects negative waits", () => {
     const zeroWait = minimalValidSettings();
     zeroWait.locks = { ttl_seconds: 900, wait_ms: 0 };

@@ -37,6 +37,17 @@ export interface ParsedSettings {
   ids?: { token_length?: number };
   /** Value that configures or reports author default for this contract. */
   author_default: string;
+  /** Declarative workspace additions to agent identity detection. */
+  agent_identity?: {
+    harness_signals: Array<{
+      harness: string;
+      environment_keys?: string[];
+      model_environment_keys?: string[];
+      session_environment_keys?: string[];
+      argv_markers?: string[];
+      client_names?: string[];
+    }>;
+  };
   /** Shared pre-write mutation guard policy. */
   mutation_guard?: {
     require_attributed_author?: boolean;
@@ -456,6 +467,15 @@ const extensionPolicy = vOptional(
   }),
 );
 
+const harnessSignalDescriptor = vObject({
+  harness: vString,
+  environment_keys: vOptional(vArray(vString)),
+  model_environment_keys: vOptional(vArray(vString)),
+  session_environment_keys: vOptional(vArray(vString)),
+  argv_markers: vOptional(vArray(vString)),
+  client_names: vOptional(vArray(vString)),
+});
+
 const settingsCheck = vObject({
   version: vNumber({ int: true }),
   id_prefix: vString,
@@ -465,6 +485,11 @@ const settingsCheck = vObject({
     }),
   ),
   author_default: vString,
+  agent_identity: vOptional(
+    vObject({
+      harness_signals: vArray(harnessSignalDescriptor),
+    }),
+  ),
   mutation_guard: vOptional(
     vObject({
       require_attributed_author: vOptional(vBoolean),

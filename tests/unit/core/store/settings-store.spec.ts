@@ -201,6 +201,7 @@ describe("core/store/settings", () => {
         "id_prefix",
         "ids",
         "author_default",
+        "agent_identity",
         "mutation_guard",
         "item_format",
         "locks",
@@ -223,6 +224,7 @@ describe("core/store/settings", () => {
       ]);
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds", "wait_ms"]);
       expectOrderedObjectKeys(parsed.ids, ["token_length"]);
+      expectOrderedObjectKeys(parsed.agent_identity, ["harness_signals"]);
       expectOrderedObjectKeys(parsed.mutation_guard, [
         "require_attributed_author",
         "secret_guard",

@@ -72,7 +72,6 @@ For each **finding item** created during the audit, also create a matching `Task
   "tool": "pm_comments",
   "args": {
     "id": "pm-xxxx",
-    "author": "claude-code-agent",
     "options": {
       "add": "Audit evidence: health=ok, validate=ok (2 warnings), dedupe=5 candidates, items=681, tests=1087 passing."
     }

@@ -2,11 +2,12 @@ id: pm-brxdct
 title: "Harness signal registry: identity detection becomes declared data that a config entry or a package can extend without a code change"
 description: "Harness detection is currently two hardcoded arrays in src/core/shared/author.ts — HARNESS_ENV_MARKERS with seven entries and HARNESS_TOKEN_MARKERS with seven regexes — plus an inline CI branch. Adding a harness, or teaching pm where a known harness publishes its model, requires editing core source, rebuilding, and shipping a release. That is the wrong shape for a surface whose contents change whenever the agent ecosystem changes, and it contradicts the universal-customization promise: a workspace running an in-house harness cannot make pm recognize it at all. Convert the table to declared data with the same purity guarantees: a signal descriptor names the harness, the environment keys that identify it, the environment keys that carry its model and session, and an optional bounded argv pattern. Built-in descriptors ship as data; workspace settings and packages may append descriptors; built-ins are never silently overridden — a conflicting descriptor is a validation error, not a last-writer-wins race. Precedence within the registry is declared and stable, so adding an entry cannot reorder detection for existing harnesses."
 type: Task
-status: open
+status: in_progress
 priority: 2
 tags[6]: agent-ux,"area:sdk",author,customization,extensibility,identity
 created_at: "2026-07-25T12:26:06.033Z"
-updated_at: "2026-07-25T12:35:01.642Z"
+updated_at: "2026-07-25T19:16:26.385Z"
+assignee: "harness:codex"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Built-in harness descriptors are declared data with a documented schema covering harness slug, identifying environment keys, model-carrying keys, session-carrying keys, and optional bounded argv patterns; Workspace settings and installed packages can append descriptors, and a descriptor that collides with a built-in slug fails validation with a named error instead of overriding it silently; Detection precedence is declared and stable, proven by a test asserting that appending a descriptor cannot change the result for any previously supported harness; The registry is exercised by a test that registers a synthetic harness and observes correct harness, model, and session resolution end to end; Descriptors stay pure data: no descriptor may specify a command to execute, a path to traverse, or a network endpoint, enforced by schema validation"
@@ -29,4 +30,19 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-j82fd3,related,"2026-07-25T12:35:01.440Z",null,null
   pm-t4d7nz,related,"2026-07-25T12:35:01.440Z",null,null
   pm-zqsrt5,related,"2026-07-25T12:35:01.440Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-25T18:18:28.969Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
+  "2026-07-25T19:14:54.167Z","harness:codex","Implementation evidence: added declarative built-in and workspace/package harness signal registries with literal bounded environment, argv, process-label, and MCP client matching; model/session key precedence; normalized collision handling; identical-registration reference counting; settings validation, sparse persistence, CLI and MCP wiring; and SDK exports. Arbitrary commands, regex execution, filesystem probing, and network lookup are excluded. Packed isolated acceptance proved a workspace-defined harness end to end; full suite and 100% coverage passed."
+  "2026-07-25T19:16:26.384Z","harness:codex","Acceptance finding and fix: a tracker evidence comment containing a harness name exposed that scanning every CLI argument could misclassify ordinary free text as a harness signal. Detection now bounds argv identity/model markers to the executable launch prefix (first three tokens); explicit process_labels remain the host-controlled extension seam. A regression test proves a later claude-code-agent comment value cannot spoof detection."
+files[6]{path,scope,note}:
+  src/cli/main.ts,project,CLI invocation scoping
+  src/core/shared/author.ts,project,declarative built-in and package registry
+  src/core/shared/constants.ts,project,default registry settings
+  src/core/store/settings-validator.ts,project,workspace descriptor validation
+  src/core/store/settings.ts,project,sparse descriptor persistence
+  src/types.ts,project,workspace registry contract
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/settings-validator.spec.ts tests/unit/core/store/settings-sparse-persistence.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,package and workspace descriptor registry
 body: ""

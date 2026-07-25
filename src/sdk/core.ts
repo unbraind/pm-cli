@@ -103,12 +103,21 @@ export {
   type UpdateResult,
 } from "./runtime.js";
 export {
+  BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
+  detectAgentIdentity,
   detectHarnessIdentity,
   readAuthorEnvironment,
+  registerHarnessSignalDescriptors,
   resolveAuthorIdentity,
+  runWithHarnessDetectionSignals,
+  runWithWorkspaceHarnessSignalDescriptors,
   writeAuthorEnvironment,
+  type AgentClientInfo,
+  type AgentModelSource,
   type AuthorSource,
+  type DetectedAgentIdentity,
   type HarnessDetectionSignals,
+  type HarnessSignalDescriptor,
   type ResolvedAuthorIdentity,
 } from "../core/shared/author.js";
 export type {

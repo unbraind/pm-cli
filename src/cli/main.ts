@@ -72,6 +72,7 @@ import {
   resolvePmRoot,
   readSettings,
   readSettingsWithMetadata,
+  runWithWorkspaceHarnessSignalDescriptors,
   type GlobalOptions,
   createLazyModule,
 } from "../sdk/runtime-primitives.js";
@@ -2789,7 +2790,13 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
       program.outputHelp();
       return;
     }
-    await program.parseAsync(invocationProcessArgv);
+    const invocationSettings = await readSettings(
+      resolvePmRoot(process.cwd(), bootstrapGlobal.path),
+    );
+    await runWithWorkspaceHarnessSignalDescriptors(
+      invocationSettings.agent_identity!.harness_signals,
+      () => program.parseAsync(invocationProcessArgv),
+    );
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });
   } finally {

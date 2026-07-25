@@ -3,6 +3,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
 import {
+  detectHarnessIdentity,
+  runWithWorkspaceHarnessSignalDescriptors,
+} from "../../../../src/core/shared/author.js";
+import {
   persistSelectedItemFormat,
   readSettings,
   settingsStoreTestOnly,
@@ -158,6 +162,44 @@ describe("sparse settings persistence", () => {
         ...requiredSparseSettings(),
         ids: { token_length: 6 },
       });
+    });
+  });
+
+  it("round-trips workspace harness descriptors without expanding defaults", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const sparse = {
+        ...requiredSparseSettings(),
+        agent_identity: {
+          harness_signals: [
+            {
+              harness: "synthetic-agent",
+              environment_keys: ["SYNTHETIC_AGENT"],
+              model_environment_keys: ["SYNTHETIC_MODEL"],
+              session_environment_keys: ["SYNTHETIC_SESSION"],
+              argv_markers: ["synthetic-agent"],
+              client_names: ["synthetic-client"],
+            },
+          ],
+        },
+      };
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(sparse, null, 2)}\n`,
+        "utf8",
+      );
+
+      const settings = await readSettings(context.pmPath);
+      expect(settings.agent_identity).toEqual(sparse.agent_identity);
+      expect(
+        runWithWorkspaceHarnessSignalDescriptors(
+          settings.agent_identity?.harness_signals ?? [],
+          () =>
+            detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } }),
+        ),
+      ).toBe("synthetic-agent");
+      await writeSettings(context.pmPath, settings);
+      expect(JSON.parse(await readFile(settingsPath, "utf8"))).toEqual(sparse);
     });
   });
 });

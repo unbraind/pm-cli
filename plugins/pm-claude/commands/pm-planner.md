@@ -33,7 +33,7 @@ Run the pm planning loop using native MCP tools. Argument: `$ARGUMENTS` (optiona
 
 6. **Link parents** for all child items:
    ```json
-   { "tool": "pm_update", "args": { "id": "pm-child", "author": "claude-code-agent", "options": { "parent": "pm-epic" } } }
+   { "tool": "pm_update", "args": { "id": "pm-child", "options": { "parent": "pm-epic" } } }
    ```
 
 7. **Validate** after batch creates:

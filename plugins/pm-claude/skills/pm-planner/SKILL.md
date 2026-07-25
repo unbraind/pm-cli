@@ -49,7 +49,6 @@ Call `TaskUpdate(completed)` when the planning item is closed.
 {
   "tool": "pm_create",
   "args": {
-    "author": "claude-code-agent",
     "options": {
       "title": "Epic: Authentication system overhaul",
       "type": "Epic",
@@ -66,12 +65,12 @@ Then for each child feature/task, set `parent: "pm-xxxx"` via `pm_update`.
 ### Prioritize the Backlog
 ```json
 { "tool": "pm_list", "args": { "options": { "status": "open", "limit": "30" } } }
-{ "tool": "pm_update", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "priority": "0" } } }
+{ "tool": "pm_update", "args": { "id": "pm-xxxx", "options": { "priority": "0" } } }
 ```
 
 ### Link Parent
 ```json
-{ "tool": "pm_update", "args": { "id": "pm-child", "author": "claude-code-agent", "options": { "parent": "pm-epic" } } }
+{ "tool": "pm_update", "args": { "id": "pm-child", "options": { "parent": "pm-epic" } } }
 ```
 
 ### Run Dedupe Audit After Batch Work

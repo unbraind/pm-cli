@@ -7,7 +7,7 @@ Use native pm MCP tools to audit the repository's pm tracker state.
 1. **Check for existing audit items** — `pm_search` with query "audit" to avoid duplicate tracking.
 2. **Create an audit tracking item** if none exists (or reuse a recent one):
    ```json
-   { "tool": "pm_create", "args": { "author": "claude-code-agent", "options": { "title": "pm tracker audit", "type": "Task", "status": "open", "priority": "1", "createMode": "progressive" } } }
+   { "tool": "pm_create", "args": { "options": { "title": "pm tracker audit", "type": "Task", "status": "open", "priority": "1", "createMode": "progressive" } } }
    ```
 3. **Claim** the audit item.
 4. **Sync to Claude Code task panel**:

@@ -22,7 +22,7 @@ This is the general-purpose pm workflow command. For specialized loops use:
    - Keywords → `pm_search` then pick the best match
    - Description of new work → `pm_search` first, then `pm_create` if no duplicate
 
-3. **Claim** with `pm_claim` + `author: "claude-code-agent"`, then `pm_update` to `in_progress`.
+3. **Claim** with `pm_claim`, then `pm_update` to `in_progress`.
 
 4. **Sync to Claude Code task panel**:
    ```

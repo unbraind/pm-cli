@@ -2,11 +2,12 @@ id: pm-zqsrt5
 title: "Shipped MCP manifests and MCP tool guidance hardwire a static author, overriding the automatic identity of every plugin-hosted agent"
 description: "Three shipped surfaces instruct or force an explicit author on exactly the hosts where automatic detection matters most. .mcp.json:6 sets env PM_AUTHOR=claude-code-agent for the repository's own MCP server. docs/CLAUDE_CODE_PLUGIN.md:70 publishes the same env block as the recommended plugin configuration. docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md:265 and :385 do the same with codex-agent and describe it as a stable fallback author. The MCP server's own tool instructions additionally tell callers to set author to claude-code-agent on all mutations. Because PM_AUTHOR outranks detection in the precedence chain, every one of these makes the resolved identity asserted rather than detected, discards the harness, and will discard the model once capture lands. The stated motive — a stable fallback when detection fails — is obsolete: detection covers these harnesses, and the correct fallback is the detector's own bounded result, not a hardcoded string that also lies about author_source. Remove the hardwiring from the shipped manifests, templates, and MCP tool guidance, and replace the docs claim with the detection contract."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[7]: agent-ux,"area:mcp",author,defect,docs,identity,plugins
 created_at: "2026-07-25T12:26:07.305Z"
-updated_at: "2026-07-25T12:35:03.094Z"
+updated_at: "2026-07-25T19:14:52.683Z"
+assignee: "harness:codex"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "The repository .mcp.json no longer sets PM_AUTHOR, and a test asserts that no shipped manifest, plugin template, or scaffold sets it; The Claude Code and Codex plugin documents describe automatic detection instead of publishing a hardwired author env block; The MCP server tool instructions no longer tell callers to pass an author on mutations, and the MCP host resolves identity through the shared resolver; A regression test greps the shipped artifact set for author overrides and fails on reintroduction; The documentation states the actual precedence contract and names the one legitimate reason to override — asserting a non-agent principal — rather than presenting an override as routine setup"
@@ -29,4 +30,22 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-j82fd3,related,"2026-07-25T12:35:02.847Z",null,null
   pm-l9wl,related,"2026-07-25T12:35:02.847Z",null,null
   pm-sx52hr,related,"2026-07-25T12:35:02.847Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-25T18:18:24.300Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
+  "2026-07-25T19:14:52.683Z","harness:claude-code","Implementation evidence: removed hard-wired PM_AUTHOR and claude-code-agent payloads from repository and bundled Claude MCP/plugin configuration, commands, agents, and skills. MCP now captures initialize clientInfo and scopes tools/call through automatic identity signals; instructions explicitly distinguish local harness provenance from authenticated principal claims. Plugin smoke passed with all 31 files and full flow; MCP integration, full suite, and 100% coverage passed."
+files[7]{path,scope,note}:
+  .mcp.json,project,repo MCP automatic identity
+  plugins/pm-claude/.mcp.json,project,plugin MCP automatic identity
+  plugins/pm-claude/agents,project,agent prompts omit redundant author
+  plugins/pm-claude/commands,project,slash commands omit redundant author
+  plugins/pm-claude/README.md,project,automatic identity guidance
+  plugins/pm-claude/skills,project,skills omit redundant author
+  src/mcp/server.ts,project,initialize client identity scoping
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,240
+  "pnpm smoke:claude-plugin",project,240
+docs[3]{path,scope,note}:
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,handshake identity contract
+  docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md,project,local versus authenticated identity boundary
+  docs/CLAUDE_CODE_PLUGIN.md,project,MCP identity configuration
 body: ""

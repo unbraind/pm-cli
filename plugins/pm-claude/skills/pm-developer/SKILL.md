@@ -53,17 +53,17 @@ TaskUpdate: { taskId: <saved>, status: "completed" }
 
 ### 2. Claim
 ```json
-{ "tool": "pm_claim", "args": { "id": "pm-xxxx", "author": "claude-code-agent" } }
-{ "tool": "pm_update", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "status": "in_progress" } } }
+{ "tool": "pm_claim", "args": { "id": "pm-xxxx" } }
+{ "tool": "pm_update", "args": { "id": "pm-xxxx", "options": { "status": "in_progress" } } }
 ```
 
 Then immediately: `TaskCreate` → `TaskUpdate(in_progress)` as shown above.
 
 ### 3. Link Evidence (during implementation)
 ```json
-{ "tool": "pm_files", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": ["path=src/file.ts,scope=project,note=implementation"] } } }
-{ "tool": "pm_docs", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": ["path=docs/GUIDE.md,scope=project,note=updated"] } } }
-{ "tool": "pm_test", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": ["command=node scripts/run-tests.mjs test -- tests/unit/foo.spec.ts,scope=project,timeout_seconds=240"] } } }
+{ "tool": "pm_files", "args": { "id": "pm-xxxx", "options": { "add": ["path=src/file.ts,scope=project,note=implementation"] } } }
+{ "tool": "pm_docs", "args": { "id": "pm-xxxx", "options": { "add": ["path=docs/GUIDE.md,scope=project,note=updated"] } } }
+{ "tool": "pm_test", "args": { "id": "pm-xxxx", "options": { "add": ["command=node scripts/run-tests.mjs test -- tests/unit/foo.spec.ts,scope=project,timeout_seconds=240"] } } }
 ```
 
 ### 4. Validate
@@ -73,13 +73,13 @@ Then immediately: `TaskCreate` → `TaskUpdate(in_progress)` as shown above.
 
 ### 5. Add Evidence Comment
 ```json
-{ "tool": "pm_comments", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "add": "Evidence: changed src/foo.ts. All tests pass. pm validate ok." } } }
+{ "tool": "pm_comments", "args": { "id": "pm-xxxx", "options": { "add": "Evidence: changed src/foo.ts. All tests pass. pm validate ok." } } }
 ```
 
 ### 6. Close
 ```json
-{ "tool": "pm_close", "args": { "id": "pm-xxxx", "reason": "Implementation complete. Acceptance criteria met.", "author": "claude-code-agent" } }
-{ "tool": "pm_release", "args": { "id": "pm-xxxx", "author": "claude-code-agent" } }
+{ "tool": "pm_close", "args": { "id": "pm-xxxx", "reason": "Implementation complete. Acceptance criteria met." } }
+{ "tool": "pm_release", "args": { "id": "pm-xxxx" } }
 ```
 
 Then: `TaskUpdate: { taskId: <saved>, status: "completed" }`
@@ -99,7 +99,6 @@ When no existing item matches:
 {
   "tool": "pm_create",
   "args": {
-    "author": "claude-code-agent",
     "options": {
       "title": "Fix: concise description of the problem",
       "description": "Root cause and approach.",
