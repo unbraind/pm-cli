@@ -202,6 +202,16 @@ describe("release automation contract", () => {
     expect(buildIndex).toBeLessThan(pipelineIndex);
   });
 
+  it("authenticates release policy reads with the protected-main release token", async () => {
+    const workflow = await readFile(
+      path.join(repoRoot, ".github/workflows/auto-release.yml"),
+      "utf8",
+    );
+    expect(workflow).toContain(
+      "GH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}",
+    );
+  });
+
   it("allows the external Sentry gate to be disabled in unauthenticated automation", () => {
     const env = { ...process.env };
     delete env.SENTRY_AUTH_TOKEN;

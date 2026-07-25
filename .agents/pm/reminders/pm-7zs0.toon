@@ -2,13 +2,14 @@ id: pm-7zs0
 title: Verify daily auto-release published to npm (release-health check)
 description: "Recurring release-health verification. The date-based daily auto-release has silently failed before (padded-month changelog match skip; publish/Sentry-gate step failing post-tag). After any merge to main, confirm the next daily release both tagged a new vYYYY.M.D AND advanced npm 'latest'."
 type: Reminder
-status: open
+status: in_progress
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-23T20:21:57.006Z"
+updated_at: "2026-07-25T03:13:46.802Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
+assignee: claude-code-agent
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day."
@@ -18,7 +19,7 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7n5a,related,"2026-07-15T18:17:35.524Z",null,null
   pm-d4ns,related,"2026-07-15T18:17:35.524Z",null,null
-comments[86]{created_at,author,text}:
+comments[89]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -105,6 +106,9 @@ comments[86]{created_at,author,text}:
   "2026-07-23T05:48:21.914Z",claude-code-agent,"Daily release verification 2026-07-23: scheduled run 29982743761 executed the production path and failed closed only on unresolved Sentry PM-CLI-2J, opening GH-653. PR #652 contains the verified fix; after merge, resolve PM-CLI-2J in the released version and close GH-653 to exercise the guarded same-day auto-release retry. No duplicate release item created."
   "2026-07-23T06:14:29.096Z",claude-code-agent,"Release-health completion 2026-07-23: GH-653 close triggered guarded Auto Release retry 29983501824 on merged head 0c2928ff; it succeeded in 14m58s and waited for downstream Release run 29983848608. v2026.7.23 is live on GitHub and npm at release commit 1206c26a. Installed public binary proof passes; Sentry critical/high=0/0, PM-CLI-2J resolved without recurrence, telemetry finish_error_rate_pct=0.68 with zero missing error codes. Daily auto-release recovery is confirmed; recurring reminder remains open and unclaimed."
   "2026-07-23T20:21:56.999Z",claude-code-agent,"Release-health evidence after PR #660: merged main is a894a8ba21df4cca220bd348b6d86dc495449ea5 and all six merged-head workflow families completed successfully. Production Auto Release run 30041389025 succeeded with the expected release_already_cut_today policy result, confirming credentials, preflight, and the one-release-per-UTC-day guard are healthy; the next eligible daily window can include PR #660. GitHub release v2026.7.23 and npm @unbrained/pm-cli 2026.7.23 remain aligned. The Sentry reliability gate reported critical=0 and high=0 over 14 days. Telemetry validation found zero invalid entries, a successful real-time flush, and start/finish events with no sampled errors. The optional Sentry release catalog currently ends at pm-cli@2026.7.22, so its release metadata lag remains explicit for the next daily verification. Reused this canonical recurring reminder instead of creating duplicate release work; it remains open and unclaimed."
+  "2026-07-25T03:07:35.699Z",claude-code-agent,"Failure evidence 2026-07-25: workflow_dispatch run 30141386316 passed build, 6,291-test 100/100/100/100 coverage, package smoke, and 88-command package-first dogfood, then failed hosted-analysis-gate because GH_TOKEN used the workflow token, which cannot read main branch protection. The release environment RELEASE_PAT is configured and already scoped into the step for protected-main push, but was not supplied to gh API reads."
+  "2026-07-25T03:09:10.989Z",claude-code-agent,"Fix evidence: Auto Release now binds GH_TOKEN to secrets.RELEASE_PAT with github.token fallback in the release step, allowing exact-head hosted-analysis to read protected-main policy without introducing a second credential. Added a contract test pinning the binding. Focused 17-test release automation suite and full pnpm lint/static/docstring/duplication/package-boundary/token-budget gates pass."
+  "2026-07-25T03:13:46.799Z",claude-code-agent,"Verification update: full sandboxed repository coverage passed after the workflow credential fix: 361 files, 6,292 tests, and 100% statements/branches/functions/lines. pnpm security:scan found no tracked credential-like secrets, pnpm audit --audit-level high found no known vulnerabilities, pnpm lint passed, and git diff --check is clean."
 notes[7]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
@@ -130,7 +134,7 @@ files[16]{path,scope,note}:
   tests/unit/commands/create-command.spec.ts,project,Regression coverage rejects prefixed and shorthand explicit IDs ending in a dash
   tests/unit/scripts/release/run-gates.spec.ts,project,"Regression coverage for release gate invoking pnpm quality:static"
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Regression coverage for updated sentry gate output/classification
-tests[12]:
+tests[13]:
   - command: node dist/cli.js package doctor --project --detail deep --json
     scope: project
     timeout_seconds: 180
@@ -145,6 +149,9 @@ tests[12]:
     scope: project
     timeout_seconds: 120
   - command: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts
     scope: project
     timeout_seconds: 240
   - command: node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/scripts/release/run-gates.spec.ts tests/integration/release-automation-contract.spec.ts
