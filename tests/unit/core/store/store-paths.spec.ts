@@ -20,10 +20,15 @@ import {
   getTestRunsStdoutPath,
   getTypeDirPath,
   resolveGlobalPmRoot,
+  resolveImplicitPmRoot,
   resolvePmRoot,
 } from "../../../../src/core/store/paths.js";
 
-function withEnvVar(name: string, value: string | undefined, run: () => void): void {
+function withEnvVar(
+  name: string,
+  value: string | undefined,
+  run: () => void,
+): void {
   const previous = process.env[name];
   if (value === undefined) {
     delete process.env[name];
@@ -47,7 +52,9 @@ describe("core/store/paths", () => {
     const cwd = "/tmp/pm-root-test";
 
     withEnvVar("PM_PATH", "env-root", () => {
-      expect(resolvePmRoot(cwd, " cli-root ")).toBe(path.resolve(cwd, "cli-root"));
+      expect(resolvePmRoot(cwd, " cli-root ")).toBe(
+        path.resolve(cwd, "cli-root"),
+      );
     });
 
     withEnvVar("PM_PATH", " env-root ", () => {
@@ -71,7 +78,11 @@ describe("core/store/paths", () => {
       const nestedCwd = path.join(projectRoot, "src", "feature", "module");
       mkdirSync(discoveredPmRoot, { recursive: true });
       mkdirSync(nestedCwd, { recursive: true });
-      writeFileSync(path.join(discoveredPmRoot, "settings.json"), "{\n  \"output\": { \"default_format\": \"toon\" }\n}\n", "utf8");
+      writeFileSync(
+        path.join(discoveredPmRoot, "settings.json"),
+        '{\n  "output": { "default_format": "toon" }\n}\n',
+        "utf8",
+      );
 
       withEnvVar("PM_PATH", undefined, () => {
         expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(discoveredPmRoot));
@@ -81,14 +92,45 @@ describe("core/store/paths", () => {
     }
   });
 
+  it("resolveImplicitPmRoot discovers the workspace tracker while PM_PATH selects another tracker", () => {
+    const tempRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-path-implicit-discovery-"),
+    );
+    try {
+      const projectRoot = path.join(tempRoot, "project");
+      const discoveredPmRoot = path.join(projectRoot, ".agents", "pm");
+      const nestedCwd = path.join(projectRoot, "src");
+      mkdirSync(discoveredPmRoot, { recursive: true });
+      mkdirSync(nestedCwd, { recursive: true });
+      writeFileSync(
+        path.join(discoveredPmRoot, "settings.json"),
+        "{}\n",
+        "utf8",
+      );
+
+      withEnvVar("PM_PATH", path.join(tempRoot, "selected"), () => {
+        expect(resolvePmRoot(nestedCwd)).toBe(path.join(tempRoot, "selected"));
+        expect(resolveImplicitPmRoot(nestedCwd)).toBe(discoveredPmRoot);
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("resolvePmRoot discovers root-layout trackers by walking ancestors (GH-495)", () => {
-    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-rootlayout-"));
+    const tempRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-path-discovery-rootlayout-"),
+    );
     try {
       // `pm init <dir>` writes settings.json directly into <dir>.
       const trackerRoot = path.join(tempRoot, "workspace");
       const nestedCwd = path.join(trackerRoot, "src", "feature");
       mkdirSync(nestedCwd, { recursive: true });
-      writeFileSync(path.join(trackerRoot, "settings.json"), JSON.stringify({ version: 1, id_prefix: "pm-" }), "utf8");
+      writeFileSync(
+        path.join(trackerRoot, "settings.json"),
+        JSON.stringify({ version: 1, id_prefix: "pm-" }),
+        "utf8",
+      );
 
       withEnvVar("PM_PATH", undefined, () => {
         expect(resolvePmRoot(trackerRoot)).toBe(path.resolve(trackerRoot));
@@ -96,7 +138,11 @@ describe("core/store/paths", () => {
       });
 
       // The item_format marker alone is also sufficient.
-      writeFileSync(path.join(trackerRoot, "settings.json"), JSON.stringify({ version: 1, item_format: "toon" }), "utf8");
+      writeFileSync(
+        path.join(trackerRoot, "settings.json"),
+        JSON.stringify({ version: 1, item_format: "toon" }),
+        "utf8",
+      );
       withEnvVar("PM_PATH", undefined, () => {
         expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(trackerRoot));
       });
@@ -106,13 +152,23 @@ describe("core/store/paths", () => {
   });
 
   it("resolvePmRoot prefers a .agents/pm tracker over a root-layout tracker at the same level", () => {
-    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-precedence-"));
+    const tempRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-path-discovery-precedence-"),
+    );
     try {
       const projectRoot = path.join(tempRoot, "project");
       const nestedPmRoot = path.join(projectRoot, ".agents", "pm");
       mkdirSync(nestedPmRoot, { recursive: true });
-      writeFileSync(path.join(nestedPmRoot, "settings.json"), JSON.stringify({ version: 1, id_prefix: "pm-" }), "utf8");
-      writeFileSync(path.join(projectRoot, "settings.json"), JSON.stringify({ version: 1, id_prefix: "pm-" }), "utf8");
+      writeFileSync(
+        path.join(nestedPmRoot, "settings.json"),
+        JSON.stringify({ version: 1, id_prefix: "pm-" }),
+        "utf8",
+      );
+      writeFileSync(
+        path.join(projectRoot, "settings.json"),
+        JSON.stringify({ version: 1, id_prefix: "pm-" }),
+        "utf8",
+      );
 
       withEnvVar("PM_PATH", undefined, () => {
         expect(resolvePmRoot(projectRoot)).toBe(path.resolve(nestedPmRoot));
@@ -123,23 +179,37 @@ describe("core/store/paths", () => {
   });
 
   it("resolvePmRoot ignores ancestor settings.json files without pm markers", () => {
-    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-foreign-"));
+    const tempRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-path-discovery-foreign-"),
+    );
     try {
       // An unrelated tool's settings.json at an ancestor must not hijack
       // tracker resolution and start receiving pm writes.
       const foreignRoot = path.join(tempRoot, "app");
       const nestedCwd = path.join(foreignRoot, "src");
       mkdirSync(nestedCwd, { recursive: true });
-      writeFileSync(path.join(foreignRoot, "settings.json"), JSON.stringify({ version: 2, theme: "dark" }), "utf8");
+      writeFileSync(
+        path.join(foreignRoot, "settings.json"),
+        JSON.stringify({ version: 2, theme: "dark" }),
+        "utf8",
+      );
       writeFileSync(path.join(tempRoot, "settings.json"), "not json", "utf8");
       const arrayRoot = path.join(foreignRoot, "src", "deeper");
       mkdirSync(arrayRoot, { recursive: true });
-      writeFileSync(path.join(path.join(foreignRoot, "src"), "settings.json"), JSON.stringify(["not", "pm"]), "utf8");
+      writeFileSync(
+        path.join(path.join(foreignRoot, "src"), "settings.json"),
+        JSON.stringify(["not", "pm"]),
+        "utf8",
+      );
 
       withEnvVar("PM_PATH", undefined, () => {
-        expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(nestedCwd, ".agents/pm"));
+        expect(resolvePmRoot(nestedCwd)).toBe(
+          path.resolve(nestedCwd, ".agents/pm"),
+        );
         // Walks past array-JSON, marker-less, and unparseable candidates alike.
-        expect(resolvePmRoot(arrayRoot)).toBe(path.resolve(arrayRoot, ".agents/pm"));
+        expect(resolvePmRoot(arrayRoot)).toBe(
+          path.resolve(arrayRoot, ".agents/pm"),
+        );
       });
     } finally {
       rmSync(tempRoot, { recursive: true, force: true });
@@ -147,7 +217,9 @@ describe("core/store/paths", () => {
   });
 
   it("resolvePmRoot ignores ancestor pm directories until initialized", () => {
-    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-uninitialized-"));
+    const tempRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-path-discovery-uninitialized-"),
+    );
     try {
       const projectRoot = path.join(tempRoot, "project");
       const uninitializedPmRoot = path.join(projectRoot, ".agents", "pm");
@@ -156,7 +228,9 @@ describe("core/store/paths", () => {
       mkdirSync(nestedCwd, { recursive: true });
 
       withEnvVar("PM_PATH", undefined, () => {
-        expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(nestedCwd, ".agents/pm"));
+        expect(resolvePmRoot(nestedCwd)).toBe(
+          path.resolve(nestedCwd, ".agents/pm"),
+        );
       });
     } finally {
       rmSync(tempRoot, { recursive: true, force: true });
@@ -164,7 +238,9 @@ describe("core/store/paths", () => {
   });
 
   it("resolvePmRoot redirects an explicit project-root path into its initialized .agents/pm", () => {
-    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-explicit-projectroot-"));
+    const tempRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-path-explicit-projectroot-"),
+    );
     try {
       const projectRoot = path.join(tempRoot, "project");
       const nestedPmRoot = path.join(projectRoot, ".agents", "pm");
@@ -174,7 +250,9 @@ describe("core/store/paths", () => {
       withEnvVar("PM_PATH", undefined, () => {
         // Passing the project root (where `pm init` created `.agents/pm`) must
         // resolve into the tracker instead of hard-failing as "not initialized".
-        expect(resolvePmRoot(tempRoot, projectRoot)).toBe(path.resolve(nestedPmRoot));
+        expect(resolvePmRoot(tempRoot, projectRoot)).toBe(
+          path.resolve(nestedPmRoot),
+        );
       });
       // Same redirect honored via PM_PATH.
       withEnvVar("PM_PATH", projectRoot, () => {
@@ -186,7 +264,9 @@ describe("core/store/paths", () => {
   });
 
   it("resolvePmRoot keeps an explicit path that is already a tracker root verbatim", () => {
-    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-explicit-trackerroot-"));
+    const tempRoot = mkdtempSync(
+      path.join(os.tmpdir(), "pm-path-explicit-trackerroot-"),
+    );
     try {
       // `pm init --path <dir>` writes settings.json directly at <dir>.
       writeFileSync(path.join(tempRoot, "settings.json"), "{}\n", "utf8");
@@ -207,11 +287,15 @@ describe("core/store/paths", () => {
     });
 
     withEnvVar("PM_GLOBAL_PATH", "  ", () => {
-      expect(resolveGlobalPmRoot(cwd)).toBe(path.resolve(path.join(os.homedir(), ".pm-cli")));
+      expect(resolveGlobalPmRoot(cwd)).toBe(
+        path.resolve(path.join(os.homedir(), ".pm-cli")),
+      );
     });
 
     withEnvVar("PM_GLOBAL_PATH", undefined, () => {
-      expect(resolveGlobalPmRoot(cwd)).toBe(path.resolve(path.join(os.homedir(), ".pm-cli")));
+      expect(resolveGlobalPmRoot(cwd)).toBe(
+        path.resolve(path.join(os.homedir(), ".pm-cli")),
+      );
     });
   });
 
@@ -221,27 +305,55 @@ describe("core/store/paths", () => {
 
     expect(getSettingsPath(pmRoot)).toBe(path.join(pmRoot, "settings.json"));
     expect(getTypeDirPath(pmRoot, "Task")).toBe(path.join(pmRoot, "tasks"));
-    expect(getItemPath(pmRoot, "Task", id)).toBe(path.join(pmRoot, "tasks", `${id}.toon`));
-    expect(getItemPath(pmRoot, "Task", id, "toon")).toBe(path.join(pmRoot, "tasks", `${id}.toon`));
-    expect(getHistoryPath(pmRoot, id)).toBe(path.join(pmRoot, "history", `${id}.jsonl`));
-    expect(getLockPath(pmRoot, id)).toBe(path.join(pmRoot, "locks", `${id}.lock`));
-    expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.md`))).toBe("json_markdown");
-    expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.toon`))).toBe("toon");
-    expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.txt`))).toBeNull();
+    expect(getItemPath(pmRoot, "Task", id)).toBe(
+      path.join(pmRoot, "tasks", `${id}.toon`),
+    );
+    expect(getItemPath(pmRoot, "Task", id, "toon")).toBe(
+      path.join(pmRoot, "tasks", `${id}.toon`),
+    );
+    expect(getHistoryPath(pmRoot, id)).toBe(
+      path.join(pmRoot, "history", `${id}.jsonl`),
+    );
+    expect(getLockPath(pmRoot, id)).toBe(
+      path.join(pmRoot, "locks", `${id}.lock`),
+    );
+    expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.md`))).toBe(
+      "json_markdown",
+    );
+    expect(
+      getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.toon`)),
+    ).toBe("toon");
+    expect(
+      getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.txt`)),
+    ).toBeNull();
   });
 
   it("recognizes item formats from Windows-style tracker paths", () => {
-    expect(getItemFormatFromPath(String.raw`C:\repo\.agents\pm\tasks\pm-win.toon`)).toBe("toon");
-    expect(getItemFormatFromPath(String.raw`C:\repo\.agents\pm\issues\pm-win.md`)).toBe("json_markdown");
-    expect(getItemFormatFromPath(String.raw`C:\repo\.agents\pm\issues\pm-win.json`)).toBeNull();
-    expect(getItemFormatFromPath(String.raw`C:\repo.with.dot\.agents\pm\tasks\pm-win`)).toBeNull();
+    expect(
+      getItemFormatFromPath(String.raw`C:\repo\.agents\pm\tasks\pm-win.toon`),
+    ).toBe("toon");
+    expect(
+      getItemFormatFromPath(String.raw`C:\repo\.agents\pm\issues\pm-win.md`),
+    ).toBe("json_markdown");
+    expect(
+      getItemFormatFromPath(String.raw`C:\repo\.agents\pm\issues\pm-win.json`),
+    ).toBeNull();
+    expect(
+      getItemFormatFromPath(
+        String.raw`C:\repo.with.dot\.agents\pm\tasks\pm-win`,
+      ),
+    ).toBeNull();
   });
 
   it("derives deterministic fallback folders for unknown item types", () => {
     const pmRoot = "/tmp/project/.agents/pm";
 
-    expect(getTypeDirPath(pmRoot, "Custom Type")).toBe(path.join(pmRoot, "custom-types"));
-    expect(getTypeDirPath(pmRoot, "Metrics")).toBe(path.join(pmRoot, "metrics"));
+    expect(getTypeDirPath(pmRoot, "Custom Type")).toBe(
+      path.join(pmRoot, "custom-types"),
+    );
+    expect(getTypeDirPath(pmRoot, "Metrics")).toBe(
+      path.join(pmRoot, "metrics"),
+    );
     expect(getTypeDirPath(pmRoot, "!!!")).toBe(path.join(pmRoot, "items"));
   });
 
@@ -250,14 +362,32 @@ describe("core/store/paths", () => {
     const runId = "run-1234";
 
     expect(getRuntimePath(pmRoot)).toBe(path.join(pmRoot, "runtime"));
-    expect(getTestRunsPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs"));
-    expect(getTestRunsRecordsPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs", "runs"));
-    expect(getTestRunRecordPath(pmRoot, runId)).toBe(path.join(pmRoot, "runtime", "test-runs", "runs", `${runId}.json`));
-    expect(getTestRunsStdoutPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs", "stdout"));
-    expect(getTestRunsStderrPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs", "stderr"));
-    expect(getTestRunStdoutPath(pmRoot, runId)).toBe(path.join(pmRoot, "runtime", "test-runs", "stdout", `${runId}.log`));
-    expect(getTestRunStderrPath(pmRoot, runId)).toBe(path.join(pmRoot, "runtime", "test-runs", "stderr", `${runId}.log`));
-    expect(getTestRunsResultsPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs", "results"));
-    expect(getTestRunResultPath(pmRoot, runId)).toBe(path.join(pmRoot, "runtime", "test-runs", "results", `${runId}.json`));
+    expect(getTestRunsPath(pmRoot)).toBe(
+      path.join(pmRoot, "runtime", "test-runs"),
+    );
+    expect(getTestRunsRecordsPath(pmRoot)).toBe(
+      path.join(pmRoot, "runtime", "test-runs", "runs"),
+    );
+    expect(getTestRunRecordPath(pmRoot, runId)).toBe(
+      path.join(pmRoot, "runtime", "test-runs", "runs", `${runId}.json`),
+    );
+    expect(getTestRunsStdoutPath(pmRoot)).toBe(
+      path.join(pmRoot, "runtime", "test-runs", "stdout"),
+    );
+    expect(getTestRunsStderrPath(pmRoot)).toBe(
+      path.join(pmRoot, "runtime", "test-runs", "stderr"),
+    );
+    expect(getTestRunStdoutPath(pmRoot, runId)).toBe(
+      path.join(pmRoot, "runtime", "test-runs", "stdout", `${runId}.log`),
+    );
+    expect(getTestRunStderrPath(pmRoot, runId)).toBe(
+      path.join(pmRoot, "runtime", "test-runs", "stderr", `${runId}.log`),
+    );
+    expect(getTestRunsResultsPath(pmRoot)).toBe(
+      path.join(pmRoot, "runtime", "test-runs", "results"),
+    );
+    expect(getTestRunResultPath(pmRoot, runId)).toBe(
+      path.join(pmRoot, "runtime", "test-runs", "results", `${runId}.json`),
+    );
   });
 });

@@ -97,12 +97,19 @@ function discoverPmRootFromAncestors(cwd: string): string | undefined {
   }
 }
 
+/** Resolve the tracker owned by the current workspace without honoring explicit CLI or PM_PATH overrides. */
+export function resolveImplicitPmRoot(cwd: string): string {
+  return discoverPmRootFromAncestors(cwd) ?? path.resolve(cwd, PM_DIRNAME);
+}
+
 /** Find a directly nested custom tracker root so recovery guidance can preserve existing data instead of recommending a second initialization. */
 export function discoverNearbyPmRoot(
   cwd: string,
   excludedRoot?: string,
 ): string | undefined {
-  const normalizedExcluded = excludedRoot ? path.resolve(excludedRoot) : undefined;
+  const normalizedExcluded = excludedRoot
+    ? path.resolve(excludedRoot)
+    : undefined;
   try {
     return readdirSync(path.resolve(cwd), { withFileTypes: true })
       .filter(
@@ -141,19 +148,15 @@ export function resolvePmRoot(cwd: string, cliPath?: string): string {
     }
     return resolved;
   }
-  const discoveredRoot = discoverPmRootFromAncestors(cwd);
-  if (discoveredRoot) {
-    return discoveredRoot;
-  }
-  const selected = PM_DIRNAME;
-  return path.resolve(cwd, selected);
+  return resolveImplicitPmRoot(cwd);
 }
 
 /** Resolve the project workspace that owns a tracker root. */
 export function resolveWorkspaceRoot(pmRoot: string): string {
   const normalizedRoot = path.resolve(pmRoot);
   const parent = path.dirname(normalizedRoot);
-  return path.basename(normalizedRoot) === "pm" && path.basename(parent) === ".agents"
+  return path.basename(normalizedRoot) === "pm" &&
+    path.basename(parent) === ".agents"
     ? path.dirname(parent)
     : normalizedRoot;
 }

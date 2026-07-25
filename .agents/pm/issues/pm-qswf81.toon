@@ -2,20 +2,51 @@ id: pm-qswf81
 title: "GH-677: pm-path relocation must diagnose extension discovery changes"
 description: "GitHub issue https://github.com/unbraind/pm-cli/issues/677 reports that --pm-path silently relocates extension discovery and extension commands vanish without a targeted diagnostic. Make storage and source discovery coordinates explicit and actionable."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:35.414Z"
-updated_at: "2026-07-25T06:27:20.622Z"
+updated_at: "2026-07-25T17:05:53.013Z"
+closed_at: "2026-07-25T17:05:51.959Z"
 author: unknown
 estimated_minutes: 180
 acceptance_criteria: "Storage root and extension discovery root are surfaced as explicit, separately named coordinates in diagnostics rather than one implied path; When --pm-path relocates discovery so that previously available extension commands are absent, the unknown-command error names the relocation as the probable cause and states the corrective flag; Coverage asserts the diagnostic on a relocated workspace whose extension set differs from the default"
 parent: pm-usfg
+resolution: pm-path relocation diagnostics are deterministic across clean and package-populated workspaces.
+expected_result: pm-path relocation diagnostics are deterministic across clean and package-populated workspaces.
+actual_result: "The CLI compares implicit workspace and selected tracker command surfaces; an initialized two-root acceptance fixture passes on clean runners. Exact-head proof: 25 linked tests, 6,370 repository tests, and 100/100/100/100 coverage."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-j4ac9a,related_to,"2026-07-25T02:06:35.414Z",null,null
   pm-gdi7,related,"2026-07-25T06:27:20.400Z",null,null
   pm-ir9vqy,related,"2026-07-25T06:27:20.400Z",null,null
   pm-l9wl,related,"2026-07-25T06:27:20.400Z",null,null
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-25T02:06:35.414Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
+  "2026-07-25T15:25:36.307Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:25:50.116Z","harness:codex","Implementation: relocation recovery now compares source and target extension discovery and emits a bounded diagnostic when --pm-path changes the available command surface."
+  "2026-07-25T16:31:17.490Z","harness:codex","Review evidence: added public SDK resolveImplicitPmRoot so relocation recovery bypasses both CLI and PM_PATH overrides without mutating process environment. Unit and integration acceptance require simultaneous activation and relocation causes. Direct tracker run passed 2/2 linked commands and 25 combined tests."
+  "2026-07-25T16:31:25.152Z","harness:codex","Final gate evidence: tracker test-all passed 10/10 linked commands across 8 active items with zero failures or skips. Repository coverage passed 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637). Static quality enforces 100% module/export/member docstrings, SDK surface and import costs, package boundary, token budgets, CLI transport, secret scan, and zero-vulnerability audit."
+  "2026-07-25T16:56:19.858Z","harness:codex","CI evidence: clean-runner shard failed because relocation acceptance depended on locally installed repository extensions. The fixture now creates an initialized workspace tracker with a distinct command surface and runs the selected tracker from that cwd, making both activation and relocation causes deterministic."
+  "2026-07-25T17:05:50.733Z","harness:codex","Final evidence: the initialized two-root relocation fixture passes locally and in the tracker-owned 25-test command. Exact squashed head b7974127 passes 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637)."
+files[9]{path,scope,note}:
+  src/cli/extension-recovery.ts,project,pm-path extension-root relocation diagnostic
+  src/core/store/paths.ts,project,Environment-independent implicit tracker primitive
+  src/sdk/index.ts,project,Universal SDK barrel export
+  src/sdk/runtime-primitives.ts,project,CLI-safe SDK primitive export
+  src/sdk/runtime.ts,project,Public SDK runtime export
+  tests/integration/extension-host-contracts.integration.spec.ts,project,Combined activation and relocation diagnostic acceptance
+  tests/unit/cli/recovery-context-usage.spec.ts,project,Relocation diagnostic proof
+  tests/unit/core/store/store-paths.spec.ts,project,PM_PATH bypass regression
+  tests/unit/sdk/sdk-index.spec.ts,project,Public SDK export proof
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/recovery-context-usage.spec.ts,project,300,Extension-root relocation regressions
+  node scripts/run-tests.mjs test -- tests/unit/core/store/store-paths.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,300,Implicit-root and relocation integration regressions
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:49:00.943Z","2026-07-25T14:49:00.943Z",1,0,0,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:53:53.876Z","2026-07-25T14:53:53.876Z",1,0,0,1,1
+  test-all-local-ms0l1mou-jddyvu,test-all,passed,"2026-07-25T16:27:43.457Z","2026-07-25T16:29:02.250Z","2026-07-25T16:29:02.250Z",2,0,0,1,2
+  test-all-local-ms0m2p6h-g1gh6t,test-all,passed,"2026-07-25T16:56:32.989Z","2026-07-25T16:57:05.836Z","2026-07-25T16:57:05.836Z",2,0,0,1,2
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: Clean-runner relocation acceptance is deterministic and exact-head coverage is complete.
 body: ""

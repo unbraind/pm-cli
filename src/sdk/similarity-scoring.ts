@@ -6,6 +6,16 @@
  */
 const ISSUE_CODE_PATTERN = /\b[a-z][a-z0-9]*-\d+\b/giu;
 
+/** Precomputed title signals reused by bounded batch similarity operations. */
+export interface PreparedSimilarityText {
+  /** Canonical title used for exact comparison. */
+  normalized: string;
+  /** Unique normalized word tokens. */
+  tokens: string[];
+  /** Unique issue identifiers embedded in the title. */
+  issueCodes: string[];
+}
+
 /** Stable score and strongest signal returned by title comparison. */
 export interface ItemSimilarityScore {
   /** Similarity on the zero-to-one scale. */
@@ -24,6 +34,22 @@ export function tokenizeSimilarityText(value: string): string[] {
   return [
     ...new Set(normalizeSimilarityText(value).match(/[\p{L}\p{N}]+/gu) ?? []),
   ];
+}
+
+/** Precompute every deterministic title signal exactly once for repeated comparisons. */
+export function prepareSimilarityText(value: string): PreparedSimilarityText {
+  const normalized = normalizeSimilarityText(value);
+  return {
+    normalized,
+    tokens: tokenizeSimilarityText(normalized),
+    issueCodes: [
+      ...new Set(
+        normalized
+          .match(ISSUE_CODE_PATTERN)
+          ?.map((code) => code.toLowerCase()) ?? [],
+      ),
+    ],
+  };
 }
 
 /** Measure set overlap between two token collections. */
@@ -47,23 +73,26 @@ export function scoreItemSimilarity(
   leftTitle: string,
   rightTitle: string,
 ): ItemSimilarityScore {
-  const leftNormalized = normalizeSimilarityText(leftTitle);
-  const rightNormalized = normalizeSimilarityText(rightTitle);
-  if (leftNormalized === rightNormalized) {
+  return scorePreparedItemSimilarity(
+    prepareSimilarityText(leftTitle),
+    prepareSimilarityText(rightTitle),
+  );
+}
+
+/** Score two precomputed title representations without repeating normalization or tokenization. */
+export function scorePreparedItemSimilarity(
+  left: PreparedSimilarityText,
+  right: PreparedSimilarityText,
+): ItemSimilarityScore {
+  if (left.normalized === right.normalized) {
     return { score: 1, reason: "exact_title" };
   }
-  const leftCodes = new Set(
-    leftNormalized.match(ISSUE_CODE_PATTERN)?.map((code) => code.toLowerCase()),
-  );
-  const rightCodes = rightNormalized.match(ISSUE_CODE_PATTERN) ?? [];
-  if (rightCodes.some((code) => leftCodes.has(code.toLowerCase()))) {
+  const leftCodes = new Set(left.issueCodes);
+  if (right.issueCodes.some((code) => leftCodes.has(code))) {
     return { score: 0.99, reason: "issue_code" };
   }
   return {
-    score: jaccardSimilarity(
-      tokenizeSimilarityText(leftNormalized),
-      tokenizeSimilarityText(rightNormalized),
-    ),
+    score: jaccardSimilarity(left.tokens, right.tokens),
     reason: "title_token_jaccard",
   };
 }

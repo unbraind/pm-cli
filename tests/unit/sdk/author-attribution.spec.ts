@@ -331,7 +331,11 @@ describe("SDK author attribution primitives", () => {
     );
     await writeFile(
       path.join(pmRoot, "history", "pm-legacy.jsonl"),
-      `${JSON.stringify({ ts: "2026-07-14T00:00:00.000Z", author: "unknown" })}\n`,
+      `${JSON.stringify({
+        ts: "2026-07-14T00:00:00.000Z",
+        author: "unknown",
+        op: "delete",
+      })}\n`,
     );
 
     const health = await runHealth(

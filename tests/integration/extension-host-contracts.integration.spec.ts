@@ -7,6 +7,7 @@ async function installHostContractExtension(
   pmPath: string,
   source: string,
   capabilities: string[] = ["commands", "renderers", "schema"],
+  commands: string[] = ["host probe", "host query", "host silent"],
 ): Promise<void> {
   const extensionDir = path.join(pmPath, "extensions", "host-contract-test");
   await mkdir(extensionDir, { recursive: true });
@@ -19,7 +20,7 @@ async function installHostContractExtension(
         entry: "./index.mjs",
         capabilities,
         activation: {
-          commands: ["host probe", "host query", "host silent"],
+          commands,
         },
       },
       null,
@@ -94,7 +95,9 @@ describe("extension host contracts", () => {
         code: 0,
         stderr: "",
       });
-      expect(result.json).toEqual({ repos: ["alpha", "beta", "gamma", "delta"] });
+      expect(result.json).toEqual({
+        repos: ["alpha", "beta", "gamma", "delta"],
+      });
     });
   });
 
@@ -179,6 +182,26 @@ describe("extension host contracts", () => {
 
   it("surfaces activation causes at unknown-command, doctor, and activate boundaries", async () => {
     await withTempPmPath(async (context) => {
+      const workspaceRoot = path.join(context.tempRoot, "workspace");
+      const workspacePmRoot = path.join(workspaceRoot, ".agents", "pm");
+      await installHostContractExtension(
+        workspacePmRoot,
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({ name: 'workspace only', run: () => ({ ok: true }) });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+        ["commands"],
+        ["workspace only"],
+      );
+      await writeFile(
+        path.join(workspacePmRoot, "settings.json"),
+        `${JSON.stringify({ id_prefix: "pm", item_format: "toon" })}\n`,
+        "utf8",
+      );
       await installHostContractExtension(
         context.pmPath,
         [
@@ -197,6 +220,7 @@ describe("extension host contracts", () => {
       );
 
       const unknown = context.runCli(["host", "probe", "--json"], {
+        cwd: workspaceRoot,
         expectJson: true,
       });
       expect(unknown.code).toBe(2);
@@ -233,14 +257,24 @@ describe("extension host contracts", () => {
           },
         },
       });
-      expect(JSON.parse(unknown.stderr)).toMatchObject({
+      const unknownError = JSON.parse(unknown.stderr) as {
+        code: string;
+        failed_extensions: Array<{ name: string; error: string }>;
+      };
+      expect(unknownError).toMatchObject({
         code: "unknown_command",
-        failed_extensions: [
-          {
+        failed_extensions: expect.arrayContaining([
+          expect.objectContaining({
             name: "host-contract-test",
             error: expect.stringContaining("requires capability 'schema'"),
-          },
-        ],
+          }),
+          expect.objectContaining({
+            name: "extension-root-relocation",
+            error: expect.stringContaining(
+              "--pm-path selects extension discovery as well as item storage",
+            ),
+          }),
+        ]),
       });
     });
   });

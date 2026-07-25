@@ -10,6 +10,7 @@ import {
   resolveItemTypeRegistry,
   migrateItemFilesToFormat,
   getSettingsPath,
+  persistSelectedItemFormat,
   readSettingsWithMetadata,
   writeSettings,
   EXIT_CODE,
@@ -235,9 +236,7 @@ function isMutationInvocation(
 }
 
 /** Normalize configured active-status spellings for preflight comparison. */
-export function normalizedLifecycleStatus(
-  value: string | undefined,
-): string {
+export function normalizedLifecycleStatus(value: string | undefined): string {
   return (value ?? "in_progress").trim().toLowerCase().replaceAll("-", "_");
 }
 
@@ -423,6 +422,7 @@ export async function enforceItemFormatWriteGateAndPreflightMigration(
     printError(`warning:${warning}`);
   }
   if (decision.enforce_item_format_gate && !metadata.has_explicit_item_format) {
+    persistSelectedItemFormat(settings);
     await writeSettings(pmRoot, settings, "item_format:auto_select_default");
   }
   if (decision.run_preflight_item_format_sync) {

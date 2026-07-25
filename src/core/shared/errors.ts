@@ -37,6 +37,14 @@ export interface PmCliErrorRecoveryPayload {
 export interface PmCliErrorContext {
   /** Value that configures or reports code for this contract. */
   code?: string;
+  /** Stable failure class within the operation-specific error code. */
+  reason?: string;
+  /** Metadata field responsible for a validation failure, when known. */
+  field?: string;
+  /** Serialization format involved in a parse failure. */
+  format?: string;
+  /** Item format version involved in a compatibility failure. */
+  format_version?: number;
   /** Schema type that determines the shape and validation rules for this value. */
   type?: string;
   /** Value that configures or reports required for this contract. */
@@ -66,6 +74,8 @@ export interface PmCliErrorContext {
 export class PmCliError extends Error {
   /** Value that configures or reports exit code for this contract. */
   public readonly exitCode: number;
+  /** Stable machine-readable code mirrored from context for direct SDK consumption. */
+  public readonly code?: string;
   /** Value that configures or reports context for this contract. */
   public readonly context: PmCliErrorContext;
 
@@ -79,5 +89,6 @@ export class PmCliError extends Error {
     this.name = "PmCliError";
     this.exitCode = exitCode;
     this.context = context;
+    this.code = context.code;
   }
 }

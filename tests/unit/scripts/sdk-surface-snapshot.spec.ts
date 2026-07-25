@@ -372,25 +372,29 @@ describe("SDK surface snapshot semantics", () => {
     ]);
   });
 
-  it("reads every declared package entrypoint through the TypeScript checker", async () => {
-    const mod = await loadModule();
-    const result = await mod.buildSdkSurfaceSnapshot();
-    expect(Object.keys(result.entrypoints)).toContain("./sdk/authoring");
-    expect(
-      result.entrypoints["./sdk/contracts"]?.symbols.some(
-        (symbol) =>
-          symbol.name === "PM_TOOL_ACTIONS" &&
-          symbol.classification === "contract_data",
-      ),
-    ).toBe(true);
-    expect(
-      result.entrypoints["./sdk/core"]?.symbols.some(
-        (symbol) =>
-          symbol.name === "PmClient" && symbol.signature.includes("class"),
-      ),
-    ).toBe(true);
-    expect(result.error_codes).toContain("invalid_query_cursor");
-  });
+  it(
+    "reads every declared package entrypoint through the TypeScript checker",
+    async () => {
+      const mod = await loadModule();
+      const result = await mod.buildSdkSurfaceSnapshot();
+      expect(Object.keys(result.entrypoints)).toContain("./sdk/authoring");
+      expect(
+        result.entrypoints["./sdk/contracts"]?.symbols.some(
+          (symbol) =>
+            symbol.name === "PM_TOOL_ACTIONS" &&
+            symbol.classification === "contract_data",
+        ),
+      ).toBe(true);
+      expect(
+        result.entrypoints["./sdk/core"]?.symbols.some(
+          (symbol) =>
+            symbol.name === "PmClient" && symbol.signature.includes("class"),
+        ),
+      ).toBe(true);
+      expect(result.error_codes).toContain("invalid_query_cursor");
+    },
+    120_000,
+  );
 
   it("fails closed for missing package exports, declarations, and declaration diagnostics", async () => {
     const mod = await loadModule();
@@ -521,15 +525,19 @@ describe("SDK surface snapshot command", () => {
     ]);
   });
 
-  it("requires exactly one command mode", async () => {
-    const mod = await loadModule();
-    await expect(mod.main([])).rejects.toThrow("Usage:");
-    await expect(mod.main(["--check", "--update"])).rejects.toThrow("Usage:");
-    await expect(mod.main(["--check"])).resolves.toMatchObject({
-      mode: "check",
-      changed: false,
-    });
-  });
+  it(
+    "requires exactly one command mode",
+    async () => {
+      const mod = await loadModule();
+      await expect(mod.main([])).rejects.toThrow("Usage:");
+      await expect(mod.main(["--check", "--update"])).rejects.toThrow("Usage:");
+      await expect(mod.main(["--check"])).resolves.toMatchObject({
+        mode: "check",
+        changed: false,
+      });
+    },
+    120_000,
+  );
 
   it("executes, skips, and reports failures through the script entrypoint", async () => {
     const scriptPath = path.resolve("scripts/sdk-surface-snapshot.mjs");

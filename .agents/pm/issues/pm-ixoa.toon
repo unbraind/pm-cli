@@ -1,22 +1,45 @@
 id: pm-ixoa
 title: "First-party service collision: builtin-calendar and builtin-guide-shell both override the global output_format service"
-description: "2026-07-04 sandbox review: with all bundled packages installed, pm extension --doctor warns extension_output_service_override_global:output_format for BOTH builtin-calendar and builtin-guide-shell — two shipped first-party packages contending for the same global output service. Decide the owner (or scope one override) so a full first-party install is warning-free."
+description: Bundled calendar and guide-shell both participate in output formatting. Treat command-bounded services and discriminated renderers as compatible scoped ownership while continuing to report genuinely unscoped global output collisions.
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[2]: audit-followup,extensions
 created_at: "2026-07-04T08:31:42.675Z"
-updated_at: "2026-07-25T06:31:39.368Z"
+updated_at: "2026-07-25T16:31:58.512Z"
+closed_at: "2026-07-25T16:31:57.512Z"
 author: maintainer-agent
 estimated_minutes: 90
-acceptance_criteria: builtin-calendar and builtin-guide-shell no longer collide on the output_format service; doctor flags first-party service collisions.
+acceptance_criteria: Calendar and guide-shell command-bounded output registrations are classified as compatible scoped ownership; Doctor retains warnings for genuinely unscoped global output service collisions; Packed all-package doctor and focused scoped-versus-global regressions pass
 parent: pm-ugqx
 risk: low
 confidence: medium
+resolution: Extension doctor recognizes command-bounded output ownership and retains warnings for genuine global collisions.
+expected_result: Extension doctor recognizes command-bounded output ownership and retains warnings for genuine global collisions.
+actual_result: Command-bounded calendar and guide-shell output registrations coexist without false-positive warnings; intentionally global collisions remain reported.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-15T06:29:50.614Z",null,null
-comments[3]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-10T05:48:02.567Z",codex-root-20260709,"Fresh packed-package evidence (2026-07-10): path-target init --with-packages activated all 11 bundled packages with zero blocking failures, but isolated deep package doctor still reports exactly two extension_output_service_override_global:output_format warnings for builtin-calendar and builtin-guide-shell. Canonical item confirmed; no duplicate created. Temp proof: /tmp/pm-cli-sdk-path-proof-XIsSsh."
   "2026-07-25T00:58:48.364Z",codex-root,"GitHub linkage: GH-687 reproduces this still-open canonical first-party output_format ownership collision on 2026.7.24-3. The GitHub issue is linked to this item; no duplicate PM item was created."
   "2026-07-25T06:31:39.368Z","harness:claude-code","GitHub issue #687 (Built-in calendar and guide-shell trigger global output service override warnings) is the external reporting surface for this item; mapped 2026-07-25, no duplicate filed."
-body: "## Context\n2026-07-04 sandbox review: with all bundled packages installed, `pm extension --doctor` warns extension_output_service_override_global:output_format for BOTH builtin-calendar and builtin-guide-shell — two first-party packages contend for the same global output_format service, so a full first-party install is never warning-free and last-activated silently wins.\n\n## Decision needed (then implement)\nPick the owner of the global output_format override (guide-shell is the likelier owner as the interactive surface; calendar probably only needs it for its own command scope) — or scope one override to its owning commands via the action-scoped mechanism from PR#406. Record the choice as a comment here (or an ADR under pm-m2u1 if the service-ownership rule generalizes).\n\n## Definition of done\nFresh sandbox with ALL bundled packages installed shows zero doctor warnings; the ownership/scoping rule is documented in EXTENSIONS.md; regression spec asserts the doctor output stays clean."
+  "2026-07-25T15:25:40.600Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:25:54.162Z","harness:codex","Implementation: SDK output ownership classifies calendar and guide-shell command-bounded services/renderers as scoped ownership while retaining warnings for genuinely global overrides."
+  "2026-07-25T16:31:20.358Z","harness:codex","Review evidence: canonical description, body, acceptance criteria, resolution, expected result, and actual result now consistently describe command-bounded ownership with warnings retained for true global collisions. Direct linked run passed all 8 ownership/runtime tests."
+  "2026-07-25T16:31:28.224Z","harness:codex","Final gate evidence: tracker test-all passed 10/10 linked commands across 8 active items with zero failures or skips. Repository coverage passed 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637). Static quality enforces 100% module/export/member docstrings, SDK surface and import costs, package boundary, token budgets, CLI transport, secret scan, and zero-vulnerability audit."
+learnings[1]{created_at,author,text}:
+  "2026-07-25T15:26:18.916Z","harness:codex","Output override safety is an ownership problem: command-bounded services and discriminated renderers are compatible, while unscoped registrations still require a global collision warning."
+files[3]{path,scope,note}:
+  src/sdk/extension.ts,project,Command-scoped output service ownership
+  src/sdk/extension/output-ownership.ts,project,Scoped output ownership classifier
+  tests/unit/extensions/output-service-ownership.spec.ts,project,Scoped versus global doctor proof
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/output-service-ownership.spec.ts tests/unit/packages/calendar-runtime.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts,project,300,Output service ownership regressions
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:48:15.330Z","2026-07-25T14:48:15.330Z",1,0,0,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:53:09.686Z","2026-07-25T14:53:09.686Z",1,0,0,1,1
+  test-all-local-ms0l1mou-jddyvu,test-all,passed,"2026-07-25T16:27:43.457Z","2026-07-25T16:28:12.955Z","2026-07-25T16:28:12.955Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: Canonical metadata and implementation now agree on scoped output ownership with genuine global collision warnings.
+body: "## Context\nCalendar and guide-shell both contribute to output formatting, but their registrations are bounded by command or renderer discrimination rather than competing global last-writer ownership.\n\n## Ownership rule\nCommand-bounded services and discriminated renderers are compatible scoped ownership. Unscoped registrations for the same output service remain genuine global collisions and must produce doctor warnings.\n\n## Definition of done\nA fresh sandbox with all bundled packages installed produces no false-positive output ownership warnings; an intentionally unscoped global collision still produces a doctor warning; the ownership rule is documented and regression-tested."

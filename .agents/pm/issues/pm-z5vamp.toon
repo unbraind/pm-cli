@@ -2,20 +2,39 @@ id: pm-z5vamp
 title: "GH-692: plan update-step must persist file, test, and doc evidence fields"
 description: "GitHub issue https://github.com/unbraind/pm-cli/issues/692 reports that plan update-step accepts evidence fields but silently ignores them. Preserve structured evidence through CLI, SDK, storage, contracts, and acceptance coverage."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:31.869Z"
-updated_at: "2026-07-25T06:27:17.355Z"
+updated_at: "2026-07-25T16:54:17.099Z"
+closed_at: "2026-07-25T16:31:53.161Z"
 author: unknown
 estimated_minutes: 180
 acceptance_criteria: "plan update-step persists --file, --test, and --doc evidence onto the step record through CLI, SDK, and MCP; Evidence fields round-trip through storage and are visible in plan reads and history entries; Unsupported or malformed evidence input fails with a typed error instead of being silently discarded; Coverage asserts persistence and rejection paths on the same plan"
 parent: pm-usfg
-dependencies[4]{id,kind,created_at,author,source_kind}:
+resolution: "Plan update-step persists and deduplicates file, test, and doc evidence."
+expected_result: "Plan update-step persists and deduplicates file, test, and doc evidence."
+actual_result: "Plan update-step persists and deduplicates file, test, and doc evidence. Verification: linked tests, full coverage, static/security gates, packed consumer, clean-runner CI follow-up, and synchronized terminal metadata passed."
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-bxdlfa,related_to,"2026-07-25T02:06:31.869Z",null,null
   pm-2tan,related,"2026-07-25T06:27:17.113Z",null,null
   pm-96tter,related,"2026-07-25T06:27:17.113Z",null,null
-  pm-bxdlfa,related,"2026-07-25T06:27:17.113Z",null,null
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-25T02:06:31.869Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
+  "2026-07-25T15:25:44.835Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:25:58.487Z","harness:codex","Implementation: plan update-step parses, persists, and deterministically deduplicates structured file/test/doc evidence instead of silently ignoring it."
+  "2026-07-25T16:31:18.485Z","harness:codex","Review evidence: plan mutation history compares the union of before/after plan_* keys, recording removals as well as additions/updates; explicit PmCliError matcher generics were removed. Duplicate pm-bxdlfa related edge removed while canonical related_to lineage remains. Direct linked run passed=1 skipped=0."
+  "2026-07-25T16:31:26.313Z","harness:codex","Final gate evidence: tracker test-all passed 10/10 linked commands across 8 active items with zero failures or skips. Repository coverage passed 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637). Static quality enforces 100% module/export/member docstrings, SDK surface and import costs, package boundary, token budgets, CLI transport, secret scan, and zero-vulnerability audit."
+files[2]{path,scope,note}:
+  src/cli/commands/plan.ts,project,Step evidence persistence and validation
+  tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,Evidence regression proof
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,300,Plan evidence regressions
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:50:46.665Z","2026-07-25T14:50:46.665Z",0,0,1,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:55:16.481Z","2026-07-25T14:55:16.481Z",0,0,1,1,1
+  test-all-local-ms0l1mou-jddyvu,test-all,passed,"2026-07-25T16:27:43.457Z","2026-07-25T16:30:43.762Z","2026-07-25T16:30:43.762Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: "Plan evidence persists, removed plan metadata fields are audited, and duplicate graph lineage is canonicalized."
 body: ""

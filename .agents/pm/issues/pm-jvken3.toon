@@ -2,20 +2,40 @@ id: pm-jvken3
 title: "GH-678: linked-test sandbox must preserve freshly installed project extensions across child processes"
 description: "GitHub issue https://github.com/unbraind/pm-cli/issues/678 reports that a freshly installed project extension disappears between sandboxed child processes. Preserve isolated extension discovery state without exposing the real tracker."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:34.409Z"
-updated_at: "2026-07-25T06:27:19.332Z"
+updated_at: "2026-07-25T16:31:44.186Z"
+closed_at: "2026-07-25T16:31:42.784Z"
 author: unknown
 estimated_minutes: 180
 acceptance_criteria: "A project extension installed inside a sandboxed linked-test run stays discoverable across the child processes of that run; Isolation is preserved: the sandbox never discovers or mutates the real repository tracker or global extension store; Regression coverage installs an extension inside the sandbox and asserts both discovery in a subsequent child process and non-leakage to the real workspace"
 parent: pm-usfg
+resolution: Linked-test sandboxes preserve extensions installed earlier in the same linked command without touching real tracker data.
+expected_result: Linked-test sandboxes preserve extensions installed earlier in the same linked command without touching real tracker data.
+actual_result: "Linked-test sandboxes preserve extensions installed earlier in the same linked command without touching real tracker data. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-954h0o,related_to,"2026-07-25T02:06:34.409Z",null,null
   pm-lp4j,related,"2026-07-25T06:27:19.072Z",null,null
   pm-p5u6,related,"2026-07-25T06:27:19.072Z",null,null
   pm-qswf81,related,"2026-07-25T06:27:19.072Z",null,null
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-25T02:06:34.409Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
+  "2026-07-25T15:25:37.194Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:25:51.265Z","harness:codex","Implementation: linked-test sandbox child processes retain freshly installed project extensions within one command while preserving isolated PM roots."
+  "2026-07-25T16:31:15.453Z","harness:codex","Review and CI evidence: the installed-extension regression now invokes the exact built repository CLI rather than an ambient global binary. Linked output retention also coalesces fragmented streams into bounded 64 KiB slabs. Tracker test-all records a direct passed=1 skipped=0 run; 56 focused tests and full 6,370-test coverage pass."
+  "2026-07-25T16:31:23.177Z","harness:codex","Final gate evidence: tracker test-all passed 10/10 linked commands across 8 active items with zero failures or skips. Repository coverage passed 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637). Static quality enforces 100% module/export/member docstrings, SDK surface and import costs, package boundary, token budgets, CLI transport, secret scan, and zero-vulnerability audit."
+files[2]{path,scope,note}:
+  src/sdk/test/execution.ts,project,Bounded linked-output slab retention
+  tests/unit/commands/test-command.spec.ts,project,Installed extension child persistence proof
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts,project,300,Installed extension sandbox regressions
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:48:47.565Z","2026-07-25T14:48:47.565Z",0,0,1,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:53:40.761Z","2026-07-25T14:53:40.761Z",0,0,1,1,1
+  test-all-local-ms0l1mou-jddyvu,test-all,passed,"2026-07-25T16:27:43.457Z","2026-07-25T16:28:40.040Z","2026-07-25T16:28:40.040Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: Linked-test extension persistence uses the exact built CLI and fragmented output is slab-bounded; direct and full gates pass.
 body: ""

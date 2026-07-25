@@ -2,21 +2,42 @@ id: pm-r9pudt
 title: "GH-691: parseItemDocument errors need stable structured SDK classification"
 description: "Public SDK parseItemDocument failures currently expose empty PmCliError context and no stable error_code, forcing package consumers to distinguish parse, validation, migration, and IO failures by matching English prose."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: context-management,errors,gh-691,github,sdk,structured-contract
 created_at: "2026-07-25T01:29:45.187Z"
-updated_at: "2026-07-25T06:27:22.750Z"
+updated_at: "2026-07-25T16:32:00.639Z"
+closed_at: "2026-07-25T16:31:59.692Z"
 author: codex-root
 estimated_minutes: 180
 acceptance_criteria: Every parseItemDocument failure category exposes a stable machine-readable error code and useful bounded context through the public SDK; CLI compatibility and 100 percent coverage remain intact.
 parent: pm-usfg
 risk: medium
+resolution: Item parse failures expose stable structured SDK error classification instead of prose-only matching.
+expected_result: Item parse failures expose stable structured SDK error classification instead of prose-only matching.
+actual_result: "Item parse failures expose stable structured SDK error classification instead of prose-only matching. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-rnpb,related,"2026-07-25T01:29:45.187Z",null,null
   pm-psy1,related,"2026-07-25T06:27:22.451Z",null,null
   pm-srns,related,"2026-07-25T06:27:22.451Z",null,null
   pm-ulqu,related,"2026-07-25T06:27:22.451Z",null,null
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-25T01:29:45.187Z",codex-root,"Duplicate check: all-status searches for parseItemDocument empty context error_code and PmCliError structured parse failures found broad completed SDK/error work but no canonical item for GitHub issue 691; created this focused child under the SDK-first epic."
+  "2026-07-25T15:25:43.759Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:25:57.447Z","harness:codex","Implementation: JSON Markdown and TOON syntax/schema failures now expose stable item_document_invalid context with reason, format/field where available, required action, and why."
+  "2026-07-25T16:31:21.286Z","harness:codex","Review evidence: structured parse regression now captures the actual thrown value without a sentinel that its own catch could swallow. Direct linked run passed all 5 structured-error tests."
+  "2026-07-25T16:31:29.240Z","harness:codex","Final gate evidence: tracker test-all passed 10/10 linked commands across 8 active items with zero failures or skips. Repository coverage passed 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637). Static quality enforces 100% module/export/member docstrings, SDK surface and import costs, package boundary, token budgets, CLI transport, secret scan, and zero-vulnerability audit."
+files[3]{path,scope,note}:
+  src/core/item/item-format.ts,project,Structured parse classification
+  src/core/shared/errors.ts,project,Stable SDK error context
+  tests/unit/core/item/item-format-structured-errors.spec.ts,project,Structured error proof
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-structured-errors.spec.ts tests/unit/core/item/item-format.spec.ts,project,300,Structured parse error regressions
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:49:11.939Z","2026-07-25T14:49:11.939Z",1,0,0,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:54:03.955Z","2026-07-25T14:54:03.955Z",1,0,0,1,1
+  test-all-local-ms0l1mou-jddyvu,test-all,passed,"2026-07-25T16:27:43.457Z","2026-07-25T16:29:11.727Z","2026-07-25T16:29:11.727Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: Structured item parse errors and their regression assertions remain precise and branch-complete.
 body: ""

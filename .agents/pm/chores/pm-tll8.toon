@@ -2,26 +2,47 @@ id: pm-tll8
 title: Refresh 2026-07-15 npm dependency updates with compatibility and release-gate proof
 description: "Update the currently reported npm package set in compatibility-safe groups, separating major runtime/type-system migrations from patch/minor tooling updates, while preserving exact coverage, package contracts, and release gates."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: dependencies,maintenance,release,security
 created_at: "2026-07-15T09:27:07.658Z"
-updated_at: "2026-07-21T16:53:26.876Z"
+updated_at: "2026-07-25T16:31:41.467Z"
+closed_at: "2026-07-25T16:31:40.540Z"
 author: codex-root
 estimated_minutes: 180
 acceptance_criteria: "Current pnpm outdated report is reconciled; safe patch/minor updates land with lockfile and zero-vulnerability proof; TypeScript 7, @types/node 26, and eslint-plugin-unicorn 71 majors are evaluated separately against Node 22/24/26 and package builds; 100/100/100/100 coverage and release gates remain green."
 parent: pm-u9d0
 risk: medium
 confidence: 80
+resolution: Sentry remains pinned to declaration-compatible 10.67.0 after 10.68.0 failed the packed TypeScript consumer.
+expected_result: The newest adopted Sentry patch must pass fresh packed TypeScript consumers and zero-vulnerability gates.
+actual_result: "Sentry 10.68.0 failed fresh packed TypeScript declarations; 10.67.0 is restored and passes the 15-package packed consumer, typecheck, manifest, and zero-vulnerability audit."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-a2g6,related,"2026-07-15T09:27:07.658Z",codex-root,null
   pm-qwoy,related,"2026-07-15T09:27:07.658Z",codex-root,null
-comments[4]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-15T09:27:07.658Z",codex-root,"Duplicate check evidence 2026-07-15: all-status search for dependency updates vulnerabilities outdated packages found only closed historical refresh items,chiefly pm-a2g6; no active July 15 dependency-refresh item exists. Live pnpm audit reports zero vulnerabilities and Dependabot reports zero open alerts. pnpm outdated reports safe patch/minor candidates plus major TypeScript,Node types,and unicorn migrations that require compatibility proof."
   "2026-07-15T20:06:31.807Z",codex-audit-20260715,"Review pass 91 dependency evidence from pnpm outdated: remaining current candidates include Vitest and coverage 4.1.10, jscpd 5.0.12, tsx 4.23.1, Sentry 10.65, ESLint 10.7, sonarjs 4.2, Greptile 3.2, typescript-eslint 8.64, @types/node 26.1.1, eslint-plugin-unicorn 71.1, and TypeScript 7.0.2. pnpm audit reports zero advisories across 330 dependencies. Preserve the existing compatibility-matrix and batched-upgrade scope."
   "2026-07-19T16:15:16.797Z",codex-wide-sdk-20260719,"2026-07-19 dependency snapshot: pnpm audit reports 0 vulnerabilities across 341 dependencies. Remaining outdated candidates are @toon-format/toon 2.3.0 to 2.3.1, greptile 3.2.0 to 3.2.2, @sentry/node 10.65.0 to 10.66.0, eslint-plugin-sonarjs 4.1.0 to 4.2.0, eslint-plugin-unicorn 71.1.0 to 72.0.0, and TypeScript 6.0.3 to 7.0.2. Preserved this canonical open upgrade lane; no duplicate and no unrelated dependency churn in the current PR."
   "2026-07-21T16:53:26.875Z",codex-derived-context-20260721,"Live GitHub dependency snapshot 2026-07-21: open Dependabot PRs are #618 dev-dependencies, #619 GitHub Actions group, #620 production-dependencies group, and #621 eslint-plugin-unicorn 72; all currently report BEHIND and remain isolated/unclaimed in this SDK lane. Dependabot alerts=0 and pnpm audit reports 0 info/low/moderate/high/critical vulnerabilities. This canonical refresh item remains the owner; no duplicate dependency item created."
-notes[2]{created_at,author,text}:
+  "2026-07-25T15:25:49.034Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:26:02.467Z","harness:codex","Dependency evidence: @sentry/node advanced from exact 10.67.0 to packed-consumer-tested 10.68.0; node_modules reports 10.68.0, the manifest acceptance pin was updated, typecheck passes, and pnpm audit reports no known vulnerabilities. Remaining majors are intentionally not folded into this safe refresh: TypeScript 7.0.2 is canonical pm-do5b pending typescript-eslint/compiler-API compatibility; @toon-format/toon 4.0.0 and npm-package-arg 14.0.0 require separately reviewed breaking-change migrations rather than an unscoped lockfile jump."
+  "2026-07-25T16:31:13.474Z","harness:codex","Correction and final evidence: the earlier Sentry 10.68 packed-consumer claim was invalid because that proof preceded the dependency update. GitHub packed TypeScript acceptance exposed missing transitive declarations in @apm-js-collab/code-transformer-bundler-plugins. Restored exact @sentry/node 10.67.0, then reran a fresh 15-package packed npx consumer successfully; typecheck, package manifest, and pnpm audit with zero vulnerabilities pass."
+  "2026-07-25T16:31:22.324Z","harness:codex","Final gate evidence: tracker test-all passed 10/10 linked commands across 8 active items with zero failures or skips. Repository coverage passed 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637). Static quality enforces 100% module/export/member docstrings, SDK surface and import costs, package boundary, token budgets, CLI transport, secret scan, and zero-vulnerability audit."
+notes[3]{created_at,author,text}:
   "2026-07-15T19:27:05.225Z",maintainer-agent,"pnpm outdated snapshot 2026-07-15 (review pass #89): patch/minor — @vitest/coverage-v8+vitest 4.1.9→4.1.10, jscpd 5.0.11→5.0.12, tsx 4.23.0→4.23.1, @sentry/node 10.63.0→10.65.0, eslint 10.6.0→10.7.0, eslint-plugin-sonarjs 4.1.0→4.2.0, greptile 3.1.1→3.2.0, typescript-eslint 8.62.1→8.64.0. MAJORS needing compatibility proof — @types/node 22.20.1→26.1.1 (engines floor is >=22.18, types should track the floor, likely stay on 22.x or bump floor decision), typescript 6.0.3→7.0.2 (gate + build + type-strip loader proof), eslint-plugin-unicorn 70.0.0→71.1.0 (rule churn vs eslint-suppressions.json A+ baseline). Majors are each their own gate-proof commit; never bundle with patch sweeps."
   "2026-07-17T05:13:54.812Z",maintainer-agent,"Dependency snapshot advanced 2026-07-17 (user-directed dependabot triage, pass #94): MERGED to main — dev-deps group #572 (@vitest/coverage-v8+vitest 4.1.10, eslint 10.7.0, greptile 3.2.0, jscpd 5.0.12, tsx 4.23.1, typescript-eslint 8.64.0), eslint-plugin-unicorn 71.1.0 (#541), @sentry/node 10.65.0 (#538), @types/node 26.1.1 (#540 — required the SetIterator annotation fix in src/core/extensions/item-fields.ts; frozen ReadonlySet wrappers must return SetIterator under the node-26 libs). NOT adopted: typescript 7.0.2 (#539) — closed via dependabot major-version ignore; migration owned by pm-do5b (typescript-eslint peer <6.1.0 + no stable JS compiler API for static-quality-gate.mts). Remaining majors from the #89 snapshot: TS7 only (types/node 26 now DONE)."
+  "2026-07-25T15:26:19.866Z","harness:codex","2026-07-25 live outdated snapshot after the safe patch refresh: @toon-format/toon 2.3.1 -> 4.0.0 major; npm-package-arg 13.0.2 -> 14.0.0 major; TypeScript 6.0.3 -> 7.0.2 major (tracked by pm-do5b). These remain explicit breaking-migration work, not hidden pending patch updates."
+files[3]{path,scope,note}:
+  package.json,project,Sentry patch dependency manifest
+  pnpm-lock.yaml,project,Resolved dependency graph
+  tests/unit/packages/package-manifest.spec.ts,project,pins the packed-consumer-safe Sentry declaration release
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts,project,300
+  pnpm typecheck && pnpm audit --audit-level=moderate,project,300
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:50:06.061Z","2026-07-25T14:50:06.061Z",1,0,0,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:54:36.611Z","2026-07-25T14:54:36.611Z",1,0,0,1,1
+  test-all-local-ms0l1mou-jddyvu,test-all,passed,"2026-07-25T16:27:43.457Z","2026-07-25T16:30:07.196Z","2026-07-25T16:30:07.196Z",2,0,0,1,2
+close_reason: "Restored packed-consumer-safe Sentry 10.67.0 after 10.68.0 declaration regression; exact package, typecheck, audit, and full gates pass."
 body: ""

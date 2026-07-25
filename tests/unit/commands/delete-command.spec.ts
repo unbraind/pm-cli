@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { runDelete } from "../../../src/cli/commands/delete.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { runHealth } from "../../../src/sdk/governance/health.js";
 import {
   createTestItemId,
   type TestItemStatus,
@@ -136,6 +137,8 @@ describe("runDelete", () => {
         deleted: true,
         outcome: "deleted",
         previous_status: "open",
+        history_retained: `history/${id}.jsonl`,
+        tombstone_retention: "retain_append_only",
       });
       await expect(access(itemPathForTask(context, id))).rejects.toBeDefined();
 
@@ -148,6 +151,55 @@ describe("runDelete", () => {
         expectJson: true,
       });
       expect(getAfterDelete.code).toBe(EXIT_CODE.NOT_FOUND);
+
+      const health = await runHealth({ path: context.pmPath });
+      const storage = health.checks.find((check) => check.name === "storage");
+      expect(storage?.status).toBe("ok");
+      expect(storage?.details).toMatchObject({
+        tombstones: {
+          retention_policy: "retain_append_only",
+          gc_enabled: false,
+          count: 1,
+          ids: [id],
+          truncated: false,
+        },
+        orphaned_history_streams: {
+          count: 0,
+          ids: [],
+          truncated: false,
+        },
+      });
+    });
+  });
+
+  it("distinguishes retained delete tombstones from corrupt orphan streams", async () => {
+    await withTempPmPath(async (context) => {
+      const liveId = createTask(context, "live-history-source");
+      const liveHistory = await readFile(
+        path.join(context.pmPath, "history", `${liveId}.jsonl`),
+        "utf8",
+      );
+      await writeFile(
+        path.join(context.pmPath, "history", "pm-orphaned.jsonl"),
+        liveHistory,
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toContain(
+        "history_orphaned_stream:pm-orphaned",
+      );
+      const storage = health.checks.find((check) => check.name === "storage");
+      expect(storage?.status).toBe("warn");
+      expect(storage?.details).toMatchObject({
+        tombstones: { count: 0, ids: [] },
+        orphaned_history_streams: {
+          count: 1,
+          ids: ["pm-orphaned"],
+          truncated: false,
+        },
+      });
     });
   });
 

@@ -1,5 +1,26 @@
 {
-  "breaking_acknowledgements": [],
+  "breaking_acknowledgements": [
+    {
+      "changes": [
+        "signature ./sdk:DeleteResult",
+        "signature ./sdk:PmCliError",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk/core:DeleteResult",
+        "signature ./sdk/core:PmCliError",
+        "signature ./sdk/runtime:DeleteResult",
+        "signature ./sdk/runtime:PmCliError"
+      ],
+      "package_version": "2026.7.25",
+      "reason": "Additive structured context, tombstone result, and context-integrity SDK contracts for the 2026.7.25 release"
+    },
+    {
+      "changes": [
+        "signature ./sdk/governance:_testOnlySimilarity"
+      ],
+      "package_version": "2026.7.25",
+      "reason": "Additive deterministic duplicate-cluster verification seams for the 2026.7.25 release"
+    }
+  ],
   "entrypoints": {
     "./sdk": {
       "classification": "advanced_export",
@@ -2006,7 +2027,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DeleteResult",
-          "signature": "export interface DeleteResult { item: Record<string, unknown>; changed_fields: string[]; dry_run: boolean; deleted: boolean; outcome: \"deleted\" | \"would_delete\"; previous_status: string; target_path?: string; warnings: string[]; }"
+          "signature": "export interface DeleteResult { item: Record<string, unknown>; changed_fields: string[]; dry_run: boolean; deleted: boolean; outcome: \"deleted\" | \"would_delete\"; previous_status: string; target_path?: string; history_retained: string; tombstone_retention: \"retain_append_only\"; warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -2217,6 +2238,24 @@
           "kind": "interface",
           "name": "DocsResult",
           "signature": "export interface DocsResult { id: string; docs: LinkedDoc[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DuplicateCluster",
+          "signature": "export interface DuplicateCluster { id: string; items: Omit<SimilarItemMatch, \"score\" | \"reason\">[]; matches: DuplicateClusterMatch[]; max_score: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DuplicateClusterMatch",
+          "signature": "export interface DuplicateClusterMatch { left_id: string; right_id: string; score: number; reason: SimilarItemMatch[\"reason\"]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DuplicateClustersResult",
+          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; cost: { item_count: number; candidate_pairs: number; scored_pairs: number; }; }"
         },
         {
           "classification": "supported",
@@ -3021,6 +3060,18 @@
           "kind": "interface",
           "name": "FilesResult",
           "signature": "export interface FilesResult { id: string; files: LinkedFile[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "findDuplicateClusters",
+          "signature": "(options?: FindDuplicateClustersOptions) => Promise<DuplicateClustersResult> | calls: (options?: FindDuplicateClustersOptions) => Promise<DuplicateClustersResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "FindDuplicateClustersOptions",
+          "signature": "export interface FindDuplicateClustersOptions extends FindSimilarItemsOptions { statuses?: readonly string[]; since?: string; }"
         },
         {
           "classification": "supported",
@@ -4053,6 +4104,12 @@
           "kind": "value",
           "name": "ISSUE_SEVERITY_VALUES",
           "signature": "readonly [\"low\", \"medium\", \"high\", \"critical\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isTerminalPlanMode",
+          "signature": "(mode: PlanMode | undefined) => boolean | calls: (mode: PlanMode | undefined) => boolean"
         },
         {
           "classification": "advanced_export",
@@ -5411,6 +5468,12 @@
           "signature": "(pmRoot: string, fingerprint: string, view: DurableGraphCacheView, queryKey: string, result: unknown) => Promise<void> | calls: (pmRoot: string, fingerprint: string, view: DurableGraphCacheView, queryKey: string, result: unknown) => Promise<void>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "persistSelectedItemFormat",
+          "signature": "(settings: PmSettings) => void | calls: (settings: PmSettings) => void"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "PLAN_FLAG_CONTRACTS",
@@ -5708,13 +5771,13 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCliError",
-          "signature": "export declare class PmCliError extends Error { readonly exitCode: number; readonly context: PmCliErrorContext; constructor(message: string, exitCode: number, context?: PmCliErrorContext); }"
+          "signature": "export declare class PmCliError extends Error { readonly exitCode: number; readonly code?: string; readonly context: PmCliErrorContext; constructor(message: string, exitCode: number, context?: PmCliErrorContext); }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; type?: string; required?: string; why?: string; examples?: string[]; nextSteps?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; format?: string; format_version?: number; type?: string; required?: string; why?: string; examples?: string[]; nextSteps?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -5889,6 +5952,18 @@
           "kind": "interface",
           "name": "PreflightRuntimeDecision",
           "signature": "export interface PreflightRuntimeDecision { enforce_item_format_gate: boolean; run_preflight_item_format_sync: boolean; run_extension_migrations: boolean; enforce_mandatory_migration_gate: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PreparedSimilarityText",
+          "signature": "export interface PreparedSimilarityText { normalized: string; tokens: string[]; issueCodes: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "prepareSimilarityText",
+          "signature": "(value: string) => PreparedSimilarityText | calls: (value: string) => PreparedSimilarityText"
         },
         {
           "classification": "advanced_export",
@@ -7387,6 +7462,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveImplicitPmRoot",
+          "signature": "(cwd: string) => string | calls: (cwd: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveIsoOrRelative",
           "signature": "(input: string, now?: Date, fieldLabel?: string) => string | calls: (input: string, now?: Date, fieldLabel?: string) => string"
         },
@@ -8491,6 +8572,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "scorePreparedItemSimilarity",
+          "signature": "(left: PreparedSimilarityText, right: PreparedSimilarityText) => ItemSimilarityScore | calls: (left: PreparedSimilarityText, right: PreparedSimilarityText) => ItemSimilarityScore"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "search",
           "signature": "(query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult> | calls: (query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult>"
         },
@@ -8799,6 +8886,12 @@
           "kind": "interface",
           "name": "SharedItemScalarFilterOptions",
           "signature": "export interface SharedItemScalarFilterOptions { status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; updatedAfter?: string; updatedBefore?: string; createdAfter?: string; createdBefore?: string; assignee?: string; parent?: string; sprint?: string; release?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "shouldCompletePlanOnClose",
+          "signature": "(item: ItemMetadata) => boolean | calls: (item: ItemMetadata) => boolean"
         },
         {
           "classification": "supported",
@@ -12320,7 +12413,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DeleteResult",
-          "signature": "export interface DeleteResult { item: Record<string, unknown>; changed_fields: string[]; dry_run: boolean; deleted: boolean; outcome: \"deleted\" | \"would_delete\"; previous_status: string; target_path?: string; warnings: string[]; }"
+          "signature": "export interface DeleteResult { item: Record<string, unknown>; changed_fields: string[]; dry_run: boolean; deleted: boolean; outcome: \"deleted\" | \"would_delete\"; previous_status: string; target_path?: string; history_retained: string; tombstone_retention: \"retain_append_only\"; warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -12668,7 +12761,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCliError",
-          "signature": "export declare class PmCliError extends Error { readonly exitCode: number; readonly context: PmCliErrorContext; constructor(message: string, exitCode: number, context?: PmCliErrorContext); }"
+          "signature": "export declare class PmCliError extends Error { readonly exitCode: number; readonly code?: string; readonly context: PmCliErrorContext; constructor(message: string, exitCode: number, context?: PmCliErrorContext); }"
         },
         {
           "classification": "supported",
@@ -12793,6 +12886,12 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "_testOnlySimilarity",
+          "signature": "{ buildDuplicateClusters: typeof buildDuplicateClusters; collectDuplicateCandidatePairs: typeof collectDuplicateCandidatePairs; createDuplicateUnionFind: typeof createDuplicateUnionFind; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "_testOnlyValidateCommand",
           "signature": "{ applyValidateFix: typeof applyValidateFix; applyValidateFixes: typeof applyValidateFixes; attachValidateFixHints: typeof attachValidateFixHints; buildCommandReferencesCheck: typeof buildCommandReferencesCheck; buildDependencyReferencesCheck: typeof buildDependencyReferencesCheck; buildCloseReasonBackfillRows: typeof buildCloseReasonBackfillRows; buildFilesCheck: typeof buildFilesCheck; buildLifecycleCheck: typeof buildLifecycleCheck; buildLifecycleDependencyGraph: typeof buildLifecycleDependencyGraph; buildLifecycleParentGraph: typeof buildLifecycleParentGraph; buildEstimateBackfillRows: typeof buildEstimateBackfillRows; buildMetadataCounts: typeof buildMetadataCounts; buildMissingFieldOccurrences: typeof buildMissingFieldOccurrences; buildOrphanedPathRows: typeof buildOrphanedPathRows; classifyOrphanedPath: typeof classifyOrphanedPath; collectDefaultProjectFileCandidates: typeof collectDefaultProjectFileCandidates; collectTrackedGitFileCandidates: typeof collectTrackedGitFileCandidates; detectLifecycleDependencyCycles: typeof detectLifecycleDependencyCycles; detectLifecycleParentCycles: typeof detectLifecycleParentCycles; escapeRegExp: typeof escapeRegExp; extractItemIds: typeof extractItemIds; findLifecycleDependencyCycleComponents: typeof findLifecycleDependencyCycleComponents; isMetadataFieldMissing: typeof isMetadataFieldMissing; linkedArtifactPathExceedsFilesystemLimits: typeof linkedArtifactPathExceedsFilesystemLimits; listFilesRecursive: typeof listFilesRecursive; resolveDependencyCycleSeverity: typeof resolveDependencyCycleSeverity; resolveParentCycleSeverity: typeof resolveParentCycleSeverity; resolveFileScanMode: typeof resolveFileScanMode; resolveLifecycleDependencyCycleSamplePath: typeof resolveLifecycleDependencyCycleSamplePath; resolveRequestedChecks: typeof resolveRequestedChecks; resolveValidateMetadataProfile: typeof resolveValidateMetadataProfile; resolveWorkspaceRoot: typeof resolveWorkspaceRoot; sharedDirectoryPrefixLength: typeof sharedDirectoryPrefixLength; summarizeOrphanedPathRows: typeof summarizeOrphanedPathRows; summarizeDuplicateIssueCodes: typeof summarizeDuplicateIssueCodes; toMeaningfulString: typeof toMeaningfulString; }"
         },
@@ -12817,6 +12916,24 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "DuplicateCluster",
+          "signature": "export interface DuplicateCluster { id: string; items: Omit<SimilarItemMatch, \"score\" | \"reason\">[]; matches: DuplicateClusterMatch[]; max_score: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DuplicateClusterMatch",
+          "signature": "export interface DuplicateClusterMatch { left_id: string; right_id: string; score: number; reason: SimilarItemMatch[\"reason\"]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DuplicateClustersResult",
+          "signature": "export interface DuplicateClustersResult { clusters: DuplicateCluster[]; count: number; threshold: number; source: \"metadata_scan\"; cost: { item_count: number; candidate_pairs: number; scored_pairs: number; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "DuplicateItemIdRow",
           "signature": "export interface DuplicateItemIdRow { id: string; paths: string[]; }"
         },
@@ -12837,6 +12954,18 @@
           "kind": "function",
           "name": "evaluateSimilarityGovernance",
           "signature": "(candidate: SimilarItemCandidate, options: FindSimilarItemsOptions & { mode: \"advisory\" | \"off\" | \"strict\"; allowDuplicate?: boolean; }) => Promise<SimilarityAdvisory | undefined> | calls: (candidate: SimilarItemCandidate, options: FindSimilarItemsOptions & { mode: \"off\" | \"advisory\" | \"strict\"; allowDuplicate?: boolean; }) => Promise<SimilarityAdvisory | undefined>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "findDuplicateClusters",
+          "signature": "(options?: FindDuplicateClustersOptions) => Promise<DuplicateClustersResult> | calls: (options?: FindDuplicateClustersOptions) => Promise<DuplicateClustersResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "FindDuplicateClustersOptions",
+          "signature": "export interface FindDuplicateClustersOptions extends FindSimilarItemsOptions { statuses?: readonly string[]; since?: string; }"
         },
         {
           "classification": "supported",
@@ -12996,6 +13125,18 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "PreparedSimilarityText",
+          "signature": "export interface PreparedSimilarityText { normalized: string; tokens: string[]; issueCodes: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "prepareSimilarityText",
+          "signature": "(value: string) => PreparedSimilarityText | calls: (value: string) => PreparedSimilarityText"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "projectValidateCounts",
           "signature": "(result: ValidateResult) => ValidateCountsResult | calls: (result: ValidateResult) => ValidateCountsResult"
@@ -13059,6 +13200,12 @@
           "kind": "function",
           "name": "scoreItemSimilarity",
           "signature": "(leftTitle: string, rightTitle: string) => ItemSimilarityScore | calls: (leftTitle: string, rightTitle: string) => ItemSimilarityScore"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "scorePreparedItemSimilarity",
+          "signature": "(left: PreparedSimilarityText, right: PreparedSimilarityText) => ItemSimilarityScore | calls: (left: PreparedSimilarityText, right: PreparedSimilarityText) => ItemSimilarityScore"
         },
         {
           "classification": "supported",
@@ -15926,7 +16073,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DeleteResult",
-          "signature": "export interface DeleteResult { item: Record<string, unknown>; changed_fields: string[]; dry_run: boolean; deleted: boolean; outcome: \"deleted\" | \"would_delete\"; previous_status: string; target_path?: string; warnings: string[]; }"
+          "signature": "export interface DeleteResult { item: Record<string, unknown>; changed_fields: string[]; dry_run: boolean; deleted: boolean; outcome: \"deleted\" | \"would_delete\"; previous_status: string; target_path?: string; history_retained: string; tombstone_retention: \"retain_append_only\"; warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -16826,7 +16973,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCliError",
-          "signature": "export declare class PmCliError extends Error { readonly exitCode: number; readonly context: PmCliErrorContext; constructor(message: string, exitCode: number, context?: PmCliErrorContext); }"
+          "signature": "export declare class PmCliError extends Error { readonly exitCode: number; readonly code?: string; readonly context: PmCliErrorContext; constructor(message: string, exitCode: number, context?: PmCliErrorContext); }"
         },
         {
           "classification": "advanced_export",
@@ -17025,6 +17172,12 @@
           "kind": "function",
           "name": "resolveGuideOutputFormat",
           "signature": "(options: GuideOptions, global: GlobalOptions) => GuideOutputFormat | calls: (options: GuideOptions, global: GlobalOptions) => GuideOutputFormat"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveImplicitPmRoot",
+          "signature": "(cwd: string) => string | calls: (cwd: string) => string"
         },
         {
           "classification": "advanced_export",
@@ -18456,6 +18609,7 @@
     "command_override_conflict",
     "dependency_edge_not_allowed",
     "duplicate_command",
+    "duplicate_sweep_cost_limit",
     "empty_surface",
     "event_cursor_query_mismatch",
     "event_index_unavailable",

@@ -2,21 +2,43 @@ id: pm-g512pv
 title: "GH-680: completed Plan close must transition plan_mode terminally"
 description: "GitHub issue https://github.com/unbraind/pm-cli/issues/680 reports that closing a fully completed Plan leaves plan_mode executing with no terminal transition command. Define and enforce terminal Plan state semantics across CLI, SDK, and history."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:32.672Z"
-updated_at: "2026-07-25T06:27:16.315Z"
+updated_at: "2026-07-25T16:31:56.319Z"
+closed_at: "2026-07-25T16:31:55.391Z"
 author: unknown
 estimated_minutes: 180
 acceptance_criteria: "Closing a Plan whose steps are all complete transitions plan_mode to a terminal state in the same mutation, with no separate command required; Terminal Plan semantics are declared once and enforced identically across CLI, SDK, and MCP; The transition is recorded in the Plan history stream with the triggering action; Attempting to resume or update a terminal Plan fails with a typed error naming the terminal state"
 parent: pm-usfg
+resolution: Closing a fully completed Plan now atomically records plan_mode completed.
+expected_result: Closing a fully completed Plan now atomically records plan_mode completed.
+actual_result: "Closing a fully completed Plan now atomically records plan_mode completed. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
 dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-bxdlfa,related_to,"2026-07-25T02:06:32.672Z",null,null
   pm-2tan,related,"2026-07-25T06:27:16.073Z",null,null
   pm-96tter,related,"2026-07-25T06:27:16.073Z",null,null
   pm-bxdlfa,related,"2026-07-25T06:27:16.073Z",null,null
   pm-z5vamp,related,"2026-07-25T06:27:16.073Z",null,null
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-25T02:06:32.672Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
+  "2026-07-25T15:25:39.465Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:25:53.225Z","harness:codex","Implementation: completed Plan close uses the shared SDK lifecycle predicate and transitions plan_mode to completed in the same audited close mutation."
+  "2026-07-25T16:31:19.499Z","harness:codex","Review evidence: terminal Plan policy is exposed as ReadonlySet and regression assertions use inferred partial matching. Direct linked lifecycle run passed 79 tests."
+  "2026-07-25T16:31:27.241Z","harness:codex","Final gate evidence: tracker test-all passed 10/10 linked commands across 8 active items with zero failures or skips. Repository coverage passed 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637). Static quality enforces 100% module/export/member docstrings, SDK surface and import costs, package boundary, token budgets, CLI transport, secret scan, and zero-vulnerability audit."
+files[4]{path,scope,note}:
+  src/cli/commands/close.ts,project,Terminal Plan close transition
+  src/core/item/plan-lifecycle.ts,project,Shared Plan terminal lifecycle primitive
+  src/sdk/runtime-primitives.ts,project,Public CLI-safe Plan lifecycle bridge
+  tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,Plan lifecycle regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/plan-lifecycle-regressions.spec.ts tests/unit/commands/close-command.spec.ts,project,300,Plan terminal close regressions
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:48:02.808Z","2026-07-25T14:48:02.808Z",1,0,0,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:52:57.056Z","2026-07-25T14:52:57.056Z",1,0,0,1,1
+  test-all-local-ms0l1mou-jddyvu,test-all,passed,"2026-07-25T16:27:43.457Z","2026-07-25T16:28:01.645Z","2026-07-25T16:28:01.645Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: Terminal Plan lifecycle policy is immutable to consumers and closure/mutation regression coverage passes.
 body: ""
