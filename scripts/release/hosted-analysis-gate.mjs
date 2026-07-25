@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Verify that DeepScan and CodeFactor report zero new issues for the exact
- * current Git commit. The gate intentionally reads GitHub's commit-scoped
- * status and check-run APIs instead of trusting branch-level dashboards.
+ * Verify that DeepScan and CodeFactor report zero new issues for the current
+ * Git tree. GitHub-created merge commits may reuse analyzer evidence from
+ * their reviewed second parent only when both commits have an identical tree.
+ * The gate reads commit-scoped APIs instead of branch-level dashboards.
  */
 import { spawnSync } from "node:child_process";
 
@@ -143,6 +144,70 @@ function inspectCodeFactor(checksPayload) {
   };
 }
 
+/** Read and parse both hosted analyzer payloads for one immutable commit. */
+function readAnalyzerEvidence(repository, sha) {
+  const statusResult = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}/status`]);
+  if (statusResult.status !== 0) {
+    return { ok: false, reason: "unable to read commit statuses with gh api" };
+  }
+  const checksResult = runCaptured(GH, [
+    "api",
+    `repos/${repository}/commits/${sha}/check-runs?per_page=100`,
+  ]);
+  if (checksResult.status !== 0) {
+    return { ok: false, reason: "unable to read check runs with gh api" };
+  }
+  const statusPayload = parseObject(statusResult.stdout, "GitHub commit status API");
+  if (!statusPayload.ok) {
+    return statusPayload;
+  }
+  const checksPayload = parseObject(checksResult.stdout, "GitHub check-runs API");
+  if (!checksPayload.ok) {
+    return checksPayload;
+  }
+  return {
+    ok: true,
+    deepScan: inspectDeepScan(statusPayload.value),
+    codeFactor: inspectCodeFactor(checksPayload.value),
+  };
+}
+
+/** Resolve analyzer evidence, allowing only an identical-tree reviewed merge parent. */
+function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
+  const exact = {
+    ...initialEvidence,
+    analyzedSha: sha,
+    analysisSource: "exact_commit",
+  };
+  const deepScanMissing =
+    !initialEvidence.deepScan.ok &&
+    initialEvidence.deepScan.reason.startsWith("DeepScan status is missing");
+  const codeFactorMissing =
+    !initialEvidence.codeFactor.ok &&
+    initialEvidence.codeFactor.reason.startsWith("CodeFactor check run is missing");
+  if (!deepScanMissing || !codeFactorMissing) {
+    return exact;
+  }
+  const mergeParent = runCaptured(GIT, ["rev-parse", `${sha}^2`]);
+  const exactTree = runCaptured(GIT, ["rev-parse", `${sha}^{tree}`]);
+  const parentSha = mergeParent.stdout.trim().toLowerCase();
+  if (mergeParent.status !== 0 || !SHA_PATTERN.test(parentSha) || exactTree.status !== 0) {
+    return exact;
+  }
+  const parentTree = runCaptured(GIT, ["rev-parse", `${parentSha}^{tree}`]);
+  if (parentTree.status !== 0 || exactTree.stdout.trim() !== parentTree.stdout.trim()) {
+    return exact;
+  }
+  const parentEvidence = readAnalyzerEvidence(repository, parentSha);
+  return parentEvidence.ok
+    ? {
+        ...parentEvidence,
+        analyzedSha: parentSha,
+        analysisSource: "identical_tree_merge_parent",
+      }
+    : exact;
+}
+
 /** Verify that both analyzer contexts are strict required checks on main. */
 function inspectBranchProtection(protectionPayload) {
   const requiredStatusChecks = protectionPayload.required_status_checks;
@@ -194,25 +259,9 @@ function main() {
     return;
   }
 
-  const statusResult = runCaptured(GH, ["api", `repos/${repository.value}/commits/${sha.value}/status`]);
-  if (statusResult.status !== 0) {
-    report(
-      outputJson,
-      { ok: false, repository: repository.value, sha: sha.value, reason: "unable to read commit statuses with gh api" },
-      1,
-    );
-    return;
-  }
-  const checksResult = runCaptured(GH, [
-    "api",
-    `repos/${repository.value}/commits/${sha.value}/check-runs?per_page=100`,
-  ]);
-  if (checksResult.status !== 0) {
-    report(
-      outputJson,
-      { ok: false, repository: repository.value, sha: sha.value, reason: "unable to read check runs with gh api" },
-      1,
-    );
+  const analyzerEvidence = readAnalyzerEvidence(repository.value, sha.value);
+  if (!analyzerEvidence.ok) {
+    report(outputJson, { ...analyzerEvidence, repository: repository.value, sha: sha.value }, 1);
     return;
   }
   const protectionResult = runCaptured(GH, [
@@ -228,28 +277,18 @@ function main() {
     return;
   }
 
-  const statusPayload = parseObject(statusResult.stdout, "GitHub commit status API");
-  if (!statusPayload.ok) {
-    report(outputJson, { ...statusPayload, repository: repository.value, sha: sha.value }, 1);
-    return;
-  }
-  const checksPayload = parseObject(checksResult.stdout, "GitHub check-runs API");
-  if (!checksPayload.ok) {
-    report(outputJson, { ...checksPayload, repository: repository.value, sha: sha.value }, 1);
-    return;
-  }
   const protectionPayload = parseObject(protectionResult.stdout, "GitHub branch protection API");
   if (!protectionPayload.ok) {
     report(outputJson, { ...protectionPayload, repository: repository.value, sha: sha.value }, 1);
     return;
   }
 
-  const deepScan = inspectDeepScan(statusPayload.value);
+  const resolvedEvidence = resolveAnalyzerEvidence(repository.value, sha.value, analyzerEvidence);
+  const { deepScan, codeFactor } = resolvedEvidence;
   if (!deepScan.ok) {
     report(outputJson, { ...deepScan, repository: repository.value, sha: sha.value }, 1);
     return;
   }
-  const codeFactor = inspectCodeFactor(checksPayload.value);
   if (!codeFactor.ok) {
     report(outputJson, { ...codeFactor, repository: repository.value, sha: sha.value }, 1);
     return;
@@ -265,6 +304,8 @@ function main() {
       ok: true,
       repository: repository.value,
       sha: sha.value,
+      analyzed_sha: resolvedEvidence.analyzedSha,
+      analysis_source: resolvedEvidence.analysisSource,
       analyzers: {
         deepscan: deepScan.analyzer,
         codefactor: codeFactor.analyzer,
