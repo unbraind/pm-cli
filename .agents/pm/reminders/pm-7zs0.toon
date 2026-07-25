@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-25T03:13:46.802Z"
+updated_at: "2026-07-25T03:14:26.745Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 assignee: claude-code-agent
@@ -19,7 +19,7 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7n5a,related,"2026-07-15T18:17:35.524Z",null,null
   pm-d4ns,related,"2026-07-15T18:17:35.524Z",null,null
-comments[89]{created_at,author,text}:
+comments[90]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -109,6 +109,7 @@ comments[89]{created_at,author,text}:
   "2026-07-25T03:07:35.699Z",claude-code-agent,"Failure evidence 2026-07-25: workflow_dispatch run 30141386316 passed build, 6,291-test 100/100/100/100 coverage, package smoke, and 88-command package-first dogfood, then failed hosted-analysis-gate because GH_TOKEN used the workflow token, which cannot read main branch protection. The release environment RELEASE_PAT is configured and already scoped into the step for protected-main push, but was not supplied to gh API reads."
   "2026-07-25T03:09:10.989Z",claude-code-agent,"Fix evidence: Auto Release now binds GH_TOKEN to secrets.RELEASE_PAT with github.token fallback in the release step, allowing exact-head hosted-analysis to read protected-main policy without introducing a second credential. Added a contract test pinning the binding. Focused 17-test release automation suite and full pnpm lint/static/docstring/duplication/package-boundary/token-budget gates pass."
   "2026-07-25T03:13:46.799Z",claude-code-agent,"Verification update: full sandboxed repository coverage passed after the workflow credential fix: 361 files, 6,292 tests, and 100% statements/branches/functions/lines. pnpm security:scan found no tracked credential-like secrets, pnpm audit --audit-level high found no known vulnerabilities, pnpm lint passed, and git diff --check is clean."
+  "2026-07-25T03:14:26.741Z",claude-code-agent,"PR evidence: opened GitHub PR #697 (https://github.com/unbraind/pm-cli/pull/697) from exact commit 8d726d70 and requested full Greptile and CodeRabbit reviews. Awaiting all checks and review surfaces before merge."
 notes[7]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
