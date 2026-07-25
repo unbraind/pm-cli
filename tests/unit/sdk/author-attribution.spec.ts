@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -42,6 +49,25 @@ async function createTempRoot(): Promise<string> {
 }
 
 describe("SDK author attribution primitives", () => {
+  it("keeps PM_AUTHOR access and author precedence in one source seam", async () => {
+    const sourceRoot = path.resolve("src");
+    const sourceFiles = (await readdir(sourceRoot, { recursive: true }))
+      .filter((entry) => entry.endsWith(".ts"))
+      .map((entry) => path.join(sourceRoot, entry));
+    const directEnvironmentReaders: string[] = [];
+    const privatePrecedenceHelpers: string[] = [];
+    for (const sourceFile of sourceFiles) {
+      const source = await readFile(sourceFile, "utf8");
+      if (source.includes("process.env.PM_AUTHOR")) {
+        directEnvironmentReaders.push(path.relative(sourceRoot, sourceFile));
+      }
+      if (/\b(?:selectAuthor|toAuthor)\s*\(/u.test(source)) {
+        privatePrecedenceHelpers.push(path.relative(sourceRoot, sourceFile));
+      }
+    }
+    expect(directEnvironmentReaders).toEqual(["core/shared/author.ts"]);
+    expect(privatePrecedenceHelpers).toEqual([]);
+  });
   it("inspects one in-memory stream through the public pure primitive", () => {
     expect(
       inspectHistoryAuthorStream(
@@ -248,7 +274,12 @@ describe("SDK author attribution primitives", () => {
       );
 
       process.env.PM_AUTHOR = "environment-agent";
-      const environmentRoot = path.join(tempRoot, "environment", ".agents", "pm");
+      const environmentRoot = path.join(
+        tempRoot,
+        "environment",
+        ".agents",
+        "pm",
+      );
       const environmentResult = await runInit(
         undefined,
         { path: environmentRoot },
@@ -528,7 +559,9 @@ describe("SDK author attribution primitives", () => {
         .join("\n") + "\n",
     );
 
-    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stdout = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     try {
       const program = createPmCliProgram("1.0.0");
       registerMutationCommands(program);
@@ -575,9 +608,7 @@ describe("SDK author attribution primitives", () => {
             ],
             { from: "user" },
           ),
-        ).rejects.toThrow(
-          "expects <item-id>:<one-based-line>",
-        );
+        ).rejects.toThrow("expects <item-id>:<one-based-line>");
       }
     } finally {
       stdout.mockRestore();

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "policy": "Upper bounds are ratchets: update only for a measured reduction or an explicitly reviewed platform correction.",
+  "baseline": {
+    "max_import_ms": 98
+  },
+  "entrypoints": {
+    "./sdk": {
+      "max_import_ms": 522,
+      "max_peak_rss_bytes": 161751860
+    },
+    "./sdk/authoring": {
+      "max_import_ms": 131,
+      "max_peak_rss_bytes": 113633281
+    },
+    "./sdk/contracts": {
+      "max_import_ms": 100,
+      "max_peak_rss_bytes": 106627277
+    },
+    "./sdk/core": {
+      "max_import_ms": 526,
+      "max_peak_rss_bytes": 160231220
+    },
+    "./sdk/governance": {
+      "max_import_ms": 331,
+      "max_peak_rss_bytes": 133058765
+    },
+    "./sdk/graph": {
+      "max_import_ms": 176,
+      "max_peak_rss_bytes": 115590759
+    },
+    "./sdk/merge": {
+      "max_import_ms": 248,
+      "max_peak_rss_bytes": 125483213
+    },
+    "./sdk/query": {
+      "max_import_ms": 214,
+      "max_peak_rss_bytes": 117769421
+    },
+    "./sdk/runtime": {
+      "max_import_ms": 480,
+      "max_peak_rss_bytes": 159014708
+    },
+    "./sdk/testing": {
+      "max_import_ms": 129,
+      "max_peak_rss_bytes": 113644340
+    }
+  }
+}

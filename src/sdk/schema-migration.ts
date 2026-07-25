@@ -40,14 +40,12 @@ import {
   mutateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import {
-  getSettingsPath,
-  resolvePmRoot,
-} from "../core/store/paths.js";
+import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { resolveAuthor } from "../core/shared/author.js";
 import { toErrorMessage } from "../core/shared/primitives.js";
 import type { ItemMetadata, PmSettings } from "../types/index.js";
 import {
@@ -128,8 +126,7 @@ export interface RunSchemaEvolutionMigrationOptions {
 }
 
 /** Result returned by a dry-run or committed schema migration. */
-export interface SchemaEvolutionMigrationResult
-  extends SchemaEvolutionMigrationPlan {
+export interface SchemaEvolutionMigrationResult extends SchemaEvolutionMigrationPlan {
   /** Schema command action used by renderers and generic SDK consumers. */
   action: SchemaEvolutionMigrationRequest["kind"];
   /** Whether any authoritative state was written. */
@@ -435,12 +432,12 @@ function mutateStatusReferences(
   }
   for (const typeWorkflow of objectRecordList(parsed.type_workflows)) {
     if (Array.isArray(typeWorkflow.allowed_transitions)) {
-      typeWorkflow.allowed_transitions =
-        typeWorkflow.allowed_transitions.map((pair) =>
+      typeWorkflow.allowed_transitions = typeWorkflow.allowed_transitions.map(
+        (pair) =>
           Array.isArray(pair)
             ? pair.map((value) => replaceMatchingToken(value, request))
             : pair,
-        );
+      );
     }
   }
 }
@@ -495,11 +492,7 @@ function mutateSchemaReferences(
   request: SchemaEvolutionMigrationRequest,
 ): string {
   const parsed = JSON.parse(raw) as unknown;
-  if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    Array.isArray(parsed)
-  ) {
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     return raw;
   }
   const record = parsed as Record<string, unknown>;
@@ -621,7 +614,10 @@ export function planSchemaEvolutionMigration(
   const request = normalizedRequest(options.request);
   const migrationId =
     options.migrationId === undefined
-      ? deriveSchemaEvolutionMigrationId(request, options.migrationScope ?? "plan")
+      ? deriveSchemaEvolutionMigrationId(
+          request,
+          options.migrationScope ?? "plan",
+        )
       : requiredMigrationId(options.migrationId);
   const completeItems = items
     .map((item) => planItem(item, request))
@@ -635,7 +631,9 @@ export function planSchemaEvolutionMigration(
       .map((id) => id.trim())
       .filter((id) => id.length > 0),
   );
-  const pendingItems = completeItems.filter((entry) => !completed.has(entry.id));
+  const pendingItems = completeItems.filter(
+    (entry) => !completed.has(entry.id),
+  );
   return Object.freeze({
     migration_id: migrationId,
     request,
@@ -767,9 +765,8 @@ async function readCurrentItem(params: {
       EXIT_CODE.NOT_FOUND,
     );
   }
-  return (
-    await readLocatedItem(located, { schema: params.settings.schema })
-  ).document.metadata;
+  return (await readLocatedItem(located, { schema: params.settings.schema }))
+    .document.metadata;
 }
 
 function applyItemRequest(
@@ -780,7 +777,8 @@ function applyItemRequest(
   const source = direction === "forward" ? request.from : request.to;
   const target = direction === "forward" ? request.to : request.from;
   if (request.kind === "rename-type") {
-    if (document.metadata.type.toLowerCase() === target.toLowerCase()) return [];
+    if (document.metadata.type.toLowerCase() === target.toLowerCase())
+      return [];
     if (document.metadata.type.toLowerCase() !== source.toLowerCase()) {
       throw new TypeError(
         `Schema migration expected type "${source}" on item "${document.metadata.id}".`,
@@ -1186,11 +1184,7 @@ export async function runSchemaEvolutionMigration(
       ? deriveSchemaEvolutionMigrationId(request, await fs.realpath(pmRoot))
       : requiredMigrationId(options.migrationId);
   const settings = await readSettings(pmRoot);
-  const author = (
-    options.author ??
-    process.env.PM_AUTHOR ??
-    settings.author_default
-  ).trim() || "unknown";
+  const author = resolveAuthor(options.author, settings.author_default);
   const resolvedPlan = await resolveMigrationPlan({
     pmRoot,
     settings,

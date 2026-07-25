@@ -1,0 +1,28 @@
+id: pm-ulb3rc
+title: "GH-706: accept bare conventional forms for create/update boolean metadata flags"
+description: Make boolean-valued create/update flags such as --regression accept bare true while retaining explicit true/false/1/0 forms and exact contract/help parity.
+type: Issue
+status: in_progress
+priority: 2
+tags[4]: agent-ux,"area:cli",contracts,gh-issue
+created_at: "2026-07-25T09:20:06.110Z"
+updated_at: "2026-07-25T11:31:41.361Z"
+assignee: "harness:codex"
+author: unknown
+parent: pm-2p6q
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-phob,related,"2026-07-25T09:20:06.110Z",null,null
+  pm-sjfs,related,"2026-07-25T09:20:06.110Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-25T09:20:06.110Z",unknown,"Duplicate-check evidence: all-status searches found historical strategic-metadata and boolean persistence items but no item owning optional-value Commander arity for canonical boolean flags. GH-706 is the first exact owner for the bare-form contract."
+  "2026-07-25T11:31:41.361Z","harness:codex","Evidence: create/update regression accepts bare true while retaining explicit booleanish forms and contract parity. Linked CLI integration passed 76/76; isolated packed consumer mutated regression=true with PM_AUTHOR unset."
+files[4]{path,scope,note}:
+  src/cli/register-mutation.ts,project,bulk mutation parity
+  src/cli/registration-helpers.ts,project,bare flag normalization
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,optional booleanish regression contract
+  tests/integration/cli.integration.spec.ts,project,bare create and explicit update behavior
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms0ab1az-r6lnep,test,passed,"2026-07-25T11:26:34.182Z","2026-07-25T11:27:06.587Z","2026-07-25T11:27:06.587Z",1,0,0
+body: ""

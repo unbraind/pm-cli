@@ -28,10 +28,11 @@ pm --version
 node -v
 pnpm -v
 pnpm build
-export PM_AUTHOR="<stable-agent-id>"
 ```
 
-For real repository tracking, do not set `PM_PATH`.
+For real repository tracking, do not set `PM_PATH`. Supported agent harnesses
+are attributed automatically; use `--author <stable-agent-id>` only when an
+explicit override is required.
 
 ## First Read Path
 
@@ -76,7 +77,7 @@ pm validate --check-resolution --check-history-drift
 
 The canonical loop is maintained in [AGENT_GUIDE.md](AGENT_GUIDE.md) — this is the condensed contributor version.
 
-1) Orient and dedupe
+1. Orient and dedupe
 
 ```bash
 pm context --limit 10
@@ -85,14 +86,14 @@ pm list-open --limit 20
 pm list-in-progress --limit 20
 ```
 
-2) Claim and start
+2. Claim and start
 
 ```bash
 pm claim <id>
 pm update <id> --status in_progress --message "Start implementation"
 ```
 
-3) Link execution context while editing
+3. Link execution context while editing
 
 ```bash
 pm files <id> --add path=src/...,scope=project,note="implementation scope"
@@ -100,7 +101,7 @@ pm docs <id> --add path=docs/...,scope=project,note="user-facing behavior"
 pm test <id> --add command="node scripts/run-tests.mjs test -- tests/unit/...",scope=project,timeout_seconds=240
 ```
 
-4) Record progress
+4. Record progress
 
 ```bash
 pm comments <id> "Progress update and rationale."
@@ -108,7 +109,7 @@ pm notes <id> --add "Design tradeoff."
 pm learnings <id> --add "Durable lesson."
 ```
 
-5) Verify, close, and release
+5. Verify, close, and release
 
 ```bash
 pm test <id> --run --progress

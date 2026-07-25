@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  ContextUsageValidationError,
   packContextCandidates,
   readContextUsageAffinity,
   recordContextUsageServing,
@@ -85,7 +86,10 @@ describe("context packing", () => {
   it("discloses intent profiles and a deterministic latency completeness certificate", () => {
     let clock = 0;
     const report = packContextCandidates(
-      [candidate("required", 1, 1, { required: true }), candidate("later", 2, 1)],
+      [
+        candidate("required", 1, 1, { required: true }),
+        candidate("later", 2, 1),
+      ],
       {
         tokenBudget: 80,
         profile: "next",
@@ -128,7 +132,9 @@ describe("context packing", () => {
       [candidate("b", 1, 1), candidate("a", 1, 1)],
       { tokenBudget: 30 },
     );
-    expect(oneUpgrade.included.map(({ id, projection }) => [id, projection])).toEqual([
+    expect(
+      oneUpgrade.included.map(({ id, projection }) => [id, projection]),
+    ).toEqual([
       ["a", "summary"],
       ["b", "identity"],
     ]);
@@ -148,7 +154,10 @@ describe("context packing", () => {
       packContextCandidates([], { tokenBudget: 1, redundancyPenalty: 2 }),
     ).toThrow("penalties");
     expect(() =>
-      packContextCandidates([], { tokenBudget: 1, profile: "unknown" as never }),
+      packContextCandidates([], {
+        tokenBudget: 1,
+        profile: "unknown" as never,
+      }),
     ).toThrow("profile");
     expect(() =>
       packContextCandidates([], { tokenBudget: 1, latencyBudgetMs: 0 }),
@@ -235,17 +244,27 @@ describe("context usage feedback", () => {
       intent: "update",
       now: "2026-07-01T01:00:00.000Z",
     });
-    const events = (await readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"))
+    const events = (
+      await readFile(
+        path.join(pmRoot, "runtime", "context-usage.jsonl"),
+        "utf8",
+      )
+    )
       .trim()
       .split("\n")
       .map((line) => JSON.parse(line) as { item_id: string });
-    expect(events.map((event) => event.item_id)).toEqual(["pm-used", "pm-other"]);
-    await expect(recordContextUsageTouches({
-      pmRoot,
-      author: "agent",
-      itemIds: [42 as never],
-      intent: "update",
-    })).rejects.toThrow("string itemIds");
+    expect(events.map((event) => event.item_id)).toEqual([
+      "pm-used",
+      "pm-other",
+    ]);
+    await expect(
+      recordContextUsageTouches({
+        pmRoot,
+        author: "agent",
+        itemIds: [42 as never],
+        intent: "update",
+      }),
+    ).rejects.toThrow("string itemIds");
   });
 
   it("compacts by retention and count while tolerating malformed derived rows", async () => {
@@ -285,9 +304,20 @@ describe("context usage feedback", () => {
       maxEvents: 3,
       retentionDays: 10,
     });
-    const batchedLines = (await readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8")).trim().split("\n");
+    const batchedLines = (
+      await readFile(
+        path.join(pmRoot, "runtime", "context-usage.jsonl"),
+        "utf8",
+      )
+    )
+      .trim()
+      .split("\n");
     expect(batchedLines).toHaveLength(3);
-    expect(batchedLines.map((line) => JSON.parse(line).item_id)).toEqual(["pm-3", "pm-4", "pm-5"]);
+    expect(batchedLines.map((line) => JSON.parse(line).item_id)).toEqual([
+      "pm-3",
+      "pm-4",
+      "pm-5",
+    ]);
   });
 
   it("keeps the exploration floor when decay underflows to zero", async () => {
@@ -309,13 +339,15 @@ describe("context usage feedback", () => {
       now: "2000-01-01T00:01:00.000Z",
       retentionDays: 3_000_000,
     });
-    await expect(readContextUsageAffinity({
-      pmRoot,
-      author: "agent",
-      now: "9999-01-01T00:00:00.000Z",
-      retentionDays: 3_000_000,
-      horizonHours: 1,
-    })).resolves.toMatchObject({ affinity: { "pm-ancient": 0.05 } });
+    await expect(
+      readContextUsageAffinity({
+        pmRoot,
+        author: "agent",
+        now: "9999-01-01T00:00:00.000Z",
+        retentionDays: 3_000_000,
+        horizonHours: 1,
+      }),
+    ).resolves.toMatchObject({ affinity: { "pm-ancient": 0.05 } });
   });
 
   it("serializes concurrent append and compaction writers without losing events", async () => {
@@ -333,7 +365,12 @@ describe("context usage feedback", () => {
         }),
       ),
     );
-    const events = (await readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"))
+    const events = (
+      await readFile(
+        path.join(pmRoot, "runtime", "context-usage.jsonl"),
+        "utf8",
+      )
+    )
       .trim()
       .split("\n")
       .map((line) => JSON.parse(line));
@@ -358,14 +395,22 @@ describe("context usage feedback", () => {
       profile: "",
       rows: [],
     });
-    await recordContextUsageTouch({ pmRoot, author: "", itemId: "", intent: "" });
-    await expect(readContextUsageAffinity({ pmRoot, author: "agent" })).resolves.toEqual({
+    await recordContextUsageTouch({
+      pmRoot,
+      author: "",
+      itemId: "",
+      intent: "",
+    });
+    await expect(
+      readContextUsageAffinity({ pmRoot, author: "agent" }),
+    ).resolves.toEqual({
       affinity: {},
       positive_judgments: 0,
       serving_events: 0,
     });
-    await expect(readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"))
-      .rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.join(pmRoot, "runtime", "context-usage.jsonl"), "utf8"),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     delete process.env.PM_CONTEXT_USAGE_DISABLED;
     await recordContextUsageTouches({
       pmRoot,
@@ -403,7 +448,11 @@ describe("context usage feedback", () => {
         itemIds: ["pm-a"],
         intent: "update",
       }),
-    ).rejects.toThrow("author and intent");
+    ).rejects.toMatchObject({
+      name: "ContextUsageValidationError",
+      code: "context_usage_validation_failed",
+      message: expect.stringContaining("author and intent"),
+    } satisfies Partial<ContextUsageValidationError>);
     await expect(
       recordContextUsageTouches({
         pmRoot,

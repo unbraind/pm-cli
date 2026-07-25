@@ -28,6 +28,19 @@ node scripts/run-tests.mjs coverage
 
 `node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, then cleans them up.
 
+Public SDK changes additionally run semantic surface and import-cost contracts:
+
+```bash
+pnpm sdk:surface:check
+pnpm benchmark:sdk-entrypoints:check
+pnpm benchmark:transport:check
+```
+
+The surface gate detects exported signature, type-parameter, declaration-kind,
+and stable error-code drift across the aggregate and every narrow SDK
+entrypoint. The performance gates protect entrypoint import cost and one-item
+CLI cold-start overhead without touching the repository tracker.
+
 `pnpm lint` is the local CodeFactor parity check. It layers ESLint rules for
 shipped source, package, plugin, and script surfaces that match the CodeFactor
 maintainability findings this repo tracks (`complexity`,
@@ -345,3 +358,14 @@ pnpm contracts:check
 CI runs `pnpm contracts:check` in the static gate. Snapshot diffs should be
 reviewed like an API change and paired with the package-owned changelog flow
 when the contract surface changes intentionally.
+
+The CLI contract snapshot is separate from the TypeScript SDK surface snapshot.
+When public SDK declarations or SDK error codes change, also run:
+
+```bash
+pnpm sdk:surface:check
+```
+
+Use `pnpm sdk:surface:update` only for reviewed additive changes. Breaking
+changes require the explicit `--acknowledge-breaking "<release rationale>"`
+argument documented in [SDK](SDK.md#public-surface-compatibility).

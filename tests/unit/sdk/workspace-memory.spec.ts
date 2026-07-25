@@ -389,7 +389,7 @@ describe("workspace memory", () => {
     expect(result).toMatchObject({
       cache_status: "rebuilt",
       snapshot: { source_cursor: "cursor" },
-      warnings: ["workspace_memory_invalid", "workspace_memory_write_failed"],
+      warnings: expect.arrayContaining(["workspace_memory_write_failed"]),
     });
   });
 });

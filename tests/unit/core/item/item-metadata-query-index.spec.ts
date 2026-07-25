@@ -43,9 +43,9 @@ afterEach(async () => {
 
 describe("item metadata SQLite query index", () => {
   it("resolves optional node:sqlite constructors without throwing when unavailable", () => {
-    expect(
-      _testOnly.loadDatabaseSync(() => ({ DatabaseSync })),
-    ).toBe(DatabaseSync);
+    expect(_testOnly.loadDatabaseSync(() => ({ DatabaseSync }))).toBe(
+      DatabaseSync,
+    );
     expect(_testOnly.loadDatabaseSync(() => ({}))).toBeNull();
     expect(
       _testOnly.loadDatabaseSync(() => {
@@ -54,6 +54,9 @@ describe("item metadata SQLite query index", () => {
     ).toBeNull();
     expect(
       _testOnly.loadStableDatabaseSync("22.21.1", () => ({ DatabaseSync })),
+    ).toBe(DatabaseSync);
+    expect(
+      _testOnly.loadStableDatabaseSync("21.7.3", () => ({ DatabaseSync })),
     ).toBeNull();
     expect(
       _testOnly.loadStableDatabaseSync("invalid", () => ({ DatabaseSync })),
@@ -64,7 +67,9 @@ describe("item metadata SQLite query index", () => {
   });
 
   it("falls back without projection writes when node:sqlite is unavailable", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "pm-query-no-sqlite-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-query-no-sqlite-"),
+    );
     roots.push(root);
     const restoreDatabaseSync = _testOnly.setDatabaseSync(null);
     try {

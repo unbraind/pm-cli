@@ -33,6 +33,13 @@ interface RuntimeActivationPaths {
   actionPathsByExtension: Map<string, Set<string>>;
 }
 
+/** Project loader and activation failures into bounded doctor output. */
+export function summarizeExtensionFailures(
+  failures: Array<{ layer: string; name: string; error: string }>,
+): Array<{ layer: string; name: string; error: string }> {
+  return failures.map(({ layer, name, error }) => ({ layer, name, error }));
+}
+
 function addRuntimePath(
   pathsByExtension: Map<string, Set<string>>,
   extensionName: string,

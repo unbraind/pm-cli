@@ -12,10 +12,7 @@ import {
   getActiveExtensionRegistrations,
   runActiveOnWriteHooks,
 } from "../core/extensions/index.js";
-import {
-  pathExists,
-  readFileIfExists,
-} from "../core/fs/fs-utils.js";
+import { pathExists, readFileIfExists } from "../core/fs/fs-utils.js";
 import { writeWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { normalizePrefix } from "../core/item/id.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
@@ -45,6 +42,7 @@ import {
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import {
   detectHarnessIdentity,
+  readAuthorEnvironment,
   resolveAuthor,
 } from "../core/shared/author.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -53,20 +51,14 @@ import { readSettings, writeSettings } from "../core/store/settings.js";
 import { ensurePmGitignore } from "./workspace.js";
 import type { GovernancePreset, PmSettings } from "../types/index.js";
 import { renderPmCommand } from "./command-line.js";
-import {
-  runExtension,
-  type ExtensionCommandResult,
-} from "./extension.js";
+import { runExtension, type ExtensionCommandResult } from "./extension.js";
 import {
   INIT_AGENT_GUIDANCE_MODE_VALUES,
   runInitAgentGuidance,
   type InitAgentGuidanceMode,
   type InitAgentGuidanceSummary,
 } from "./init-agent-guidance.js";
-import {
-  findGitWorkspaceRoot,
-  installMergeFence,
-} from "./merge/install.js";
+import { findGitWorkspaceRoot, installMergeFence } from "./merge/install.js";
 
 /** Documents the init installed packages summary payload exchanged by command, SDK, and package integrations. */
 export interface InitInstalledPackagesSummary {
@@ -934,7 +926,7 @@ async function createNewInitSettings(params: {
   const settings = cloneDefaults();
   settings.id_prefix = normalizedPrefix;
   applyGovernancePreset(settings, effectivePreset);
-  const environmentAuthor = process.env.PM_AUTHOR?.trim() || undefined;
+  const environmentAuthor = readAuthorEnvironment()?.trim() || undefined;
   const detectedHarness = detectHarnessIdentity({
     env: process.env,
     argv: [process.execPath, ...process.argv],
@@ -1151,7 +1143,7 @@ function buildInitNextSteps(params: {
     );
   }
   nextSteps.push(
-    "Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.",
+    "Supported agent harnesses are attributed automatically; use --author or PM_AUTHOR only when an explicit identity override is required.",
   );
   for (const guidanceNextStep of params.agentGuidanceNextSteps) {
     const scopedGuidance =
@@ -1272,10 +1264,7 @@ export async function runInit(
   }
 
   await ensureInitTypeDirectories({ pmRoot, settings, createdDirs, warnings });
-  if (
-    workspaceRoot &&
-    normalizedOptions.agentGuidanceMode !== "status"
-  ) {
+  if (workspaceRoot && normalizedOptions.agentGuidanceMode !== "status") {
     const gitignore = await ensurePmGitignore(workspaceRoot, { pmRoot });
     if (gitignore.changed) {
       warnings.push(`updated:gitignore:${gitignore.path}`);

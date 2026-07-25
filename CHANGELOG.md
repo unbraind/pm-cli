@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Other
+
+- ADR: Startup-latency strategy (prebuilt JS, lazy per-command imports, external deps, no single bundle) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
+
 ## 2026.7.25 - 2026-07-25
 
 ### Added
@@ -1309,7 +1315,6 @@
 
 - Governance test: enforce manifest pm_min_version and manifest_version on all first-party packages ([pm-exrw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-exrw.toon))
 - Ecosystem PM living-map audit & reorganization methodology ([pm-knqw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-knqw.toon))
-- ADR: Startup-latency strategy (prebuilt JS, lazy per-command imports, external deps, no single bundle) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
 - Verify living-map: ecosystem coverage gaps ([pm-xmhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmhn.toon))
 - ADR: Stable CLI exit-code contract (0 success, 1 generic, 2 usage, 3 not_found, 4 conflict, 5 dependency_failed) ([pm-x1z3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-x1z3.toon))
 - Ecosystem-wide PM living-context map: audit, ADRs, roadmap, and forward backlog (2026-05-31) ([pm-w7f2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-w7f2.toon))

@@ -17,6 +17,7 @@ import {
   type RuntimeStatusRegistry,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import {
   collectDependencyBlockedIds,
@@ -1155,7 +1156,8 @@ function summarizeAgenda(events: CalendarRow[]): ContextAgendaSummary {
   };
 }
 
-function mergeSortedWarnings(
+/** Combines warning groups into a stable, duplicate-free lexical ordering. */
+export function mergeSortedWarnings(
   ...warningGroups: Array<string[] | undefined>
 ): string[] {
   return [...new Set(warningGroups.flatMap((group) => group ?? []))].sort(
@@ -2516,8 +2518,7 @@ export function applyContextTagProjection(
     const parent = rowsById.get(row.parent);
     if (
       parent &&
-      originalTagSignatures.get(row.id) ===
-        originalTagSignatures.get(parent.id)
+      originalTagSignatures.get(row.id) === originalTagSignatures.get(parent.id)
     ) {
       delete row.tags;
       row.tags_inherited = parent.id;
@@ -2594,7 +2595,7 @@ export async function runContext(
       Math.max(256, scaledLimit * 160),
     ),
   };
-  const author = process.env.PM_AUTHOR ?? runtime.settings.author_default;
+  const author = resolveAuthor(undefined, runtime.settings.author_default);
   // Single shared edge-aware blocked classification (GH-578): resolved against
   // the full corpus so terminal blocker targets count as satisfied at every depth.
   const blockedIds = collectDependencyBlockedIds(

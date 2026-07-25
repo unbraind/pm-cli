@@ -1,3 +1,4 @@
+import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   runActiveCommandHandler,
@@ -38,20 +39,31 @@ describe("core/extensions runtime wrappers", () => {
   });
 
   it("records affected items for usage feedback even when extension hooks are inactive", () => {
-    recordAfterCommandAffectedItem({ id: "pm-skip", op: "update", status: "open" });
+    recordAfterCommandAffectedItem({
+      id: "pm-skip",
+      op: "update",
+      status: "open",
+    });
     expect(consumeAfterCommandAffectedItems()).toEqual([
       { id: "pm-skip", op: "update", status: "open" },
     ]);
 
     setActiveExtensionHooks({
       beforeCommand: [],
-      afterCommand: [{ layer: "project", name: "after-ext", run: () => undefined }],
+      afterCommand: [
+        { layer: "project", name: "after-ext", run: () => undefined },
+      ],
       onWrite: [],
       onRead: [],
       onIndex: [],
     });
 
-    recordAfterCommandAffectedItem({ id: "pm-one", op: "update", previous_status: "open", status: "closed" });
+    recordAfterCommandAffectedItem({
+      id: "pm-one",
+      op: "update",
+      previous_status: "open",
+      status: "closed",
+    });
 
     expect(consumeAfterCommandAffectedItems()).toEqual([
       { id: "pm-one", op: "update", previous_status: "open", status: "closed" },
@@ -62,19 +74,30 @@ describe("core/extensions runtime wrappers", () => {
   it("drops invalid affected-item payloads and clears queue on hook reset", () => {
     setActiveExtensionHooks({
       beforeCommand: [],
-      afterCommand: [{ layer: "project", name: "after-ext", run: () => undefined }],
+      afterCommand: [
+        { layer: "project", name: "after-ext", run: () => undefined },
+      ],
       onWrite: [],
       onRead: [],
       onIndex: [],
     });
 
-    recordAfterCommandAffectedItem({ id: "pm-one", op: "update", previous_status: "open", status: "closed" });
+    recordAfterCommandAffectedItem({
+      id: "pm-one",
+      op: "update",
+      previous_status: "open",
+      status: "closed",
+    });
     recordAfterCommandAffectedItem(null as unknown as { id: string });
     expect(consumeAfterCommandAffectedItems()).toEqual([
       { id: "pm-one", op: "update", previous_status: "open", status: "closed" },
     ]);
 
-    recordAfterCommandAffectedItem({ id: "pm-two", op: "delete", previous_status: "closed" });
+    recordAfterCommandAffectedItem({
+      id: "pm-two",
+      op: "delete",
+      previous_status: "closed",
+    });
     clearActiveExtensionHooks();
     expect(consumeAfterCommandAffectedItems()).toBeUndefined();
   });
@@ -89,10 +112,20 @@ describe("core/extensions runtime wrappers", () => {
         priority: 1,
         assignee: "agent",
         body: "large body",
-        comments: [{ text: "large comment", created_at: "2026-06-06T00:00:00.000Z" }],
+        comments: [
+          { text: "large comment", created_at: "2026-06-06T00:00:00.000Z" },
+        ],
         tests: [{ command: "pnpm test", scope: "project" }],
       },
-      ["title", "unset:assignee", "body", "comments", "tests", "missing", 42 as unknown as string],
+      [
+        "title",
+        "unset:assignee",
+        "body",
+        "comments",
+        "tests",
+        "missing",
+        42 as unknown as string,
+      ],
     );
 
     expect(snapshot).toEqual({
@@ -127,7 +160,12 @@ describe("core/extensions runtime wrappers", () => {
           type: "Task",
           status: "open",
           title: "No id",
-        } as unknown as { id: string; type: string; status: string; title: string },
+        } as unknown as {
+          id: string;
+          type: string;
+          status: string;
+          title: string;
+        },
         ["title"],
       ),
     ).toEqual({});
@@ -212,7 +250,11 @@ describe("core/extensions runtime wrappers", () => {
       }),
     ).toEqual([]);
 
-    expect(trace).toEqual(["write:create:project", "read:README.md:project", "index:keyword:3"]);
+    expect(trace).toEqual([
+      "write:create:project",
+      "read:README.md:project",
+      "index:keyword:3",
+    ]);
   });
 
   it("contains active hook failures and continues later hooks", async () => {
@@ -246,7 +288,9 @@ describe("core/extensions runtime wrappers", () => {
       op: "update",
     });
 
-    expect(warnings).toEqual(["extension_hook_failed:project:boom-write-ext:onWrite"]);
+    expect(warnings).toEqual([
+      "extension_hook_failed:project:boom-write-ext:onWrite",
+    ]);
     expect(successCalls).toBe(1);
   });
 
@@ -397,7 +441,12 @@ describe("core/extensions runtime wrappers", () => {
         command: "update",
         args: ["--id", "pm-x"],
         options: { id: "pm-x" },
-        global: { json: false, quiet: false, noExtensions: false, profile: false },
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
         pm_root: "/tmp/project",
         decision,
       }),
@@ -407,7 +456,12 @@ describe("core/extensions runtime wrappers", () => {
         command: "update",
         args: ["--id", "pm-x"],
         options: { id: "pm-x" },
-        global: { json: false, quiet: false, noExtensions: false, profile: false },
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
         pm_root: "/tmp/project",
       },
       decision,
@@ -496,7 +550,10 @@ describe("core/extensions runtime wrappers", () => {
           layer: "project",
           name: "service-ext",
           service: "output_format",
-          run: (context) => JSON.stringify({ wrapped: (context.payload as { result: unknown }).result }),
+          run: (context) =>
+            JSON.stringify({
+              wrapped: (context.payload as { result: unknown }).result,
+            }),
         },
       ],
     });
@@ -604,7 +661,9 @@ describe("core/extensions runtime wrappers", () => {
     expect(runActiveCommandOverride({ count: 1 })).toEqual({
       overridden: false,
       result: { count: 1 },
-      warnings: ["extension_command_override_async_unsupported:project:async-command-override:list-open"],
+      warnings: [
+        "extension_command_override_async_unsupported:project:async-command-override:list-open",
+      ],
     });
 
     setActiveExtensionParsers({
@@ -644,6 +703,9 @@ describe("core/extensions runtime wrappers", () => {
           profile: false,
         },
         pm_root: "/tmp/project",
+        source_workspace_root: path.resolve("."),
+        repo_root: path.resolve("."),
+        pm_root_rel: undefined,
       },
       warnings: ["extension_parser_override_failed:project:parser-boom:create"],
     });
@@ -691,6 +753,9 @@ describe("core/extensions runtime wrappers", () => {
           profile: false,
         },
         pm_root: "/tmp/project",
+        source_workspace_root: path.resolve("."),
+        repo_root: path.resolve("."),
+        pm_root_rel: undefined,
       },
       decision,
       warnings: ["extension_preflight_override_failed:project:preflight-boom"],
@@ -716,15 +781,19 @@ describe("core/extensions runtime wrappers", () => {
         },
       ],
     });
-    expect(runActiveServiceOverrideSync("output_format", { ok: true })).toEqual({
-      handled: false,
-      result: { ok: true },
-      warnings: [
-        "extension_service_override_failed:project:throwing-service:output_format",
-        "extension_service_override_async_unsupported:project:async-sync-service:output_format",
-      ],
-    });
-    expect(await runActiveServiceOverride("missing_service", { ok: true })).toEqual({
+    expect(runActiveServiceOverrideSync("output_format", { ok: true })).toEqual(
+      {
+        handled: false,
+        result: { ok: true },
+        warnings: [
+          "extension_service_override_failed:project:throwing-service:output_format",
+          "extension_service_override_async_unsupported:project:async-sync-service:output_format",
+        ],
+      },
+    );
+    expect(
+      await runActiveServiceOverride("missing_service", { ok: true }),
+    ).toEqual({
       handled: false,
       result: { ok: true },
       warnings: [],
@@ -751,7 +820,9 @@ describe("core/extensions runtime wrappers", () => {
     expect(runActiveRendererOverride("json", { ok: true })).toEqual({
       overridden: false,
       rendered: null,
-      warnings: ["extension_renderer_invalid_result:project:invalid-renderer:json"],
+      warnings: [
+        "extension_renderer_invalid_result:project:invalid-renderer:json",
+      ],
     });
     expect(runActiveRendererOverride("toon", { ok: true })).toEqual({
       overridden: false,
@@ -771,7 +842,13 @@ describe("core/extensions runtime wrappers", () => {
     expect(
       await runCommandHandler(
         { overrides: [], handlers: [] },
-        { command: "  ", args: [], options: {}, global, pm_root: "/tmp/project" },
+        {
+          command: "  ",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+        },
       ),
     ).toEqual({ handled: false, result: null, warnings: [] });
     await expect(
@@ -789,7 +866,13 @@ describe("core/extensions runtime wrappers", () => {
             },
           ],
         },
-        { command: "sync", args: [], options: {}, global, pm_root: "/tmp/project" },
+        {
+          command: "sync",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+        },
       ),
     ).rejects.toMatchObject({ exitCode: 7 });
     expect(
@@ -807,12 +890,20 @@ describe("core/extensions runtime wrappers", () => {
             },
           ],
         },
-        { command: "sync", args: [], options: {}, global, pm_root: "/tmp/project" },
+        {
+          command: "sync",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+        },
       ),
     ).toEqual({
       handled: false,
       result: null,
-      warnings: ["extension_command_handler_failed:project:plain-object-handler:sync"],
+      warnings: [
+        "extension_command_handler_failed:project:plain-object-handler:sync",
+      ],
       errorMessage: "first second",
     });
     expect(
@@ -830,7 +921,13 @@ describe("core/extensions runtime wrappers", () => {
             },
           ],
         },
-        { command: "sync", args: [], options: {}, global, pm_root: "/tmp/project" },
+        {
+          command: "sync",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+        },
       ),
     ).toMatchObject({ errorMessage: "" });
     expect(
@@ -848,24 +945,48 @@ describe("core/extensions runtime wrappers", () => {
             },
           ],
         },
-        { command: "sync", args: [], options: {}, global, pm_root: "/tmp/project" },
+        {
+          command: "sync",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+        },
       ),
     ).toMatchObject({ errorMessage: "string failure" });
 
     expect(
       await runParserOverride(
         { overrides: [] },
-        { command: " ", args: ["raw"], options: { raw: true }, global, pm_root: "/tmp/project" },
+        {
+          command: " ",
+          args: ["raw"],
+          options: { raw: true },
+          global,
+          pm_root: "/tmp/project",
+        },
       ),
     ).toEqual({
       overridden: false,
-      context: { command: "", args: ["raw"], options: { raw: true }, global, pm_root: "/tmp/project" },
+      context: {
+        command: "",
+        args: ["raw"],
+        options: { raw: true },
+        global,
+        pm_root: "/tmp/project",
+      },
       warnings: [],
     });
     expect(
       await runParserOverride(
         { overrides: [] },
-        { command: "create", args: ["--title", "One"], options: { title: "One" }, global, pm_root: "/tmp/project" },
+        {
+          command: "create",
+          args: ["--title", "One"],
+          options: { title: "One" },
+          global,
+          pm_root: "/tmp/project",
+        },
       ),
     ).toEqual({
       overridden: false,
@@ -890,11 +1011,21 @@ describe("core/extensions runtime wrappers", () => {
             },
           ],
         },
-        { command: "create", args: ["--title", "One"], options: { title: "One" }, global, pm_root: "/tmp/project" },
+        {
+          command: "create",
+          args: ["--title", "One"],
+          options: { title: "One" },
+          global,
+          pm_root: "/tmp/project",
+        },
       ),
     ).toMatchObject({
       overridden: true,
-      context: { command: "create", args: ["--title", "One"], options: { title: "One" } },
+      context: {
+        command: "create",
+        args: ["--title", "One"],
+        options: { title: "One" },
+      },
     });
 
     expect(
@@ -916,7 +1047,12 @@ describe("core/extensions runtime wrappers", () => {
       ),
     ).toMatchObject({ overridden: false, warnings: [] });
 
-    expect(runServiceOverrideSync({ overrides: [] }, { service: "output_format", pm_root: "/tmp/project", payload: "base" })).toEqual({
+    expect(
+      runServiceOverrideSync(
+        { overrides: [] },
+        { service: "output_format", pm_root: "/tmp/project", payload: "base" },
+      ),
+    ).toEqual({
       handled: false,
       result: "base",
       warnings: [],
@@ -933,7 +1069,15 @@ describe("core/extensions runtime wrappers", () => {
             },
           ],
         },
-        { service: "output_format", command: "list-open", args: [], options: {}, global, pm_root: "/tmp/project", payload: "base" },
+        {
+          service: "output_format",
+          command: "list-open",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+          payload: "base",
+        },
       ),
     ).toEqual({ handled: false, result: "base", warnings: [] });
     expect(
@@ -948,7 +1092,15 @@ describe("core/extensions runtime wrappers", () => {
             },
           ],
         },
-        { service: "output_format", command: "list-open", args: [], options: {}, global, pm_root: "/tmp/project", payload: "base" },
+        {
+          service: "output_format",
+          command: "list-open",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+          payload: "base",
+        },
       ),
     ).toEqual({ handled: true, result: "rendered", warnings: [] });
     expect(
@@ -980,12 +1132,18 @@ describe("core/extensions runtime wrappers", () => {
             },
           ],
         },
-        { service: "item_store_read", pm_root: "/tmp/project", payload: { ok: true } },
+        {
+          service: "item_store_read",
+          pm_root: "/tmp/project",
+          payload: { ok: true },
+        },
       ),
     ).toEqual({
       handled: false,
       result: { ok: true },
-      warnings: ["extension_service_override_failed:project:throwing-async-service:item_store_read"],
+      warnings: [
+        "extension_service_override_failed:project:throwing-async-service:item_store_read",
+      ],
     });
 
     expect(
@@ -1025,7 +1183,12 @@ describe("core/extensions runtime wrappers", () => {
         command: "sync",
         args: [],
         options: {},
-        global: { json: false, quiet: false, noExtensions: false, profile: false },
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
         pm_root: "/tmp/project",
       },
     );
@@ -1035,7 +1198,12 @@ describe("core/extensions runtime wrappers", () => {
   });
 
   it("falls back to the original context when a parser override returns a nullish delta", async () => {
-    const global = { json: false, quiet: false, noExtensions: false, profile: false };
+    const global = {
+      json: false,
+      quiet: false,
+      noExtensions: false,
+      profile: false,
+    };
     const result = await runParserOverride(
       {
         overrides: [
@@ -1047,7 +1215,13 @@ describe("core/extensions runtime wrappers", () => {
           },
         ],
       },
-      { command: "create", args: ["--title", "One"], options: { title: "One" }, global, pm_root: "/tmp/project" },
+      {
+        command: "create",
+        args: ["--title", "One"],
+        options: { title: "One" },
+        global,
+        pm_root: "/tmp/project",
+      },
     );
     expect(result).toEqual({
       overridden: true,
@@ -1063,7 +1237,12 @@ describe("core/extensions runtime wrappers", () => {
   });
 
   it("applies a fully-populated preflight delta and tolerates a nullish delta", async () => {
-    const global = { json: false, quiet: false, noExtensions: false, profile: false };
+    const global = {
+      json: false,
+      quiet: false,
+      noExtensions: false,
+      profile: false,
+    };
     const baseDecision = {
       enforce_item_format_gate: true,
       run_preflight_item_format_sync: true,
@@ -1089,7 +1268,14 @@ describe("core/extensions runtime wrappers", () => {
           },
         ],
       },
-      { command: "update", args: [], options: {}, global, pm_root: "/tmp/project", decision: baseDecision },
+      {
+        command: "update",
+        args: [],
+        options: {},
+        global,
+        pm_root: "/tmp/project",
+        decision: baseDecision,
+      },
     );
     expect(fullDelta).toEqual({
       overridden: true,
@@ -1119,7 +1305,14 @@ describe("core/extensions runtime wrappers", () => {
           },
         ],
       },
-      { command: "update", args: ["--keep"], options: { keep: true }, global, pm_root: "/tmp/project", decision: baseDecision },
+      {
+        command: "update",
+        args: ["--keep"],
+        options: { keep: true },
+        global,
+        pm_root: "/tmp/project",
+        decision: baseDecision,
+      },
     );
     expect(nullDelta).toEqual({
       overridden: true,

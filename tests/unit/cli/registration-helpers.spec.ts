@@ -300,6 +300,7 @@ describe("registration helpers", () => {
         acceptance_criteria: ["second criterion"],
         ac: ["third criterion"],
         addTags: ["coverage"],
+        regression: true,
         allowMissingParent: true,
         clearDocs: true,
         customRuntimeField: "kept",
@@ -312,6 +313,7 @@ describe("registration helpers", () => {
       type: "Task",
       acceptanceCriteria: "one criterion; second criterion; third criterion",
       addTags: ["coverage"],
+      regression: "true",
       allowMissingParent: true,
       clearDocs: true,
       customRuntimeField: "kept",
@@ -322,6 +324,7 @@ describe("registration helpers", () => {
       acceptance_criteria: undefined,
       ac: ["second"],
       addTags: ["tests"],
+      regression: true,
       depRemove: ["pm-old"],
       ownershipMetadataBypass: true,
       ownershipDependencyBypass: true,
@@ -331,6 +334,7 @@ describe("registration helpers", () => {
     });
     expect(update).toMatchObject({
       addTags: ["tests"],
+      regression: "true",
       acceptanceCriteria: "first; second",
       depRemove: ["pm-old"],
       ownershipMetadataBypass: true,

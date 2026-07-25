@@ -43,9 +43,14 @@ Author precedence is:
 1. explicit command or invocation `--author`;
 2. `PM_AUTHOR`;
 3. project `author_default`;
-4. command-specific safe fallback.
+4. detected harness identity;
+5. `unknown`.
 
-New trackers persist a non-empty `author_default`. `pm init --author <id>` and `PM_AUTHOR` take precedence; otherwise init derives a stable local `username@hostname` identity. Existing projects can configure the value without editing storage:
+Agents running in a supported harness do not need to set `PM_AUTHOR`.
+New trackers persist a non-empty `author_default`; `pm init --author <id>` and
+`PM_AUTHOR` take precedence, otherwise init prefers a detected harness before
+deriving a stable local `username@hostname` identity. Existing projects can
+configure the value without editing storage:
 
 ```bash
 pm config project set author_default stable-agent-id

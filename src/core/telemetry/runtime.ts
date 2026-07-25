@@ -21,6 +21,7 @@ import {
   type TelemetryErrorCategory,
 } from "../shared/constants.js";
 import { nowIso } from "../shared/time.js";
+import { readAuthorEnvironment } from "../shared/author.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
 import {
@@ -83,7 +84,6 @@ const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_INLINE_FLUSH_ENV = "PM_TELEMETRY_INLINE_FLUSH";
 const PM_TELEMETRY_FLUSH_CHILD_ENV = "PM_TELEMETRY_FLUSH_CHILD";
 const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
-const PM_AUTHOR_ENV = "PM_AUTHOR";
 /** Supported values accepted by the pm telemetry source context contract. */
 export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = [
   "user",
@@ -765,7 +765,7 @@ function buildAuthorContextPayloadFields(
   captureLevel: TelemetryCaptureLevel,
   installationId: string,
 ): Record<string, unknown> {
-  const author = (process.env[PM_AUTHOR_ENV] ?? "").trim();
+  const author = (readAuthorEnvironment() ?? "").trim();
   if (captureLevel === "minimal") {
     return { has_author_context: author.length > 0 };
   }
@@ -1374,9 +1374,7 @@ function buildCommandErrorPayload(params: {
   };
 }
 
-async function ensureInstallationId(
-  globalPmRoot: string,
-): Promise<{
+async function ensureInstallationId(globalPmRoot: string): Promise<{
   installationId: string;
   endpoint: string;
   retentionDays: number;

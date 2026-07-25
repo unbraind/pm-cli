@@ -1,0 +1,31 @@
+id: pm-fc9gm4
+title: "GH-703: populate portable workspace coordinates in extension CommandHandlerContext"
+description: "Complete the GH-685 contract by actually populating source_workspace_root, repo_root, and pm_root_rel when invoking extension command handlers."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: "area:sdk",extensions,gh-issue,paths,privacy
+created_at: "2026-07-25T09:20:03.391Z"
+updated_at: "2026-07-25T11:31:32.947Z"
+assignee: "harness:codex"
+author: unknown
+parent: pm-ugqx
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-954h0o,related,"2026-07-25T09:20:03.391Z",null,null
+  pm-j4ac9a,related,"2026-07-25T09:20:03.391Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-25T09:20:03.391Z",unknown,"Duplicate-check evidence: all-status search found closed pm-j4ac9a for GH-685,whose declared interface shipped but runtime population did not. This follow-up preserves that completed lineage and owns the independently reproduced GH-703 implementation gap."
+  "2026-07-25T09:24:53.696Z","harness:codex","Implementation evidence: installed extension handlers now receive source_workspace_root, repo_root, and pm_root_rel after the host resolves them; the same coordinates are preserved across parser, preflight, command override, renderer, and service runtime copies. Focused integration suite passed 5/5 against a real installed extension."
+  "2026-07-25T11:31:32.946Z","harness:codex","Evidence: portable extension command coordinates are populated and preserved across clone boundaries; linked host-contract acceptance passed 6/6. Full suite passed 6340/6340 at 100% statements, branches, functions, and lines; packed Node/Bun consumer and package-first dogfood passed."
+files[3]{path,scope,note}:
+  src/core/extensions/extension-hook-runtime.ts,project,Preserve portable workspace coordinates across every extension runtime clone boundary
+  src/core/extensions/loader.ts,project,validated extension host contracts
+  tests/integration/extension-host-contracts.integration.spec.ts,project,installed extension coordinate acceptance
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms09qz5b-uylny1,test,passed,"2026-07-25T11:11:21.032Z","2026-07-25T11:11:30.671Z","2026-07-25T11:11:30.671Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,portable context contract
+  docs/SDK.md,project,SDK extension author guidance
+body: ""

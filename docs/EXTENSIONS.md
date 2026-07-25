@@ -408,7 +408,6 @@ pm health --check-only --json
 ```
 
 For package-owned commands, install the package before assuming the command is available. Runtime contracts expose installed package actions; static SDK contracts intentionally expose only core actions.
-
 If a package-owned command is invoked before installation, usage guidance includes the recovery install command when `pm` can map the command to a bundled package.
 
 ## Package Authoring Notes
@@ -416,12 +415,13 @@ If a package-owned command is invoked before installation, usage guidance includ
 Third-party packages should import only stable public SDK subpaths:
 
 ```ts
-import { defineExtension, createPmCliExpectedError } from "@unbrained/pm-cli/sdk";
-import { createExtensionTestHarness, activateExtensionForTest } from "@unbrained/pm-cli/sdk/testing";
+import { defineExtension } from "@unbrained/pm-cli/sdk/authoring";
+import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/contracts";
+import { createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";
+import { activateExtensionForTest } from "@unbrained/pm-cli/sdk/testing";
 ```
 
 Use `createPmCliExpectedError(message, { exitCode, context })` for expected user/action failures from package commands. It creates an `Error` named `PmCliError` with a structural `exitCode`, so separately installed package code still gets expected-error handling and Sentry filtering.
-
 Prefer the `define*` builders for exported registration definitions (`defineCommand`, `defineFlag`, `defineSearchProvider`, `defineAfterCommandHook`, and the matching override/import/export/hook helpers; see ADR [pm-3mph](../.agents/pm/decisions/pm-3mph.toon)). They are zero-cost identity functions that preserve object literal types and contextually type function parameters before the definitions reach `api.register*`; runtime validation remains in the loader, and behavior validation remains in `sdk/testing`.
 
 Prefer `createExtensionTestHarness(module, { capabilities })` in package unit tests: it activates the module once and returns a fluent fixture whose `assert*`/`run*` methods are already bound to the right activation sub-registry (so you never thread `activation.registrations` vs `activation.commands` vs `activation.hooks` by hand), plus a `deactivate()` that runs the real teardown engine — e.g. `harness.assertCommandContract({ name: command })`, `await harness.runCommand({ command })`, `await harness.deactivate()`. Named assertion expectations consistently accept `name`; the older surface-specific keys (`command`, `provider`, `field`, and the rest) remain compatibility aliases. The methods do not use `this`, so they are safe to destructure. For finer control, the standalone helpers remain public: `activateExtensionForTest(module)` returns the raw `activation`, then `runRegisteredCommandForTest(activation.commands, { command })` invokes a registered command handler through pm's real dispatch engine to assert behavior, not just wiring; the matching `runRegisteredHookForTest` (lifecycle hooks), `runRegistered{Parser,Preflight,Command,Renderer,Service}OverrideForTest` (override surfaces), and `runRegistered{SearchProvider,VectorStoreAdapter,Migration,Importer,Exporter}ForTest` (executable registrations — the importer/exporter helpers take the whole `activation` and resolve by name, deriving the command path internally) helpers extend that invoke verb to every other runtime surface. Keep `pm package doctor --project --detail deep --trace` and runtime contracts for integration tests against installed packages.

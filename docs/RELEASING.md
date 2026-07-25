@@ -12,6 +12,8 @@ For local progressive-disclosure routing, install `guide-shell` with `pm install
 - Publishing is owned by the tag-driven GitHub Actions release workflow.
 - Do not run manual `npm publish`.
 - Run local parity gates before pushing release tags.
+- Treat `pnpm sdk:surface:check` as a release compatibility gate; never
+  regenerate an unexplained public API diff.
 - Use `pm guide release --json` for machine-readable release docs routing after `guide-shell` is installed.
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon),
@@ -114,15 +116,15 @@ Signal tiers:
 
 Category precedence (first matching bucket wins):
 
-| Priority | Category | Trigger terms (from strong + weak signals unless noted) |
-|---|---|---|
-| 1 | `Security` | `security`, `cve`, `vulnerability` |
-| 2 | `Deprecated` | `deprecated`, `deprecation` |
-| 3 | `Removed` | `removed`, `remove`, `deleted`, `delete` |
-| 4 | `Fixed` | `fix`, `fixed`, `bug`, `bugfix`, `hotfix`, `regression` |
-| 5 | `Added` | `feature`, `feat`, `added`, `add`, `new` |
-| 6 | `Changed` | strong-signal `change`, `changed`, `refactor`, `update`, `updated`, `improve`; for non-bug-like types only, title fallback is also used |
-| 7 | `Other` | no classifier match |
+| Priority | Category     | Trigger terms (from strong + weak signals unless noted)                                                                                 |
+| -------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | `Security`   | `security`, `cve`, `vulnerability`                                                                                                      |
+| 2        | `Deprecated` | `deprecated`, `deprecation`                                                                                                             |
+| 3        | `Removed`    | `removed`, `remove`, `deleted`, `delete`                                                                                                |
+| 4        | `Fixed`      | `fix`, `fixed`, `bug`, `bugfix`, `hotfix`, `regression`                                                                                 |
+| 5        | `Added`      | `feature`, `feat`, `added`, `add`, `new`                                                                                                |
+| 6        | `Changed`    | strong-signal `change`, `changed`, `refactor`, `update`, `updated`, `improve`; for non-bug-like types only, title fallback is also used |
+| 7        | `Other`      | no classifier match                                                                                                                     |
 
 Bug-like default:
 
@@ -194,6 +196,15 @@ pnpm release:pipeline:dry-run
 # Full local preparation (version/changelog mutation + local commit/tag)
 pnpm release:pipeline
 ```
+
+The static phase includes `pnpm sdk:surface:check`,
+`pnpm benchmark:sdk-entrypoints:check`, and
+`pnpm benchmark:transport:check`. Additive SDK exports require a reviewed
+snapshot refresh. A removal or semantic signature change fails until the
+maintainer supplies
+`pnpm sdk:surface:update -- --acknowledge-breaking "<release rationale>"`;
+pair that acknowledgement with migration guidance, compatible extension
+version bounds where applicable, and the next eligible date-based release.
 
 5. Push branch and tag after local green.
 

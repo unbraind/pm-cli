@@ -62,6 +62,17 @@ function nonBlank(value: string | undefined): string | undefined {
   return trimmed && trimmed.length > 0 ? trimmed : undefined;
 }
 
+/** Reads the invocation-wide author override through the canonical environment seam. */
+export function readAuthorEnvironment(): string | undefined {
+  return process.env.PM_AUTHOR;
+}
+
+/** Updates or clears the invocation-wide author override through the canonical environment seam. */
+export function writeAuthorEnvironment(author: string | undefined): void {
+  if (author === undefined) delete process.env.PM_AUTHOR;
+  else process.env.PM_AUTHOR = author;
+}
+
 /**
  * Detect a known agent harness from bounded, caller-supplied runtime signals.
  *

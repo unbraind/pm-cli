@@ -1,0 +1,31 @@
+id: pm-de3foa
+title: "GH-705: make duplicate governance discoverable and advisory by default"
+description: "Add canonical hyphenated duplicate-governance config keys, align governance presets/defaults, and teach create help how to enable advisory/strict duplicate handling."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: agent-ux,dedupe,gh-issue,governance,multi-agent
+created_at: "2026-07-25T09:20:05.177Z"
+updated_at: "2026-07-25T11:31:34.009Z"
+assignee: "harness:codex"
+author: unknown
+parent: pm-33cw
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-4n1a,related,"2026-07-25T09:20:05.177Z",null,null
+  pm-4ri6,related,"2026-07-25T09:20:05.177Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-25T09:20:05.177Z",unknown,"Duplicate-check evidence: closed pm-4ri6 owns the implemented similarity primitive and create/copy enforcement. GH-705 is a separately reproduced discoverability/default-policy follow-up: the public hyphenated config aliases are missing and fresh defaults leave the shipped advisory unreachable."
+  "2026-07-25T11:31:34.009Z","harness:codex","Evidence: duplicate governance now uses discoverable kebab-case keys with advisory default and strict/minimal preset semantics. Linked create/settings tests passed 148/148; all-status exact-title audit found no duplicate in this delivery lineage."
+files[4]{path,scope,note}:
+  src/cli/register-setup.ts,project,discoverable kebab config keys
+  src/core/shared/constants.ts,project,default advisory duplicate governance
+  tests/unit/commands/create-command.spec.ts,project,advisory and kebab behavior
+  tests/unit/core/store/settings-store.spec.ts,project,preset default coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/core/store/settings-store.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms09raof-ybm3db,test,passed,"2026-07-25T11:11:31.366Z","2026-07-25T11:11:45.615Z","2026-07-25T11:11:45.615Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/CONFIGURATION.md,project,duplicate governance defaults and keys
+  docs/SDK_CONTEXT_COORDINATION.md,project,duplicate coordination semantics
+body: ""

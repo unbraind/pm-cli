@@ -23,6 +23,7 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import { readHistoryEntries } from "../../sdk/history-read.js";
 import { recordContextUsageTouches } from "../../sdk/context-usage.js";
@@ -671,9 +672,7 @@ export async function runGet(
     try {
       await recordContextUsageTouches({
         pmRoot: context.pmRoot,
-        author:
-          (process.env.PM_AUTHOR ?? context.settings.author_default).trim() ||
-          "unknown",
+        author: resolveAuthor(undefined, context.settings.author_default),
         itemIds: [context.locatedId],
         intent: "get",
       });

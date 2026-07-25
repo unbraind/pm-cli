@@ -223,7 +223,7 @@ export const GOVERNANCE_PRESET_DEFAULTS: Record<
     parent_reference: "strict_error",
     metadata_profile: "core",
     force_required_for_stale_lock: true,
-    duplicate_detection_mode: "off",
+    duplicate_detection_mode: "advisory",
     duplicate_detection_threshold: 0.8,
     duplicate_detection_limit: 3,
   },

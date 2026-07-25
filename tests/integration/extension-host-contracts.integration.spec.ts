@@ -6,6 +6,7 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
 async function installHostContractExtension(
   pmPath: string,
   source: string,
+  capabilities: string[] = ["commands", "renderers", "schema"],
 ): Promise<void> {
   const extensionDir = path.join(pmPath, "extensions", "host-contract-test");
   await mkdir(extensionDir, { recursive: true });
@@ -16,7 +17,7 @@ async function installHostContractExtension(
         name: "host-contract-test",
         version: "1.0.0",
         entry: "./index.mjs",
-        capabilities: ["commands", "renderers", "schema"],
+        capabilities,
         activation: {
           commands: ["host probe", "host query", "host silent"],
         },
@@ -144,6 +145,103 @@ describe("extension host contracts", () => {
       expect(result.code).toBe(0);
       expect(result.stdout).toBe("");
       expect(result.stderr).toBe("");
+    });
+  });
+
+  it("supplies portable workspace coordinates to installed extension commands", async () => {
+    await withTempPmPath(async (context) => {
+      await installHostContractExtension(
+        context.pmPath,
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'host probe',",
+          "      run: ({ source_workspace_root, repo_root, pm_root_rel }) => ({ source_workspace_root, repo_root, pm_root_rel }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      );
+
+      const result = context.runCli(["host", "probe", "--json"], {
+        expectJson: true,
+      });
+
+      expect(result.code).toBe(0);
+      expect(result.json).toEqual({
+        source_workspace_root: process.cwd(),
+        repo_root: process.cwd(),
+      });
+    });
+  });
+
+  it("surfaces activation causes at unknown-command, doctor, and activate boundaries", async () => {
+    await withTempPmPath(async (context) => {
+      await installHostContractExtension(
+        context.pmPath,
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'host probe',",
+          "      flags: [{ long: '--ref', value_name: 'value' }],",
+          "      run: () => ({ ok: true }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+        ["commands"],
+      );
+
+      const unknown = context.runCli(["host", "probe", "--json"], {
+        expectJson: true,
+      });
+      expect(unknown.code).toBe(2);
+
+      const doctor = context.runCli(
+        ["extension", "doctor", "--project", "--json"],
+        { expectJson: true },
+      );
+      expect(doctor.json).toMatchObject({
+        details: {
+          summary: {
+            activation_failures: [
+              {
+                name: "host-contract-test",
+                error: expect.stringContaining("requires capability 'schema'"),
+              },
+            ],
+          },
+        },
+      });
+
+      const activate = context.runCli(
+        ["extension", "activate", "host-contract-test", "--project", "--json"],
+        { expectJson: true },
+      );
+      expect(activate.json).toMatchObject({
+        ok: false,
+        details: {
+          active: false,
+          runtime_active: false,
+          activation_failure: {
+            name: "host-contract-test",
+            error: expect.stringContaining("requires capability 'schema'"),
+          },
+        },
+      });
+      expect(JSON.parse(unknown.stderr)).toMatchObject({
+        code: "unknown_command",
+        failed_extensions: [
+          {
+            name: "host-contract-test",
+            error: expect.stringContaining("requires capability 'schema'"),
+          },
+        ],
+      });
     });
   });
 });

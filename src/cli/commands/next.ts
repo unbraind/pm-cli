@@ -24,6 +24,7 @@ import {
   normalizeStatusForRegistry,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
@@ -31,6 +32,7 @@ import {
   buildChildrenByParent,
   collectSubtreeIds,
   compareCriticalItems,
+  mergeSortedWarnings,
   packRankedContextItems,
   resolveContextTokenBudget,
   toContextPackingSummary,
@@ -304,9 +306,7 @@ function partitionCallerOwnedReady(
   available: ActionableEntry[];
   held: Array<{ id: string; assignee: string }>;
 } {
-  const caller =
-    (explicitAuthor ?? process.env.PM_AUTHOR ?? fallbackAuthor).trim() ||
-    "unknown";
+  const caller = resolveAuthor(explicitAuthor, fallbackAuthor);
   const available: ActionableEntry[] = [];
   const held: Array<{ id: string; assignee: string }> = [];
   for (const entry of ready) {
@@ -320,7 +320,13 @@ function partitionCallerOwnedReady(
 }
 
 /** Test-only access to deterministic next-work partitioning edge cases. */
-export const _testOnlyNextCommand = { partitionCallerOwnedReady };
+export const _testOnlyNextCommand = {
+  partitionCallerOwnedReady,
+  resolveNextCallerAuthor: (
+    options: NextOptions,
+    settingsAuthor: string,
+  ): string => resolveNextCallerAuthor(options, settingsAuthor),
+};
 
 /** Separates human-gated decisions from autonomous agent work unless the caller explicitly opts into decision claims. */
 export function partitionDecisionEntries(
@@ -513,12 +519,9 @@ async function attachNextUsageFeedback(params: {
       enabled: process.env.PM_CONTEXT_USAGE_DISABLED !== "1",
     });
   } catch {
-    params.result.warnings = [
-      ...new Set([
-        ...(params.result.warnings ?? []),
-        "context_usage_feedback_write_failed",
-      ]),
-    ].sort((left, right) => left.localeCompare(right));
+    params.result.warnings = mergeSortedWarnings(params.result.warnings, [
+      "context_usage_feedback_write_failed",
+    ]);
   }
 }
 
@@ -599,9 +602,7 @@ async function rankReadyEntriesWithRelevance(
 ): Promise<{
   projectedReady: ActionableEntry[];
   ranking: Awaited<
-    ReturnType<
-      typeof scoreContextCandidatesWithActiveExtensions<ItemMetadata>
-    >
+    ReturnType<typeof scoreContextCandidatesWithActiveExtensions<ItemMetadata>>
   >;
   completedContainer: boolean;
   packing: ContextPackingReport<ItemMetadata>;
@@ -632,7 +633,12 @@ async function rankReadyEntriesWithRelevance(
     "next",
     featureStore.candidates,
   );
-  const packing = packRankedContextItems(ranking, tokenBudget, new Set(), "next");
+  const packing = packRankedContextItems(
+    ranking,
+    tokenBudget,
+    new Set(),
+    "next",
+  );
   const readyById = new Map(
     structuralReady.map((entry) => [entry.item.id, entry]),
   );
@@ -648,19 +654,18 @@ async function rankReadyEntriesWithRelevance(
   };
 }
 
-/** Resolve the ranking perspective from an explicit caller, delegated assignee, environment author, or project default. */
+/** Resolve the ranking perspective through the canonical author precedence contract. */
 function resolveNextCallerAuthor(
   options: NextOptions,
   settingsAuthor: string,
 ): string {
   const requestedAssignee = options.assignee?.trim();
-  return (
+  return resolveAuthor(
     options.callerAuthor ??
-    (requestedAssignee && requestedAssignee.length > 0
-      ? requestedAssignee
-      : undefined) ??
-    process.env.PM_AUTHOR ??
-    settingsAuthor
+      (requestedAssignee && requestedAssignee.length > 0
+        ? requestedAssignee
+        : undefined),
+    settingsAuthor,
   );
 }
 
@@ -678,7 +683,10 @@ export async function runNext(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const now = nowIso();
   const limit = parseNextLimit(options.limit, "--limit", DEFAULT_NEXT_LIMIT);
-  const tokenBudget = resolveContextTokenBudget(options.tokenBudget, Math.max(192, limit * 128));
+  const tokenBudget = resolveContextTokenBudget(
+    options.tokenBudget,
+    Math.max(192, limit * 128),
+  );
   const blockedLimit = parseNextLimit(
     options.blockedLimit,
     "--blocked-limit",
@@ -830,7 +838,13 @@ export async function runNext(
  */
 export function renderNextMarkdown(result: NextResult): string {
   const lines: string[] = ["# pm next", "", ...renderNextSummaryLines(result)];
-  lines.push(...renderNextSection("Recommended", renderNextRecommendedRows(result.recommended), "No ready work."));
+  lines.push(
+    ...renderNextSection(
+      "Recommended",
+      renderNextRecommendedRows(result.recommended),
+      "No ready work.",
+    ),
+  );
   lines.push(
     ...renderNextSection(
       "Decision needed",
@@ -882,16 +896,25 @@ function renderNextSummaryLines(result: NextResult): string[] {
 
 // Renders the recommendation rows (item line + rationale) or nothing when no
 // candidate is ready, letting the shared section helper supply the empty state.
-function renderNextRecommendedRows(recommended: NextResult["recommended"]): string[] {
+function renderNextRecommendedRows(
+  recommended: NextResult["recommended"],
+): string[] {
   if (!recommended) {
     return [];
   }
-  return [`- ${formatNextLine(recommended)}`, `  why: ${recommended.reasons.join("; ")}`];
+  return [
+    `- ${formatNextLine(recommended)}`,
+    `  why: ${recommended.reasons.join("; ")}`,
+  ];
 }
 
 // Renders one markdown queue section: the `##` header, then either the rows or
 // the section's empty-state message, closed by a separating blank line.
-function renderNextSection(header: string, rows: string[], emptyMessage: string): string[] {
+function renderNextSection(
+  header: string,
+  rows: string[],
+  emptyMessage: string,
+): string[] {
   return [`## ${header}`, ...(rows.length === 0 ? [emptyMessage] : rows), ""];
 }
 

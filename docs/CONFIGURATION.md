@@ -6,7 +6,8 @@
 
 - Do not override `PM_PATH` for real repository tracking.
 - Prefer `--pm-path <repo>/.agents/pm` when a script must target tracker storage explicitly; `--path` remains a compatibility alias and is not a workspace/cwd flag.
-- Do set `PM_AUTHOR` for maintainer and agent mutations.
+- Let pm detect supported agent harnesses automatically; set `PM_AUTHOR` only
+  when an explicit session-wide identity override is required.
 - Use `--json` only when strict parsing is needed.
 - Use `pm contracts` for current command/schema metadata.
 
@@ -67,30 +68,30 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 
 ## Common Settings
 
-| Setting | Purpose |
-|---------|---------|
-| `id_prefix` | generated item ID prefix, default `pm-` |
-| `ids.token_length` | random base36 token length for newly minted item ids (4-12, default `4`); raise it to shrink cross-branch id collision odds in concurrent multi-agent workflows (see [Merge Safety](MERGE_SAFETY.md)) |
-| `author_default` | fallback mutation author |
-| `item_format` | item storage format (`toon` writes; legacy markdown is read/migrate only) |
-| `output.default_format` | default renderer, usually `toon` |
-| `locks.ttl_seconds` | stale lock threshold |
-| `locks.wait_ms` | bounded jittered wait budget before a contended item mutation returns `lock_conflict` (default `3000`; set `0` to fail fast) |
-| `history.missing_stream` | `auto_create` or `strict_error` |
-| `history.compact_policy.enabled` | enable the compaction advisory: `pm health` warns on over-threshold streams (default `false`); when disabled, `max_entries`/`trigger` are inert |
-| `history.compact_policy.max_entries` | when the policy is enabled, the entry count above which a stream is flagged by `pm health` and the default `pm history-compact --all-over` threshold (default `500`) |
-| `history.compact_policy.trigger` | policy intent when enabled: `health_warn` (advisory only) or `auto` (scheduled sweeps expected) |
-| `testing.record_results_to_items` | persist bounded linked-test summaries |
-| `validation.sprint_release_format` | `warn` or `strict_error` |
-| `validation.parent_reference` | `warn` or `strict_error` (`strict_error` is the built-in default; `pm create --allow-missing-parent` is the explicit escape hatch) |
-| `item_types.definitions[]` | custom item types and type options |
-| `governance.create_default_type` | default `--type` used by `pm create "title"` when `--type` is omitted (defaults to `Task`); must resolve to a known item type |
-| `governance.workflow_enforcement` | per-type transition enforcement mode for `pm update --status` (`off` default, `warn`, or `strict`) |
-| `governance.duplicate_detection_mode` | create/copy similarity policy: `off`, `advisory`, or `strict`; minimal/default presets use `off`, while strict governance uses `strict` |
-| `governance.duplicate_detection_threshold` | inclusive likely-duplicate score from `0` through `1` (default `0.8`) |
-| `governance.duplicate_detection_limit` | maximum matches attached to a create/copy advisory from `0` through `20` (default `3`) |
-| `schema.type_workflows[]` | per-type allowed status transitions (see Per-Type Workflows below) |
-| `search.*` | search mode, scoring, providers, embedding timeout, and vector settings |
+| Setting                                    | Purpose                                                                                                                                                                                               |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id_prefix`                                | generated item ID prefix, default `pm-`                                                                                                                                                               |
+| `ids.token_length`                         | random base36 token length for newly minted item ids (4-12, default `4`); raise it to shrink cross-branch id collision odds in concurrent multi-agent workflows (see [Merge Safety](MERGE_SAFETY.md)) |
+| `author_default`                           | configured mutation author before automatic harness detection                                                                                                                                         |
+| `item_format`                              | item storage format (`toon` writes; legacy markdown is read/migrate only)                                                                                                                             |
+| `output.default_format`                    | default renderer, usually `toon`                                                                                                                                                                      |
+| `locks.ttl_seconds`                        | stale lock threshold                                                                                                                                                                                  |
+| `locks.wait_ms`                            | bounded jittered wait budget before a contended item mutation returns `lock_conflict` (default `3000`; set `0` to fail fast)                                                                          |
+| `history.missing_stream`                   | `auto_create` or `strict_error`                                                                                                                                                                       |
+| `history.compact_policy.enabled`           | enable the compaction advisory: `pm health` warns on over-threshold streams (default `false`); when disabled, `max_entries`/`trigger` are inert                                                       |
+| `history.compact_policy.max_entries`       | when the policy is enabled, the entry count above which a stream is flagged by `pm health` and the default `pm history-compact --all-over` threshold (default `500`)                                  |
+| `history.compact_policy.trigger`           | policy intent when enabled: `health_warn` (advisory only) or `auto` (scheduled sweeps expected)                                                                                                       |
+| `testing.record_results_to_items`          | persist bounded linked-test summaries                                                                                                                                                                 |
+| `validation.sprint_release_format`         | `warn` or `strict_error`                                                                                                                                                                              |
+| `validation.parent_reference`              | `warn` or `strict_error` (`strict_error` is the built-in default; `pm create --allow-missing-parent` is the explicit escape hatch)                                                                    |
+| `item_types.definitions[]`                 | custom item types and type options                                                                                                                                                                    |
+| `governance.create_default_type`           | default `--type` used by `pm create "title"` when `--type` is omitted (defaults to `Task`); must resolve to a known item type                                                                         |
+| `governance.workflow_enforcement`          | per-type transition enforcement mode for `pm update --status` (`off` default, `warn`, or `strict`)                                                                                                    |
+| `governance.duplicate_detection_mode`      | create/copy similarity policy: `off`, `advisory`, or `strict`; the minimal preset uses `off`, the default preset uses `advisory`, and strict governance uses `strict`                                 |
+| `governance.duplicate_detection_threshold` | inclusive likely-duplicate score from `0` through `1` (default `0.8`)                                                                                                                                 |
+| `governance.duplicate_detection_limit`     | maximum matches attached to a create/copy advisory from `0` through `20` (default `3`)                                                                                                                |
+| `schema.type_workflows[]`                  | per-type allowed status transitions (see Per-Type Workflows below)                                                                                                                                    |
+| `search.*`                                 | search mode, scoring, providers, embedding timeout, and vector settings                                                                                                                               |
 
 Runtime item types are context primitives. Use `pm schema list` to inspect the merged registry and `pm schema show <Type>` to inspect one type's folder, aliases, defaults, required options, and extension provenance. `pm init --type-preset agile|ops|research` writes reusable domain types into `.agents/pm/schema/types.json`; this is equivalent to persisted project schema, not an extension-only runtime overlay.
 
@@ -105,28 +106,29 @@ pm config project set locks_ttl_seconds 60                 # (locks.ttl_seconds)
 pm config project set locks_wait_ms 3000                   # (locks.wait_ms) integer >= 0
 pm config project set checkpoints_retention_days 30        # (checkpoints.retention_days) integer >= 1; pm gc --scope checkpoints prunes checkpoints older than this many days
 pm config project set schema_unknown_field_policy reject   # (schema.unknown_field_policy) allow | warn | reject
-pm config project set governance_duplicate_detection_mode advisory       # (governance.duplicate_detection_mode) off | advisory | strict
-pm config project set governance_duplicate_detection_threshold 0.8       # (governance.duplicate_detection_threshold) ratio 0..1
-pm config project set governance_duplicate_detection_limit 3             # (governance.duplicate_detection_limit) integer 0..20
+pm config project set governance-duplicate-detection-mode advisory       # (governance.duplicate_detection_mode) off | advisory | strict
+pm config project set governance-duplicate-detection-threshold 0.8       # (governance.duplicate_detection_threshold) ratio 0..1
+pm config project set governance-duplicate-detection-limit 3             # (governance.duplicate_detection_limit) integer 0..20
 ```
 
 Duplicate governance uses the shared SDK scorer and bounded metadata query
 index described in [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).
 Advisory mode keeps exit code zero and adds a structured
 `similarity_advisory`; strict mode requires `--allow-duplicate` to accept a
-threshold match.
+threshold match. Kebab-case config keys are the documented spelling; existing
+underscore aliases remain accepted for compatibility.
 
 ## Environment Variables
 
-| Variable | Use |
-|----------|-----|
-| `PM_AUTHOR` | explicit mutation author |
-| `PM_PATH` | override project tracker root for tests or sandboxes |
-| `PM_GLOBAL_PATH` | override global profile root for tests or sandboxes |
-| `PM_LOCK_WAIT_MS` | per-process override for `locks.wait_ms`; non-negative integer milliseconds, with `0` restoring fail-fast lock conflicts |
-| `PM_OLLAMA_MODEL` | choose default Ollama embedding model |
-| `PM_DISABLE_OLLAMA_AUTO_DEFAULTS` | disable implicit Ollama search defaults |
-| `PM_CONTEXT_USAGE_DISABLED` | set to `1` to disable the derived context/next usage-feedback ledger with zero filesystem reads or writes |
+| Variable                          | Use                                                                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `PM_AUTHOR`                       | optional explicit session-wide mutation author override                                                                  |
+| `PM_PATH`                         | override project tracker root for tests or sandboxes                                                                     |
+| `PM_GLOBAL_PATH`                  | override global profile root for tests or sandboxes                                                                      |
+| `PM_LOCK_WAIT_MS`                 | per-process override for `locks.wait_ms`; non-negative integer milliseconds, with `0` restoring fail-fast lock conflicts |
+| `PM_OLLAMA_MODEL`                 | choose default Ollama embedding model                                                                                    |
+| `PM_DISABLE_OLLAMA_AUTO_DEFAULTS` | disable implicit Ollama search defaults                                                                                  |
+| `PM_CONTEXT_USAGE_DISABLED`       | set to `1` to disable the derived context/next usage-feedback ledger with zero filesystem reads or writes                |
 
 For command-level tracker targeting, prefer `--pm-path <tracker-root>`. The old
 `--path` flag is still accepted, but it means the pm tracker storage directory
@@ -139,24 +141,24 @@ Tests should set both `PM_PATH` and `PM_GLOBAL_PATH` to temporary directories. T
 
 Telemetry is opt-in via `pm config set telemetry-tracking on` (see [Common Settings](#common-settings)). When enabled, these environment variables tune runtime behaviour. All boolean knobs accept `1`, `true`, `yes`, or `on` (case-insensitive); any other value leaves the knob off.
 
-| Variable | Values | Use |
-|----------|--------|-----|
-| `PM_TELEMETRY_DISABLED` | boolean | Hard-disable all telemetry for this process, ignoring settings. |
-| `PM_NO_TELEMETRY` | boolean | Alias for `PM_TELEMETRY_DISABLED` (honoured by the same checks). |
-| `PM_TELEMETRY_OTEL_DISABLED` | boolean | Disable only OTLP trace-span export; the event queue still flushes. |
-| `PM_TELEMETRY_INLINE_FLUSH` | boolean | Flush the queue and OTLP spans inline instead of dispatching the detached worker. Mainly for tests; normal use relies on the background worker. |
-| `PM_TELEMETRY_SOURCE_CONTEXT` | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Any other value is ignored and the context is inferred. |
-| `PM_TELEMETRY_INGEST_KEY` | string | Sent as the `x-pm-telemetry-key` header on queue flushes; never logged. |
-| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | URL | OTLP/HTTP traces endpoint for command spans. Takes precedence over the base endpoint. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | URL | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`. |
-| `OTEL_SERVICE_NAME` | string | `service.name` attribute on exported spans (defaults to `pm-cli`). |
+| Variable                             | Values                                        | Use                                                                                                                                             |
+| ------------------------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PM_TELEMETRY_DISABLED`              | boolean                                       | Hard-disable all telemetry for this process, ignoring settings.                                                                                 |
+| `PM_NO_TELEMETRY`                    | boolean                                       | Alias for `PM_TELEMETRY_DISABLED` (honoured by the same checks).                                                                                |
+| `PM_TELEMETRY_OTEL_DISABLED`         | boolean                                       | Disable only OTLP trace-span export; the event queue still flushes.                                                                             |
+| `PM_TELEMETRY_INLINE_FLUSH`          | boolean                                       | Flush the queue and OTLP spans inline instead of dispatching the detached worker. Mainly for tests; normal use relies on the background worker. |
+| `PM_TELEMETRY_SOURCE_CONTEXT`        | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Any other value is ignored and the context is inferred.                            |
+| `PM_TELEMETRY_INGEST_KEY`            | string                                        | Sent as the `x-pm-telemetry-key` header on queue flushes; never logged.                                                                         |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | URL                                           | OTLP/HTTP traces endpoint for command spans. Takes precedence over the base endpoint.                                                           |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`        | URL                                           | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`.                                                                   |
+| `OTEL_SERVICE_NAME`                  | string                                        | `service.name` attribute on exported spans (defaults to `pm-cli`).                                                                              |
 
 Interaction rules:
 
 - `PM_TELEMETRY_DISABLED` / `PM_NO_TELEMETRY` short-circuit everything, including OTLP export, regardless of the other knobs.
 - OTLP span export only happens when telemetry is enabled, `PM_TELEMETRY_OTEL_DISABLED` is off, and a traces endpoint is configured. By default spans are persisted to a bounded queue and exported by the detached, unref'd flush worker so commands exit promptly even when the traces endpoint is unreachable. `PM_TELEMETRY_INLINE_FLUSH=1` is the explicit test-oriented exception that performs the flush inline.
 - `pm health --check-telemetry --json` surfaces flush and OTLP export diagnostics (`pending_otel_spans`, `last_otel_attempt_at`, `last_otel_success_at`, `last_otel_failure_at`, `last_otel_failure_error`) and the active `env_overrides` (including `telemetry_inline_flush` and `telemetry_source_context`) so agents can self-diagnose a stalled endpoint.
-- `PM_AUTHOR` adds a privacy-preserving agent-identity dimension to `command_start`/`command_finish` events so agent-driven invocations can be segmented in dashboards without leaking the raw author string. At `redacted`/`max` capture the events carry `author_context_hash` — the same installation-id-keyed one-way SHA-256 used for `pm_root_hash`/`cwd_hash`, so the same author hashes consistently within an installation but differently across installations. At `minimal` capture only a boolean `has_author_context` is emitted. The raw `PM_AUTHOR` value is never exported.
+- An explicit `PM_AUTHOR` override adds a privacy-preserving agent-identity dimension to `command_start`/`command_finish` events so overridden invocations can be segmented in dashboards without leaking the raw author string. At `redacted`/`max` capture the events carry `author_context_hash` — the same installation-id-keyed one-way SHA-256 used for `pm_root_hash`/`cwd_hash`, so the same author hashes consistently within an installation but differently across installations. At `minimal` capture only a boolean `has_author_context` is emitted. The raw `PM_AUTHOR` value is never exported.
 
 `pm telemetry stats` reads the local queue and reports, per command bucket, latency percentiles (`duration_p50_ms`/`duration_p95_ms`/`duration_max_ms`, nearest-rank over `command_finish` `duration_ms`), outcome rates (`ok_count`/`error_count`/`error_rate`; a finish event whose `ok` is missing or not strictly `true` is counted conservatively as an error), and `command_resolution_counts`. These are an always-available, zero-network performance and reliability signal for the most recent queued window.
 
@@ -164,11 +166,11 @@ Interaction rules:
 
 Crash and error diagnostics are reported to Sentry only when telemetry is enabled and the process is not opted out. These environment variables tune the Sentry client.
 
-| Variable | Values | Use |
-|----------|--------|-----|
-| `PM_SENTRY_DISABLED` | boolean | Disable Sentry error reporting for this process (the Sentry SDK is not even imported). `PM_TELEMETRY_DISABLED` / `PM_NO_TELEMETRY` also disable it. |
-| `SENTRY_DSN` | URL | Override the destination DSN. Defaults to the bundled pm-cli project DSN. |
-| `SENTRY_ENVIRONMENT` | string | Override the reported environment tag. Defaults to `test` under Vitest, `ci` when `CI` is set, otherwise `production`. |
+| Variable                    | Values         | Use                                                                                                                                                                                                                         |
+| --------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PM_SENTRY_DISABLED`        | boolean        | Disable Sentry error reporting for this process (the Sentry SDK is not even imported). `PM_TELEMETRY_DISABLED` / `PM_NO_TELEMETRY` also disable it.                                                                         |
+| `SENTRY_DSN`                | URL            | Override the destination DSN. Defaults to the bundled pm-cli project DSN.                                                                                                                                                   |
+| `SENTRY_ENVIRONMENT`        | string         | Override the reported environment tag. Defaults to `test` under Vitest, `ci` when `CI` is set, otherwise `production`.                                                                                                      |
 | `SENTRY_TRACES_SAMPLE_RATE` | number `0`–`1` | Fraction of command spans sampled for performance tracing. Defaults to `0.2` (20%). Set to `1` for full-trace performance debugging or `0` to disable tracing. Non-numeric or out-of-range values fall back to the default. |
 
 > Sentry is hard-disabled under Vitest (`VITEST` / `VITEST_WORKER_ID`), so these knobs are no-ops inside the test suite.
@@ -228,16 +230,20 @@ unaffected until you opt in).
 ```jsonc
 // .agents/pm/schema/workflows.json
 {
-  "workflow": { "open_status": "open", "close_status": "closed", "canceled_status": "canceled" },
+  "workflow": {
+    "open_status": "open",
+    "close_status": "closed",
+    "canceled_status": "canceled",
+  },
   "type_workflows": [
     {
       "type": "Story",
       "allowed_transitions": [
         ["open", "in_progress"],
-        ["in_progress", "closed"]
-      ]
-    }
-  ]
+        ["in_progress", "closed"],
+      ],
+    },
+  ],
 }
 ```
 
@@ -328,8 +334,16 @@ Unknown names in the list are ignored. Optional structured fields are only embed
 {
   "search": {
     // embed only the high-signal fields for compact, focused vectors
-    "corpus_fields": ["title", "description", "tags", "type", "priority", "status", "body"]
-  }
+    "corpus_fields": [
+      "title",
+      "description",
+      "tags",
+      "type",
+      "priority",
+      "status",
+      "body",
+    ],
+  },
 }
 ```
 
@@ -348,11 +362,11 @@ When query expansion or rerank providers fail, `pm search` degrades gracefully a
 
 Mutation commands invalidate keyword search caches immediately. Semantic vector refresh is controlled by `search.mutation_refresh_policy`:
 
-| Policy | Behavior |
-|--------|----------|
-| `semantic_configured` | default; refresh vectors during mutations only when semantic provider/store settings are explicitly configured |
-| `cache_only` | fastest writes; invalidate keyword caches and leave vector refresh to `pm reindex` or `pm health --refresh-vectors` |
-| `semantic_auto` | also apply implicit local Ollama/LanceDB defaults during mutations |
+| Policy                | Behavior                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `semantic_configured` | default; refresh vectors during mutations only when semantic provider/store settings are explicitly configured      |
+| `cache_only`          | fastest writes; invalidate keyword caches and leave vector refresh to `pm reindex` or `pm health --refresh-vectors` |
+| `semantic_auto`       | also apply implicit local Ollama/LanceDB defaults during mutations                                                  |
 
 Useful commands:
 
@@ -452,19 +466,19 @@ Fields live in `.agents/pm/schema/fields.json` with the shape `{ "fields": [Runt
 {
   "fields": [
     {
-      "key": "component",                 // required: canonical field name (snake_case)
-      "type": "string",                   // string | number | boolean | string_array (default string)
-      "metadata_key": "component",        // item metadata key (defaults to `key`)
-      "cli_flag": "component",            // long flag, used as --component (defaults to key)
-      "cli_aliases": ["comp"],            // extra accepted flag spellings (--comp)
+      "key": "component", // required: canonical field name (snake_case)
+      "type": "string", // string | number | boolean | string_array (default string)
+      "metadata_key": "component", // item metadata key (defaults to `key`)
+      "cli_flag": "component", // long flag, used as --component (defaults to key)
+      "cli_aliases": ["comp"], // extra accepted flag spellings (--comp)
       "commands": ["create", "update", "list"], // create | update | update_many | list | search | calendar | context
-      "description": "Owning component",  // shown in --help
-      "required": false,                  // required on every mutation when true
-      "required_on_create": false,        // required only on create
-      "allow_unset": true,                // allow clearing via --component "" / --no-component
-      "required_types": ["Task"]          // only required for these item types (subset of required*)
-    }
-  ]
+      "description": "Owning component", // shown in --help
+      "required": false, // required on every mutation when true
+      "required_on_create": false, // required only on create
+      "allow_unset": true, // allow clearing via --component "" / --no-component
+      "required_types": ["Task"], // only required for these item types (subset of required*)
+    },
+  ],
 }
 ```
 
@@ -495,9 +509,9 @@ End-to-end example — add a required-on-create `component` string field on `Tas
       "commands": ["create", "update", "list"],
       "description": "Owning component (auth, billing, ...).",
       "required_on_create": true,
-      "required_types": ["Task"]
-    }
-  ]
+      "required_types": ["Task"],
+    },
+  ],
 }
 ```
 

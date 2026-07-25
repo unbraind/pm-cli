@@ -297,7 +297,9 @@ describe("SDK mutation event stream", () => {
         author: undefined,
       }),
     ).toEqual(expect.any(String));
-    expect(_testOnlyMutationEvents.parseMutationEventLimit(undefined)).toBe(100);
+    expect(_testOnlyMutationEvents.parseMutationEventLimit(undefined)).toBe(
+      100,
+    );
     expect(_testOnlyMutationEvents.parseMutationEventLimit(0)).toBe(0);
     expect(
       _testOnlyMutationEvents.resolveMutationEventStart(undefined, fingerprint),
@@ -342,7 +344,10 @@ describe("SDK mutation event stream", () => {
       _testOnlyMutationEvents.isMutationEventCursorEnvelope(null, fingerprint),
     ).toBe(false);
     expect(
-      _testOnlyMutationEvents.isMutationEventCursorEnvelope("cursor", fingerprint),
+      _testOnlyMutationEvents.isMutationEventCursorEnvelope(
+        "cursor",
+        fingerprint,
+      ),
     ).toBe(false);
     expect(_testOnlyMutationEvents.isAbortError("AbortError")).toBe(false);
     expect(
@@ -376,7 +381,7 @@ describe("SDK mutation event stream", () => {
       let restore = eventIndexTestOnly.setDatabaseSync(null);
       await expect(
         listMutationEvents({ pmRoot: context.pmPath }),
-      ).rejects.toThrow(/stable node:sqlite/);
+      ).rejects.toThrow(/node:sqlite DatabaseSync/);
       restore();
 
       let constructions = 0;

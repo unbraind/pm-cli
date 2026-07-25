@@ -12,6 +12,7 @@ import {
   GOVERNANCE_PRESET_DEFAULTS,
   SETTINGS_DEFAULTS,
 } from "../shared/constants.js";
+import { resolveAuthor } from "../shared/author.js";
 import { readFileIfExists } from "../fs/fs-utils.js";
 import { writeWorkspaceJsonWithHistory } from "../history/workspace-history.js";
 import {
@@ -141,8 +142,7 @@ function withGovernanceExtras(
     base.require_close_reason = false;
   }
   base.duplicate_detection_mode = governance.duplicate_detection_mode;
-  base.duplicate_detection_threshold =
-    governance.duplicate_detection_threshold;
+  base.duplicate_detection_threshold = governance.duplicate_detection_threshold;
   base.duplicate_detection_limit = governance.duplicate_detection_limit;
   return base;
 }
@@ -232,8 +232,7 @@ function resolveGovernanceExtras(
       Number(threshold) <= 1,
     ].every(Boolean)
   ) {
-    extras.duplicate_detection_threshold =
-      threshold;
+    extras.duplicate_detection_threshold = threshold;
   }
   const limit = rawGovernance.duplicate_detection_limit;
   if (
@@ -244,8 +243,7 @@ function resolveGovernanceExtras(
       Number(limit) <= 20,
     ].every(Boolean)
   ) {
-    extras.duplicate_detection_limit =
-      limit;
+    extras.duplicate_detection_limit = limit;
   }
   return extras;
 }
@@ -282,14 +280,12 @@ export function resolveGovernanceKnobs(
       ...extras,
       require_close_reason: requireCloseReason,
       duplicate_detection_mode:
-        extras.duplicate_detection_mode ??
-        baseline.duplicate_detection_mode,
+        extras.duplicate_detection_mode ?? baseline.duplicate_detection_mode,
       duplicate_detection_threshold:
         extras.duplicate_detection_threshold ??
         baseline.duplicate_detection_threshold,
       duplicate_detection_limit:
-        extras.duplicate_detection_limit ??
-        baseline.duplicate_detection_limit,
+        extras.duplicate_detection_limit ?? baseline.duplicate_detection_limit,
     };
   }
   const baseline = resolveGovernanceKnobsFromPreset(preset);
@@ -1867,10 +1863,7 @@ export async function writeSettings(
       filePath: settingsPath,
       raw: afterRaw,
       op,
-      author:
-        process.env.PM_AUTHOR?.trim() ||
-        settings.author_default.trim() ||
-        "unknown",
+      author: resolveAuthor(undefined, settings.author_default),
       lockTtlSeconds: settings.locks.ttl_seconds,
       lockWaitMs: settings.locks.wait_ms,
       recordCreation: false,

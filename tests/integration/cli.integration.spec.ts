@@ -2026,7 +2026,6 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--component",
           "cli/create",
           "--regression",
-          "true",
           "--customer_impact",
           "create impact summary",
           "--dep",

@@ -11,7 +11,10 @@ import {
 } from "../../../src/cli/commands/next.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
 interface CreateItemOptions {
   title: string;
@@ -24,7 +27,10 @@ interface CreateItemOptions {
   dep?: string;
 }
 
-function createItem(context: TempPmContext, options: CreateItemOptions): string {
+function createItem(
+  context: TempPmContext,
+  options: CreateItemOptions,
+): string {
   const args = [
     "create",
     "--json",
@@ -65,17 +71,25 @@ describe("resolveNextOutputFormat", () => {
 
   it("defaults to toon and honours an explicit command format", () => {
     expect(resolveNextOutputFormat({}, {})).toBe("toon");
-    expect(resolveNextOutputFormat({ format: "MARKDOWN" }, {})).toBe("markdown");
+    expect(resolveNextOutputFormat({ format: "MARKDOWN" }, {})).toBe(
+      "markdown",
+    );
   });
 
   it("forces json under global --json and rejects a conflicting command format", () => {
     expect(resolveNextOutputFormat({}, { json: true })).toBe("json");
-    expect(resolveNextOutputFormat({ format: "json" }, { json: true })).toBe("json");
-    expect(() => resolveNextOutputFormat({ format: "toon" }, { json: true })).toThrow(/Cannot combine --json/);
+    expect(resolveNextOutputFormat({ format: "json" }, { json: true })).toBe(
+      "json",
+    );
+    expect(() =>
+      resolveNextOutputFormat({ format: "toon" }, { json: true }),
+    ).toThrow(/Cannot combine --json/);
   });
 
   it("rejects an unknown command format", () => {
-    expect(() => resolveNextOutputFormat({ format: "yaml" }, {})).toThrow(/markdown\|toon\|json/);
+    expect(() => resolveNextOutputFormat({ format: "yaml" }, {})).toThrow(
+      /markdown\|toon\|json/,
+    );
   });
 });
 
@@ -84,9 +98,32 @@ describe("runNext", () => {
     const previousAuthor = process.env.PM_AUTHOR;
     delete process.env.PM_AUTHOR;
     try {
-      expect(nextInternals.partitionCallerOwnedReady([], "settings-author")).toEqual({ available: [], held: [] });
-      expect(nextInternals.partitionCallerOwnedReady([], "   ")).toEqual({ available: [], held: [] });
-      expect(nextInternals.partitionCallerOwnedReady([], "settings-author", "explicit-author")).toEqual({ available: [], held: [] });
+      expect(
+        nextInternals.partitionCallerOwnedReady([], "settings-author"),
+      ).toEqual({ available: [], held: [] });
+      expect(nextInternals.partitionCallerOwnedReady([], "   ")).toEqual({
+        available: [],
+        held: [],
+      });
+      expect(
+        nextInternals.partitionCallerOwnedReady(
+          [],
+          "settings-author",
+          "explicit-author",
+        ),
+      ).toEqual({ available: [], held: [] });
+      expect(
+        nextInternals.resolveNextCallerAuthor(
+          { assignee: " delegated-agent " },
+          "settings-author",
+        ),
+      ).toBe("delegated-agent");
+      expect(
+        nextInternals.resolveNextCallerAuthor(
+          { assignee: " ", callerAuthor: "caller-agent" },
+          "settings-author",
+        ),
+      ).toBe("caller-agent");
     } finally {
       if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
       else process.env.PM_AUTHOR = previousAuthor;
@@ -96,16 +133,34 @@ describe("runNext", () => {
   it("recommends in-progress work first, ranks ready leaves, and lists blocked leaves with their blockers", async () => {
     await withTempPmPath(async (context) => {
       const epic = createItem(context, { title: "Build auth", type: "Epic" });
-      const child = createItem(context, { title: "Design schema", parent: epic, priority: "1" });
-      const blocker = createItem(context, { title: "Provision DB", priority: "0" });
-      const blockee = createItem(context, { title: "Run migration", priority: "0", dep: `id=${blocker},kind=blocked_by` });
-      const wip = createItem(context, { title: "Already underway", priority: "2" });
-      context.runCli(["update", wip, "--status", "in_progress", "--json"], { expectJson: true });
+      const child = createItem(context, {
+        title: "Design schema",
+        parent: epic,
+        priority: "1",
+      });
+      const blocker = createItem(context, {
+        title: "Provision DB",
+        priority: "0",
+      });
+      const blockee = createItem(context, {
+        title: "Run migration",
+        priority: "0",
+        dep: `id=${blocker},kind=blocked_by`,
+      });
+      const wip = createItem(context, {
+        title: "Already underway",
+        priority: "2",
+      });
+      context.runCli(["update", wip, "--status", "in_progress", "--json"], {
+        expectJson: true,
+      });
 
       const result = await runNext({}, { path: context.pmPath });
 
       expect(result.recommended?.id).toBe(wip);
-      expect(result.recommended?.reasons).toContain("in progress — resume to finish");
+      expect(result.recommended?.reasons).toContain(
+        "in progress — resume to finish",
+      );
       const readyIds = result.ready.map((entry) => entry.id);
       expect(readyIds).toContain(child);
       expect(readyIds).toContain(blocker);
@@ -119,15 +174,24 @@ describe("runNext", () => {
       expect(result.blocked[0].blockers).toEqual([
         { id: blocker, title: "Provision DB", status: "open" },
       ]);
-      expect(result.summary).toMatchObject({ recommended: true, in_progress: 1, containers: 1 });
+      expect(result.summary).toMatchObject({
+        recommended: true,
+        in_progress: 1,
+        containers: 1,
+      });
     });
   });
 
   it("rationalises an open recommendation with priority, deadline, parent, resolved blockers, and downstream unblocks", async () => {
     await withTempPmPath(async (context) => {
       const epic = createItem(context, { title: "Parent epic", type: "Epic" });
-      const doneBlocker = createItem(context, { title: "Already done", status: "open" });
-      context.runCli(["close", doneBlocker, "done", "--json"], { expectJson: true });
+      const doneBlocker = createItem(context, {
+        title: "Already done",
+        status: "open",
+      });
+      context.runCli(["close", doneBlocker, "done", "--json"], {
+        expectJson: true,
+      });
       const focus = createItem(context, {
         title: "Focus task",
         priority: "0",
@@ -135,7 +199,10 @@ describe("runNext", () => {
         deadline: deadlineOffsetMs(5 * DAY_MS),
         dep: `id=${doneBlocker},kind=blocked_by`,
       });
-      createItem(context, { title: "Downstream", dep: `id=${focus},kind=blocked_by` });
+      createItem(context, {
+        title: "Downstream",
+        dep: `id=${focus},kind=blocked_by`,
+      });
 
       const result = await runNext({}, { path: context.pmPath });
       expect(result.recommended?.id).toBe(focus);
@@ -144,32 +211,62 @@ describe("runNext", () => {
       expect(reasons).toContain("priority p0 (highest)");
       expect(reasons).toContain("all blockers resolved");
       expect(reasons).toContain(`advances ${epic}`);
-      expect(reasons.some((reason) => reason.startsWith("deadline ") && reason.includes("(in "))).toBe(true);
-      expect(reasons.some((reason) => reason.startsWith("unblocks 1 item(s):"))).toBe(true);
+      expect(
+        reasons.some(
+          (reason) => reason.startsWith("deadline ") && reason.includes("(in "),
+        ),
+      ).toBe(true);
+      expect(
+        reasons.some((reason) => reason.startsWith("unblocks 1 item(s):")),
+      ).toBe(true);
     });
   });
 
   it("renders overdue and due-today deadline rationales", async () => {
     await withTempPmPath(async (context) => {
-      createItem(context, { title: "Overdue task", priority: "0", deadline: deadlineOffsetMs(-5 * DAY_MS) });
+      createItem(context, {
+        title: "Overdue task",
+        priority: "0",
+        deadline: deadlineOffsetMs(-5 * DAY_MS),
+      });
       const overdue = await runNext({}, { path: context.pmPath });
-      expect(overdue.recommended?.reasons.some((reason) => reason.includes("(overdue "))).toBe(true);
+      expect(
+        overdue.recommended?.reasons.some((reason) =>
+          reason.includes("(overdue "),
+        ),
+      ).toBe(true);
     });
     await withTempPmPath(async (context) => {
       // A date-only deadline of today resolves to today's UTC midnight, so the
       // calendar-date delta is exactly 0 regardless of the wall-clock time.
       const todayDate = new Date(Date.now()).toISOString().slice(0, 10);
-      createItem(context, { title: "Due today", priority: "0", deadline: todayDate });
+      createItem(context, {
+        title: "Due today",
+        priority: "0",
+        deadline: todayDate,
+      });
       const today = await runNext({}, { path: context.pmPath });
-      expect(today.recommended?.reasons.some((reason) => reason.includes("(due today)"))).toBe(true);
+      expect(
+        today.recommended?.reasons.some((reason) =>
+          reason.includes("(due today)"),
+        ),
+      ).toBe(true);
     });
   });
 
   it("ranks multiple blocked leaves by criticality", async () => {
     await withTempPmPath(async (context) => {
       const blocker = createItem(context, { title: "Shared blocker" });
-      const high = createItem(context, { title: "High blocked", priority: "0", dep: `id=${blocker},kind=blocked_by` });
-      const low = createItem(context, { title: "Low blocked", priority: "3", dep: `id=${blocker},kind=blocked_by` });
+      const high = createItem(context, {
+        title: "High blocked",
+        priority: "0",
+        dep: `id=${blocker},kind=blocked_by`,
+      });
+      const low = createItem(context, {
+        title: "Low blocked",
+        priority: "3",
+        dep: `id=${blocker},kind=blocked_by`,
+      });
       const result = await runNext({}, { path: context.pmPath });
       // The shared blocker is the only ready leaf; both dependents are blocked and
       // ranked p0 before p3.
@@ -183,21 +280,46 @@ describe("runNext", () => {
       const p3 = createItem(context, { title: "Lowest", priority: "3" });
       const p1 = createItem(context, { title: "Highest", priority: "1" });
       const p2 = createItem(context, { title: "Middle", priority: "2" });
-      const decision = createItem(context, { title: "Maintainer choice", type: "Decision", priority: "0" });
-      const foreignDecision = createItem(context, { title: "Other maintainer choice", type: "Decision", priority: "1" });
-      context.runCli(["update", foreignDecision, "--assignee", "other-agent", "--json"], { expectJson: true });
+      const decision = createItem(context, {
+        title: "Maintainer choice",
+        type: "Decision",
+        priority: "0",
+      });
+      const foreignDecision = createItem(context, {
+        title: "Other maintainer choice",
+        type: "Decision",
+        priority: "1",
+      });
+      context.runCli(
+        ["update", foreignDecision, "--assignee", "other-agent", "--json"],
+        { expectJson: true },
+      );
       const result = await runNext({}, { path: context.pmPath });
       expect(result.recommended?.id).toBe(p1);
       expect(result.recommended?.rank).toBe(1);
-      expect(result.ready.map((entry) => [entry.id, entry.rank])).toEqual([[p2, 2], [p3, 3]]);
-      expect(result.decision_needed.map((entry) => entry.id)).toEqual([decision, foreignDecision]);
+      expect(result.ready.map((entry) => [entry.id, entry.rank])).toEqual([
+        [p2, 2],
+        [p3, 3],
+      ]);
+      expect(result.decision_needed.map((entry) => entry.id)).toEqual([
+        decision,
+        foreignDecision,
+      ]);
       expect(result.held_by_others).toEqual([]);
-      const optedIn = await runNext({ includeDecisions: true }, { path: context.pmPath });
+      const optedIn = await runNext(
+        { includeDecisions: true },
+        { path: context.pmPath },
+      );
       expect(optedIn.recommended?.id).toBe(decision);
       expect(optedIn.decision_needed).toEqual([]);
-      expect(optedIn.held_by_others).toEqual([{ id: foreignDecision, assignee: "other-agent" }]);
+      expect(optedIn.held_by_others).toEqual([
+        { id: foreignDecision, assignee: "other-agent" },
+      ]);
 
-      const numericPriority = await runNext({ priority: 2 }, { path: context.pmPath });
+      const numericPriority = await runNext(
+        { priority: 2 },
+        { path: context.pmPath },
+      );
       expect(numericPriority.recommended?.id).toBe(p2);
     });
   });
@@ -217,10 +339,7 @@ describe("runNext", () => {
         { expectJson: true },
       );
 
-      const result = await runNext(
-        { limit: "1" },
-        { path: context.pmPath },
-      );
+      const result = await runNext({ limit: "1" }, { path: context.pmPath });
       expect(result.decision_needed).toHaveLength(1);
       expect(result.held_by_others).toHaveLength(1);
       expect(result.truncation).toEqual({
@@ -236,10 +355,23 @@ describe("runNext", () => {
 
   it("keeps completed containers behind concrete leaf work and marks container closeout rationale", async () => {
     await withTempPmPath(async (context) => {
-      const completedEpic = createItem(context, { title: "Completed platform epic", type: "Epic", priority: "0" });
-      const shippedChild = createItem(context, { title: "Already shipped", parent: completedEpic, priority: "0" });
-      context.runCli(["close", shippedChild, "shipped", "--json"], { expectJson: true });
-      const leaf = createItem(context, { title: "Actual next leaf", priority: "1" });
+      const completedEpic = createItem(context, {
+        title: "Completed platform epic",
+        type: "Epic",
+        priority: "0",
+      });
+      const shippedChild = createItem(context, {
+        title: "Already shipped",
+        parent: completedEpic,
+        priority: "0",
+      });
+      context.runCli(["close", shippedChild, "shipped", "--json"], {
+        expectJson: true,
+      });
+      const leaf = createItem(context, {
+        title: "Actual next leaf",
+        priority: "1",
+      });
 
       const result = await runNext({}, { path: context.pmPath });
       expect(result.recommended?.id).toBe(leaf);
@@ -249,14 +381,19 @@ describe("runNext", () => {
       const closeoutOnly = await runNext({}, { path: context.pmPath });
       expect(closeoutOnly.recommended?.id).toBe(completedEpic);
       expect(closeoutOnly.ready).toEqual([]);
-      expect(closeoutOnly.recommended?.reasons).toContain("completed container — governance closeout");
+      expect(closeoutOnly.recommended?.reasons).toContain(
+        "completed container — governance closeout",
+      );
     });
   });
 
   it("scopes to a parent subtree, honours --limit/--blocked-limit, and --ready-only", async () => {
     await withTempPmPath(async (context) => {
       const epic = createItem(context, { title: "Scoped epic", type: "Epic" });
-      const inSubtree = createItem(context, { title: "Subtree leaf", parent: epic });
+      const inSubtree = createItem(context, {
+        title: "Subtree leaf",
+        parent: epic,
+      });
       createItem(context, { title: "Outside leaf" });
       const scoped = await runNext({ parent: epic }, { path: context.pmPath });
       expect(scoped.recommended?.id).toBe(inSubtree);
@@ -274,7 +411,10 @@ describe("runNext", () => {
       expect(zeroLimit.filters.limit).toBe(5);
       expect(zeroLimit.ready).toHaveLength(1);
 
-      const readyOnly = await runNext({ readyOnly: true }, { path: context.pmPath });
+      const readyOnly = await runNext(
+        { readyOnly: true },
+        { path: context.pmPath },
+      );
       expect(readyOnly.filters.ready_only).toBe(true);
       expect(readyOnly.blocked).toHaveLength(0);
     });
@@ -299,10 +439,31 @@ describe("runNext", () => {
   it("keeps lifecycle and dangling-dependency blockers visible and skips foreign work", async () => {
     await withTempPmPath(async (context) => {
       const mine = createItem(context, { title: "My work", priority: "1" });
-      const foreign = createItem(context, { title: "Foreign work", priority: "0" });
-      context.runCli(["update", foreign, "--status", "in_progress", "--assignee", "other-agent", "--json"], { expectJson: true });
-      const dangling = createItem(context, { title: "Dangling blocker", dep: "id=pm-ghost,kind=blocked_by" });
-      const lifecycleBlocked = createItem(context, { title: "Lifecycle blocked", status: "blocked", blockedBy: "pm-ghost" });
+      const foreign = createItem(context, {
+        title: "Foreign work",
+        priority: "0",
+      });
+      context.runCli(
+        [
+          "update",
+          foreign,
+          "--status",
+          "in_progress",
+          "--assignee",
+          "other-agent",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const dangling = createItem(context, {
+        title: "Dangling blocker",
+        dep: "id=pm-ghost,kind=blocked_by",
+      });
+      const lifecycleBlocked = createItem(context, {
+        title: "Lifecycle blocked",
+        status: "blocked",
+        blockedBy: "pm-ghost",
+      });
 
       const previousAuthor = process.env.PM_AUTHOR;
       process.env.PM_AUTHOR = "test-author";
@@ -310,9 +471,17 @@ describe("runNext", () => {
         const result = await runNext({}, { path: context.pmPath });
         expect(result.recommended?.id).toBe(mine);
         expect(result.ready).toEqual([]);
-        expect(result.held_by_others).toEqual([{ id: foreign, assignee: "other-agent" }]);
-        expect(result.blocked.map((entry) => entry.id).sort()).toEqual([dangling, lifecycleBlocked].sort());
-        expect(result.summary).toMatchObject({ ready: 1, blocked: 2, candidates: 4 });
+        expect(result.held_by_others).toEqual([
+          { id: foreign, assignee: "other-agent" },
+        ]);
+        expect(result.blocked.map((entry) => entry.id).sort()).toEqual(
+          [dangling, lifecycleBlocked].sort(),
+        );
+        expect(result.summary).toMatchObject({
+          ready: 1,
+          blocked: 2,
+          candidates: 4,
+        });
       } finally {
         if (previousAuthor === undefined) delete process.env.PM_AUTHOR;
         else process.env.PM_AUTHOR = previousAuthor;
@@ -322,10 +491,14 @@ describe("runNext", () => {
 
   it("rejects an unknown --parent and an invalid --limit", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runNext({ parent: "pm-missing" }, { path: context.pmPath })).rejects.toMatchObject<Partial<PmCliError>>({
+      await expect(
+        runNext({ parent: "pm-missing" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
-      await expect(runNext({ limit: "abc" }, { path: context.pmPath })).rejects.toMatchObject<Partial<PmCliError>>({
+      await expect(
+        runNext({ limit: "abc" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -338,14 +511,22 @@ describe("runNext", () => {
       expect(empty.suggestions?.[0]).toContain("pm create");
 
       const blocker = createItem(context, { title: "Hard blocker" });
-      createItem(context, { title: "Waiting work", dep: `id=${blocker},kind=blocked_by` });
-      context.runCli(["update", blocker, "--status", "blocked", "--json"], { expectJson: true });
+      createItem(context, {
+        title: "Waiting work",
+        dep: `id=${blocker},kind=blocked_by`,
+      });
+      context.runCli(["update", blocker, "--status", "blocked", "--json"], {
+        expectJson: true,
+      });
       const blockedOnly = await runNext({}, { path: context.pmPath });
       expect(blockedOnly.recommended).toBeNull();
       expect(blockedOnly.suggestions?.[0]).toContain(`closing ${blocker}`);
     });
     await withTempPmPath(async (context) => {
-      createItem(context, { title: "Blocked without references", status: "blocked" });
+      createItem(context, {
+        title: "Blocked without references",
+        status: "blocked",
+      });
       const blockedOnly = await runNext({}, { path: context.pmPath });
       expect(blockedOnly.recommended).toBeNull();
       expect(blockedOnly.suggestions?.[0]).toContain("add blocker context");
@@ -355,11 +536,23 @@ describe("runNext", () => {
   it("propagates de-duplicated, sorted parse warnings from the corpus reads", async () => {
     await withTempPmPath(async (context) => {
       const tasksDir = path.join(context.pmPath, "tasks");
-      await writeFile(path.join(tasksDir, "invalid-a.toon"), "id: invalid-a\nstatus: open\n", "utf8");
-      await writeFile(path.join(tasksDir, "invalid-b.toon"), "this is not TOON item metadata\n", "utf8");
+      await writeFile(
+        path.join(tasksDir, "invalid-a.toon"),
+        "id: invalid-a\nstatus: open\n",
+        "utf8",
+      );
+      await writeFile(
+        path.join(tasksDir, "invalid-b.toon"),
+        "this is not TOON item metadata\n",
+        "utf8",
+      );
       const result = await runNext({}, { path: context.pmPath });
       expect(result.warnings?.length ?? 0).toBeGreaterThanOrEqual(2);
-      expect(result.warnings).toEqual([...(result.warnings ?? [])].sort((left, right) => left.localeCompare(right)));
+      expect(result.warnings).toEqual(
+        [...(result.warnings ?? [])].sort((left, right) =>
+          left.localeCompare(right),
+        ),
+      );
     });
   });
 });
@@ -373,7 +566,14 @@ function nextResult(overrides: Partial<NextResult>): NextResult {
     decision_needed: [],
     blocked: [],
     held_by_others: [],
-    summary: { recommended: false, ready: 0, blocked: 0, in_progress: 0, candidates: 0, containers: 0 },
+    summary: {
+      recommended: false,
+      ready: 0,
+      blocked: 0,
+      in_progress: 0,
+      candidates: 0,
+      containers: 0,
+    },
     filters: {
       type: null,
       tag: null,
@@ -471,12 +671,21 @@ describe("renderNextMarkdown", () => {
             unblocks: [],
           },
         ],
-        summary: { recommended: true, ready: 1, blocked: 1, in_progress: 0, candidates: 2, containers: 0 },
+        summary: {
+          recommended: true,
+          ready: 1,
+          blocked: 1,
+          in_progress: 0,
+          candidates: 2,
+          containers: 0,
+        },
         filters: { ...nextResult({}).filters, parent: "pm-epic" },
       }),
     );
     expect(markdown).toContain("## Recommended");
-    expect(markdown).toContain("why: open and ready to start; priority p0 (highest)");
+    expect(markdown).toContain(
+      "why: open and ready to start; priority p0 (highest)",
+    );
     expect(markdown).toContain("scope: subtree of pm-epic");
     expect(markdown).toContain("unblocks:1");
     expect(markdown).toContain("blocked_by:pm-gate(open), pm-gate2(?)");
@@ -487,7 +696,9 @@ describe("renderNextMarkdown", () => {
       nextResult({
         decision_needed: undefined as never,
         filters: { ...nextResult({}).filters, ready_only: true },
-        suggestions: ["pm create --type Task --title \"...\" to add a new work item"],
+        suggestions: [
+          'pm create --type Task --title "..." to add a new work item',
+        ],
       }),
     );
     expect(markdown).toContain("No ready work.");

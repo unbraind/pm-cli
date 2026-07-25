@@ -34,7 +34,7 @@ function loadStableDatabaseSync(
   loadModule: (specifier: string) => unknown,
 ): DatabaseSyncConstructor | null {
   const nodeMajor = Number.parseInt(nodeVersion, 10);
-  return Number.isFinite(nodeMajor) && nodeMajor >= 23
+  return Number.isFinite(nodeMajor) && nodeMajor >= 22
     ? loadDatabaseSync(loadModule)
     : null;
 }

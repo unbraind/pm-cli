@@ -18,6 +18,7 @@ import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import {
@@ -97,7 +98,9 @@ export interface MergeInstallResult {
 }
 
 /** Resolve the enclosing Git worktree root or return null outside Git. */
-export async function findGitWorkspaceRoot(cwd: string): Promise<string | null> {
+export async function findGitWorkspaceRoot(
+  cwd: string,
+): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync(
       "git",
@@ -260,7 +263,11 @@ export async function auditMergeAttributeFence(
     directory = parent;
   }
   if (fenceDirectory === null) {
-    return { status: "not_installed", missing_patterns: [], stale_patterns: [] };
+    return {
+      status: "not_installed",
+      missing_patterns: [],
+      stale_patterns: [],
+    };
   }
   const fencePath = path.join(fenceDirectory, ".gitattributes");
   const start = fenceContent.indexOf(PM_GITATTRIBUTES_START);
@@ -321,12 +328,12 @@ export async function refreshMergeAttributeFenceIfInstalled(
     path.resolve(pmRoot),
   );
   const lockSettings = await readSettings(pmRoot);
-  const owner = (process.env.PM_AUTHOR ?? lockSettings.author_default).trim();
+  const owner = resolveAuthor(undefined, lockSettings.author_default);
   const releaseLock = await acquireLock(
     pmRoot,
     MERGE_FENCE_LOCK_ID,
     lockSettings.locks.ttl_seconds,
-    owner.length > 0 ? owner : "unknown",
+    owner,
     false,
     resolveGovernanceKnobs(lockSettings).force_required_for_stale_lock,
     lockSettings.locks.wait_ms,

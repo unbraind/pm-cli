@@ -21,12 +21,25 @@ import {
   resolveScaleItemCount,
 } from "./scale-workspace.mjs";
 
-const DEFAULT_BUDGET_PATH = path.join(repoRoot, "scripts", "bench", "scale-budgets.json");
-const DEFAULT_REPORT_PATH = path.join(repoRoot, "docs", "performance", "latest-scale-report.json");
+const DEFAULT_BUDGET_PATH = path.join(
+  repoRoot,
+  "scripts",
+  "bench",
+  "scale-budgets.json",
+);
+const DEFAULT_REPORT_PATH = path.join(
+  repoRoot,
+  "docs",
+  "performance",
+  "latest-scale-report.json",
+);
 const CLI_PATH = path.join(repoRoot, "dist", "cli.js");
 const RSS_SAMPLE_INTERVAL_MS = 5;
 const LATENCY_NOISE_MARGIN_MS = 25;
-const PRODUCT_TARGET = Object.freeze({ p95_ms: 1000, max_estimated_tokens: 5000 });
+const PRODUCT_TARGET = Object.freeze({
+  p95_ms: 1000,
+  max_estimated_tokens: 5000,
+});
 
 /** Estimate agent tokens from UTF-8 bytes using the repo-wide four-byte rule. */
 export function estimateTokens(bytes) {
@@ -35,7 +48,8 @@ export function estimateTokens(bytes) {
 
 /** Return the nearest-rank percentile for a non-empty numeric sample. */
 export function nearestRank(values, percentile) {
-  if (values.length === 0) throw new Error("Cannot calculate a percentile for an empty sample");
+  if (values.length === 0)
+    throw new Error("Cannot calculate a percentile for an empty sample");
   const sorted = [...values].sort((left, right) => left - right);
   const rank = Math.max(1, Math.ceil((percentile / 100) * sorted.length));
   return sorted[Math.min(sorted.length - 1, rank - 1)];
@@ -55,7 +69,9 @@ export function summarizeSamples(samples, warmupSample) {
     max_ms: Math.round(Math.max(...latencies)),
     max_peak_rss_bytes: rssValues.length === 0 ? null : Math.max(...rssValues),
     max_output_bytes: Math.max(...samples.map((sample) => sample.output_bytes)),
-    max_estimated_tokens: Math.max(...samples.map((sample) => sample.estimated_tokens)),
+    max_estimated_tokens: Math.max(
+      ...samples.map((sample) => sample.estimated_tokens),
+    ),
     ...(warmupSample
       ? {
           warmup_ms: Math.round(warmupSample.duration_ms),
@@ -63,6 +79,33 @@ export function summarizeSamples(samples, warmupSample) {
         }
       : {}),
   };
+}
+
+/**
+ * Derive the fixed transport tax for operations measured through both layers.
+ *
+ * Positive values are milliseconds paid by the CLI adapter above the
+ * equivalent in-process SDK operation. Negative values are retained because
+ * they expose measurement noise instead of silently rewriting evidence.
+ */
+export function buildTransportOverheadReport(transports) {
+  if (!transports.cli || !transports.sdk) return null;
+  return Object.fromEntries(
+    Object.keys(transports.cli)
+      .filter((name) => transports.sdk[name] !== undefined)
+      .map((name) => {
+        const cli = transports.cli[name];
+        const sdk = transports.sdk[name];
+        return [
+          name,
+          {
+            min_cli_minus_sdk_ms: cli.min_ms - sdk.min_ms,
+            p50_cli_minus_sdk_ms: cli.p50_ms - sdk.p50_ms,
+            p95_cli_minus_sdk_ms: cli.p95_ms - sdk.p95_ms,
+          },
+        ];
+      }),
+  );
 }
 
 /** Read one Linux process RSS sample, or return undefined on other hosts. */
@@ -80,11 +123,15 @@ export async function readLinuxRssBytes(pid, platform = process.platform) {
 /** Measure one real built-CLI subprocess including output and sampled RSS. */
 export async function measureCliProcess(args, environment) {
   const startedAt = performance.now();
-  const child = spawn(environment.executablePath ?? process.execPath, [CLI_PATH, ...args], {
-    cwd: environment.workspaceRoot,
-    env: environment.env,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  const child = spawn(
+    environment.executablePath ?? process.execPath,
+    [CLI_PATH, ...args],
+    {
+      cwd: environment.workspaceRoot,
+      env: environment.env,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
   let stdout = "";
   let stderr = "";
   let complete = false;
@@ -100,7 +147,8 @@ export async function measureCliProcess(args, environment) {
   const resourceSampler = (async () => {
     while (!complete) {
       const rssBytes = await readLinuxRssBytes(child.pid);
-      if (rssBytes !== undefined) peakRssBytes = Math.max(peakRssBytes ?? 0, rssBytes);
+      if (rssBytes !== undefined)
+        peakRssBytes = Math.max(peakRssBytes ?? 0, rssBytes);
       await delay(RSS_SAMPLE_INTERVAL_MS);
     }
   })();
@@ -110,7 +158,9 @@ export async function measureCliProcess(args, environment) {
       child.once("close", (code) => resolve(code === 0 ? 0 : 1));
     });
     if (exitCode !== 0) {
-      throw new Error(`Benchmark command failed (${exitCode}): pm ${args.join(" ")}\n${stderr.trim()}`);
+      throw new Error(
+        `Benchmark command failed (${exitCode}): pm ${args.join(" ")}\n${stderr.trim()}`,
+      );
     }
     const outputBytes = Buffer.byteLength(stdout);
     return {
@@ -139,13 +189,33 @@ async function measureSdkOperation(operation) {
 
 function cliCommandDefinitions(manifest) {
   return [
-    { name: "list", args: () => ["list", "--status", "all", "--limit", "20", "--json"] },
-    { name: "get", args: () => ["get", manifest.sample_ids.get, "--json"] },
-    { name: "next", args: () => ["next", "--limit", "10", "--json"] },
-    { name: "context", args: () => ["context", "--limit", "10", "--json"] },
+    {
+      name: "list",
+      args: () => ["list", "--status", "all", "--limit", "20", "--json"],
+    },
+    {
+      name: "get",
+      args: () => ["get", manifest.sample_ids.get, "--json"],
+    },
+    {
+      name: "next",
+      args: () => ["next", "--limit", "10", "--json"],
+    },
+    {
+      name: "context",
+      args: () => ["context", "--limit", "10", "--json"],
+    },
     {
       name: "search",
-      args: () => ["search", "synthetic", "--status", "all", "--limit", "10", "--json"],
+      args: () => [
+        "search",
+        "synthetic",
+        "--status",
+        "all",
+        "--limit",
+        "10",
+        "--json",
+      ],
     },
     {
       name: "create",
@@ -175,7 +245,10 @@ function sdkCommandDefinitions(client, manifest) {
     { name: "get", run: () => client.get(manifest.sample_ids.get) },
     { name: "next", run: () => client.next({ limit: "10" }) },
     { name: "context", run: () => client.context({ limit: "10" }) },
-    { name: "search", run: () => client.search("synthetic", { status: "all", limit: "10" }) },
+    {
+      name: "search",
+      run: () => client.search("synthetic", { status: "all", limit: "10" }),
+    },
     {
       name: "create",
       run: (iteration) =>
@@ -186,17 +259,25 @@ function sdkCommandDefinitions(client, manifest) {
           status: "open",
         }),
     },
-    { name: "claim", run: (iteration) => client.claim(manifest.sample_ids.open[iteration]) },
+    {
+      name: "claim",
+      run: (iteration) => client.claim(manifest.sample_ids.open[iteration]),
+    },
   ];
 }
 
 async function runCliBenchmarks(manifest, iterations, environment) {
   const report = {};
   for (const definition of cliCommandDefinitions(manifest)) {
-    const warmup = await measureCliProcess(definition.args(iterations), environment);
+    const warmup = await measureCliProcess(
+      definition.args(iterations),
+      environment,
+    );
     const samples = [];
     for (let iteration = 0; iteration < iterations; iteration += 1) {
-      samples.push(await measureCliProcess(definition.args(iteration), environment));
+      samples.push(
+        await measureCliProcess(definition.args(iteration), environment),
+      );
     }
     report[definition.name] = summarizeSamples(samples, warmup);
   }
@@ -239,10 +320,57 @@ export function buildTierBudget(report, headroom = 1.25) {
   const transports = {};
   for (const [transport, commands] of Object.entries(report.transports)) {
     transports[transport] = Object.fromEntries(
-      Object.entries(commands).map(([name, summary]) => [name, budgetFromSummary(summary, headroom)]),
+      Object.entries(commands).map(([name, summary]) => [
+        name,
+        budgetFromSummary(summary, headroom),
+      ]),
     );
   }
-  return { headroom, transports };
+  const transportOverhead =
+    report.transport_overhead === null ||
+    report.transport_overhead === undefined
+      ? undefined
+      : Object.fromEntries(
+          Object.entries(report.transport_overhead).map(([name, summary]) => [
+            name,
+            {
+              max_cli_minus_sdk_ms: Math.ceil(
+                Math.max(0, summary.min_cli_minus_sdk_ms) * headroom,
+              ),
+            },
+          ]),
+        );
+  return {
+    headroom,
+    transports,
+    ...(transportOverhead === undefined
+      ? {}
+      : { transport_overhead: transportOverhead }),
+  };
+}
+
+function compareTransportOverhead(report, tier) {
+  if (
+    report.transport_overhead === null ||
+    report.transport_overhead === undefined
+  ) {
+    return [];
+  }
+  const violations = [];
+  for (const [name, summary] of Object.entries(report.transport_overhead)) {
+    const budget = tier.transport_overhead?.[name];
+    if (!budget) {
+      violations.push(`transport_overhead.${name}: missing budget`);
+    } else if (
+      summary.min_cli_minus_sdk_ms >
+      budget.max_cli_minus_sdk_ms + LATENCY_NOISE_MARGIN_MS
+    ) {
+      violations.push(
+        `transport_overhead.${name}: best delta ${summary.min_cli_minus_sdk_ms}ms > ${budget.max_cli_minus_sdk_ms + LATENCY_NOISE_MARGIN_MS}ms`,
+      );
+    }
+  }
+  return violations;
 }
 
 /** Return human-readable regression and product-target violations. */
@@ -250,7 +378,9 @@ export function compareScaleBudgets(report, manifest) {
   const violations = [];
   const tier = manifest?.tiers?.[String(report.fixture.item_count)];
   if (!tier) {
-    violations.push(`missing regression budget for ${report.fixture.item_count} items`);
+    violations.push(
+      `missing regression budget for ${report.fixture.item_count} items`,
+    );
     return violations;
   }
   for (const [transport, commands] of Object.entries(report.transports)) {
@@ -260,9 +390,12 @@ export function compareScaleBudgets(report, manifest) {
         violations.push(`${transport}.${name}: missing budget`);
         continue;
       }
-      violations.push(...compareCommandBudget(transport, name, summary, budget));
+      violations.push(
+        ...compareCommandBudget(transport, name, summary, budget),
+      );
     }
   }
+  violations.push(...compareTransportOverhead(report, tier));
   return violations;
 }
 
@@ -303,7 +436,8 @@ function productTargetStatus(transports) {
         p95_ms: summary.p95_ms,
         max_estimated_tokens: summary.max_estimated_tokens,
         latency_ok: summary.p95_ms <= PRODUCT_TARGET.p95_ms,
-        tokens_ok: summary.max_estimated_tokens <= PRODUCT_TARGET.max_estimated_tokens,
+        tokens_ok:
+          summary.max_estimated_tokens <= PRODUCT_TARGET.max_estimated_tokens,
       });
     }
   }
@@ -321,8 +455,15 @@ async function updateBudgetManifest(manifestPath, report, headroom) {
   } catch {
     // A first baseline creates the manifest.
   }
-  manifest.tiers[String(report.fixture.item_count)] = buildTierBudget(report, headroom);
-  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  manifest.tiers[String(report.fixture.item_count)] = buildTierBudget(
+    report,
+    headroom,
+  );
+  await writeFile(
+    manifestPath,
+    `${JSON.stringify(manifest, null, 2)}\n`,
+    "utf8",
+  );
 }
 
 function resolveTransport(value) {
@@ -336,7 +477,10 @@ function resolveTransport(value) {
 /** Generate a fixture, benchmark requested transports, and return the report. */
 export async function runScaleBenchmarks(options) {
   const itemCount = resolveScaleItemCount(options.itemCount);
-  const iterations = parsePositiveInteger(options.iterations ?? 3, "--iterations");
+  const iterations = parsePositiveInteger(
+    options.iterations ?? 3,
+    "--iterations",
+  );
   if (iterations > 100) throw new Error("--iterations must be <= 100");
   const transport = resolveTransport(options.transport);
   const ownsWorkspace = options.workspaceRoot === undefined;
@@ -352,7 +496,9 @@ export async function runScaleBenchmarks(options) {
       force: true,
     });
     if (fixture.sample_ids.open.length < iterations + 1) {
-      throw new Error(`Fixture has ${fixture.sample_ids.open.length} open items; need ${iterations + 1}`);
+      throw new Error(
+        `Fixture has ${fixture.sample_ids.open.length} open items; need ${iterations + 1}`,
+      );
     }
     const environment = {
       workspaceRoot,
@@ -360,7 +506,6 @@ export async function runScaleBenchmarks(options) {
         ...process.env,
         PM_PATH: fixture.pm_root,
         PM_GLOBAL_PATH: path.join(workspaceRoot, ".pm-global"),
-        PM_AUTHOR: "pm-scale-benchmark",
         PM_SENTRY_DISABLED: "1",
         PM_TELEMETRY_DISABLED: "1",
         PM_TELEMETRY_OTEL_DISABLED: "1",
@@ -385,6 +530,7 @@ export async function runScaleBenchmarks(options) {
       fixture,
       product_target: productTargetStatus(transports),
       transports,
+      transport_overhead: buildTransportOverheadReport(transports),
     };
   } finally {
     if (ownsWorkspace && options.keepWorkspace !== true) {
@@ -396,7 +542,9 @@ export async function runScaleBenchmarks(options) {
 /** Resolve a path-valued CLI flag while preserving a caller-supplied default. */
 export function resolveBenchmarkPathFlag(flags, key, defaultPath) {
   const value = flags.get(key);
-  return value === undefined || value === true ? defaultPath : path.resolve(String(value));
+  return value === undefined || value === true
+    ? defaultPath
+    : path.resolve(String(value));
 }
 
 /** Convert parsed benchmark flags into the runner's stable default options. */
@@ -405,7 +553,8 @@ export function benchmarkOptionsFromFlags(flags) {
     itemCount: flags.get("items") ?? "ci",
     iterations: flags.get("iterations") ?? 3,
     seed: flags.get("seed") ?? 42,
-    mode: flags.get("mode") === undefined ? "direct" : String(flags.get("mode")),
+    mode:
+      flags.get("mode") === undefined ? "direct" : String(flags.get("mode")),
     transport: flags.get("transport") ?? "both",
     keepWorkspace: flags.has("keep-workspace"),
   };
@@ -414,31 +563,50 @@ export function benchmarkOptionsFromFlags(flags) {
 async function applyBudgetActions(flags, report, manifestPath) {
   if (flags.has("update")) {
     const headroomValue = flags.get("headroom");
-    const headroom = headroomValue === undefined || headroomValue === true ? 1.25 : Number(headroomValue);
-    if (!Number.isFinite(headroom) || headroom < 1) throw new Error("--headroom must be >= 1");
+    const headroom =
+      headroomValue === undefined || headroomValue === true
+        ? 1.25
+        : Number(headroomValue);
+    if (!Number.isFinite(headroom) || headroom < 1)
+      throw new Error("--headroom must be >= 1");
     await mkdir(path.dirname(manifestPath), { recursive: true });
     await updateBudgetManifest(manifestPath, report, headroom);
   }
   if (!flags.has("check")) return;
-  const violations = compareScaleBudgets(report, await readBudgetManifest(manifestPath));
-  if (violations.length > 0) throw new Error(`Scale benchmark gate failed:\n${violations.join("\n")}`);
+  const violations = compareScaleBudgets(
+    report,
+    await readBudgetManifest(manifestPath),
+  );
+  if (violations.length > 0)
+    throw new Error(`Scale benchmark gate failed:\n${violations.join("\n")}`);
 }
 
 /** Execute the scale benchmark command-line interface. */
 export async function main(argv = process.argv.slice(2)) {
   const { flags } = parseFlags(argv);
   const report = await runScaleBenchmarks(benchmarkOptionsFromFlags(flags));
-  const outputPath = resolveBenchmarkPathFlag(flags, "output", DEFAULT_REPORT_PATH);
+  const outputPath = resolveBenchmarkPathFlag(
+    flags,
+    "output",
+    DEFAULT_REPORT_PATH,
+  );
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 
-  const manifestPath = resolveBenchmarkPathFlag(flags, "manifest", DEFAULT_BUDGET_PATH);
+  const manifestPath = resolveBenchmarkPathFlag(
+    flags,
+    "manifest",
+    DEFAULT_BUDGET_PATH,
+  );
   await applyBudgetActions(flags, report, manifestPath);
   return { report, outputPath, manifestPath };
 }
 
 function isMainModule(argv) {
-  return argv[1] !== undefined && path.resolve(argv[1]) === fileURLToPath(import.meta.url);
+  return (
+    argv[1] !== undefined &&
+    path.resolve(argv[1]) === fileURLToPath(import.meta.url)
+  );
 }
 
 /** Run the executable entrypoint without mutating process globals in tests. */

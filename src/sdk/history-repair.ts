@@ -25,6 +25,7 @@ import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
 import {
   getActiveExtensionRegistrations,
@@ -294,16 +295,6 @@ interface HistoryRepairItemReplayContext {
   loadedItem: Awaited<ReturnType<typeof readLocatedItem>> | null;
 }
 
-function toAuthor(
-  candidate: string | undefined,
-  defaultAuthor: string,
-): string {
-  /* c8 ignore next -- PM_AUTHOR fallback branch is environment-dependent in CI. */
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
-  const trimmed = resolved.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
-}
-
 async function loadHistoryRepairItemReplay(
   subject: Awaited<ReturnType<typeof resolveHistorySubject>>,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -513,7 +504,7 @@ export async function runHistoryRepair(
     reanchor.entriesRehashed > 0 ||
     reanchor.entriesPatchRepaired > 0 ||
     reconcileNeeded;
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const dryRun = Boolean(options.dryRun);
 
   const repairMessage = buildHistoryRepairMessage({

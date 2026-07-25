@@ -438,7 +438,7 @@ describe("runInit", () => {
       initGuidanceInternals.buildAgentGuidanceBlock("\n"),
     );
     expect(unchanged.next_content).toContain(
-      "Set `PM_AUTHOR=<stable-agent-id>` before mutation commands.",
+      "Author identity is automatic for supported agent harnesses",
     );
     const crlfTrimmed = initGuidanceInternals.upsertAgentGuidanceBlock(
       `${initGuidanceInternals.buildAgentGuidanceBlock("\r\n")}# Tail`,
@@ -1078,7 +1078,7 @@ describe("runInit", () => {
         "<!-- pm-cli:agent-guidance:start:v1 -->",
       );
       expect(firstGuidance).toContain("pm context --limit 10");
-      expect(firstGuidance).toContain("PM_AUTHOR");
+      expect(firstGuidance).toContain("Author identity is automatic");
 
       const readded = await runInit(
         "pm",
@@ -1221,7 +1221,7 @@ describe("runInit", () => {
       });
       expect(guidance).toContain("<!-- pm-cli:agent-guidance:start:v1 -->\r\n");
       expect(guidance).toContain(
-        "Set `PM_AUTHOR=<stable-agent-id>` before mutation commands.",
+        "Author identity is automatic for supported agent harnesses",
       );
       expect(guidance).toContain("# Existing\r\n");
     } finally {
@@ -1970,7 +1970,7 @@ describe("runInit", () => {
           result.next_steps.filter(
             (step) =>
               step ===
-              "Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.",
+              "Supported agent harnesses are attributed automatically; use --author or PM_AUTHOR only when an explicit identity override is required.",
           ),
         ).toHaveLength(1);
       } finally {

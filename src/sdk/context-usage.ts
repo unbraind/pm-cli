@@ -76,6 +76,18 @@ const DAY_MS = 86_400_000;
 const DEFAULT_COMPACTION_BYTES = 262_144;
 const CONTEXT_USAGE_LOCK_ID = "context-usage-ledger";
 
+/** Named validation failure emitted by context-usage SDK inputs. */
+export class ContextUsageValidationError extends TypeError {
+  /** Stable machine-readable error code for package and CLI hosts. */
+  readonly code = "context_usage_validation_failed";
+
+  /** Creates a typed validation error without exposing derived ledger contents. */
+  constructor(message: string) {
+    super(message);
+    this.name = "ContextUsageValidationError";
+  }
+}
+
 function ledgerPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", "context-usage.jsonl");
 }
@@ -87,7 +99,9 @@ function resolveNow(options: ContextUsageLedgerOptions): {
   const iso = options.now ?? new Date().toISOString();
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms))
-    throw new TypeError("Context usage now must be a valid timestamp");
+    throw new ContextUsageValidationError(
+      "Context usage now must be a valid timestamp",
+    );
   return { iso: new Date(ms).toISOString(), ms };
 }
 
@@ -129,7 +143,7 @@ async function appendEvents(
     !Number.isFinite(retentionDays) ||
     retentionDays <= 0
   ) {
-    throw new TypeError(
+    throw new ContextUsageValidationError(
       "Context usage retention requires positive maxEvents and retentionDays",
     );
   }
@@ -146,7 +160,11 @@ async function appendEvents(
   );
   try {
     await mkdir(runtimeDirectory, { recursive: true });
-    await appendFile(target, events.map((event) => `${JSON.stringify(event)}\n`).join(""), "utf8");
+    await appendFile(
+      target,
+      events.map((event) => `${JSON.stringify(event)}\n`).join(""),
+      "utf8",
+    );
     const customBounds =
       options.maxEvents !== undefined || options.retentionDays !== undefined;
     if (!customBounds && (await stat(target)).size <= DEFAULT_COMPACTION_BYTES)
@@ -180,14 +198,18 @@ export async function recordContextUsageServing(
     rows: ContextUsageServingRow[];
   },
 ): Promise<void> {
-  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1" || options.enabled === false) return;
+  if (
+    process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
+    options.enabled === false
+  )
+    return;
   if (
     !options.author.trim() ||
     options.rows.some(
       (row) => !row.id.trim() || !Number.isInteger(row.rank) || row.rank < 1,
     )
   ) {
-    throw new TypeError(
+    throw new ContextUsageValidationError(
       "Context usage serving requires an author and valid ranked rows",
     );
   }
@@ -209,13 +231,17 @@ export async function recordContextUsageTouch(
     intent: string;
   },
 ): Promise<void> {
-  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1" || options.enabled === false) return;
+  if (
+    process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
+    options.enabled === false
+  )
+    return;
   if (
     !options.author.trim() ||
     !options.itemId.trim() ||
     !options.intent.trim()
   ) {
-    throw new TypeError(
+    throw new ContextUsageValidationError(
       "Context usage touch requires author, itemId, and intent",
     );
   }
@@ -241,36 +267,60 @@ export async function recordContextUsageTouches(
     intent: string;
   },
 ): Promise<void> {
-  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1" || options.enabled === false || options.itemIds.length === 0) return;
+  if (
+    process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
+    options.enabled === false ||
+    options.itemIds.length === 0
+  )
+    return;
   const author = options.author.trim();
   const intent = options.intent.trim();
   if (!author || !intent) {
-    throw new TypeError("Context usage touch requires author and intent");
+    throw new ContextUsageValidationError(
+      "Context usage touch requires author and intent",
+    );
   }
   const itemIds = new Set<string>();
   for (const itemId of options.itemIds) {
     if (typeof itemId !== "string") {
-      throw new TypeError("Context usage touch requires string itemIds");
+      throw new ContextUsageValidationError(
+        "Context usage touch requires string itemIds",
+      );
     }
     const trimmedId = itemId.trim();
-    if (!trimmedId) throw new TypeError("Context usage touch requires non-empty itemId");
+    if (!trimmedId)
+      throw new ContextUsageValidationError(
+        "Context usage touch requires non-empty itemId",
+      );
     itemIds.add(trimmedId);
   }
   const at = resolveNow(options).iso;
   const events = [...itemIds].map(
-    (itemId): ContextUsageEvent => ({ kind: "touch", at, author, item_id: itemId, intent }),
+    (itemId): ContextUsageEvent => ({
+      kind: "touch",
+      at,
+      author,
+      item_id: itemId,
+      intent,
+    }),
   );
   await appendEvents(options, events);
 }
 
 function findTouchTimeInHorizon(
-  touches: readonly { entry: Extract<ContextUsageEvent, { kind: "touch" }>; time: number }[],
+  touches: readonly {
+    entry: Extract<ContextUsageEvent, { kind: "touch" }>;
+    time: number;
+  }[],
   itemId: string,
   servedAt: number,
   horizonMs: number,
 ): number | undefined {
-  return touches.find(({ entry, time }) =>
-    entry.item_id === itemId && time >= servedAt && time - servedAt <= horizonMs
+  return touches.find(
+    ({ entry, time }) =>
+      entry.item_id === itemId &&
+      time >= servedAt &&
+      time - servedAt <= horizonMs,
   )?.time;
 }
 
@@ -284,13 +334,18 @@ export async function readContextUsageAffinity(
     horizonHours?: number;
   },
 ): Promise<ContextUsageAffinity> {
-  if (process.env.PM_CONTEXT_USAGE_DISABLED === "1" || options.enabled === false)
+  if (
+    process.env.PM_CONTEXT_USAGE_DISABLED === "1" ||
+    options.enabled === false
+  )
     return { affinity: {}, positive_judgments: 0, serving_events: 0 };
   const events = await readEvents(options);
   const now = resolveNow(options).ms;
   const horizonMs = (options.horizonHours ?? 24) * 3_600_000;
   if (!Number.isFinite(horizonMs) || horizonMs <= 0)
-    throw new TypeError("Context usage horizonHours must be positive");
+    throw new ContextUsageValidationError(
+      "Context usage horizonHours must be positive",
+    );
   const author = options.author.trim();
   const touches = events
     .filter(
@@ -307,7 +362,12 @@ export async function readContextUsageAffinity(
     const servedAt = Date.parse(event.at);
     for (const row of event.rows) {
       if (!row.included) continue;
-      const touchTime = findTouchTimeInHorizon(touches, row.id, servedAt, horizonMs);
+      const touchTime = findTouchTimeInHorizon(
+        touches,
+        row.id,
+        servedAt,
+        horizonMs,
+      );
       if (touchTime === undefined) continue;
       positiveJudgments += 1;
       const ageDays = Math.max(0, (now - touchTime) / DAY_MS);

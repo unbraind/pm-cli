@@ -14,6 +14,7 @@ import {
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { detectHarnessIdentity } from "../../../src/core/shared/author.js";
 import { getHistoryPath } from "../../../src/core/store/paths.js";
 import {
   readSettings,
@@ -218,9 +219,13 @@ describe("runClaim/runRelease", () => {
         claimRunner,
       );
 
+      const detectedHarness = detectHarnessIdentity({
+        env: process.env,
+        argv: [process.execPath, ...process.argv],
+      });
       expect(unknown).toMatchObject({
         available: false,
-        claimed_by: "unknown",
+        claimed_by: detectedHarness ? `harness:${detectedHarness}` : "unknown",
         skipped: true,
         attempts: 1,
         recommendation: null,

@@ -33,6 +33,7 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import {
   evaluateSimilarityGovernance,
@@ -69,15 +70,6 @@ export interface CopyResult {
   warnings: string[];
   /** Likely existing items found before the mutation committed. */
   similarity_advisory?: SimilarityAdvisory;
-}
-
-function selectAuthor(
-  explicitAuthor: string | undefined,
-  settingsAuthor: string,
-): string {
-  const candidate = explicitAuthor ?? process.env.PM_AUTHOR ?? settingsAuthor;
-  const trimmed = candidate.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
 }
 
 function buildChangedFields(
@@ -149,7 +141,7 @@ export async function runCopy(
   });
   const sourceMetadata = sourceLoaded.document.metadata;
   const copiedAt = nowIso();
-  const author = selectAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const newId = await generateItemId(pmRoot, settings.id_prefix, {
     tokenLength: settings.ids.token_length,
     typeToFolder: typeRegistry.type_to_folder,

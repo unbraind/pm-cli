@@ -1848,6 +1848,48 @@ function validateItemFieldDefinitions(fields: unknown): void {
   }
 }
 
+/** Validate the optional command-specific visibility and requirement policies of one extension item type. */
+function validateItemTypeCommandOptionPolicies(
+  typeIndex: number,
+  value: unknown,
+): void {
+  if (value === undefined) {
+    return;
+  }
+  const label = `registerItemTypes types[${typeIndex}].command_option_policies`;
+  if (!Array.isArray(value)) {
+    throw new TypeError(`${label} must be an array when provided`);
+  }
+  for (const [policyIndex, rawPolicy] of value.entries()) {
+    const at = `${label}[${policyIndex}]`;
+    const policy = asRegistrationRecord(at, rawPolicy);
+    assertNonEmptyString(`${at}.command`, policy.command);
+    assertNonEmptyString(`${at}.option`, policy.option);
+    assertOptionalBooleanField(`${at}.enabled`, policy.enabled);
+    assertOptionalBooleanField(`${at}.required`, policy.required);
+    assertOptionalBooleanField(`${at}.visible`, policy.visible);
+  }
+}
+
+/** Validate the optional custom option vocabulary of one extension item type. */
+function validateItemTypeOptions(typeIndex: number, value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  const label = `registerItemTypes types[${typeIndex}].options`;
+  if (!Array.isArray(value)) {
+    throw new TypeError(`${label} must be an array when provided`);
+  }
+  for (const [optionIndex, rawOption] of value.entries()) {
+    const at = `${label}[${optionIndex}]`;
+    const option = asRegistrationRecord(at, rawOption);
+    assertNonEmptyString(`${at}.key`, option.key);
+    assertOptionalStringArrayField(`${at}.values`, option.values);
+    assertOptionalBooleanField(`${at}.required`, option.required);
+    assertOptionalStringArrayField(`${at}.aliases`, option.aliases);
+  }
+}
+
 function validateItemTypeDefinitions(types: unknown): void {
   if (!Array.isArray(types)) {
     throw new TypeError(
@@ -1855,97 +1897,24 @@ function validateItemTypeDefinitions(types: unknown): void {
     );
   }
   for (const [typeIndex, raw] of types.entries()) {
-    const record = asRegistrationRecord(
-      `registerItemTypes types[${typeIndex}]`,
-      raw,
-    );
-    assertNonEmptyString(
-      `registerItemTypes types[${typeIndex}].name`,
-      record.name,
-    );
-    assertOptionalStringField(
-      `registerItemTypes types[${typeIndex}].folder`,
-      record.folder,
-    );
+    const at = `registerItemTypes types[${typeIndex}]`;
+    const record = asRegistrationRecord(at, raw);
+    assertNonEmptyString(`${at}.name`, record.name);
+    assertOptionalStringField(`${at}.folder`, record.folder);
+    assertOptionalStringArrayField(`${at}.aliases`, record.aliases);
     assertOptionalStringArrayField(
-      `registerItemTypes types[${typeIndex}].aliases`,
-      record.aliases,
-    );
-    assertOptionalStringArrayField(
-      `registerItemTypes types[${typeIndex}].required_create_fields`,
+      `${at}.required_create_fields`,
       record.required_create_fields,
     );
     assertOptionalStringArrayField(
-      `registerItemTypes types[${typeIndex}].required_create_repeatables`,
+      `${at}.required_create_repeatables`,
       record.required_create_repeatables,
     );
-
-    if (record.command_option_policies !== undefined) {
-      if (!Array.isArray(record.command_option_policies)) {
-        throw new TypeError(
-          `registerItemTypes types[${typeIndex}].command_option_policies must be an array when provided`,
-        );
-      }
-      for (const [
-        policyIndex,
-        rawPolicy,
-      ] of record.command_option_policies.entries()) {
-        const policy = asRegistrationRecord(
-          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}]`,
-          rawPolicy,
-        );
-        assertNonEmptyString(
-          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].command`,
-          policy.command,
-        );
-        assertNonEmptyString(
-          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].option`,
-          policy.option,
-        );
-        assertOptionalBooleanField(
-          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].enabled`,
-          policy.enabled,
-        );
-        assertOptionalBooleanField(
-          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].required`,
-          policy.required,
-        );
-        assertOptionalBooleanField(
-          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].visible`,
-          policy.visible,
-        );
-      }
-    }
-
-    if (record.options !== undefined) {
-      if (!Array.isArray(record.options)) {
-        throw new TypeError(
-          `registerItemTypes types[${typeIndex}].options must be an array when provided`,
-        );
-      }
-      for (const [optionIndex, rawOption] of record.options.entries()) {
-        const option = asRegistrationRecord(
-          `registerItemTypes types[${typeIndex}].options[${optionIndex}]`,
-          rawOption,
-        );
-        assertNonEmptyString(
-          `registerItemTypes types[${typeIndex}].options[${optionIndex}].key`,
-          option.key,
-        );
-        assertOptionalStringArrayField(
-          `registerItemTypes types[${typeIndex}].options[${optionIndex}].values`,
-          option.values,
-        );
-        assertOptionalBooleanField(
-          `registerItemTypes types[${typeIndex}].options[${optionIndex}].required`,
-          option.required,
-        );
-        assertOptionalStringArrayField(
-          `registerItemTypes types[${typeIndex}].options[${optionIndex}].aliases`,
-          option.aliases,
-        );
-      }
-    }
+    validateItemTypeCommandOptionPolicies(
+      typeIndex,
+      record.command_option_policies,
+    );
+    validateItemTypeOptions(typeIndex, record.options);
   }
 }
 
@@ -1998,20 +1967,21 @@ const PROJECT_PROFILE_DIMENSIONS = [
   "packages",
 ] as const;
 
-/** Validates the field shapes the profile planner, `pm profile show/apply/lint`, and `describeProjectProfile` dereference without re-checking, so a structurally well-formed but type-violating extension entry (e.g. a workflow whose `type` is a number, or whose `allowed_transitions` is not an array) is rejected here rather than crashing a downstream consumer. Dimensions whose consumers already coerce or gracefully reject malformed values (statuses, fields, config) need no shape check. The `entry` is an already-confirmed non-null object. */
-function validateProjectProfileEntryShape(
-  dimension: string,
-  index: number,
-  entry: Record<string, unknown>,
-): void {
-  const at = `registerProfile profile.${dimension}[${index}]`;
-  if (dimension === "types") {
+type ProjectProfileDimension = (typeof PROJECT_PROFILE_DIMENSIONS)[number];
+
+/** Dimension-specific profile entry validators used after the common object-shape boundary. */
+const PROJECT_PROFILE_ENTRY_VALIDATORS: Partial<
+  Record<
+    ProjectProfileDimension,
+    (at: string, entry: Record<string, unknown>) => void
+  >
+> = {
+  types: (at, entry) => {
     if (entry.name !== undefined && typeof entry.name !== "string") {
       throw new TypeError(`${at}.name must be a string when provided`);
     }
-    return;
-  }
-  if (dimension === "workflows") {
+  },
+  workflows: (at, entry) => {
     if (typeof entry.type !== "string") {
       throw new TypeError(`${at}.type must be a string`);
     }
@@ -2025,9 +1995,8 @@ function validateProjectProfileEntryShape(
         );
       }
     }
-    return;
-  }
-  if (dimension === "templates") {
+  },
+  templates: (at, entry) => {
     if (typeof entry.name !== "string") {
       throw new TypeError(`${at}.name must be a string`);
     }
@@ -2038,14 +2007,13 @@ function validateProjectProfileEntryShape(
     ) {
       throw new TypeError(`${at}.options must be an object`);
     }
-    return;
-  }
-  if (dimension === "packages") {
+  },
+  packages: (at, entry) => {
     if (typeof entry.spec !== "string") {
       throw new TypeError(`${at}.spec must be a string`);
     }
-  }
-}
+  },
+};
 
 function validateProjectProfileDefinition(profile: unknown): void {
   const record = asRegistrationRecord("registerProfile profile", profile);
@@ -2079,9 +2047,8 @@ function validateProjectProfileDefinition(profile: unknown): void {
       // Beyond "is an object", validate the specific field shapes consumers
       // dereference so a type-violating entry can never crash the planner, the
       // `pm profile` surfaces, or describeProjectProfile downstream.
-      validateProjectProfileEntryShape(
-        dimension,
-        index,
+      PROJECT_PROFILE_ENTRY_VALIDATORS[dimension]?.(
+        `registerProfile profile.${dimension}[${index}]`,
         entry as Record<string, unknown>,
       );
     }

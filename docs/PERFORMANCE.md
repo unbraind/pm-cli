@@ -1,6 +1,6 @@
 # Performance and scale
 
-Tracker: [pm-mi2x](../.agents/pm/chores/pm-mi2x.toon) under the [pm-9rxu scale-out initiative](../.agents/pm/epics/pm-9rxu.toon).
+Tracker: [pm-mi2x](../.agents/pm/chores/pm-mi2x.toon) under the [pm-9rxu scale-out initiative](../.agents/pm/epics/pm-9rxu.toon). CLI transport overhead is tracked by [pm-yse5dt](../.agents/pm/tasks/pm-yse5dt.toon).
 
 `pm` treats wall time, memory, and agent token cost as one performance contract: project management is context management, so a fast command that emits an unbounded payload is still slow for its caller.
 
@@ -37,6 +37,31 @@ pnpm benchmark:scale --items ci --iterations 3 --transport both --check
 ```
 
 The JSON report records fixture generation time plus one excluded warmup observation and measured p50/p95/min/max latency, peak RSS on Linux, output bytes, and estimated tokens for `list`, `get`, `next`, `context`, `search`, `create`, and `claim`. The warmup exposes initial index-build cost while regression percentiles measure the continuously warm derived-index contract across real cold CLI processes and in-process SDK calls. Run the committed local regression check with `pnpm benchmark:scale:check`. GitHub-hosted runners do not execute the scale suite, which keeps expensive performance work off Actions and avoids consuming hosted-runner capacity.
+
+The scale report also records the CLI-minus-SDK transport delta for each common
+operation and gates it independently from the absolute CLI/SDK budgets. This
+separates process/bootstrap cost from storage or domain cost instead of allowing
+one transport to hide a regression in the other. The synthetic workspace has no
+installed extensions, while the SDK client explicitly opts out, so both paths
+measure the same core operation without project package work. CLI mutations do
+not inject `PM_AUTHOR`; they exercise the normal harness/default attribution
+resolver. The 10,000-item delta budgets are measured ratchets. The 100,000-item
+delta bounds are conservative ceilings derived from the existing absolute CLI
+budgets until a stable large-fixture measurement can replace them; they do not
+weaken either transport's existing absolute gate.
+
+For a fast, deterministic one-item cold-start floor covering `get`, `list`,
+`context`, `next`, `create`, and `claim`, run:
+
+```bash
+pnpm benchmark:transport:check
+```
+
+The committed [CLI transport report](performance/cli-transport-overhead.md)
+contains best/p50/p95 measurements and a stage breakdown. SDK entrypoint import
+costs are independently gated with `pnpm benchmark:sdk-entrypoints:check` and
+documented in the
+[SDK entrypoint report](performance/sdk-entrypoint-import-costs.md).
 
 The metadata read cache is rebuildable derived state. Workspaces with at least
 500 indexed items use its directory-validated fast path to avoid per-item
