@@ -2,12 +2,12 @@ id: pm-qwuber
 title: "ADR: agent identity model — stable author namespace plus structured harness, model, and session provenance"
 description: Decide the stable author and structured harness/model provenance contract while keeping invocation session identifiers transient and non-durable.
 type: Decision
-status: in_progress
+status: closed
 priority: 1
 tags[7]: adr,agent-ux,"area:sdk",author,governance,identity,provenance
 created_at: "2026-07-25T12:24:02.830Z"
-updated_at: "2026-07-25T19:51:54.821Z"
-assignee: "harness:codex"
+updated_at: "2026-07-25T20:06:40.746Z"
+closed_at: "2026-07-25T20:06:39.645Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The decision states whether model belongs in the author string or in structured provenance fields, with the rejected options and their reasons recorded; The decision names every provenance field, its type, its cardinality expectations, and its absence semantics (a missing model must never degrade the author to unknown); The decision states explicitly that detected identity is an unverified claim and may never be used as an authorization input, deferring verified identity to pm-u14c; The decision states the privacy contract: which identity dimensions may reach telemetry, in what hashed form, and which must never leave the machine; The decision states the compatibility rule for workspaces written before model capture existed, so old streams stay valid and verifiable; A superseding or amending decision is required before any later change to the recorded identity shape"
@@ -20,6 +20,9 @@ why_now: Model capture is about to be implemented; identity fields are append-on
 parent: pm-m2u1
 risk: medium
 confidence: 75
+resolution: Accepted durable identity is stable author plus optional harness/model/model-source; session signals remain transient and non-serializable.
+expected_result: "A written, privacy-bounded, backward-compatible identity decision governs SDK, CLI, MCP, history, and telemetry."
+actual_result: "ADR amended and implemented; raw branch-local session fields were scrubbed and all 2,028 history streams verify without drift."
 dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-33cw,related,"2026-07-25T12:24:02.830Z",null,null
   pm-42p9nk,related,"2026-07-25T12:24:02.830Z",null,null
@@ -32,10 +35,11 @@ dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-gw6uyq,related,"2026-07-25T12:34:57.387Z",null,null
   pm-j82fd3,related,"2026-07-25T12:34:57.387Z",null,null
   pm-szv11n,related,"2026-07-25T12:34:57.387Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-25T18:18:16.583Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
   "2026-07-25T19:14:50.527Z","harness:codex","Implementation evidence: accepted agent identity ADR is now embodied in shared SDK/runtime contracts. History records author_source independently from observed agent_harness, agent_model, agent_model_source, and local-only transient_session_signal. Telemetry emits only presence at minimal capture and installation-keyed harness/model hashes plus fixed model-source enums at redacted/max; session is never emitted. Verification: 6,376 tests passed with 100/100/100/100 coverage, strict 100% docstring/static/API/token gates passed, secret scan clean, packed isolated acceptance passed."
   "2026-07-25T19:51:54.821Z","harness:codex","Review amendment: session identifiers are transient host context only and are no longer serialized to durable history or telemetry. Exact branch-local history streams were scrubbed of the mistakenly persisted top-level field. Additional review hardening covers bounded settings validation, executable-basename argv matching, inherited environment values, cached descriptor normalization, deterministic telemetry tests, and failure-safe registration cleanup."
+  "2026-07-25T20:06:38.334Z","harness:codex","Final evidence: PR #713 exact head 446d00ae passed all 6,376 tests and 100/100/100/100 coverage (44,010 statements, 31,205 branches, 8,996 functions, 42,752 lines); strict 100% docstring/static/token/API gates; packed unrelated-directory SDK and CLI acceptance; CodeQL, DeepScan with zero findings, Semgrep, Trivy, TruffleHog, CodeFactor, Hound, Windows, compatibility, smokes, and benchmarks. All 13 CodeRabbit findings were individually fixed/dispositioned/reacted and every thread is resolved. Follow-up CodeRabbit and Greptile requests reached external free-review limits after the complete first review."
 files[4]{path,scope,note}:
   src/core/history/history.ts,project,local provenance fields
   src/core/shared/author.ts,project,decision implementation
@@ -49,4 +53,5 @@ tests[4]{command,scope,timeout_seconds}:
 docs[2]{path,scope,note}:
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,identity ADR and privacy semantics
   docs/SDK_CUSTOMIZATION_PRIMITIVES.md,project,explicit override semantics
+close_reason: "Implemented and verified in PR #713 with complete local, packed-consumer, hosted-gate, and review evidence."
 body: "## Decision\n\nAccepted: keep `author` as the stable effective principal and record durable runtime observation separately as optional `agent_harness`, `agent_model`, and `agent_model_source` history fields. Widening author to `harness:<harness>/<model>` is rejected because it breaks existing equality filters, increases cardinality, and conflates stable selection with volatile observation. Signed principals remain deferred to pm-u14c.\n\nSession identifiers are accepted only as transient host input to `DetectedAgentIdentity`. They are deliberately excluded from `HistoryEntry`, item metadata, logs, and telemetry because a durable or exported session identifier creates correlation and privacy risk without improving stable project context.\n\n## Contract\n\n- `agent_harness?: string`: normalized low-cardinality harness namespace. Missing means no bounded signal matched.\n- `agent_model?: string`: bounded model identifier exactly observed from an allowed signal. Missing means unknown and never changes the effective author to `unknown`.\n- `agent_model_source?: override | environment | mcp_client | argv`: fixed-cardinality provenance for the model value. It is absent whenever `agent_model` is absent.\n- `session?: string` on transient detection results only: bounded invocation identifier available to the current embedding host and never serialized.\n\nAuthor precedence remains explicit argument, `PM_AUTHOR`, configured default, detected harness, then `unknown`. Detection always executes independently, so asserted or configured authors may still carry observed durable agent fields. These observations are unverified claims: they are attribution/context only and MUST NOT authorize access, ownership takeover, or privileged operations.\n\n## Privacy and compatibility\n\nTelemetry may emit only presence booleans at minimal capture, or installation-keyed one-way hashes of harness/model plus the fixed model-source enum at redacted/max capture. Session identifiers must never enter durable history or leave the process. Legacy entries without the optional durable fields remain valid and replay/verifiability semantics are unchanged.\n\nThis amendment was made during PR review before merge. The exact affected branch-local history streams were mechanically scrubbed of the mistakenly serialized transient field; PM replay and history-drift validation must remain green. Any future author-string incorporation, durable-field rename, cardinality expansion, session persistence/export, or authorization use requires an explicit superseding or amending Decision item linked to this ADR."

@@ -2,12 +2,12 @@ id: pm-sx52hr
 title: "Built-in help examples teach an explicit --author on dozens of commands, training every agent to suppress its own detected identity and pay tokens for it"
 description: "src/cli/help-content.ts publishes --author \"codex-agent\" or --assignee codex-agent in the canonical examples for claim, release, close, delete, restore, comments, history-compact, activity, create, list, next, calendar, ctx and more, and src/cli/register-operations.ts repeats it for claim and start-task. An agent reading help learns that passing an author is normal pm usage. Two costs follow. First, correctness: an explicit --author outranks detection, so following the published example replaces real harness and model provenance with a literal string and mislabels author_source as asserted. Second, tokens: the identity fragment is pure overhead repeated in every example an agent reads and in every command it then copies, which is the same budget the token-efficiency work is trying to shrink. The examples predate harness detection and were never revised when pm-z9x1r2 shipped. Every example should show the short form, and the one example that legitimately demonstrates an override should say why an override is the exception."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[7]: agent-ux,"area:cli",author,defect,docs,identity,token-efficiency
 created_at: "2026-07-25T12:26:08.788Z"
-updated_at: "2026-07-25T19:52:02.344Z"
-assignee: "harness:codex"
+updated_at: "2026-07-25T20:06:54.478Z"
+closed_at: "2026-07-25T20:06:53.511Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "No published example passes --author or --assignee except the one example whose subject is identity override itself, and that example states why an override is the exception; A contract test asserts the identity-flag fragment appears in at most that one example across help content, operation registrations, docs, and scaffolds; Published examples are asserted to be the shortest form that still demonstrates the command's subject, with a measured token delta recorded as evidence on this item; The identity-override example is cross-referenced to the detection contract so the exception stays discoverable"
@@ -19,6 +19,9 @@ outcome: "An agent that copies pm help verbatim produces minimal, correctly attr
 parent: pm-mpbb
 risk: low
 confidence: 85
+resolution: Removed redundant author/assignee tokens from normal agent help while preserving one intentional service-account override example.
+expected_result: Agent-facing help is materially more token-efficient without hiding explicit override semantics.
+actual_result: "Surface reduced from approximately 141 to 17 tokens across measured examples; help, contracts, and token-budget gates pass."
 dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-03pq3o,related,"2026-07-25T12:26:08.788Z",null,null
   pm-1kxs,related,"2026-07-25T12:26:08.788Z",null,null
@@ -30,10 +33,11 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-j82fd3,related,"2026-07-25T12:35:04.009Z",null,null
   pm-kxci8x,related,"2026-07-25T12:35:04.009Z",null,null
   pm-zqsrt5,related,"2026-07-25T12:35:04.009Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-25T18:18:26.654Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
   "2026-07-25T19:14:53.383Z","harness:codex","Implementation evidence: normal agent help examples now omit redundant --author/--assignee/structured author fields, while exactly one explicit non-agent service override remains documented. Surface measurement fell from 23 occurrences / 561 characters / approximately 141 tokens to 2 occurrences / 67 characters / approximately 17 tokens. Help invariants, token-budget gate, complete suite, and 100% coverage passed."
   "2026-07-25T19:52:02.343Z","harness:codex","Review amendment: session identifiers are transient host context only and are no longer serialized to durable history or telemetry. Exact branch-local history streams were scrubbed of the mistakenly persisted top-level field. Additional review hardening covers bounded settings validation, executable-basename argv matching, inherited environment values, cached descriptor normalization, deterministic telemetry tests, and failure-safe registration cleanup."
+  "2026-07-25T20:06:52.269Z","harness:codex","Final evidence: PR #713 exact head 446d00ae passed all 6,376 tests and 100/100/100/100 coverage (44,010 statements, 31,205 branches, 8,996 functions, 42,752 lines); strict 100% docstring/static/token/API gates; packed unrelated-directory SDK and CLI acceptance; CodeQL, DeepScan with zero findings, Semgrep, Trivy, TruffleHog, CodeFactor, Hound, Windows, compatibility, smokes, and benchmarks. All 13 CodeRabbit findings were individually fixed/dispositioned/reacted and every thread is resolved. Follow-up CodeRabbit and Greptile requests reached external free-review limits after the complete first review."
 files[4]{path,scope,note}:
   src/cli/error-guidance.ts,project,automatic identity recovery guidance
   src/cli/help-content.ts,project,token-minimal automatic identity examples
@@ -46,4 +50,5 @@ tests[4]{command,scope,timeout_seconds}:
   "pnpm quality:static",project,1200
 docs[1]{path,scope,note}:
   docs/SDK_CUSTOMIZATION_PRIMITIVES.md,project,automatic identity and intentional override guidance
+close_reason: "Implemented and verified in PR #713 with complete local, packed-consumer, hosted-gate, and review evidence."
 body: ""

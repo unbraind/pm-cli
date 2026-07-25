@@ -4,14 +4,19 @@
 
 ### Added
 
+- Model-aware agent identity: detection resolves harness, model, and session so an agent never types an identity flag and history still records which model acted ([pm-03pq3o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-03pq3o.toon))
 - Author-resolution bypass class: create/copy and the context, next, and usage-feedback paths re-implement author precedence without harness detection, stamping author 'unknown' on new items ([pm-42p9nk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-42p9nk.toon))
 
 ### Changed
 
+- Harness signal registry: identity detection becomes declared data that a config entry or a package can extend without a code change ([pm-brxdct](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-brxdct.toon))
 - Public SDK surface snapshot and breaking-change gate: the exported API is a reviewed artifact, and an unintended removal or signature change cannot merge ([pm-e6tm5c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e6tm5c.toon))
 
 ### Fixed
 
+- Built-in help examples teach an explicit --author on dozens of commands, training every agent to suppress its own detected identity and pay tokens for it ([pm-sx52hr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sx52hr.toon))
+- Shipped MCP manifests and MCP tool guidance hardwire a static author, overriding the automatic identity of every plugin-hosted agent ([pm-zqsrt5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zqsrt5.toon))
+- A configured author_default suppresses harness detection entirely, so any workspace that sets a default author records no harness and no model provenance ([pm-6uxhe0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6uxhe0.toon))
 - GH-677: pm-path relocation must diagnose extension discovery changes ([pm-qswf81](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qswf81.toon))
 - GH-691: parseItemDocument errors need stable structured SDK classification ([pm-r9pudt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r9pudt.toon))
 - First-party service collision: builtin-calendar and builtin-guide-shell both override the global output_format service ([pm-ixoa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ixoa.toon))
@@ -40,6 +45,7 @@
 
 ### Other
 
+- ADR: agent identity model — stable author namespace plus structured harness, model, and session provenance ([pm-qwuber](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-qwuber.toon))
 - Public SDK surface shape: 881 exports behind one flat entrypoint with no capability tiering and a 250ms eager import cost ([pm-38bskj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-38bskj.toon))
 - CLI transport overhead budget: gate the per-invocation bootstrap floor and the CLI-vs-SDK delta, not just absolute scale numbers ([pm-yse5dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yse5dt.toon))
 - ADR: Startup-latency strategy (prebuilt JS, lazy per-command imports, external deps, no single bundle) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
