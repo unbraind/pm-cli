@@ -27,6 +27,7 @@
 
 ### Security
 
+- Adopt TruffleHog 3.96.0 security action update ([pm-ion0bp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ion0bp.toon))
 - Semgrep 874840488: High spawn shell true in scripts/release/utils.mjs\#L38 ([pm-a7m7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-a7m7.toon))
 - Semgrep 874962820: High spawn shell true in plugins/pm-codex/scripts/pm-mcp-server.mjs\#L86 ([pm-1uul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1uul.toon))
 - Semgrep 874962821: High spawn shell true in plugins/pm-claude/scripts/pm-mcp-server.mjs\#L82 ([pm-f7ik](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f7ik.toon))
