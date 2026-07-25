@@ -1,0 +1,26 @@
+id: pm-zeifd2
+title: "Review and audit passes are identified by date and theme, never by sequential numbers"
+description: "Standing governance convention: every review, audit, organization, or planning pass recorded in the tracker is named by ISO date plus a descriptive theme. Sequential pass numbering (for example 'audit pass #99' or 'review #17') is prohibited in item titles, bodies, comments, notes, learnings, docs, and linked evidence."
+type: Decision
+status: open
+priority: 1
+tags[6]: audit,convention,governance,merge-safety,multi-agent,review
+created_at: "2026-07-25T22:08:46.174Z"
+updated_at: "2026-07-25T22:11:59.104Z"
+author: "harness:opencode"
+estimated_minutes: 30
+acceptance_criteria: Convention is recorded on the living roadmap pm-doxj; every future pass is identified by ISO date and descriptive theme; no new sequential pass numbers appear in any tracker surface or doc; historical numbered references remain unaltered as immutable record; enforcement rides the existing tracker data-quality ratchet pm-kpftft
+goal: project management = context management
+objective: "Keep pass identifiers self-describing, sortable, and safe under thousands of concurrent agents and multi-branch merges"
+value: "Date+theme identifiers carry their own context, cannot collide across branches or harnesses, and need no global counter coordination"
+why_now: An explicit maintainer directive prohibits numbered audit runs; the tracker already mixes both styles (numbered review #12/#13/#15/#16 and pass 91 versus unnumbered date+theme passes since 2026-07-25) with no recorded governing decision
+parent: pm-33cw
+risk: low
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-doxj,related,"2026-07-25T22:08:46.174Z",null,null
+  pm-kpftft,related,"2026-07-25T22:08:46.174Z",null,null
+  pm-m08hza,related,"2026-07-25T22:08:46.174Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-25T22:11:59.104Z","harness:opencode","Verification evidence: convention appended to pm-doxj body (Convention addition 2026-07-25); post-change graph analyze shows 2,046 nodes / 4,536 edges with cycle_count unchanged at the 8 known legacy ordering cycles (owned by pm-hnc9w7) and audit findings unchanged at 11 info-level legacy classes; validate reports zero history drift and only the canonical owned resolution-field warning class; pnpm build passes. Duplicate evidence: keyword searches for pass-numbering conventions and pm dedupe-audit found no pre-existing convention item before creation."
+body: ""
