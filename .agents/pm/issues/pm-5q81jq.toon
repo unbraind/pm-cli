@@ -2,14 +2,17 @@ id: pm-5q81jq
 title: "Dependabot alert: brace-expansion unbounded expansion denial of service (GHSA-mh99-v99m-4gvg)"
 description: "Upgrade the transitive brace-expansion graph from 5.0.7 to 5.0.8 or newer through the ESLint/minimatch dependency path, close the high-severity Scorecard vulnerability signal, and preserve strict lint, coverage, compatibility, and supply-chain gates."
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags[6]: "area:dependencies","area:security",brace-expansion,dependabot,ghsa-mh99-v99m-4gvg,high
 created_at: "2026-07-25T00:15:36.128Z"
-updated_at: "2026-07-25T02:02:47.605Z"
-assignee: codex-root
+updated_at: "2026-07-25T02:25:26.674Z"
+closed_at: "2026-07-25T02:24:40.486Z"
 author: codex-root
 parent: pm-qwoy
+resolution: Constrained brace-expansion to version 5.0.8 or newer through the workspace override and regenerated lockfile.
+expected_result: The dependency graph contains no version vulnerable to GHSA-mh99-v99m-4gvg.
+actual_result: The patched dependency resolves throughout the lockfile and pnpm audit reports no known vulnerabilities.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-a24aqt,related,"2026-07-25T00:15:36.128Z",null,null
   pm-f5hy2n,related,"2026-07-25T00:15:36.128Z",null,null
@@ -22,4 +25,5 @@ files[2]{path,scope,note}:
   pnpm-lock.yaml,project,Brace expansion advisory override
 tests[1]{command,scope,timeout_seconds}:
   pnpm audit --audit-level high,project,240
+close_reason: "Merged in PR #693 as main commit 3a0c570c: brace-expansion is constrained to >=5.0.8 and pnpm audit reports no known vulnerabilities."
 body: ""

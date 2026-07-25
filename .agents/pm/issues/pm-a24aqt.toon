@@ -2,12 +2,12 @@ id: pm-a24aqt
 title: "Dependabot alert #43: PostCSS previous source-map path traversal (GHSA-r28c-9q8g-f849)"
 description: "Resolve GitHub Dependabot alert #43 for transitive development dependency postcss 8.5.16, vulnerable through 8.5.17 to arbitrary .map file disclosure when auto-loading previous source maps. Upgrade the lockfile graph to postcss 8.5.18 or newer through the owning Vite/Vitest dependency path, preserve release-age and supply-chain policy, and prove the alert closes without weakening any gate."
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags[6]: "area:dependencies","area:security",dependabot,ghsa-r28c-9q8g-f849,high,postcss
 created_at: "2026-07-24T23:35:17.857Z"
-updated_at: "2026-07-25T02:03:38.536Z"
-assignee: codex-root
+updated_at: "2026-07-25T02:25:25.882Z"
+closed_at: "2026-07-25T02:24:38.447Z"
 author: claude-code-agent
 estimated_minutes: 120
 acceptance_criteria: "pnpm why postcss resolves only patched versions >=8.5.18; GitHub Dependabot alert #43 is closed; lockfile supply-chain policy, audit, static analysis, exact coverage, compatibility, package smoke, and exact-head DeepScan/CodeFactor gates pass; fix ships in the next PR and is linked from the alert follow-up lineage."
@@ -15,8 +15,9 @@ parent: pm-qwoy
 severity: high
 environment: pnpm-lock.yaml; transitive development dependency postcss 8.5.16 via vite 7.3.5 and vitest 4.1.10
 repro_steps: "Read GitHub Dependabot alert 43 and run pnpm why postcss; current graph resolves one version, postcss 8.5.16, while the first patched version is 8.5.18."
-expected_result: "The resolved postcss version is at least 8.5.18, Dependabot alert #43 is closed, and the full security/static/coverage/release suite passes."
-actual_result: Main 1847f891 resolves postcss 8.5.16 through vite 7.3.5/vitest 4.1.10; Dependabot alert #43 is open at high severity.
+resolution: Upgraded dependencies and Action pins and constrained PostCSS to its patched range.
+expected_result: No installed dependency remains vulnerable to GHSA-r28c-9q8g-f849 and security workflows use current immutable actions.
+actual_result: "PostCSS resolves at a patched version; pnpm audit, CodeQL, Semgrep, Trivy, TruffleHog, and CI are green."
 component: dependency supply chain
 regression: false
 customer_impact: Development-only transitive exposure; crafted sourceMappingURL input processed by affected tooling could disclose arbitrary .map files.
@@ -46,4 +47,5 @@ files[16]{path,scope,note}:
   tests/unit/packages/package-manifest.spec.ts,project,Dependency and workflow security hardening
 tests[1]{command,scope,timeout_seconds}:
   pnpm audit --audit-level high,project,240
+close_reason: "Merged in PR #693 as main commit 3a0c570c: PostCSS is constrained to the patched range, dependency/action pins are refreshed, and audit/security/CI gates pass."
 body: ""

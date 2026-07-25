@@ -60,6 +60,7 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import { runClose } from "./close.js";
 import {
@@ -241,15 +242,6 @@ const OWNERSHIP_BYPASS_DISALLOWED_UNSET_ITEM_METADATA_KEYS = new Set<string>([
   "reminders",
   "events",
 ]);
-
-function toAuthor(
-  candidate: string | undefined,
-  defaultAuthor: string,
-): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
-}
 
 const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS =
   createLegacyNoneCollectionNormalizers<UpdateCommandOptions>({
@@ -2816,7 +2808,7 @@ export async function runUpdate(
   rejectUnsetScalarConflicts(options, unsetTargets);
   rejectLegacyScalarTokens(options);
 
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const nowValue = new Date();
   const nowIso = nowValue.toISOString();
   const dependencyUpdates = parseDependencyAdditions(

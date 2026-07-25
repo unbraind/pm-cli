@@ -2,12 +2,12 @@ id: pm-z9x1r2
 title: "Harness-aware author identity: pm resolves the acting agent from its runtime harness so PM_AUTHOR is never required"
 description: ""
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",author,identity,provenance,token-efficiency
 created_at: "2026-07-24T23:45:04.396Z"
-updated_at: "2026-07-25T02:03:56.953Z"
-assignee: codex-root
+updated_at: "2026-07-25T02:36:59.831Z"
+closed_at: "2026-07-25T02:36:59.000Z"
 author: maintainer-agent
 estimated_minutes: 900
 acceptance_criteria: "A public SDK resolver detects the acting harness from environment and process ancestry, covering at minimum Claude Code, Codex, pi, opencode, Cursor, Aider, Gemini CLI, and generic CI, with an extension point for unknown harnesses; Resolution precedence is documented and tested: explicit --author, then PM_AUTHOR, then configured author_default, then harness detection, then anonymous; Every history entry records an author_source discriminator (asserted vs detected vs configured) so detected identity is never confused with verified identity; Detection is bounded and never blocks: a hard timeout and a pure-function fallback keep cold-start latency within the startup budget; Detected authors are recorded in a stable, greppable namespace (for example harness:claude-code) so downstream queries can filter by harness; Telemetry continues to receive only the hashed author context, with no raw harness-derived identity leaving the machine"
@@ -20,6 +20,9 @@ why_now: "Author attribution enforcement shipped with a strict mode, but strict 
 parent: pm-mpbb
 risk: medium
 confidence: medium
+resolution: Implemented and merged harness-aware author resolution and immutable source provenance through the public SDK and CLI runtime.
+expected_result: "Agent mutations require no PM_AUTHOR boilerplate while retaining deterministic, provenanced author identity."
+actual_result: "All supported harnesses resolve through the shared primitive; create, update, and close produce no unknown author, with focused and packed-style temporary acceptance plus 6,291-test full coverage at 100/100/100/100."
 dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-cpja,related,"2026-07-24T23:45:04.396Z",null,null
   pm-dj98,related,"2026-07-24T23:45:04.396Z",null,null
@@ -31,16 +34,20 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-w7ccmv,related,"2026-07-24T23:45:04.396Z",null,null
   pm-xc68,related,"2026-07-24T23:45:04.396Z",null,null
   pm-z3ez,related,"2026-07-24T23:45:04.396Z",null,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-25T02:02:06.258Z","harness:codex","Evidence: implemented public SDK runtime primitives for deterministic author resolution and harness detection (Codex, Claude Code, pi, OpenCode, Cursor, Aider, Gemini, CI), explicit/env/configured/harness precedence, provenance propagation through history, and portable source-workspace roots for sandboxed linked tests. Verified by the full 6,290-test coverage run at 100/100/100/100 and an anonymous packed-package consumer where PM_AUTHOR was unset and mutations recorded harness:codex."
+  "2026-07-25T02:27:16.123Z",codex-root,"Regression evidence: on merged main 3a0c570c with PM_AUTHOR unset, pm close and pm update wrote author=unknown/author_source=unknown while comments, files, release, and other migrated paths wrote harness:codex. Health rose to 32 actionable unknown events. Scope is now every remaining direct PM_AUTHOR/default fallback in mutation-capable CLI/SDK paths, plus acknowledgements for the events generated during closeout."
+  "2026-07-25T02:36:58.133Z","harness:codex","Post-merge remediation evidence: close.ts and update.ts now call the shared resolveAuthor primitive; focused test, typecheck, strict lint/static/docstring gates, and full coverage all pass. Full suite: 361 files, 6,291 tests, 100% statements 43,249/43,249, branches 30,704/30,704, functions 8,791/8,791, lines 42,030/42,030. Global installed acceptance recorded create as detected and later update/close as configured harness:codex after init persisted the detected default; the real repository update recorded detected harness:codex. All 32 bypass-generated closeout events were append-only acknowledged with evidence, restoring actionable_unknown_event_count=0 and health ok:true."
 learnings[1]{created_at,author,text}:
   "2026-07-25T02:02:06.885Z","harness:codex","Agent identity belongs in a deterministic SDK primitive: explicit, environment, configured, detected harness, then unknown. Harness detection must inspect bounded process metadata only and must never require a user-authored environment variable."
-files[16]{path,scope,note}:
+files[18]{path,scope,note}:
   AGENTS.md,project,Harness identity and runtime primitive documentation or verification
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,Harness identity and runtime primitive documentation or verification
   docs/MUTATION_INTEGRITY.md,project,Harness identity and runtime primitive documentation or verification
   README.md,project,Harness identity and runtime primitive documentation or verification
+  src/cli/commands/close.ts,project,Shared harness resolver parity for close mutations
   src/cli/commands/plan.ts,project,SDK boundary author resolution parity
+  src/cli/commands/update.ts,project,Shared harness resolver parity for update mutations
   src/core/history/history.ts,project,Harness identity and immutable provenance implementation
   src/core/shared/author.ts,project,Harness identity and immutable provenance implementation
   src/sdk/index.ts,project,Harness identity and runtime primitive documentation or verification
@@ -52,11 +59,13 @@ files[16]{path,scope,note}:
   tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Harness identity and immutable provenance implementation
   tests/unit/sdk/author-attribution.spec.ts,project,Harness identity and runtime primitive documentation or verification
   tests/unit/sdk/test-all-author.spec.ts,project,Existing author-parity coverage this feature extends with harness-resolved identity and author_source provenance
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/core/shared/shared-helpers.spec.ts,project,240
 docs[4]{path,scope,note}:
   AGENTS.md,project,Agent author detection guidance
   docs/AGENT_RUNTIME_PRIMITIVES.md,project,Agent author detection guidance
   docs/MUTATION_INTEGRITY.md,project,Updated mutation attribution integrity contract
   README.md,project,Runtime primitive documentation entrypoint
+close_reason: "Completed universal author parity after PR #693: update and close now use the shared harness resolver, regression coverage and full gates pass, and all bypass-generated events are acknowledged without history rewriting."
 body: "## Problem\nCorrect authorship currently depends on every agent remembering to prefix mutations with PM_AUTHOR. That is out-of-band instruction cost on every call, it is silently skippable, and when skipped it produces unknown-author history events that the governance surface then has to triage.\n\n## Approach\nResolve identity from the runtime instead of from instruction. A harness detector inspects environment markers and process ancestry to name the acting agent, and the result is recorded alongside a provenance discriminator so that detected identity is never mistaken for cryptographically verified identity.\n\n## Boundary\nDetection is convenience, not authentication. Verifiable authorship is pm-u14c (per-entry signatures); authorization is pm-xc68 (principal policy). This item must not claim or imply verification, and strict-mode rejection semantics stay owned by the attribution enforcement work.\n\n## Prior art in this workspace\nErgonomic attribution (global --author, init author_default, unknown-author advisory) and attribution enforcement both shipped and closed; the telemetry agent-identity dimension already hashes PM_AUTHOR. This item adds the detection layer those three assumed would exist."

@@ -2,12 +2,12 @@ id: pm-f7ik
 title: "Semgrep 874962821: High spawn shell true in plugins/pm-claude/scripts/pm-mcp-server.mjs#L82"
 description: Semgrep finding 874962821 (High) for spawn shell true at plugins/pm-claude/scripts/pm-mcp-server.mjs#L82; autotriage=False positive; file risk=Generated Code.
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[7]: code-scanning,false-positive,generated-code,high,security,semgrep,spawn-shell-true
 created_at: "2026-07-06T18:56:15.125Z"
-updated_at: "2026-07-25T02:02:14.431Z"
-assignee: codex-root
+updated_at: "2026-07-25T02:25:27.558Z"
+closed_at: "2026-07-25T02:24:42.586Z"
 author: codex-cli-agent
 estimated_minutes: 45
 acceptance_criteria: "The flagged shell:true spawn at plugins/pm-claude/scripts/pm-mcp-server.mjs#L82 is remediated (safe argv-array spawn or documented justified suppression); a fresh Semgrep scan of this path no longer reports finding 874962821; full test suite and CI gates stay green."
@@ -17,8 +17,9 @@ confidence: low
 reporter: semgrep
 severity: high
 environment: unbraind/pm-cli refs/heads/main
-expected_result: "Semgrep finding is triaged as fixed, confirmed false positive, or explicitly accepted with rationale; the source code or CI/security configuration is updated when remediation is required."
-actual_result: "Semgrep currently reports finding 874962821 as Open (High, confidence Low) at plugins/pm-claude/scripts/pm-mcp-server.mjs#L82."
+resolution: Regenerated the Claude MCP wrapper to select npx.cmd on Windows and spawn structured argv with shell disabled.
+expected_result: Package-provided arguments cannot be interpreted by a shell and cross-platform launcher behavior remains functional.
+actual_result: "The shell-enabled path is removed and generator, wrapper, security, and full coverage gates pass."
 affected_version: main@6f511706628f18743a00a1cfe851e8d1f492684e
 component: plugins/pm-claude/scripts/pm-mcp-server.mjs
 dependencies[2]{id,kind,created_at,author,source_kind}:
@@ -32,4 +33,5 @@ files[3]{path,scope,note}:
   tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts,project,Claude launcher shell removal
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,project,240
+close_reason: "Merged in PR #693 as main commit 3a0c570c: Claude MCP launcher uses platform-specific executable selection with structured argv and shell disabled."
 body: "# Semgrep finding import\n\nSemgrep finding id: 874962821\nRule: javascript.lang.security.audit.spawn-shell-true.spawn-shell-true\nProduct: Code\nSeverity: High\nStatus: Open\nConfidence: Low\nCategory: security\nIs Pro Rule: False\nSemgrep autotriage result: False positive\nSemgrep file risk tag: Generated Code\nRepository: unbraind/pm-cli\nBranch: refs/heads/main\nCreated at: 2026-07-03 13:57:47.068416\nLast opened at: 2026-07-03 13:57:47.060764\n\nLinks:\n- Code: https://github.com/unbraind/pm-cli/blob/6f511706628f18743a00a1cfe851e8d1f492684e/plugins/pm-claude/scripts/pm-mcp-server.mjs#L82\n- Semgrep: https://semgrep.dev/orgs/unbrained/findings/874962821\n- Repository: https://github.com/unbraind/pm-cli\n\nRule description:\nFound '$SPAWN' with '{shell: process.platform === \"win32\"}'. This is dangerous because this call will spawn the command using a shell process. Doing so propagates current shell settings and variables, which makes it much easier for a malicious actor to execute commands. Use '{shell: false}' instead.\n\nAutotriage reason:\nThis matched because the rule treats any non-false shell value as dangerous, but here the shell option is only enabled on Windows for a fixed hardcoded command and arguments. There is no user-controlled input flowing into the command, so this is not a meaningful command injection risk in this context.\n\nImported from downloaded CSV:\nSemgrep_Code_Combined_Findings_2026_07_06.csv (local download, not committed)"
