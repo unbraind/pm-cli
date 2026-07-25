@@ -1,0 +1,21 @@
+id: pm-34w8za
+title: "History maintenance triplicates one load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact instead of sharing a stream-maintenance primitive"
+description: "The history subsystem is 5,807 lines across 18 files. Three of them are the maintenance operations and they are the three largest: src/sdk/history-redact.ts at 930 lines, src/sdk/history-compact.ts at 878, src/sdk/history-repair.ts at 728. Each performs the same pipeline — read the stream, verify the hash chain, apply a per-operation transform, re-anchor the chain, reconcile against the on-disk item, and emit a dry-run plan plus an applied report — and each implements that pipeline separately. A shared src/core/history/history-rewrite.ts exists at 226 lines but covers only part of it.\n\nMeasured with jscpd in strict mode at 12 lines and 60 tokens over src, packages and scripts (the repository gate runs at 22 lines and 115 tokens, which reports zero; that sensitivity gap is pm-xspd). Clone pairs inside this family:\n\n  sdk/history-redact.ts:784   <-> sdk/history-repair.ts:452    22 lines, 95 tokens\n  sdk/history-compact.ts:372  <-> sdk/history-repair.ts:400    16 lines, 92 tokens\n  sdk/history-compact.ts:412  <-> sdk/history-read.ts:122      20 lines, 73 tokens\n  cli/commands/copy.ts:110    <-> sdk/history-repair.ts:439    19 lines, 88 tokens\n  cli/commands/restore.ts:144 <-> sdk/history-redact.ts:738    19 lines, 80 tokens\n  cli/commands/copy.ts:110    <-> sdk/history-compact.ts:411   15 lines, 74 tokens\n  cli/commands/copy.ts:110    <-> cli/commands/restore.ts:336  15 lines, 71 tokens\n\nThe last four matter beyond duplication: cli/commands/copy.ts and cli/commands/restore.ts are re-implementing stream handling that the SDK owns, which is the SDK-first inversion pm-usfg exists to remove.\n\nThe cost is not line count, it is that each maintenance operation can drift in how it verifies and re-anchors. That is the exact surface where a divergence is silent and unrecoverable: a rewriter that re-anchors slightly differently from its siblings produces a stream that verifies under one command and not another. It also multiplies the work of every future history invariant by three.\n\nConsolidating is a simplification with zero capability change: the three commands keep their flags, output shapes and semantics, and differ only in the transform they hand to one shared maintenance primitive.\n\nScope boundary. pm-yh8r owns intra-file LOC decomposition as a general policy; pm-xspd owns the duplication-detection gate; pm-9yfo owns proving every mutation appends history; pm-klo8 owns the workspace-level stream. This is the specific consolidation of the item-stream maintenance pipeline that all of them assume exists."
+type: Chore
+status: open
+priority: 3
+tags[5]: "area:quality","area:sdk",history,refactor,simplification
+created_at: "2026-07-25T21:38:53.550Z"
+updated_at: "2026-07-25T21:38:53.550Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "One SDK primitive owns the load, verify, transform, re-anchor, reconcile and report pipeline for item history streams, and redact, repair and compact are expressed as transforms handed to it. cli/commands/copy.ts and cli/commands/restore.ts consume that primitive rather than re-implementing stream handling. The externally observable behaviour of every history command — flags, dry-run plans, applied reports, exit codes — is unchanged, asserted by the existing suites passing without modification. A jscpd run at 12 lines and 60 tokens reports no remaining clone pair inside the history family."
+parent: pm-o2kc
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-9yfo,related,"2026-07-25T21:38:53.550Z",null,null
+  pm-usfg,related,"2026-07-25T21:38:53.550Z",null,null
+  pm-xspd,related,"2026-07-25T21:38:53.550Z",null,null
+  pm-yh8r,related,"2026-07-25T21:38:53.550Z",null,null
+body: ""

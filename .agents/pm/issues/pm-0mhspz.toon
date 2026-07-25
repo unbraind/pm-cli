@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli","area:schema",customization
 created_at: "2026-07-25T21:12:41.727Z"
-updated_at: "2026-07-25T21:12:41.727Z"
+updated_at: "2026-07-25T21:40:48.466Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "pm schema add-status either requires a lifecycle role or defaults to a documented role and reports which role was applied; registering a role-less status is impossible or warns loudly at registration time. pm validate and pm health each gain a check that reports every registered status carrying no lifecycle role, with the affected item ids. pm context summary.open and summary.in_progress are derived from lifecycle roles rather than the literal built-in status ids, so active_items reconciles with its component buckets in a workspace using custom active statuses. A regression test registers a custom status per lifecycle role and asserts next/context/list-open/list-blocked classify its items consistently with the equivalent built-in status."
@@ -16,4 +16,6 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-8jdc,implements,"2026-07-25T21:12:41.727Z",null,null
   pm-pww8ax,related,"2026-07-25T21:12:41.727Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-25T21:40:48.466Z","harness:claude-code","Reproduction extended 2026-07-25: the second half of this class ships inside a first-party profile, so it is reachable without anyone mis-using pm schema add-status.\n\npm profile apply research registers the custom status 'analyzing' correctly — schema/statuses.json records roles [\"active\"], pm schema show-status analyzing reports source custom, roles active, order 12, and pm profile lint research reports ok with 0 warnings. Everything the workspace is told about the status is right.\n\nAn item moved into it then behaves inconsistently across the read surface:\n  pm next            recommends it, reasons \"open and ready to start\", ready 1   (role-derived, correct)\n  pm context         active_items 1, open 0, in_progress 0                        (mixed, the arithmetic stops adding up)\n  pm list-open       count 0                                                      (literal status id, wrong)\n  pm validate        ok true, pm health ok true                                   (silent)\n\nSo list-open belongs to the literal-id half alongside context summary.open / summary.in_progress, and this item's acceptance criterion already names it in the regression-test clause. Worth keeping because it changes the severity argument: the fix is not only about guarding a mis-used flag, it is about the three shipped profiles (agile, ops, research) each adding an active-role status whose items are already invisible to list-open today. Any workspace that applies a built-in profile — the intended path for customising pm to a domain — lands in the inconsistent state without doing anything unusual."
 body: ""

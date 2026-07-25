@@ -1,0 +1,22 @@
+id: pm-z8qd4k
+title: "Detected agent identity is not agent-unique, so claim mutual exclusion silently degenerates across a same-harness fleet"
+description: "Claim is documented as an atomic test-and-set so parallel agents never proceed believing they own the same item (the exact wording pm claim prints on conflict). That property holds only when the two agents resolve to different author strings. Under the identity configuration this project mandates it does not hold at all.\n\nReproduced on a clean sandbox workspace against dist build 2026.7.25.\n\nRepro A, the mandated configuration. AGENTS.md and the standing maintainer mandate forbid setting PM_AUTHOR: identity must stay automatic. Automatic resolution stamps author 'harness:claude-code' for every Claude Code process on the machine, so two concurrent agents are one principal. pm claim <id> from agent A succeeds. pm claim <id> from agent B succeeds too, exit 0, no warning, no conflict envelope; the assignee is unchanged because it already equals the caller, and last_claim is overwritten with B's message. Both history entries record author 'harness:claude-code', agent_harness 'claude-code'. Nothing in the item, the history stream, or the command output distinguishes the two agents or signals that a live claim was taken over. Both agents proceed believing they own the item.\n\nRepro B, the control. With PM_AUTHOR=agent-alpha then PM_AUTHOR=agent-beta, the second claim is correctly refused with the already-claimed-by error and the --force / --if-available guidance. The safety property is real; it is keyed on a value that automatic detection is not designed to make unique.\n\nContributing gap in provenance. src/core/shared/author.ts already resolves a per-invocation session identifier: AgentIdentitySignals carries a session field, each harness descriptor declares session_environment_keys (CLAUDE_CODE_SESSION_ID, CODEX_THREAD_ID, PI_SESSION_ID, OPENCODE_SESSION_ID, CURSOR_TRACE_ID, AIDER_SESSION_ID, GEMINI_CLI_SESSION_ID), and resolution populates it. src/core/history/history.ts then writes agent_harness, agent_model and agent_model_source into the entry and drops session on the floor. The one signal that would make two same-harness agents distinguishable is detected and discarded, so even after the fact the history stream cannot answer which of two concurrent agents held a claim or made an edit.\n\nScope boundary. pm-03pq3o (closed) added harness and model to the resolved identity; this item is about the identity being agent-unique and about the concurrency primitive that consumes it, not about adding another provenance attribute. pm-z9x1r2 owns detection mechanics, pm-u14c owns authenticity, pm-xc68 owns authorization, pm-3oqjnc owns assignment and routing, pm-w8q4 owns abandoned work. None of them owns the fact that the mutual-exclusion comparison has no unique operand in the fleet configuration the product mandates and ships."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli",concurrency,identity,multi-agent,provenance
+created_at: "2026-07-25T21:37:44.433Z"
+updated_at: "2026-07-25T21:37:44.433Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Two concurrent agents of the same harness resolve to distinct claim principals without either agent setting an identity flag, so the second pm claim on a held item is refused exactly as it is for two distinct PM_AUTHOR values. The resolved session identifier is carried into the history entry alongside agent_harness and agent_model so a completed stream can attribute a mutation to one agent process. Taking over an existing live claim is never silent: it either fails or reports the prior holder and requires --force, including when the prior holder shares the caller's harness. A regression test runs two same-harness claims against one item and asserts the second is refused, and asserts the history entries carry distinct agent identifiers."
+parent: pm-dj98
+risk: medium
+confidence: high
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-03pq3o,related,"2026-07-25T21:37:44.433Z",null,null
+  pm-3oqjnc,related,"2026-07-25T21:37:44.433Z",null,null
+  pm-szv11n,implements,"2026-07-25T21:37:44.433Z",null,null
+  pm-w8q4,related,"2026-07-25T21:37:44.433Z",null,null
+  pm-z9x1r2,related,"2026-07-25T21:37:44.433Z",null,null
+body: ""
