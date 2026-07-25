@@ -255,20 +255,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
           return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
         }
         if (target.includes("/check-runs")) {
-          return {
-            status: 0,
-            stdout: JSON.stringify({
-              check_runs: [
-                {
-                  name: "CodeFactor",
-                  status: "completed",
-                  conclusion: "success",
-                  output: { title: "No issues found." },
-                },
-              ],
-            }),
-            stderr: "",
-          };
+          return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
         }
         return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
       });
@@ -313,20 +300,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
           : { status: 1, stdout: "", stderr: "unavailable" };
       }
       if (target.includes("/check-runs")) {
-        return {
-          status: 0,
-          stdout: JSON.stringify({
-            check_runs: [
-              {
-                name: "CodeFactor",
-                status: "completed",
-                conclusion: "success",
-                output: { title: "No issues found." },
-              },
-            ],
-          }),
-          stderr: "",
-        };
+        return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
       }
       return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
     });
@@ -337,6 +311,41 @@ describe("scripts/release/hosted-analysis-gate", () => {
       ok: false,
       reason: "DeepScan status is missing for the exact commit",
     });
+    expect(process.exitCode).toBe(1);
+  });
+
+  it.each([
+    {
+      label: "DeepScan failure with missing CodeFactor",
+      statuses: {
+        statuses: [{ context: "DeepScan", state: "failure", description: "2 new issues" }],
+      },
+      checks: { check_runs: [] },
+      reason: "DeepScan is not successful",
+    },
+    {
+      label: "missing DeepScan with CodeFactor failure",
+      statuses: { statuses: [] },
+      checks: {
+        check_runs: [
+          {
+            name: "CodeFactor",
+            status: "completed",
+            conclusion: "failure",
+            output: { title: "2 issues found." },
+          },
+        ],
+      },
+      reason: "DeepScan status is missing for the exact commit",
+    },
+  ])("does not replace partial exact evidence for $label", async ({ label, statuses, checks, reason }) => {
+    const spawnSync = mockCommands({ statuses, checks });
+    const payload = await runJson([], `hostedAnalysisPartialExact-${label}`);
+    expect(payload.ok).toBe(false);
+    expect(payload.reason).toContain(reason);
+    expect(
+      spawnSync.mock.calls.some(([, args]) => args[0] === "rev-parse" && String(args[1]).endsWith("^2")),
+    ).toBe(false);
     expect(process.exitCode).toBe(1);
   });
 

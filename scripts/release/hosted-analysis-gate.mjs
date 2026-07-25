@@ -179,12 +179,13 @@ function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
     analyzedSha: sha,
     analysisSource: "exact_commit",
   };
-  if (
-    (initialEvidence.deepScan.ok ||
-      !initialEvidence.deepScan.reason.startsWith("DeepScan status is missing")) &&
-    (initialEvidence.codeFactor.ok ||
-      !initialEvidence.codeFactor.reason.startsWith("CodeFactor check run is missing"))
-  ) {
+  const deepScanMissing =
+    !initialEvidence.deepScan.ok &&
+    initialEvidence.deepScan.reason.startsWith("DeepScan status is missing");
+  const codeFactorMissing =
+    !initialEvidence.codeFactor.ok &&
+    initialEvidence.codeFactor.reason.startsWith("CodeFactor check run is missing");
+  if (!deepScanMissing || !codeFactorMissing) {
     return exact;
   }
   const mergeParent = runCaptured(GIT, ["rev-parse", `${sha}^2`]);
