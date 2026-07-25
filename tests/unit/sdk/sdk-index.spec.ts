@@ -102,6 +102,7 @@ import {
   readSettings,
   refreshItemMetadataDerivedIndex,
   restore,
+  resolveImplicitPmRoot,
   resolvePmRoot,
   runAction,
   resolveSubcommandFlagContractsForCommand,
@@ -979,6 +980,7 @@ describe("public sdk entrypoint", () => {
     expect(typeof getItemPath).toBe("function");
     expect(typeof locateItem).toBe("function");
     expect(typeof readSettings).toBe("function");
+    expect(typeof resolveImplicitPmRoot).toBe("function");
     expect(typeof resolvePmRoot).toBe("function");
     expect("_testOnlyActionRunner" in sdkBarrel).toBe(false);
     expect("_testOnlyCliContracts" in sdkBarrel).toBe(false);

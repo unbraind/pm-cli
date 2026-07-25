@@ -285,9 +285,6 @@
   },
   "src/sdk/governance/health.ts": {
     "no-useless-assignment": {
-      "count": 3
-    },
-    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },

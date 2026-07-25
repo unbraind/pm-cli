@@ -289,15 +289,105 @@ interface HistoryStreamSummary {
   warnings: string[];
   over_threshold: string[];
   max_entries: number | null;
+  tombstones: string[];
+  orphaned: string[];
+}
+
+interface HistoryStreamInspection {
+  warnings: string[];
+  overThreshold: boolean;
+  classification: "live" | "tombstone" | "orphaned" | "unreadable";
+}
+
+/** Enumerate item document IDs from every direct tracker folder, including unreadable documents and extension-defined folders unavailable to this process. */
+async function listStoredItemDocumentIds(pmRoot: string): Promise<Set<string>> {
+  const directories = (
+    await fs.readdir(pmRoot, { withFileTypes: true })
+  ).filter((entry) => entry.isDirectory());
+  const filesByDirectory = await Promise.all(
+    directories.map((entry) =>
+      fs.readdir(path.join(pmRoot, entry.name), { withFileTypes: true }),
+    ),
+  );
+  return new Set(
+    filesByDirectory.flatMap((entries) =>
+      entries
+        .filter((entry) => entry.isFile())
+        .filter((entry) =>
+          ITEM_FILE_EXTENSIONS.some((extension) =>
+            entry.name.endsWith(extension),
+          ),
+        )
+        .map((entry) => path.parse(entry.name).name),
+    ),
+  );
+}
+
+async function inspectHistoryStream(
+  streamPath: string,
+  itemId: string,
+  compactPolicy: HistoryCompactPolicy,
+  liveItemIds: ReadonlySet<string>,
+): Promise<HistoryStreamInspection> {
+  const warnings = await runActiveOnReadHooks({
+    path: streamPath,
+    scope: "project",
+  });
+  const needsClassification =
+    itemId !== "_workspace" && !liveItemIds.has(itemId);
+  if (!compactPolicy.enabled && !needsClassification) {
+    return { warnings, overThreshold: false, classification: "live" };
+  }
+  let raw: string;
+  try {
+    raw = await fs.readFile(streamPath, "utf8");
+  } catch {
+    return {
+      warnings,
+      overThreshold: false,
+      classification: "unreadable",
+    };
+  }
+  let classification: HistoryStreamInspection["classification"] = "live";
+  if (needsClassification) {
+    const lastLine = raw
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .at(-1);
+    try {
+      const lastEntry = JSON.parse(lastLine ?? "{}") as { op?: unknown };
+      classification = lastEntry.op === "delete" ? "tombstone" : "orphaned";
+    } catch {
+      classification = "orphaned";
+    }
+  }
+  const entryCount = compactPolicy.enabled
+    ? raw.split(/\r?\n/).filter((line) => line.trim().length > 0).length
+    : 0;
+  return {
+    warnings,
+    overThreshold:
+      compactPolicy.enabled && entryCount > compactPolicy.max_entries,
+    classification,
+  };
 }
 
 async function countHistoryStreams(
   pmRoot: string,
   compactPolicy: HistoryCompactPolicy,
+  liveItemIds: ReadonlySet<string>,
 ): Promise<HistoryStreamSummary> {
   const historyDir = path.join(pmRoot, "history");
   if (!(await isDirectory(historyDir))) {
-    return { count: 0, warnings: [], over_threshold: [], max_entries: null };
+    return {
+      count: 0,
+      warnings: [],
+      over_threshold: [],
+      max_entries: null,
+      tombstones: [],
+      orphaned: [],
+    };
   }
   const historyFiles = (await fs.readdir(historyDir))
     .filter((entry) => entry.endsWith(".jsonl"))
@@ -307,24 +397,21 @@ async function countHistoryStreams(
   const maxEntries = policyActive ? compactPolicy.max_entries : null;
   const warnings: string[] = [];
   const overThreshold: string[] = [];
+  const tombstones: string[] = [];
+  const orphaned: string[] = [];
   for (const fileName of historyFiles) {
     const streamPath = path.join(historyDir, fileName);
-    warnings.push(
-      ...(await runActiveOnReadHooks({ path: streamPath, scope: "project" })),
+    const itemId = fileName.slice(0, -".jsonl".length);
+    const inspection = await inspectHistoryStream(
+      streamPath,
+      itemId,
+      compactPolicy,
+      liveItemIds,
     );
-    if (!policyActive) {
-      continue;
-    }
-    const raw = await fs.readFile(streamPath, "utf8");
-    let entries = 0;
-    for (const line of raw.split(/\r?\n/)) {
-      if (line.trim().length > 0) {
-        entries += 1;
-      }
-    }
-    if (entries > compactPolicy.max_entries) {
-      overThreshold.push(fileName.slice(0, -".jsonl".length));
-    }
+    warnings.push(...inspection.warnings);
+    if (inspection.classification === "tombstone") tombstones.push(itemId);
+    if (inspection.classification === "orphaned") orphaned.push(itemId);
+    if (inspection.overThreshold) overThreshold.push(itemId);
   }
 
   return {
@@ -334,9 +421,12 @@ async function countHistoryStreams(
       ...overThreshold.map(
         (id) => `history_stream_over_compact_threshold:${id}`,
       ),
+      ...orphaned.map((id) => `history_orphaned_stream:${id}`),
     ],
     over_threshold: overThreshold,
     max_entries: maxEntries,
+    tombstones,
+    orphaned,
   };
 }
 
@@ -396,40 +486,39 @@ function shouldReportHistoryDirectoryUnreadable(error: unknown): boolean {
   );
 }
 
-async function buildIntegrityCheck(
+interface ItemIntegrityScan {
+  paths: string[];
+  unreadable: string[];
+  conflictMarkers: Array<{ path: string; line: number; marker: string }>;
+  parseFailures: string[];
+  formatVersions: Array<{ ref: string; version: number }>;
+}
+
+async function scanItemIntegrity(
   pmRoot: string,
   typeToFolder: Record<string, string>,
   schema: PmSettings["schema"],
-): Promise<{ check: HealthCheck; warnings: string[] }> {
-  const itemPaths = await listItemDocumentPaths(pmRoot, typeToFolder);
-  const itemUnreadable: string[] = [];
-  const itemConflictMarkers: Array<{
-    path: string;
-    line: number;
-    marker: string;
-  }> = [];
-  const itemParseFailures: string[] = [];
-  const formatVersionEntries: Array<{ ref: string; version: number }> = [];
+): Promise<ItemIntegrityScan> {
+  const paths = await listItemDocumentPaths(pmRoot, typeToFolder);
+  const unreadable: string[] = [];
+  const conflictMarkers: ItemIntegrityScan["conflictMarkers"] = [];
+  const parseFailures: string[] = [];
+  const formatVersions: ItemIntegrityScan["formatVersions"] = [];
   const extensionFieldNames = collectRegisteredItemFieldNames(
     getActiveExtensionRegistrations(),
   );
-
-  for (const itemPath of itemPaths) {
+  for (const itemPath of paths) {
     const relativePath = normalizeRelativePath(pmRoot, itemPath);
-    let raw = "";
+    let raw: string;
     try {
       raw = await fs.readFile(itemPath, "utf8");
     } catch {
-      itemUnreadable.push(relativePath);
+      unreadable.push(relativePath);
       continue;
     }
     const conflictMarker = findFirstMergeConflictMarker(raw);
     if (conflictMarker) {
-      itemConflictMarkers.push({
-        path: relativePath,
-        line: conflictMarker.line,
-        marker: conflictMarker.marker,
-      });
+      conflictMarkers.push({ path: relativePath, ...conflictMarker });
       continue;
     }
     try {
@@ -438,86 +527,93 @@ async function buildIntegrityCheck(
         schema,
         extensionFieldNames,
       });
-      formatVersionEntries.push({
+      formatVersions.push({
         ref: relativePath,
         version: effectiveItemFormatVersion(parsed.metadata),
       });
     } catch {
-      itemParseFailures.push(relativePath);
+      parseFailures.push(relativePath);
     }
   }
-  const formatVersionScan = scanItemFormatVersions(formatVersionEntries);
-  const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);
+  return { paths, unreadable, conflictMarkers, parseFailures, formatVersions };
+}
 
+interface HistoryIntegrityScan {
+  files: string[];
+  unreadable: string[];
+  conflictMarkers: Array<{ id: string; line: number; marker: string }>;
+  invalidJson: Array<{ id: string; line: number }>;
+}
+
+async function scanHistoryIntegrity(
+  pmRoot: string,
+): Promise<HistoryIntegrityScan> {
   const historyDir = path.join(pmRoot, "history");
-  const historyUnreadable: string[] = [];
-  const historyConflictMarkers: Array<{
-    id: string;
-    line: number;
-    marker: string;
-  }> = [];
-  const historyInvalidJson: Array<{ id: string; line: number }> = [];
-  let historyFiles: string[] = [];
+  const unreadable: string[] = [];
+  const conflictMarkers: HistoryIntegrityScan["conflictMarkers"] = [];
+  const invalidJson: HistoryIntegrityScan["invalidJson"] = [];
+  let files: string[] = [];
   try {
-    historyFiles = (await fs.readdir(historyDir))
+    files = (await fs.readdir(historyDir))
       .filter((entry) => entry.endsWith(".jsonl"))
       .sort((left, right) => left.localeCompare(right));
   } catch (error: unknown) {
     /* c8 ignore start -- ENOENT/non-ENOENT differentiation requires filesystem fault injection */
-    if (shouldReportHistoryDirectoryUnreadable(error)) {
-      historyUnreadable.push("history");
-    }
+    if (shouldReportHistoryDirectoryUnreadable(error))
+      unreadable.push("history");
     /* c8 ignore stop */
   }
-  for (const fileName of historyFiles) {
+  for (const fileName of files) {
     const itemId = fileName.slice(0, -".jsonl".length);
-    const historyPath = path.join(historyDir, fileName);
-    let raw = "";
+    let raw: string;
     try {
-      raw = await fs.readFile(historyPath, "utf8");
+      raw = await fs.readFile(path.join(historyDir, fileName), "utf8");
     } catch {
-      historyUnreadable.push(itemId);
+      unreadable.push(itemId);
       continue;
     }
     const conflictMarker = findFirstMergeConflictMarker(raw);
     if (conflictMarker) {
-      historyConflictMarkers.push({
-        id: itemId,
-        line: conflictMarker.line,
-        marker: conflictMarker.marker,
-      });
+      conflictMarkers.push({ id: itemId, ...conflictMarker });
       continue;
     }
-    const lines = raw.split(/\r?\n/);
-    for (let index = 0; index < lines.length; index += 1) {
-      const line = lines[index]?.trim();
-      if (!line) {
-        continue;
-      }
+    raw.split(/\r?\n/).forEach((line, index) => {
+      if (!line.trim()) return;
       try {
         JSON.parse(line);
       } catch {
-        historyInvalidJson.push({
-          id: itemId,
-          line: index + 1,
-        });
+        invalidJson.push({ id: itemId, line: index + 1 });
       }
-    }
+    });
   }
+  return { files, unreadable, conflictMarkers, invalidJson };
+}
+
+async function buildIntegrityCheck(
+  pmRoot: string,
+  typeToFolder: Record<string, string>,
+  schema: PmSettings["schema"],
+): Promise<{ check: HealthCheck; warnings: string[] }> {
+  const itemScan = await scanItemIntegrity(pmRoot, typeToFolder, schema);
+  const historyScan = await scanHistoryIntegrity(pmRoot);
+  const formatVersionScan = scanItemFormatVersions(itemScan.formatVersions);
+  const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);
 
   const warnings = [
-    ...itemUnreadable.map((entry) => `integrity_item_unreadable:${entry}`),
-    ...itemConflictMarkers.map(
+    ...itemScan.unreadable.map((entry) => `integrity_item_unreadable:${entry}`),
+    ...itemScan.conflictMarkers.map(
       (entry) => `integrity_item_conflict_marker:${entry.path}:L${entry.line}`,
     ),
-    ...itemParseFailures.map((entry) => `integrity_item_parse_failed:${entry}`),
-    ...historyUnreadable.map(
+    ...itemScan.parseFailures.map(
+      (entry) => `integrity_item_parse_failed:${entry}`,
+    ),
+    ...historyScan.unreadable.map(
       (entry) => `integrity_history_unreadable:${entry}`,
     ),
-    ...historyConflictMarkers.map(
+    ...historyScan.conflictMarkers.map(
       (entry) => `integrity_history_conflict_marker:${entry.id}:L${entry.line}`,
     ),
-    ...historyInvalidJson.map(
+    ...historyScan.invalidJson.map(
       (entry) => `integrity_history_invalid_json:${entry.id}:L${entry.line}`,
     ),
     /* c8 ignore start -- outdated-version items are unreachable until CURRENT_ITEM_FORMAT_VERSION advances past the baseline (an effective version below 1 cannot occur); the per-item mapping is covered in item-format-version.spec, and the ahead path below is covered by health-command.spec */
@@ -543,27 +639,27 @@ async function buildIntegrityCheck(
       name: "integrity",
       status: normalizedWarnings.length === 0 ? "ok" : "warn",
       details: {
-        checked_item_files: itemPaths.length,
-        checked_history_streams: historyFiles.length,
+        checked_item_files: itemScan.paths.length,
+        checked_history_streams: historyScan.files.length,
         counts: {
-          item_unreadable: itemUnreadable.length,
-          item_conflict_markers: itemConflictMarkers.length,
-          item_parse_failures: itemParseFailures.length,
-          history_unreadable: historyUnreadable.length,
-          history_conflict_markers: historyConflictMarkers.length,
-          history_invalid_json: historyInvalidJson.length,
+          item_unreadable: itemScan.unreadable.length,
+          item_conflict_markers: itemScan.conflictMarkers.length,
+          item_parse_failures: itemScan.parseFailures.length,
+          history_unreadable: historyScan.unreadable.length,
+          history_conflict_markers: historyScan.conflictMarkers.length,
+          history_invalid_json: historyScan.invalidJson.length,
           item_outdated_format_version: formatVersionScan.outdated.length,
           item_ahead_format_version: formatVersionScan.ahead.length,
           tracked_runtime_cache_files: trackedRuntimeCache.tracked_path_count,
         },
-        item_unreadable: itemUnreadable,
-        item_conflict_markers: itemConflictMarkers,
-        item_parse_failures: itemParseFailures,
+        item_unreadable: itemScan.unreadable,
+        item_conflict_markers: itemScan.conflictMarkers,
+        item_parse_failures: itemScan.parseFailures,
         item_outdated_format_version: formatVersionScan.outdated,
         item_ahead_format_version: formatVersionScan.ahead,
-        history_unreadable: historyUnreadable,
-        history_conflict_markers: historyConflictMarkers,
-        history_invalid_json: historyInvalidJson,
+        history_unreadable: historyScan.unreadable,
+        history_conflict_markers: historyScan.conflictMarkers,
+        history_invalid_json: historyScan.invalidJson,
         tracked_runtime_cache: {
           tracker_relative_root: trackedRuntimeCache.tracker_relative_root,
           tracked_paths: trackedRuntimeCache.tracked_paths,
@@ -2428,6 +2524,7 @@ function buildStorageHealthCheck(
     name: "storage",
     status:
       historySummary.over_threshold.length === 0 &&
+      historySummary.orphaned.length === 0 &&
       !hasActionableAuthorWarnings &&
       !hasStaleInProgressItems
         ? "ok"
@@ -2435,6 +2532,18 @@ function buildStorageHealthCheck(
     details: {
       items: items.length,
       history_streams: historySummary.count,
+      tombstones: {
+        retention_policy: "retain_append_only",
+        gc_enabled: false,
+        count: historySummary.tombstones.length,
+        ids: historySummary.tombstones.slice(0, 25),
+        truncated: historySummary.tombstones.length > 25,
+      },
+      orphaned_history_streams: {
+        count: historySummary.orphaned.length,
+        ids: historySummary.orphaned.slice(0, 25),
+        truncated: historySummary.orphaned.length > 25,
+      },
       ...(hasAuthorEvents ? { author_attribution: authorAttribution } : {}),
       ...(hasStaleInProgressItems
         ? { stale_in_progress: staleInProgress }
@@ -2656,6 +2765,7 @@ export async function runHealth(
   const historySummary = await countHistoryStreams(
     pmRoot,
     settings.history.compact_policy,
+    await listStoredItemDocumentIds(pmRoot),
   );
   const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
   const actionableUnknownAuthorEventCount =

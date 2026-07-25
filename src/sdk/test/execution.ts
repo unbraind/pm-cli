@@ -63,6 +63,7 @@ import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
 
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
+const TEST_OUTPUT_SLAB_MAX_CHARACTERS = 64 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
 const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
 const DEFAULT_LINKED_TEST_PIPE_CLOSE_GRACE_MS = 5000;
@@ -151,6 +152,7 @@ interface LinkedTestExecutionResult {
   signal?: NodeJS.Signals | null;
   timedOut: boolean;
   maxBufferExceeded: boolean;
+  outputTruncated: boolean;
   spawnError?: string;
 }
 
@@ -1017,7 +1019,7 @@ function endLinkedTestProgress(
   context: LinkedTestProgressContext,
   executionResult: Pick<
     LinkedTestExecutionResult,
-    "timedOut" | "maxBufferExceeded" | "exitCode" | "signal"
+    "timedOut" | "maxBufferExceeded" | "outputTruncated" | "exitCode" | "signal"
   >,
   startedAt: number,
   mode: LinkedTestProgressMode,
@@ -1038,6 +1040,9 @@ function endLinkedTestProgress(
   }
   if (executionResult.maxBufferExceeded) {
     reasonTokens.push("reason=max_buffer");
+  }
+  if (executionResult.outputTruncated) {
+    reasonTokens.push("output=truncated");
   }
   if (executionResult.signal) {
     reasonTokens.push(`signal=${executionResult.signal}`);
@@ -1091,11 +1096,11 @@ interface LinkedTestTimerState {
 }
 
 interface LinkedTestOutputBufferState {
-  stdout: string;
-  stderr: string;
+  stdout: string[];
+  stderr: string[];
   stdoutBytes: number;
   stderrBytes: number;
-  maxBufferExceeded: boolean;
+  outputTruncated: boolean;
 }
 
 function clearLinkedTestTimers(timers: LinkedTestTimerState): void {
@@ -1172,29 +1177,38 @@ function appendLinkedTestOutputChunk(
   state: LinkedTestOutputBufferState,
   chunk: Buffer | string,
   target: "stdout" | "stderr",
-): boolean {
-  if (state.maxBufferExceeded) {
-    return false;
-  }
+): void {
   const bytes =
     typeof chunk === "string" ? Buffer.byteLength(chunk) : chunk.byteLength;
-  if (target === "stdout") {
-    const remainingBytes = TEST_OUTPUT_MAX_BUFFER_BYTES - state.stdoutBytes;
-    state.stdout += readLinkedTestOutputChunkText(chunk, bytes, remainingBytes);
-    state.stdoutBytes += bytes;
-  } else {
-    const remainingBytes = TEST_OUTPUT_MAX_BUFFER_BYTES - state.stderrBytes;
-    state.stderr += readLinkedTestOutputChunkText(chunk, bytes, remainingBytes);
-    state.stderrBytes += bytes;
+  const slabs = target === "stdout" ? state.stdout : state.stderr;
+  const retainedBytes =
+    target === "stdout" ? state.stdoutBytes : state.stderrBytes;
+  let text = readLinkedTestOutputChunkText(
+    chunk,
+    bytes,
+    TEST_OUTPUT_MAX_BUFFER_BYTES - retainedBytes,
+  );
+  while (text.length > 0) {
+    const lastIndex = slabs.length - 1;
+    const lastSlab = slabs[lastIndex];
+    const availableCharacters =
+      TEST_OUTPUT_SLAB_MAX_CHARACTERS - (lastSlab?.length ?? 0);
+    if (lastSlab !== undefined && availableCharacters > 0) {
+      slabs[lastIndex] = lastSlab + text.slice(0, availableCharacters);
+      text = text.slice(availableCharacters);
+    } else {
+      slabs.push(text.slice(0, TEST_OUTPUT_SLAB_MAX_CHARACTERS));
+      text = text.slice(TEST_OUTPUT_SLAB_MAX_CHARACTERS);
+    }
   }
-  const bufferExceeded =
+  if (target === "stdout") state.stdoutBytes += bytes;
+  else state.stderrBytes += bytes;
+  if (
     state.stdoutBytes > TEST_OUTPUT_MAX_BUFFER_BYTES ||
-    state.stderrBytes > TEST_OUTPUT_MAX_BUFFER_BYTES;
-  if (bufferExceeded) {
-    state.maxBufferExceeded = true;
-    return true;
+    state.stderrBytes > TEST_OUTPUT_MAX_BUFFER_BYTES
+  ) {
+    state.outputTruncated = true;
   }
-  return false;
 }
 
 function waitForLinkedTestChildClose(
@@ -1276,11 +1290,11 @@ async function runLinkedTestCommand(
     timedOutTimer: null,
   };
   const output: LinkedTestOutputBufferState = {
-    stdout: "",
-    stderr: "",
+    stdout: [],
+    stderr: [],
     stdoutBytes: 0,
     stderrBytes: 0,
-    maxBufferExceeded: false,
+    outputTruncated: false,
   };
   const requestTermination = createLinkedTestTerminationRequester(
     child,
@@ -1293,9 +1307,7 @@ async function runLinkedTestCommand(
     chunk: Buffer | string,
     target: "stdout" | "stderr",
   ): void => {
-    if (appendLinkedTestOutputChunk(output, chunk, target)) {
-      void requestTermination();
-    }
+    appendLinkedTestOutputChunk(output, chunk, target);
   };
 
   child.stdout?.on("data", (chunk) => appendChunk(chunk, "stdout"));
@@ -1314,13 +1326,17 @@ async function runLinkedTestCommand(
 
   const { code, signal } = await waitForLinkedTestChildClose(child);
   clearLinkedTestTimers(timers);
+  const truncationNotice = output.outputTruncated
+    ? `\n[pm linked-test output truncated at ${TEST_OUTPUT_MAX_BUFFER_BYTES} bytes per stream; the child process continued to completion]\n`
+    : "";
   const executionResult: LinkedTestExecutionResult = {
-    stdout: output.stdout,
-    stderr: output.stderr,
+    stdout: `${output.stdout.join("")}${truncationNotice}`,
+    stderr: output.stderr.join(""),
     exitCode: code,
     signal,
     timedOut,
-    maxBufferExceeded: output.maxBufferExceeded,
+    maxBufferExceeded: false,
+    outputTruncated: output.outputTruncated,
     spawnError,
   };
   endLinkedTestProgress(
@@ -2878,8 +2894,10 @@ export const _testOnlyTestCommand = {
   countLinkedTestItemFiles,
   ensureScope,
   evaluateLinkedTestAssertions,
+  endLinkedTestProgress,
   extractPmInvocationArgsFromSegment,
   firstDirectTestRunnerSubcommand,
+  formatLinkedTestExecutionError,
   hasLinkedTestAssertions,
   initializeLinkedTestSandboxes,
   parseAddJsonEntries,

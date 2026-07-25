@@ -12,11 +12,30 @@
 
 ### Fixed
 
+- GH-691: parseItemDocument errors need stable structured SDK classification ([pm-r9pudt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r9pudt.toon))
+- First-party service collision: builtin-calendar and builtin-guide-shell both override the global output_format service ([pm-ixoa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ixoa.toon))
+- GH-680: completed Plan close must transition plan_mode terminally ([pm-g512pv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g512pv.toon))
+- GH-692: plan update-step must persist file, test, and doc evidence fields ([pm-z5vamp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z5vamp.toon))
+- GH-677: pm-path relocation must diagnose extension discovery changes ([pm-qswf81](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qswf81.toon))
+- GH-678: linked-test sandbox must preserve freshly installed project extensions across child processes ([pm-jvken3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jvken3.toon))
+- GH-709: batch duplicate-cluster sweep with canonical precomputed similarity signals ([pm-2i12ti](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2i12ti.toon))
+- pm config set on one leaf key rewrites settings.json with every default materialized and silently replaces explicit stored values (validation.parent_reference warn -\> strict_error) ([pm-x2aplf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x2aplf.toon))
+- GH-690: plan resume and approve must apply or reject scope changes ([pm-bxdlfa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bxdlfa.toon))
+- GH-688: seeded Plan creation must be atomic across ownership boundaries ([pm-96tter](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-96tter.toon))
+- GH-679: linked-test output capture must not abort verbose child tools with EAGAIN ([pm-j36ypd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j36ypd.toon))
 - GH-706: accept bare conventional forms for create/update boolean metadata flags ([pm-ulb3rc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ulb3rc.toon))
 - GH-700/GH-701/GH-702: nightly Node 22 and cross-platform regression bundle ([pm-3x8w4m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3x8w4m.toon))
 - GH-704: make extension activation failures actionable at command and lifecycle boundaries ([pm-3ljt19](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3ljt19.toon))
 - GH-705: make duplicate governance discoverable and advisory by default ([pm-de3foa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-de3foa.toon))
 - GH-703: populate portable workspace coordinates in extension CommandHandlerContext ([pm-fc9gm4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fc9gm4.toon))
+
+### Removed
+
+- GH-708: make retained delete tombstones discoverable and policy-controlled ([pm-wdrkfr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wdrkfr.toon))
+
+### Security
+
+- Refresh 2026-07-15 npm dependency updates with compatibility and release-gate proof ([pm-tll8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-tll8.toon))
 
 ### Other
 

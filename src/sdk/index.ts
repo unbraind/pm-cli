@@ -128,17 +128,25 @@ export {
 } from "./mutation-guard.js";
 export {
   findSimilarItems,
+  findDuplicateClusters,
   evaluateSimilarityGovernance,
   similarityAdvisoryWarnings,
   jaccardSimilarity,
   normalizeSimilarityText,
+  prepareSimilarityText,
   scoreItemSimilarity,
+  scorePreparedItemSimilarity,
   tokenizeSimilarityText,
   type FindSimilarItemsOptions,
+  type FindDuplicateClustersOptions,
+  type DuplicateCluster,
+  type DuplicateClusterMatch,
+  type DuplicateClustersResult,
   type SimilarItemCandidate,
   type SimilarItemMatch,
   type SimilarItemsResult,
   type SimilarityAdvisory,
+  type PreparedSimilarityText,
 } from "./similarity.js";
 export {
   inspectStaleInProgressItems,
@@ -514,6 +522,7 @@ export {
   resolveCalendarOutputFormat,
   resolveGuideOutputFormat,
   resolveItemTypeRegistry,
+  resolveImplicitPmRoot,
   resolvePmRoot,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,

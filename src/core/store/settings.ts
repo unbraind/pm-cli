@@ -58,6 +58,7 @@ const MAX_VECTOR_STORE_COLLECTION_NAME_LENGTH = 128;
 const DUPLICATE_DETECTION_MODES = new Set(["off", "advisory", "strict"]);
 
 interface SettingsPersistSourceSnapshot {
+  source_settings: ParsedSettings;
   has_source_item_type_definitions: boolean;
   source_item_type_definitions: ItemTypeDefinition[];
   has_source_schema_statuses: boolean;
@@ -386,6 +387,7 @@ function buildSettingsPersistSourceSnapshot(
   const sourceFields = cloneOptionalArray(sourceSchema?.fields);
   const sourceTypeWorkflows = cloneOptionalArray(sourceSchema?.type_workflows);
   return {
+    source_settings: structuredClone(parsedSettings),
     has_source_item_type_definitions: Array.isArray(
       parsedSettings.item_types?.definitions,
     ),
@@ -437,16 +439,26 @@ function getSettingsPersistSourceSnapshot(
   return candidate as SettingsPersistSourceSnapshot;
 }
 
+/**
+ * Mark the runtime-selected item format as intentional persisted state while
+ * preserving every other default-backed setting as a sparse omission.
+ */
+export function persistSelectedItemFormat(settings: PmSettings): void {
+  const source = getSettingsPersistSourceSnapshot(settings);
+  if (source) {
+    const detachedSource = structuredClone(source);
+    detachedSource.source_settings.item_format = settings.item_format;
+    attachSettingsPersistSourceSnapshot(settings, detachedSource);
+  }
+}
+
 function cloneSettingsReadResult(
   result: SettingsReadResult,
 ): SettingsReadResult {
   const clonedSettings = structuredClone(result.settings);
   const persistSource = getSettingsPersistSourceSnapshot(result.settings);
   if (persistSource) {
-    attachSettingsPersistSourceSnapshot(
-      clonedSettings,
-      structuredClone(persistSource),
-    );
+    attachSettingsPersistSourceSnapshot(clonedSettings, persistSource);
   }
   return {
     settings: clonedSettings,
@@ -1616,17 +1628,84 @@ function buildNormalizedSettingsForSerialization(
   };
 }
 
-/** Implements serialize settings for the public runtime surface of this module. */
-export function serializeSettings(
+function applySettingsDelta(
+  target: Record<string, unknown>,
+  baseline: Record<string, unknown>,
+  current: Record<string, unknown>,
+): void {
+  const keys = new Set([...Object.keys(baseline), ...Object.keys(current)]);
+  for (const key of keys) {
+    const before = baseline[key];
+    const after = current[key];
+    if (stableValueEquals(before, after)) continue;
+    if (after === undefined) {
+      delete target[key];
+      continue;
+    }
+    if (
+      typeof before === "object" &&
+      before !== null &&
+      !Array.isArray(before) &&
+      typeof after === "object" &&
+      after !== null &&
+      !Array.isArray(after)
+    ) {
+      const existing = target[key];
+      const nestedTarget =
+        typeof existing === "object" &&
+        existing !== null &&
+        !Array.isArray(existing)
+          ? (existing as Record<string, unknown>)
+          : {};
+      applySettingsDelta(
+        nestedTarget,
+        before as Record<string, unknown>,
+        after as Record<string, unknown>,
+      );
+      if (Object.keys(nestedTarget).length > 0) target[key] = nestedTarget;
+      else delete target[key];
+      continue;
+    }
+    target[key] = structuredClone(after);
+  }
+}
+
+const SETTINGS_TOP_LEVEL_KEY_ORDER = [
+  "version",
+  "id_prefix",
+  "ids",
+  "author_default",
+  "mutation_guard",
+  "item_format",
+  "locks",
+  "checkpoints",
+  "output",
+  "history",
+  "validation",
+  "governance",
+  "workflow",
+  "testing",
+  "telemetry",
+  "agent_guidance",
+  "item_types",
+  "schema",
+  "context",
+  "extensions",
+  "search",
+  "providers",
+  "vector_store",
+];
+
+function buildOrderedSettingsForSerialization(
   settings: PmSettings,
-  options: SerializeSettingsOptions = {},
-): string {
+  persistSource: SettingsPersistSourceSnapshot | undefined,
+): Record<string, unknown> {
   const baseSettings = buildSerializeBaseSettings(settings);
   const governance = resolveGovernanceKnobs(baseSettings);
   const normalizedSchema = normalizeRuntimeSchemaSettings(baseSettings.schema);
   const persistedFileBackedSections = resolvePersistedFileBackedSchemaSections(
     baseSettings,
-    options.persist_source,
+    persistSource,
   );
   const normalizedSettings = buildNormalizedSettingsForSerialization(
     baseSettings,
@@ -1639,34 +1718,54 @@ export function serializeSettings(
       ...(normalizedSettings as unknown as Record<string, unknown>),
       governance: normalizeGovernanceForPersist(governance) as unknown,
     },
-    [
-      "version",
-      "id_prefix",
-      "ids",
-      "author_default",
-      "mutation_guard",
-      "item_format",
-      "locks",
-      "checkpoints",
-      "output",
-      "history",
-      "validation",
-      "governance",
-      "workflow",
-      "testing",
-      "telemetry",
-      "agent_guidance",
-      "item_types",
-      "schema",
-      "context",
-      "extensions",
-      "search",
-      "providers",
-      "vector_store",
-    ],
+    SETTINGS_TOP_LEVEL_KEY_ORDER,
   );
   orderSerializedSettingsSections(ordered);
+  return ordered;
+}
 
+/** Implements serialize settings for the public runtime surface of this module. */
+export function serializeSettings(
+  settings: PmSettings,
+  options: SerializeSettingsOptions = {},
+): string {
+  const ordered = buildOrderedSettingsForSerialization(
+    settings,
+    options.persist_source,
+  );
+  if (options.persist_source) {
+    const baselineSettings = mergeSettings(
+      options.persist_source.source_settings,
+    );
+    baselineSettings.item_types = {
+      definitions: structuredClone(
+        options.persist_source.runtime_item_type_definitions,
+      ),
+    };
+    baselineSettings.schema = {
+      ...baselineSettings.schema,
+      statuses: structuredClone(
+        options.persist_source.runtime_schema_statuses,
+      ),
+      fields: structuredClone(options.persist_source.runtime_schema_fields),
+      type_workflows: structuredClone(
+        options.persist_source.runtime_schema_type_workflows,
+      ),
+    };
+    const baseline = buildOrderedSettingsForSerialization(
+      baselineSettings,
+      options.persist_source,
+    );
+    const sparse = structuredClone(
+      options.persist_source.source_settings,
+    ) as unknown as Record<string, unknown>;
+    applySettingsDelta(sparse, baseline, ordered);
+    return `${JSON.stringify(
+      orderObject(sparse, SETTINGS_TOP_LEVEL_KEY_ORDER),
+      null,
+      2,
+    )}\n`;
+  }
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }
 
@@ -1880,6 +1979,7 @@ export async function writeSettings(
 
 /** Public contract for settings store test only, shared by SDK and presentation-layer consumers. */
 export const settingsStoreTestOnly = {
+  applySettingsDelta,
   hasExplicitItemFormat,
   buildSettingsPersistSourceSnapshot,
   cacheSettingsReadResultIfStable,

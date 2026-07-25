@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateSimilarityGovernance,
+  findDuplicateClusters,
   findSimilarItems,
   similarityAdvisoryWarnings,
   jaccardSimilarity,
   normalizeSimilarityText,
+  prepareSimilarityText,
   readSettings,
   resolveItemTypeRegistry,
   scoreItemSimilarity,
+  scorePreparedItemSimilarity,
   tokenizeSimilarityText,
 } from "../../../src/sdk/index.js";
+import { _testOnlySimilarity } from "../../../src/sdk/similarity.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { _testOnly as metadataQueryIndexTestOnly } from "../../../src/core/store/item-metadata-query-index.js";
 import { listAllDocumentCandidatesCached } from "../../../src/core/store/item-metadata-cache.js";
@@ -36,6 +40,139 @@ describe("SDK item similarity governance", () => {
       score: 0.5,
       reason: "title_token_jaccard",
     });
+    expect(
+      scorePreparedItemSimilarity(
+        prepareSimilarityText("Fix GH-672 import"),
+        prepareSimilarityText("Investigate gh-672"),
+      ),
+    ).toEqual({ score: 0.99, reason: "issue_code" });
+  });
+
+  it("finds deterministic all-status clusters with explicit batch cost", async () => {
+    await withTempPmPath(async (context) => {
+      const ids = [
+        "Canonical SDK context",
+        "Canonical SDK context",
+        "Canonical SDK context work",
+        "Unrelated release workflow",
+        "Second duplicate cluster",
+        "Second duplicate cluster",
+        "Weak common alpha beta gamma",
+        "Weak common delta epsilon zeta",
+      ].map((title) => {
+        const result = context.runCli(
+          ["create", "--title", title, "--type", "Task", "--json"],
+          { expectJson: true },
+        );
+        return (result.json as { item: { id: string } }).item.id;
+      });
+
+      const result = await findDuplicateClusters({
+        pmRoot: context.pmPath,
+        threshold: 0.65,
+      });
+      expect(result).toMatchObject({
+        count: 2,
+        source: "metadata_scan",
+        cost: {
+          item_count: 8,
+          candidate_pairs: 5,
+          scored_pairs: 5,
+        },
+      });
+      expect(
+        result.clusters
+          .flatMap((cluster) => cluster.items.map((item) => item.id))
+          .sort(),
+      ).toEqual([...ids.slice(0, 3), ...ids.slice(4, 6)].sort());
+      expect(result.clusters[0]?.matches[0]).toMatchObject({
+        score: 1,
+        reason: "exact_title",
+      });
+      expect(result.clusters.map((cluster) => cluster.id)).toEqual(
+        result.clusters
+          .map((cluster) => cluster.id)
+          .sort((left, right) => left.localeCompare(right)),
+      );
+
+      await expect(
+        findDuplicateClusters({
+          pmRoot: context.pmPath,
+          statuses: ["closed"],
+        }),
+      ).resolves.toMatchObject({ count: 0, cost: { item_count: 0 } });
+      await expect(
+        findDuplicateClusters({
+          pmRoot: context.pmPath,
+          since: "2999-01-01T00:00:00.000Z",
+        }),
+      ).resolves.toMatchObject({ count: 0, cost: { item_count: 0 } });
+      await expect(
+        findDuplicateClusters({
+          pmRoot: context.pmPath,
+          since: "not-a-date",
+        }),
+      ).rejects.toThrow(/valid ISO timestamp/);
+      await expect(
+        findDuplicateClusters({ pmRoot: context.pmPath, limit: 1_001 }),
+      ).rejects.toThrow(/integer from 0 to 1000/);
+    });
+  });
+
+  it("fails closed when the disclosed batch candidate budget is exceeded", () => {
+    const prepared = prepareSimilarityText("same title");
+    expect(() =>
+      _testOnlySimilarity.collectDuplicateCandidatePairs(
+        [
+          { item: { id: "pm-a" }, prepared },
+          { item: { id: "pm-b" }, prepared },
+        ] as never,
+        0,
+      ),
+    ).toThrow(/candidate pairs/);
+  });
+
+  it("orders equal-score cluster evidence and handles a connected component without matches", () => {
+    const items = ["pm-a", "pm-b", "pm-c"].map((id) => ({
+      item: { id, title: id, status: "open", type: "Task" },
+      prepared: prepareSimilarityText(id),
+    }));
+    const union = _testOnlySimilarity.createDuplicateUnionFind(items.length);
+    union.parent[1] = 0;
+    union.parent[2] = 0;
+    const clusters = _testOnlySimilarity.buildDuplicateClusters(
+      items as never,
+      [
+        {
+          left_id: "pm-a",
+          right_id: "pm-c",
+          score: 0.8,
+          reason: "title_token_jaccard",
+        },
+        {
+          left_id: "pm-a",
+          right_id: "pm-b",
+          score: 0.8,
+          reason: "title_token_jaccard",
+        },
+      ],
+      union,
+      10,
+    );
+    expect(clusters[0]?.matches.map((match) => match.right_id)).toEqual([
+      "pm-b",
+      "pm-c",
+    ]);
+    const unmatchedUnion = _testOnlySimilarity.createDuplicateUnionFind(2);
+    unmatchedUnion.parent[1] = 0;
+    expect(
+      _testOnlySimilarity.buildDuplicateClusters(
+        items.slice(0, 2) as never,
+        [],
+        unmatchedUnion,
+        10,
+      )[0]?.max_score,
+    ).toBe(0);
   });
 
   it("returns bounded ranked candidates and validates query controls", async () => {
@@ -188,12 +325,7 @@ describe("SDK item similarity governance", () => {
       );
       expect(similarityAdvisoryWarnings(undefined)).toEqual([]);
       const bypassed = context.runCli(
-        [
-          "copy",
-          originalId,
-          "--allow-duplicate",
-          "--json",
-        ],
+        ["copy", originalId, "--allow-duplicate", "--json"],
         { expectJson: true },
       );
       expect(bypassed.json).toMatchObject({

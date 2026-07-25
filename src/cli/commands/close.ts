@@ -22,6 +22,7 @@ import {
   resolvePmRoot,
   readSettings,
   resolveAuthor,
+  shouldCompletePlanOnClose,
 } from "../../sdk/runtime-primitives.js";
 import { collectBlockedByIds } from "../../sdk/actionability.js";
 import type { ItemMetadata } from "../../types/index.js";
@@ -644,6 +645,10 @@ function mutateCloseMetadata(
     ...applyCloseReason(metadata, context.closeReason),
     ...inlineChangedFields,
   ];
+  if (shouldCompletePlanOnClose(metadata)) {
+    metadata.plan_mode = "completed";
+    changedFields.push("plan_mode");
+  }
   if (context.duplicateOf !== undefined) {
     changedFields.push("duplicate_of");
     for (const key of duplicateFallbackFields) {

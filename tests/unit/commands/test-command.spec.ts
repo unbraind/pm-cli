@@ -1408,37 +1408,50 @@ describe("runTest", () => {
     expect(linkedExecution.stdout).toContain("ok");
     expect(linkedExecution.stderr).toContain("warn");
     const exceededBuffer = {
-      stdout: "",
-      stderr: "",
-      stdoutBytes: 0,
+      stdout: [] as string[],
+      stderr: [] as string[],
+      stdoutBytes: 20 * 1024 * 1024 + 1,
       stderrBytes: 0,
-      maxBufferExceeded: true,
+      outputTruncated: true,
     };
-    expect(
-      testInternals.appendLinkedTestOutputChunk(
-        exceededBuffer,
-        Buffer.from("ignored"),
-        "stdout",
-      ),
-    ).toBe(false);
-    expect(exceededBuffer.stdoutBytes).toBe(0);
+    testInternals.appendLinkedTestOutputChunk(
+      exceededBuffer,
+      Buffer.from("ignored"),
+      "stdout",
+    );
+    expect(exceededBuffer.stdout).toEqual([]);
+    expect(exceededBuffer.stdoutBytes).toBe(20 * 1024 * 1024 + 8);
     const nearlyFullBuffer = {
-      stdout: "",
-      stderr: "",
+      stdout: [] as string[],
+      stderr: [] as string[],
       stdoutBytes: 20 * 1024 * 1024 - 2,
       stderrBytes: 0,
-      maxBufferExceeded: false,
+      outputTruncated: false,
     };
-    expect(
-      testInternals.appendLinkedTestOutputChunk(
-        nearlyFullBuffer,
-        Buffer.from("abcd"),
-        "stdout",
-      ),
-    ).toBe(true);
-    expect(nearlyFullBuffer.stdout).toBe("ab");
+    testInternals.appendLinkedTestOutputChunk(
+      nearlyFullBuffer,
+      Buffer.from("abcd"),
+      "stdout",
+    );
+    expect(nearlyFullBuffer.stdout.join("")).toBe("ab");
     expect(nearlyFullBuffer.stdoutBytes).toBe(20 * 1024 * 1024 + 2);
-    expect(nearlyFullBuffer.maxBufferExceeded).toBe(true);
+    expect(nearlyFullBuffer.outputTruncated).toBe(true);
+    const fragmentedBuffer = {
+      stdout: [] as string[],
+      stderr: [] as string[],
+      stdoutBytes: 0,
+      stderrBytes: 0,
+      outputTruncated: false,
+    };
+    for (let index = 0; index < 70_000; index += 1) {
+      testInternals.appendLinkedTestOutputChunk(
+        fragmentedBuffer,
+        "x",
+        "stdout",
+      );
+    }
+    expect(fragmentedBuffer.stdout).toHaveLength(2);
+    expect(fragmentedBuffer.stdout.join("")).toHaveLength(70_000);
 
     const tempRoot = await mkdtemp(
       path.join(os.tmpdir(), "pm-test-command-helpers-"),
@@ -2381,6 +2394,38 @@ describe("runTest", () => {
     });
   });
 
+  it("keeps extensions installed inside one linked command visible to its next child process", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-sandbox-fresh-extension");
+      const packagePath = path.resolve("packages/pm-command-kit");
+      await runTest(
+        id,
+        {
+          add: [
+            `command=node dist/cli.js install ${packagePath} --project && node dist/cli.js command-kit echo persisted --json,scope=project,timeout_seconds=30`,
+          ],
+          message: "seed fresh extension persistence probe",
+        },
+        { path: context.pmPath },
+      );
+
+      const run = await runTest(
+        id,
+        { run: true, timeout: "30" },
+        { path: context.pmPath },
+      );
+      expect(run.run_results[0]).toMatchObject({
+        status: "passed",
+        exit_code: 0,
+      });
+      expect(run.run_results[0]?.stdout ?? "").toContain("persisted");
+      expect(
+        context.runCli(["extension", "list", "--json"], { expectJson: true })
+          .stdout,
+      ).not.toContain("builtin-command-kit");
+    });
+  });
+
   it("omits transient runtime data when seeding tracker-mode linked-test sandboxes", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-sandbox-runtime-skip");
@@ -2963,7 +3008,7 @@ describe("runTest", () => {
     });
   });
 
-  it("reports deterministic maxBuffer diagnostics for noisy linked commands", async () => {
+  it("drains noisy linked commands to completion with bounded disclosed output", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-max-buffer");
       await runTest(
@@ -2987,9 +3032,11 @@ describe("runTest", () => {
       );
 
       expect(run.run_results).toHaveLength(1);
-      expect(run.run_results[0]?.status).toBe("failed");
-      expect(run.run_results[0]?.exit_code).toBe(1);
-      expect(run.run_results[0]?.error ?? "").toContain("maxBuffer=20971520");
+      expect(run.run_results[0]?.status).toBe("passed");
+      expect(run.run_results[0]?.exit_code).toBe(0);
+      expect(run.run_results[0]?.stdout ?? "").toContain(
+        "output truncated at 20971520 bytes",
+      );
     });
   });
 
@@ -3181,7 +3228,7 @@ describe("runTest", () => {
     });
   });
 
-  it("records progress failure reasons for timeout, max-buffer, and signal failures", async () => {
+  it("records progress failure reasons and non-fatal output truncation", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-progress-failure-reasons");
       const includeSignalFixture = process.platform !== "win32";
@@ -3228,16 +3275,14 @@ describe("runTest", () => {
           .map((entry) => entry.failure_category)
           .sort();
         expect(categories).toEqual(
-          includeSignalFixture
-            ? ["max_buffer", "signal", "timeout"]
-            : ["max_buffer", "timeout"],
+          includeSignalFixture ? ["signal", "timeout"] : ["timeout"],
         );
 
         const stderrOutput = stderrWriteSpy.mock.calls
           .map((entry) => String(entry[0]))
           .join("");
         expect(stderrOutput).toContain("reason=timeout");
-        expect(stderrOutput).toContain("reason=max_buffer");
+        expect(stderrOutput).toContain("output=truncated");
         if (includeSignalFixture) {
           expect(stderrOutput).toContain("signal=SIGTERM");
         }
@@ -3254,6 +3299,37 @@ describe("runTest", () => {
         });
       }
     });
+  });
+
+  it("formats legacy max-buffer failures and emits their progress reason", () => {
+    const execution = {
+      stdout: "",
+      stderr: "",
+      exitCode: null,
+      timedOut: false,
+      maxBufferExceeded: true,
+      outputTruncated: false,
+    };
+    expect(
+      testInternals.formatLinkedTestExecutionError(execution, 1_000),
+    ).toContain("exceeded maxBuffer");
+    const write = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    testInternals.endLinkedTestProgress(
+      {
+        index: 1,
+        total: 1,
+        timeoutMs: 1_000,
+        command: "node --version",
+      },
+      execution,
+      Date.now(),
+      "always",
+    );
+    expect(write.mock.calls.map((call) => String(call[0])).join("")).toContain(
+      "reason=max_buffer",
+    );
   });
 
   it("reports JSON assertion mismatch and missing-path failures", async () => {

@@ -2,11 +2,12 @@ id: pm-wdrkfr
 title: "GH-708: make retained delete tombstones discoverable and policy-controlled"
 description: "Expose history streams retained after pm delete as intentional tombstones through supported health/list output, explain retention in delete results/help, and define explicit opt-in retention or garbage-collection policy without weakening append-only audit defaults."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[9]: agent-ux,"area:history","area:storage",delete,gc,gh-issue,"gh:unbraind/pm-cli#708",multi-agent,observability
 created_at: "2026-07-25T12:10:49.472Z"
-updated_at: "2026-07-25T12:38:49.342Z"
+updated_at: "2026-07-25T16:54:15.967Z"
+closed_at: "2026-07-25T16:31:45.722Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "pm health or an equivalent supported command reports a bounded count/list of history streams without live item files and distinguishes valid delete tombstones from corruption; pm delete output and help explicitly state that the history stream is retained; an opt-in tombstone retention or gc policy is documented and cannot silently remove append-only proof; SDK/CLI contracts expose the same structured tombstone state; sandboxed delete, health, history, gc, and merge regression tests preserve 100% coverage"
@@ -15,6 +16,9 @@ value: Agents can distinguish intentional audit proof from orphaned residue and 
 parent: pm-o2kc
 risk: medium
 confidence: high
+resolution: Delete tombstones are explicit in mutation output and health policy while orphan histories remain warnings.
+expected_result: Delete tombstones are explicit in mutation output and health policy while orphan histories remain warnings.
+actual_result: "Delete tombstones are explicit in mutation output and health policy while orphan histories remain warnings. Verification: linked tests, full coverage, static/security gates, packed consumer, clean-runner CI follow-up, and synchronized terminal metadata passed."
 dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-4yl0,related,"2026-07-25T12:11:51.320Z",null,null
   pm-9yfo,related,"2026-07-25T12:11:51.320Z",null,null
@@ -22,6 +26,26 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-o79o,related,"2026-07-25T12:11:51.320Z",null,null
   pm-tqel,related,"2026-07-25T12:11:51.320Z",null,null
   pm-wwfd,related,"2026-07-25T12:11:51.320Z",null,null
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-25T12:10:49.472Z","harness:codex","Duplicate-check evidence: all-status search and full metadata review covered closed delete implementation pm-4yl0,closed storage observability plan pm-l709,open history namespace work pm-tqel,open mutation-completeness gate pm-9yfo,parent epic pm-o2kc,and closed delete/modify merge fix pm-wwfd. Those items own delete execution,generic storage stats,command naming,append completeness,durability,and resurrection detection respectively; none owns enumeration/explanation/retention policy for legitimate history-only tombstones. GH-708 is the canonical new owner."
+  "2026-07-25T15:25:45.793Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:25:59.578Z","harness:codex","Implementation: delete returns an explicit retained-history tombstone contract; health distinguishes valid retained tombstones from orphan streams, discloses retain_append_only policy, and bounds IDs."
+  "2026-07-25T16:31:16.374Z","harness:codex","Review evidence: history classification now enumerates existing item documents across every direct tracker folder before calling a stream orphaned, so unreadable items and temporarily unavailable extension-defined types remain non-orphan live streams. Delete history paths use the shared path helper. Direct linked run passed 67 tests; full coverage passes."
+  "2026-07-25T16:31:24.162Z","harness:codex","Final gate evidence: tracker test-all passed 10/10 linked commands across 8 active items with zero failures or skips. Repository coverage passed 370 files / 6,370 tests at 100% statements (43,892), branches (31,106), functions (8,958), and lines (42,637). Static quality enforces 100% module/export/member docstrings, SDK surface and import costs, package boundary, token budgets, CLI transport, secret scan, and zero-vulnerability audit."
+files[6]{path,scope,note}:
+  src/cli/commands/delete.ts,project,Explicit retained history result
+  src/cli/register-mutation.ts,project,Tombstone help contract
+  src/sdk/governance/health.ts,project,Tombstone and orphan classification
+  tests/fixtures/sdk/public-surface.json,project,Delete result contract snapshot
+  tests/unit/commands/delete-command.spec.ts,project,Delete tombstone proof
+  tests/unit/commands/health-command.spec.ts,project,Health contract proof
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/delete-command.spec.ts tests/unit/commands/health-command.spec.ts,project,300,Tombstone retention and health regressions
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:50:32.664Z","2026-07-25T14:50:32.664Z",1,0,0,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:55:03.294Z","2026-07-25T14:55:03.294Z",1,0,0,1,1
+  test-all-local-ms0l1mou-jddyvu,test-all,passed,"2026-07-25T16:27:43.457Z","2026-07-25T16:30:30.945Z","2026-07-25T16:30:30.945Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: Tombstone paths use shared storage primitives and health distinguishes deleted streams from unreadable or unavailable live item documents.
 body: ""

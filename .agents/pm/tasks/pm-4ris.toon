@@ -2,12 +2,12 @@ id: pm-4ris
 title: Add TruffleHog OSS verified-secret scanning to the security workflow and complete free GitHub secret-scanning toggles
 description: ""
 type: Task
-status: closed
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-07-14T21:47:46.436Z"
-updated_at: "2026-07-14T22:11:41.231Z"
-closed_at: "2026-07-14T22:11:41.230Z"
+updated_at: "2026-07-25T16:56:39.620Z"
+assignee: "harness:codex"
 author: maintainer-agent
 estimated_minutes: 40
 acceptance_criteria: "TruffleHog OSS job (SHA-pinned release) green in the Security and Script Quality workflow on push/PR with verified+unknown results failing the job; no secrets found on the initial scan; GitHub secret_scanning_non_provider_patterns and secret_scanning_validity_checks either enabled or (API-gated, verified 2026-07-14) documented with exact free UI steps for the maintainer"
@@ -20,9 +20,15 @@ actual_result: "Job green on main after first live catch: the gate flagged a fix
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-k7dp,related,"2026-07-14T21:47:46.436Z",null,null
   pm-pim7,related,"2026-07-14T21:47:46.436Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-14T21:49:50.034Z",maintainer-agent,"GitHub toggle attempt 2026-07-14: PATCH /repos with security_and_analysis.secret_scanning_non_provider_patterns/.secret_scanning_validity_checks = enabled returns 200 but the values stay 'disabled' (verified via GET after retry with JSON body and form syntax) — silently ignored for this user-namespace public repo; these two appear UI-gated. Maintainer UI path: Settings → Advanced Security → Secret Protection → enable 'Non-provider patterns' and 'Validity checks' (both FREE on public repos). Already-enabled free surface verified live: secret_scanning, secret_scanning_push_protection, dependabot_security_updates, private vulnerability reporting."
   "2026-07-14T21:55:56.383Z",maintainer-agent,"Implementation: TruffleHog job added to security.yml — trufflesecurity/trufflehog@27b0417c (v3.95.9), fetch-depth:0, extra_args '--results=verified,unknown --exclude-paths=.trufflehog-exclude-paths.txt'. Local full-history scan with the pinned binary: 0 verified secrets; sole 'unknown' = deliberate test fixture https://[redacted-test-fixture-uri] in tests/unit/health-command.spec.ts (DNS-unverifiable) — excluded via unanchored path regex (anchored ^...$ does NOT match in git mode; trap noted). Post-exclusion scan exit 0 / 0 findings printed."
   "2026-07-14T22:03:22.432Z",maintainer-agent,"Gate self-test (first live catch): the initial push went RED because my own implementation comment quoted the basic-auth fixture URI verbatim — the literal landed in this item's history JSONL and TruffleHog flagged the pm store itself (2 unknown results, exit 183). Remediation: pm history-redact pm-4ris (regex redaction, 1 replacement, hash chain recomputed, verify_ok:true — first production use of history-redact) + excluded this item's two store paths in .trufflehog-exclude-paths.txt because the pre-redaction literal is permanent in git blob history. Rule reinforced: NEVER quote secret-pattern literals into pm text, even to describe a fixture. Full-history rescan with pinned binary: 0 findings."
-close_reason: TruffleHog OSS verified-secret scanning live in the security workflow; repo history clean; gate proved itself on first push.
+  "2026-07-25T16:56:20.818Z","harness:codex","Security evidence: TruffleHog 3.96.0 found 0 verified secrets and one unverified credential-shaped URI in the earlier PR commit for a unit-test fixture. The current tree composes the inert URI at runtime; the PR branch will be rewritten after final changes so the obsolete blob is unreachable, then rescanned with verified+unknown fail mode."
+files[1]{path,scope,note}:
+  tests/unit/commands/health-command.spec.ts,project,Runtime-composed URI fixture and clean branch-history proof
+tests[1]{command,scope,timeout_seconds,note}:
+  "pnpm security:scan",project,300,Repository secret scan
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0m2p6h-g1gh6t,test-all,passed,"2026-07-25T16:56:32.989Z","2026-07-25T16:56:39.594Z","2026-07-25T16:56:39.594Z",1,0,0,1,1
 body: ""

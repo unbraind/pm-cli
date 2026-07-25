@@ -6,7 +6,9 @@
 import {
   pathExists,
   getActiveExtensionRegistrations,
+  isTerminalStatus,
   resolveItemTypeRegistry,
+  resolveRuntimeStatusRegistry,
   resolveTypeName,
   EXIT_CODE,
   type GlobalOptions,
@@ -20,6 +22,7 @@ import {
   resolvePmRoot,
   readSettings,
   resolveAuthor,
+  isTerminalPlanMode,
 } from "../../sdk/runtime-primitives.js";
 import type {
   DependencyKind,
@@ -614,6 +617,16 @@ function parsePairList(raw: string, label: string): Record<string, string> {
       throw new PmCliError(
         `Invalid ${label} entry "${trimmed}"; expected key=value`,
         EXIT_CODE.USAGE,
+        {
+          code: "malformed_plan_step_evidence",
+          required: `${label} entries must use comma-separated key=value fields.`,
+          why: "Structured Plan evidence must be validated before it is persisted.",
+          examples: [
+            '--file "path=src/index.ts,scope=project,note=implementation"',
+            '--test "command=pnpm test,note=regression"',
+            '--doc "path=docs/PLAN.md,scope=project"',
+          ],
+        },
       );
     }
     out[trimmed.slice(0, equalsIndex).trim().toLowerCase()] = trimmed
@@ -626,7 +639,11 @@ function parsePairList(raw: string, label: string): Record<string, string> {
 function parseStepFile(spec: string): PlanStepFile {
   const fields = parsePairList(spec, "--file");
   if (!fields.path) {
-    throw new PmCliError("--file requires path=<value>", EXIT_CODE.USAGE);
+    throw new PmCliError("--file requires path=<value>", EXIT_CODE.USAGE, {
+      code: "malformed_plan_step_evidence",
+      required: "--file requires a non-empty path field.",
+      why: "Plan file evidence needs a stable path for later verification.",
+    });
   }
   const file: PlanStepFile = { path: fields.path };
   if (fields.scope === "global" || fields.scope === "project")
@@ -641,6 +658,11 @@ function parseStepTest(spec: string): PlanStepTest {
     throw new PmCliError(
       "--test requires at least command=<value> or path=<value>",
       EXIT_CODE.USAGE,
+      {
+        code: "malformed_plan_step_evidence",
+        required: "--test requires a command or path field.",
+        why: "Plan test evidence must identify something runnable or inspectable.",
+      },
     );
   }
   const test: PlanStepTest = {};
@@ -653,7 +675,11 @@ function parseStepTest(spec: string): PlanStepTest {
 function parseStepDoc(spec: string): PlanStepDoc {
   const fields = parsePairList(spec, "--doc");
   if (!fields.path) {
-    throw new PmCliError("--doc requires path=<value>", EXIT_CODE.USAGE);
+    throw new PmCliError("--doc requires path=<value>", EXIT_CODE.USAGE, {
+      code: "malformed_plan_step_evidence",
+      required: "--doc requires a non-empty path field.",
+      why: "Plan documentation evidence needs a stable path for later verification.",
+    });
   }
   const doc: PlanStepDoc = { path: fields.path };
   if (fields.scope === "global" || fields.scope === "project")
@@ -1127,59 +1153,6 @@ function buildInitialSteps(options: PlanCommandOptions): {
   };
 }
 
-function seedCreatedPlanMetadata(
-  document: ItemDocument,
-  options: PlanCommandOptions,
-  mode: PlanMode,
-  harness: PlanHarness | undefined,
-): { changedFields: string[] } {
-  const changedFields = ["plan_mode"];
-  document.metadata.plan_mode = mode;
-  if (harness) {
-    document.metadata.plan_harness = harness;
-    changedFields.push("plan_harness");
-  }
-  const scope = options.scope?.trim();
-  if (scope) {
-    document.metadata.plan_scope = scope;
-    changedFields.push("plan_scope");
-  }
-  const resumeContext = options.resumeContext?.trim();
-  if (resumeContext) {
-    document.metadata.plan_resume_context = resumeContext;
-    changedFields.push("plan_resume_context");
-  }
-  document.metadata.plan_steps ??= [];
-  return { changedFields };
-}
-
-function seedCreatedPlanSteps(
-  document: ItemDocument,
-  initialSteps: PlanStep[],
-  initialValidation: PlanValidationCheck | undefined,
-): { changedFields: string[] } {
-  ensurePlanItem(document.metadata);
-  document.metadata.plan_steps = initialSteps;
-  if (!initialValidation) return { changedFields: ["plan_steps"] };
-  document.metadata.plan_validation = [
-    ...(document.metadata.plan_validation ?? []),
-    initialValidation,
-  ];
-  return { changedFields: ["plan_steps", "plan_validation"] };
-}
-
-function seedCreatedPlanValidation(
-  document: ItemDocument,
-  initialValidation: PlanValidationCheck,
-): { changedFields: string[] } {
-  ensurePlanItem(document.metadata);
-  document.metadata.plan_validation = [
-    ...(document.metadata.plan_validation ?? []),
-    initialValidation,
-  ];
-  return { changedFields: ["plan_validation"] };
-}
-
 async function planCreate(
   options: PlanCommandOptions,
   global: GlobalOptions,
@@ -1197,77 +1170,10 @@ async function planCreate(
   const mode = asPlanMode(options.mode, DEFAULT_PLAN_MODE);
   const harness = asHarness(options.harness);
   const fromSearch = options.fromSearch?.trim();
-
-  const description =
-    options.description?.trim() ?? options.scope?.trim() ?? title;
-  const createOptions: CreateCommandOptions = {
-    ...options,
-    title,
-    description,
-    type: "Plan",
-    template: undefined,
-    file: toSpecArray(options.file),
-    test: toSpecArray(options.test),
-    doc: toSpecArray(options.doc),
-    field: toSpecArray(options.field),
-    blockedBy: undefined,
-    dep: buildPlanCreateDependencies(options),
-    message:
-      options.message ??
-      (fromSearch ? `plan create (search: ${fromSearch})` : `plan create`),
-  };
-
-  const createResult: CreateResult = await runCreate(createOptions, global);
-
-  // The create command stores type_options. To use real metadata keys, run a follow-up mutate.
-  const seedResult = await mutateItem({
-    pmRoot: ctx.pmRoot,
-    settings: ctx.settings,
-    id: createResult.item.id,
-    op: "plan_create_metadata",
-    author: resolveAuthor(options.author, ctx.settings.author_default),
-    message: "seed plan metadata",
-    mutate(doc) {
-      return seedCreatedPlanMetadata(doc, options, mode, harness);
-    },
-  });
-
-  let finalMetadata: ItemMetadata = seedResult.item;
-  let initialStep: PlanStep | undefined;
   const initialValidation = buildInitialValidation(options);
   const { steps: initialSteps, hasPerStepDetailOptions } =
     buildInitialSteps(options);
-  if (initialSteps.length > 0) {
-    initialStep = initialSteps[0];
-    const stepped = await mutateItem({
-      pmRoot: ctx.pmRoot,
-      settings: ctx.settings,
-      id: createResult.item.id,
-      op: "plan_create_initial_step",
-      author: resolveAuthor(options.author, ctx.settings.author_default),
-      message:
-        initialSteps.length === 1
-          ? `plan create initial step "${initialSteps[0].title}"`
-          : `plan create ${initialSteps.length} initial steps`,
-      mutate(doc) {
-        return seedCreatedPlanSteps(doc, initialSteps, initialValidation);
-      },
-    });
-    finalMetadata = stepped.item;
-  } else if (initialValidation) {
-    const validated = await mutateItem({
-      pmRoot: ctx.pmRoot,
-      settings: ctx.settings,
-      id: createResult.item.id,
-      op: "plan_create_initial_validation",
-      author: resolveAuthor(options.author, ctx.settings.author_default),
-      message: "plan create initial validation",
-      mutate(doc) {
-        return seedCreatedPlanValidation(doc, initialValidation);
-      },
-    });
-    finalMetadata = validated.item;
-  } else if (hasPerStepDetailOptions) {
+  if (initialSteps.length === 0 && hasPerStepDetailOptions) {
     throw new PmCliError(
       "pm plan create step options require --step-title (or a single --step)",
       EXIT_CODE.USAGE,
@@ -1279,30 +1185,81 @@ async function planCreate(
       },
     );
   }
-  if (options.claim) {
-    const claimed = await mutateItem({
-      pmRoot: ctx.pmRoot,
-      settings: ctx.settings,
-      id: createResult.item.id,
-      op: "claim",
-      author: resolveAuthor(options.author, ctx.settings.author_default),
-      message: "plan claim by author",
-      mutate(doc) {
-        doc.metadata.assignee = resolveAuthor(
-          options.author,
-          ctx.settings.author_default,
-        );
-        return { changedFields: ["assignee"] };
-      },
-    });
-    finalMetadata = claimed.item;
-  }
 
-  const plan = projectPlan(finalMetadata, "brief");
+  const description =
+    options.description?.trim() ?? options.scope?.trim() ?? title;
+  const requestedAssignee = options.claim
+    ? resolveAuthor(options.author, ctx.settings.author_default)
+    : options.assignee?.trim() || undefined;
+  const createOptions: CreateCommandOptions = {
+    ...options,
+    title,
+    description,
+    type: "Plan",
+    template: undefined,
+    file: toSpecArray(options.file),
+    test: toSpecArray(options.test),
+    doc: toSpecArray(options.doc),
+    field: toSpecArray(options.field),
+    assignee: requestedAssignee,
+    blockedBy: undefined,
+    dep: buildPlanCreateDependencies(options),
+    message:
+      options.message ??
+      (fromSearch ? `plan create (search: ${fromSearch})` : `plan create`),
+  };
+
+  const createResult: CreateResult = await runCreate(createOptions, global);
+
+  // Seed every Plan-specific field before assigning the requested owner so
+  // cross-owner creation cannot reject a follow-up enrichment and leave a
+  // partially initialized Plan.
+  const seedResult = await mutateItem({
+    pmRoot: ctx.pmRoot,
+    settings: ctx.settings,
+    id: createResult.item.id,
+    op: "plan_create_metadata",
+    author: resolveAuthor(options.author, ctx.settings.author_default),
+    message: "seed plan metadata",
+    mutate(doc) {
+      const changedFields = ["plan_mode"];
+      doc.metadata.plan_mode = mode;
+      if (harness) {
+        doc.metadata.plan_harness = harness;
+        changedFields.push("plan_harness");
+      }
+      const scope = options.scope?.trim();
+      if (scope) {
+        doc.metadata.plan_scope = scope;
+        changedFields.push("plan_scope");
+      }
+      const resumeContext = options.resumeContext?.trim();
+      if (resumeContext) {
+        doc.metadata.plan_resume_context = resumeContext;
+        changedFields.push("plan_resume_context");
+      }
+      doc.metadata.plan_steps = initialSteps;
+      changedFields.push("plan_steps");
+      if (initialValidation) {
+        doc.metadata.plan_validation = [
+          ...(doc.metadata.plan_validation ?? []),
+          initialValidation,
+        ];
+        changedFields.push("plan_validation");
+      }
+      if (requestedAssignee) {
+        doc.metadata.assignee = requestedAssignee;
+        changedFields.push("assignee");
+      }
+      return { changedFields };
+    },
+  });
+
+  const plan = projectPlan(seedResult.item, "brief");
   return {
     action: "create",
     plan,
-    step: initialStep,
+    step: initialSteps[0],
     next_actions: nextActionsFor(createResult.item.id, plan),
     warnings: [...createResult.warnings],
     generated_at: nowIso(),
@@ -1344,6 +1301,21 @@ interface MutateStepArgs {
   ): { changedSteps: string[]; current?: PlanStep; resultStep?: PlanStep };
 }
 
+/** Compare the union of persisted Plan metadata keys so additions, updates, and removals are all audited. */
+function changedPlanMetadataFields(
+  beforePlanFields: ReadonlyMap<string, string | undefined>,
+  metadata: ItemMetadata,
+): string[] {
+  const afterPlanFields = new Map(
+    Object.entries(metadata)
+      .filter(([key]) => key.startsWith("plan_"))
+      .map(([key, value]) => [key, JSON.stringify(value)]),
+  );
+  return [
+    ...new Set([...beforePlanFields.keys(), ...afterPlanFields.keys()]),
+  ].filter((key) => beforePlanFields.get(key) !== afterPlanFields.get(key));
+}
+
 async function mutatePlanSteps(
   args: MutateStepArgs,
 ): Promise<{ document: ItemDocument; resultStep?: PlanStep; itemId: string }> {
@@ -1362,8 +1334,30 @@ async function mutatePlanSteps(
     force: args.options.force,
     mutate(doc) {
       ensurePlanItem(doc.metadata);
+      const statusRegistry = resolveRuntimeStatusRegistry(
+        args.ctx.settings.schema,
+      );
+      if (
+        isTerminalStatus(doc.metadata.status, statusRegistry) ||
+        isTerminalPlanMode(doc.metadata.plan_mode)
+      ) {
+        throw new PmCliError(
+          `Plan ${doc.metadata.id} is terminal (status=${doc.metadata.status}, plan_mode=${doc.metadata.plan_mode ?? "unset"}) and cannot be mutated.`,
+          EXIT_CODE.CONFLICT,
+          {
+            code: "terminal_plan_mutation",
+            required:
+              "Create or reopen a non-terminal Plan before changing its execution context or steps.",
+            why: "Terminal Plan history is immutable execution evidence.",
+          },
+        );
+      }
       const steps = (doc.metadata.plan_steps ?? []).slice();
-      const before = JSON.stringify(steps);
+      const beforePlanFields = new Map(
+        Object.entries(doc.metadata)
+          .filter(([key]) => key.startsWith("plan_"))
+          .map(([key, value]) => [key, JSON.stringify(value)]),
+      );
       const outcome = args.mutator(steps, doc);
       resultStep = outcome.resultStep;
       const sorted = steps
@@ -1371,8 +1365,10 @@ async function mutatePlanSteps(
         .sort((left, right) => left.order - right.order)
         .map((step, index) => ({ ...step, order: index + 1 }));
       doc.metadata.plan_steps = sorted;
-      const after = JSON.stringify(sorted);
-      const changedFields = before === after ? [] : ["plan_steps"];
+      const changedFields = changedPlanMetadataFields(
+        beforePlanFields,
+        doc.metadata,
+      );
       if (changedFields.length === 0 && outcome.changedSteps.length === 0) {
         return { changedFields: [] };
       }
@@ -1621,6 +1617,31 @@ function applyStepFieldUpdates(
   if (options.stepReplacement !== undefined) {
     step.superseded_by = options.stepReplacement.trim() || undefined;
   }
+  const files = toSpecArray(options.file).map(parseStepFile);
+  const tests = toSpecArray(options.test).map(parseStepTest);
+  const docs = toSpecArray(options.doc).map(parseStepDoc);
+  if (files.length > 0) {
+    step.files = mergePlanStepEvidence(step.files, files);
+  }
+  if (tests.length > 0) {
+    step.tests = mergePlanStepEvidence(step.tests, tests);
+  }
+  if (docs.length > 0) {
+    step.docs = mergePlanStepEvidence(step.docs, docs);
+  }
+}
+
+/** Append structured Plan evidence while preserving first-seen order and rejecting duplicate payloads. */
+function mergePlanStepEvidence<T>(existing: T[] | undefined, added: T[]): T[] {
+  const merged = [...(existing ?? [])];
+  const seen = new Set(merged.map((entry) => JSON.stringify(entry)));
+  for (const entry of added) {
+    const key = JSON.stringify(entry);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(entry);
+  }
+  return merged;
 }
 
 function applyStepCompletionTimestamp(
@@ -1909,6 +1930,8 @@ async function planResume(
     message: options.message ?? "plan resume context update",
     mutator(_steps, doc) {
       doc.metadata.plan_resume_context = text;
+      const scope = options.scope?.trim();
+      if (scope) doc.metadata.plan_scope = scope;
       return { changedSteps: [] };
     },
   });
@@ -1936,6 +1959,8 @@ async function planApprove(
     message: options.message ?? `plan approve mode=${mode}`,
     mutator(_steps, doc) {
       doc.metadata.plan_mode = mode;
+      const scope = options.scope?.trim();
+      if (scope) doc.metadata.plan_scope = scope;
       return { changedSteps: [] };
     },
   });
@@ -2404,3 +2429,8 @@ export async function runPlan(
     ctx,
   );
 }
+
+/** Internal Plan mutation helpers exposed only for branch-complete regression coverage. */
+export const _testOnlyPlanCommand = {
+  changedPlanMetadataFields,
+};

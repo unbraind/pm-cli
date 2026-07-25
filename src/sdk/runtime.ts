@@ -409,6 +409,7 @@ export {
   getHistoryPath,
   getItemPath,
   getSettingsPath,
+  resolveImplicitPmRoot,
   resolvePmRoot,
 } from "../core/store/paths.js";
 export { readSettings } from "../core/store/settings.js";
@@ -725,7 +726,9 @@ export interface PmClientOptions {
   noExtensions?: boolean;
 }
 
-const ACTIVE_EXTENSION_HOST_CONTEXT = Symbol("pm.active-extension-host-context");
+const ACTIVE_EXTENSION_HOST_CONTEXT = Symbol(
+  "pm.active-extension-host-context",
+);
 
 interface PmClientDefaults {
   path?: string;
@@ -3866,13 +3869,22 @@ async function loadWorkspaceExtensionRegistrations(
 
 export type { ContractsCommandOptions, ContractsResult };
 export type {
-  AppendCommandOptions, AppendResult,
-  CommentsCommandOptions, CommentsResult,
-  ConfigCommandOptions, ConfigResult,
-  DepsCommandOptions, DepsResult,
-  DocsCommandOptions, DocsResult,
-  ExtensionCommandOptions, ExtensionCommandResult,
-  FilesCommandOptions, FilesDiscoverOptions, FilesDiscoverResult, FilesResult,
+  AppendCommandOptions,
+  AppendResult,
+  CommentsCommandOptions,
+  CommentsResult,
+  ConfigCommandOptions,
+  ConfigResult,
+  DepsCommandOptions,
+  DepsResult,
+  DocsCommandOptions,
+  DocsResult,
+  ExtensionCommandOptions,
+  ExtensionCommandResult,
+  FilesCommandOptions,
+  FilesDiscoverOptions,
+  FilesDiscoverResult,
+  FilesResult,
   GcCommandOptions,
   GcResult,
   HealthResult,

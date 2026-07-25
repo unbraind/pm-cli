@@ -2,22 +2,41 @@ id: pm-96tter
 title: "GH-688: seeded Plan creation must be atomic across ownership boundaries"
 description: Make pm plan create with seeded steps and linked artifacts preflight or transact ownership so a failed enrichment cannot leave a partial Plan when author and assignee differ.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:plan",atomicity,gh-issue,multi-agent
 created_at: "2026-07-25T00:58:27.692Z"
-updated_at: "2026-07-25T07:16:05.161Z"
+updated_at: "2026-07-25T15:27:17.914Z"
+closed_at: "2026-07-25T15:27:14.045Z"
 author: codex-root
 estimated_minutes: 300
 acceptance_criteria: A cross-owner seeded plan either persists all requested steps/artifacts or leaves no Plan; CLI and SDK regression tests cover success and rollback.
 parent: pm-mpbb
+resolution: Seeded cross-owner Plan creation validates first and persists one complete Plan state.
+expected_result: Seeded cross-owner Plan creation validates first and persists one complete Plan state.
+actual_result: "Seeded cross-owner Plan creation validates first and persists one complete Plan state. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
 dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-8t5x,related,"2026-07-25T00:58:27.692Z",null,null
   pm-je50,related,"2026-07-25T00:58:27.692Z",null,null
   pm-bgcu,related,"2026-07-25T06:27:23.713Z",null,null
   pm-bxdlfa,related,"2026-07-25T06:27:23.713Z",null,null
   pm-v7dj,discovered_from,"2026-07-25T07:16:02.353Z",null,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-25T00:58:27.692Z",codex-root,"Duplicate check: searched all statuses for GH-688, seeded plan ownership conflict, partial Plan creation, atomic plan create, and cross-owner steps. Closed pm-v7dj/pm-je50 own the base workflow and pm-8t5x owns atomic claim behavior, but none owns transactional seeded Plan creation; this is the canonical residual issue."
   "2026-07-25T07:16:05.161Z","harness:claude-code","Governance repair (ecosystem review 2026-07-25): this item and pm-bxdlfa were the two rows behind validate's active_terminal_parent warning — both hung off pm-v7dj, closed since the pm plan delivery wave. Active work under a terminal parent is invisible to outcome-milestone reachability (pm-bzmeaa) and to capability-epic rollups. Re-parented to pm-mpbb, the established home for pm plan command-surface items (pm-2tan precedent), with a discovered_from edge back to pm-v7dj so the delivery lineage survives. pm-v7dj itself was not mutated."
+  "2026-07-25T15:25:41.553Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:25:55.200Z","harness:codex","Implementation: Plan seed validation happens before create; metadata, steps, validation, and requested assignee are persisted as one complete seed mutation across ownership boundaries."
+learnings[1]{created_at,author,text}:
+  "2026-07-25T15:26:16.717Z","harness:codex","Validate every Plan seed before create and defer ownership assignment until the complete Plan-specific state can be committed, otherwise cross-owner enforcement can strand partial execution context."
+files[2]{path,scope,note}:
+  src/cli/commands/plan.ts,project,Atomic seeded Plan initialization
+  tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,Cross-owner and failure atomicity proof
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/plan-lifecycle-regressions.spec.ts,project,300,Seeded Plan atomicity regressions
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:47:41.196Z","2026-07-25T14:47:41.196Z",1,0,0,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:52:35.986Z","2026-07-25T14:52:35.986Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: Seeded cross-owner Plan creation validates first and persists one complete Plan state.
 body: ""

@@ -2,19 +2,39 @@ id: pm-x2aplf
 title: pm config set on one leaf key rewrites settings.json with every default materialized and silently replaces explicit stored values (validation.parent_reference warn -> strict_error)
 description: "Make config writes sparse and intent-preserving: changing one leaf must not materialize unrelated defaults or replace explicit stored values, reducing semantic drift and multi-branch conflict surface."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:config","area:storage",concurrency,data-integrity,merge-safety
 created_at: "2026-07-20T02:39:14.788Z"
-updated_at: "2026-07-22T18:25:04.709Z"
+updated_at: "2026-07-25T15:27:29.305Z"
+closed_at: "2026-07-25T15:27:28.406Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Setting one config key persists only that key's change (or a documented normalize step); explicit stored enum values survive unrelated writes; a regression spec round-trips a sparse settings.json through config set and asserts no unrelated key changes
 parent: pm-o2kc
 risk: medium
 confidence: medium
+resolution: One-leaf config changes preserve sparse settings and explicit stored policy values without cold-read regression.
+expected_result: One-leaf config changes preserve sparse settings and explicit stored policy values without cold-read regression.
+actual_result: "One-leaf config changes preserve sparse settings and explicit stored policy values without cold-read regression. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-88cy,discovered_from,"2026-07-20T02:39:14.788Z",null,null
   pm-bgcu,related,"2026-07-20T02:39:14.788Z",null,null
   pm-xdn6,related,"2026-07-20T02:39:14.788Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-25T15:25:46.909Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
+  "2026-07-25T15:26:00.497Z","harness:codex","Implementation: settings writes apply a leaf delta against an immutable copy-on-write read provenance snapshot, preserving sparse source intent and explicit preset-owned values; cold reads retain the transport budget."
+learnings[1]{created_at,author,text}:
+  "2026-07-25T15:26:15.741Z","harness:codex",Sparse configuration persistence needs both source intent and an immutable runtime baseline; copy-on-write provenance keeps unrelated reads fast and prevents cached settings instances from leaking explicit-selection state.
+files[2]{path,scope,note}:
+  src/core/store/settings.ts,project,Sparse source-preserving persistence
+  tests/unit/core/store/settings-sparse-persistence.spec.ts,project,Sparse roundtrip proof
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/settings-sparse-persistence.spec.ts tests/unit/core/store/settings-store.spec.ts,project,300,Sparse settings regressions
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-ms0hg2mq-ht8qkn,test-all,passed,"2026-07-25T14:46:58.826Z","2026-07-25T14:50:46.628Z","2026-07-25T14:50:46.628Z",1,0,0,1,1
+  test-all-local-ms0hmkck-1a8mcc,test-all,passed,"2026-07-25T14:52:01.706Z","2026-07-25T14:55:16.451Z","2026-07-25T14:55:16.451Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/SDK_CONTEXT_INTEGRITY_PRIMITIVES.md,project,Shared CLI SDK context-integrity contract
+close_reason: One-leaf config changes preserve sparse settings and explicit stored policy values without cold-read regression.
 body: "## Observed (2026-07-20, this repository)\n`pm config set ids_token_length 6` against a sparse tracked settings.json produced a 128-insertion diff: every implicit default materialized (locks.wait_ms, checkpoints, history.compact_policy, full extensions.policy block, telemetry block incl. endpoint, context sections, schema block, search rerank/query_expansion, vector_store.collection_name...), and the explicitly stored `validation.parent_reference: \"warn\"` (a VALID enum per settings-validator vLiteral(\"warn\",\"strict_error\")) was replaced with \"strict_error\" in the same write.\n\n## Why it matters\n1. Frozen defaults: materialized values no longer track future default changes (e.g. telemetry endpoint churn never reaches the workspace) — the file silently pins today's defaults.\n2. Multi-agent conflict surface: a fully materialized singleton file maximizes cross-branch overlap exactly where pm-xdn6's config merge driver has no per-key semantics; two branches each touching one unrelated key now conflict across the whole file.\n3. Intent loss: explicit stored values flattened to effective/normalized values (warn -> strict_error, likely via governance layering writing the effective value back) destroy the user's recorded choice even when runtime behavior was already equivalent.\n\n## Direction\nSparse persistence: write only keys that differ from defaults (or at minimum only the mutated key), keep normalization read-side, and add a round-trip regression spec."

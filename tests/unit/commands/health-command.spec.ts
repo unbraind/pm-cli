@@ -1,18 +1,43 @@
-import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { _testOnlyHealthCommand as healthInternals, runHealth } from "../../../src/cli/commands/health.js";
+import {
+  _testOnlyHealthCommand as healthInternals,
+  runHealth,
+} from "../../../src/cli/commands/health.js";
 import {
   buildCapabilityContractMetadata as doctorBuildCapabilityContractMetadata,
   collectUnknownCapabilityGuidance as doctorCollectUnknownCapabilityGuidance,
 } from "../../../src/sdk/extension/doctor.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+} from "../../../src/core/extensions/index.js";
 import { writeVectorizationStatusLedger } from "../../../src/core/search/cache.js";
-import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
-import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
-import { installFailingFetchMock, installSemanticFetchMock } from "../../helpers/semanticFetchMock.js";
+import {
+  EXIT_CODE,
+  SETTINGS_DEFAULTS,
+} from "../../../src/core/shared/constants.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../src/core/store/settings.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
+import {
+  installFailingFetchMock,
+  installSemanticFetchMock,
+} from "../../helpers/semanticFetchMock.js";
 
 const initialDisableAutoDefaults = process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
 
@@ -88,9 +113,7 @@ describe("runHealth", () => {
         unknown_event_count: 3,
       } as never),
     ).toBe(3);
-    expect(
-      healthInternals.resolveUnknownAuthorEventCount({} as never),
-    ).toBe(0);
+    expect(healthInternals.resolveUnknownAuthorEventCount({} as never)).toBe(0);
     expect(
       healthInternals.resolveActionableUnknownAuthorEventCount({
         actionable_unknown_event_count: 2,
@@ -111,9 +134,13 @@ describe("runHealth", () => {
     const previousDisabled = process.env.PM_TELEMETRY_DISABLED;
     try {
       process.env.PM_TELEMETRY_DISABLED = " YES ";
-      expect(healthInternals.telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED")).toBe(true);
+      expect(
+        healthInternals.telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED"),
+      ).toBe(true);
       process.env.PM_TELEMETRY_DISABLED = "0";
-      expect(healthInternals.telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED")).toBe(false);
+      expect(
+        healthInternals.telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED"),
+      ).toBe(false);
     } finally {
       if (previousDisabled === undefined) {
         delete process.env.PM_TELEMETRY_DISABLED;
@@ -122,24 +149,55 @@ describe("runHealth", () => {
       }
     }
 
-    expect(healthInternals.warningCode("missing_directory:history")).toBe("missing_directory");
-    expect(healthInternals.warningCode(" telemetry_state_invalid_json ")).toBe("telemetry_state_invalid_json");
-    expect(healthInternals.isAdvisoryHealthWarning("telemetry_endpoint_probe_failed")).toBe(true);
-    expect(healthInternals.normalizeEndpointForDisplay(" https://user:pass@example.test/path?token=secret#hash ")).toBe(
-      "https://example.test/path",
+    expect(healthInternals.warningCode("missing_directory:history")).toBe(
+      "missing_directory",
     );
-    expect(healthInternals.normalizeEndpointForDisplay("not a url")).toBe("not a url");
-    expect(healthInternals.normalizeExtensionNameForMatch(" Builtin-Guide ")).toBe("builtin-guide");
-    expect(healthInternals.isExpectedUnmanagedExtension("builtin-guide", "anything")).toBe(true);
-    expect(healthInternals.isExpectedUnmanagedExtension("todos", "TODOS")).toBe(true);
-    expect(healthInternals.isExpectedUnmanagedExtension("custom", "custom")).toBe(false);
-    expect(healthInternals.summarizeRecordList("bad", 2)).toEqual({ count: 0, sample: [], truncated: false });
-    expect(healthInternals.summarizeRecordList([{ a: 1 }, { a: 2 }, { a: 3 }], 2)).toEqual({
+    expect(healthInternals.warningCode(" telemetry_state_invalid_json ")).toBe(
+      "telemetry_state_invalid_json",
+    );
+    expect(
+      healthInternals.isAdvisoryHealthWarning(
+        "telemetry_endpoint_probe_failed",
+      ),
+    ).toBe(true);
+    expect(
+      healthInternals.normalizeEndpointForDisplay(
+        ` https://${["fixture-user", "fixture-pass"].join(":")}@example.test/path?mode=fixture#hash `,
+      ),
+    ).toBe("https://example.test/path");
+    expect(healthInternals.normalizeEndpointForDisplay("not a url")).toBe(
+      "not a url",
+    );
+    expect(
+      healthInternals.normalizeExtensionNameForMatch(" Builtin-Guide "),
+    ).toBe("builtin-guide");
+    expect(
+      healthInternals.isExpectedUnmanagedExtension("builtin-guide", "anything"),
+    ).toBe(true);
+    expect(healthInternals.isExpectedUnmanagedExtension("todos", "TODOS")).toBe(
+      true,
+    );
+    expect(
+      healthInternals.isExpectedUnmanagedExtension("custom", "custom"),
+    ).toBe(false);
+    expect(healthInternals.summarizeRecordList("bad", 2)).toEqual({
+      count: 0,
+      sample: [],
+      truncated: false,
+    });
+    expect(
+      healthInternals.summarizeRecordList([{ a: 1 }, { a: 2 }, { a: 3 }], 2),
+    ).toEqual({
       count: 3,
       sample: [{ a: 1 }, { a: 2 }],
       truncated: true,
     });
-    expect(healthInternals.summarizeExtensionList([null, { name: "ext", module: "hidden", enabled: true }], 5)).toEqual({
+    expect(
+      healthInternals.summarizeExtensionList(
+        [null, { name: "ext", module: "hidden", enabled: true }],
+        5,
+      ),
+    ).toEqual({
       count: 2,
       sample: [
         {},
@@ -187,20 +245,29 @@ describe("runHealth", () => {
         remediation_command: "git rm --cached",
       },
     });
-    expect(healthInternals.buildCapabilityContractMetadata).toBe(doctorBuildCapabilityContractMetadata);
-    expect(healthInternals.collectUnknownCapabilityGuidance).toBe(doctorCollectUnknownCapabilityGuidance);
-    expect(healthInternals.buildCapabilityContractMetadata().capabilities.length).toBeGreaterThan(0);
-    const vectorizationDetails = healthInternals.buildVectorizationProviderDetails(
-      {
-        ...structuredClone(SETTINGS_DEFAULTS),
-        search: {},
-        vector_store: {},
-      },
-      {
-        providerResolution: { active: null },
-        vectorStoreResolution: { active: null },
-      } as Parameters<typeof healthInternals.buildVectorizationProviderDetails>[1],
+    expect(healthInternals.buildCapabilityContractMetadata).toBe(
+      doctorBuildCapabilityContractMetadata,
     );
+    expect(healthInternals.collectUnknownCapabilityGuidance).toBe(
+      doctorCollectUnknownCapabilityGuidance,
+    );
+    expect(
+      healthInternals.buildCapabilityContractMetadata().capabilities.length,
+    ).toBeGreaterThan(0);
+    const vectorizationDetails =
+      healthInternals.buildVectorizationProviderDetails(
+        {
+          ...structuredClone(SETTINGS_DEFAULTS),
+          search: {},
+          vector_store: {},
+        },
+        {
+          providerResolution: { active: null },
+          vectorStoreResolution: { active: null },
+        } as Parameters<
+          typeof healthInternals.buildVectorizationProviderDetails
+        >[1],
+      );
     expect(vectorizationDetails).toMatchObject({
       provider_configured: null,
       vector_store_configured: null,
@@ -209,14 +276,19 @@ describe("runHealth", () => {
 
   it("covers additional health helper edge branches", async () => {
     expect(healthInternals.normalizeEndpointForDisplay("   ")).toBe("");
-    expect(healthInternals.parseTelemetryQueue('{"attempts":"bad"}').invalidRows).toBe(1);
+    expect(
+      healthInternals.parseTelemetryQueue('{"attempts":"bad"}').invalidRows,
+    ).toBe(1);
     const guidance = healthInternals.collectUnknownCapabilityGuidance([
       "extension_capability_unknown:project:custom:legacy:allowed=schema,commands:suggested=schema",
       "extension_capability_unknown:project:custom:legacy:allowed=schema,commands:suggested=schema",
     ]);
     expect(guidance).toHaveLength(1);
     const triage = healthInternals.buildExtensionHealthTriageSummary(
-      ["extension_command_definition_legacy_handler_alias:project:ext", "managed_state_warning:project:ext"],
+      [
+        "extension_command_definition_legacy_handler_alias:project:ext",
+        "managed_state_warning:project:ext",
+      ],
       0,
       0,
       { applied_count: 0, pending_count: 0, failed_count: 0 },
@@ -226,8 +298,16 @@ describe("runHealth", () => {
       ["project:todos"],
       ["project:custom"],
     );
-    expect(triage.remediation.some((entry) => entry.includes("refresh managed-state diagnostics"))).toBe(true);
-    expect(triage.remediation.some((entry) => entry.includes("legacy handler were auto-remapped"))).toBe(true);
+    expect(
+      triage.remediation.some((entry) =>
+        entry.includes("refresh managed-state diagnostics"),
+      ),
+    ).toBe(true);
+    expect(
+      triage.remediation.some((entry) =>
+        entry.includes("legacy handler were auto-remapped"),
+      ),
+    ).toBe(true);
     expect(
       healthInternals.summarizeHealthCheckDetails(
         {
@@ -267,7 +347,9 @@ describe("runHealth", () => {
         } as never,
         3,
       ),
-    ).toMatchObject({ activation: { failed: { count: 0 }, warnings: { count: 0 } } });
+    ).toMatchObject({
+      activation: { failed: { count: 0 }, warnings: { count: 0 } },
+    });
     expect(
       healthInternals.summarizeHealthCheckDetails(
         {
@@ -289,13 +371,22 @@ describe("runHealth", () => {
       },
     });
 
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-health-list-paths-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-health-list-paths-"),
+    );
     try {
       await writeFile(path.join(tempRoot, "tasks"), "not-a-directory", "utf8");
       await mkdir(path.join(tempRoot, "notes"), { recursive: true });
-      await writeFile(path.join(tempRoot, "notes", "keep.toon"), "item", "utf8");
+      await writeFile(
+        path.join(tempRoot, "notes", "keep.toon"),
+        "item",
+        "utf8",
+      );
       await writeFile(path.join(tempRoot, "notes", "skip.txt"), "item", "utf8");
-      const itemPaths = await healthInternals.listItemDocumentPaths(tempRoot, { Task: "tasks", Note: "notes" });
+      const itemPaths = await healthInternals.listItemDocumentPaths(tempRoot, {
+        Task: "tasks",
+        Note: "notes",
+      });
       expect(itemPaths.some((entry) => entry.endsWith("keep.toon"))).toBe(true);
       expect(itemPaths.some((entry) => entry.endsWith("skip.txt"))).toBe(false);
     } finally {
@@ -304,7 +395,9 @@ describe("runHealth", () => {
   });
 
   it("fails when tracker is not initialized", async () => {
-    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-health-not-init-"));
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), "pm-health-not-init-"),
+    );
     try {
       await expect(runHealth({ path: tempDir })).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
@@ -333,17 +426,23 @@ describe("runHealth", () => {
         "vectorization",
       ]);
 
-      const directoriesCheck = health.checks.find((check) => check.name === "directories");
+      const directoriesCheck = health.checks.find(
+        (check) => check.name === "directories",
+      );
       expect(directoriesCheck?.status).toBe("ok");
       expect(directoriesCheck?.details).toMatchObject({
         missing: [],
       });
 
-      const settingValuesCheck = health.checks.find((check) => check.name === "settings_values");
+      const settingValuesCheck = health.checks.find(
+        (check) => check.name === "settings_values",
+      );
       expect(settingValuesCheck?.status).toBe("ok");
       expect(settingValuesCheck?.details).toEqual({ warnings: [] });
 
-      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      const telemetryCheck = health.checks.find(
+        (check) => check.name === "telemetry",
+      );
       expect(telemetryCheck?.status).toBe("ok");
       expect(telemetryCheck?.details).toMatchObject({
         enabled: true,
@@ -359,7 +458,9 @@ describe("runHealth", () => {
         },
       });
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       expect(extensionCheck?.status).toBe("ok");
       expect(extensionCheck?.details).toMatchObject({
         disabled_by_flag: false,
@@ -389,16 +490,36 @@ describe("runHealth", () => {
         },
       });
       const defaultExtensionDetails = extensionCheck?.details as
-        | { loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }
+        | {
+            loaded?: Array<{
+              name: string;
+              has_activate: boolean;
+              module?: unknown;
+            }>;
+          }
         | undefined;
       const defaultLoaded = defaultExtensionDetails?.loaded ?? [];
       expect(defaultLoaded).toEqual([]);
       expect(defaultLoaded.every((entry) => !("module" in entry))).toBe(true);
 
-      const storageCheck = health.checks.find((check) => check.name === "storage");
+      const storageCheck = health.checks.find(
+        (check) => check.name === "storage",
+      );
       expect(storageCheck?.details).toEqual({
         items: 1,
         history_streams: 1,
+        tombstones: {
+          retention_policy: "retain_append_only",
+          gc_enabled: false,
+          count: 0,
+          ids: [],
+          truncated: false,
+        },
+        orphaned_history_streams: {
+          count: 0,
+          ids: [],
+          truncated: false,
+        },
       });
 
       const locksCheck = health.checks.find((check) => check.name === "locks");
@@ -410,7 +531,9 @@ describe("runHealth", () => {
         unparseable_lock_count: 0,
       });
 
-      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
       expect(historyDriftCheck?.status).toBe("ok");
       expect(historyDriftCheck?.details).toMatchObject({
         checked_items: 1,
@@ -425,7 +548,9 @@ describe("runHealth", () => {
         },
       });
 
-      const vectorizationCheck = health.checks.find((check) => check.name === "vectorization");
+      const vectorizationCheck = health.checks.find(
+        (check) => check.name === "vectorization",
+      );
       expect(vectorizationCheck?.status).toBe("ok");
       expect(vectorizationCheck?.details).toMatchObject({
         semantic_runtime_available: false,
@@ -440,7 +565,9 @@ describe("runHealth", () => {
         vector_store_configured: "",
       });
 
-      const integrityCheck = health.checks.find((check) => check.name === "integrity");
+      const integrityCheck = health.checks.find(
+        (check) => check.name === "integrity",
+      );
       expect(integrityCheck?.status).toBe("ok");
       expect(integrityCheck?.details).toMatchObject({
         counts: {
@@ -501,7 +628,9 @@ describe("runHealth", () => {
       );
       expect(health.ok).toBe(true);
       expect(health.warnings).toContain("stale_in_progress_items:1");
-      expect(health.checks.find((check) => check.name === "storage")).toMatchObject({
+      expect(
+        health.checks.find((check) => check.name === "storage"),
+      ).toMatchObject({
         status: "warn",
         details: {
           stale_in_progress: {
@@ -525,7 +654,9 @@ describe("runHealth", () => {
       await withTempPmPath(async (context) => {
         delete process.env.PM_TELEMETRY_OTEL_DISABLED;
         const health = await runHealth({ path: context.pmPath });
-        const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+        const telemetryCheck = health.checks.find(
+          (check) => check.name === "telemetry",
+        );
         expect(telemetryCheck?.details).toMatchObject({
           env_overrides: {
             telemetry_disabled: true,
@@ -579,9 +710,13 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(true);
-      expect(health.warnings).not.toEqual(expect.arrayContaining(["telemetry_queue_pending:1"]));
+      expect(health.warnings).not.toEqual(
+        expect.arrayContaining(["telemetry_queue_pending:1"]),
+      );
 
-      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      const telemetryCheck = health.checks.find(
+        (check) => check.name === "telemetry",
+      );
       expect(telemetryCheck?.status).toBe("ok");
       expect(telemetryCheck?.details).toMatchObject({
         queue_entries: 1,
@@ -621,9 +756,13 @@ describe("runHealth", () => {
       const health = await runHealth({ path: context.pmPath });
       // Telemetry warnings are advisory: surfaced but never flip overall health.
       expect(health.ok).toBe(true);
-      expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_queue_pending:1"]));
+      expect(health.warnings).toEqual(
+        expect.arrayContaining(["telemetry_queue_pending:1"]),
+      );
 
-      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      const telemetryCheck = health.checks.find(
+        (check) => check.name === "telemetry",
+      );
       expect(telemetryCheck?.status).toBe("warn");
       expect(telemetryCheck?.details).toMatchObject({
         queue_entries: 1,
@@ -638,23 +777,34 @@ describe("runHealth", () => {
     await withTempPmPath(async (context) => {
       const itemId = createSeedItem(context);
       for (let index = 0; index < 5; index += 1) {
-        expect(context.runCli(["update", itemId, "--priority", String(index % 5)]).code).toBe(0);
+        expect(
+          context.runCli(["update", itemId, "--priority", String(index % 5)])
+            .code,
+        ).toBe(0);
       }
       // A second, shallow stream stays under the threshold so the policy scan
       // exercises both the over- and under-threshold branches.
       const shallowId = createSeedItem(context);
       const settings = await readSettings(context.pmPath);
-      settings.history.compact_policy = { enabled: true, max_entries: 3, trigger: "health_warn" };
+      settings.history.compact_policy = {
+        enabled: true,
+        max_entries: 3,
+        trigger: "health_warn",
+      };
       await writeSettings(context.pmPath, settings, "test:compact-policy");
 
       const health = await runHealth({ path: context.pmPath });
       // Over-threshold warnings are advisory: surfaced but never flip overall health.
       expect(health.ok).toBe(true);
       expect(health.warnings).toEqual(
-        expect.arrayContaining([`history_stream_over_compact_threshold:${itemId}`]),
+        expect.arrayContaining([
+          `history_stream_over_compact_threshold:${itemId}`,
+        ]),
       );
 
-      const storageCheck = health.checks.find((check) => check.name === "storage");
+      const storageCheck = health.checks.find(
+        (check) => check.name === "storage",
+      );
       expect(storageCheck?.status).toBe("warn");
       expect(storageCheck?.details).toMatchObject({
         compact_policy: {
@@ -664,7 +814,9 @@ describe("runHealth", () => {
           over_threshold_count: 1,
           over_threshold: [itemId],
         },
-        remediation_map: { history_stream_over_compact_threshold: "pm history-compact <id>" },
+        remediation_map: {
+          history_stream_over_compact_threshold: "pm history-compact <id>",
+        },
       });
     });
   });
@@ -675,21 +827,35 @@ describe("runHealth", () => {
       const second = createSeedItem(context);
       for (const itemId of [first, second]) {
         for (let index = 0; index < 5; index += 1) {
-          expect(context.runCli(["update", itemId, "--priority", String(index % 5)]).code).toBe(0);
+          expect(
+            context.runCli(["update", itemId, "--priority", String(index % 5)])
+              .code,
+          ).toBe(0);
         }
       }
       const settings = await readSettings(context.pmPath);
-      settings.history.compact_policy = { enabled: true, max_entries: 3, trigger: "auto" };
+      settings.history.compact_policy = {
+        enabled: true,
+        max_entries: 3,
+        trigger: "auto",
+      };
       await writeSettings(context.pmPath, settings, "test:compact-policy");
 
       const health = await runHealth({ path: context.pmPath });
-      const storageCheck = health.checks.find((check) => check.name === "storage");
+      const storageCheck = health.checks.find(
+        (check) => check.name === "storage",
+      );
       const compactPolicyDetails = storageCheck?.details as
         | { compact_policy?: { over_threshold_count?: number } }
         | undefined;
-      expect(compactPolicyDetails?.compact_policy?.over_threshold_count).toBe(2);
+      expect(compactPolicyDetails?.compact_policy?.over_threshold_count).toBe(
+        2,
+      );
       expect(storageCheck?.details).toMatchObject({
-        remediation_map: { history_stream_over_compact_threshold: "pm history-compact --all-streams" },
+        remediation_map: {
+          history_stream_over_compact_threshold:
+            "pm history-compact --all-streams",
+        },
       });
     });
   });
@@ -702,7 +868,10 @@ describe("runHealth", () => {
       await writeFile(
         path.join(telemetryRuntimeDir, "events.jsonl"),
         [
-          JSON.stringify({ attempts: 12, event: { event_id: "evt-near-exhaustion" } }),
+          JSON.stringify({
+            attempts: 12,
+            event: { event_id: "evt-near-exhaustion" },
+          }),
           JSON.stringify({ attempts: 1, event: { event_id: "evt-fresh" } }),
         ].join("\n") + "\n",
         "utf8",
@@ -722,9 +891,13 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(true);
-      expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_queue_high_retries:1"]));
+      expect(health.warnings).toEqual(
+        expect.arrayContaining(["telemetry_queue_high_retries:1"]),
+      );
 
-      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      const telemetryCheck = health.checks.find(
+        (check) => check.name === "telemetry",
+      );
       expect(telemetryCheck?.status).toBe("warn");
       expect(telemetryCheck?.details).toMatchObject({
         queue_entries: 2,
@@ -733,7 +906,9 @@ describe("runHealth", () => {
         queue_max_attempts: 12,
         queue_draining: false,
       });
-      const telemetryDetails = telemetryCheck?.details as { remediation_map?: Record<string, string> } | undefined;
+      const telemetryDetails = telemetryCheck?.details as
+        | { remediation_map?: Record<string, string> }
+        | undefined;
       expect(telemetryDetails?.remediation_map).toMatchObject({
         telemetry_queue_high_retries: "pm telemetry flush",
       });
@@ -750,15 +925,24 @@ describe("runHealth", () => {
         `${JSON.stringify({ attempts: 1, event: { event_id: "evt-valid" } })}\nnot-json\n`,
         "utf8",
       );
-      await writeFile(path.join(telemetryRuntimeDir, "state.json"), "{bad-json\n", "utf8");
+      await writeFile(
+        path.join(telemetryRuntimeDir, "state.json"),
+        "{bad-json\n",
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
 
       expect(health.ok).toBe(true);
       expect(health.warnings).toEqual(
-        expect.arrayContaining(["telemetry_state_invalid_json", "telemetry_queue_invalid_rows:1"]),
+        expect.arrayContaining([
+          "telemetry_state_invalid_json",
+          "telemetry_queue_invalid_rows:1",
+        ]),
       );
-      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      const telemetryCheck = health.checks.find(
+        (check) => check.name === "telemetry",
+      );
       expect(telemetryCheck?.status).toBe("warn");
       expect(telemetryCheck?.details).toMatchObject({
         queue_entries: 1,
@@ -774,22 +958,34 @@ describe("runHealth", () => {
       await writeSettings(context.pmPath, settings);
 
       const originalFetch = globalThis.fetch;
-      const fetchMock = vi.fn(async () => new Response("service unavailable", {
-        status: 503,
-        headers: {
-          "x-pm-telemetry-max-schema-version": "2",
-        },
-      }));
+      const fetchMock = vi.fn(
+        async () =>
+          new Response("service unavailable", {
+            status: 503,
+            headers: {
+              "x-pm-telemetry-max-schema-version": "2",
+            },
+          }),
+      );
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
-        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        const health = await runHealth(
+          { path: context.pmPath },
+          { checkTelemetry: true },
+        );
         // Telemetry endpoint probe failures are advisory: surfaced but not blocking.
         expect(health.ok).toBe(true);
-        expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_endpoint_probe_http_status:503"]));
-        expect(health.warnings).not.toEqual(expect.arrayContaining(["telemetry_schema_version_behind:2"]));
+        expect(health.warnings).toEqual(
+          expect.arrayContaining(["telemetry_endpoint_probe_http_status:503"]),
+        );
+        expect(health.warnings).not.toEqual(
+          expect.arrayContaining(["telemetry_schema_version_behind:2"]),
+        );
         expect(fetchMock).toHaveBeenCalledTimes(1);
 
-        const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+        const telemetryCheck = health.checks.find(
+          (check) => check.name === "telemetry",
+        );
         expect(telemetryCheck?.status).toBe("warn");
         expect(telemetryCheck?.details).toMatchObject({
           endpoint: "https://pm-cli.unbrained.dev/v1/events",
@@ -814,19 +1010,29 @@ describe("runHealth", () => {
       await writeSettings(context.pmPath, settings);
 
       const originalFetch = globalThis.fetch;
-      const fetchMock = vi.fn(async () => new Response("ok", {
-        status: 200,
-        headers: {
-          "x-pm-telemetry-max-schema-version": "2",
-        },
-      }));
+      const fetchMock = vi.fn(
+        async () =>
+          new Response("ok", {
+            status: 200,
+            headers: {
+              "x-pm-telemetry-max-schema-version": "2",
+            },
+          }),
+      );
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
-        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        const health = await runHealth(
+          { path: context.pmPath },
+          { checkTelemetry: true },
+        );
         expect(health.ok).toBe(true);
-        expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_schema_version_behind:2"]));
+        expect(health.warnings).toEqual(
+          expect.arrayContaining(["telemetry_schema_version_behind:2"]),
+        );
 
-        const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+        const telemetryCheck = health.checks.find(
+          (check) => check.name === "telemetry",
+        );
         expect(telemetryCheck?.details).toMatchObject({
           endpoint_probe: {
             attempted: true,
@@ -848,17 +1054,25 @@ describe("runHealth", () => {
       await writeSettings(context.pmPath, settings);
 
       const originalFetch = globalThis.fetch;
-      const fetchMock = vi.fn(async () => new Response("ok", {
-        status: 200,
-        headers: {
-          "x-pm-telemetry-max-schema-version": "1",
-        },
-      }));
+      const fetchMock = vi.fn(
+        async () =>
+          new Response("ok", {
+            status: 200,
+            headers: {
+              "x-pm-telemetry-max-schema-version": "1",
+            },
+          }),
+      );
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
-        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        const health = await runHealth(
+          { path: context.pmPath },
+          { checkTelemetry: true },
+        );
         expect(health.ok).toBe(true);
-        expect(health.warnings).not.toEqual(expect.arrayContaining(["telemetry_schema_version_behind:1"]));
+        expect(health.warnings).not.toEqual(
+          expect.arrayContaining(["telemetry_schema_version_behind:1"]),
+        );
       } finally {
         globalThis.fetch = originalFetch;
       }
@@ -875,10 +1089,15 @@ describe("runHealth", () => {
       const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
-        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        const health = await runHealth(
+          { path: context.pmPath },
+          { checkTelemetry: true },
+        );
         expect(health.ok).toBe(true);
         expect(health.warnings).not.toEqual(
-          expect.arrayContaining([expect.stringMatching(/^telemetry_schema_version_behind:/)]),
+          expect.arrayContaining([
+            expect.stringMatching(/^telemetry_schema_version_behind:/),
+          ]),
         );
       } finally {
         globalThis.fetch = originalFetch;
@@ -897,10 +1116,17 @@ describe("runHealth", () => {
         throw new Error("network unavailable");
       }) as unknown as typeof fetch;
       try {
-        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        const health = await runHealth(
+          { path: context.pmPath },
+          { checkTelemetry: true },
+        );
         expect(health.ok).toBe(true);
-        expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_endpoint_probe_failed"]));
-        const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+        expect(health.warnings).toEqual(
+          expect.arrayContaining(["telemetry_endpoint_probe_failed"]),
+        );
+        const telemetryCheck = health.checks.find(
+          (check) => check.name === "telemetry",
+        );
         expect(telemetryCheck?.status).toBe("warn");
         expect(telemetryCheck?.details).toMatchObject({
           endpoint_probe: {
@@ -921,13 +1147,25 @@ describe("runHealth", () => {
       const unreadableId = createSeedItem(context);
       const mismatchId = createSeedItem(context);
 
-      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
-      await writeFile(path.join(context.pmPath, "history", `${unreadableId}.jsonl`), "not-json\n", "utf8");
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), {
+        force: true,
+      });
+      await writeFile(
+        path.join(context.pmPath, "history", `${unreadableId}.jsonl`),
+        "not-json\n",
+        "utf8",
+      );
 
-      const mismatchPath = path.join(context.pmPath, "history", `${mismatchId}.jsonl`);
+      const mismatchPath = path.join(
+        context.pmPath,
+        "history",
+        `${mismatchId}.jsonl`,
+      );
       const mismatchRaw = await readFile(mismatchPath, "utf8");
       const mismatchLines = mismatchRaw.trim().split(/\r?\n/);
-      const lastEntry = JSON.parse(mismatchLines[mismatchLines.length - 1]) as { after_hash: string };
+      const lastEntry = JSON.parse(mismatchLines[mismatchLines.length - 1]) as {
+        after_hash: string;
+      };
       lastEntry.after_hash = "corrupted-after-hash";
       mismatchLines[mismatchLines.length - 1] = JSON.stringify(lastEntry);
       await writeFile(mismatchPath, `${mismatchLines.join("\n")}\n`, "utf8");
@@ -943,11 +1181,15 @@ describe("runHealth", () => {
         ]),
       );
 
-      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
       expect(historyDriftCheck?.status).toBe("warn");
       expect(historyDriftCheck?.details).toMatchObject({
         checked_items: 3,
-        drifted_items: [mismatchId, missingId, unreadableId].sort((left, right) => left.localeCompare(right)),
+        drifted_items: [mismatchId, missingId, unreadableId].sort(
+          (left, right) => left.localeCompare(right),
+        ),
         missing_streams: [missingId],
         unreadable_streams: [unreadableId],
         hash_mismatches: [mismatchId],
@@ -989,9 +1231,13 @@ describe("runHealth", () => {
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
       expect(health.warnings).toContain(`history_drift_chain_mismatch:${id}`);
-      expect(health.warnings).not.toContain(`history_drift_hash_mismatch:${id}`);
+      expect(health.warnings).not.toContain(
+        `history_drift_hash_mismatch:${id}`,
+      );
 
-      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
       expect(historyDriftCheck?.details).toMatchObject({
         drifted_items: [id],
         hash_mismatches: [],
@@ -1005,15 +1251,27 @@ describe("runHealth", () => {
       const itemConflictId = createSeedItem(context);
       const historyConflictId = createSeedItem(context);
 
-      const markdownItemPath = path.join(context.pmPath, "tasks", `${itemConflictId}.md`);
-      const toonItemPath = path.join(context.pmPath, "tasks", `${itemConflictId}.toon`);
+      const markdownItemPath = path.join(
+        context.pmPath,
+        "tasks",
+        `${itemConflictId}.md`,
+      );
+      const toonItemPath = path.join(
+        context.pmPath,
+        "tasks",
+        `${itemConflictId}.toon`,
+      );
       let itemPath = markdownItemPath;
       try {
         await access(itemPath);
       } catch {
         itemPath = toonItemPath;
       }
-      await writeFile(itemPath, "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n", "utf8");
+      await writeFile(
+        itemPath,
+        "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n",
+        "utf8",
+      );
       await writeFile(
         path.join(context.pmPath, "history", `${historyConflictId}.jsonl`),
         "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n",
@@ -1022,7 +1280,9 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
-      const relativeItemPath = path.relative(context.pmPath, itemPath).replaceAll("\\", "/");
+      const relativeItemPath = path
+        .relative(context.pmPath, itemPath)
+        .replaceAll("\\", "/");
       expect(health.warnings).toEqual(
         expect.arrayContaining([
           `integrity_item_conflict_marker:${relativeItemPath}:L1`,
@@ -1030,7 +1290,9 @@ describe("runHealth", () => {
         ]),
       );
 
-      const integrityCheck = health.checks.find((check) => check.name === "integrity");
+      const integrityCheck = health.checks.find(
+        (check) => check.name === "integrity",
+      );
       expect(integrityCheck?.status).toBe("warn");
       expect(integrityCheck?.details).toMatchObject({
         counts: {
@@ -1045,9 +1307,19 @@ describe("runHealth", () => {
     await withTempPmPath(async (context) => {
       createSeedItem(context);
 
-      await mkdir(path.join(context.pmPath, "tasks", "integrity-unreadable.md"), { recursive: true });
-      await writeFile(path.join(context.pmPath, "tasks", "integrity-parse-failure.md"), "{ invalid-json", "utf8");
-      await mkdir(path.join(context.pmPath, "history", "integrity-unreadable.jsonl"), { recursive: true });
+      await mkdir(
+        path.join(context.pmPath, "tasks", "integrity-unreadable.md"),
+        { recursive: true },
+      );
+      await writeFile(
+        path.join(context.pmPath, "tasks", "integrity-parse-failure.md"),
+        "{ invalid-json",
+        "utf8",
+      );
+      await mkdir(
+        path.join(context.pmPath, "history", "integrity-unreadable.jsonl"),
+        { recursive: true },
+      );
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
@@ -1059,7 +1331,9 @@ describe("runHealth", () => {
         ]),
       );
 
-      const integrityCheck = health.checks.find((check) => check.name === "integrity");
+      const integrityCheck = health.checks.find(
+        (check) => check.name === "integrity",
+      );
       expect(integrityCheck?.status).toBe("warn");
       expect(integrityCheck?.details).toMatchObject({
         counts: {
@@ -1097,11 +1371,19 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.warnings).toEqual(
-        expect.arrayContaining(["integrity_item_ahead_format_version:tasks/pm-ahead.toon"]),
+        expect.arrayContaining([
+          "integrity_item_ahead_format_version:tasks/pm-ahead.toon",
+        ]),
       );
-      expect(health.warnings.some((warning) => warning.startsWith("integrity_item_outdated_format_version:"))).toBe(false);
+      expect(
+        health.warnings.some((warning) =>
+          warning.startsWith("integrity_item_outdated_format_version:"),
+        ),
+      ).toBe(false);
 
-      const integrityCheck = health.checks.find((check) => check.name === "integrity");
+      const integrityCheck = health.checks.find(
+        (check) => check.name === "integrity",
+      );
       expect(integrityCheck?.status).toBe("warn");
       expect(integrityCheck?.details).toMatchObject({
         counts: {
@@ -1120,7 +1402,9 @@ describe("runHealth", () => {
       const settings = await readSettings(context.pmPath);
       settings.history.missing_stream = "strict_error";
       await writeSettings(context.pmPath, settings);
-      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), {
+        force: true,
+      });
 
       await expect(runHealth({ path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.NOT_FOUND,
@@ -1144,7 +1428,9 @@ describe("runHealth", () => {
         expect(health.ok).toBe(true);
         expect(health.warnings).toEqual([]);
 
-        const vectorizationCheck = health.checks.find((check) => check.name === "vectorization");
+        const vectorizationCheck = health.checks.find(
+          (check) => check.name === "vectorization",
+        );
         expect(vectorizationCheck?.status).toBe("ok");
         expect(vectorizationCheck?.details).toMatchObject({
           semantic_runtime_available: true,
@@ -1159,7 +1445,9 @@ describe("runHealth", () => {
         });
 
         const settledHealth = await runHealth({ path: context.pmPath });
-        const settledVectorizationCheck = settledHealth.checks.find((check) => check.name === "vectorization");
+        const settledVectorizationCheck = settledHealth.checks.find(
+          (check) => check.name === "vectorization",
+        );
         expect(settledVectorizationCheck?.details).toMatchObject({
           semantic_runtime_available: true,
           stale_items_before: [],
@@ -1180,14 +1468,21 @@ describe("runHealth", () => {
   it("warns when vectorization embedding identity differs from current runtime provider settings", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createSeedItem(context);
-      const getResult = context.runCli(["get", itemId, "--json"], { expectJson: true });
+      const getResult = context.runCli(["get", itemId, "--json"], {
+        expectJson: true,
+      });
       expect(getResult.code).toBe(0);
-      const updatedAt = (getResult.json as { item: { updated_at: string } }).item.updated_at;
+      const updatedAt = (getResult.json as { item: { updated_at: string } })
+        .item.updated_at;
 
       const settings = await readSettings(context.pmPath);
       settings.providers.openai.base_url = "https://api.example.test/v1";
       settings.providers.openai.model = "new-model";
-      settings.vector_store.lancedb.path = path.join(context.pmPath, "search", "lancedb-health-identity");
+      settings.vector_store.lancedb.path = path.join(
+        context.pmPath,
+        "search",
+        "lancedb-health-identity",
+      );
       await writeSettings(context.pmPath, settings);
 
       await writeVectorizationStatusLedger(
@@ -1200,9 +1495,16 @@ describe("runHealth", () => {
         },
       );
 
-      const health = await runHealth({ path: context.pmPath }, { checkOnly: true });
-      expect(health.warnings).toEqual(expect.arrayContaining(["vectorization_embedding_identity_changed"]));
-      const vectorizationCheck = health.checks.find((check) => check.name === "vectorization");
+      const health = await runHealth(
+        { path: context.pmPath },
+        { checkOnly: true },
+      );
+      expect(health.warnings).toEqual(
+        expect.arrayContaining(["vectorization_embedding_identity_changed"]),
+      );
+      const vectorizationCheck = health.checks.find(
+        (check) => check.name === "vectorization",
+      );
       expect(vectorizationCheck?.status).toBe("warn");
       expect(vectorizationCheck?.details).toMatchObject({
         semantic_runtime_available: true,
@@ -1244,7 +1546,9 @@ describe("runHealth", () => {
           },
         );
         expect(checkOnly.ok).toBe(false);
-        const checkOnlyVectorization = checkOnly.checks.find((check) => check.name === "vectorization");
+        const checkOnlyVectorization = checkOnly.checks.find(
+          (check) => check.name === "vectorization",
+        );
         expect(checkOnlyVectorization?.details).toMatchObject({
           semantic_runtime_available: true,
           stale_items_before: [itemId],
@@ -1266,7 +1570,9 @@ describe("runHealth", () => {
           },
         );
         expect(noRefresh.ok).toBe(false);
-        const noRefreshVectorization = noRefresh.checks.find((check) => check.name === "vectorization");
+        const noRefreshVectorization = noRefresh.checks.find(
+          (check) => check.name === "vectorization",
+        );
         expect(noRefreshVectorization?.details).toMatchObject({
           semantic_runtime_available: true,
           stale_items_before: [itemId],
@@ -1287,89 +1593,101 @@ describe("runHealth", () => {
     });
   });
 
-  it(
-    "summarizes stale vectorization IDs by default and supports verbose expansion",
-    async () => {
-      await withTempPmPath(async (context) => {
-        const ids: string[] = [];
-        for (let index = 0; index < 26; index += 1) {
-          ids.push(createSeedItem(context));
-        }
+  it("summarizes stale vectorization IDs by default and supports verbose expansion", async () => {
+    await withTempPmPath(async (context) => {
+      const ids: string[] = [];
+      for (let index = 0; index < 26; index += 1) {
+        ids.push(createSeedItem(context));
+      }
 
-        const settings = await readSettings(context.pmPath);
-        settings.providers.openai.base_url = "https://api.example.test/v1";
-        settings.providers.openai.model = "text-embedding-3-small";
-        settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
-        await writeSettings(context.pmPath, settings);
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
 
-        const summaryResult = await runHealth(
-          { path: context.pmPath },
-          {
-            checkOnly: true,
-          },
+      const summaryResult = await runHealth(
+        { path: context.pmPath },
+        {
+          checkOnly: true,
+        },
+      );
+      const summaryVectorizationCheck = summaryResult.checks.find(
+        (check) => check.name === "vectorization",
+      );
+      const summaryDetails = summaryVectorizationCheck?.details as
+        | {
+            stale_items_detail_mode: string;
+            stale_items_summary_limit: number;
+            stale_items_before_total: number;
+            stale_items_before: string[];
+            stale_items_before_truncated: boolean;
+            stale_items_after_total: number;
+            stale_items_after: string[];
+            stale_items_after_truncated: boolean;
+          }
+        | undefined;
+      if (summaryDetails === undefined) {
+        throw new TypeError(
+          "Expected health vectorization summary details to exist.",
         );
-        const summaryVectorizationCheck = summaryResult.checks.find((check) => check.name === "vectorization");
-        const summaryDetails = summaryVectorizationCheck?.details as
-          | {
-              stale_items_detail_mode: string;
-              stale_items_summary_limit: number;
-              stale_items_before_total: number;
-              stale_items_before: string[];
-              stale_items_before_truncated: boolean;
-              stale_items_after_total: number;
-              stale_items_after: string[];
-              stale_items_after_truncated: boolean;
-            }
-          | undefined;
-        if (summaryDetails === undefined) {
-          throw new TypeError("Expected health vectorization summary details to exist.");
-        }
-        expect(summaryDetails.stale_items_detail_mode).toBe("summary");
-        expect(summaryDetails.stale_items_summary_limit).toBe(25);
-        expect(summaryDetails.stale_items_before_total).toBe(ids.length);
-        expect(summaryDetails.stale_items_after_total).toBe(ids.length);
-        expect(summaryDetails.stale_items_before.length).toBe(25);
-        expect(summaryDetails.stale_items_after.length).toBe(25);
-        expect(summaryDetails.stale_items_before_truncated).toBe(true);
-        expect(summaryDetails.stale_items_after_truncated).toBe(true);
-        expect(summaryDetails.stale_items_before.every((entry) => ids.includes(entry))).toBe(true);
-        expect(summaryDetails.stale_items_after.every((entry) => ids.includes(entry))).toBe(true);
+      }
+      expect(summaryDetails.stale_items_detail_mode).toBe("summary");
+      expect(summaryDetails.stale_items_summary_limit).toBe(25);
+      expect(summaryDetails.stale_items_before_total).toBe(ids.length);
+      expect(summaryDetails.stale_items_after_total).toBe(ids.length);
+      expect(summaryDetails.stale_items_before.length).toBe(25);
+      expect(summaryDetails.stale_items_after.length).toBe(25);
+      expect(summaryDetails.stale_items_before_truncated).toBe(true);
+      expect(summaryDetails.stale_items_after_truncated).toBe(true);
+      expect(
+        summaryDetails.stale_items_before.every((entry) => ids.includes(entry)),
+      ).toBe(true);
+      expect(
+        summaryDetails.stale_items_after.every((entry) => ids.includes(entry)),
+      ).toBe(true);
 
-        const verboseResult = await runHealth(
-          { path: context.pmPath },
-          {
-            checkOnly: true,
-            verboseStaleItems: true,
-          },
+      const verboseResult = await runHealth(
+        { path: context.pmPath },
+        {
+          checkOnly: true,
+          verboseStaleItems: true,
+        },
+      );
+      const verboseVectorizationCheck = verboseResult.checks.find(
+        (check) => check.name === "vectorization",
+      );
+      const verboseDetails = verboseVectorizationCheck?.details as
+        | {
+            stale_items_detail_mode: string;
+            stale_items_before_total: number;
+            stale_items_before: string[];
+            stale_items_before_truncated: boolean;
+            stale_items_after_total: number;
+            stale_items_after: string[];
+            stale_items_after_truncated: boolean;
+          }
+        | undefined;
+      if (verboseDetails === undefined) {
+        throw new TypeError(
+          "Expected health vectorization verbose details to exist.",
         );
-        const verboseVectorizationCheck = verboseResult.checks.find((check) => check.name === "vectorization");
-        const verboseDetails = verboseVectorizationCheck?.details as
-          | {
-              stale_items_detail_mode: string;
-              stale_items_before_total: number;
-              stale_items_before: string[];
-              stale_items_before_truncated: boolean;
-              stale_items_after_total: number;
-              stale_items_after: string[];
-              stale_items_after_truncated: boolean;
-            }
-          | undefined;
-        if (verboseDetails === undefined) {
-          throw new TypeError("Expected health vectorization verbose details to exist.");
-        }
-        expect(verboseDetails.stale_items_detail_mode).toBe("full");
-        expect(verboseDetails.stale_items_before_total).toBe(ids.length);
-        expect(verboseDetails.stale_items_after_total).toBe(ids.length);
-        expect(verboseDetails.stale_items_before.length).toBe(ids.length);
-        expect(verboseDetails.stale_items_after.length).toBe(ids.length);
-        expect(verboseDetails.stale_items_before_truncated).toBe(false);
-        expect(verboseDetails.stale_items_after_truncated).toBe(false);
-        expect(verboseDetails.stale_items_before).toEqual(expect.arrayContaining(ids));
-        expect(verboseDetails.stale_items_after).toEqual(expect.arrayContaining(ids));
-      });
-    },
-    120_000,
-  );
+      }
+      expect(verboseDetails.stale_items_detail_mode).toBe("full");
+      expect(verboseDetails.stale_items_before_total).toBe(ids.length);
+      expect(verboseDetails.stale_items_after_total).toBe(ids.length);
+      expect(verboseDetails.stale_items_before.length).toBe(ids.length);
+      expect(verboseDetails.stale_items_after.length).toBe(ids.length);
+      expect(verboseDetails.stale_items_before_truncated).toBe(false);
+      expect(verboseDetails.stale_items_after_truncated).toBe(false);
+      expect(verboseDetails.stale_items_before).toEqual(
+        expect.arrayContaining(ids),
+      );
+      expect(verboseDetails.stale_items_after).toEqual(
+        expect.arrayContaining(ids),
+      );
+    });
+  }, 120_000);
 
   it("rejects conflicting vector refresh policy flags", async () => {
     await withTempPmPath(async (context) => {
@@ -1408,14 +1726,20 @@ describe("runHealth", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const semanticMock = installFailingFetchMock({ text: "embedding unavailable" });
+      const semanticMock = installFailingFetchMock({
+        text: "embedding unavailable",
+      });
 
       try {
         const health = await runHealth({ path: context.pmPath });
         expect(health.ok).toBe(false);
-        expect(health.warnings).toEqual(expect.arrayContaining([`vectorization_stale_items_remaining:1`]));
+        expect(health.warnings).toEqual(
+          expect.arrayContaining([`vectorization_stale_items_remaining:1`]),
+        );
 
-        const vectorizationCheck = health.checks.find((check) => check.name === "vectorization");
+        const vectorizationCheck = health.checks.find(
+          (check) => check.name === "vectorization",
+        );
         expect(vectorizationCheck?.status).toBe("warn");
         expect(vectorizationCheck?.details).toMatchObject({
           semantic_runtime_available: true,
@@ -1437,10 +1761,20 @@ describe("runHealth", () => {
       };
       settings.id_prefix = "";
       settings.locks.ttl_seconds = 0;
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
 
-      await rm(path.join(context.pmPath, "history"), { recursive: true, force: true });
-      await rm(path.join(context.pmPath, "search"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "history"), {
+        recursive: true,
+        force: true,
+      });
+      await rm(path.join(context.pmPath, "search"), {
+        recursive: true,
+        force: true,
+      });
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
@@ -1451,25 +1785,34 @@ describe("runHealth", () => {
         "settings:locks_ttl_non_positive",
       ]);
 
-      const directoriesCheck = health.checks.find((check) => check.name === "directories");
+      const directoriesCheck = health.checks.find(
+        (check) => check.name === "directories",
+      );
       expect(directoriesCheck?.status).toBe("warn");
       expect(directoriesCheck?.details).toMatchObject({
         missing: ["history", "search"],
       });
 
-      const settingValuesCheck = health.checks.find((check) => check.name === "settings_values");
+      const settingValuesCheck = health.checks.find(
+        (check) => check.name === "settings_values",
+      );
       expect(settingValuesCheck?.status).toBe("warn");
       // settings_values is a remediation source, so a machine-executable
       // remediation_map is attached alongside the warning list in full output.
       expect(settingValuesCheck?.details).toEqual({
-        warnings: ["settings:id_prefix_empty", "settings:locks_ttl_non_positive"],
+        warnings: [
+          "settings:id_prefix_empty",
+          "settings:locks_ttl_non_positive",
+        ],
         remediation_map: {
           "settings:id_prefix_empty": "pm config list --json",
           "settings:locks_ttl_non_positive": "pm config list --json",
         },
       });
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       expect(extensionCheck?.status).toBe("ok");
       expect(extensionCheck?.details).toMatchObject({
         disabled_by_flag: false,
@@ -1477,26 +1820,123 @@ describe("runHealth", () => {
         warnings: [],
       });
 
-      const storageCheck = health.checks.find((check) => check.name === "storage");
+      const storageCheck = health.checks.find(
+        (check) => check.name === "storage",
+      );
       expect(storageCheck?.details).toEqual({
         items: 0,
         history_streams: 0,
+        tombstones: {
+          retention_policy: "retain_append_only",
+          gc_enabled: false,
+          count: 0,
+          ids: [],
+          truncated: false,
+        },
+        orphaned_history_streams: {
+          count: 0,
+          ids: [],
+          truncated: false,
+        },
+      });
+    });
+  });
+
+  it("classifies malformed history-only streams as orphaned rather than tombstones", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(
+        path.join(context.pmPath, "history", "pm-malformed.jsonl"),
+        "not-json\n",
+        "utf8",
+      );
+      await writeFile(
+        path.join(context.pmPath, "history", "pm-empty.jsonl"),
+        "",
+        "utf8",
+      );
+      const health = await runHealth(
+        { path: context.pmPath },
+        {
+          checkOnly: true,
+          skipIntegrity: true,
+          skipDrift: true,
+          skipVectors: true,
+        },
+      );
+      expect(health.warnings).toContain("history_orphaned_stream:pm-malformed");
+      expect(
+        health.checks.find((check) => check.name === "storage")?.details,
+      ).toMatchObject({
+        tombstones: { count: 0 },
+        orphaned_history_streams: {
+          count: 2,
+          ids: ["pm-empty", "pm-malformed"],
+        },
+      });
+    });
+  });
+
+  it("does not classify history as orphaned when an unreadable or unregistered item document still exists", async () => {
+    await withTempPmPath(async (context) => {
+      await mkdir(path.join(context.pmPath, "unregistered"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(context.pmPath, "unregistered", "pm-hidden.toon"),
+        "unavailable extension document",
+        "utf8",
+      );
+      await writeFile(
+        path.join(context.pmPath, "history", "pm-hidden.jsonl"),
+        `${JSON.stringify({ op: "update" })}\n`,
+        "utf8",
+      );
+      const health = await runHealth(
+        { path: context.pmPath },
+        {
+          checkOnly: true,
+          skipIntegrity: true,
+          skipDrift: true,
+          skipVectors: true,
+        },
+      );
+      expect(health.warnings).not.toContain(
+        "history_orphaned_stream:pm-hidden",
+      );
+      expect(
+        health.checks.find((check) => check.name === "storage")?.details,
+      ).toMatchObject({
+        orphaned_history_streams: { count: 0, ids: [] },
       });
     });
   });
 
   it("treats missing optional type directories as informational by default", async () => {
     await withTempPmPath(async (context) => {
-      await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
-      await rm(path.join(context.pmPath, "reminders"), { recursive: true, force: true });
-      await rm(path.join(context.pmPath, "milestones"), { recursive: true, force: true });
-      await rm(path.join(context.pmPath, "meetings"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "events"), {
+        recursive: true,
+        force: true,
+      });
+      await rm(path.join(context.pmPath, "reminders"), {
+        recursive: true,
+        force: true,
+      });
+      await rm(path.join(context.pmPath, "milestones"), {
+        recursive: true,
+        force: true,
+      });
+      await rm(path.join(context.pmPath, "meetings"), {
+        recursive: true,
+        force: true,
+      });
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(true);
       expect(health.warnings).toEqual([]);
 
-      const directoriesCheck = health.checks.find((check) => check.name === "directories");
+      const directoriesCheck = health.checks.find(
+        (check) => check.name === "directories",
+      );
       expect(directoriesCheck?.status).toBe("ok");
       expect(directoriesCheck?.details).toMatchObject({
         missing: [],
@@ -1508,12 +1948,27 @@ describe("runHealth", () => {
 
   it("fails on missing optional directories when strict mode is enabled", async () => {
     await withTempPmPath(async (context) => {
-      await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
-      await rm(path.join(context.pmPath, "reminders"), { recursive: true, force: true });
-      await rm(path.join(context.pmPath, "milestones"), { recursive: true, force: true });
-      await rm(path.join(context.pmPath, "meetings"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "events"), {
+        recursive: true,
+        force: true,
+      });
+      await rm(path.join(context.pmPath, "reminders"), {
+        recursive: true,
+        force: true,
+      });
+      await rm(path.join(context.pmPath, "milestones"), {
+        recursive: true,
+        force: true,
+      });
+      await rm(path.join(context.pmPath, "meetings"), {
+        recursive: true,
+        force: true,
+      });
 
-      const health = await runHealth({ path: context.pmPath }, { strictDirectories: true });
+      const health = await runHealth(
+        { path: context.pmPath },
+        { strictDirectories: true },
+      );
       expect(health.ok).toBe(false);
       expect(health.warnings).toEqual([
         "missing_directory:events",
@@ -1522,7 +1977,9 @@ describe("runHealth", () => {
         "missing_directory:reminders",
       ]);
 
-      const directoriesCheck = health.checks.find((check) => check.name === "directories");
+      const directoriesCheck = health.checks.find(
+        (check) => check.name === "directories",
+      );
       expect(directoriesCheck?.status).toBe("warn");
       expect(directoriesCheck?.details).toMatchObject({
         missing: ["events", "meetings", "milestones", "reminders"],
@@ -1536,7 +1993,9 @@ describe("runHealth", () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");
 
-      await mkdir(path.join(projectExtensionsRoot, "boom"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "boom"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "boom", "manifest.json"),
         `${JSON.stringify(
@@ -1550,7 +2009,11 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(path.join(projectExtensionsRoot, "boom", "index.js"), "throw new Error('boom-load');\n", "utf8");
+      await writeFile(
+        path.join(projectExtensionsRoot, "boom", "index.js"),
+        "throw new Error('boom-load');\n",
+        "utf8",
+      );
 
       await mkdir(path.join(projectExtensionsRoot, "ok"), { recursive: true });
       await writeFile(
@@ -1566,9 +2029,15 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(path.join(projectExtensionsRoot, "ok", "index.js"), "export default { ok: true };\n", "utf8");
+      await writeFile(
+        path.join(projectExtensionsRoot, "ok", "index.js"),
+        "export default { ok: true };\n",
+        "utf8",
+      );
 
-      await mkdir(path.join(projectExtensionsRoot, "primitive"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "primitive"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "primitive", "manifest.json"),
         `${JSON.stringify(
@@ -1582,7 +2051,11 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(path.join(projectExtensionsRoot, "primitive", "index.js"), "export default 1;\n", "utf8");
+      await writeFile(
+        path.join(projectExtensionsRoot, "primitive", "index.js"),
+        "export default 1;\n",
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
@@ -1591,7 +2064,9 @@ describe("runHealth", () => {
         "extension_update_health_partial_coverage:skipped_unmanaged:2",
       ]);
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       expect(extensionCheck?.status).toBe("warn");
       expect(extensionCheck?.details).toMatchObject({
         disabled_by_flag: false,
@@ -1616,10 +2091,18 @@ describe("runHealth", () => {
       // map alongside the per-extension triage; the load-failure code is not in
       // the shared registry and is intentionally absent (pm-bdvm).
       const extensionDetails = extensionCheck?.details as
-        | { remediation_map?: Record<string, string>; loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }
+        | {
+            remediation_map?: Record<string, string>;
+            loaded?: Array<{
+              name: string;
+              has_activate: boolean;
+              module?: unknown;
+            }>;
+          }
         | undefined;
       expect(extensionDetails?.remediation_map).toEqual({
-        extension_update_health_partial_coverage: "pm extension --adopt-all --project",
+        extension_update_health_partial_coverage:
+          "pm extension --adopt-all --project",
       });
 
       const loaded = extensionDetails?.loaded ?? [];
@@ -1641,7 +2124,9 @@ describe("runHealth", () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");
 
-      await mkdir(path.join(projectExtensionsRoot, "activate-boom"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "activate-boom"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "activate-boom", "manifest.json"),
         `${JSON.stringify(
@@ -1688,7 +2173,9 @@ describe("runHealth", () => {
         "extension_update_health_partial_coverage:skipped_unmanaged:2",
       ]);
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       expect(extensionCheck?.status).toBe("warn");
       expect(extensionCheck?.details).toMatchObject({
         disabled_by_flag: false,
@@ -1725,7 +2212,9 @@ describe("runHealth", () => {
         },
       });
 
-      const extensionDetails = extensionCheck?.details as { loaded?: Array<{ name: string }> } | undefined;
+      const extensionDetails = extensionCheck?.details as
+        | { loaded?: Array<{ name: string }> }
+        | undefined;
       const loaded = extensionDetails?.loaded ?? [];
       expect(loaded.map((entry) => entry.name)).toEqual([
         "activate-boom-ext",
@@ -1770,7 +2259,9 @@ describe("runHealth", () => {
       }
 
       const health = await runHealth({ path: context.pmPath });
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       const extensionDetails = extensionCheck?.details as
         | {
             triage?: {
@@ -1782,11 +2273,20 @@ describe("runHealth", () => {
       const triage = extensionDetails?.triage;
 
       expect(triage?.warning_codes).toEqual(
-        expect.arrayContaining(["extension_preflight_override_collision", "extension_renderer_collision"]),
+        expect.arrayContaining([
+          "extension_preflight_override_collision",
+          "extension_renderer_collision",
+        ]),
       );
-      expect(triage?.remediation.join(" ")).toContain("Conflicting extensions: pm-starter, pm-ts-starter");
-      expect(triage?.remediation.join(" ")).toContain("pm extension --deactivate <name> --project/--global");
-      expect(triage?.remediation.join(" ")).toContain("pm extension --doctor --project/--global --detail deep --trace");
+      expect(triage?.remediation.join(" ")).toContain(
+        "Conflicting extensions: pm-starter, pm-ts-starter",
+      );
+      expect(triage?.remediation.join(" ")).toContain(
+        "pm extension --deactivate <name> --project/--global",
+      );
+      expect(triage?.remediation.join(" ")).toContain(
+        "pm extension --doctor --project/--global --detail deep --trace",
+      );
     });
   });
 
@@ -1807,12 +2307,22 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(path.join(bundledStyleDir, "index.js"), "export default { activate() {} };\n", "utf8");
+      await writeFile(
+        path.join(bundledStyleDir, "index.js"),
+        "export default { activate() {} };\n",
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
-      expect(health.warnings.some((warning) => warning.startsWith("extension_update_health_partial_coverage:"))).toBe(false);
+      expect(
+        health.warnings.some((warning) =>
+          warning.startsWith("extension_update_health_partial_coverage:"),
+        ),
+      ).toBe(false);
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       const extensionDetails = extensionCheck?.details as
         | {
             discovered?: Array<{ name: string | null }>;
@@ -1835,18 +2345,31 @@ describe("runHealth", () => {
         unmanaged_expected_extension_count: 1,
         unmanaged_action_required_extension_count: 0,
       });
-      expect((triage?.remediation ?? []).some((entry) => entry.includes("treated as informational"))).toBe(true);
+      expect(
+        (triage?.remediation ?? []).some((entry) =>
+          entry.includes("treated as informational"),
+        ),
+      ).toBe(true);
     });
   });
 
   it("reports applied pending and failed extension migrations in health diagnostics", async () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");
-      const globalExtensionsRoot = path.join(context.env.PM_GLOBAL_PATH as string, "extensions");
+      const globalExtensionsRoot = path.join(
+        context.env.PM_GLOBAL_PATH as string,
+        "extensions",
+      );
 
-      await mkdir(path.join(globalExtensionsRoot, "global-migration-ext"), { recursive: true });
+      await mkdir(path.join(globalExtensionsRoot, "global-migration-ext"), {
+        recursive: true,
+      });
       await writeFile(
-        path.join(globalExtensionsRoot, "global-migration-ext", "manifest.json"),
+        path.join(
+          globalExtensionsRoot,
+          "global-migration-ext",
+          "manifest.json",
+        ),
         `${JSON.stringify(
           {
             name: "global-migration-ext",
@@ -1872,7 +2395,9 @@ describe("runHealth", () => {
         "utf8",
       );
 
-      await mkdir(path.join(projectExtensionsRoot, "a-ext"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "a-ext"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "a-ext", "manifest.json"),
         `${JSON.stringify(
@@ -1901,7 +2426,9 @@ describe("runHealth", () => {
         "utf8",
       );
 
-      await mkdir(path.join(projectExtensionsRoot, "b-ext"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "b-ext"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "b-ext", "manifest.json"),
         `${JSON.stringify(
@@ -1942,7 +2469,9 @@ describe("runHealth", () => {
         "extension_update_health_partial_coverage:skipped_unmanaged:3",
       ]);
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       expect(extensionCheck?.status).toBe("warn");
       expect(extensionCheck?.details).toMatchObject({
         warnings: [
@@ -2010,7 +2539,9 @@ describe("runHealth", () => {
   it("includes allowed capability guidance and nearest-match suggestions for unknown capabilities", async () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");
-      await mkdir(path.join(projectExtensionsRoot, "unknown-capability"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "unknown-capability"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "unknown-capability", "manifest.json"),
         `${JSON.stringify(
@@ -2025,25 +2556,40 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(path.join(projectExtensionsRoot, "unknown-capability", "index.js"), "export default { activate() {} };\n", "utf8");
+      await writeFile(
+        path.join(projectExtensionsRoot, "unknown-capability", "index.js"),
+        "export default { activate() {} };\n",
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
       const capabilityWarning = health.warnings.find((warning) =>
-        warning.startsWith("extension_capability_unknown:project:unknown-capability-ext:service"),
+        warning.startsWith(
+          "extension_capability_unknown:project:unknown-capability-ext:service",
+        ),
       );
       expect(capabilityWarning).toBeDefined();
-      expect(capabilityWarning).toContain("allowed=commands,renderers,hooks,schema,importers,search,parser,preflight,services");
+      expect(capabilityWarning).toContain(
+        "allowed=commands,renderers,hooks,schema,importers,search,parser,preflight,services",
+      );
       expect(capabilityWarning).toContain("suggested=services");
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       const details = extensionCheck?.details as {
-        capability_contract?: { version?: number; legacy_aliases?: Record<string, string> };
+        capability_contract?: {
+          version?: number;
+          legacy_aliases?: Record<string, string>;
+        };
         capability_guidance?: Array<Record<string, unknown>>;
         triage?: { unknown_capability_count?: number; remediation?: string[] };
       };
       expect(details.capability_contract?.version).toBeGreaterThanOrEqual(1);
-      expect(details.capability_contract?.legacy_aliases?.migration).toBe("schema");
+      expect(details.capability_contract?.legacy_aliases?.migration).toBe(
+        "schema",
+      );
       expect(details.capability_guidance).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -2055,18 +2601,29 @@ describe("runHealth", () => {
           }),
         ]),
       );
-      const allowedCapabilities = details.capability_guidance?.[0]?.allowed_capabilities as string[] | undefined;
+      const allowedCapabilities = details.capability_guidance?.[0]
+        ?.allowed_capabilities as string[] | undefined;
       expect(allowedCapabilities ?? []).toContain("services");
-      expect(typeof details.capability_guidance?.[0]?.capability_contract_version).toBe("number");
-      expect(details.triage?.unknown_capability_count).toBeGreaterThanOrEqual(1);
-      expect((details.triage?.remediation ?? []).some((entry) => entry.includes("Allowed capabilities"))).toBe(true);
+      expect(
+        typeof details.capability_guidance?.[0]?.capability_contract_version,
+      ).toBe("number");
+      expect(details.triage?.unknown_capability_count).toBeGreaterThanOrEqual(
+        1,
+      );
+      expect(
+        (details.triage?.remediation ?? []).some((entry) =>
+          entry.includes("Allowed capabilities"),
+        ),
+      ).toBe(true);
     });
   });
 
   it("includes legacy capability alias guidance for health extension diagnostics", async () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");
-      await mkdir(path.join(projectExtensionsRoot, "legacy-capability"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "legacy-capability"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "legacy-capability", "manifest.json"),
         `${JSON.stringify(
@@ -2081,10 +2638,16 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(path.join(projectExtensionsRoot, "legacy-capability", "index.js"), "export default { activate() {} };\n", "utf8");
+      await writeFile(
+        path.join(projectExtensionsRoot, "legacy-capability", "index.js"),
+        "export default { activate() {} };\n",
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       const details = extensionCheck?.details as {
         capability_guidance?: Array<Record<string, unknown>>;
       };
@@ -2105,7 +2668,9 @@ describe("runHealth", () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");
 
-      await mkdir(path.join(projectExtensionsRoot, "fallback-ext"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "fallback-ext"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "fallback-ext", "manifest.json"),
         `${JSON.stringify(
@@ -2141,7 +2706,9 @@ describe("runHealth", () => {
         "extension_update_health_partial_coverage:skipped_unmanaged:1",
       ]);
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       expect(extensionCheck?.details).toMatchObject({
         activation: {
           migration_status: {
@@ -2173,11 +2740,22 @@ describe("runHealth", () => {
   it("reports extension manifest issues and respects --no-extensions", async () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");
-      const globalExtensionsRoot = path.join(context.env.PM_GLOBAL_PATH as string, "extensions");
+      const globalExtensionsRoot = path.join(
+        context.env.PM_GLOBAL_PATH as string,
+        "extensions",
+      );
 
-      await mkdir(path.join(projectExtensionsRoot, "broken-manifest"), { recursive: true });
-      await writeFile(path.join(projectExtensionsRoot, "broken-manifest", "manifest.json"), "{not-json", "utf8");
-      await mkdir(path.join(projectExtensionsRoot, "invalid-entry"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "broken-manifest"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(projectExtensionsRoot, "broken-manifest", "manifest.json"),
+        "{not-json",
+        "utf8",
+      );
+      await mkdir(path.join(projectExtensionsRoot, "invalid-entry"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "invalid-entry", "manifest.json"),
         `${JSON.stringify(
@@ -2191,7 +2769,9 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await mkdir(path.join(projectExtensionsRoot, "invalid-name"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "invalid-name"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "invalid-name", "manifest.json"),
         `${JSON.stringify(
@@ -2205,7 +2785,9 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await mkdir(path.join(projectExtensionsRoot, "invalid-version"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "invalid-version"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "invalid-version", "manifest.json"),
         `${JSON.stringify(
@@ -2219,8 +2801,12 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await mkdir(path.join(projectExtensionsRoot, "missing-manifest"), { recursive: true });
-      await mkdir(path.join(projectExtensionsRoot, "missing-entry"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "missing-manifest"), {
+        recursive: true,
+      });
+      await mkdir(path.join(projectExtensionsRoot, "missing-entry"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "missing-entry", "manifest.json"),
         `${JSON.stringify(
@@ -2234,9 +2820,17 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await mkdir(path.join(projectExtensionsRoot, "non-object"), { recursive: true });
-      await writeFile(path.join(projectExtensionsRoot, "non-object", "manifest.json"), '"not-an-object"\n', "utf8");
-      await mkdir(path.join(projectExtensionsRoot, "outside-entry"), { recursive: true });
+      await mkdir(path.join(projectExtensionsRoot, "non-object"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(projectExtensionsRoot, "non-object", "manifest.json"),
+        '"not-an-object"\n',
+        "utf8",
+      );
+      await mkdir(path.join(projectExtensionsRoot, "outside-entry"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(projectExtensionsRoot, "outside-entry", "manifest.json"),
         `${JSON.stringify(
@@ -2250,9 +2844,15 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(path.join(context.pmPath, "outside-target.js"), "export default {};\n", "utf8");
+      await writeFile(
+        path.join(context.pmPath, "outside-target.js"),
+        "export default {};\n",
+        "utf8",
+      );
 
-      await mkdir(path.join(globalExtensionsRoot, "global-valid"), { recursive: true });
+      await mkdir(path.join(globalExtensionsRoot, "global-valid"), {
+        recursive: true,
+      });
       await writeFile(
         path.join(globalExtensionsRoot, "global-valid", "manifest.json"),
         `${JSON.stringify(
@@ -2266,7 +2866,11 @@ describe("runHealth", () => {
         )}\n`,
         "utf8",
       );
-      await writeFile(path.join(globalExtensionsRoot, "global-valid", "index.js"), "export default {};\n", "utf8");
+      await writeFile(
+        path.join(globalExtensionsRoot, "global-valid", "index.js"),
+        "export default {};\n",
+        "utf8",
+      );
 
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
@@ -2277,7 +2881,11 @@ describe("runHealth", () => {
       };
       settings.extensions.enabled = [" zed ", "alpha", "alpha"];
       settings.extensions.disabled = ["gamma", " beta "];
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
@@ -2292,7 +2900,9 @@ describe("runHealth", () => {
         "extension_entry_outside_extension:project:outside-entry-ext",
       ]);
 
-      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const extensionCheck = health.checks.find(
+        (check) => check.name === "extensions",
+      );
       expect(extensionCheck?.status).toBe("warn");
       expect(extensionCheck?.details).toMatchObject({
         disabled_by_flag: false,
@@ -2331,10 +2941,15 @@ describe("runHealth", () => {
         "outside-entry-ext",
       ]);
 
-      const skipped = await runHealth({ path: context.pmPath, noExtensions: true });
+      const skipped = await runHealth({
+        path: context.pmPath,
+        noExtensions: true,
+      });
       expect(skipped.ok).toBe(true);
       expect(skipped.warnings).toEqual([]);
-      const skippedCheck = skipped.checks.find((check) => check.name === "extensions");
+      const skippedCheck = skipped.checks.find(
+        (check) => check.name === "extensions",
+      );
       expect(skippedCheck?.status).toBe("ok");
       expect(skippedCheck?.details).toMatchObject({
         disabled_by_flag: true,
@@ -2375,19 +2990,26 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
-      expect(health.warnings).toContain("extension_hook_failed:project:boom-read-hook:onRead");
+      expect(health.warnings).toContain(
+        "extension_hook_failed:project:boom-read-hook:onRead",
+      );
       expect(events).toContain("history");
       const expectedHistoryEvents = [firstSeedId, secondSeedId]
         .sort((left, right) => left.localeCompare(right))
         .map((id) => `${id}.jsonl`);
-      const historyStreamEvents = events.filter((event) => event.endsWith(".jsonl"));
+      const historyStreamEvents = events.filter((event) =>
+        event.endsWith(".jsonl"),
+      );
       expect(historyStreamEvents).toEqual(expectedHistoryEvents);
     });
   });
 
   it("skips integrity, drift, and vector checks when skip flags are set", async () => {
     await withTempPmPath(async (context) => {
-      const health = await runHealth({ path: context.pmPath }, { skipIntegrity: true, skipDrift: true, skipVectors: true });
+      const health = await runHealth(
+        { path: context.pmPath },
+        { skipIntegrity: true, skipDrift: true, skipVectors: true },
+      );
       const integrityCheck = health.checks.find((c) => c.name === "integrity");
       const driftCheck = health.checks.find((c) => c.name === "history_drift");
       const vectorCheck = health.checks.find((c) => c.name === "vectorization");
@@ -2427,7 +3049,10 @@ describe("runHealth", () => {
   it("uses fast skipped expensive checks for brief check-only agent loops", async () => {
     await withTempPmPath(async (context) => {
       createSeedItem(context);
-      const health = await runHealth({ path: context.pmPath }, { brief: true, checkOnly: true });
+      const health = await runHealth(
+        { path: context.pmPath },
+        { brief: true, checkOnly: true },
+      );
       const integrityCheck = health.checks.find((c) => c.name === "integrity");
       const driftCheck = health.checks.find((c) => c.name === "history_drift");
       const vectorCheck = health.checks.find((c) => c.name === "vectorization");
@@ -2444,7 +3069,12 @@ describe("runHealth", () => {
       createSeedItem(context);
       const health = await runHealth(
         { path: context.pmPath },
-        { summary: true, skipIntegrity: true, skipDrift: true, skipVectors: true },
+        {
+          summary: true,
+          skipIntegrity: true,
+          skipDrift: true,
+          skipVectors: true,
+        },
       );
       expect(health.ok).toBe(true);
       expect(health.warning_count).toBe(0);
@@ -2463,13 +3093,18 @@ describe("runHealth", () => {
         "storage",
         "locks",
       ]);
-      expect(health.checks.every((check) => Object.keys(check.details).length === 0)).toBe(true);
+      expect(
+        health.checks.every((check) => Object.keys(check.details).length === 0),
+      ).toBe(true);
     });
   });
 
   it("full flag overrides skip flags", async () => {
     await withTempPmPath(async (context) => {
-      const health = await runHealth({ path: context.pmPath }, { skipIntegrity: true, skipDrift: true, full: true });
+      const health = await runHealth(
+        { path: context.pmPath },
+        { skipIntegrity: true, skipDrift: true, full: true },
+      );
       const integrityCheck = health.checks.find((c) => c.name === "integrity");
       const driftCheck = health.checks.find((c) => c.name === "history_drift");
       expect(integrityCheck?.details).not.toMatchObject({ skipped: true });
@@ -2480,13 +3115,19 @@ describe("runHealth", () => {
   it("attaches a machine-executable remediation_map to the history_drift check on missing-stream drift", async () => {
     await withTempPmPath(async (context) => {
       const missingId = createSeedItem(context);
-      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), {
+        force: true,
+      });
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
-      expect(health.warnings).toContain(`history_drift_missing_stream:${missingId}`);
+      expect(health.warnings).toContain(
+        `history_drift_missing_stream:${missingId}`,
+      );
 
-      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
       expect(historyDriftCheck?.status).toBe("warn");
       const historyDriftDetails = historyDriftCheck?.details as
         | { remediation_map?: Record<string, string> }
@@ -2501,10 +3142,14 @@ describe("runHealth", () => {
   it("omits the remediation_map from history_drift details in brief projection mode", async () => {
     await withTempPmPath(async (context) => {
       const missingId = createSeedItem(context);
-      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), {
+        force: true,
+      });
 
       const health = await runHealth({ path: context.pmPath }, { brief: true });
-      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
       expect(historyDriftCheck).toBeDefined();
       expect(historyDriftCheck?.details).not.toHaveProperty("remediation_map");
     });
@@ -2514,8 +3159,12 @@ describe("runHealth", () => {
     await withTempPmPath(async (context) => {
       const firstId = createSeedItem(context);
       const secondId = createSeedItem(context);
-      await rm(path.join(context.pmPath, "history", `${firstId}.jsonl`), { force: true });
-      await rm(path.join(context.pmPath, "history", `${secondId}.jsonl`), { force: true });
+      await rm(path.join(context.pmPath, "history", `${firstId}.jsonl`), {
+        force: true,
+      });
+      await rm(path.join(context.pmPath, "history", `${secondId}.jsonl`), {
+        force: true,
+      });
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
@@ -2525,7 +3174,9 @@ describe("runHealth", () => {
           `history_drift_missing_stream:${secondId}`,
         ]),
       );
-      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      const historyDriftCheck = health.checks.find(
+        (check) => check.name === "history_drift",
+      );
       const historyDriftDetails = historyDriftCheck?.details as
         | { remediation_map?: Record<string, string> }
         | undefined;
@@ -2542,9 +3193,19 @@ describe("runHealth", () => {
       const locksDir = path.join(context.pmPath, "locks");
       await mkdir(locksDir, { recursive: true });
       const lockPayload = (createdAt: string, ttlSeconds: number): string =>
-        JSON.stringify({ id: "pm-lock", pid: 1234, owner: "spec-owner", created_at: createdAt, ttl_seconds: ttlSeconds });
+        JSON.stringify({
+          id: "pm-lock",
+          pid: 1234,
+          owner: "spec-owner",
+          created_at: createdAt,
+          ttl_seconds: ttlSeconds,
+        });
       // active: fresh timestamp, generous ttl
-      await writeFile(path.join(locksDir, "pm-active.lock"), lockPayload(new Date().toISOString(), 3600), "utf8");
+      await writeFile(
+        path.join(locksDir, "pm-active.lock"),
+        lockPayload(new Date().toISOString(), 3600),
+        "utf8",
+      );
       // stale: ttl elapsed long ago
       await writeFile(
         path.join(locksDir, "pm-stale.lock"),
@@ -2552,12 +3213,20 @@ describe("runHealth", () => {
         "utf8",
       );
       // unparseable: invalid JSON
-      await writeFile(path.join(locksDir, "pm-broken.lock"), "{not json", "utf8");
+      await writeFile(
+        path.join(locksDir, "pm-broken.lock"),
+        "{not json",
+        "utf8",
+      );
       // unreadable: a directory with a .lock name makes readFile fail deterministically
-      await mkdir(path.join(locksDir, "pm-unreadable.lock"), { recursive: true });
+      await mkdir(path.join(locksDir, "pm-unreadable.lock"), {
+        recursive: true,
+      });
 
       const health = await runHealth({ path: context.pmPath });
-      expect(health.warnings).toEqual(expect.arrayContaining(["locks_stale_count:1", "locks_unreadable:1"]));
+      expect(health.warnings).toEqual(
+        expect.arrayContaining(["locks_stale_count:1", "locks_unreadable:1"]),
+      );
 
       const locksCheck = health.checks.find((check) => check.name === "locks");
       expect(locksCheck?.status).toBe("warn");
@@ -2567,7 +3236,9 @@ describe("runHealth", () => {
         unreadable_lock_count: 1,
         unparseable_lock_count: 1,
       });
-      const lockDetails = locksCheck?.details as { remediation_map?: Record<string, string> } | undefined;
+      const lockDetails = locksCheck?.details as
+        | { remediation_map?: Record<string, string> }
+        | undefined;
       const remediationMap = lockDetails?.remediation_map;
       expect(remediationMap).toEqual({
         locks_stale_count: "pm gc --scope locks",
@@ -2575,19 +3246,34 @@ describe("runHealth", () => {
       });
 
       // Read-only contract: the scan never removes or mutates lock files.
-      await expect(access(path.join(locksDir, "pm-stale.lock"))).resolves.toBeUndefined();
-      await expect(access(path.join(locksDir, "pm-broken.lock"))).resolves.toBeUndefined();
+      await expect(
+        access(path.join(locksDir, "pm-stale.lock")),
+      ).resolves.toBeUndefined();
+      await expect(
+        access(path.join(locksDir, "pm-broken.lock")),
+      ).resolves.toBeUndefined();
     });
   });
 
   it("reports a warn check when the locks scan cannot read the locks directory", async () => {
     await withTempPmPath(async (context) => {
       createSeedItem(context);
-      await rm(path.join(context.pmPath, "locks"), { recursive: true, force: true });
-      await writeFile(path.join(context.pmPath, "locks"), "not a directory", "utf8");
+      await rm(path.join(context.pmPath, "locks"), {
+        recursive: true,
+        force: true,
+      });
+      await writeFile(
+        path.join(context.pmPath, "locks"),
+        "not a directory",
+        "utf8",
+      );
 
       const health = await runHealth({ path: context.pmPath });
-      expect(health.warnings.some((warning) => warning.startsWith("locks_scan_failed:"))).toBe(true);
+      expect(
+        health.warnings.some((warning) =>
+          warning.startsWith("locks_scan_failed:"),
+        ),
+      ).toBe(true);
       const locksCheck = health.checks.find((check) => check.name === "locks");
       expect(locksCheck?.status).toBe("warn");
       expect(locksCheck?.details).toMatchObject({
@@ -2632,8 +3318,13 @@ describe("runHealth", () => {
       expect(locksCheck?.details).not.toHaveProperty("remediation_map");
       expect(health.warnings).toContain("locks_stale_count:1");
 
-      const summary = await runHealth({ path: context.pmPath }, { summary: true });
-      const summaryLocks = summary.checks.find((check) => check.name === "locks");
+      const summary = await runHealth(
+        { path: context.pmPath },
+        { summary: true },
+      );
+      const summaryLocks = summary.checks.find(
+        (check) => check.name === "locks",
+      );
       expect(summaryLocks?.status).toBe("warn");
       expect(summaryLocks?.details).toEqual({});
     });

@@ -320,12 +320,18 @@ export {
   readLocatedItem,
 } from "../core/store/item-store.js";
 export {
+  isTerminalPlanMode,
+  shouldCompletePlanOnClose,
+} from "../core/item/plan-lifecycle.js";
+export {
   getHistoryPath,
   getItemPath,
   getSettingsPath,
+  resolveImplicitPmRoot,
   resolvePmRoot,
 } from "../core/store/paths.js";
 export {
+  persistSelectedItemFormat,
   readSettings,
   readSettingsWithMetadata,
   writeSettings,

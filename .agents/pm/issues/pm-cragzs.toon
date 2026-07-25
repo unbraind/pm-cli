@@ -1,0 +1,16 @@
+id: pm-cragzs
+title: "GH-711: update must support intentional unresolved parent references under strict governance"
+description: "Add create/update parity for an explicit allow-missing-parent escape hatch so strict parent_reference policy can support forward-declared hierarchy construction without disabling validation globally. GitHub: https://github.com/unbraind/pm-cli/issues/711"
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,gh-711,governance,relationships
+created_at: "2026-07-25T15:23:57.781Z"
+updated_at: "2026-07-25T15:23:57.781Z"
+author: "harness:codex"
+parent: pm-usfg
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-p9hw,related,"2026-07-25T15:23:57.781Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-25T15:23:57.781Z","harness:codex","Duplicate check: searched every tracker status for GH-711, allow missing parent, strict parent_reference, and update parent parity; no canonical item exists. Related lineage: pm-p9hw established create parent semantics and pm-usfg owns SDK-first mutation parity."
+body: ""

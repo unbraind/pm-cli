@@ -88,6 +88,7 @@ import {
   withExtensionInstallLock,
 } from "./extension/install-runtime.js";
 import { mapWithFixedConcurrency } from "./extension/concurrency.js";
+import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ownership.js";
 import { checkGithubUpdate } from "./extension/update-check.js";
 import {
   captureExtensionInstallSnapshot,
@@ -1589,35 +1590,6 @@ const requireTarget = (
     );
   }
   return throwMissingLifecycleTarget(action, options);
-};
-
-/** Collect doctor warnings for unsafe global output override registrations. */
-const collectGlobalOutputOverrideDoctorWarnings = (
-  activationResult: Awaited<ReturnType<typeof activateExtensions>>,
-): string[] => {
-  const warnings: string[] = [];
-  for (const entry of activationResult.services.overrides) {
-    if (entry.service !== "output_format") {
-      continue;
-    }
-    warnings.push(
-      `extension_output_service_override_global:${entry.service}:${entry.layer}:${entry.name}`,
-    );
-  }
-  for (const entry of activationResult.renderers.overrides) {
-    if (
-      (entry.commands?.length ?? 0) > 0 ||
-      entry.resultDiscriminator !== undefined
-    ) {
-      continue;
-    }
-    warnings.push(
-      `extension_output_renderer_override_global:${entry.format}:${entry.layer}:${entry.name}`,
-    );
-  }
-  return [...new Set(warnings)].sort((left, right) =>
-    left.localeCompare(right),
-  );
 };
 
 /**
@@ -3204,7 +3176,7 @@ const runExtensionDoctorAction = async (
   warnings.push(
     ...classifyUnusedCapabilityWarnings(loadResult, activationResult),
   );
-  warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult));
+  warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult, loadResult));
   warnings.push(
     ...collectSchemaNarrowActivationDoctorWarnings(
       loadResult,

@@ -11,6 +11,7 @@ import {
   PmCliError,
   toItemRecord,
   deleteItem,
+  getHistoryPath,
   getSettingsPath,
   resolvePmRoot,
   readSettings,
@@ -44,6 +45,10 @@ export interface DeleteResult {
   previous_status: string;
   /** Filesystem path used for target resolution. */
   target_path?: string;
+  /** Retained append-only audit stream for the deleted item. */
+  history_retained: string;
+  /** Explicit retention contract; tombstone GC is never implicit. */
+  tombstone_retention: "retain_append_only";
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
 }
@@ -86,6 +91,11 @@ export async function runDelete(
     outcome: options.dryRun === true ? "would_delete" : "deleted",
     previous_status: result.item.status,
     ...(targetPath ? { target_path: targetPath } : {}),
+    history_retained: path
+      .relative(pmRoot, getHistoryPath(pmRoot, result.item.id))
+      .split(path.sep)
+      .join("/"),
+    tombstone_retention: "retain_append_only",
     warnings: result.warnings,
   };
 }

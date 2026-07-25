@@ -89,4 +89,106 @@ describe("CLI recovery and derived usage helpers", () => {
       loadUnknownCommandRecoveryFailures("invalid_option", "/missing"),
     ).resolves.toEqual([]);
   });
+
+  it("explains storage and extension-discovery relocation for unknown commands", async () => {
+    const result = await loadUnknownCommandRecoveryFailures(
+      "unknown_command",
+      "/scratch/.agents/pm",
+      {
+        resolveImplicitPmRoot: () => "/workspace/.agents/pm",
+        readSettings: async () => ({}) as never,
+        loadExtensions: async ({ pmRoot }) =>
+          ({
+            roots: { project: `${pmRoot}/extensions`, global: "/global" },
+            loaded:
+              pmRoot === "/workspace/.agents/pm"
+                ? [
+                    {},
+                    {
+                      activation: {
+                        commands: ["changelog generate", "changelog export"],
+                      },
+                    },
+                  ]
+                : [{}],
+            failed: [],
+          }) as never,
+        activateExtensions: async () => ({ failed: [] }) as never,
+      },
+    );
+
+    expect(result).toContainEqual({
+      layer: "runtime",
+      name: "extension-root-relocation",
+      error: expect.stringContaining(
+        "storage_root=/scratch/.agents/pm extension_discovery_root=/scratch/.agents/pm/extensions",
+      ),
+    });
+    expect(result.at(-1)?.error).toContain(
+      "cwd_extension_discovery_root=/workspace/.agents/pm/extensions",
+    );
+    expect(result.at(-1)?.error).toContain(
+      "--pm-path selects extension discovery as well as item storage",
+    );
+    expect(result.at(-1)?.error).toContain(
+      "pm --pm-path /scratch/.agents/pm install <package> --project",
+    );
+  });
+
+  it("bounds relocation comparison across same-root, same-command, and large-command surfaces", async () => {
+    const base = {
+      readSettings: async () => ({}) as never,
+      activateExtensions: async () => ({ failed: [] }) as never,
+    };
+    const sameRoot = await loadUnknownCommandRecoveryFailures(
+      "unknown_command",
+      "/same/.agents/pm",
+      {
+        ...base,
+        resolveImplicitPmRoot: () => "/same/.agents/pm",
+        loadExtensions: async () =>
+          ({
+            roots: { project: "/same/.agents/pm/extensions" },
+            loaded: [],
+            failed: [],
+          }) as never,
+      },
+    );
+    expect(sameRoot).toEqual([]);
+
+    const compare = (workspaceCommands: string[], selectedCommands: string[]) =>
+      loadUnknownCommandRecoveryFailures(
+        "unknown_command",
+        "/selected/.agents/pm",
+        {
+          ...base,
+          resolveImplicitPmRoot: () => "/workspace/.agents/pm",
+          loadExtensions: async ({ pmRoot }) =>
+            ({
+              roots: { project: `${pmRoot}/extensions` },
+              loaded: [
+                {
+                  activation: {
+                    commands:
+                      pmRoot === "/workspace/.agents/pm"
+                        ? workspaceCommands
+                        : selectedCommands,
+                  },
+                },
+              ],
+              failed: [],
+            }) as never,
+        },
+      );
+    await expect(compare(["shared"], ["shared"])).resolves.toEqual([]);
+    const many = await compare(
+      [
+        "shared",
+        ...Array.from({ length: 9 }, (_, index) => `command-${index}`),
+      ],
+      ["shared"],
+    );
+    expect(many.at(-1)?.error).toContain("missing 9 workspace command path(s)");
+    expect(many.at(-1)?.error).toContain(", ...");
+  });
 });

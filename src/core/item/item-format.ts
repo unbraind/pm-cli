@@ -152,10 +152,31 @@ function runtimeFieldRequiredForType(
 }
 
 function validationError(message: string): never {
+  const field = message.match(/^([a-z_][\w.]*)\s/u)?.[1];
   throw new PmCliError(
     `Invalid item metadata: ${message}`,
     EXIT_CODE.GENERIC_FAILURE,
+    {
+      code: "item_document_invalid",
+      reason: message.includes("required")
+        ? "missing_required_field"
+        : "schema_validation_error",
+      ...(field ? { field } : {}),
+      required:
+        "Provide an item document whose metadata satisfies the active runtime schema.",
+      why: message,
+    },
   );
+}
+
+function documentSyntaxError(format: ItemFormat, message: string): never {
+  throw new PmCliError(message, EXIT_CODE.GENERIC_FAILURE, {
+    code: "item_document_invalid",
+    reason: "syntax_error",
+    format,
+    required: `Provide a syntactically valid ${format === "toon" ? "TOON" : "JSON Markdown"} item document.`,
+    why: "The document could not be decoded far enough to validate item metadata.",
+  });
 }
 
 function buildKnownItemMetadataKeys(
@@ -171,7 +192,10 @@ function buildKnownItemMetadataKeys(
   return knownKeys;
 }
 
-function assertItemMetadataCondition(condition: boolean, message: string): void {
+function assertItemMetadataCondition(
+  condition: boolean,
+  message: string,
+): void {
   if (!condition) {
     validationError(message);
   }
@@ -426,7 +450,9 @@ function assertConfidenceItemMetadataField(
   assertItemMetadataCondition(false, "confidence must be a number or string");
 }
 
-function assertSeverityItemMetadataField(record: Record<string, unknown>): void {
+function assertSeverityItemMetadataField(
+  record: Record<string, unknown>,
+): void {
   const severity = record.severity;
   if (severity === undefined) {
     return;
@@ -1565,7 +1591,9 @@ export function normalizeItemMetadata(
     acceptance_criteria: itemMetadata.acceptance_criteria ?? undefined,
     design: itemMetadata.design ?? undefined,
     external_ref: itemMetadata.external_ref ?? undefined,
-    definition_of_ready: trimStringOrUndefined(itemMetadata.definition_of_ready),
+    definition_of_ready: trimStringOrUndefined(
+      itemMetadata.definition_of_ready,
+    ),
     order: itemMetadata.order,
     goal: trimStringOrUndefined(itemMetadata.goal),
     objective: trimStringOrUndefined(itemMetadata.objective),
@@ -1602,7 +1630,9 @@ export function normalizeItemMetadata(
     plan_harness: trimStringOrUndefined(
       itemMetadata.plan_harness,
     ) as ItemMetadata["plan_harness"],
-    plan_resume_context: trimStringOrUndefined(itemMetadata.plan_resume_context),
+    plan_resume_context: trimStringOrUndefined(
+      itemMetadata.plan_resume_context,
+    ),
     plan_steps: normalizePlanSteps(itemMetadata.plan_steps),
     plan_decisions: normalizePlanDecisions(itemMetadata.plan_decisions),
     plan_discoveries: normalizePlanDiscoveries(itemMetadata.plan_discoveries),
@@ -1615,7 +1645,9 @@ export function normalizeItemMetadata(
   return normalized;
 }
 
-function orderItemMetadata(itemMetadata: ItemMetadata): Record<string, unknown> {
+function orderItemMetadata(
+  itemMetadata: ItemMetadata,
+): Record<string, unknown> {
   return orderObject(
     itemMetadata as unknown as Record<string, unknown>,
     ITEM_METADATA_KEY_ORDER,
@@ -1737,16 +1769,22 @@ function parseJsonMarkdownItemDocument(
   if (!frontMatter) {
     const trimmed = content.trimStart();
     if (trimmed.startsWith("{")) {
-      validationError("JSON front matter is not valid JSON");
+      documentSyntaxError(
+        "json_markdown",
+        "JSON front matter is not valid JSON",
+      );
     }
-    validationError("missing JSON front matter");
+    documentSyntaxError(
+      "json_markdown",
+      "JSON Markdown item document is missing JSON front matter",
+    );
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(frontMatter);
   } catch {
-    validationError("JSON front matter is not valid JSON");
+    documentSyntaxError("json_markdown", "JSON front matter is not valid JSON");
   }
   assertValidItemMetadata(parsed, runtimeContext);
 
@@ -1773,13 +1811,24 @@ function parseToonItemDocument(
     // red for legacy files. The behavior is pinned by toon-decode.spec.ts.
     parsed = decodeToonItemContent(content).value;
   } catch {
-    validationError("TOON item document is not valid TOON");
+    documentSyntaxError("toon", "TOON item document is not valid TOON");
   }
   assertItemMetadataCondition(
     typeof parsed === "object" && parsed !== null && !Array.isArray(parsed),
     "TOON item document must be an object",
   );
   const record = parsed as Record<string, unknown>;
+  if (
+    !REQUIRED_STRING_FIELDS.some((fieldName) =>
+      Object.prototype.hasOwnProperty.call(record, fieldName),
+    ) &&
+    !Object.prototype.hasOwnProperty.call(record, "front_matter")
+  ) {
+    documentSyntaxError(
+      "toon",
+      "TOON input does not have the shape of an item document",
+    );
+  }
 
   if (Object.prototype.hasOwnProperty.call(record, "front_matter")) {
     assertValidItemMetadata(record.front_matter, runtimeContext);
@@ -1812,10 +1861,7 @@ function serializeJsonMarkdownItemDocument(
     "schema" | "extensionFieldNames" | "onWarning"
   > = {},
 ): string {
-  const normalizedMetadata = normalizeItemMetadata(
-    document.metadata,
-    options,
-  );
+  const normalizedMetadata = normalizeItemMetadata(document.metadata, options);
   const orderedMetadata = orderItemMetadata(normalizedMetadata);
   const serializedMetadata = JSON.stringify(orderedMetadata, null, 2);
   const normalizedBody = normalizeBody(document.body ?? "");
@@ -1832,10 +1878,7 @@ function serializeToonItemDocument(
     "schema" | "extensionFieldNames" | "onWarning"
   > = {},
 ): string {
-  const normalizedMetadata = normalizeItemMetadata(
-    document.metadata,
-    options,
-  );
+  const normalizedMetadata = normalizeItemMetadata(document.metadata, options);
   const orderedMetadata = orderItemMetadata(normalizedMetadata);
   const normalizedBody = normalizeBody(document.body ?? "");
   return `${encodeToon({ ...orderedMetadata, body: normalizedBody })}\n`;
@@ -1853,6 +1896,7 @@ export function parseItemDocument(
       EXIT_CODE.GENERIC_FAILURE,
       {
         code: "merge_conflict_markers_detected",
+        reason: "merge_conflict",
         required:
           "Resolve merge-conflict markers in the item file before parsing or mutation commands.",
         why: "Partially merged documents can corrupt item metadata and history integrity.",
