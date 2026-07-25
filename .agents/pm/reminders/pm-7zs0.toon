@@ -2,14 +2,13 @@ id: pm-7zs0
 title: Verify daily auto-release published to npm (release-health check)
 description: "Recurring release-health verification. The date-based daily auto-release has silently failed before (padded-month changelog match skip; publish/Sentry-gate step failing post-tag). After any merge to main, confirm the next daily release both tagged a new vYYYY.M.D AND advanced npm 'latest'."
 type: Reminder
-status: in_progress
+status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-25T04:20:27.638Z"
+updated_at: "2026-07-25T04:47:04.772Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
-assignee: claude-code-agent
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day."
@@ -19,7 +18,7 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7n5a,related,"2026-07-15T18:17:35.524Z",null,null
   pm-d4ns,related,"2026-07-15T18:17:35.524Z",null,null
-comments[97]{created_at,author,text}:
+comments[98]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -117,6 +116,7 @@ comments[97]{created_at,author,text}:
   "2026-07-25T04:05:03.325Z",claude-code-agent,"Merge-tree analysis proof verification: full pnpm lint passes with zero duplicates and strict static/docstring/package-boundary/token gates; full sandboxed coverage passes 361 files, 6,301 tests, 100% statements/branches/functions/lines. Adversarial tests reject missing/invalid merge parents, unreadable trees, non-identical trees, and unreadable parent analyzer APIs."
   "2026-07-25T04:15:19.313Z",claude-code-agent,"CodeRabbit review evidence for PR #698: accepted the mixed-provenance finding. The fallback is now deliberately stricter: identical-tree merge-parent evidence is eligible only when both exact-commit analyzer records are absent; any partial exact evidence is retained and evaluated fail-closed. Added direct regressions for exact DeepScan failure plus missing CodeFactor and missing DeepScan plus exact CodeFactor failure."
   "2026-07-25T04:20:27.635Z",claude-code-agent,"Post-CodeRabbit verification for PR #698: focused hosted-analysis suite passes 44/44; repository pnpm lint passes ESLint, zero-copy jscpd, 100% docstring/static quality, package-boundary, and token-budget gates; full sandboxed coverage passes 361 files and 6,303 tests at literal 100% statements, branches, functions, and lines. The reviewed mixed-provenance edge is fixed fail-closed."
+  "2026-07-25T04:47:03.333Z",claude-code-agent,"Release-health completion 2026-07-25: PR #698 merged as 84694f6e after a complete exact-head review inventory with zero unresolved or unreacted bot surfaces. Production Auto Release run 30144035888 succeeded in 17m34s and waited for publication; the single daily tag v2026.7.25 points to release commit e893e5ad, GitHub Release is live, and npm latest is @unbrained/pm-cli 2026.7.25. Authenticated Sentry/telemetry gate passes with critical=0, high=0, finish_error_rate_pct=2.03, and zero failures missing error codes. pm health reports telemetry endpoint 200, last successful real-time flush at 2026-07-25T04:44:49.632Z, queue draining normally, history drift zero, and no actionable unknown-author events. Isolated anonymous-registry installed-package proof in a temporary directory passed version, init, create, comments, get, health, and validate without PM_AUTHOR; both mutations were attributed automatically to harness:codex. Returning this recurring reminder to open and unclaimed."
 notes[7]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
