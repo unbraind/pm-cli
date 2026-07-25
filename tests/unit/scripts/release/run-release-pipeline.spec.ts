@@ -211,6 +211,26 @@ describe("run-release-pipeline", () => {
       expect(gateArgs).toContain("--skip-telemetry-sentry");
     });
 
+    it("passes the policy token only to the gate runner", async () => {
+      process.env.RELEASE_POLICY_TOKEN = "policy-token";
+      const runCommand = vi.fn(() => ({ status: 0, stdout: "", stderr: "" }));
+      mockUtils(runCommand);
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      expect(process.env.RELEASE_POLICY_TOKEN).toBeUndefined();
+
+      mod.runReleaseGates({
+        telemetryMode: "required",
+        skipCompatibility: false,
+        skipTelemetrySentry: false,
+      });
+
+      expect(runCommand).toHaveBeenCalledWith(
+        process.execPath,
+        expect.arrayContaining(["scripts/release/run-gates.mjs"]),
+        { env: { RELEASE_POLICY_TOKEN: "policy-token" } },
+      );
+    });
+
     it("covers runReleaseGates without skip flags", async () => {
       const calls: string[][] = [];
       const runCommand = vi.fn((command: string, args: string[]) => {

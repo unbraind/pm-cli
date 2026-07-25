@@ -20,6 +20,8 @@ import { isReleaseRelevantPath } from "./release-relevance.mjs";
 
 const releasePushToken = process.env.RELEASE_PUSH_TOKEN?.trim() ?? "";
 delete process.env.RELEASE_PUSH_TOKEN;
+const releasePolicyToken = process.env.RELEASE_POLICY_TOKEN?.trim() ?? "";
+delete process.env.RELEASE_POLICY_TOKEN;
 
 export function usage() {
   console.log(`Usage:
@@ -144,7 +146,9 @@ export function runReleaseGates(options) {
   if (options.skipTelemetrySentry) {
     args.push("--skip-telemetry-sentry");
   }
-  runCommand(process.execPath, args);
+  runCommand(process.execPath, args, {
+    env: releasePolicyToken ? { RELEASE_POLICY_TOKEN: releasePolicyToken } : undefined,
+  });
   return {
     ok: true,
     telemetry_mode: options.telemetryMode,
