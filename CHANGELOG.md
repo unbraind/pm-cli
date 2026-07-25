@@ -12,11 +12,11 @@
 
 ### Fixed
 
+- GH-677: pm-path relocation must diagnose extension discovery changes ([pm-qswf81](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qswf81.toon))
 - GH-691: parseItemDocument errors need stable structured SDK classification ([pm-r9pudt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r9pudt.toon))
 - First-party service collision: builtin-calendar and builtin-guide-shell both override the global output_format service ([pm-ixoa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ixoa.toon))
 - GH-680: completed Plan close must transition plan_mode terminally ([pm-g512pv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g512pv.toon))
 - GH-692: plan update-step must persist file, test, and doc evidence fields ([pm-z5vamp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z5vamp.toon))
-- GH-677: pm-path relocation must diagnose extension discovery changes ([pm-qswf81](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qswf81.toon))
 - GH-678: linked-test sandbox must preserve freshly installed project extensions across child processes ([pm-jvken3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jvken3.toon))
 - GH-709: batch duplicate-cluster sweep with canonical precomputed similarity signals ([pm-2i12ti](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2i12ti.toon))
 - pm config set on one leaf key rewrites settings.json with every default materialized and silently replaces explicit stored values (validation.parent_reference warn -\> strict_error) ([pm-x2aplf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x2aplf.toon))
@@ -35,6 +35,7 @@
 
 ### Security
 
+- Add TruffleHog OSS verified-secret scanning to the security workflow and complete free GitHub secret-scanning toggles ([pm-4ris](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4ris.toon))
 - Refresh 2026-07-15 npm dependency updates with compatibility and release-gate proof ([pm-tll8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-tll8.toon))
 
 ### Other
@@ -317,7 +318,6 @@
 
 ### Security
 
-- Add TruffleHog OSS verified-secret scanning to the security workflow and complete free GitHub secret-scanning toggles ([pm-4ris](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4ris.toon))
 - Add OSSF Scorecard supply-chain security workflow with published results and SARIF code-scanning upload ([pm-k7dp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k7dp.toon))
 
 ### Other
