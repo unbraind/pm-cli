@@ -1,0 +1,23 @@
+id: pm-nb4zwz
+title: "Read surfaces give no tombstone signal for a deleted id: pm get returns a bare not-found, so an agent cannot tell never-existed from deleted-and-recoverable"
+description: "pm delete retains the history stream and the item is fully recoverable, but no read surface says so, and the error an agent actually hits names no recovery path.\n\nLive behaviour on 2026.7.25 in an isolated sandbox:\n\n  pm delete <id> --message \"...\"  -> status deleted, deleted true, previous_status open\n  ls .agents/pm/history/           -> <id>.jsonl retained\n  pm get <id>                      -> Error: Item ID not found / \"Item <id> not found\"\n  pm get <id> --at 1               -> full point-in-time item, unchanged\n  pm restore <id> 1                -> item fully resurrected, 10 fields restored\n\nSo the recovery works and the proof is intact. The read path simply does not disclose it. An agent that hits the not-found error has no way to distinguish an id that never existed, an id from another workspace, and an id whose complete history is one command away, and the error names neither pm get --at nor pm restore.\n\npm-wdrkfr closed the discoverability halves it scoped: mutation output states retention, pm health reports history streams without live item files, and the gc policy cannot silently drop append-only proof. The read-surface half was outside it. This is the same shape as the capability-aware hint family that pm-ulqu, pm-qljv, and pm-tmhs belong to under pm-mpbb: the corrective action must come from declared state rather than from the operator already knowing.\n\nThe fleet case sharpens it. With many agents on one workspace, one agent deleting an item makes every other agent's next read of that id fail with an error that reads like a typo, and the tombstone is the only thing that would tell them what happened."
+type: Issue
+status: open
+priority: 3
+tags: []
+created_at: "2026-07-25T20:41:21.338Z"
+updated_at: "2026-07-25T20:41:21.338Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A read of a tombstoned id reports the tombstone as structured state - that the id existed, that it was deleted, and when - rather than an undifferentiated not-found, in both human and JSON output; The error names the recovery path with a runnable command, at minimum pm get --at and pm restore for the highest recorded version, following the recovery-bundle contract already used elsewhere; A not-found for an id with no history stream stays distinct from a tombstone hit, so the two cases are never conflated; The distinction is available through the SDK read primitives, not only rendered in the CLI, so MCP and other hosts inherit it; Disclosure respects the diagnostic output budget and adds no cost to the common not-found path where no stream exists"
+parent: pm-mpbb
+risk: low
+confidence: 90
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-9j2r3b,related,"2026-07-25T20:41:21.338Z",null,null
+  pm-cha95z,related,"2026-07-25T20:41:21.338Z",null,null
+  pm-qljv,related,"2026-07-25T20:41:21.338Z",null,null
+  pm-tmhs,related,"2026-07-25T20:41:21.338Z",null,null
+  pm-ulqu,related,"2026-07-25T20:41:21.338Z",null,null
+  pm-wdrkfr,discovered_from,"2026-07-25T20:41:21.338Z",null,null
+body: ""

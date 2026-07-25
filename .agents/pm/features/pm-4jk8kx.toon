@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: "area:sdk","area:storage",durability,governance,interop,specification,standards
 created_at: "2026-07-25T12:29:30.396Z"
-updated_at: "2026-07-25T12:35:29.789Z"
+updated_at: "2026-07-25T20:44:41.644Z"
 author: "harness:claude-code"
 estimated_minutes: 960
 acceptance_criteria: "The specification defines the item document grammar, history record grammar, hash-chain construction, tombstone and redaction semantics, relationship edge encoding, and index artifacts, and states for each artifact whether it is authoritative or derivable; The specification states the compatibility rules between format versions, including what a conformant reader must do with a version it does not recognize; A conformance suite exists that a third-party implementation can run, covering read, write, hash-chain verification, and round-trip fidelity; This implementation is run against the same conformance suite in CI, so the spec and the code cannot drift; An independent reader — a small script that verifies a history chain without importing pm — is published as executable proof that the spec is sufficient; The specification is versioned and its revision policy is stated, so a change to it is a reviewable event"
@@ -19,7 +19,7 @@ why_now: The v1.0 stability contract freezes the storage format policy; a policy
 parent: pm-o2kc
 risk: medium
 confidence: 60
-dependencies[14]{id,kind,created_at,author,source_kind}:
+dependencies[15]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-25T12:29:30.396Z",null,null
   pm-ae1u,related,"2026-07-25T12:29:30.396Z",null,null
   pm-eeai,related,"2026-07-25T12:29:30.396Z",null,null
@@ -34,4 +34,5 @@ dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-iiv1gl,related,"2026-07-25T12:35:29.524Z",null,null
   pm-odohgb,related,"2026-07-25T12:35:29.524Z",null,null
   pm-wlqxg3,related,"2026-07-25T12:35:29.524Z",null,null
+  pm-is1a,implements,"2026-07-25T20:44:41.293Z",null,null
 body: ""

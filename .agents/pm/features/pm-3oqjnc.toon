@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,"area:sdk",concurrency,context,graph,scale
 created_at: "2026-07-25T06:17:52.754Z"
-updated_at: "2026-07-25T12:40:27.025Z"
+updated_at: "2026-07-25T20:44:29.939Z"
 author: unknown
 estimated_minutes: 1200
 acceptance_criteria: "An SDK primitive returns a bounded allocation over the ready set for a described fleet, deterministic for a fixed workspace state and fleet description; Allocation accounts for declared agent capabilities, existing claims, graph criticality (slack and critical path), and spread, and each assignment carries an explainable reason naming the deciding signals; A fleet of one produces exactly the ranking pm next produces today, so the primitive is a strict generalization with no behavioural regression; Advice never bypasses atomic claim: an agent that acts on stale advice loses the claim race safely and re-requests; Contention benchmarks show measurably higher throughput and lower wasted claim attempts than independent ranking at hundreds and thousands of simulated agents; The primitive is bounded in tokens and latency at million-item scale and degrades explicitly rather than scanning the workspace"
@@ -19,7 +19,7 @@ why_now: "Atomic claim, ranked next, graph slack and critical-path analytics, an
 parent: pm-dj98
 risk: high
 confidence: medium
-dependencies[9]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-25T06:17:52.754Z",null,null
   pm-7ob5,related,"2026-07-25T06:17:52.754Z",null,null
   pm-e200,related,"2026-07-25T06:17:52.754Z",null,null
@@ -29,4 +29,5 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-xc68,related,"2026-07-25T06:17:52.754Z",null,null
   pm-gw6uyq,related,"2026-07-25T12:40:26.750Z",null,null
   pm-szv11n,related,"2026-07-25T12:40:26.750Z",null,null
+  pm-szv11n,implements,"2026-07-25T20:44:29.608Z",null,null
 body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,"area:cli","area:sdk",instrumentation,observability,token-efficiency
 created_at: "2026-07-25T12:28:07.388Z"
-updated_at: "2026-07-25T12:40:19.227Z"
+updated_at: "2026-07-25T20:44:28.674Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "An opt-in accounting mode reports output token cost decomposed by section, using the same tokenizer as the declared budget contract so the figures are directly comparable; Accounting is off by default and adds no measurable cost when off, asserted by a benchmark; The reported figure is asserted equal to an independent count of the emitted bytes, so the accounting cannot drift from reality; Accounting output is itself bounded and excluded from the accounted total, with the exclusion documented; The transcript-replay regression gate consumes per-command accounting so a session regression identifies the responsible commands; Accounting works identically for CLI and MCP transports, since MCP callers pay the same budget"
@@ -18,7 +18,7 @@ outcome: A context overrun becomes a diagnosable event with a named cause instea
 parent: pm-5oj5
 risk: low
 confidence: 70
-dependencies[9]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-5oj5,related,"2026-07-25T12:28:07.388Z",null,null
   pm-5t33or,related,"2026-07-25T12:28:07.388Z",null,null
   pm-8pnj,related,"2026-07-25T12:28:07.388Z",null,null
@@ -28,4 +28,5 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-k6t4yb,related,"2026-07-25T12:35:10.300Z",null,null
   pm-o87av6,related,"2026-07-25T12:35:10.300Z",null,null
   pm-g3n00m,related,"2026-07-25T12:40:18.797Z",null,null
+  pm-g3n00m,implements,"2026-07-25T20:44:28.425Z",null,null
 body: ""

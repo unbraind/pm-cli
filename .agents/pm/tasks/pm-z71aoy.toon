@@ -1,0 +1,25 @@
+id: pm-z71aoy
+title: "Token-budget gate corpus is unrepresentative in both scale and coverage: budgets are set on a seeded micro-workspace and the largest agent-facing payloads are not measured at all"
+description: "The shipped token-budget gate (scripts/release/token-budget-gate.mjs over token-budgets.json, delivered under the closed pm-cu1i) passes 14 surfaces green, but its corpus cannot detect the growth it exists to prevent.\n\nScale. Budgets are measured against an isolated PM_PATH with deterministic seeded items, as the fixture field in token-budgets.json states. Real output on the repository tracker (2,028 items, 2026.7.25) exceeds those ceilings by an order of magnitude:\n\n  next --limit 5      declared max 1,043 B   measured 11,099 B  (~2,774 tokens)\n  context --limit 10  declared max 1,098 B   measured  7,214 B  (~1,803 tokens)\n  list --status open --limit 20                measured  3,988 B\n  get pm-doxj                                  measured 20,290 B (~5,072 tokens)\n\nThe ceilings therefore bound a fixture, not a product. A change that doubles per-row cost at real scale keeps the gate green.\n\nCoverage. The two largest agent-facing payloads are absent from the corpus entirely:\n\n  MCP tools/list handshake   38,496 B  ~9,624 tokens  (31 tools)\n  aggregate per-command help 187,363 B ~46,841 tokens (76 commands)\n  root help                   12,281 B  ~3,070 tokens\n\nThe handshake is the largest unavoidable fixed cost: every MCP-connected agent pays it once per session before any work. It has demonstrably grown while the gate stayed green - the pm-a22j baseline recorded 28 tools at 32,979 B (~8.2k tokens) and it is now 31 tools at 38,496 B (~9,624 tokens), a 17 percent increase with no gate that fires. scripts/measure-agent-token-surface.mjs already produces every one of these numbers; nothing consumes them as a ratchet.\n\nTwo consequences follow. The gate reports a guarantee it does not provide, and the surface-growth ratchets that pm-wt43zj and pm-kxci8x depend on have no measured cost axis to enforce. pm-5t33or replaces hand-maintained ceilings with contract-declared per-command budgets and is the destination for the declarations; this item owns making the corpus and its fixtures representative so any declaration is enforced against numbers agents actually pay. pm-8pnj measures tokens per completed task end to end and consumes this as its per-surface floor."
+type: Task
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-25T20:41:01.555Z"
+updated_at: "2026-07-25T20:41:01.555Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Budgets are measured against fixtures at declared scale tiers including at least one workspace of repository size or larger, and each budget records the tier it was measured at, so a ceiling can no longer be set on a micro-workspace and read as a product guarantee; The corpus covers the MCP tools/list handshake payload and the aggregate per-command help surface, sourced from the same measurement the gate uses, so both have ceilings that fail on growth; The gate consumes scripts/measure-agent-token-surface.mjs rather than duplicating measurement, and a single command reproduces every published figure; A coverage assertion fails when a command, MCP tool, or output format exists with no budget entry, so new surfaces cannot be added outside the corpus; The gate reports the delta against the recorded baseline, not only pass or fail, so a change that consumes headroom without breaching is visible in review; The current 31-tool handshake and 76-command help surface are recorded as the new baseline with their measurement method, superseding the stale pm-a22j 28-tool figure wherever it is cited"
+parent: pm-u9d0
+risk: medium
+confidence: 85
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-5t33or,related,"2026-07-25T20:41:01.555Z",null,null
+  pm-8pnj,related,"2026-07-25T20:41:01.555Z",null,null
+  pm-9k90,related,"2026-07-25T20:41:01.555Z",null,null
+  pm-g3n00m,implements,"2026-07-25T20:41:01.555Z",null,null
+  pm-j82fd3,verifies,"2026-07-25T20:41:01.555Z",null,null
+  pm-k6t4yb,related,"2026-07-25T20:41:01.555Z",null,null
+  pm-kxci8x,related,"2026-07-25T20:41:01.555Z",null,null
+  pm-wt43zj,related,"2026-07-25T20:41:01.555Z",null,null
+body: ""
