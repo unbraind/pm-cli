@@ -1,0 +1,33 @@
+id: pm-ygli86
+title: "Released-artifact acceptance: the exact published tarball is installed clean and driven through a scripted agent session before the release is advertised"
+description: "Release gates currently run against the repository. What users receive is the published tarball installed into a foreign environment, and the differences between those two things are exactly where install-shaped defects live — packaging omissions, dependency resolution under a different manager, global-prefix and executable-path problems, extension discovery from an installed location, first-run behavior in a workspace that has never seen pm. Several such defects are already tracked from field reports, which is evidence that repository-level gates do not cover this surface. Add an acceptance stage that operates on the published artifact itself: install it from the registry into a clean environment, then drive a scripted agent session that performs the real cold-start loop — initialize a workspace, orient, create, claim, annotate, link evidence, close, validate, and read context back — asserting outcomes and bounded output at each step, across the supported operating systems and the supported package managers. The release is advertised only after that passes, so the artifact users install is the artifact that was accepted."
+type: Task
+status: open
+priority: 2
+tags[5]: ci,install,quality,release,testing
+created_at: "2026-07-25T12:31:34.837Z"
+updated_at: "2026-07-25T12:35:37.513Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "Acceptance installs the exact published artifact from the registry into a clean environment rather than building from the repository; A scripted agent session exercises the full cold-start loop — init, orient, create, claim, annotate, link evidence, close, validate, read context — asserting outcomes and bounded output at each step; The matrix covers the supported operating systems and the supported package managers, including the global-install path that has produced field defects; A failure blocks release advertisement and produces a report identifying the failing step, not merely a failing job; The acceptance session's token cost is recorded so cold-start cost is tracked release over release; The same session runs against the previous release to prove the harness itself is not the cause when a failure appears"
+goal: project management = context management
+objective: The thing that gets accepted is the thing users install
+value: "Repository-green and install-broken is the failure mode with the worst ratio of user impact to detection difficulty, and it is currently uncovered"
+impact: Adds a post-publish acceptance stage that gates advertisement; a failure means an unadvertised or withdrawn release rather than a bad one left standing
+outcome: Install-shaped defects are caught before publication rather than reported by users afterwards
+parent: pm-u9d0
+risk: medium
+confidence: 70
+dependencies[11]{id,kind,created_at,author,source_kind}:
+  pm-8pnj,related,"2026-07-25T12:31:34.837Z",null,null
+  pm-998juj,related,"2026-07-25T12:31:34.837Z",null,null
+  pm-feecbs,related,"2026-07-25T12:31:34.837Z",null,null
+  pm-ir9vqy,related,"2026-07-25T12:31:34.837Z",null,null
+  pm-pae3wo,related,"2026-07-25T12:31:34.837Z",null,null
+  pm-sqf7,related,"2026-07-25T12:31:34.837Z",null,null
+  pm-k6t4yb,related,"2026-07-25T12:35:37.084Z",null,null
+  pm-o8um,related,"2026-07-25T12:35:37.084Z",null,null
+  pm-tll8,related,"2026-07-25T12:35:37.084Z",null,null
+  pm-xp1xsw,related,"2026-07-25T12:35:37.084Z",null,null
+  pm-z3ez,related,"2026-07-25T12:35:37.084Z",null,null
+body: ""

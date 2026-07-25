@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: "area:graph","area:sdk",context-management,governance,initiative,relationships,scale
 created_at: "2026-07-13T21:57:05.806Z"
-updated_at: "2026-07-25T06:32:04.043Z"
+updated_at: "2026-07-25T12:36:48.558Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "A reviewed ADR defines canonical and custom edge semantics, direction, ordering, inverse, provenance, and compatibility; The public SDK exposes bounded graph mutation and query primitives before thin CLI, MCP, and package adapters; Graph governance reports semantic errors, isolates, stale or redundant edges, cycles only over order-bearing kinds, and profile-aware coverage; Analytics provide explainable critical paths, blast radius, bottlenecks, communities, redundancy, and relevance signals with deterministic evidence; A resumable all-status backfill classifies every item as connected, intentional root or archive, waived, or remediation debt without synthetic related filler; Benchmarks demonstrate bounded memory, latency, and token output at one million items while preserving small-project ergonomics"
@@ -19,7 +19,7 @@ why_now: The live hierarchy is connected but the active dependency graph has 100
 parent: pm-33cw
 risk: high
 confidence: high
-dependencies[8]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-13T21:57:05.806Z",null,null
   pm-6irg,related,"2026-07-13T21:57:05.806Z",null,null
   pm-801d,related,"2026-07-13T21:57:05.806Z",null,null
@@ -28,6 +28,8 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-bzmeaa,related,"2026-07-24T23:54:54.688Z",null,null
   pm-hnc9w7,related,"2026-07-24T23:54:54.688Z",null,null
   pm-s5e04g,related,"2026-07-24T23:54:54.688Z",null,null
+  pm-4jk8kx,related,"2026-07-25T12:36:48.210Z",null,null
+  pm-odohgb,related,"2026-07-25T12:36:48.210Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-13T21:57:05.806Z",codex-root,"Duplicate check 2026-07-13: exhaustive all-status keyword and normalized-title review found adjacent visualization,linked-resource,context-engine,and one-time audit work but no active or terminal initiative owning typed relationship semantics plus scalable graph governance and all-status reconstruction; canonical parent is pm-33cw."
   "2026-07-13T22:09:16.493Z",codex-root,"Post-organization evidence 2026-07-13: tracker now has 1,799 items, 1,614 parent edges, 1,224 dependency entries, and 682 items with dependencies. Compared with the pre-pass baseline, active dependency components improved 109 to 96, active dependency isolates 100 to 89, largest active component 79 to 110, active blocked_by edges 30 to 71, hierarchy depth 4 to 5, and longest active prerequisite path 2 to 5: pm-lnrk -> pm-qnl2 -> pm-p9a4 -> pm-6x7o -> pm-ju83 -> pm-4jqm. Validation reports zero active dangling references, zero lifecycle or parent cycles, zero stale blockers, and zero history hash or chain drift. Health has zero warnings. Exact and 0.92 fuzzy dedupe found only the known three canceled accidental-probe items; parent-scope found no cluster. No terminal items were mutated."

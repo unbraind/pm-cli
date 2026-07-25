@@ -1,0 +1,32 @@
+id: pm-e5yupa
+title: "Multi-decade readability policy: every format version has a declared support window and a CI-proven reader for the oldest version still in support"
+description: "The stated ambition includes workspaces spanning decades. Nothing currently states how long a format version stays readable, what an operator of a very old workspace should expect, or how that expectation is kept true. The cross-version compatibility matrix proves adjacent pm releases interoperate; that is a different and shorter-horizon guarantee than a workspace written in 2026 still being readable in 2046. Declare the policy — how long each format version is supported, what support means, what happens after a support window closes, and what migration path exists — and then make it mechanically true by keeping golden workspaces from every supported format version in the test corpus and asserting the current build reads, verifies, and migrates them. The policy must also cover the parts that decay quietly: whether a derived index from an old version is still usable or must be rebuilt, and whether a hash chain written under an old construction still verifies under the current verifier, since a verification break is worse than a read break."
+type: Task
+status: open
+priority: 3
+tags[6]: "area:storage",ci,durability,governance,long-horizon,migration
+created_at: "2026-07-25T12:29:31.317Z"
+updated_at: "2026-07-25T12:35:31.239Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "The policy declares, per format version, its support window, what support guarantees (read, verify, migrate), and what happens when the window closes; A golden workspace for every supported format version lives in the test corpus, and CI asserts the current build reads it, verifies its hash chains, and migrates it without loss; Hash-chain verification across construction changes is covered explicitly, so a verification break is caught separately from a read break; Derived artifacts from older versions are covered: the policy states whether they are usable or must be rebuilt, and the test asserts the stated behavior; Dropping support for a format version is a reviewable, announced event with a migration path, never a silent failure to parse; The policy is referenced from the v1.0 stability contract so it is frozen alongside the other compatibility guarantees"
+goal: project management = context management
+objective: "A workspace's readable lifetime is a stated, tested guarantee rather than an implicit hope"
+value: Multi-decade durability is a headline claim of the product; an untested claim about a twenty-year horizon is the claim most likely to be false
+impact: Adds golden workspaces per format version to the permanent test corpus and constrains future format changes to declared support windows
+outcome: An operator of a decade-old workspace knows exactly what the current release will do with it before running it
+parent: pm-o2kc
+risk: low
+confidence: 70
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-agou,related,"2026-07-25T12:29:31.317Z",null,null
+  pm-eeai,related,"2026-07-25T12:29:31.317Z",null,null
+  pm-o79o,related,"2026-07-25T12:29:31.317Z",null,null
+  pm-pae3wo,related,"2026-07-25T12:29:31.317Z",null,null
+  pm-xp1xsw,related,"2026-07-25T12:29:31.317Z",null,null
+  pm-0qg5,related,"2026-07-25T12:35:30.978Z",null,null
+  pm-4jk8kx,blocked_by,"2026-07-25T12:35:30.978Z",null,null
+  pm-9c7h9x,related,"2026-07-25T12:35:30.978Z",null,null
+  pm-t4d7nz,related,"2026-07-25T12:35:30.978Z",null,null
+  pm-wlqxg3,related,"2026-07-25T12:35:30.978Z",null,null
+body: ""

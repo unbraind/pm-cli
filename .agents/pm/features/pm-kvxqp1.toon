@@ -1,0 +1,36 @@
+id: pm-kvxqp1
+title: "Tokens-per-fact encoding study: measure every output encoding against an information-equivalence baseline and adopt the cheapest per surface"
+description: "pm has TOON and JSON output and a default of TOON for agent loops, chosen on reasoning rather than measurement. No item owns the question of how many tokens pm spends to deliver one unit of information, which is the actual currency of an agent workspace. This item establishes the measurement and then lets it decide. Define a fact set — the specific field values an agent must receive for a given command and intent — and measure, per encoding, the tokenizer cost of delivering exactly that fact set with nothing else. Candidate encodings to measure, not to presume: TOON as it exists; JSON as it exists; a key-hoisted tabular form where repeated field names appear once per result set rather than once per row; an ordinal form where a contract-declared field order removes names entirely for known projections; and a hybrid that hoists keys only above a row-count threshold. Measure across representative result sizes, because the winner at one row is not the winner at five hundred. The deliverable is a measured table plus a per-surface default, not a universal winner."
+type: Feature
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",benchmark,context-management,token-efficiency
+created_at: "2026-07-25T12:26:58.075Z"
+updated_at: "2026-07-25T12:40:13.423Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "A reproducible benchmark defines the required fact set per measured command and intent, and rejects any encoding that omits a required fact rather than scoring it as cheaper; Tokenizer cost is measured for every candidate encoding at small, medium, and large result sizes, and the results are published as a table with the measurement method; A per-surface default encoding is selected from the measurements and recorded with its rationale, including surfaces where the existing default wins; Human readability is scored as an explicit criterion, so a marginal token win cannot silently make output unreadable; The benchmark runs in CI as a regression gate so an encoding change that raises tokens-per-fact fails; Any new default encoding is reachable through the uniform format-flag grammar and every prior spelling keeps working"
+goal: project management = context management
+objective: The default encoding of every read surface is the measured cheapest encoding that preserves the required facts
+value: "Encoding overhead is paid on every single command an agent runs; a percentage saved here compounds across every agent, every session, and every workspace forever"
+impact: May change default output encodings on read surfaces; must land behind the uniform output contract so the change is one coordinated decision rather than per-command drift
+outcome: "Agents spend measurably fewer tokens per unit of delivered context, with the tradeoff recorded rather than assumed"
+why_now: "Encoding defaults get frozen by the v1.0 grammar and output-contract work, so measuring after the freeze is measuring too late"
+parent: pm-mpbb
+risk: medium
+confidence: 70
+dependencies[13]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-25T12:26:58.075Z",null,null
+  pm-5t33or,related,"2026-07-25T12:26:58.075Z",null,null
+  pm-8pnj,related,"2026-07-25T12:26:58.075Z",null,null
+  pm-j82fd3,related,"2026-07-25T12:26:58.075Z",null,null
+  pm-o87av6,related,"2026-07-25T12:26:58.075Z",null,null
+  pm-srns,related,"2026-07-25T12:26:58.075Z",null,null
+  pm-1kxs,related,"2026-07-25T12:35:06.473Z",null,null
+  pm-cha95z,related,"2026-07-25T12:35:06.473Z",null,null
+  pm-cxr0jb,related,"2026-07-25T12:35:06.473Z",null,null
+  pm-m9xv,related,"2026-07-25T12:35:06.473Z",null,null
+  pm-psy1,related,"2026-07-25T12:35:06.473Z",null,null
+  pm-t5dt4z,related,"2026-07-25T12:35:06.473Z",null,null
+  pm-g3n00m,related,"2026-07-25T12:40:13.096Z",null,null
+body: ""

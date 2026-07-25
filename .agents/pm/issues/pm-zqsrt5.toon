@@ -1,0 +1,32 @@
+id: pm-zqsrt5
+title: "Shipped MCP manifests and MCP tool guidance hardwire a static author, overriding the automatic identity of every plugin-hosted agent"
+description: "Three shipped surfaces instruct or force an explicit author on exactly the hosts where automatic detection matters most. .mcp.json:6 sets env PM_AUTHOR=claude-code-agent for the repository's own MCP server. docs/CLAUDE_CODE_PLUGIN.md:70 publishes the same env block as the recommended plugin configuration. docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md:265 and :385 do the same with codex-agent and describe it as a stable fallback author. The MCP server's own tool instructions additionally tell callers to set author to claude-code-agent on all mutations. Because PM_AUTHOR outranks detection in the precedence chain, every one of these makes the resolved identity asserted rather than detected, discards the harness, and will discard the model once capture lands. The stated motive — a stable fallback when detection fails — is obsolete: detection covers these harnesses, and the correct fallback is the detector's own bounded result, not a hardcoded string that also lies about author_source. Remove the hardwiring from the shipped manifests, templates, and MCP tool guidance, and replace the docs claim with the detection contract."
+type: Issue
+status: open
+priority: 1
+tags[7]: agent-ux,"area:mcp",author,defect,docs,identity,plugins
+created_at: "2026-07-25T12:26:07.305Z"
+updated_at: "2026-07-25T12:35:03.094Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "The repository .mcp.json no longer sets PM_AUTHOR, and a test asserts that no shipped manifest, plugin template, or scaffold sets it; The Claude Code and Codex plugin documents describe automatic detection instead of publishing a hardwired author env block; The MCP server tool instructions no longer tell callers to pass an author on mutations, and the MCP host resolves identity through the shared resolver; A regression test greps the shipped artifact set for author overrides and fails on reintroduction; The documentation states the actual precedence contract and names the one legitimate reason to override — asserting a non-agent principal — rather than presenting an override as routine setup"
+goal: project management = context management
+objective: No shipped pm artifact overrides an agent's own detected identity
+value: "These manifests are copied verbatim into user projects, so the defect propagates into every downstream workspace and permanently poisons its attribution history"
+impact: Removes four hardwired author overrides from shipped artifacts and one instruction from the MCP tool guidance; existing workspaces that copied the manifest keep working but start recording real identity once updated
+outcome: A plugin-installed agent is attributed to its real harness and model without the operator editing anything
+parent: pm-5k4v
+risk: low
+confidence: 90
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-03pq3o,related,"2026-07-25T12:26:07.305Z",null,null
+  pm-5k4v,related,"2026-07-25T12:26:07.305Z",null,null
+  pm-6uxhe0,related,"2026-07-25T12:26:07.305Z",null,null
+  pm-95d7,related,"2026-07-25T12:26:07.305Z",null,null
+  pm-z3ez,related,"2026-07-25T12:26:07.305Z",null,null
+  pm-9k90,related,"2026-07-25T12:35:02.847Z",null,null
+  pm-brxdct,related,"2026-07-25T12:35:02.847Z",null,null
+  pm-j82fd3,related,"2026-07-25T12:35:02.847Z",null,null
+  pm-l9wl,related,"2026-07-25T12:35:02.847Z",null,null
+  pm-sx52hr,related,"2026-07-25T12:35:02.847Z",null,null
+body: ""

@@ -1,0 +1,32 @@
+id: pm-brxdct
+title: "Harness signal registry: identity detection becomes declared data that a config entry or a package can extend without a code change"
+description: "Harness detection is currently two hardcoded arrays in src/core/shared/author.ts — HARNESS_ENV_MARKERS with seven entries and HARNESS_TOKEN_MARKERS with seven regexes — plus an inline CI branch. Adding a harness, or teaching pm where a known harness publishes its model, requires editing core source, rebuilding, and shipping a release. That is the wrong shape for a surface whose contents change whenever the agent ecosystem changes, and it contradicts the universal-customization promise: a workspace running an in-house harness cannot make pm recognize it at all. Convert the table to declared data with the same purity guarantees: a signal descriptor names the harness, the environment keys that identify it, the environment keys that carry its model and session, and an optional bounded argv pattern. Built-in descriptors ship as data; workspace settings and packages may append descriptors; built-ins are never silently overridden — a conflicting descriptor is a validation error, not a last-writer-wins race. Precedence within the registry is declared and stable, so adding an entry cannot reorder detection for existing harnesses."
+type: Task
+status: open
+priority: 2
+tags[6]: agent-ux,"area:sdk",author,customization,extensibility,identity
+created_at: "2026-07-25T12:26:06.033Z"
+updated_at: "2026-07-25T12:35:01.642Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Built-in harness descriptors are declared data with a documented schema covering harness slug, identifying environment keys, model-carrying keys, session-carrying keys, and optional bounded argv patterns; Workspace settings and installed packages can append descriptors, and a descriptor that collides with a built-in slug fails validation with a named error instead of overriding it silently; Detection precedence is declared and stable, proven by a test asserting that appending a descriptor cannot change the result for any previously supported harness; The registry is exercised by a test that registers a synthetic harness and observes correct harness, model, and session resolution end to end; Descriptors stay pure data: no descriptor may specify a command to execute, a path to traverse, or a network endpoint, enforced by schema validation"
+goal: project management = context management
+objective: "Recognizing a new agent harness is a configuration change, not a pm release"
+value: The agent-harness ecosystem changes faster than pm's release cadence; a hardcoded table guarantees pm is permanently behind it
+impact: Moves seven hardcoded entries into declared data with a validation contract; no behavior change for currently supported harnesses
+outcome: A team running an unlisted or in-house harness gets correct identity provenance without waiting for an upstream release
+parent: pm-mpbb
+risk: low
+confidence: 75
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-03pq3o,blocked_by,"2026-07-25T12:26:06.033Z",null,null
+  pm-8jdc,related,"2026-07-25T12:26:06.033Z",null,null
+  pm-qwuber,related,"2026-07-25T12:26:06.033Z",null,null
+  pm-ugqx,related,"2026-07-25T12:26:06.033Z",null,null
+  pm-z9x1r2,related,"2026-07-25T12:26:06.033Z",null,null
+  pm-6uxhe0,related,"2026-07-25T12:35:01.440Z",null,null
+  pm-g608fc,related,"2026-07-25T12:35:01.440Z",null,null
+  pm-j82fd3,related,"2026-07-25T12:35:01.440Z",null,null
+  pm-t4d7nz,related,"2026-07-25T12:35:01.440Z",null,null
+  pm-zqsrt5,related,"2026-07-25T12:35:01.440Z",null,null
+body: ""

@@ -1,0 +1,33 @@
+id: pm-iiv1gl
+title: "Beyond-PM exemplar: a content-addressed version-control domain built on pm primitives alone, as executable proof of the universal claim"
+description: "The universal-platform claim names version control as its headline example: if pm's primitives are truly general, a git-like system is expressible in them. Nothing tests that, and version control is the right test precisely because it stresses the primitives pm cares most about — content-addressed immutable objects, an append-only history with verifiable chaining, a branch as a movable reference into that history, a merge with declared conflict semantics, and point-in-time reconstruction of any state. Every one of those maps onto a capability pm already claims for its own data. Build the exemplar as a package: objects as items with content-addressed identifiers, trees as typed edges, commits as history entries chained by the existing hash construction, branches as references, merge as a declared resolution over the same merge semantics pm uses for its own workspaces, and checkout as point-in-time reconstruction. Success is not a competitive VCS; success is a demonstration that survives a property test — commit a tree, branch, diverge, merge, and reconstruct any prior state exactly — using only public SDK surface. Where it cannot be done without private access, that is the finding, and each gap is filed as SDK promotion work."
+type: Feature
+status: open
+priority: 3
+tags[5]: "area:sdk",exemplar,platform,proof,universal-domain
+created_at: "2026-07-25T12:30:38.270Z"
+updated_at: "2026-07-25T12:35:34.872Z"
+author: "harness:claude-code"
+estimated_minutes: 960
+acceptance_criteria: "The exemplar is a package that imports public SDK surface only, asserted by the existing import-boundary gate with no waiver; Content-addressed objects, trees, commits, branches, merge, and point-in-time checkout are all expressed in pm primitives, with the mapping documented primitive by primitive; A property test commits a tree, branches, diverges, merges, and reconstructs an arbitrary prior state exactly, and runs in CI; Every capability that could not be expressed through public SDK surface is filed as an SDK gap item linked discovered_from this exemplar, and the exemplar documents the workaround it used meanwhile; The exemplar states plainly what it is not — it is a proof of expressiveness, not a production VCS — so the claim it supports stays accurate; A measured statement of scale limits is recorded, so the proof is not mistaken for a performance claim"
+goal: project management = context management
+objective: "Prove the universal-domain claim on the hardest domain pm has ever cited, using public SDK surface only"
+value: "This is the strongest possible evidence for the platform positioning, and equally valuable if it fails, because a falsified claim found now is a corrected roadmap rather than a broken promise"
+impact: "Will surface genuine SDK gaps in content addressing, reference management, and merge semantics; those gaps are the deliverable as much as the exemplar is"
+outcome: The claim that a VCS is buildable on pm primitives is backed by a running package and a property test rather than by an assertion in a milestone
+why_now: The claim is already published in the milestone and the marketing narrative; proving or falsifying it before v1.0 freezes the SDK surface is far cheaper than after
+parent: pm-8jdc
+risk: high
+confidence: 50
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-3z0k,related,"2026-07-25T12:30:38.270Z",null,null
+  pm-4jk8kx,related,"2026-07-25T12:30:38.270Z",null,null
+  pm-8ngt,verifies,"2026-07-25T12:30:38.270Z",null,null
+  pm-cbwg,related,"2026-07-25T12:30:38.270Z",null,null
+  pm-kr3t,related,"2026-07-25T12:30:38.270Z",null,null
+  pm-t4d7nz,related,"2026-07-25T12:30:38.270Z",null,null
+  pm-9rgaal,related,"2026-07-25T12:35:34.554Z",null,null
+  pm-g608fc,related,"2026-07-25T12:35:34.554Z",null,null
+  pm-usfg,related,"2026-07-25T12:35:34.554Z",null,null
+  pm-wlqxg3,related,"2026-07-25T12:35:34.554Z",null,null
+body: ""

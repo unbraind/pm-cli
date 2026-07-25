@@ -1,0 +1,38 @@
+id: pm-g3n00m
+title: "As a coding agent, every pm command I run costs the fewest tokens that still fully answer my question, and I can see what I spent"
+description: "The token-efficiency work is spread across a budget contract, an encoding study, intent-scoped projections, a diagnostics budget, per-invocation accounting, delta reads, and a transcript-replay gate. Each is individually correct and none of them states the entitlement they collectively serve, so nothing checks the composite: an agent could gain a cheaper encoding while losing a needed field, or gain intent projections while diagnostics stay unbounded, and every individual gate would still pass. State it from the consumer's side. An agent asking a question should receive an answer whose token cost is proportional to the information it actually needs, never to the size of the workspace or the verbosity of the command; should never pay for fields it discards; should pay a bounded, predictable amount when a command fails; and should be able to see, at any moment, what its context budget was spent on. The composite is measurable end to end as tokens per completed task, which is the only number that captures all of it at once."
+type: Story
+status: open
+priority: 1
+tags[4]: agent-ux,context-management,story,token-efficiency
+created_at: "2026-07-25T12:39:48.106Z"
+updated_at: "2026-07-25T12:40:06.134Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Tokens per completed task is measured over a representative agent-task corpus and tracked release over release as the composite figure; A component change that improves its own metric while raising the composite fails, proven by a deliberate negative-control scenario; The corpus covers the small-workspace, large-workspace, failing-command, and returning-agent cases, so no scenario is optimized at another's expense; An agent can obtain a per-invocation breakdown of what its budget was spent on without leaving its normal loop; No command's answer omits a field the corpus tasks actually consume, asserted by a completeness check rather than by reviewer judgment; The composite figure is published with the release so the trend is externally visible rather than internal-only"
+goal: project management = context management
+objective: State and measure the agent-side entitlement that the whole token-efficiency programme exists to deliver
+value: Composite entitlements fail at the seams; tokens per completed task is the only measure an agent's operator actually experiences
+impact: Adds an end-to-end measure over existing gates and makes a regression in the composite visible even when every component gate passes
+outcome: "Token efficiency has one acceptance surface measured as tokens per completed task, not seven independently green gates"
+parent: pm-mpbb
+risk: low
+confidence: 75
+dependencies[16]{id,kind,created_at,author,source_kind}:
+  pm-1kxs,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-5t33or,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-8pnj,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-cha95z,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-cxr0jb,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-j82fd3,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-kvxqp1,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-t5dt4z,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-tuadp2,related,"2026-07-25T12:39:48.106Z",null,null
+  pm-bwyw,related,"2026-07-25T12:40:05.770Z",null,null
+  pm-fs8q9x,related,"2026-07-25T12:40:05.770Z",null,null
+  pm-g2zz,related,"2026-07-25T12:40:05.770Z",null,null
+  pm-kxci8x,related,"2026-07-25T12:40:05.770Z",null,null
+  pm-m9xv,related,"2026-07-25T12:40:05.770Z",null,null
+  pm-o87av6,related,"2026-07-25T12:40:05.770Z",null,null
+  pm-z436,related,"2026-07-25T12:40:05.770Z",null,null
+body: ""

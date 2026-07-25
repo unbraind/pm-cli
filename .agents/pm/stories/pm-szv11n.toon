@@ -1,0 +1,35 @@
+id: pm-szv11n
+title: "As one of a thousand agents on the same project, my identity, my claims, and my recorded work survive branching and merging without me coordinating with any other agent"
+description: "The multi-agent guarantees are currently expressed as separate technical items — merge fences, claim contention, history union, conflict-free field merges, identity resolution — with no single statement of what an agent is entitled to expect when a fleet works in parallel on branches that later merge. Without that statement, each technical item optimizes its own surface and nothing checks the composite experience. State it as an entitlement: an agent that claims an item on its own branch, does work, records evidence, and closes the item must find, after any merge order, that its claim was respected while held, its history entries are present and attributed to it with its harness and model, its evidence links survived, and no other agent's concurrent work was lost to make that true. The composite is the acceptance surface, and it is checkable end to end rather than only per mechanism."
+type: Story
+status: open
+priority: 2
+tags[5]: concurrency,identity,merge,multi-agent,story
+created_at: "2026-07-25T12:32:19.634Z"
+updated_at: "2026-07-25T12:35:46.593Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "An end-to-end scenario runs multiple agents on divergent branches performing claim, work, evidence, and close, then merges in several orders and asserts the same final state; Every agent's history entries are present after merge with their own author, harness, and model provenance intact and no cross-author loss; Claims are respected while held and correctly released or reported as stale after merge, with no item left claimed by nobody yet unreleasable; Evidence links — files, docs, tests, comments, notes — survive merge with no silent drops, asserted by count and content; Concurrent non-contradictory work from different agents is all present after merge, and contradictory work resolves deterministically with the resolution recorded; The scenario runs at a fleet size large enough to exercise contention rather than as a two-agent illustration"
+goal: project management = context management
+objective: State and verify what a single agent in a large fleet is entitled to expect across branch and merge
+value: "Composite guarantees fail at the seams between mechanisms, and no current item owns the seams"
+impact: Adds an end-to-end acceptance surface over existing mechanisms; expected to surface seam defects that per-mechanism tests cannot see
+outcome: The multi-agent guarantees have one composite acceptance surface instead of several independently correct mechanisms
+parent: pm-dj98
+risk: medium
+confidence: 70
+dependencies[13]{id,kind,created_at,author,source_kind}:
+  pm-03pq3o,related,"2026-07-25T12:32:19.634Z",null,null
+  pm-2sbj8p,related,"2026-07-25T12:32:19.634Z",null,null
+  pm-3oqjnc,related,"2026-07-25T12:32:19.634Z",null,null
+  pm-76dnfg,verifies,"2026-07-25T12:32:19.634Z",null,null
+  pm-dj98,related,"2026-07-25T12:32:19.634Z",null,null
+  pm-g5sx,related,"2026-07-25T12:32:19.634Z",null,null
+  pm-lvyd,related,"2026-07-25T12:32:19.634Z",null,null
+  pm-bzmeaa,related,"2026-07-25T12:35:46.011Z",null,null
+  pm-gw6uyq,related,"2026-07-25T12:35:46.011Z",null,null
+  pm-o87av6,related,"2026-07-25T12:35:46.011Z",null,null
+  pm-odohgb,related,"2026-07-25T12:35:46.011Z",null,null
+  pm-qwuber,related,"2026-07-25T12:35:46.011Z",null,null
+  pm-ugld,related,"2026-07-25T12:35:46.011Z",null,null
+body: ""

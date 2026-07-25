@@ -1,0 +1,35 @@
+id: pm-cxr0jb
+title: "Intent-scoped read projections: a command returns exactly the fields the declared intent consumes, so agents stop paying for fields they discard"
+description: "pm get returns a full item projection whether the caller is about to close the item, review its evidence, implement it, or merely confirm it exists. The agent then discards most of it. The same is true of list and context: the projection is a property of the command, not of the purpose. Intent is the missing dimension and it is cheap to declare — an agent always knows why it is reading. Introduce a contract-declared intent on read surfaces (for example orient, implement, review, close, triage, link) where each intent names exactly the field set it consumes, and the command returns that set. Intents are contract data, discoverable through the contracts surface and extensible per workspace, so a domain built on the SDK declares its own intents rather than inheriting a project-management vocabulary. This composes with, and does not duplicate, the token-budget work: the budget decides how much output is allowed, the intent decides which fields are worth spending it on, and the relevance engine decides which items are worth including. Field selection stays honest: an intent that omits a field an agent then needs must be discoverable as a miss, so intent definitions can be corrected by evidence."
+type: Feature
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",context-management,customization,token-efficiency
+created_at: "2026-07-25T12:28:05.242Z"
+updated_at: "2026-07-25T12:40:15.309Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "Read surfaces accept a declared intent, and each intent names its exact field set in contract data rather than in code; Omitting the intent preserves today's default projection byte-for-byte, proven by a snapshot test; Intents are discoverable through the contracts surface and extensible by workspace configuration and packages, so a non-project-management domain can declare its own; A measured token delta per intent versus the default projection is published as evidence, per command and per result size; Requesting an intent that a workspace has not declared fails with the one canonical unknown-value error and a nearest-match suggestion; Intent selection composes with the token budget and the relevance engine without any of the three overriding the others, proven by a test that exercises all three together"
+goal: project management = context management
+objective: The field set of a read is decided by the reader's purpose rather than by the command name
+value: Field-level waste is paid on every read of every item; at a million items and thousands of agents it is one of the largest recurring token costs in the system
+impact: Adds one declared dimension to read surfaces; existing default projections stay unchanged so no caller is broken
+outcome: Common agent loops read materially fewer tokens per item without losing any field they actually use
+parent: pm-mpbb
+risk: medium
+confidence: 65
+dependencies[13]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-25T12:28:05.242Z",null,null
+  pm-5t33or,related,"2026-07-25T12:28:05.242Z",null,null
+  pm-801d,related,"2026-07-25T12:28:05.242Z",null,null
+  pm-kvxqp1,related,"2026-07-25T12:28:05.242Z",null,null
+  pm-srns,related,"2026-07-25T12:28:05.242Z",null,null
+  pm-tuadp2,related,"2026-07-25T12:28:05.242Z",null,null
+  pm-cha95z,related,"2026-07-25T12:35:07.682Z",null,null
+  pm-j82fd3,related,"2026-07-25T12:35:07.682Z",null,null
+  pm-kxci8x,related,"2026-07-25T12:35:07.682Z",null,null
+  pm-o87av6,related,"2026-07-25T12:35:07.682Z",null,null
+  pm-plwm,related,"2026-07-25T12:35:07.682Z",null,null
+  pm-t5dt4z,related,"2026-07-25T12:35:07.682Z",null,null
+  pm-g3n00m,related,"2026-07-25T12:40:14.936Z",null,null
+body: ""

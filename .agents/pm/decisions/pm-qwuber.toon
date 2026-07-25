@@ -1,0 +1,34 @@
+id: pm-qwuber
+title: "ADR: agent identity model — stable author namespace plus structured harness, model, and session provenance"
+description: "pm already resolves an acting identity without PM_AUTHOR (pm-z9x1r2, closed 2026-07-25) and already writes an author_source discriminator. The recorded identity is still a single opaque string in the harness:<name> namespace: src/core/shared/author.ts returns { author, source, harness? } and nothing anywhere records WHICH MODEL performed the mutation. In a fleet where a claude-opus-5 session, a claude-haiku-4-5 session, and a GLM-5.2 session all run under harness:claude-code or harness:pi, every downstream question that matters — which model produced the rework, which model's context packing needs a different profile, which model may hold a claim — is unanswerable from history. This ADR decides the identity data model before any implementation lands, because identity is written into immutable history and is therefore effectively unchangeable after the fact. Options considered: (a) widen the author string to harness:<harness>/<model> — cheap, greppable, but explodes author cardinality, breaks every existing equality filter, and conflates a stable principal with a volatile runtime attribute; (b) keep author as the stable principal namespace and add structured provenance fields (agent_harness, agent_model, agent_model_source, agent_session) to the history entry and to the resolved identity — preserves existing filters, keeps cardinality bounded, and lets model be absent without making the author unknown; (c) full principal identity with signatures — deferred to pm-u14c. Recommended: (b), with (a) available as a rendering concern only."
+type: Decision
+status: open
+priority: 1
+tags[7]: adr,agent-ux,"area:sdk",author,governance,identity,provenance
+created_at: "2026-07-25T12:24:02.830Z"
+updated_at: "2026-07-25T12:34:57.630Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The decision states whether model belongs in the author string or in structured provenance fields, with the rejected options and their reasons recorded; The decision names every provenance field, its type, its cardinality expectations, and its absence semantics (a missing model must never degrade the author to unknown); The decision states explicitly that detected identity is an unverified claim and may never be used as an authorization input, deferring verified identity to pm-u14c; The decision states the privacy contract: which identity dimensions may reach telemetry, in what hashed form, and which must never leave the machine; The decision states the compatibility rule for workspaces written before model capture existed, so old streams stay valid and verifiable; A superseding or amending decision is required before any later change to the recorded identity shape"
+goal: project management = context management
+objective: "Decide, once and in writing, what an automatically detected agent identity consists of and what it is never permitted to assert"
+value: "Attribution that distinguishes harness from model is the precondition for fleet analytics, per-model context profiles, and any trust decision about who may hold a claim"
+impact: Locks the on-disk provenance shape for every future history entry; a wrong choice here is expensive to reverse because history is immutable by design
+outcome: "Every later identity change — model capture, signatures, fleet analytics, per-model context profiles — extends one decided data model instead of renegotiating it in immutable history"
+why_now: Model capture is about to be implemented; identity fields are append-only history and cannot be renamed later without a redaction workflow
+parent: pm-m2u1
+risk: medium
+confidence: 75
+dependencies[11]{id,kind,created_at,author,source_kind}:
+  pm-33cw,related,"2026-07-25T12:24:02.830Z",null,null
+  pm-42p9nk,related,"2026-07-25T12:24:02.830Z",null,null
+  pm-u14c,related,"2026-07-25T12:24:02.830Z",null,null
+  pm-w7ccmv,related,"2026-07-25T12:24:02.830Z",null,null
+  pm-z9x1r2,related,"2026-07-25T12:24:02.830Z",null,null
+  pm-03pq3o,related,"2026-07-25T12:34:57.387Z",null,null
+  pm-6uxhe0,related,"2026-07-25T12:34:57.387Z",null,null
+  pm-brxdct,related,"2026-07-25T12:34:57.387Z",null,null
+  pm-gw6uyq,related,"2026-07-25T12:34:57.387Z",null,null
+  pm-j82fd3,related,"2026-07-25T12:34:57.387Z",null,null
+  pm-szv11n,related,"2026-07-25T12:34:57.387Z",null,null
+body: ""

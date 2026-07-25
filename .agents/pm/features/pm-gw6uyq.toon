@@ -1,0 +1,33 @@
+id: pm-gw6uyq
+title: "Fleet attribution analytics: per-harness and per-model throughput, rework, and defect-escape rates derived from immutable history alone"
+description: "Once identity carries harness and model, the immutable history streams already contain everything needed to answer the questions a fleet operator actually has, with no new stored state and no telemetry: which model's work is reopened most often; which harness produces the most unresolved-validation warnings; how completion time distributes per model on comparable item types; which model's closes later attract a defect item linked by discovered_from; how much of a workspace's mutation volume is annotation versus state change per agent class. These are derivations over the same append-only streams that pm-pee5 uses for flow metrics, restricted and grouped by the provenance dimensions rather than by item. The output must be bounded and comparable: rates and distributions with sample counts, never raw per-entry dumps, and never a leaderboard that invites optimizing the metric. Explicitly out of scope: using these numbers as an authorization or routing input — detected identity is an unverified claim, and pm-3oqjnc owns allocation decisions on capability declarations, not on inferred quality scores."
+type: Feature
+status: open
+priority: 2
+tags[6]: analytics,"area:sdk",identity,observability,provenance,scale
+created_at: "2026-07-25T12:26:56.829Z"
+updated_at: "2026-07-25T12:35:05.491Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "Analytics are pure derivations over immutable history with no new stored state and no telemetry dependency; Grouping is available by harness, by model, and by author_source, and every reported figure carries its sample count and window; A metric with an insufficient sample is reported as insufficient rather than as a number, so small workspaces get honest output; Output is bounded by the same token-budget contract as other read surfaces and degrades deterministically instead of dumping entries; The documentation states that these figures are observational, that detected identity is unverified, and that the figures must not be used as an authorization or allocation input; A workspace with no model provenance (pre-capture history) produces correct harness-level output and reports the model dimension as unavailable rather than empty"
+goal: project management = context management
+objective: "A fleet operator can compare agent classes on evidence already recorded, without instrumenting anything"
+value: Thousands of concurrent agents of different models are the target deployment; without per-model attribution there is no way to tell an improving fleet from a degrading one
+impact: Adds derived read-only analytics over existing streams; introduces a real risk of metric-gaming that the acceptance criteria must bound
+outcome: Model and harness selection for a workspace becomes an evidence-backed decision instead of a preference
+parent: pm-5oj5
+risk: medium
+confidence: 65
+dependencies[11]{id,kind,created_at,author,source_kind}:
+  pm-03pq3o,blocked_by,"2026-07-25T12:26:56.829Z",null,null
+  pm-3oqjnc,related,"2026-07-25T12:26:56.829Z",null,null
+  pm-5oj5,related,"2026-07-25T12:26:56.829Z",null,null
+  pm-pee5,related,"2026-07-25T12:26:56.829Z",null,null
+  pm-qwuber,related,"2026-07-25T12:26:56.829Z",null,null
+  pm-u14c,related,"2026-07-25T12:26:56.829Z",null,null
+  pm-6uxhe0,related,"2026-07-25T12:35:05.199Z",null,null
+  pm-o87av6,related,"2026-07-25T12:35:05.199Z",null,null
+  pm-szv11n,related,"2026-07-25T12:35:05.199Z",null,null
+  pm-t5dt4z,related,"2026-07-25T12:35:05.199Z",null,null
+  pm-w7ccmv,related,"2026-07-25T12:35:05.199Z",null,null
+body: ""

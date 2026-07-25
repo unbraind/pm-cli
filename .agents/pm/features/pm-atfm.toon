@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: context,quality-gate,relevance,scale
 created_at: "2026-07-06T23:25:57.317Z"
-updated_at: "2026-07-25T06:27:53.405Z"
+updated_at: "2026-07-25T12:41:54.275Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Golden corpus (one real-shaped and one synthetic pm-mi2x workspace) with graded judgments versioned in-repo; offline runner scores pm context and pm next with rank-aware quality metrics; baseline of the current structural assembler recorded before pm-4k6b lands; CI gate fails on quality regression beyond a documented threshold; harness consumes only public SDK read primitives; documented workflow for adding new judgment cases
@@ -18,7 +18,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-mi2x,related,"2026-07-10T21:38:37.208Z",null,null
   pm-lixy,related,"2026-07-11T02:59:42.959Z",null,null
   pm-4k6b,verifies,"2026-07-25T06:27:53.163Z",null,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-06T23:51:08.193Z",codex-agent,"Planning evidence 2026-07-07: pm-atfm remains the canonical quality harness for context/next relevance. Added non-duplicate child slices pm-lixy (graded scenario corpus across scratch, real-shaped, scale, and returning-agent continuity cases) and pm-xmp5 (offline runner + CI gate). Done definition should mirror search-eval rigor but score context assembly: rank-aware quality, required-item recall, continuity-delta coverage, and token-budget adherence. This keeps pm-4k6b weight tuning evidence-driven instead of aesthetic.\n"
   "2026-07-09T19:10:26.051Z",codex-root-20260709,"Progress evidence: context/next evaluation harness now has public SDK runner contracts, reviewable golden workspaces, committed baseline, required CI gate, and documented intentional-update workflow."
   "2026-07-09T19:50:43.336Z",codex-root-20260709,"Verification: public SDK evaluation scenario/corpus APIs execute context and next through real PmClient readers with attribution and threshold/baseline regression reporting. Four committed scenarios and installed-package consumer pass; thresholds remain explicit and token budgets measured from compact payloads."
@@ -26,6 +26,9 @@ comments[7]{created_at,author,text}:
   "2026-07-10T00:03:04.613Z",codex-root-20260709,"Post-merge Gemini review follow-up: validate every required corpus threshold as a finite number before executing the external JSON evaluation gate. Review thread: discussion_r3555533556."
   "2026-07-10T00:16:51.550Z",codex-root-20260709,"Review-fix evidence: the external corpus reader now rejects missing, null, NaN/non-finite required thresholds with metric-specific errors before workspace setup. Focused gate tests and the real committed corpus pass; full suite remains exact 100% coverage."
   "2026-07-10T05:53:29.680Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
+  "2026-07-25T12:33:44.265Z","harness:claude-code","Registry input 2026-07-25 (directed maintainer pass): pm-4k6b note (22) proposes counterfactual replay evaluation under this harness — replaying a candidate scorer against recorded request points from real sessions and comparing on whether subsequently touched items were served, at what rank, and at what token cost. It is off-policy evaluation and must be documented with its honest limit: it cannot observe what an agent would have done with items it never saw, so it bounds improvement rather than proving it, and a replay win still requires a live comparison before a default changes. Its value is filtering — rejecting most scoring proposals on recorded data rather than shipping them. Recorded here so the harness scope covers counterfactual comparison and not only graded judgments; see pm-g8t7b9 for the full ownership disposition."
+learnings[1]{created_at,author,text}:
+  "2026-07-25T12:41:54.275Z","harness:claude-code","An evaluation mechanism must never be owned by the item whose work it evaluates. When a scoring item owns its own harness, the harness's acceptance criteria are written to be satisfiable by that scorer, and a genuinely falsifying result becomes a scope negotiation rather than a finding. Keeping the judgment corpus, the replay harness, and the counterfactual evaluator under an evaluation-owned item — with scoring items depending on them rather than containing them — is what preserves the ability to reject a scoring idea on evidence."
 files[4]{path,scope,note}:
   scripts/release/context-eval-gate.mjs,project,Offline isolated evaluation runner
   tests/context-eval/baseline.json,project,Accepted structural and scorer quality baseline

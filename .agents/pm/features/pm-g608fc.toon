@@ -1,0 +1,35 @@
+id: pm-g608fc
+title: "Domain-pack authoring kit: the reusable substrate for modeling a foreign domain — types, typed edges, invariants, projections, lifecycle — with a scaffold that proves it end to end"
+description: "Two exemplars have proven the universal claim by construction: a minimal custom PM tool and a temporal digital-twin graph. Both were built by hand against SDK primitives, and neither left behind reusable substrate. The next author of a foreign domain repeats the same discovery work — which primitive models an entity, how to declare custom types and statuses, how to express an invariant that the engine will enforce rather than merely document, how to define a projection that stays bounded, how to attach domain lifecycle rules without forking the lifecycle engine. Package that path: a domain-pack shape with declared types, declared edge kinds and their semantics, declared invariants checked by validation, declared projections honoring the token budget, and declared lifecycle rules — plus a scaffold that generates a working pack and a conformance test that tells an author whether their pack is correct. The kit is also the honest test of the SDK boundary: every gap an author would hit is a missing SDK primitive, and finding those gaps is half the value of building it."
+type: Feature
+status: open
+priority: 2
+tags[5]: "area:sdk",customization,extensibility,platform,universal-domain
+created_at: "2026-07-25T12:30:36.097Z"
+updated_at: "2026-07-25T12:35:33.594Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "A domain pack declares custom types, custom edge kinds with their semantics, invariants, projections, and lifecycle rules through documented public SDK surface only, with no private core imports; Declared invariants are enforced by validation, so a pack can make an illegal state unrepresentable rather than merely discouraged; Declared projections honor the token budget and degrade deterministically, like core read surfaces; A scaffold generates a working pack, and a conformance test tells an author whether their pack is correct, with named failures rather than a generic error; Building the kit produces a filed item for every SDK gap encountered, linked to this item as discovered_from, and none are worked around privately; The kit is exercised by rebuilding at least one existing exemplar on top of it, proving it is sufficient rather than merely plausible"
+goal: project management = context management
+objective: "Modeling a foreign domain on pm is a declared pack, not a from-scratch integration project"
+value: The universal-platform milestone is unreachable while each domain is bespoke; a kit is what turns two proofs of concept into a repeatable capability
+impact: "Formalizes the extension surface a domain author depends on, which raises the compatibility bar for that surface; gaps found while building it become SDK promotion work"
+outcome: "A developer models a new domain in hours using declared substrate, and every gap they hit is a filed SDK primitive rather than a workaround"
+parent: pm-8jdc
+risk: medium
+confidence: 60
+dependencies[13]{id,kind,created_at,author,source_kind}:
+  pm-8jdc,related,"2026-07-25T12:30:36.097Z",null,null
+  pm-8ngt,related,"2026-07-25T12:30:36.097Z",null,null
+  pm-cbwg,related,"2026-07-25T12:30:36.097Z",null,null
+  pm-e1va,related,"2026-07-25T12:30:36.097Z",null,null
+  pm-ju83,related,"2026-07-25T12:30:36.097Z",null,null
+  pm-kr3t,related,"2026-07-25T12:30:36.097Z",null,null
+  pm-t4d7nz,related,"2026-07-25T12:30:36.097Z",null,null
+  pm-9rgaal,related,"2026-07-25T12:35:33.331Z",null,null
+  pm-iiv1gl,related,"2026-07-25T12:35:33.331Z",null,null
+  pm-o8um,related,"2026-07-25T12:35:33.331Z",null,null
+  pm-odohgb,related,"2026-07-25T12:35:33.331Z",null,null
+  pm-usfg,related,"2026-07-25T12:35:33.331Z",null,null
+  pm-z5nb,related,"2026-07-25T12:35:33.331Z",null,null
+body: ""

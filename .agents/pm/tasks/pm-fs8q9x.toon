@@ -1,0 +1,35 @@
+id: pm-fs8q9x
+title: "Flag lexicon conformance: one spelling per concept across every command, machine-checked, with a declared per-command flag budget"
+description: "The consolidation programme shrinks the noun and verb surface. The flag surface is the other half of what an agent must learn and it is currently unconstrained: the same concept is spelled differently across commands, multi-value grammar is inconsistent enough to have its own defect item, stdin conventions differ per flag, and there is no ceiling on how many flags one command may accept — pm create alone publishes more than sixty. An agent's cost of using pm is the product of nouns, verbs, and flags, so consolidating only the first two leaves most of the learning cost in place. Establish a flag lexicon: every flag maps to exactly one declared concept, every concept has exactly one canonical spelling, value grammar is uniform per value kind (single, multi-value, path, stdin-capable, enum), and each command declares a flag budget that a new flag must fit inside or explicitly raise with a recorded rationale. The gate is mechanical, in the same conformance pass that checks the noun-verb table, so a non-conforming flag cannot merge. Every existing spelling survives as a hidden alias — this is a naming contract, not a removal."
+type: Task
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli",contracts,grammar,simplification,token-efficiency
+created_at: "2026-07-25T12:28:49.234Z"
+updated_at: "2026-07-25T12:35:11.793Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "A declared lexicon maps every flag on every command to exactly one concept with one canonical spelling and one declared value kind; The conformance gate rejects a new or renamed flag that introduces a second spelling for an existing concept, or a value grammar inconsistent with its value kind; Every current spelling remains accepted as a hidden alias, proven by a test over the full pre-change flag inventory; Each command declares a flag budget; exceeding it fails the gate unless the budget is raised in the same change with a recorded rationale; The lexicon is published as contract data so agents and completions consume it without prose; Measured flag-count and help-token deltas per command are recorded as evidence"
+goal: project management = context management
+objective: "One concept, one flag spelling, one value grammar, across the entire surface"
+value: Predictable flags remove the most common agent failure mode — a retry loop caused by guessing a spelling that exists on a neighbouring command
+impact: Adds a mechanical lexicon gate and hidden aliases for every current spelling; no feature is removed and no existing invocation breaks
+outcome: An agent that learns pm's flag vocabulary once can predict the flags of a command it has never run
+parent: pm-n7rr
+risk: medium
+confidence: 70
+dependencies[13]{id,kind,created_at,author,source_kind}:
+  pm-e2bq,related,"2026-07-25T12:28:49.234Z",null,null
+  pm-gknu,related,"2026-07-25T12:28:49.234Z",null,null
+  pm-iktj,related,"2026-07-25T12:28:49.234Z",null,null
+  pm-j82fd3,related,"2026-07-25T12:28:49.234Z",null,null
+  pm-pbyu,related,"2026-07-25T12:28:49.234Z",null,null
+  pm-srns,related,"2026-07-25T12:28:49.234Z",null,null
+  pm-wt43zj,blocked_by,"2026-07-25T12:28:49.234Z",null,null
+  pm-0mox,related,"2026-07-25T12:35:11.542Z",null,null
+  pm-0z7n,related,"2026-07-25T12:35:11.542Z",null,null
+  pm-cxr0jb,related,"2026-07-25T12:35:11.542Z",null,null
+  pm-kxci8x,related,"2026-07-25T12:35:11.542Z",null,null
+  pm-mu8m,related,"2026-07-25T12:35:11.542Z",null,null
+  pm-xp1xsw,related,"2026-07-25T12:35:11.542Z",null,null
+body: ""

@@ -1,0 +1,33 @@
+id: pm-kxci8x
+title: "Single source of surface tiering: one contract-declared tier per command drives CLI help, MCP tool profiles, completions, and docs together"
+description: "Four separate efforts each decide, independently, which part of pm's surface an agent sees first: tiered CLI help, MCP tool profiles capping the exposed tool count, hiding completion helper entrypoints, and hiding the internal test-runs worker. Each is correct on its own and all four answer the same question — what tier is this command in — with four mechanisms that will drift apart the moment one is edited without the others. Declare the tier once, as a field on the command contract, and derive all four surfaces from it. The tiers themselves are the decision: a core tier an agent must know to work, a standard tier it reaches for by name, a full tier that exists and is documented, and an internal tier that is reachable but never advertised. Deriving everything from one field also makes the one-screen claim testable rather than aspirational, because the core tier's rendered size is a number the gate can check."
+type: Task
+status: open
+priority: 2
+tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
+created_at: "2026-07-25T12:28:50.389Z"
+updated_at: "2026-07-25T12:35:12.913Z"
+author: "harness:claude-code"
+estimated_minutes: 360
+acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; A test asserts no surface maintains its own independent visibility list; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier through the same field, so extensions cannot bypass tiering"
+goal: project management = context management
+objective: "Surface visibility is one declared property, not four independently maintained lists"
+value: Four mechanisms answering one question is a drift generator; drift here means an agent sees different surfaces through CLI and MCP and cannot trust either
+impact: "Consolidates four visibility mechanisms into one contract field; the visible surfaces should be unchanged on the first landing, proven by snapshots"
+outcome: "Raising or lowering a command's visibility is a one-field change that updates help, MCP tools, completions, and docs at once"
+parent: pm-n7rr
+risk: low
+confidence: 75
+dependencies[11]{id,kind,created_at,author,source_kind}:
+  pm-1kxs,related,"2026-07-25T12:28:50.389Z",null,null
+  pm-9k90,related,"2026-07-25T12:28:50.389Z",null,null
+  pm-e2bq,related,"2026-07-25T12:28:50.389Z",null,null
+  pm-lp4j,related,"2026-07-25T12:28:50.389Z",null,null
+  pm-mu8m,related,"2026-07-25T12:28:50.389Z",null,null
+  pm-szdc,related,"2026-07-25T12:28:50.389Z",null,null
+  pm-0z7n,related,"2026-07-25T12:35:12.677Z",null,null
+  pm-5k4v,related,"2026-07-25T12:35:12.677Z",null,null
+  pm-fs8q9x,related,"2026-07-25T12:35:12.677Z",null,null
+  pm-ka6d,related,"2026-07-25T12:35:12.677Z",null,null
+  pm-xp1xsw,related,"2026-07-25T12:35:12.677Z",null,null
+body: ""

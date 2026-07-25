@@ -1,0 +1,31 @@
+id: pm-t5dt4z
+title: "Self-reported token accounting: any command can report the token cost of its own output so budget spend is attributable at runtime and in CI"
+description: "Token cost is currently measured externally, in a CI corpus gate, against a fixed sample of commands. That answers whether a release regressed on the sampled corpus; it cannot answer where a specific agent's context budget actually went during a real session, which is the question that matters when an agent runs out of context mid-task. Add an opt-in accounting mode in which a command reports the token cost of the output it just produced, decomposed by section — result rows, envelope, diagnostics, hints — using the same tokenizer as the budget contract so the numbers are comparable to the declared ceilings. This makes budget spend attributable at the granularity of a single invocation and lets an agent adapt: if a read cost far more than expected, it can narrow the next one. It also gives the transcript-replay gate real per-command attribution instead of a session total, turning a regression signal into a diagnosis. Accounting must never itself be expensive or on by default: it is opt-in, adds no cost when off, and its own overhead is measured and asserted."
+type: Task
+status: open
+priority: 2
+tags[6]: agent-ux,"area:cli","area:sdk",instrumentation,observability,token-efficiency
+created_at: "2026-07-25T12:28:07.388Z"
+updated_at: "2026-07-25T12:40:19.227Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "An opt-in accounting mode reports output token cost decomposed by section, using the same tokenizer as the declared budget contract so the figures are directly comparable; Accounting is off by default and adds no measurable cost when off, asserted by a benchmark; The reported figure is asserted equal to an independent count of the emitted bytes, so the accounting cannot drift from reality; Accounting output is itself bounded and excluded from the accounted total, with the exclusion documented; The transcript-replay regression gate consumes per-command accounting so a session regression identifies the responsible commands; Accounting works identically for CLI and MCP transports, since MCP callers pay the same budget"
+goal: project management = context management
+objective: Every token an agent spends is attributable to the command and section that produced it
+value: Optimizing token cost without per-invocation attribution is guesswork; this converts the whole token-efficiency program from sampling to measurement
+impact: Adds an opt-in reporting path to the output pipeline; must be provably zero-cost when disabled
+outcome: A context overrun becomes a diagnosable event with a named cause instead of an unexplained failure
+parent: pm-5oj5
+risk: low
+confidence: 70
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-5oj5,related,"2026-07-25T12:28:07.388Z",null,null
+  pm-5t33or,related,"2026-07-25T12:28:07.388Z",null,null
+  pm-8pnj,related,"2026-07-25T12:28:07.388Z",null,null
+  pm-kvxqp1,related,"2026-07-25T12:28:07.388Z",null,null
+  pm-atfm,related,"2026-07-25T12:35:10.300Z",null,null
+  pm-cxr0jb,related,"2026-07-25T12:35:10.300Z",null,null
+  pm-k6t4yb,related,"2026-07-25T12:35:10.300Z",null,null
+  pm-o87av6,related,"2026-07-25T12:35:10.300Z",null,null
+  pm-g3n00m,related,"2026-07-25T12:40:18.797Z",null,null
+body: ""

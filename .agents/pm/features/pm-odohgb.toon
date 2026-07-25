@@ -1,0 +1,34 @@
+id: pm-odohgb
+title: "Workspace federation: cross-workspace references, remote dependency resolution, and aggregated bounded context without a central server"
+description: "The federation story is filed as an organizational need with no implementation owner. It is the natural scale boundary: a single workspace scales by index and packing work already underway, but an organization with many repositories has many workspaces, and the questions that matter cross them — what blocks this item lives in another repository's tracker, what is the aggregate state of a programme spanning eight repositories, which agent in which workspace holds the claim on the shared dependency. Design this the way the rest of pm is designed: no central server, no live coupling, git-native. A workspace declares peers by repository coordinate; cross-workspace references are first-class identifiers that resolve through a locally cached, verifiable snapshot of the peer's public projection; aggregation is a read-side fold over those snapshots with explicit staleness reporting, never a distributed transaction. Writes stay strictly local — a federated reference can be observed and depended upon but never mutated remotely — which keeps the immutability and merge guarantees intact and makes the whole feature safe to adopt incrementally. Cross-workspace cycles, unreachable peers, and stale snapshots must be reported as facts in the output rather than treated as errors, because in a federation partial knowledge is the normal state."
+type: Feature
+status: open
+priority: 3
+tags[6]: "area:sdk","area:storage",federation,long-horizon,multi-agent,scale
+created_at: "2026-07-25T12:30:34.401Z"
+updated_at: "2026-07-25T12:35:32.403Z"
+author: "harness:claude-code"
+estimated_minutes: 1200
+acceptance_criteria: "A workspace declares peers by repository coordinate, and cross-workspace references are first-class identifiers distinguishable from local ones in every projection; Peer state is a locally cached, integrity-verified snapshot of the peer's public projection, and every read reports the snapshot's age; Aggregation across peers is a bounded read-side fold that honors the token budget and reports partial results with named missing peers rather than failing; Writes to a peer workspace are impossible through federation, asserted by a test that attempts every mutation path against a federated reference; A cross-workspace dependency cycle is detected and reported as a fact with the participating workspaces named, never as a crash or a silent drop; An unreachable peer degrades to last-known state with explicit staleness, and a workspace with no peers behaves exactly as it does today, proven by snapshot; Federated identifiers survive merge, history replay, and format migration with the same guarantees as local identifiers"
+goal: project management = context management
+objective: Context assembly answers questions that span repositories without any workspace giving up local authority
+value: The largest deployments are inherently multi-repository; without federation the product's ceiling is one repository regardless of how well a single workspace scales
+impact: Introduces the first identifiers that point outside a workspace; the design must keep write authority local or the immutability and merge guarantees weaken
+outcome: "An organization runs one tracker per repository and still gets programme-level context, dependency resolution, and aggregation"
+parent: pm-o2kc
+risk: high
+confidence: 50
+dependencies[12]{id,kind,created_at,author,source_kind}:
+  pm-3oqjnc,related,"2026-07-25T12:30:34.401Z",null,null
+  pm-4jk8kx,related,"2026-07-25T12:30:34.401Z",null,null
+  pm-9rxu,related,"2026-07-25T12:30:34.401Z",null,null
+  pm-is1a,implements,"2026-07-25T12:30:34.401Z",null,null
+  pm-mn4zas,related,"2026-07-25T12:30:34.401Z",null,null
+  pm-o2kc,related,"2026-07-25T12:30:34.401Z",null,null
+  pm-t4d7nz,related,"2026-07-25T12:30:34.401Z",null,null
+  pm-801d,related,"2026-07-25T12:35:32.102Z",null,null
+  pm-g608fc,related,"2026-07-25T12:35:32.102Z",null,null
+  pm-o87av6,related,"2026-07-25T12:35:32.102Z",null,null
+  pm-plwm,related,"2026-07-25T12:35:32.102Z",null,null
+  pm-szv11n,related,"2026-07-25T12:35:32.102Z",null,null
+body: ""

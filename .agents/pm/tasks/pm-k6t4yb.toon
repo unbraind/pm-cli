@@ -1,0 +1,37 @@
+id: pm-k6t4yb
+title: "Gate registry: every enforced CI and release gate has an owner item, a declared failure taxonomy, a bypass policy, and a negative-control fixture proving it fails on known-bad input"
+description: "The pipeline enforces a large and growing number of gates — static quality, coverage, contract snapshots, changelog drift, LOC caps, import boundary, SDK surface snapshot, token cost, latency, scanners, install smoke, nightly matrices — added incrementally by many changes over months. There is no single place that says which gates exist, who owns each, what a failure means, whether it can be bypassed and by whom, and, most importantly, whether each gate actually still catches what it was built to catch. A gate that silently stopped failing is worse than no gate: it produces false confidence on every green run. Build the registry as tracked data, one entry per enforced gate, each linked to its owning item, and require every gate to carry a negative-control fixture — a deliberately broken input the gate must reject. Run the negative controls in CI so a gate that has stopped detecting its own failure mode fails immediately. This is what converts the demand for a maximally critical pipeline from an intention into a mechanism, because it makes gate erosion visible."
+type: Task
+status: open
+priority: 1
+tags[5]: ci,governance,quality,release,testing
+created_at: "2026-07-25T12:31:33.732Z"
+updated_at: "2026-07-25T12:35:36.256Z"
+author: "harness:claude-code"
+estimated_minutes: 600
+acceptance_criteria: "A registry entry exists for every enforced CI and release gate, naming the owning item, the failure taxonomy, the bypass policy and who may invoke it, and the negative-control fixture; Every gate has a negative control — a deliberately broken input it must reject — and CI runs the negative controls so a gate that stopped detecting its failure mode fails; Adding a gate without a registry entry and a negative control fails the conformance gate; A bypass is recorded as an event with actor and reason and is visible in the registry, so silent bypasses are impossible; The registry is generated from enforced configuration rather than hand-maintained where the configuration is machine-readable, so it cannot drift from what actually runs; Gate coverage is reported against the failure taxonomy, so a class of defect with no owning gate is visible as a gap rather than an absence"
+goal: project management = context management
+objective: "Every enforced gate is inventoried, owned, and continuously proven to still detect its failure mode"
+value: "Undetected gate erosion is the highest-severity failure a quality pipeline can have, because it removes the signal that everything else depends on and does so invisibly"
+impact: Adds a negative-control fixture per gate and a registry that must be updated when a gate is added; a new gate without a negative control cannot merge
+outcome: "A green pipeline is evidence that each gate ran and still works, not merely that nothing complained"
+parent: pm-u9d0
+risk: medium
+confidence: 70
+dependencies[15]{id,kind,created_at,author,source_kind}:
+  pm-feecbs,related,"2026-07-25T12:31:33.732Z",null,null
+  pm-rtn5h6,related,"2026-07-25T12:31:33.732Z",null,null
+  pm-u9d0,related,"2026-07-25T12:31:33.732Z",null,null
+  pm-xp1xsw,related,"2026-07-25T12:31:33.732Z",null,null
+  pm-zclzll,related,"2026-07-25T12:31:33.732Z",null,null
+  pm-zlv8jl,related,"2026-07-25T12:31:33.732Z",null,null
+  pm-76dnfg,related,"2026-07-25T12:35:35.976Z",null,null
+  pm-92if,related,"2026-07-25T12:35:35.976Z",null,null
+  pm-9c7h9x,related,"2026-07-25T12:35:35.976Z",null,null
+  pm-a8lnoh,related,"2026-07-25T12:35:35.976Z",null,null
+  pm-gnzh,related,"2026-07-25T12:35:35.976Z",null,null
+  pm-vlnc,related,"2026-07-25T12:35:35.976Z",null,null
+  pm-wlqxg3,related,"2026-07-25T12:35:35.976Z",null,null
+  pm-xgcp18,related,"2026-07-25T12:35:35.976Z",null,null
+  pm-ygli86,related,"2026-07-25T12:35:35.976Z",null,null
+body: ""

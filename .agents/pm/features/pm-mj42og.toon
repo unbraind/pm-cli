@@ -1,0 +1,34 @@
+id: pm-mj42og
+title: "Declarative policy engine: item-level transition, approval, and authorship rules declared as data and enforced consistently at the SDK layer"
+description: "Modeling an organization's business logic on pm — the stated ambition of the universal-domain milestone — requires rules about who may do what to which item, and pm has no way to express them. Every workflow constraint today is either a validation warning, a convention in a document, or code inside a package. Declare them instead: a policy names a subject (item type, tag, lifecycle state, or graph position), a rule (which transitions are permitted, which require a second actor's approval, which fields are writable by whom, which closures require named evidence), and an effect (advise, warn, or refuse). Enforcement lives at the SDK layer so CLI, MCP, packages, and direct SDK consumers all get the same answer — a policy enforced only in the CLI is not a policy. One constraint must be stated honestly and enforced by design: pm identity is a detected, unverified claim, so this engine is a correctness and workflow mechanism, not a security boundary. It prevents mistakes and records intent; it cannot stop a determined actor, and the documentation must say so plainly rather than implying an authorization guarantee that only signed identity (pm-u14c) could provide. Policy evaluation must also be cheap and explainable: a refusal states which policy refused and why, and evaluation cost stays bounded at fleet scale."
+type: Feature
+status: open
+priority: 3
+tags[6]: "area:sdk",governance,platform,policy,universal-domain,workflow
+created_at: "2026-07-25T12:39:45.946Z"
+updated_at: "2026-07-25T12:40:04.071Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "A policy is declared data naming subject, rule, and effect, validated against a published schema, with no code required to express a common rule; Enforcement lives in the SDK so CLI, MCP, packages, and direct SDK consumers observe identical outcomes, proven by a test that exercises the same policy through every surface; The default effect is advisory; refusal is opt-in per policy and per workspace, so adopting the engine cannot break an existing workflow silently; A refusal names the policy that refused, the rule that matched, and the corrective action, within the diagnostic token budget; The documentation states that detected identity is unverified and that this engine is a workflow mechanism rather than an authorization boundary, with signed identity named as the prerequisite for any stronger claim; Policy evaluation cost is bounded and measured at fleet scale, and a workspace with no policies pays no measurable cost; Every policy decision that changes an outcome is recorded in history, so an audit can reconstruct which rule shaped which mutation"
+goal: project management = context management
+objective: An organization expresses its workflow rules as declared data that every pm surface enforces identically
+value: Roles and approvals are the substrate of organizational workflow; without them the universal-domain claim stops at modeling and cannot reach process
+impact: "Introduces a refusal path that did not previously exist, so defaults must be advisory and the escalation to refusal must be an explicit workspace decision"
+outcome: Business workflows with approvals and role boundaries run on pm without forking the lifecycle engine or reimplementing rules per surface
+parent: pm-33cw
+risk: high
+confidence: 55
+dependencies[12]{id,kind,created_at,author,source_kind}:
+  pm-33cw,related,"2026-07-25T12:39:45.946Z",null,null
+  pm-8jdc,related,"2026-07-25T12:39:45.946Z",null,null
+  pm-g608fc,related,"2026-07-25T12:39:45.946Z",null,null
+  pm-qwuber,related,"2026-07-25T12:39:45.946Z",null,null
+  pm-t4d7nz,related,"2026-07-25T12:39:45.946Z",null,null
+  pm-u14c,related,"2026-07-25T12:39:45.946Z",null,null
+  pm-wenq,related,"2026-07-25T12:39:45.946Z",null,null
+  pm-xc68,implements,"2026-07-25T12:39:45.946Z",null,null
+  pm-iiv1gl,related,"2026-07-25T12:40:03.665Z",null,null
+  pm-mn4zas,related,"2026-07-25T12:40:03.665Z",null,null
+  pm-odohgb,related,"2026-07-25T12:40:03.665Z",null,null
+  pm-szv11n,related,"2026-07-25T12:40:03.665Z",null,null
+body: ""

@@ -1,0 +1,37 @@
+id: pm-4jk8kx
+title: "Open workspace format specification: the on-disk item, history, and index formats become a versioned, independently implementable public spec with a conformance suite"
+description: "pm's durability promise is that a workspace is plain files in a git repository that outlive any particular tool. That promise is currently underwritten by one implementation: the format is whatever this codebase writes, described in prose and a format_version field. If pm stops being maintained, or an organization needs a reader in another language, or an auditor needs to verify a history stream without trusting the tool that produced it, there is nothing to implement against. Publish the format as a specification: the item document grammar, the history stream record grammar and its hash-chain construction, the tombstone and redaction semantics, the relationship edge encoding, the index artifacts and which of them are derivable versus authoritative, and the compatibility rules between format versions. Ship a conformance suite that a third-party implementation can run to prove it reads and writes conformant workspaces, and run this implementation against that same suite so the spec cannot drift from the code. The specification is what makes the tamper-evidence claim meaningful: a proof anyone can verify requires a format anyone can parse."
+type: Feature
+status: open
+priority: 2
+tags[7]: "area:sdk","area:storage",durability,governance,interop,specification,standards
+created_at: "2026-07-25T12:29:30.396Z"
+updated_at: "2026-07-25T12:35:29.789Z"
+author: "harness:claude-code"
+estimated_minutes: 960
+acceptance_criteria: "The specification defines the item document grammar, history record grammar, hash-chain construction, tombstone and redaction semantics, relationship edge encoding, and index artifacts, and states for each artifact whether it is authoritative or derivable; The specification states the compatibility rules between format versions, including what a conformant reader must do with a version it does not recognize; A conformance suite exists that a third-party implementation can run, covering read, write, hash-chain verification, and round-trip fidelity; This implementation is run against the same conformance suite in CI, so the spec and the code cannot drift; An independent reader — a small script that verifies a history chain without importing pm — is published as executable proof that the spec is sufficient; The specification is versioned and its revision policy is stated, so a change to it is a reviewable event"
+goal: project management = context management
+objective: "A competent engineer can write a correct pm workspace reader from the specification alone, without reading this codebase"
+value: An open format converts pm from a tool users depend on into a format users own — the strongest possible answer to the question of what happens if this project stops
+impact: Publishes and freezes structural details currently free to change; every subsequent format change becomes a spec revision with a compatibility statement
+outcome: "The durability promise is backed by an implementable, independently verifiable specification rather than by a single implementation"
+why_now: The v1.0 stability contract freezes the storage format policy; a policy over an unspecified format is a policy over an undefined thing
+parent: pm-o2kc
+risk: medium
+confidence: 60
+dependencies[14]{id,kind,created_at,author,source_kind}:
+  pm-3z0k,related,"2026-07-25T12:29:30.396Z",null,null
+  pm-ae1u,related,"2026-07-25T12:29:30.396Z",null,null
+  pm-eeai,related,"2026-07-25T12:29:30.396Z",null,null
+  pm-mn4zas,related,"2026-07-25T12:29:30.396Z",null,null
+  pm-pae3wo,related,"2026-07-25T12:29:30.396Z",null,null
+  pm-t4d7nz,related,"2026-07-25T12:29:30.396Z",null,null
+  pm-w7ccmv,related,"2026-07-25T12:29:30.396Z",null,null
+  pm-xp1xsw,related,"2026-07-25T12:29:30.396Z",null,null
+  pm-9c7h9x,related,"2026-07-25T12:35:29.524Z",null,null
+  pm-e5yupa,related,"2026-07-25T12:35:29.524Z",null,null
+  pm-g608fc,related,"2026-07-25T12:35:29.524Z",null,null
+  pm-iiv1gl,related,"2026-07-25T12:35:29.524Z",null,null
+  pm-odohgb,related,"2026-07-25T12:35:29.524Z",null,null
+  pm-wlqxg3,related,"2026-07-25T12:35:29.524Z",null,null
+body: ""
