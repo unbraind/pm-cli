@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",ci,governance,simplification
 created_at: "2026-07-25T06:17:12.603Z"
-updated_at: "2026-07-25T06:27:45.334Z"
+updated_at: "2026-07-25T07:13:37.724Z"
 author: unknown
 estimated_minutes: 420
 acceptance_criteria: "The contracts table declares the permitted top-level nouns, the shared verb vocabulary with one documented meaning per verb, and the scope-before-verb ordering rule as data, not prose; A CI check fails when a command, subcommand, or newly registered extension surface introduces a top-level noun outside the allowlist, a verb outside the vocabulary, or a scope-after-verb ordering; Hidden deprecated spellings must be declared as aliases of a conforming target and are exempt from the noun allowlist while still being counted; The gate reports the offending spelling and the nearest conforming target so the failure is self-correcting; The gate runs on the same job as the contracts drift check and cannot be satisfied by regenerating artifacts alone"
@@ -28,4 +28,6 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-mu8m,related,"2026-07-25T06:17:12.603Z",null,null
   pm-pbyu,blocked_by,"2026-07-25T06:17:12.603Z",null,null
   pm-j82fd3,verifies,"2026-07-25T06:27:45.129Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-25T07:13:37.719Z","harness:claude-code","Surface-growth measurement for the conformance gate this item defines (2026-07-25): pm --help now lists 78 top-level commands in this repo (76 in the isolated fixture the token-budget gate measures) across 109 lines. pm-n7rr's charter was written against roughly 60 and targets roughly 15 nouns, so the surface has grown by about a third while the consolidation epic has been open. The 78 include all eight list-* status variants, four history-* commands, three completion-* data providers, three lifecycle aliases (start-task, pause-task, close-task), three calendar shortcuts (meet, event, remind), and package-registered commands (beads, changelog, dedupe-audit, dedupe-merge, comments-audit, normalize, item, pm). This is the concrete baseline the grammar gate has to freeze: without it the count has no ceiling, and every new command adds to the 49,872-token full help surface agents pay to discover the tool."
 body: ""

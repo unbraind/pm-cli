@@ -1,0 +1,29 @@
+id: pm-yse5dt
+title: "CLI transport overhead budget: gate the per-invocation bootstrap floor and the CLI-vs-SDK delta, not just absolute scale numbers"
+description: "Every pm invocation pays a fixed ~280ms bootstrap cost before it touches workspace data, and no gate owns that number. Measured on this checkout (Node 26.5.0, warm compile cache, dist/cli-bundle in use): bare 'node -e \"\"' 41ms; 'pm --version' 71ms; on a freshly initialised single-item sandbox workspace 'pm --help' 325ms, 'pm get <id>' 319-370ms, 'pm context' 325ms, 'pm next' 309ms — i.e. the entire cost is bootstrap, not data. Importing the published entrypoints alone reproduces it: 'import(dist/cli-bundle/main.js)' 286ms and 'import(dist/cli-bundle/sdk.js)' 289ms against a 41ms node baseline. The same tax dominates the fixed scale budgets: scripts/bench/scale-budgets.json records cli.create 285ms vs sdk.create 9ms and cli.claim 395ms vs sdk.claim 7ms at the 10k tier, and pm-hcrmye's own closing evidence records 'cli.create min was 275ms ... SDK create remained 5-7ms'. Duplicate check: searched cold-start/startup/latency/bootstrap/benchmark all-status. ADR pm-irp1 set the strategy and a sub-200ms goal but is a closed Decision with no gate; pm-gt82 (esbuild bundling) and pm-7rlp are closed delivery items; pm-mi2x (harness) is closed; pm-hcrmye restored the existing absolute budgets and explicitly left the transport gap unaddressed; pm-801d owns the O(workspace) read index (a different, data-scaling axis); pm-5t33or owns output token budgets, not latency. Nothing owns the fixed floor or the CLI/SDK ratio."
+type: Task
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",performance,scale,startup
+created_at: "2026-07-25T07:09:44.499Z"
+updated_at: "2026-07-25T07:12:22.491Z"
+author: unknown
+estimated_minutes: 900
+acceptance_criteria: "scripts/bench publishes two new gated metrics alongside the existing absolute budgets: (a) a cold-start floor measured on a single-item workspace for at least get/list/context/next/create/claim, and (b) the per-operation CLI-minus-SDK delta at every tier; both have committed budgets that CI fails on regression; the floor budget is set from a measured baseline and documented as a ratchet that may only decrease; a written breakdown attributes the current floor across module graph load, command registration, settings/schema read, and extension discovery, with at least one landed reduction proven by before/after numbers on the new metrics; ADR pm-irp1 is superseded or amended to state the enforced target instead of an aspirational one; no existing budget is weakened and no feature is removed"
+goal: project management = context management
+objective: "Make a pm invocation feel instant: bounded, gated per-command bootstrap cost independent of workspace size"
+value: Agents invoke pm hundreds of times per session; a 280ms unowned floor is minutes of wall-clock per session and the single largest fixed cost in the agent loop
+why_now: The absolute scale budgets were just restored (pm-hcrmye) by treating 275ms CLI create as acceptable while the same operation costs 5-7ms through the SDK; without a gate on the delta the transport tax is permanent and will keep growing with the command surface
+parent: pm-9rxu
+risk: medium
+confidence: high
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-5t33or,related,"2026-07-25T07:11:54.548Z",null,null
+  pm-801d,related,"2026-07-25T07:11:54.548Z",null,null
+  pm-hcrmye,related,"2026-07-25T07:11:54.548Z",null,null
+  pm-irp1,related,"2026-07-25T07:11:54.548Z",null,null
+  pm-o87av6,verifies,"2026-07-25T07:11:54.548Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-25T07:12:21.706Z","harness:claude-code","Duplicate-check evidence (all-status pm search over cold start, startup, latency, bootstrap, benchmark, transport): matched closed pm-gt82, pm-irp1, pm-7rlp, pm-mi2x, pm-hcrmye and open pm-9rxu, pm-801d, pm-5t33or. pm-irp1 is a closed Decision stating the sub-200ms strategy with no enforcement; pm-hcrmye restored the existing absolute budgets and its closing comment records the unaddressed gap verbatim (cli.create min 275ms vs SDK create 5-7ms); pm-801d is the data-scaling read index, a different axis. No open item owns the fixed floor or the CLI/SDK delta. Filed as a focused child of pm-9rxu."
+  "2026-07-25T07:12:22.483Z","harness:claude-code","Measurement method for reproduction: Node 26.5.0, warm compile cache, dist/cli-bundle resolved via bin. Baselines: node -e '' 41ms; pm --version 71ms. Freshly initialised single-item sandbox workspace (PM_PATH/PM_GLOBAL_PATH isolated): pm --help 325ms, pm get 319-370ms, pm context 325ms, pm next 309ms, pm validate 352ms, pm stats 318ms — the floor is identical whether or not the command reads data. Entry import cost in isolation: dist/cli-bundle/main.js 286ms, dist/cli-bundle/sdk.js 289ms. Real 1,984-item workspace for contrast: get 995-1168ms, list-open 908-1005ms, context 1129ms, next 1265ms, stats 1365ms, validate 5981ms. CPU profile of pm get attributes roughly 250ms of the run to Node ESM machinery (loader, resolve, package_json_reader, compileSourceTextModule) plus 67ms GC, before any workspace read."
+body: ""

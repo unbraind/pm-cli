@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[3]: codefactor,duplication,quality-gate
 created_at: "2026-07-11T02:58:27.882Z"
-updated_at: "2026-07-11T02:58:27.882Z"
+updated_at: "2026-07-25T07:14:41.244Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "jscpd config detects the GH-508-class clone shape (create.ts/update.ts normalizer tables) on a pre-fix checkout, via lowered minTokens or a second low-token/high-line profile; lint:duplicates still passes on main after pm-zuw8 lands; false-positive review documented if thresholds are lowered"
@@ -15,6 +15,8 @@ risk: low
 confidence: medium
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-zuw8,related,"2026-07-11T02:58:27.882Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-25T07:14:41.243Z","harness:claude-code","Sensitivity measurement 2026-07-25 quantifying the blind spot. At the committed .jscpd.json thresholds (minLines 22, minTokens 115, strict mode, 748 files / 418,637 lines) the repo reports zero clones — a clean pass. Re-running the identical file set at minLines 12 / minTokens 60 reports 402 clone groups, 6,403 duplicated lines (1.53%) and 34,408 duplicated tokens, so the entire duplication signal lives between the two settings. Composition of the lower-threshold set: the large majority are test files (static-quality-gate.spec.ts, sentry-telemetry-gate.spec.ts, sdk/graph/*.spec.ts, sdk/merge-safety.spec.ts, workspace-transaction.spec.ts, smoke-*.spec.ts), which is the pm-ld0z spec-decomposition territory rather than product duplication. Product-side groups worth triage: src/cli/commands/copy.ts around lines 118-136 appears in ten overlapping groups against multiple partners, src/cli/commands/create.ts at 338 and 1025, src/cli/error-guidance.ts at 452 and 508, src/cli/commands/reindex.ts at 894 and 1133, src/cli/main.ts at 3285, src/cli/register-mutation.ts at 54-90, plus per-package clones in packages/pm-beads, pm-calendar, pm-governance-audit, pm-guide-shell, pm-linked-test-adapters and pm-templates runtimes. The copy.ts cluster is the strongest single candidate: one region matching ten partners is the signature of a table or option-mapping shape that wants a shared helper."
 files[1]{path,scope,note}:
   .jscpd.json,project,null
 body: ""

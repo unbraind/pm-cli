@@ -1,0 +1,29 @@
+id: pm-38bskj
+title: "Public SDK surface shape: 881 exports behind one flat entrypoint with no capability tiering and a 250ms eager import cost"
+description: "Importing the published SDK entry yields 881 runtime exports from a single module (693 functions plus 188 values/classes), and package.json declares only four subpaths: '.', './sdk', './sdk/runtime', './sdk/testing'. Everything else — query, governance, graph, merge, test, extension, cli-contracts — is flattened into that one namespace, so a package author who needs one primitive loads the whole graph: 'import(dist/cli-bundle/sdk.js)' costs 289ms against a 41ms bare-node baseline, the same as importing the entire CLI (286ms). The namespace is also undifferentiated: stable authoring primitives sit beside per-command flag-contract constants (ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS, CALENDAR_FLAG_CONTRACTS, ...) with nothing marking which symbols are the supported authoring surface. src/sdk/index.ts is 35 'export *' lines, which is why the surface grows silently. Duplicate check: searched SDK surface/entrypoint/subpath/tiering/import-cost all-status. pm-e6tm5c owns the snapshot and breaking-change gate — it will freeze whatever shape exists, so shaping must precede or accompany it; pm-9x6e (closed) zeroed the private-core import baseline in the other direction; pm-ds3b (closed) documented the promoted primitives; pm-agou is the GA stability ADR; pm-feecbs governs external package conformance, not host export shape. None of them own how the surface is partitioned or what it costs to import."
+type: Task
+status: open
+priority: 1
+tags[6]: api,architecture,"area:sdk",ecosystem,packages,performance
+created_at: "2026-07-25T07:10:29.303Z"
+updated_at: "2026-07-25T07:12:46.149Z"
+author: unknown
+estimated_minutes: 1200
+acceptance_criteria: "The public SDK is partitioned into documented subpath entrypoints that mirror the internal module families (at minimum core item/query, governance, graph, merge, extension authoring, testing, and cli-contracts), each independently importable; a package author can import one family without loading the others, proven by a measured import-cost table in the repo showing per-entry cost against the bare-node baseline; the flat './sdk' entry keeps working unchanged as an aggregate so no existing consumer breaks; every export is classified as supported authoring surface, contract data, or advanced/internal-but-exported, and that classification is the input pm-e6tm5c snapshots; docs/SDK.md and the extension author docs route by entrypoint; no export is removed and no external package requires changes to keep working"
+goal: project management = context management
+objective: "Make building a pm package cheap to start and cheap to run: a small, tiered, independently loadable public API"
+value: The SDK is the product surface for the whole ecosystem; an 881-symbol flat namespace that costs a quarter second to import is both a discovery barrier for authors and a fixed latency cost in every extension process
+why_now: "pm-e6tm5c is about to turn the current shape into a frozen compatibility contract, and pm-9rgaal declares SDK-complete core as an outcome milestone — shaping after the freeze is a breaking change"
+parent: pm-usfg
+risk: medium
+confidence: medium
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-9rgaal,verifies,"2026-07-25T07:11:56.612Z",null,null
+  pm-agou,related,"2026-07-25T07:11:56.612Z",null,null
+  pm-e6tm5c,related,"2026-07-25T07:11:56.612Z",null,null
+  pm-feecbs,related,"2026-07-25T07:11:56.612Z",null,null
+  pm-yse5dt,related,"2026-07-25T07:11:56.612Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-25T07:12:45.389Z","harness:claude-code","Duplicate-check evidence (all-status pm search over SDK surface, entrypoint, subpath, exports, tiering, import cost): matched closed pm-xzhz, pm-rjqr, pm-ju83, pm-ds3b, pm-9x6e, pm-8778, pm-79fr, pm-16ue and open pm-usfg, pm-e6tm5c, pm-92if. The closed set is promotion work (moving capability INTO the SDK) and boundary work (stopping private-core imports OUT of CLI/MCP); pm-e6tm5c is the snapshot/change gate over whatever shape exists. Nothing owns the partitioning of the surface or its import cost. Filed as a child of pm-usfg."
+  "2026-07-25T07:12:46.141Z","harness:claude-code","Surface measurement: Object.keys on the published sdk entry yields 881 exports (693 functions, 188 values). src/sdk/index.ts is 35 'export *' lines, so any new module file joins the public surface with no review step. package.json exports declares four subpaths only ('.', './sdk', './sdk/runtime', './sdk/testing'); dist/sdk/index.d.ts carries 102 top-level export statements. Import cost measured against a 41ms bare-node baseline: sdk.js 289ms, main.js 286ms — importing one SDK primitive costs the same as launching the whole CLI. Contract constants (ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS, CALENDAR_FLAG_CONTRACTS, CONTEXT_FLAG_CONTRACTS and siblings) sit in the same namespace as authoring primitives with no marker distinguishing them."
+body: ""

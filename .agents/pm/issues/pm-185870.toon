@@ -1,0 +1,34 @@
+id: pm-185870
+title: "Subcommand-token error contract: one unknown-subcommand code with nearest-match recovery across every subcommand family"
+description: "The same agent mistake — a wrong positional subcommand token — is reported under four different structured error codes with three different recovery payloads, and never with a nearest-match suggestion, even though the allowed set is known at the failure site. Reproduced on 2026.7.25 with --json: 'pm schema add-typ Foo' returns code unknown_subcommand (allowed set in detail, title truncated mid-list with an ellipsis); 'pm graph analyz' returns invalid_argument_value; 'pm plan sttus' returns command_failed, a generic execution-failure code for a pure input error; and the space-separated form the help text invites, 'pm schema add type Foo', returns invalid_command_usage carrying commander's raw text 'too many arguments for schema. Expected 2 arguments but got 3: add, type, Foo' with no allowed set and no hint that the real token is add-type. The schema help renders its subcommands as 'add/remove type/status/field', which reads as two positional words but is actually the hyphenated tokens add-type/add-status/add-field/remove-type/remove-field. None of the four emits a suggested_retry despite edit distance 1 from a known-good token. Duplicate check: searched unknown subcommand/suggested_retry/did-you-mean/positional all-status. pm-g543 (GH-490) owns unknown top-level COMMAND suggester ranking; pm-gdi7 owns unknown OPTION suggestions; pm-ulqu owns value-domain rendering inside suggested_retry for enum flags; pm-bu1m (closed) covered unknown-command help probes; pm-r2kd (closed) covered pm templates falling back to list. No item covers positional subcommand tokens, their code inconsistency, or the space-versus-hyphen spelling trap."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:cli",contracts,errors,recovery
+created_at: "2026-07-25T07:10:54.548Z"
+updated_at: "2026-07-25T07:12:48.042Z"
+author: unknown
+estimated_minutes: 240
+acceptance_criteria: "Every subcommand family (schema, plan, graph, history, package, merge, config, profile and any package-registered family) fails an unknown positional token through one shared helper that emits the single code unknown_subcommand with a stable envelope; the envelope always carries the complete allowed set untruncated and a suggested_retry with the nearest-match token when edit distance is within threshold; the hyphen-versus-space spelling trap resolves — 'pm schema add type X' either succeeds as add-type or fails with unknown_subcommand naming add-type, never with a raw commander arity message; help text for these families renders the literal tokens rather than slash-compressed shorthand; a contract test asserts code and envelope parity across all families so a new family cannot regress it; existing exit codes stay 2 and no command spelling is removed"
+goal: project management = context management
+objective: "Never block an agent on a wrong subcommand token: one predictable failure contract with machine-usable recovery"
+value: Agents pattern-match on structured error codes; four codes for one mistake class forces a help or contracts round-trip per retry and makes recovery non-generalisable across command families
+why_now: "The surface now carries 78 top-level commands with several nested families, and pm-wt43zj is defining the grammar conformance gate — the failure contract for positional tokens should be part of that grammar rather than a per-family accident"
+parent: pm-mpbb
+risk: low
+confidence: high
+severity: medium
+repro_steps: pm schema add-typ Foo --json; pm graph analyz --json; pm plan sttus --json; pm schema add type Foo --json — compare .code and .suggested_retry across the four
+expected_result: "A wrong subcommand token always returns code unknown_subcommand with the full allowed set and a nearest-match suggested_retry, in every command family"
+actual_result: "Four codes for the same mistake (unknown_subcommand, invalid_argument_value, command_failed, invalid_command_usage), one truncated allowed set, one raw commander arity message with no allowed set, and no suggested_retry anywhere"
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-1kxs,implements,"2026-07-25T07:11:57.844Z",null,null
+  pm-g543,related,"2026-07-25T07:11:57.844Z",null,null
+  pm-gdi7,related,"2026-07-25T07:11:57.844Z",null,null
+  pm-j82fd3,verifies,"2026-07-25T07:11:57.844Z",null,null
+  pm-ulqu,related,"2026-07-25T07:11:57.844Z",null,null
+  pm-wt43zj,related,"2026-07-25T07:11:57.844Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-25T07:12:47.062Z","harness:claude-code","Duplicate-check evidence (all-status pm search over unknown subcommand, suggested_retry, did-you-mean, positional, recovery): matched closed pm-8nyc, pm-r2kd, pm-bu1m, pm-zwl7 and open pm-g543, pm-gdi7, pm-ulqu, pm-mpbb. pm-g543 is top-level command ranking, pm-gdi7 is unknown-option suggestion, pm-ulqu is enum value-domain rendering inside an existing suggested_retry, pm-r2kd was a single command silently falling back to list. None covers positional subcommand tokens across families. Filed as a child of pm-mpbb."
+  "2026-07-25T07:12:48.039Z","harness:claude-code","Reproduction on 2026.7.25, exact --json .code values: pm schema add-typ Foo -> unknown_subcommand (detail carries the full 15-token allowed set; title truncates it mid-list with an ellipsis). pm graph analyz -> invalid_argument_value (allowed set present in detail). pm plan sttus -> command_failed (allowed set present in detail; the code says execution failure for what is an input error). pm schema add type Foo -> invalid_command_usage with detail 'error: too many arguments for schema. Expected 2 arguments but got 3: add, type, Foo' and no allowed set at all. None of the four returns suggested_retry, although each mistake is edit distance 1 (or a pure hyphenation difference) from a valid token and the allowed set is available at the failure site. The space-form trap is invited by pm schema --help, which renders the subcommand list as 'add/remove type/status/field' rather than the literal tokens add-type, add-status, add-field, remove-type, remove-field."
+body: ""

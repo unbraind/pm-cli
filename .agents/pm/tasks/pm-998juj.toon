@@ -1,0 +1,28 @@
+id: pm-998juj
+title: "Published artifact weight: the npm tarball ships 20MB of inline-source sourcemaps plus duplicate tsc and bundle outputs"
+description: "The published package is 40.66MB unpacked across 1,668 files (npm view @unbrained/pm-cli dist.unpackedSize/dist.fileCount, 2026.7.25). Local dist is 31MB, of which 491 .js.map files account for 20MB — tsconfig.json sets both sourceMap:true and inlineSources:true, so every map embeds the full TypeScript source (dist/sdk alone: 2.6MB JS, 1.2MB d.ts, 5.0MB maps). Those maps are already uploaded to Sentry at release time by the sentry:upload script, which reads dist/ directly, so the tarball copy is redundant for symbolication. On top of that the tarball ships both build outputs: the tsc emit (dist/cli 5.6MB, dist/core 5.4MB, dist/sdk 8.7MB) and the esbuild bundle (dist/cli-bundle 12MB, 182 chunks) that bin/exports actually resolve to. package.json also declares an unused optional peerDependency on 'typebox' — no source, package, script, or doc file references it. Duplicate check: searched install/size/tarball/sourcemap/footprint all-status. pm-oxq2 (closed) removed the nested 25MB host copy from project-scope extension installs and its own body raised 'publish a slim SDK-only package' without acting on it; pm-feecbs owns install-latency policy for the 18 external packages, not the host artifact; pm-hcrmye deliberately kept production source maps and did not examine tarball composition."
+type: Task
+status: open
+priority: 2
+tags[5]: "area:release",distribution,ecosystem,packaging,performance
+created_at: "2026-07-25T07:10:06.541Z"
+updated_at: "2026-07-25T07:12:24.197Z"
+author: unknown
+estimated_minutes: 300
+acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
+goal: project management = context management
+objective: Cut install cost and disk footprint for every pm consumer without losing debuggability
+value: "Install size is the first thing every agent, CI job, and extension workspace pays; halving it speeds cold environments, CI, and the changelog:pm reinstall path that runs on every check"
+why_now: The artifact grew from the 25MB recorded in pm-oxq2 to 40.66MB with no size gate; source maps are now the single largest component and are already delivered to Sentry by a separate path
+parent: pm-u9d0
+risk: low
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-feecbs,related,"2026-07-25T07:11:55.544Z",null,null
+  pm-oxq2,discovered_from,"2026-07-25T07:11:55.544Z",null,null
+  pm-quzx,related,"2026-07-25T07:11:55.544Z",null,null
+  pm-yse5dt,related,"2026-07-25T07:11:55.544Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-25T07:12:23.380Z","harness:claude-code","Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
+  "2026-07-25T07:12:24.186Z","harness:claude-code","Composition evidence: npm view @unbrained/pm-cli dist.unpackedSize=40660446 dist.fileCount=1668. Local dist 31MB total: cli-bundle 12MB (182 chunks), sdk 8.7MB, cli 5.6MB, core 5.4MB, mcp 152K. 491 .js.map files total 20MB; dist/sdk splits as 2.6MB JS, 1.2MB d.ts, 5.0MB maps — the ratio is driven by tsconfig inlineSources:true. scripts sentry:upload runs 'sentry-cli sourcemaps upload --validate dist/' at release, so symbolication already has the maps out-of-band. grep across src, packages, scripts and docs finds zero references to the declared optional peer 'typebox'."
+body: ""
