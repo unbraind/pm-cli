@@ -2,12 +2,12 @@ id: pm-yse5dt
 title: "CLI transport overhead budget: gate the per-invocation bootstrap floor and the CLI-vs-SDK delta, not just absolute scale numbers"
 description: "Every pm invocation pays a fixed ~280ms bootstrap cost before it touches workspace data, and no gate owns that number. Measured on this checkout (Node 26.5.0, warm compile cache, dist/cli-bundle in use): bare 'node -e \"\"' 41ms; 'pm --version' 71ms; on a freshly initialised single-item sandbox workspace 'pm --help' 325ms, 'pm get <id>' 319-370ms, 'pm context' 325ms, 'pm next' 309ms — i.e. the entire cost is bootstrap, not data. Importing the published entrypoints alone reproduces it: 'import(dist/cli-bundle/main.js)' 286ms and 'import(dist/cli-bundle/sdk.js)' 289ms against a 41ms node baseline. The same tax dominates the fixed scale budgets: scripts/bench/scale-budgets.json records cli.create 285ms vs sdk.create 9ms and cli.claim 395ms vs sdk.claim 7ms at the 10k tier, and pm-hcrmye's own closing evidence records 'cli.create min was 275ms ... SDK create remained 5-7ms'. Duplicate check: searched cold-start/startup/latency/bootstrap/benchmark all-status. ADR pm-irp1 set the strategy and a sub-200ms goal but is a closed Decision with no gate; pm-gt82 (esbuild bundling) and pm-7rlp are closed delivery items; pm-mi2x (harness) is closed; pm-hcrmye restored the existing absolute budgets and explicitly left the transport gap unaddressed; pm-801d owns the O(workspace) read index (a different, data-scaling axis); pm-5t33or owns output token budgets, not latency. Nothing owns the fixed floor or the CLI/SDK ratio."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",performance,scale,startup
 created_at: "2026-07-25T07:09:44.499Z"
-updated_at: "2026-07-25T11:31:37.742Z"
-assignee: "harness:codex"
+updated_at: "2026-07-25T11:58:34.769Z"
+closed_at: "2026-07-25T11:58:33.804Z"
 author: unknown
 estimated_minutes: 900
 acceptance_criteria: "scripts/bench publishes two new gated metrics alongside the existing absolute budgets: (a) a cold-start floor measured on a single-item workspace for at least get/list/context/next/create/claim, and (b) the per-operation CLI-minus-SDK delta at every tier; both have committed budgets that CI fails on regression; the floor budget is set from a measured baseline and documented as a ratchet that may only decrease; a written breakdown attributes the current floor across module graph load, command registration, settings/schema read, and extension discovery, with at least one landed reduction proven by before/after numbers on the new metrics; ADR pm-irp1 is superseded or amended to state the enforced target instead of an aspirational one; no existing budget is weakened and no feature is removed"
@@ -18,17 +18,21 @@ why_now: The absolute scale budgets were just restored (pm-hcrmye) by treating 2
 parent: pm-9rxu
 risk: medium
 confidence: high
+resolution: "Added mandatory one-item CLI cold-transport budgets and per-tier CLI-minus-SDK deltas, while separating focused SDK bundles from the executable graph."
+expected_result: CI fails fixed bootstrap or CLI-vs-SDK transport regressions without weakening existing absolute scale budgets.
+actual_result: Committed transport ratchets cover six operations and scale deltas; the authoritative clean GitHub benchmark passed unchanged budgets after a documented saturated-host local miss.
 dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-5t33or,related,"2026-07-25T07:11:54.548Z",null,null
   pm-801d,related,"2026-07-25T07:11:54.548Z",null,null
   pm-hcrmye,related,"2026-07-25T07:11:54.548Z",null,null
   pm-irp1,related,"2026-07-25T07:11:54.548Z",null,null
   pm-o87av6,verifies,"2026-07-25T07:11:54.548Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-25T07:12:21.706Z","harness:claude-code","Duplicate-check evidence (all-status pm search over cold start, startup, latency, bootstrap, benchmark, transport): matched closed pm-gt82, pm-irp1, pm-7rlp, pm-mi2x, pm-hcrmye and open pm-9rxu, pm-801d, pm-5t33or. pm-irp1 is a closed Decision stating the sub-200ms strategy with no enforcement; pm-hcrmye restored the existing absolute budgets and its closing comment records the unaddressed gap verbatim (cli.create min 275ms vs SDK create 5-7ms); pm-801d is the data-scaling read index, a different axis. No open item owns the fixed floor or the CLI/SDK delta. Filed as a focused child of pm-9rxu."
   "2026-07-25T07:12:22.483Z","harness:claude-code","Measurement method for reproduction: Node 26.5.0, warm compile cache, dist/cli-bundle resolved via bin. Baselines: node -e '' 41ms; pm --version 71ms. Freshly initialised single-item sandbox workspace (PM_PATH/PM_GLOBAL_PATH isolated): pm --help 325ms, pm get 319-370ms, pm context 325ms, pm next 309ms, pm validate 352ms, pm stats 318ms — the floor is identical whether or not the command reads data. Entry import cost in isolation: dist/cli-bundle/main.js 286ms, dist/cli-bundle/sdk.js 289ms. Real 1,984-item workspace for contrast: get 995-1168ms, list-open 908-1005ms, context 1129ms, next 1265ms, stats 1365ms, validate 5981ms. CPU profile of pm get attributes roughly 250ms of the run to Node ESM machinery (loader, resolve, package_json_reader, compileSourceTextModule) plus 67ms GC, before any workspace read."
   "2026-07-25T09:14:33.815Z","harness:codex","Evidence update: the first 10k check exposed that adding focused SDK entrypoints to the executable esbuild graph fragmented eager CLI chunks and breached the existing create/claim floor. The bundle now builds the CLI plus compatibility SDK graph separately from focused SDK entrypoints. The unchanged 10k absolute, RSS, product, and CLI-minus-SDK gates pass on the repository's authoritative Node 24.12 runtime; Node 26.5 remains above the historical create/claim RSS envelope and is recorded as runtime-specific evidence rather than weakening budgets. CLI benchmark mutations no longer inject PM_AUTHOR and exercise automatic author resolution."
   "2026-07-25T11:31:37.739Z","harness:codex","Evidence: committed cold CLI transport floor and CLI-minus-SDK scale deltas are mandatory static gates; floor, transport unit tests, and bundle split checks passed. The exact scale gate was retained unchanged and recorded a local latency-only miss under workstation load ~10 on 8 CPUs; unchanged base also failed and was slower. Awaiting clean GitHub-runner evidence before closure."
+  "2026-07-25T11:57:43.379Z","harness:codex","Exact-head delivery evidence: PR #707 head 7c1921db passed every required GitHub check, including static quality, Windows Node 24, Ubuntu Node 22/24 and macOS smokes, typecheck, compatibility, all four coverage shards plus the 100% coverage gate, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, docs/skills, package smokes, and benchmarks. Manual packed Node/Bun consumer acceptance and telemetry/Sentry gates also passed. Automated review returned no inline findings; CodeRabbit/Sourcery/Gemini/Greptile limitations are documented on the PR and Greptile quota is linked to canonical pm-e02lgu."
 files[9]{path,scope,note}:
   package.json,project,mandatory transport scripts
   scripts/bench/cli-transport-budgets.json,project,one item cold transport gate
@@ -52,4 +56,5 @@ docs[4]{path,scope,note}:
   docs/performance/cli-transport-overhead.md,project,measured cold report
   docs/RELEASING.md,project,release integration
   docs/TESTING.md,project,transport regression gate
+close_reason: "Delivered in PR #707 exact head 7c1921db with linked local, packed-consumer, full-coverage, cross-platform, security, performance, and GitHub CI evidence."
 body: ""

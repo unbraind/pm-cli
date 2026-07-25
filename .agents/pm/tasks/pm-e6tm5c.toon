@@ -2,12 +2,12 @@ id: pm-e6tm5c
 title: "Public SDK surface snapshot and breaking-change gate: the exported API is a reviewed artifact, and an unintended removal or signature change cannot merge"
 description: "Every CLI and MCP capability is now reachable from the public SDK, and packages are authored against it. That makes the exported surface a compatibility obligation, but nothing records what the surface is or notices when it changes: an export can be renamed, a parameter can become required, or a return type can narrow, and the only signal is a downstream package breaking after publish. This task snapshots the full public type surface into a reviewed, committed artifact and adds a gate that fails when the snapshot changes without an accompanying update, classifying each change as additive, behaviourally compatible, or breaking. The classification is what the GA stability ADR needs to be enforceable rather than aspirational, and it gives date-based releases a way to state compatibility that version numbers cannot."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[6]: api,"area:sdk",ci,contracts,governance,stability
 created_at: "2026-07-25T06:18:29.335Z"
-updated_at: "2026-07-25T11:31:38.793Z"
-assignee: "harness:codex"
+updated_at: "2026-07-25T11:58:39.431Z"
+closed_at: "2026-07-25T11:58:38.391Z"
 author: unknown
 estimated_minutes: 480
 acceptance_criteria: "A committed artifact records the complete public SDK type surface: exported symbols, signatures, type parameters, and declared error codes; CI regenerates the snapshot and fails when it differs from the committed copy, printing the diff; Each detected change is classified as additive, compatible, or breaking, and a breaking change requires an explicit recorded acknowledgment in the changeset rather than silently updating the snapshot; The gate covers the SDK subpath exports and the declared error-code surface, not just top-level names; Documentation states the compatibility promise the snapshot enforces and how date-based releases communicate breakage"
@@ -20,6 +20,9 @@ why_now: "All promotion slices and the import-boundary capstone have landed, so 
 parent: pm-usfg
 risk: medium
 confidence: high
+resolution: "Added a semantic public SDK surface snapshot, additive/compatible/breaking classifier, and mandatory CI/release enforcement."
+expected_result: "Every public SDK subpath, signature, and declared error surface changes only through a reviewed classified snapshot update."
+actual_result: "The complete baseline is committed, unexplained changes fail the gate, breaking changes require acknowledgement, and exact-head static/release checks passed."
 dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-9rgaal,related,"2026-07-25T06:18:29.335Z",null,null
   pm-agou,related,"2026-07-25T06:18:29.335Z",null,null
@@ -28,8 +31,9 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-r9pudt,related,"2026-07-25T06:18:29.335Z",null,null
   pm-xp1xsw,related,"2026-07-25T06:18:29.335Z",null,null
   pm-xp1xsw,verifies,"2026-07-25T06:27:47.390Z",null,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-25T11:31:38.792Z","harness:codex","Evidence: complete semantic SDK snapshot and additive/compatible/breaking classifier are wired into CI and release gates. Linked snapshot/release tests passed 28/28, lint/static quality passed, and the surface check reports zero unexplained changes."
+  "2026-07-25T11:57:44.557Z","harness:codex","Exact-head delivery evidence: PR #707 head 7c1921db passed every required GitHub check, including static quality, Windows Node 24, Ubuntu Node 22/24 and macOS smokes, typecheck, compatibility, all four coverage shards plus the 100% coverage gate, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, docs/skills, package smokes, and benchmarks. Manual packed Node/Bun consumer acceptance and telemetry/Sentry gates also passed. Automated review returned no inline findings; CodeRabbit/Sourcery/Gemini/Greptile limitations are documented on the PR and Greptile quota is linked to canonical pm-e02lgu."
 files[5]{path,scope,note}:
   .github/workflows/ci.yml,project,mandatory CI surface check
   package.json,project,surface update and check scripts
@@ -46,4 +50,5 @@ docs[3]{path,scope,note}:
   docs/RELEASING.md,project,date release breaking procedure
   docs/SDK.md,project,compatibility and breaking acknowledgement policy
   docs/TESTING.md,project,semantic gate guidance
+close_reason: "Delivered in PR #707 exact head 7c1921db with linked local, packed-consumer, full-coverage, cross-platform, security, performance, and GitHub CI evidence."
 body: ""

@@ -2,12 +2,12 @@ id: pm-42p9nk
 title: "Author-resolution bypass class: create/copy and the context, next, and usage-feedback paths re-implement author precedence without harness detection, stamping author 'unknown' on new items"
 description: "The canonical precedence chain lives in core/shared/author.ts (resolveAuthorIdentity: explicit argument, then PM_AUTHOR, then configured default, then detected harness, then unknown). Six presentation-layer sites re-implement it and all of them omit the harness-detection step, so the identity capability that shipped and closed on 2026-07-25 is invisible to them. Two distinct failures result. (1) Attribution: src/cli/commands/create.ts:1352 and src/cli/commands/copy.ts:74 each define a private selectAuthor that resolves explicit ?? PM_AUTHOR ?? settings.author_default and falls back to the literal 'unknown'. With author_default empty - the state of this repository - every item created by a harness-identified agent is stamped author: unknown and writes an unknown-author history event, which is precisely the governance warning that pm-zqpnte just finished dispositioning. Verified on pm-42p9nk, pm-wt43zj, and pm-tuadp2: item author 'unknown' and the create history entry author 'unknown' with author_source 'unknown', while the very next pm update on the same items recorded 'harness:claude-code' with author_source 'detected'. (2) Relevance: src/cli/main.ts:734 (afterCommand context-usage hook), src/cli/commands/context.ts:2597, and src/cli/commands/next.ts:308 and :662 read PM_AUTHOR ?? author_default directly; the empty result makes recordContextUsageTouches throw TypeError('Context usage touch requires author and intent'), the throw is swallowed, and every mutation prints 'afterCommand hook_warnings=context_usage_feedback_write_failed'. Reproduced on every mutation in this session."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",author,context,defect,relevance
 created_at: "2026-07-25T06:16:22.783Z"
-updated_at: "2026-07-25T11:31:42.429Z"
-assignee: "harness:codex"
+updated_at: "2026-07-25T11:58:45.442Z"
+closed_at: "2026-07-25T11:58:44.562Z"
 author: unknown
 estimated_minutes: 240
 acceptance_criteria: "create and copy resolve the acting identity through the canonical resolver instead of a private selectAuthor, so an item created with no PM_AUTHOR and an empty author_default carries the detected harness identity and not the literal 'unknown'; The context-usage hook, pm next, and pm context resolve identity through the same canonical resolver; A workspace with an empty author_default and no PM_AUTHOR records usage touches under the detected identity and emits no hook warning; recordContextUsageTouches raises a typed, named error instead of a bare TypeError, so a swallowed throw can never hide a systemic outage again; A contract test asserts that process.env.PM_AUTHOR is read in exactly one source file and that no other module defines a private author-precedence helper, making the bypass class mechanically impossible to reintroduce; Items created during this session that were stamped 'unknown' are dispositioned through the existing acknowledgment flow rather than by rewriting history"
@@ -20,6 +20,9 @@ why_now: "Harness detection shipped and closed on 2026-07-25; the paths that wer
 parent: pm-mpbb
 risk: medium
 confidence: high
+resolution: "Centralized author precedence and migrated create, copy, context, next, claim, and usage feedback to automatic harness detection with typed usage failures."
+expected_result: Agents need no PM_AUTHOR override; every mutation and context-usage path records detected identity and no duplicated precedence path can silently emit unknown.
+actual_result: "Packed acceptance recorded harness:codex with PM_AUTHOR unset and no hook warning; source contract limits PM_AUTHOR access to the canonical resolver and health has zero actionable unknown events."
 dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-25T06:16:36.929Z",null,null
   pm-psy1,related,"2026-07-25T06:16:36.929Z",null,null
@@ -29,10 +32,11 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-33cw,related,"2026-07-25T06:25:02.245Z",null,null
   pm-e6tm5c,related,"2026-07-25T06:25:02.245Z",null,null
   pm-zqpnte,related,"2026-07-25T06:25:02.245Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-25T06:25:01.526Z","harness:claude-code","Evidence 2026-07-25: created pm-42p9nk, pm-wt43zj, pm-tuadp2, pm-3oqjnc, pm-zlv8jl, pm-e6tm5c, pm-xgcp18, pm-f86lth, pm-yf07b7, pm-p1g43q, pm-mn4zas in this session with no PM_AUTHOR set. Every one carries 'author: unknown' in its .toon and an unknown-author create entry in its history stream, while subsequent pm update calls on the same items in the same shell recorded author 'harness:claude-code' with author_source 'detected'. The divergence isolates the defect to the create/copy selectAuthor duplicates rather than to detection itself."
   "2026-07-25T06:35:00.766Z","harness:claude-code","Disposition recorded 2026-07-25: the 11 create entries stamped 'unknown' by this defect were acknowledged through pm history-author-acknowledge (attributed harness:claude-code, evidence = each item's next entry recording author_source 'detected' from the same process). pm health returns ok:true again with actionable_unknown_event_count 0 and 48 acknowledged. This is a disposition, not a fix — until the create/copy selectAuthor duplicates are removed, every harness-identified create will keep producing a new actionable unknown-author event and re-redden health."
   "2026-07-25T11:31:42.429Z","harness:codex","Evidence: canonical author resolution now owns all PM_AUTHOR access; create/copy/context/next/claim/usage paths use detected harness identity and context usage raises a typed validation error. Linked tests passed 322/322. Packed consumer created and updated an item as harness:codex with PM_AUTHOR unset and no hook warning. Five pre-rebuild creation events were dispositioned append-only via history-author-acknowledge; no history was rewritten."
+  "2026-07-25T11:57:47.276Z","harness:codex","Exact-head delivery evidence: PR #707 head 7c1921db passed every required GitHub check, including static quality, Windows Node 24, Ubuntu Node 22/24 and macOS smokes, typecheck, compatibility, all four coverage shards plus the 100% coverage gate, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, docs/skills, package smokes, and benchmarks. Manual packed Node/Bun consumer acceptance and telemetry/Sentry gates also passed. Automated review returned no inline findings; CodeRabbit/Sourcery/Gemini/Greptile limitations are documented on the PR and Greptile quota is linked to canonical pm-e02lgu."
 files[9]{path,scope,note}:
   src/cli/after-command-context-usage.ts,project,Typed after-command usage attribution and telemetry boundary
   src/cli/commands/context.ts,project,Context usage attribution
@@ -53,4 +57,5 @@ docs[5]{path,scope,note}:
   docs/CONFIGURATION.md,project,Optional PM_AUTHOR override guidance
   docs/ONBOARDING.md,project,Bootstrap without PM_AUTHOR
   docs/SDK_CUSTOMIZATION_PRIMITIVES.md,project,SDK author precedence
+close_reason: "Delivered in PR #707 exact head 7c1921db with linked local, packed-consumer, full-coverage, cross-platform, security, performance, and GitHub CI evidence."
 body: ""
