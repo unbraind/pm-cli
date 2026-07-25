@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",context-management,customization,token-efficiency
 created_at: "2026-07-25T12:28:05.242Z"
-updated_at: "2026-07-25T12:40:15.309Z"
+updated_at: "2026-07-25T17:54:29.381Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Read surfaces accept a declared intent, and each intent names its exact field set in contract data rather than in code; Omitting the intent preserves today's default projection byte-for-byte, proven by a snapshot test; Intents are discoverable through the contracts surface and extensible by workspace configuration and packages, so a non-project-management domain can declare its own; A measured token delta per intent versus the default projection is published as evidence, per command and per result size; Requesting an intent that a workspace has not declared fails with the one canonical unknown-value error and a nearest-match suggestion; Intent selection composes with the token budget and the relevance engine without any of the three overriding the others, proven by a test that exercises all three together"
@@ -32,4 +32,6 @@ dependencies[13]{id,kind,created_at,author,source_kind}:
   pm-plwm,related,"2026-07-25T12:35:07.682Z",null,null
   pm-t5dt4z,related,"2026-07-25T12:35:07.682Z",null,null
   pm-g3n00m,related,"2026-07-25T12:40:14.936Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-25T17:54:29.381Z","harness:claude-code","Intent-split evidence measured 2026-07-25 on `pm next --json` (2,022-item workspace, default flags). Payload breakdown by top-level key, in bytes:\n\n- blocked: 5,450 (47% of the response)\n- decision_needed: 2,163 (19%)\n- ready: 2,116 (18%)\n- recommended: 660 (6%)\n- filters 214, summary 133, truncation 27\n\nThe agent asked one question — what should I work on next — and 66% of the answer describes work it explicitly cannot start. The recommendation itself, the actual answer, is 6%. This is the clearest single case for intent-scoped projection in the CLI: `next` today serves three distinct intents (pick my next task; show me what is stuck; show me what needs a human decision) in one unconditional payload, and an agent pays for all three every time.\n\nNote also that `--fields` is available on list (5 references in help), search (4), and get (3), but absent from `next` entirely and nearly absent from `context` (1). The two commands an agent runs first, and most often, are the two with the least projection control.\n\nSuggested intent names when this item defines the vocabulary, so the split follows the existing envelope rather than inventing new shapes: `--for next` (recommended only), `--for triage` (blocked + blockers), `--for decisions` (decision_needed). Companion buckets stay reachable, never removed — the pm-0z7n alias-preservation rule applies to output shape, not just spellings."
 body: ""

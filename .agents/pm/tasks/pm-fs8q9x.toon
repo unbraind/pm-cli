@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli",contracts,grammar,simplification,token-efficiency
 created_at: "2026-07-25T12:28:49.234Z"
-updated_at: "2026-07-25T12:35:11.793Z"
+updated_at: "2026-07-25T17:54:06.792Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "A declared lexicon maps every flag on every command to exactly one concept with one canonical spelling and one declared value kind; The conformance gate rejects a new or renamed flag that introduces a second spelling for an existing concept, or a value grammar inconsistent with its value kind; Every current spelling remains accepted as a hidden alias, proven by a test over the full pre-change flag inventory; Each command declares a flag budget; exceeding it fails the gate unless the budget is raised in the same change with a recorded rationale; The lexicon is published as contract data so agents and completions consume it without prose; Measured flag-count and help-token deltas per command are recorded as evidence"
@@ -32,4 +32,6 @@ dependencies[13]{id,kind,created_at,author,source_kind}:
   pm-kxci8x,related,"2026-07-25T12:35:11.542Z",null,null
   pm-mu8m,related,"2026-07-25T12:35:11.542Z",null,null
   pm-xp1xsw,related,"2026-07-25T12:35:11.542Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-25T17:54:06.791Z","harness:claude-code","Flag-axis baseline measured 2026-07-25 (shipped 2026.7.25), for the per-command flag budget this item declares.\n\n1,712 flag declarations across 77 top-level commands; 470 distinct spellings. Distribution is extremely skewed — the top five commands (plan 97, update 82, create 78, list 66, search 58) carry 381 declarations, 22% of the total on 6% of the commands.\n\nTwo candidate budget shapes the item should choose between, with evidence:\n- A flat per-command ceiling would immediately fail on plan/update/create/list/search, which are the five commands agents use most; a ceiling low enough to be meaningful elsewhere would force real capability into subcommands or config on exactly the wrong surfaces.\n- A tiered ceiling keyed to the declared surface tier (pm-kxci8x) fits the measured shape better: core-tier commands get a hard, small budget; specialist commands are allowed a larger one but must justify each flag against the shared lexicon.\n\nLexicon evidence for the \"one spelling per concept\" half: --author appears on 35 commands, --message on 30, --compact on 28, --force on 27, --limit on 25, --priority on 23, --parent on 23, --type on 21. High repetition is the healthy case — it means the concept is shared. The conformance risk is the long tail: 470 distinct spellings against roughly 77 commands means most spellings appear once or twice, and single-use spellings are where synonym drift hides. Recommend the gate measure the tail (spellings used on exactly one command) rather than the head."
 body: ""
