@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:extensions",dx,scaffold
 created_at: "2026-07-25T21:13:51.838Z"
-updated_at: "2026-07-25T23:37:16.233Z"
+updated_at: "2026-07-25T23:43:47.292Z"
 closed_at: "2026-07-25T23:36:15.515Z"
 author: "harness:claude-code"
 estimated_minutes: 180
@@ -20,11 +20,12 @@ actual_result: "Both spellings emit the same seven-file artifact, generated test
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-8mxg,related,"2026-07-25T21:13:51.838Z",null,null
   pm-quzx,related,"2026-07-25T21:13:51.838Z",null,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-25T22:35:03.905Z","harness:codex","Implementation evidence: extension and package init now emit the same publishable seven-file TypeScript package artifact for all ten capabilities, with colocated runtime tests and identical manifests/package metadata."
   "2026-07-25T22:45:43.797Z","harness:codex","Coverage triage: repository coverage run was invalidated by ENOSPC in shared /tmp (175 suites failed during transform). Two legitimate stale guidance expectations were updated to the unified package artifact; no coverage threshold or test gate was changed."
   "2026-07-25T23:27:33.340Z","harness:codex","Evidence: unified package/extension scaffolding and all first-party package installation paths passed the full sandboxed coverage gate (371 files, 6,388 tests, 100/100/100/100). Fresh module-graph verification for search-advanced also passes after consuming the shared canonical runtime contracts."
   "2026-07-25T23:33:32.235Z","harness:codex","Acceptance evidence: independent packed consumer generated `pm-agent-workflow` through package init and `pm-agent-hooks` through extension init; both emitted publishable TypeScript packages whose generated typecheck/test scripts passed, installed successfully, dispatched their commands, and passed isolated deep strict doctor."
+  "2026-07-25T23:43:47.292Z","harness:codex","PR evidence: PR #718 exact head 46707ab7 passed every required CI, cross-platform, security, coverage, benchmark, and static-analysis gate; thread-aware inventory found no actionable review threads."
 files[4]{path,scope,note}:
   src/sdk/extension/scaffold.ts,project,Unified extension/package scaffold artifact
   tests/unit/extensions/extension-command.spec.ts,project,Lifecycle scaffold acceptance coverage

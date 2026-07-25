@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:ci","area:dependencies",dependabot,github
 created_at: "2026-07-21T21:01:06.562Z"
-updated_at: "2026-07-25T23:37:19.698Z"
+updated_at: "2026-07-25T23:43:48.933Z"
 closed_at: "2026-07-25T23:36:21.795Z"
 author: codex-relationship-backfill-20260721
 estimated_minutes: 240
@@ -20,7 +20,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-92if,related_to,"2026-07-21T21:01:44.301Z",null,null
   pm-gkut,related_to,"2026-07-21T21:01:44.301Z",null,null
   pm-qwoy,related_to,"2026-07-21T21:01:44.301Z",null,null
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-07-21T21:01:06.562Z",codex-relationship-backfill-20260721,"Duplicate check 2026-07-21: searched all statuses for the exact queue title and PR numbers after reviewing the live GitHub PR inventory. No canonical queue item existed. Live snapshot: #618 dev-dependencies group is green; #619 GitHub Actions has a coverage-shard failure; #620 production dependencies has a coverage-shard failure; #621 eslint-plugin-unicorn 72 is green. This item is documentation-only in the current SDK implementation cycle and therefore remains open and unclaimed."
   "2026-07-23T20:35:25.529Z",claude-code-agent,"Dependency intake update (2026-07-23): Dependabot PR #661 supersedes the prior development dependency group snapshot with @typescript-eslint/eslint-plugin and @typescript-eslint/parser 8.53.1 -> 8.53.2. The PR is open and queued in this existing dependency-review lineage; no duplicate tracker item created."
   "2026-07-24T19:16:35.285Z",claude-code-agent,"GitHub inventory 2026-07-24: grouped GitHub Actions PR #669 is now open with one failed coverage shard and otherwise green checks; it extends this canonical dependency queue rather than creating a duplicate item. PR: https://github.com/unbraind/pm-cli/pull/669"
@@ -30,6 +30,7 @@ comments[9]{created_at,author,text}:
   "2026-07-25T23:33:34.067Z","harness:codex","Security and quality evidence: pnpm audit reports zero known vulnerabilities; tracked secret scan found no credential-like content; ESLint has zero warnings; jscpd found zero clones across 769 files; static docstring gate is 100% for source/exported/member coverage; SDK import-cost and CLI transport floors pass."
   "2026-07-25T23:36:12.487Z","harness:codex","GitHub linkage closeout: PRs #618-#621 and superseding #661 already contained this canonical pm-item link; added the missing canonical link to terminal grouped Actions PR #669. Live open PR inventory remains empty."
   "2026-07-25T23:37:19.698Z","harness:codex","Changelog evidence: npm registry confirms pm-changelog 2026.7.25 is latest; the package-owned changelog script reinstalled that version and regenerated CHANGELOG.md with the three closed items. No generated changelog content was hand-edited."
+  "2026-07-25T23:43:48.933Z","harness:codex","PR evidence: PR #718 exact head 46707ab7 has no open dependency PRs and passed audit, CodeQL, Semgrep, Trivy, TruffleHog, CodeFactor, DeepScan, all repository gates, and cross-platform coverage."
 files[3]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog package reinstall state used for generation
   package.json,project,ESLint 10.8.0 dependency update

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:extensions",dx,scaffold
 created_at: "2026-07-25T21:38:28.090Z"
-updated_at: "2026-07-25T23:37:16.965Z"
+updated_at: "2026-07-25T23:43:48.092Z"
 closed_at: "2026-07-25T23:36:18.663Z"
 author: "harness:claude-code"
 estimated_minutes: 90
@@ -20,10 +20,11 @@ actual_result: Parameterized tests cover every capability and both vocabularies;
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-9smp7j,related,"2026-07-25T21:38:28.090Z",null,null
   pm-quzx,related,"2026-07-25T21:38:28.090Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-25T22:35:05.130Z","harness:codex","Implementation evidence: scaffold names strip repeated leading pm- prefixes, results report package_name and invocation_command, and parameterized acceptance covers every capability across extension/package vocabulary."
   "2026-07-25T23:27:34.296Z","harness:codex","Evidence: prefix normalization and the publishable scaffold matrix passed the full sandboxed coverage gate (371 files, 6,388 tests, 100/100/100/100)."
   "2026-07-25T23:33:33.161Z","harness:codex","Acceptance evidence: unrelated installed consumer preserved canonical generated names (`pm-agent-workflow`, `pm-agent-hooks`) and executable commands (`pm agent workflow ping`, `pm agent hooks ping`) without doubled prefixes."
+  "2026-07-25T23:43:48.092Z","harness:codex","PR evidence: PR #718 exact head 46707ab7 passed every required CI, cross-platform, security, coverage, benchmark, and static-analysis gate; thread-aware inventory found no actionable review threads."
 files[2]{path,scope,note}:
   src/sdk/extension/scaffold.ts,project,Idempotent repeated pm-prefix normalization and discovery fields
   tests/unit/sdk/extension-authoring-contracts.spec.ts,project,Every-capability prefix parity proof
