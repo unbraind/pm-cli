@@ -21,6 +21,7 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import { collectBlockedByIds } from "../../sdk/actionability.js";
 import type { ItemMetadata } from "../../types/index.js";
@@ -75,15 +76,6 @@ interface CloseMutationContext {
   activeChildIds: string[];
   closeReason: string | undefined;
   closedAt: string;
-}
-
-function toAuthor(
-  candidate: string | undefined,
-  defaultAuthor: string,
-): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
 }
 
 function normalizeCloseReason(
@@ -694,7 +686,7 @@ export async function runClose(
 
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   // GH-250: verify the target item EXISTS before the governance close-reason
   // gate fires. Otherwise closing a typo'd id with no reason reports
   // "Close reason text is required" and hides the real cause (bad id) until a

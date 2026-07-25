@@ -2,12 +2,12 @@ id: pm-zqpnte
 title: "Execute and expose the unknown-author acknowledgment flow: dispose the five stranded events and give the shipped SDK primitive a CLI and MCP surface"
 description: ""
 type: Chore
-status: in_progress
+status: closed
 priority: 1
 tags[7]: "area:cli","area:sdk",audit,author,governance,history,validate-warning
 created_at: "2026-07-24T23:59:58.211Z"
-updated_at: "2026-07-25T02:03:53.992Z"
-assignee: codex-root
+updated_at: "2026-07-25T02:25:21.797Z"
+closed_at: "2026-07-25T02:24:26.328Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "The five 2026-07-16 unknown-author test_run_track events carry an audited acknowledgment with reviewer, attributed author, and reason, recorded without rewriting history or moving the baseline; pm health returns ok:true and validate no longer reports validate_history_unknown_author_events for this workspace; acknowledgeUnknownAuthorHistoryEvents is reachable from the CLI and from MCP with the same typed errors as the SDK primitive, wired through every required registration site; Docs state when acknowledgment is appropriate and that it is a recorded disposition, never a way to attribute authorship after the fact"
@@ -20,6 +20,9 @@ why_now: "The attribution-enforcement item closed on the strength of the primiti
 parent: pm-33cw
 risk: low
 confidence: high
+resolution: "Implemented and merged governed unknown-author acknowledgements through CLI, SDK, MCP, schemas, and contracts."
+expected_result: Historical unknown-author events can be dispositioned without rewriting history and health has no actionable attribution warning.
+actual_result: "Five historical events are acknowledged, actionable_unknown_event_count is zero, and the public command surfaces are covered."
 dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-5oj5,related,"2026-07-24T23:59:58.211Z",null,null
   pm-e9zh,related,"2026-07-24T23:59:58.211Z",null,null
@@ -51,4 +54,5 @@ tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/mutation-guard.spec.ts,project,240
 docs[1]{path,scope,note}:
   docs/MUTATION_INTEGRITY.md,project,Immutable author remediation workflow
+close_reason: "Merged in PR #693 as main commit 3a0c570c: unknown-author acknowledgement is exposed through CLI, SDK, MCP, schemas, and contracts; health reports no actionable unknown-author events."
 body: "## What shipped and what did not\nThe attribution-enforcement work delivered strict unknown-author rejection, SDK test-all author parity, and a public acknowledgeUnknownAuthorHistoryEvents primitive with hardened error handling. Its acceptance criteria also stated that the five stranded events would be dispositioned and health would return ok:true. The primitive exists; the disposition was never executed against this repository, and there is no CLI or MCP path to execute it.\n\n## Why the disposition is a judgement call\nAcknowledgment records a reviewer, an attributed author, and a reason against immutable events. That is a maintainer decision about who is accountable for five specific historical mutations, not a mechanical cleanup, which is why it must be run deliberately rather than folded into a sweep.\n\n## Boundary\nNo history rewriting. No baseline movement. No hand-attribution of legacy pre-baseline events — only the five post-baseline actionable ones. Preventing future unknown-author events is the harness identity work, not this item."

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -16,10 +16,16 @@ import {
   resolveAuthorIdentity,
 } from "../../../src/core/shared/author.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../../../src/core/shared/constants.js";
+import { runClose } from "../../../src/cli/commands/close.js";
+import { runUpdate } from "../../../src/cli/commands/update.js";
 import {
   _testOnlyValidateCommand,
   runValidate,
 } from "../../../src/sdk/governance/validate.js";
+import {
+  readSettings,
+  writeSettings,
+} from "../../../src/sdk/runtime-primitives.js";
 import type { ItemDocument } from "../../../src/types.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -116,6 +122,95 @@ describe("agent runtime SDK primitives", () => {
     ).toMatchObject({
       author: "configured-agent",
       author_source: "configured",
+    });
+  });
+
+  it("attributes update and close mutations to the detected harness", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "harness mutation parity",
+          "--description",
+          "Exercise update and close without explicit author configuration",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--author",
+          "fixture-author",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const id = (created.json as { item: { id: string } }).item.id;
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "" });
+      const previousCodexThreadId = process.env.CODEX_THREAD_ID;
+      delete process.env.PM_AUTHOR;
+      process.env.CODEX_THREAD_ID = "runtime-mutation-parity";
+      try {
+        await runUpdate(
+          id,
+          { description: "Updated through detected harness identity" },
+          { path: context.pmPath },
+        );
+        await runClose(
+          id,
+          "Closed through detected harness identity",
+          {
+            resolution: "Harness attribution is preserved",
+            expectedResult: "Update and close use the shared resolver",
+            actualResult: "Both history entries record detected Codex identity",
+          },
+          { path: context.pmPath },
+        );
+      } finally {
+        if (previousCodexThreadId === undefined) {
+          delete process.env.CODEX_THREAD_ID;
+        } else {
+          process.env.CODEX_THREAD_ID = previousCodexThreadId;
+        }
+      }
+
+      const history = (
+        await readFile(
+          path.join(context.pmPath, "history", `${id}.jsonl`),
+          "utf8",
+        )
+      )
+        .trim()
+        .split("\n")
+        .map(
+          (line) =>
+            JSON.parse(line) as {
+              op: string;
+              author: string;
+              author_source?: string;
+            },
+        )
+        .filter((entry) => entry.op === "update" || entry.op === "close");
+      expect(history).toEqual([
+        {
+          op: "update",
+          author: "harness:codex",
+          author_source: "detected",
+          ts: expect.any(String),
+          patch: expect.any(Array),
+          before_hash: expect.any(String),
+          after_hash: expect.any(String),
+        },
+        {
+          op: "close",
+          author: "harness:codex",
+          author_source: "detected",
+          ts: expect.any(String),
+          patch: expect.any(Array),
+          before_hash: expect.any(String),
+          after_hash: expect.any(String),
+        },
+      ]);
     });
   });
 

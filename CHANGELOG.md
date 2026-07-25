@@ -4,12 +4,17 @@
 
 ### Added
 
+- Harness-aware author identity: pm resolves the acting agent from its runtime harness so PM_AUTHOR is never required ([pm-z9x1r2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-z9x1r2.toon))
 - Mandatory exact-head DeepScan and CodeFactor zero-new-issues release gate ([pm-39cqqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-39cqqx.toon))
 - Mutation event stream primitive: pm events --follow (NDJSON with durable cursor) + SDK subscription API for cross-process agent coordination ([pm-e200](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e200.toon))
 - Create-time near-duplicate advisory: pm create/copy surface similar existing items before new work is filed ([pm-4ri6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4ri6.toon))
 
 ### Fixed
 
+- GH-686: validate extension flag descriptors and support repeatable as a list alias ([pm-s1w0sf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s1w0sf.toon))
+- GH-683: standard get projection must expose tests_count when tests are omitted ([pm-1exil1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1exil1.toon))
+- GH-685: extension CommandContext needs portable source and tracker workspace coordinates ([pm-j4ac9a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j4ac9a.toon))
+- GH-682: linked-test tracker sandbox must preserve source VCS workspace identity ([pm-954h0o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-954h0o.toon))
 - 10k scale gate regression: CLI create latency and create/claim peak RSS exceed fixed budgets ([pm-hcrmye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hcrmye.toon))
 - PR \#673 review hardening: literal Git paths, canonical workspace identity, bounded diagnostics, and recoverable init ([pm-d7crwk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d7crwk.toon))
 - GH-666/GH-667: nightly Node 22 stderr and Windows permission-contract regressions ([pm-lvd647](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lvd647.toon))
@@ -22,10 +27,17 @@
 
 ### Security
 
+- Semgrep 874840488: High spawn shell true in scripts/release/utils.mjs\#L38 ([pm-a7m7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-a7m7.toon))
+- Semgrep 874962820: High spawn shell true in plugins/pm-codex/scripts/pm-mcp-server.mjs\#L86 ([pm-1uul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1uul.toon))
+- Semgrep 874962821: High spawn shell true in plugins/pm-claude/scripts/pm-mcp-server.mjs\#L82 ([pm-f7ik](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f7ik.toon))
+- Dependabot alert: brace-expansion unbounded expansion denial of service (GHSA-mh99-v99m-4gvg) ([pm-5q81jq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5q81jq.toon))
+- Dependabot alert \#43: PostCSS previous source-map path traversal (GHSA-r28c-9q8g-f849) ([pm-a24aqt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-a24aqt.toon))
 - Release pipeline permits duplicate same-day production versions ([pm-4s24d2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4s24d2.toon))
 
 ### Other
 
+- PR \#684 post-merge deferred checks and review follow-up ([pm-e3g0h6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e3g0h6.toon))
+- Execute and expose the unknown-author acknowledgment flow: dispose the five stranded events and give the shipped SDK primitive a CLI and MCP surface ([pm-zqpnte](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zqpnte.toon))
 - Holistic pm CLI, SDK, and ecosystem optimization roadmap ([pm-xe0c38](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-xe0c38.toon))
 
 ## 2026.7.24-3 - 2026-07-24
