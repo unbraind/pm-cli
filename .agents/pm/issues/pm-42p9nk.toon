@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",author,context,defect,relevance
 created_at: "2026-07-25T06:16:22.783Z"
-updated_at: "2026-07-25T06:25:02.551Z"
+updated_at: "2026-07-25T06:35:00.767Z"
 author: unknown
 estimated_minutes: 240
 acceptance_criteria: "create and copy resolve the acting identity through the canonical resolver instead of a private selectAuthor, so an item created with no PM_AUTHOR and an empty author_default carries the detected harness identity and not the literal 'unknown'; The context-usage hook, pm next, and pm context resolve identity through the same canonical resolver; A workspace with an empty author_default and no PM_AUTHOR records usage touches under the detected identity and emits no hook warning; recordContextUsageTouches raises a typed, named error instead of a bare TypeError, so a swallowed throw can never hide a systemic outage again; A contract test asserts that process.env.PM_AUTHOR is read in exactly one source file and that no other module defines a private author-precedence helper, making the bypass class mechanically impossible to reintroduce; Items created during this session that were stamped 'unknown' are dispositioned through the existing acknowledgment flow rather than by rewriting history"
@@ -28,6 +28,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-33cw,related,"2026-07-25T06:25:02.245Z",null,null
   pm-e6tm5c,related,"2026-07-25T06:25:02.245Z",null,null
   pm-zqpnte,related,"2026-07-25T06:25:02.245Z",null,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-25T06:25:01.526Z","harness:claude-code","Evidence 2026-07-25: created pm-42p9nk, pm-wt43zj, pm-tuadp2, pm-3oqjnc, pm-zlv8jl, pm-e6tm5c, pm-xgcp18, pm-f86lth, pm-yf07b7, pm-p1g43q, pm-mn4zas in this session with no PM_AUTHOR set. Every one carries 'author: unknown' in its .toon and an unknown-author create entry in its history stream, while subsequent pm update calls on the same items in the same shell recorded author 'harness:claude-code' with author_source 'detected'. The divergence isolates the defect to the create/copy selectAuthor duplicates rather than to detection itself."
+  "2026-07-25T06:35:00.766Z","harness:claude-code","Disposition recorded 2026-07-25: the 11 create entries stamped 'unknown' by this defect were acknowledged through pm history-author-acknowledge (attributed harness:claude-code, evidence = each item's next entry recording author_source 'detected' from the same process). pm health returns ok:true again with actionable_unknown_event_count 0 and 48 acknowledged. This is a disposition, not a fix — until the create/copy selectAuthor duplicates are removed, every harness-identified create will keep producing a new actionable unknown-author event and re-redden health."
 body: ""
