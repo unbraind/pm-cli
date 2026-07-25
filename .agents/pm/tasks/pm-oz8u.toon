@@ -2,11 +2,12 @@ id: pm-oz8u
 title: Semgrep 2026-07-06 downloaded code findings triage batch
 description: "Import and triage the 40 Semgrep Code findings downloaded on 2026-07-06, preserving each platform finding as a linked pm issue with source links and security metadata."
 type: Task
-status: open
+status: in_progress
 priority: 1
 tags[5]: code-scanning,context-management,security,semgrep,triage
 created_at: "2026-07-06T18:56:14.728Z"
-updated_at: "2026-07-24T23:54:07.371Z"
+updated_at: "2026-07-25T02:02:16.804Z"
+assignee: codex-root
 author: codex-cli-agent
 estimated_minutes: 240
 acceptance_criteria: "Every Semgrep finding from the CSV has a linked pm Issue with Semgrep ID, rule, severity, status, platform link, code link, autotriage metadata, and rule description."
@@ -18,8 +19,18 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-6ixn,related,"2026-07-24T23:54:07.117Z",null,null
   pm-ngjd,related,"2026-07-24T23:54:07.117Z",null,null
   pm-qwoy,related,"2026-07-24T23:54:07.117Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-06T18:57:11.617Z",codex-cli-agent,"Evidence: imported 40 Semgrep Code findings from Semgrep_Code_Combined_Findings_2026_07_06.csv as child Issue items. Duplicate check before import found no existing Semgrep tracker items or Semgrep finding IDs in .agents/pm. Verification after import: pm search semgrep --status all --limit 60 returns 41 items (parent + 40 children); pm list --status all --parent pm-oz8u --limit 60 returns 40 child issues."
   "2026-07-06T19:36:47.451Z",codex-cli-agent,"Evidence update: imported the downloaded Semgrep 2026-07-06 CSV as one parent task plus 40 child Issue items, after all-status duplicate checks found no existing Semgrep lineage. Redacted the local absolute download path from the imported pm history/item metadata with pm history-redact; rg no longer finds the original local CSV path in tracked pm data. Verification: pm search semgrep --status all --limit 60 returns 41 items and pm list --status all --parent pm-oz8u --limit 60 returns 40 child issues; security:scan reports no credential-like secrets."
   "2026-07-24T12:17:13.096Z",claude-code-agent,"Whole-system audit evidence: active-only dedupe-audit found six fuzzy title clusters (29 candidate items, 23 merge suggestions), all within this imported Semgrep batch. Exact-title and parent-scope modes found zero. Manual comparison of pm-dtn1 and pm-y49x confirms distinct Semgrep finding IDs and distinct RegExp argument flows despite the same file/line signature; treat the fuzzy clusters as triage groups, not proven duplicates, and preserve external finding identity until each full record is reconciled against current Semgrep state."
+  "2026-07-25T02:02:13.608Z","harness:codex","Evidence: completed the coordinated high-severity Semgrep remediation family. Generated Claude/Codex MCP wrappers select npx.cmd on Windows and spawn argv with shell disabled; the unused release shell option was removed. Full security scan, generator fixtures, wrapper execution tests, and 100% coverage pass."
+learnings[1]{created_at,author,text}:
+  "2026-07-25T02:02:16.799Z","harness:codex",Cross-platform Node command wrappers should select the Windows .cmd shim explicitly and keep shell disabled; argv must remain structured from generation through execution.
+files[4]{path,scope,note}:
+  scripts/gen-plugin-mcp-wrappers.mjs,project,High severity shell spawn remediation batch
+  scripts/release/utils.mjs,project,High severity shell spawn remediation batch
+  tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts,project,High severity shell spawn remediation batch
+  tests/unit/scripts/release/utils.spec.ts,project,High severity shell spawn remediation batch
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/scripts/release/utils.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,project,240
 body: "# Semgrep downloaded findings triage batch\n\nSource CSV: Semgrep_Code_Combined_Findings_2026_07_06.csv (local download, not committed)\nDownloaded: 2026-07-06\nFinding count: 40\nRepository: unbraind/pm-cli\n\nThis parent groups the Semgrep Code findings imported from the downloaded CSV so each platform finding has a durable pm issue with source links and triage metadata.\n\nDuplicate check before import: `pm search semgrep --status all --limit 100 --json` returned 0 items, and `rg` found no Semgrep finding IDs or semgrep.dev finding links under `.agents/pm`."

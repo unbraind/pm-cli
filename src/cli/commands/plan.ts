@@ -19,6 +19,7 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
+  resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
 import type {
   DependencyKind,
@@ -419,15 +420,6 @@ function planCompletionPct(completed: number, total: number): number {
 }
 
 /* c8 ignore start -- detailed plan helper branches are validated through broader plan workflow integration tests. */
-function resolveAuthor(
-  candidate: string | undefined,
-  fallback: string,
-): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
-  const trimmed = resolved.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
-}
-
 /** pm-6mit: ordered step titles from repeated --step values. Unlike toArray this NEVER comma-splits — each --step value is one full step title, so titles containing commas survive intact (also why --step must not be list:true in contracts: the bootstrap coalescer would comma-join values). */
 function toOrderedStepTitles(value: unknown): string[] {
   const values = Array.isArray(value)

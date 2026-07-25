@@ -100,14 +100,13 @@ describe("scripts/release/utils: runCommand", () => {
     vi.doMock("node:child_process", () => ({ spawnSync }));
     const utils = await loadUtils("utilsRunOk");
 
-    const success = utils.runCommand("pm", ["json-ok"], { capture: true, cwd: "/tmp/pm", shell: true });
+    const success = utils.runCommand("pm", ["json-ok"], { capture: true, cwd: "/tmp/pm" });
     expect(success).toEqual({ status: 0, stdout: '{"ok":true}', stderr: "" });
     expect(spawnSync).toHaveBeenCalledWith(
       "pm",
       ["json-ok"],
       expect.objectContaining({
         cwd: "/tmp/pm",
-        shell: true,
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
       }),

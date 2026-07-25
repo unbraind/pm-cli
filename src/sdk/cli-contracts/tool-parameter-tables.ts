@@ -109,6 +109,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   assigneeFilter: { type: "string", enum: ["assigned", "unassigned"] },
   parent: { type: "string" },
   reviewer: { type: "string" },
+  attributedAuthor: { type: "string" },
+  historyEvent: { type: "array", items: { type: "string" } },
   risk: { type: "string" },
   confidence: { anyOf: [{ type: "string" }, { type: "number" }] },
   sprint: { type: "string" },
@@ -911,6 +913,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
       ["start=2026-07-01T10:00:00Z,duration=PT30M,title=window"],
     ],
   },
+  historyEvent: {
+    description:
+      "Unknown-author history target in <item-id>:<one-based-line> form.",
+    examples: [["pm-example:4", "pm-example:5"]],
+  },
   estimate: {
     description: "Estimated effort in minutes.",
     examples: [60, "120"],
@@ -920,6 +927,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   author: {
     description: "Mutation author identity.",
+    examples: ["codex-agent"],
+  },
+  attributedAuthor: {
+    description:
+      "Principal attributed to the immutable unknown-author history events after review.",
     examples: ["codex-agent"],
   },
   message: {

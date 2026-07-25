@@ -426,6 +426,42 @@ export function startMcpServer() {
     exit.mockRestore();
   });
 
+  it("spawns npx.cmd without a shell on Windows", async () => {
+    delete process.env.PM_CLI_MCP_SERVER;
+    const fallbackSpawn = spawnReturningExit(0, null);
+    vi.doMock("node:child_process", () => ({ spawn: fallbackSpawn }));
+    vi.doMock("node:fs/promises", () => ({
+      access: vi.fn(async () => {
+        throw new Error("ENOENT");
+      }),
+    }));
+    const platform = Object.getOwnPropertyDescriptor(process, "platform");
+    Object.defineProperty(process, "platform", {
+      configurable: true,
+      value: "win32",
+    });
+    const exit = mockExit();
+    try {
+      for (const script of mcpServerScripts) {
+        await expect(
+          importScript(script, `windows-fallback-${path.basename(script)}`),
+        ).rejects.toThrow("EXIT:0");
+      }
+    } finally {
+      if (platform) {
+        Object.defineProperty(process, "platform", platform);
+      }
+      exit.mockRestore();
+    }
+    expect(fallbackSpawn).toHaveBeenCalledTimes(2);
+    expect(fallbackSpawn).toHaveBeenCalledWith(
+      "npx.cmd",
+      ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"],
+      expect.objectContaining({ stdio: "inherit" }),
+    );
+    expect(fallbackSpawn.mock.calls[0]?.[2]).not.toHaveProperty("shell");
+  });
+
   it("uses the npx fallback when Codex repo discovery reaches the depth limit", async () => {
     delete process.env.PM_CLI_MCP_SERVER;
     const fallbackSpawn = spawnReturningExit(0, null);

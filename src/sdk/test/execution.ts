@@ -17,6 +17,7 @@ import {
 } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { stableValueEquals } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
@@ -296,15 +297,6 @@ export interface TestResult {
   changed: boolean;
   /** Value that configures or reports count for this contract. */
   count: number;
-}
-
-function resolveAuthor(
-  candidate: string | undefined,
-  fallback: string,
-): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
 }
 
 function resolveTrackedRunId(kind: "test" | "test-all"): string {
@@ -2260,6 +2252,8 @@ function buildLinkedTestExecutionEnv(params: {
   executionEnv.FORCE_COLOR = "0";
   executionEnv.PM_PATH = params.executionContext.sandbox_project_pm_path;
   executionEnv.PM_GLOBAL_PATH = params.executionContext.sandbox_global_pm_path;
+  executionEnv.PM_SOURCE_WORKSPACE_ROOT =
+    process.env.PM_SOURCE_WORKSPACE_ROOT ?? process.cwd();
   return executionEnv;
 }
 

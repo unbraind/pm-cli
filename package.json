@@ -142,9 +142,9 @@
     }
   },
   "dependencies": {
-    "@sentry/node": "10.65.0",
+    "@sentry/node": "10.67.0",
+    "@toon-format/toon": "^2.3.1",
     "@types/node": ">=22",
-    "@toon-format/toon": "^2.3.0",
     "commander": "^15.0.0",
     "fast-glob": "^3.3.3",
     "fast-json-patch": "^3.1.1",
@@ -153,19 +153,19 @@
   "devDependencies": {
     "@codspeed/vitest-plugin": "^5.7.1",
     "@eslint/js": "^10.0.1",
-    "@sentry/cli": "^3.6.0",
+    "@sentry/cli": "^3.6.2",
     "@types/node": "^26.1.1",
     "@types/npm-package-arg": "^6.1.4",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/coverage-v8": "^4.1.10",
     "esbuild": "0.28.1",
-    "eslint": "^10.6.0",
-    "eslint-plugin-sonarjs": "^4.1.0",
-    "eslint-plugin-unicorn": "^71.1.0",
-    "greptile": "^3.1.1",
-    "jscpd": "^5.0.11",
-    "tsx": "^4.23.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-sonarjs": "^4.2.0",
+    "eslint-plugin-unicorn": "^72.0.0",
+    "greptile": "^3.2.3",
+    "jscpd": "^5.0.12",
+    "tsx": "^4.23.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.1",
-    "vitest": "^4.1.9"
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10"
   }
 }

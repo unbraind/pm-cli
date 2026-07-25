@@ -325,12 +325,23 @@ function coerceLooseOptionValue(
   return LOOSE_OPTION_VALUE_COERCERS[kind](value);
 }
 
-/** Flatten a (possibly repeated and/or comma-joined) value into a list, applying the declared coercion kind per element. Mirrors how core list flags such as `--tags` split comma values and accumulate repeated occurrences, so an extension flag declared `list: true` behaves identically. Empty segments are dropped and surrounding whitespace is trimmed. */
-function splitCommaListValue(
+/**
+ * Normalize an accumulated extension flag while preserving the semantic
+ * difference between the canonical CSV-friendly `list` form and the
+ * package-author `repeatable` alias. Both accumulate occurrences in order;
+ * `repeatable` additionally preserves commas inside each occurrence so
+ * structured values such as `id=pm-a,kind=related` remain atomic.
+ */
+function normalizeAccumulatedFlagValue(
   value: unknown,
   kind: LooseOptionCoercionKind | null,
+  preserveOccurrenceCommas: boolean,
 ): unknown[] {
-  const entries = flattenFlagListValue(value);
+  const entries = preserveOccurrenceCommas
+    ? (Array.isArray(value) ? value.flat(Infinity) : [value]).filter(
+        (entry) => entry !== undefined && entry !== null && entry !== "",
+      )
+    : flattenFlagListValue(value);
   return kind
     ? entries.map((entry) => coerceLooseOptionValue(entry, kind))
     : entries;
@@ -341,9 +352,14 @@ function applyFlagDefault(
   defaultValue: unknown,
   kind: LooseOptionCoercionKind | null,
   isListFlag: boolean,
+  preserveOccurrenceCommas: boolean,
 ): unknown {
   if (isListFlag) {
-    return splitCommaListValue(defaultValue, kind);
+    return normalizeAccumulatedFlagValue(
+      defaultValue,
+      kind,
+      preserveOccurrenceCommas,
+    );
   }
   return kind ? coerceLooseOptionValue(defaultValue, kind) : defaultValue;
 }
@@ -410,6 +426,7 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
       delete coerced[key];
     }
     const kind = resolveLooseOptionCoercionKind(definition);
+    const preserveOccurrenceCommas = definition.repeatable === true;
     if (!Object.hasOwn(coerced, canonical)) {
       // Flag was omitted entirely: apply the declared default when present.
       if (definition.default !== undefined) {
@@ -417,18 +434,20 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
           definition.default,
           kind,
           isListFlag,
+          preserveOccurrenceCommas,
         );
       }
       continue;
     }
     if (isListFlag) {
-      coerced[canonical] = splitCommaListValue(
+      coerced[canonical] = normalizeAccumulatedFlagValue(
         readOrderedLooseListValues(
           occurrenceSource,
           optionKeys,
           coerced[canonical],
         ),
         kind,
+        preserveOccurrenceCommas,
       );
       continue;
     }

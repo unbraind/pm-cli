@@ -26,6 +26,14 @@ import {
 } from "./item-field-types.js";
 import { snapshotExtensionModuleGraph } from "./module-graph-snapshot.js";
 import {
+  asRegistrationRecord,
+  assertOptionalBooleanField,
+  assertOptionalFlagDefaultField,
+  assertOptionalStringArrayField,
+  assertOptionalStringField,
+  normalizeOptionalStringArrayField,
+} from "./registration-validation.js";
+import {
   compareComparableVersions,
   evaluatePmMaxVersionBound,
   evaluatePmMinVersionBound,
@@ -1553,95 +1561,31 @@ function normalizeRegistrationRecordList(
   return value.map((entry) => normalizeRegistrationRecord(name, entry));
 }
 
-function asRegistrationRecord(
+const FLAG_DEFINITION_KEYS = new Set([
+  "default",
+  "description",
+  "enabled",
+  "list",
+  "long",
+  "repeatable",
+  "required",
+  "short",
+  "type",
+  "value_name",
+  "value_type",
+  "visible",
+]);
+
+function normalizeFlagDefinitions(
   name: string,
   value: unknown,
-): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new TypeError(`${name} requires an object definition`);
-  }
-  return value as Record<string, unknown>;
-}
-
-function assertOptionalBooleanField(name: string, value: unknown): void {
-  if (value !== undefined && typeof value !== "boolean") {
-    throw new TypeError(`${name} must be a boolean when provided`);
-  }
-}
-
-function assertOptionalStringField(name: string, value: unknown): void {
-  if (value === undefined) {
-    return;
-  }
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new TypeError(`${name} must be a non-empty string when provided`);
-  }
-}
-
-function isFlagDefaultScalar(value: unknown): boolean {
-  return (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  );
-}
-
-function assertOptionalFlagDefaultField(name: string, value: unknown): void {
-  if (value === undefined) {
-    return;
-  }
-  if (Array.isArray(value)) {
-    for (const [index, item] of value.entries()) {
-      if (!isFlagDefaultScalar(item)) {
-        throw new TypeError(
-          `${name}[${index}] must be a string, number, or boolean`,
-        );
-      }
+): FlagDefinition[] {
+  return normalizeRegistrationRecordList(name, value).map((record) => {
+    if (record.repeatable === true) {
+      record.list = true;
     }
-    return;
-  }
-  if (!isFlagDefaultScalar(value)) {
-    throw new TypeError(
-      `${name} must be a string, number, or boolean, or an array of these when provided`,
-    );
-  }
-}
-
-function assertOptionalStringArrayField(name: string, value: unknown): void {
-  if (value === undefined) {
-    return;
-  }
-  if (!Array.isArray(value)) {
-    throw new TypeError(
-      `${name} must be an array of non-empty strings when provided`,
-    );
-  }
-  for (const [index, entry] of value.entries()) {
-    if (typeof entry !== "string" || entry.trim().length === 0) {
-      throw new TypeError(`${name}[${index}] must be a non-empty string`);
-    }
-  }
-}
-
-function normalizeOptionalStringArrayField(
-  name: string,
-  value: unknown,
-): string[] {
-  assertOptionalStringArrayField(name, value);
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  const normalized: string[] = [];
-  const seen = new Set<string>();
-  for (const entry of value) {
-    const trimmed = entry.trim();
-    if (trimmed.length === 0 || seen.has(trimmed)) {
-      continue;
-    }
-    seen.add(trimmed);
-    normalized.push(trimmed);
-  }
-  return normalized;
+    return record as FlagDefinition;
+  });
 }
 
 function normalizeCommandActionName(value: string): string {
@@ -1756,6 +1700,14 @@ function validateFlagDefinitions(flags: unknown): void {
   }
   for (const [index, raw] of flags.entries()) {
     const record = asRegistrationRecord(`registerFlags flags[${index}]`, raw);
+    const unknownKeys = Object.keys(record)
+      .filter((key) => !FLAG_DEFINITION_KEYS.has(key))
+      .sort((left, right) => left.localeCompare(right));
+    if (unknownKeys.length > 0) {
+      throw new TypeError(
+        `registerFlags flags[${index}] contains unknown field(s): ${unknownKeys.join(", ")}`,
+      );
+    }
     const long = record.long;
     const short = record.short;
     if (long === undefined && short === undefined) {
@@ -1789,11 +1741,28 @@ function validateFlagDefinitions(flags: unknown): void {
       `registerFlags flags[${index}].list`,
       record.list,
     );
+    assertOptionalBooleanField(
+      `registerFlags flags[${index}].repeatable`,
+      record.repeatable,
+    );
+    if (
+      record.list !== undefined &&
+      record.repeatable !== undefined &&
+      record.list !== record.repeatable
+    ) {
+      throw new TypeError(
+        `registerFlags flags[${index}].list and repeatable must match when both are provided`,
+      );
+    }
     assertOptionalFlagDefaultField(
       `registerFlags flags[${index}].default`,
       record.default,
     );
-    if (Array.isArray(record.default) && record.list !== true) {
+    if (
+      Array.isArray(record.default) &&
+      record.list !== true &&
+      record.repeatable !== true
+    ) {
       throw new TypeError(
         `registerFlags flags[${index}].default cannot be an array unless list is true.`,
       );
@@ -1826,7 +1795,7 @@ function assertFlagValueTypeAndDefault(
   // comma-joined strings and nested arrays are flattened first — so a valid
   // default like `value_type: "number", default: "10,20"` is not wrongly rejected.
   const defaults =
-    record.list === true
+    record.list === true || record.repeatable === true
       ? flattenFlagListValue(record.default)
       : [record.default];
   for (const [defaultIndex, defaultValue] of defaults.entries()) {
@@ -2530,7 +2499,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
             layer: this.#loadedExtension.layer,
             name: this.#loadedExtension.name,
             target_command: normalizedCommand,
-            flags: normalizeRegistrationRecordList(
+            flags: normalizeFlagDefinitions(
               "registerCommand definition.flags",
               definition.flags,
             ),
@@ -2742,7 +2711,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
       assertNonEmptyString("registerFlags targetCommand", targetCommand),
     );
     validateFlagDefinitions(flags);
-    const normalizedFlags = normalizeRegistrationRecordList(
+    const normalizedFlags = normalizeFlagDefinitions(
       "registerFlags flags",
       flags,
     );
@@ -2986,7 +2955,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
           layer: this.#loadedExtension.layer,
           name: this.#loadedExtension.name,
           target_command: commandPath,
-          flags: normalizeRegistrationRecordList(
+          flags: normalizeFlagDefinitions(
             `${method} options.flags`,
             resolvedOptions.flags,
           ),

@@ -1,0 +1,18 @@
+id: pm-96tter
+title: "GH-688: seeded Plan creation must be atomic across ownership boundaries"
+description: Make pm plan create with seeded steps and linked artifacts preflight or transact ownership so a failed enrichment cannot leave a partial Plan when author and assignee differ.
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:plan",atomicity,gh-issue,multi-agent
+created_at: "2026-07-25T00:58:27.692Z"
+updated_at: "2026-07-25T00:58:27.692Z"
+author: codex-root
+acceptance_criteria: A cross-owner seeded plan either persists all requested steps/artifacts or leaves no Plan; CLI and SDK regression tests cover success and rollback.
+parent: pm-v7dj
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-8t5x,related,"2026-07-25T00:58:27.692Z",null,null
+  pm-je50,related,"2026-07-25T00:58:27.692Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-25T00:58:27.692Z",codex-root,"Duplicate check: searched all statuses for GH-688, seeded plan ownership conflict, partial Plan creation, atomic plan create, and cross-owner steps. Closed pm-v7dj/pm-je50 own the base workflow and pm-8t5x owns atomic claim behavior, but none owns transactional seeded Plan creation; this is the canonical residual issue."
+body: ""

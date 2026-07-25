@@ -485,8 +485,7 @@ export interface RendererOverrideOwnership {
   resultDiscriminator?: (result: unknown) => boolean;
 }
 /** Declarative renderer definition combining a callback with host-enforced ownership. */
-export interface ScopedRendererOverrideDefinition
-  extends RendererOverrideOwnership {
+export interface ScopedRendererOverrideDefinition extends RendererOverrideOwnership {
   /** Renderer callback invoked only after every declared ownership predicate matches. */
   run: RendererOverride;
 }
@@ -527,8 +526,18 @@ export interface ExtensionHookRegistry {
   onIndex: Array<RegisteredExtensionHook<OnIndexHook>>;
 }
 
+/** Portable workspace coordinates supplied to every extension runtime surface. */
+export interface PortableWorkspaceContext {
+  /** Immutable source workspace root, distinct from a sandboxed tracker root. */
+  source_workspace_root?: string;
+  /** Source VCS repository root when one can be resolved. */
+  repo_root?: string;
+  /** POSIX tracker path relative to the source workspace when contained there. */
+  pm_root_rel?: string;
+}
+
 /** Documents the command override context payload exchanged by command, SDK, and package integrations. */
-export interface CommandOverrideContext {
+export interface CommandOverrideContext extends PortableWorkspaceContext {
   /** Value that configures or reports command for this contract. */
   command: string;
   /** Value that configures or reports args for this contract. */
@@ -544,7 +553,7 @@ export interface CommandOverrideContext {
 }
 
 /** Documents the renderer override context payload exchanged by command, SDK, and package integrations. */
-export interface RendererOverrideContext {
+export interface RendererOverrideContext extends Partial<PortableWorkspaceContext> {
   /** Value that configures or reports format for this contract. */
   format: OutputRendererFormat;
   /** Value that configures or reports command for this contract. */
@@ -562,7 +571,7 @@ export interface RendererOverrideContext {
 }
 
 /** Documents the command handler context payload exchanged by command, SDK, and package integrations. */
-export interface CommandHandlerContext {
+export interface CommandHandlerContext extends PortableWorkspaceContext {
   /** Value that configures or reports command for this contract. */
   command: string;
   /** Value that configures or reports args for this contract. */
@@ -659,7 +668,7 @@ export interface PreflightOverrideDelta extends ParserOverrideDelta {
 }
 
 /** Documents the service override context payload exchanged by command, SDK, and package integrations. */
-export interface ServiceOverrideContext {
+export interface ServiceOverrideContext extends Partial<PortableWorkspaceContext> {
   /** Value that configures or reports service for this contract. */
   service: ExtensionServiceName;
   /** Value that configures or reports command for this contract. */
@@ -772,8 +781,11 @@ export interface FlagDefinition {
   type?: FlagValueType;
   /** When true, a repeated comma-list flag accumulates values across repeats — parity with core list flags such as `--tags` — instead of the last value winning. Mirrors the core `CliFlagContract.list` field so extension-registered list flags coalesce through the same bootstrap path. */
   list?: boolean;
+  /** Package-author-friendly alias for ordered list accumulation. Unlike CSV-friendly `list`, commas inside one repeated occurrence remain atomic. Normalized with `list: true` for host registration and contracts. */
+  repeatable?: boolean;
   /** Default value applied when the flag is omitted. Surfaced to runtime contracts and help output. A `list` flag may default to an array of scalars (e.g. `["a", "b"]`); the array is flattened/coerced like any list value. */
   default?: string | number | boolean | Array<string | number | boolean>;
+  /** Extension metadata remains structurally interoperable while activation rejects unknown runtime fields. */
   [key: string]: unknown;
 }
 

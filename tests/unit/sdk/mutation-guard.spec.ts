@@ -38,7 +38,7 @@ describe("SDK mutation guard", () => {
       PM_MUTATION_ACTION_CONTRACTS.filter(
         (contract) => contract.history_scope === "workspace",
       ).map((contract) => contract.action),
-    ).toEqual(["init"]);
+    ).toEqual(["history-author-acknowledge", "init"]);
     expect(
       PM_MUTATION_ACTION_CONTRACTS.filter(
         (contract) => contract.history_scope === "history",

@@ -31,14 +31,12 @@ export function runCommand(command, args, options = {}) {
     env = {},
     capture = false,
     allowFailure = false,
-    shell = false,
   } = options;
   const mergedEnv = { ...process.env, ...env };
 
   const result = spawnSync(command, args, {
     cwd,
     env: mergedEnv,
-    shell,
     encoding: "utf8",
     stdio: capture ? ["ignore", "pipe", "pipe"] : "inherit",
   });

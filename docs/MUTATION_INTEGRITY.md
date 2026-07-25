@@ -9,7 +9,8 @@ argument parsing or exposing detected values.
 ## Agent Quick Context
 
 - Every mutation should have a stable author. Precedence remains explicit
-  invocation author, `PM_AUTHOR`, then `author_default`.
+  invocation author, `PM_AUTHOR`, configured `author_default`, detected
+  harness identity, then `unknown`.
 - The secret guard inspects string leaves and returns only detector names and
   object paths. It never returns the matched value.
 - `pm health` reports old, unclaimed in-progress work as advisory governance
@@ -99,6 +100,13 @@ coordinates. After evidence-backed review, SDK hosts can call
 `acknowledgeUnknownAuthorHistoryEvents`. The function validates that every
 target is still an actionable unknown-author event and appends
 `history:author-acknowledge` to `_workspace.jsonl`.
+
+The same primitive is available as
+`pm history-author-acknowledge --event <item-id:line> ...`,
+`PmClient.historyAuthorAcknowledge`, and the MCP `pm_run` action
+`history-author-acknowledge`. See
+[Agent Runtime Primitives](AGENT_RUNTIME_PRIMITIVES.md) for the shared
+CLI/SDK/MCP contract.
 
 The acknowledgment includes target coordinates, the attributed principal,
 reviewer, and rationale. Subsequent health and validation scans keep the

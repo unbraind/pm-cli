@@ -28,6 +28,13 @@ export {
   type HistoryAuthorAttributionScan,
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
+export {
+  detectHarnessIdentity,
+  resolveAuthorIdentity,
+  type AuthorSource,
+  type HarnessDetectionSignals,
+  type ResolvedAuthorIdentity,
+} from "../core/shared/author.js";
 export { createPmCliProgram } from "./cli-program.js";
 export { runSearchRefreshWorkerEntrypoint } from "./search-refresh-worker.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
@@ -260,6 +267,7 @@ export {
   HISTORY_FLAG_CONTRACTS,
   HISTORY_REDACT_FLAG_CONTRACTS,
   HISTORY_REPAIR_FLAG_CONTRACTS,
+  HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
   INSTALL_FLAG_CONTRACTS,
   LEARNINGS_FLAG_CONTRACTS,

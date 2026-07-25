@@ -387,6 +387,14 @@ export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
 ];
 
+/** Public contract for append-only unknown-author acknowledgment flags. */
+export const HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--event", repeatable: true },
+  { flag: "--attributed-author", aliases: ["--attributed_author"] },
+  { flag: "--reviewer" },
+  { flag: "--reason" },
+];
+
 /** Public contract for history compact flag contracts, shared by SDK and presentation-layer consumers. */
 export const HISTORY_COMPACT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--before" },
@@ -1703,6 +1711,10 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["history", HISTORY_FLAG_CONTRACTS],
     ["history-redact", HISTORY_REDACT_FLAG_CONTRACTS],
     ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],
+    [
+      "history-author-acknowledge",
+      HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
+    ],
     ["history-compact", HISTORY_COMPACT_FLAG_CONTRACTS],
     ["merge", MERGE_FLAG_CONTRACTS],
     ["schema", SCHEMA_FLAG_CONTRACTS],

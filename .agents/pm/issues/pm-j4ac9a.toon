@@ -1,0 +1,30 @@
+id: pm-j4ac9a
+title: "GH-685: extension CommandContext needs portable source and tracker workspace coordinates"
+description: Expose canonical repo/source workspace and POSIX-relative tracker coordinates to extension commands so package authors can emit portable host-path-free results and linked-test sandboxes can distinguish source VCS context from isolated tracker storage.
+type: Issue
+status: in_progress
+priority: 1
+tags[7]: "area:sdk",context-management,extensions,gh-issue,packages,paths,privacy
+created_at: "2026-07-25T00:15:33.253Z"
+updated_at: "2026-07-25T02:02:49.103Z"
+assignee: codex-root
+author: codex-root
+parent: pm-ugqx
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-usfg,related,"2026-07-25T00:15:33.253Z",null,null
+  pm-z9x1r2,related,"2026-07-25T00:15:33.253Z",null,null
+  pm-954h0o,related,"2026-07-25T01:59:47.154Z",null,null
+  pm-s1w0sf,related,"2026-07-25T01:59:47.154Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-25T00:15:33.253Z",codex-root,"Duplicate check: searched all statuses for GH-685, extension CommandContext relative root, host-path privacy, repo root, and source workspace. No item owns the public context coordinate contract; core path-redaction and SDK-boundary work are adjacent but already shipped."
+  "2026-07-25T02:02:10.994Z","harness:codex","Evidence: standard pm get output now exposes tests_count without inflating agent context with the tests collection. Focused CLI assertions, token-budget validation across 14 surfaces, packed-consumer acceptance, and full coverage pass."
+  "2026-07-25T02:02:49.102Z","harness:codex","Correction to the immediately preceding evidence comment: this item owns portable extension workspace coordinates. Evidence: CommandContext exposes source_workspace_root, repo_root, and pm_root_rel without leaking checkout-specific tracker coordinates; packed-consumer and package-first acceptance pass."
+files[3]{path,scope,note}:
+  src/core/extensions/extension-types.ts,project,Portable extension workspace coordinates
+  src/core/extensions/index.ts,project,Portable extension workspace coordinates
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Portable extension workspace coordinates
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,Portable CommandContext contract
+body: ""

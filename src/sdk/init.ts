@@ -43,7 +43,10 @@ import {
   SETTINGS_DEFAULTS,
 } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
-import { resolveAuthor } from "../core/shared/author.js";
+import {
+  detectHarnessIdentity,
+  resolveAuthor,
+} from "../core/shared/author.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
@@ -932,9 +935,14 @@ async function createNewInitSettings(params: {
   settings.id_prefix = normalizedPrefix;
   applyGovernancePreset(settings, effectivePreset);
   const environmentAuthor = process.env.PM_AUTHOR?.trim() || undefined;
+  const detectedHarness = detectHarnessIdentity({
+    env: process.env,
+    argv: [process.execPath, ...process.argv],
+  });
   settings.author_default =
     params.normalizedOptions.authorFromOption ??
     environmentAuthor ??
+    (detectedHarness ? `harness:${detectedHarness}` : undefined) ??
     `${userInfo().username}@${hostname()}`;
   if (chosenTelemetryEnabled !== undefined) {
     settings.telemetry.enabled = chosenTelemetryEnabled;

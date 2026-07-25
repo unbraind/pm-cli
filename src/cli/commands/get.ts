@@ -68,6 +68,8 @@ type GetItemProjection = Partial<ItemMetadata> & {
   body?: string;
   /** Number of notes omitted by a token-bounded projection. */
   notes_count?: number;
+  /** Number of linked tests omitted by a token-bounded projection. */
+  tests_count?: number;
 };
 
 /** Documents the get result payload exchanged by command, SDK, and package integrations. */
@@ -211,6 +213,7 @@ function projectItemForDepth(
   return {
     ...projected,
     notes_count: item.notes?.length ?? 0,
+    tests_count: item.tests?.length ?? 0,
   };
 }
 
@@ -246,6 +249,7 @@ function validateGetFields(
     ...ITEM_METADATA_KEY_ORDER,
     ...runtimeMetadataKeys,
     "notes_count",
+    "tests_count",
   ]);
   const allowedRootFields = new Set([
     "body",
@@ -304,6 +308,10 @@ function projectItemForFields(
   fields: string[],
 ): GetItemProjection {
   const source = toItemRecord(item);
+  const omittedCounts = {
+    notes_count: item.notes?.length ?? 0,
+    tests_count: item.tests?.length ?? 0,
+  };
   const projected: Record<string, unknown> = {};
   for (const field of fields) {
     const normalized = normalizeGetField(field);
@@ -320,10 +328,9 @@ function projectItemForFields(
     ) {
       continue;
     }
-    projected[normalized] =
-      normalized === "notes_count"
-        ? (item.notes?.length ?? 0)
-        : source[normalized];
+    projected[normalized] = Object.hasOwn(omittedCounts, normalized)
+      ? omittedCounts[normalized as keyof typeof omittedCounts]
+      : source[normalized];
   }
   return projected as GetItemProjection;
 }

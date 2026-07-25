@@ -911,6 +911,8 @@ export interface HistoryEntry {
   ts: string;
   /** Value that configures or reports author for this contract. */
   author: string;
+  /** Provenance of the author selected for this event. Absent only on legacy entries. */
+  author_source?: "asserted" | "configured" | "detected" | "unknown";
   /** Value that configures or reports op for this contract. */
   op: string;
   /** Value that configures or reports patch for this contract. */

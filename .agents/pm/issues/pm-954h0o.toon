@@ -1,0 +1,30 @@
+id: pm-954h0o
+title: "GH-682: linked-test tracker sandbox must preserve source VCS workspace identity"
+description: Preserve an explicit read-only source workspace and VCS root when pm test executes with a sandboxed tracker so Git-aware SDK and package commands observe the same tags and repository metadata as direct execution while tracker writes remain isolated.
+type: Issue
+status: in_progress
+priority: 1
+tags[7]: "area:sdk","area:test",context-management,gh-issue,packages,sandbox,vcs
+created_at: "2026-07-25T00:15:28.871Z"
+updated_at: "2026-07-25T02:02:48.321Z"
+assignee: codex-root
+author: codex-root
+parent: pm-ugqx
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-kfq5,related,"2026-07-25T00:15:28.871Z",null,null
+  pm-usfg,related,"2026-07-25T00:15:28.871Z",null,null
+  pm-j4ac9a,related,"2026-07-25T01:59:46.187Z",null,null
+  pm-s1w0sf,related,"2026-07-25T01:59:46.187Z",null,null
+comments[5]{created_at,author,text}:
+  "2026-07-25T00:15:28.871Z",codex-root,"Duplicate check: searched every status for GH-682, linked-test sandbox PM_PATH Git context, tracker source workspace identity, release tags, and pm-changelog linked tests. Existing linked-test and SDK work does not own the distinct split between isolated tracker storage and read-only source VCS identity."
+  "2026-07-25T00:58:53.168Z",codex-root,"Scope extension from GH-689: preserving PM_SOURCE_WORKSPACE_ROOT for extension context is insufficient unless nested pm validate --check-files resolves linked repository artifacts against that source workspace while PM_PATH remains the isolated tracker. Acceptance now includes a nested package-script regression proving storage isolation and source file resolution coexist."
+  "2026-07-25T00:59:00.326Z",codex-root,"Scope extension from GH-689: preserving PM_SOURCE_WORKSPACE_ROOT for extension context is insufficient unless nested pm validate --check-files resolves linked repository artifacts against that source workspace while PM_PATH remains the isolated tracker. Acceptance now includes a nested package-script regression proving storage isolation and source file resolution coexist."
+  "2026-07-25T02:02:10.164Z","harness:codex","Evidence: extension option parsing now rejects unknown keys, preserves commas inside structured values, handles repeatable/list semantics deterministically, and validates defaults through the same contract path. Unit, contract snapshot, packed-consumer, package-first dogfood, and full coverage gates pass."
+  "2026-07-25T02:02:48.321Z","harness:codex","Correction to the immediately preceding evidence comment: this item owns linked-test source VCS identity. Evidence: execution propagates source_workspace_root while PM_PATH and PM_GLOBAL_PATH stay sandboxed; an installed tarball consumer ran a real linked test successfully."
+files[3]{path,scope,note}:
+  src/sdk/governance/validate.ts,project,Sandboxed tracker and source workspace validation
+  src/sdk/test/execution.ts,project,Sandboxed tracker and source workspace validation
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Sandboxed tracker and source workspace validation
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+body: ""

@@ -15,6 +15,10 @@ import {
   stableStringify,
 } from "../shared/serialization.js";
 import { nowIso } from "../shared/time.js";
+import {
+  resolveHistoryAuthorSource,
+  type AuthorSource,
+} from "../shared/author.js";
 import type {
   HistoryEntry,
   HistoryPatchOp,
@@ -163,6 +167,7 @@ export function hashEmptyDocument(): string {
 export function createHistoryEntry(params: {
   nowIso: string;
   author: string;
+  authorSource?: AuthorSource;
   op: string;
   before: ItemDocument;
   after: ItemDocument;
@@ -182,6 +187,8 @@ export function createHistoryEntry(params: {
   return {
     ts: params.nowIso,
     author: params.author,
+    author_source:
+      params.authorSource ?? resolveHistoryAuthorSource(params.author),
     op: params.op,
     patch,
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),
