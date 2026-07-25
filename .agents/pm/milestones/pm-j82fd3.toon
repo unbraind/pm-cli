@@ -1,0 +1,33 @@
+id: pm-j82fd3
+title: "Outcome milestone: agent-legible command grammar — one-screen surface, zero feature loss, alias-preserved"
+description: ""
+type: Milestone
+status: open
+priority: 1
+tags[6]: agent-ux,grammar,"horizon:near",milestone,outcome,token-efficiency
+created_at: "2026-07-24T23:42:39.540Z"
+updated_at: "2026-07-24T23:44:37.988Z"
+deadline: "2026-10-31T00:00:00.000Z"
+author: maintainer-agent
+estimated_minutes: 4800
+acceptance_criteria: Top-level command count meets the pm-pbyu ADR target with zero capability removed; Every pre-consolidation spelling resolves via the alias shim with a one-line migration hint; Golden agent-transcript replay shows a measured tokens-per-completed-task reduction versus the pre-consolidation baseline; Tiered help renders the full core surface in one screen; pm help --all remains complete
+goal: agent-legible-surface
+objective: A coding agent operates every pm capability from one screen of help without out-of-band context
+value: "Cuts the dominant agent onboarding cost: today's ~70 top-level commands force out-of-band documentation reads before the first useful call."
+impact: Every agent invocation in every downstream workspace gets cheaper; the grammar freeze in the GA contract depends on this landing first.
+outcome: "Top-level noun count at or below the ADR target, every retired spelling still functional as a hidden alias, and a measured drop in tokens-per-completed-task."
+why_now: "The surface is still growing (graph, plan, merge, history-* families all landed post-v0.1). Consolidating later means freezing more aliases forever."
+parent: pm-doxj
+risk: medium
+confidence: high
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-0z7n,related,"2026-07-24T23:42:39.540Z",null,null
+  pm-1kxs,related,"2026-07-24T23:42:39.540Z",null,null
+  pm-8pnj,related,"2026-07-24T23:42:39.540Z",null,null
+  pm-e2bq,related,"2026-07-24T23:42:39.540Z",null,null
+  pm-m08hza,related,"2026-07-24T23:42:39.540Z",null,null
+  pm-mpbb,related,"2026-07-24T23:42:39.540Z",null,null
+  pm-n7rr,related,"2026-07-24T23:42:39.540Z",null,null
+  pm-pbyu,blocked_by,"2026-07-24T23:42:39.540Z",null,null
+  pm-xp1xsw,related,"2026-07-24T23:44:37.716Z",null,null
+body: "## Outcome\nA coding agent that has never seen this workspace can enumerate and operate the entire pm capability set from a single screen of help output, and every historical spelling keeps working.\n\n## Why this is a milestone, not an epic\npm-n7rr is the living execution epic (partition of consolidation tasks). This milestone is the outcome gate: it declares when the grammar work is done enough to freeze, which is the precondition the GA stability contract (pm-agou) consumes.\n\n## Delivery chain\npm-pbyu (ADR, accept first) -> pm-0z7n (alias shim foundation) -> the consolidation partition under pm-n7rr (pfqi/kcs4/tqel/yql1/tnud/6apl/xkgq/ik19/eq4x/o3fh/npr3/lp4j/szdc) -> pm-e2bq tiered help -> pm-8pnj transcript replay proves the outcome.\n\n## Explicit non-goals\nNo capability removal. No breaking rename without an alias. No grammar freeze here — freezing is pm-agou's job."

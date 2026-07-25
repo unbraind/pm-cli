@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:governance","area:health","area:validate",backlog,living-map,pm-cli
 created_at: "2026-07-04T19:46:21.526Z"
-updated_at: "2026-07-21T15:56:05.581Z"
+updated_at: "2026-07-24T23:54:43.616Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "pm validate/health warnings each map to an open remediation item; metadata-coverage predicates + issue-code + content-field governance stay accurate (no false positives, no missed real gaps); remediation registry keeps every finding machine-executable."
@@ -16,6 +16,9 @@ value: "An agent can rebuild full context from pm alone because every item's met
 parent: pm-doxj
 risk: low
 confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-bzmeaa,related,"2026-07-24T23:54:43.262Z",null,null
+  pm-rtn5h6,related,"2026-07-24T23:54:43.262Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-13T22:09:17.607Z",codex-root,"Governance extension 2026-07-13: pm-96h7 is the canonical typed relationship-graph maturity initiative under this capability. Its governance slice pm-6x7o defines semantic edge validation, profile-aware coverage, isolate waivers, counts-first audits, dry-run remediation, active-versus-terminal safety, and shared SDK findings. The all-status plan pm-a8zm is intentionally blocked until semantics and tooling exist; it forbids density-only links and separates terminal batches through pm-e9zh."
   "2026-07-18T14:08:41.384Z",codex-ecosystem-planner,"Governance baseline 2026-07-18: all active items have parent, AC, estimate, risk, confidence, and history; graph has zero actionable findings and zero active isolates. Metadata debt remains historical and already owned: validation warns validate_resolution_missing_fields:276 under pm-e9zh/pm-wenq and health warns history_unknown_author_events:5 under pm-h90s; history drift is zero. Dedupe audits found one exact/fuzzy cluster consisting solely of three already-canceled accidental probe items, and parent-scope mode found zero clusters. Do not rewrite historical terminal evidence with placeholders or manufacture graph edges. New filing pm-szdc passed all-status focused/exact duplicate checks."

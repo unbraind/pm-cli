@@ -1,0 +1,36 @@
+id: pm-o87av6
+title: "Outcome milestone: proven scale — sub-second bounded-token context at a million items with thousands of concurrent agents"
+description: ""
+type: Milestone
+status: open
+priority: 2
+tags[7]: concurrency,context-management,"horizon:long",milestone,outcome,performance,scale
+created_at: "2026-07-24T23:43:41.928Z"
+updated_at: "2026-07-24T23:44:34.766Z"
+deadline: "2027-09-30T00:00:00.000Z"
+author: maintainer-agent
+estimated_minutes: 9600
+acceptance_criteria: "list/context/next/get-by-filter are served from a derived index with cost proportional to the result, not the workspace; Published benchmark evidence at 1M items shows sub-second bounded-token context assembly on commodity hardware; Claim and lock throughput is measured under thousands of concurrent agents with documented contention behaviour; The small end is proven too: a three-item scratch workspace pays proportional, near-zero ceremony and token cost; History and repository growth stay bounded by an automated compaction, gc, and archival policy"
+goal: proven-scale
+objective: "Context assembly cost is bounded by the answer size, not the workspace size, at every scale from three items to a million"
+value: "Scale is the claim that distinguishes pm from a flat-file backlog: an agent must not pay for workspace size it never reads."
+impact: "Determines whether pm can host decade-spanning, multi-team, thousands-of-agents workspaces or stays a single-repo tool."
+outcome: "Published, reproducible benchmark evidence for latency, memory, token cost, and claim throughput at the million-item and thousand-agent points."
+why_now: The read path still scans item files; every capability added before the index lands inherits the scan and has to be re-tuned afterwards.
+parent: pm-doxj
+risk: high
+confidence: medium
+dependencies[12]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-801d,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-9rxu,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-g2zz,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-lvyd,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-m08hza,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-o79o,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-plwm,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-z436,related,"2026-07-24T23:43:41.928Z",null,null
+  pm-9rgaal,blocked_by,"2026-07-24T23:44:34.545Z",null,null
+  pm-w7ccmv,related,"2026-07-24T23:44:34.545Z",null,null
+  pm-xp1xsw,related,"2026-07-24T23:44:34.545Z",null,null
+body: "## Outcome\nCost is a function of the answer, not the archive. The same binary serves a three-item scratch project created minutes ago and a million-item workspace spanning decades, with no special mode the agent has to know about.\n\n## Why this is a milestone, not an epic\npm-9rxu is the living execution epic. This milestone is the outcome gate: it declares the scale claims the GA contract is allowed to publish.\n\n## Delivery chain\npm-801d persistent derived read index -> pm-plwm index-backed --where predicates -> pm-0qg5 item-directory fan-out -> pm-lvyd claim throughput -> pm-o79o growth policy -> pm-5qmm memory tiers for decades-old epochs. Spectrum stories pm-g2zz (large) and pm-z436 (small) are the acceptance narratives.\n\n## Explicit non-goals\nNo daemon (ADR pm-i7i4). No external database requirement for the base install. No scale mode the agent has to opt into."

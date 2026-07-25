@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: algorithms,"area:context","area:sdk",context-management,governance,roadmap,token-efficiency
 created_at: "2026-07-22T18:25:57.017Z"
-updated_at: "2026-07-22T18:28:19.006Z"
+updated_at: "2026-07-24T23:56:53.926Z"
 author: codex-root
 estimated_minutes: 480
 acceptance_criteria: "Inventory every named mechanism in pm-4k6b and pm-vvib by stable descriptive slug rather than audit-run or document numbering; For each mechanism record proposal state, owning canonical item, decision gate, SDK surface, required data sources, scale behavior, privacy and safety risks, evaluation scenarios, and delivery evidence; Create an individual implementation, research, decision, or rejection item only when no canonical owner exists and the applicable ADR permits it; every creation includes an all-status duplicate check; Shared substrate work is linked without pretending one item independently delivers multiple user-visible mechanisms; independent acceptance surfaces receive independent items; Rejected, deferred, superseded, and merged ideas retain rationale and relationships in immutable history; The registry supports bounded token-efficient queries and remains valid from tiny workspaces through million-item multi-decade workspaces; pm-atfm or its successor links a judgment scenario and regression threshold for every mechanism promoted toward delivery"
@@ -17,7 +17,7 @@ impact: "Prevents hidden scope, duplicate algorithm work, premature implementati
 outcome: "A machine-queryable registry maps every named mechanism to one canonical pm item, decision state, dependencies, scale regime, evaluation scenario, and evidence trail"
 why_now: "The canonical context and cognitive-memory items contain a mature multi-mechanism catalog, but several mechanisms are intentionally note-only pending ADR acceptance or mapped across shared delivery items; explicit portfolio governance is now necessary."
 parent: pm-4k6b
-dependencies[7]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-3hps,related,"2026-07-22T18:25:57.017Z",codex-root,null
   pm-55ra,related,"2026-07-22T18:25:57.017Z",codex-root,null
   pm-801d,related,"2026-07-22T18:25:57.017Z",codex-root,null
@@ -25,6 +25,8 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-m08hza,related,"2026-07-22T18:25:57.017Z",codex-root,null
   pm-uwfs,related,"2026-07-22T18:25:57.017Z",codex-root,null
   pm-vvib,blocked_by,"2026-07-22T18:25:57.017Z",codex-root,null
+  pm-5t33or,related,"2026-07-24T23:56:53.638Z",null,null
+  pm-z9x1r2,related,"2026-07-24T23:56:53.638Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-22T18:25:57.017Z",codex-root,"Duplicate check: all-status searches for context algorithm catalog, algorithm owner matrix, memory subsystem registry, delivery wave, and idea disposition found the canonical implementation feature pm-4k6b and proposed ADR pm-vvib, but no item owns the one-to-one proposal-to-item governance required here. This task does not reopen shipped mechanisms or bypass the ADR; it makes their state and ownership queryable."
   "2026-07-22T18:26:36.697Z",codex-root,"Portfolio boundary: pm-4k6b remains the canonical adaptive-engine feature and pm-vvib remains the proposed cognitive-memory decision. This task owns registry completeness and disposition only. It must not reopen shipped substrate, accept the ADR implicitly, or convert speculative mechanisms into implementation commitments without independent acceptance surfaces and evaluation evidence."

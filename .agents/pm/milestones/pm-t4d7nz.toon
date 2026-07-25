@@ -1,0 +1,35 @@
+id: pm-t4d7nz
+title: "Outcome milestone: universal domain platform — non-PM systems are buildable on pm SDK primitives alone"
+description: ""
+type: Milestone
+status: open
+priority: 3
+tags[7]: digital-twin,extensibility,"horizon:far",milestone,outcome,sdk,universal-tool
+created_at: "2026-07-24T23:44:02.049Z"
+updated_at: "2026-07-24T23:44:33.677Z"
+deadline: "2028-06-30T00:00:00.000Z"
+author: maintainer-agent
+estimated_minutes: 12000
+acceptance_criteria: "Custom types, statuses, workflows, fields, and relationship kinds are fully definable at runtime with lossless migration; Principal-based item-level policy is enforced at the SDK layer, not per-surface; Cross-workspace federation supports context, dependencies, and aggregation across many repositories; A published exemplar outside project management ships with an empty SDK gap ledger; Project profiles let a workspace be reshaped for a non-software domain without editing core"
+goal: universal-domain-platform
+objective: "A developer models a foreign domain — version control, business workflows, a digital twin — using only public pm SDK primitives"
+value: "Proves the central product claim: pm is an event-sourced, graph-native context substrate, and project management is one application of it."
+impact: Opens the addressable surface beyond software backlogs and turns the extension ecosystem into a platform rather than a plugin list.
+outcome: "At least three foreign-domain exemplars ship with no core forks, no private-core imports, and a published gap ledger that is empty."
+why_now: The first two exemplars (a git-like VCS and a temporal digital twin) already shipped and produced a gap report; the remaining gaps decide whether the platform claim is real or aspirational.
+parent: pm-doxj
+risk: high
+confidence: medium
+dependencies[11]{id,kind,created_at,author,source_kind}:
+  pm-8jdc,related,"2026-07-24T23:44:02.049Z",null,null
+  pm-dijg,related,"2026-07-24T23:44:02.049Z",null,null
+  pm-is1a,related,"2026-07-24T23:44:02.049Z",null,null
+  pm-m08hza,related,"2026-07-24T23:44:02.049Z",null,null
+  pm-ugqx,related,"2026-07-24T23:44:02.049Z",null,null
+  pm-xc68,related,"2026-07-24T23:44:02.049Z",null,null
+  pm-z5nb,related,"2026-07-24T23:44:02.049Z",null,null
+  pm-9rgaal,blocked_by,"2026-07-24T23:44:33.478Z",null,null
+  pm-o87av6,related,"2026-07-24T23:44:33.478Z",null,null
+  pm-w7ccmv,blocked_by,"2026-07-24T23:44:33.478Z",null,null
+  pm-xp1xsw,related,"2026-07-24T23:44:33.478Z",null,null
+body: "## Outcome\npm SDK primitives — typed items, custom status graphs, a relationship registry, immutable event history, point-in-time reconstruction, transactional multi-item commits, and bounded graph queries — are sufficient to model domains that have nothing to do with software backlogs.\n\n## Evidence already recorded\nTwo exemplars landed and closed: a git-like version-control extension and a temporal digital-twin phase-2 exemplar. Their gap reports named the missing primitives; the transaction waiver has since been retired. This milestone tracks the remaining distance.\n\n## Delivery chain\npm-8jdc schema/config completion (incl. pm-z5nb, pm-dijg migrations) -> pm-xc68 policy roles -> pm-is1a federation -> a third foreign-domain exemplar with an empty gap ledger. Depends on the SDK-complete milestone being reached first.\n\n## Explicit non-goals\nNo domain-specific policy in core. Exemplars are conformance vehicles, not products."

@@ -1,0 +1,31 @@
+id: pm-xp1xsw
+title: "Outcome milestone: v1.0 GA stability contract — frozen grammar, semver SDK surface, storage format policy, published scale targets"
+description: ""
+type: Milestone
+status: open
+priority: 2
+tags[7]: contract,ga,"horizon:gate",milestone,outcome,semver,stability
+created_at: "2026-07-24T23:44:20.858Z"
+updated_at: "2026-07-24T23:44:20.858Z"
+deadline: "2027-12-31T00:00:00.000Z"
+author: maintainer-agent
+estimated_minutes: 3600
+acceptance_criteria: "The CLI grammar is frozen against the contract table with alias-removal windows measured by usage counters, not guesswork; The public SDK surface carries semver commitments with a compatibility test suite proving them; Storage format_version policy defines forward and backward compatibility windows with an automated cross-version matrix; Published scale targets are backed by reproducible benchmark evidence, not claims"
+goal: v1-ga-stability
+objective: "Downstream users can depend on pm surfaces with written, testable compatibility guarantees"
+value: Without a stability contract every consumer treats pm as pre-release and refuses to build durable integrations on it.
+impact: Converts the ecosystem from experimental packages to dependable ones and makes deprecations governable instead of ad hoc.
+outcome: "A published contract states what is frozen, what may change, and how long removed spellings survive — enforced by compatibility tests."
+why_now: "Deferred deliberately: freezing before grammar consolidation and SDK completion would immortalise the surface this roadmap is trying to simplify."
+parent: pm-doxj
+risk: high
+confidence: medium
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-0mox,related,"2026-07-24T23:44:20.858Z",null,null
+  pm-9rgaal,blocked_by,"2026-07-24T23:44:20.858Z",null,null
+  pm-agou,blocked_by,"2026-07-24T23:44:20.858Z",null,null
+  pm-j82fd3,blocked_by,"2026-07-24T23:44:20.858Z",null,null
+  pm-m08hza,related,"2026-07-24T23:44:20.858Z",null,null
+  pm-m2u1,related,"2026-07-24T23:44:20.858Z",null,null
+  pm-w7ccmv,blocked_by,"2026-07-24T23:44:20.858Z",null,null
+body: "## Outcome\nA written, testable stability contract for the CLI grammar, the SDK API, the storage format, and the published scale targets.\n\n## Gate semantics\nThis milestone is a gate, not a workstream: it cannot open until the grammar, SDK-complete, and provable-history milestones are reached, and its scale claims are limited to what the scale milestone has actually measured.\n\n## Delivery chain\nADR pm-agou drafts the contract -> pm-0mox alias usage counters supply removal evidence -> the cross-version compatibility matrix supplies format evidence -> benchmark evidence supplies the scale numbers.\n\n## Explicit non-goals\nNot a feature freeze. Not a marketing event — messaging lives under pm-wjfa."

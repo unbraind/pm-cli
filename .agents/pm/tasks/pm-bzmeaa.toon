@@ -1,0 +1,32 @@
+id: pm-bzmeaa
+title: "Strategic reachability invariant: every active item resolves to an outcome milestone through a typed, explainable path within a bounded hop count"
+description: ""
+type: Task
+status: open
+priority: 1
+tags[7]: "area:sdk",context-management,depth,governance,graph,relationships,traceability
+created_at: "2026-07-24T23:47:30.529Z"
+updated_at: "2026-07-24T23:47:30.529Z"
+author: maintainer-agent
+estimated_minutes: 1500
+acceptance_criteria: "The audit profile reports depth distribution, eccentricity, and shortest-path-to-milestone for every active item, not just isolate and degree counts; A declared policy states the maximum acceptable hop distance to an outcome milestone and the minimum distinct edge-kind count on the path; Violations surface as audit findings with a remediation hint naming candidate anchors, never as an instruction to fabricate an edge; Deliberately shallow items are representable as reviewed waivers with recorded rationale rather than silently failing; The profile is computed within the graph analytics token and latency budgets and stays bounded at million-item scale"
+goal: explainable-graph
+objective: Graph algorithms alone can answer why any item exists and which outcome it serves
+value: "The graph currently guarantees that no active item is isolated. That is a floor, not a structure: an item can satisfy it with one parent edge and still be unreachable from any strategic outcome, which means no traversal can explain why it is being worked on."
+impact: "Turns the relationship graph from a connectivity artifact into a navigable explanation of the project, which is the precondition for graph-driven context assembly and for the reachability-based relevance signals the context engine wants."
+outcome: "A governance profile reports, for every active item, the shortest typed path to an outcome milestone and the edge-kind diversity along it; violations are findings with named owners."
+why_now: "Outcome milestones now exist as graph roots, so reachability finally has a defined target. Measuring depth before the terminal-history backfill waves run means the waves can be aimed at the actual gaps."
+parent: pm-96h7
+risk: medium
+confidence: medium
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-33cw,related,"2026-07-24T23:47:30.529Z",null,null
+  pm-4k6b,related,"2026-07-24T23:47:30.529Z",null,null
+  pm-6x7o,related,"2026-07-24T23:47:30.529Z",null,null
+  pm-7ob5,related,"2026-07-24T23:47:30.529Z",null,null
+  pm-a8zm,related,"2026-07-24T23:47:30.529Z",null,null
+  pm-doxj,related,"2026-07-24T23:47:30.529Z",null,null
+  pm-m2il,related,"2026-07-24T23:47:30.529Z",null,null
+  pm-p9a4,related,"2026-07-24T23:47:30.529Z",null,null
+  pm-qnl2,related,"2026-07-24T23:47:30.529Z",null,null
+body: "## Problem\nThe active graph reports zero isolates and zero degree-one nodes, which reads as healthy. It is not the property that matters. What matters for an agent is whether a traversal from an item reaches an outcome that explains it, and how many typed hops that takes. A workspace can be fully connected and still be a flat list wearing a graph costume.\n\n## What good looks like\nFrom any active item, following typed edges reaches an outcome milestone; the path passes through the epic that owns the capability, the feature that delivers it, and the decision that authorised it; and each hop is explainable from the edge kind alone. That is depth, and depth is what makes graph algorithms useful for context assembly rather than decorative.\n\n## Measures to add\nDepth distribution and eccentricity per active node; shortest typed path to any outcome milestone; edge-kind diversity along that path; count of nodes reachable only through a single parent edge; component structure of the active subgraph excluding parent edges, which is the honest test of semantic linkage.\n\n## Boundary\nNo density targets and no fabricated edges. An unreachable item is a signal that either an anchor is missing or the item should not be active — both are answers, and both are better than an invented edge."

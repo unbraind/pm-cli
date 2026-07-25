@@ -1,0 +1,33 @@
+id: pm-a8lnoh
+title: "Deterministic fault and concurrency simulation harness: seeded, reproducible interleavings and IO failures replayed against the SDK"
+description: ""
+type: Task
+status: open
+priority: 1
+tags[8]: "area:sdk",ci,concurrency,defect-detection,durability,multi-agent,simulation,testing
+created_at: "2026-07-24T23:46:28.176Z"
+updated_at: "2026-07-24T23:46:28.176Z"
+author: maintainer-agent
+estimated_minutes: 3600
+acceptance_criteria: "A seeded scheduler drives concurrent claim, mutate, commit, merge, and compaction operations with reproducible interleavings from a single seed; Fault injection covers partial writes, fsync failure, EIO, ENOSPC, process kill between journal and apply, and lock-holder death; After every simulated schedule, workspace invariants are asserted: history chain verifies, storage integrity validates, no lost update, no duplicate id, no orphaned lock; A failing schedule reports a seed that reproduces the failure deterministically, and the seed is recordable on the resulting pm item; Nightly runs sweep a seed corpus; discovered failing seeds become permanent regression cases"
+goal: ci-detects-every-defect
+objective: Concurrency and crash bugs are found by a deterministic search rather than by production flakes
+value: "The known open races — lock-free workspace singleton writes, id reservation TOCTOU, stale-lock reclamation — were all found by reasoning or by luck, not by tests. At thousands of concurrent agents, luck stops scaling."
+impact: "Converts the entire class of concurrency and partial-write defects from intermittent production surprises into reproducible, bisectable failures with a seed."
+outcome: "A seeded simulator drives concurrent SDK operations and injected IO faults, asserts workspace invariants after every schedule, and reports a failing seed that reproduces exactly."
+why_now: "Multi-agent operation is a stated product requirement and the storage layer just gained transactions, merge drivers, and history reanchoring — the invariants are now rich enough to be worth checking mechanically, and complex enough that review alone will not."
+parent: pm-dj98
+risk: high
+confidence: medium
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-9yfo,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-bgcu,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-khdq,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-lvyd,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-m2il,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-o2kc,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-o87av6,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-rtn5h6,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-w7ccmv,related,"2026-07-24T23:46:28.176Z",null,null
+  pm-zwib,related,"2026-07-24T23:46:28.176Z",null,null
+body: "## Problem\nThe tests prove that operations work when nothing goes wrong. The product promise is that thousands of agents mutate the same workspace across branches without conflict or loss, and that every mutation survives a crash. Neither promise is currently tested against adversarial scheduling or IO failure.\n\n## Approach\nDeterministic simulation: control the sources of nondeterminism (scheduling, clock, filesystem outcomes) behind seeded injectors, enumerate schedules from a seed, and assert invariants after each. A failure yields a seed, and a seed yields an exact reproduction — which is what makes concurrency bugs fixable at all.\n\n## Invariants to assert\nHash-chain verification passes; storage integrity validation passes; no update is lost across concurrent writers; ids never collide; locks are never orphaned past their TTL; a merge of any two divergent branches converges to the same state regardless of merge order.\n\n## Known targets this should catch\nThe three recorded open races — workspace singleton read-modify-write, id reservation TOCTOU, stale-lock reclamation — are the acceptance targets. If the harness does not find them from a cold start, it is not searching hard enough.\n\n## Boundary\nNot a load benchmark: throughput measurement stays with the claim-throughput work. Not chaos in production."

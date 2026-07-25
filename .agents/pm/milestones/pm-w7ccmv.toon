@@ -1,0 +1,33 @@
+id: pm-w7ccmv
+title: "Outcome milestone: provable history — every mutation immutably recorded, independently verifiable, restorable to any version"
+description: ""
+type: Milestone
+status: open
+priority: 1
+tags[7]: audit,history,"horizon:mid",immutability,integrity,milestone,outcome
+created_at: "2026-07-24T23:43:21.135Z"
+updated_at: "2026-07-24T23:44:35.854Z"
+deadline: "2027-03-31T00:00:00.000Z"
+author: maintainer-agent
+estimated_minutes: 5400
+acceptance_criteria: "A contract-driven gate proves every mutating CLI and SDK action appends a history entry, with zero exemptions outside a reviewed waiver ledger; Workspace-scoped mutations (schema/config/profile/init) write to an append-only audit stream; A detached hash-chain proof bundle exports and verifies standalone, without the workspace; Per-entry author attribution is verifiable rather than self-asserted, and unknown-author events are rejected under strict mode; Restore-to-any-version and point-in-time reads hold across compaction, redaction, repair, and merge"
+goal: provable-history
+objective: "Any third party can verify that the recorded history of any workspace was never altered, and any item can be reconstructed at any point in time"
+value: "Immutable, verifiable proof is what makes an agent-written tracker trustworthy: without it, thousands of autonomous mutations are unauditable assertions."
+impact: "Precondition for organizational adoption, for policy enforcement, and for any regulated or contractual use of pm as the system of record."
+outcome: "Zero mutating actions bypass the history stream, per-entry authorship is attributable, and a detached proof bundle verifies standalone."
+why_now: "Workspace-scoped mutations (schema, config, profile, init) still leave no append-only record, so the every-mutation-leaves-proof invariant is not yet true."
+parent: pm-doxj
+risk: high
+confidence: medium
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-33cw,related,"2026-07-24T23:43:21.135Z",null,null
+  pm-3z0k,related,"2026-07-24T23:43:21.135Z",null,null
+  pm-9yfo,related,"2026-07-24T23:43:21.135Z",null,null
+  pm-klo8,related,"2026-07-24T23:43:21.135Z",null,null
+  pm-m08hza,related,"2026-07-24T23:43:21.135Z",null,null
+  pm-o2kc,related,"2026-07-24T23:43:21.135Z",null,null
+  pm-u14c,related,"2026-07-24T23:43:21.135Z",null,null
+  pm-9rgaal,related,"2026-07-24T23:44:35.637Z",null,null
+  pm-j82fd3,related,"2026-07-24T23:44:35.637Z",null,null
+body: "## Outcome\nEvery mutating pm action leaves a permanent, tamper-evident record. Any item is restorable to any recorded version. A third party holding only an exported proof bundle can confirm the recorded history was never altered.\n\n## Standing invariant this closes\nThe product invariant states that all mutating actions record permanently and immutably. Today item mutations satisfy it; workspace-scoped mutations (pm-klo8) do not, the completeness gate proving it (pm-9yfo) is not built, portable proof (pm-3z0k) is not exported, and authorship (pm-u14c) is self-asserted.\n\n## Delivery chain\npm-9yfo completeness gate (phase 1 item scope first) -> pm-klo8 workspace audit stream -> pm-3z0k portable attestation -> pm-u14c per-entry signatures. Compaction, redaction, and repair paths must each be proven not to break replay.\n\n## Explicit non-goals\nNo history rewriting to fix legacy gaps. No hand-attribution of legacy unknown-author events."
