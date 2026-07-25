@@ -381,6 +381,16 @@
       "requires_extension": false
     },
     {
+      "action": "history-author-acknowledge",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "history-author-acknowledge",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "history-compact",
       "available": true,
       "cli_exposed": true,
@@ -880,6 +890,7 @@
     "graph",
     "health",
     "history",
+    "history-author-acknowledge",
     "history-compact",
     "history-redact",
     "history-repair",
@@ -2684,6 +2695,28 @@
         },
         {
           "flag": "--format"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history-author-acknowledge",
+      "flags": [
+        {
+          "flag": "--event",
+          "repeatable": true
+        },
+        {
+          "aliases": [
+            "--attributed_author"
+          ],
+          "flag": "--attributed-author"
+        },
+        {
+          "flag": "--reviewer"
+        },
+        {
+          "flag": "--reason"
         }
       ],
       "provider": "core"
@@ -8666,6 +8699,7 @@
     "health",
     "help",
     "history",
+    "history-author-acknowledge",
     "history-compact",
     "history-redact",
     "history-repair",
@@ -9923,7 +9957,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, graph, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, history-author-acknowledge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, graph, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions are available dynamically when their provider package is installed.",
             "type": "string"
           },
           "author": {
@@ -20090,6 +20124,91 @@
           "action"
         ],
         "title": "pm action \"history-compact\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "history-author-acknowledge",
+            "description": "Tool action to execute."
+          },
+          "attributedAuthor": {
+            "description": "Principal attributed to the immutable unknown-author history events after review.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
+          "historyEvent": {
+            "description": "Unknown-author history target in <item-id>:<one-based-line> form.",
+            "examples": [
+              [
+                "pm-example:4",
+                "pm-example:5"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "reason": {
+            "description": "Reason.",
+            "type": "string"
+          },
+          "reviewer": {
+            "description": "Reviewer.",
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "historyEvent",
+          "attributedAuthor",
+          "reviewer",
+          "reason"
+        ],
+        "title": "pm action \"history-author-acknowledge\" parameters",
         "type": "object"
       },
       {

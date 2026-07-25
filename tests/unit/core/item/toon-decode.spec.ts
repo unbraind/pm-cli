@@ -14,37 +14,41 @@ describe("decodeToonItemContent", () => {
     expect(result.value).toMatchObject({ title: "Hello", priority: 2 });
   });
 
-  it("recovers a quoted value containing a bracketed-token-then-colon via strict escaped retry", () => {
-    // Reproduces the upstream round-trip bug: the strict decoder mis-detects
-    // the bracket in the quoted value as a "key[N]:" array header and throws.
-    const result = decodeToonItemContent('body: "POST [redacted_endpoint]: HTTP 200, accepted:1"');
-    expect(result.usedScalarBracketEscape).toBe(true);
-    expect(result.value).toMatchObject({ body: "POST [redacted_endpoint]: HTTP 200, accepted:1" });
+  it("decodes a quoted bracketed-token-then-colon natively with TOON 2.3.1", () => {
+    const result = decodeToonItemContent(
+      'body: "POST [redacted_endpoint]: HTTP 200, accepted:1"',
+    );
+    expect(result.usedScalarBracketEscape).toBe(false);
+    expect(result.value).toMatchObject({
+      body: "POST [redacted_endpoint]: HTTP 200, accepted:1",
+    });
   });
 
-  it("does NOT retry unchanged content for non-bracket strict errors", () => {
-    expect(() => decodeToonItemContent("a: 1\na: 2")).toThrow(/Duplicate sibling key/);
-    expect(() => decodeToonItemContent("tags[2]: one")).toThrow(/Expected 2 inline array items/);
-  });
-
-  it("still enforces strict-only invariants after the escaped retry engages", () => {
-    // The bracketed scalar causes the escaped retry to run, but duplicate keys
-    // must still fail because the retry stays in strict mode.
-    expect(() => decodeToonItemContent('body: "POST [redacted_endpoint]: HTTP 200"\na: 1\na: 2')).toThrow(
+  it("preserves strict decoder failures", () => {
+    expect(() => decodeToonItemContent("a: 1\na: 2")).toThrow(
       /Duplicate sibling key/,
     );
+    expect(() => decodeToonItemContent("tags[2]: one")).toThrow(
+      /Expected 2 inline array items/,
+    );
+    expect(() =>
+      decodeToonItemContent(
+        'body: "POST [redacted_endpoint]: HTTP 200"\na: 1\na: 2',
+      ),
+    ).toThrow(/Duplicate sibling key/);
+    expect(() =>
+      decodeToonItemContent('a: "p[x]: y"\nb: "unterminated'),
+    ).toThrow(/Unterminated string/);
   });
 
-  it("surfaces escaped strict retry errors for genuinely malformed documents", () => {
-    expect(() => decodeToonItemContent('a: "p[x]: y"\nb: "unterminated')).toThrow(/Unterminated string/);
-  });
-
-  it("preserves array headers while escaping only quoted scalar brackets", () => {
-    const result = decodeToonItemContent([
-      "tags[2]: alpha,beta",
-      'body: "POST [redacted_endpoint]: HTTP 200"',
-    ].join("\n"));
-    expect(result.usedScalarBracketEscape).toBe(true);
+  it("preserves array headers beside quoted scalar brackets", () => {
+    const result = decodeToonItemContent(
+      [
+        "tags[2]: alpha,beta",
+        'body: "POST [redacted_endpoint]: HTTP 200"',
+      ].join("\n"),
+    );
+    expect(result.usedScalarBracketEscape).toBe(false);
     expect(result.value).toMatchObject({
       tags: ["alpha", "beta"],
       body: "POST [redacted_endpoint]: HTTP 200",
@@ -52,15 +56,18 @@ describe("decodeToonItemContent", () => {
   });
 });
 
-describe("TOON scalar bracket workaround tracking", () => {
-  it("keeps explicit upstream linkage for future workaround removal", () => {
-    expect(TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR).toBe("https://github.com/toon-format/toon/pull/314");
+describe("TOON scalar bracket fix tracking", () => {
+  it("keeps explicit upstream linkage after removing the local workaround", () => {
+    expect(TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR).toBe(
+      "https://github.com/toon-format/toon/pull/314",
+    );
     expect(TOON_SCALAR_BRACKET_ESCAPE_TRACKING).toMatchObject({
       dependency: "@toon-format/toon",
       affected_versions: "<=2.3.0",
+      resolved_version: "2.3.1",
       upstream_pr: TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR,
+      workaround_status: "removed",
     });
-    expect(TOON_SCALAR_BRACKET_ESCAPE_TRACKING.removal_condition).toMatch(/Remove escapeBracketsInQuotedScalars retry/);
   });
 });
 
@@ -85,7 +92,7 @@ describe("parseItemDocument TOON scalar-bracket recovery", () => {
     );
     expect(document.metadata.id).toBe("pm-test");
     expect(document.body).toContain("[redacted_endpoint]");
-    // Recovery is lossless and intentionally silent (no health-flipping warning).
+    // Native strict decoding is lossless and intentionally warning-free.
     expect(warnings).toEqual([]);
   });
 });

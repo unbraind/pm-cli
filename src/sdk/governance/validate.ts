@@ -818,6 +818,10 @@ function resolveFileScanMode(
 }
 
 function resolveWorkspaceRoot(pmRoot: string): string {
+  const sourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT?.trim();
+  if (sourceWorkspaceRoot) {
+    return path.resolve(sourceWorkspaceRoot);
+  }
   const resolvedPmRoot = path.resolve(pmRoot);
   const normalizedPmRoot = resolvedPmRoot.replaceAll("\\", "/");
   if (normalizedPmRoot.endsWith("/.agents/pm")) {

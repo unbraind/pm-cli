@@ -1,0 +1,16 @@
+id: pm-bwnclq
+title: "GH-675: lifecycle must record actual completion time separately from tracker close time"
+description: "GitHub issue https://github.com/unbraind/pm-cli/issues/675 reports that closed_at is always mutation time, causing time-window reports to misattribute late tracker closeout. Add governed actual-completion semantics with migration and query contracts."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-25T02:06:37.256Z"
+updated_at: "2026-07-25T02:06:37.256Z"
+author: unknown
+parent: pm-usfg
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related_to,"2026-07-25T02:06:37.256Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-25T02:06:37.256Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
+body: ""

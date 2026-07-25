@@ -3,6 +3,8 @@
  *
  * Implements extension runtime contracts and governance for Index.
  */
+import { existsSync } from "node:fs";
+import path from "node:path";
 import {
   runCommandHandler,
   runCommandOverride,
@@ -33,6 +35,7 @@ import {
   type OutputRendererFormat,
   type ParserOverrideContext,
   type ParserOverrideResult,
+  type PortableWorkspaceContext,
   type PreflightOverrideContext,
   type PreflightOverrideResult,
   type RendererOverrideResult,
@@ -63,6 +66,55 @@ const AFTER_COMMAND_SNAPSHOT_OMITTED_FIELDS = new Set([
   "test_runs",
   "tests",
 ]);
+
+function findSourceRepositoryRoot(candidate: string): string | undefined {
+  let cursor = path.resolve(candidate);
+  while (true) {
+    if (existsSync(path.join(cursor, ".git"))) {
+      return cursor;
+    }
+    const parent = path.dirname(cursor);
+    if (parent === cursor) {
+      return undefined;
+    }
+    cursor = parent;
+  }
+}
+
+/**
+ * Resolve portable workspace coordinates without reading tracker state.
+ *
+ * Linked-test runners set `PM_SOURCE_WORKSPACE_ROOT` before swapping `PM_PATH`,
+ * preserving source VCS identity while every mutation remains sandboxed.
+ */
+export function resolvePortableWorkspaceContext(
+  pmRoot: string | undefined,
+): PortableWorkspaceContext {
+  const sourceCandidate =
+    process.env.PM_SOURCE_WORKSPACE_ROOT?.trim() || process.cwd();
+  const sourceWorkspaceRoot =
+    findSourceRepositoryRoot(sourceCandidate) ?? path.resolve(sourceCandidate);
+  const repoRoot = findSourceRepositoryRoot(sourceWorkspaceRoot);
+  if (!pmRoot) {
+    return {
+      source_workspace_root: sourceWorkspaceRoot,
+      ...(repoRoot ? { repo_root: repoRoot } : {}),
+    };
+  }
+  const relativePmRoot = path.relative(sourceWorkspaceRoot, path.resolve(pmRoot));
+  const contained =
+    relativePmRoot.length > 0 &&
+    !relativePmRoot.startsWith(`..${path.sep}`) &&
+    relativePmRoot !== ".." &&
+    !path.isAbsolute(relativePmRoot);
+  return {
+    source_workspace_root: sourceWorkspaceRoot,
+    ...(repoRoot ? { repo_root: repoRoot } : {}),
+    ...(contained
+      ? { pm_root_rel: relativePmRoot.split(path.sep).join("/") }
+      : {}),
+  };
+}
 
 /** Implements set active extension hooks for the public runtime surface of this module. */
 export function setActiveExtensionHooks(
@@ -143,7 +195,12 @@ export function resetActiveExtensionRuntimeState(): void {
 export function setActiveCommandContext(
   context: Omit<CommandOverrideContext, "result"> | null,
 ): void {
-  activeCommandContext = context;
+  activeCommandContext = context
+    ? {
+        ...context,
+        ...resolvePortableWorkspaceContext(context.pm_root),
+      }
+    : null;
 }
 
 /** Implements set active command result for the public runtime surface of this module. */
@@ -290,6 +347,9 @@ export function runActiveCommandOverride(
       ? { ...activeCommandContext.global }
       : undefined,
     pm_root: activeCommandContext.pm_root,
+    source_workspace_root: activeCommandContext.source_workspace_root,
+    repo_root: activeCommandContext.repo_root,
+    pm_root_rel: activeCommandContext.pm_root_rel,
     result,
   });
 }
@@ -305,7 +365,10 @@ export async function runActiveCommandHandler(
       warnings: [],
     };
   }
-  return runCommandHandler(activeExtensionCommands, context);
+  return runCommandHandler(activeExtensionCommands, {
+    ...context,
+    ...resolvePortableWorkspaceContext(context.pm_root),
+  });
 }
 
 /** Implements run active parser override for the public runtime surface of this module. */
@@ -325,7 +388,10 @@ export async function runActiveParserOverride(
       warnings: [],
     };
   }
-  return runParserOverride(activeExtensionParsers, context);
+  return runParserOverride(activeExtensionParsers, {
+    ...context,
+    ...resolvePortableWorkspaceContext(context.pm_root),
+  });
 }
 
 /** Implements run active preflight override for the public runtime surface of this module. */
@@ -346,7 +412,10 @@ export async function runActivePreflightOverride(
       warnings: [],
     };
   }
-  return runPreflightOverride(activeExtensionPreflight, context);
+  return runPreflightOverride(activeExtensionPreflight, {
+    ...context,
+    ...resolvePortableWorkspaceContext(context.pm_root),
+  });
 }
 
 /** Implements run active renderer override for the public runtime surface of this module. */
@@ -372,6 +441,9 @@ export function runActiveRendererOverride(
       ? { ...activeCommandContext.global }
       : undefined,
     pm_root: activeCommandContext?.pm_root,
+    source_workspace_root: activeCommandContext?.source_workspace_root,
+    repo_root: activeCommandContext?.repo_root,
+    pm_root_rel: activeCommandContext?.pm_root_rel,
     result,
   });
 }
@@ -388,6 +460,9 @@ function buildServiceContext(service: ExtensionServiceName, payload: unknown) {
       ? { ...activeCommandContext.global }
       : undefined,
     pm_root: activeCommandContext?.pm_root,
+    source_workspace_root: activeCommandContext?.source_workspace_root,
+    repo_root: activeCommandContext?.repo_root,
+    pm_root_rel: activeCommandContext?.pm_root_rel,
     payload,
   };
 }

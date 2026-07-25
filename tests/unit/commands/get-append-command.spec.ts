@@ -199,6 +199,7 @@ describe("runGet and runAppend", () => {
       expect(defaultRead.item.comments).toBeUndefined();
       expect(defaultRead.item.notes).toBeUndefined();
       expect(defaultRead.item.notes_count).toBe(1);
+      expect(defaultRead.item.tests_count).toBe(1);
       expect(defaultRead.linked.files).toHaveLength(1);
       expect(defaultRead.item.body).toBe("depth body");
 
@@ -210,6 +211,7 @@ describe("runGet and runAppend", () => {
       expect(explicitFull.item.comments).toBeDefined();
       expect(explicitFull.item.notes).toBeDefined();
       expect(explicitFull.item.notes_count).toBeUndefined();
+      expect(explicitFull.item.tests_count).toBeUndefined();
       expect(explicitFull.linked.files).toHaveLength(1);
       expect(explicitFull.item.body).toBe("depth body");
 
@@ -221,6 +223,7 @@ describe("runGet and runAppend", () => {
       expect(depthFullAlias.item.comments).toBeDefined();
       expect(depthFullAlias.item.notes).toBeDefined();
       expect(depthFullAlias.item.notes_count).toBeUndefined();
+      expect(depthFullAlias.item.tests_count).toBeUndefined();
       expect(depthFullAlias.linked.files).toHaveLength(1);
       expect(depthFullAlias.item.body).toBe("depth body");
 
@@ -233,6 +236,7 @@ describe("runGet and runAppend", () => {
       expect(standard.item.comments).toBeUndefined();
       expect(standard.item.notes).toBeUndefined();
       expect(standard.item.notes_count).toBe(1);
+      expect(standard.item.tests_count).toBe(1);
       expect(standard.item.files).toBeUndefined();
       expect(standard.linked.files).toHaveLength(1);
       expect(standard.item.body).toBe("depth body");
@@ -245,6 +249,7 @@ describe("runGet and runAppend", () => {
       expect(brief.item.id).toBe(id);
       expect(brief.item.comments).toBeUndefined();
       expect(brief.item.notes_count).toBe(1);
+      expect(brief.item.tests_count).toBe(1);
       expect(brief.linked).toBeUndefined();
       expect(brief.item.body).toBeUndefined();
       expect(brief.claim_state).toBeUndefined();
@@ -325,6 +330,13 @@ describe("runGet and runAppend", () => {
         { fields: "id,notes_count" },
       );
       expect(withNotesCount.item).toEqual({ id, notes_count: 0 });
+
+      const withTestsCount = await runGet(
+        id,
+        { path: context.pmPath },
+        { fields: "id,tests_count" },
+      );
+      expect(withTestsCount.item).toEqual({ id, tests_count: 1 });
 
       const withClaimState = await runGet(
         id,

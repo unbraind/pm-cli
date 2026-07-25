@@ -47,11 +47,9 @@ pnpm -v
 pnpm build
 ```
 
-Then set:
-
-```bash
-export PM_AUTHOR=<stable-agent-id>
-```
+Author identity is automatic. Pass `--author` or set `PM_AUTHOR` only when an
+explicit override is required; otherwise `pm` uses the configured default or a
+detected harness identity.
 
 Use `PM_CMD=pm` only after `pm` clearly resolves to this checkout's current build. Otherwise run `node dist/cli.js` from the repository root.
 
@@ -79,7 +77,7 @@ pm close <id> "<reason with evidence>" --validate-close warn
 pm release <id>
 ```
 
-Set `PM_AUTHOR=<stable-agent-id>` before mutations.
+Author identity is automatic; use `--author` only for an explicit override.
 <!-- pm-cli:agent-guidance:end -->
 
 ## Working Rules

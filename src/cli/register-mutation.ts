@@ -26,6 +26,7 @@ import {
 import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
+import { registerHistoryAuthorAcknowledgeCommand } from "./register-history-author.js";
 import { PLAN_SUBCOMMANDS, runPlan } from "./commands/plan.js";
 import {
   isPureSnakeCaseAlias,
@@ -3101,6 +3102,8 @@ export function registerMutationCommands(
         }
       },
     );
+
+  registerHistoryAuthorAcknowledgeCommand(program);
 
   program
     .command("history-compact")

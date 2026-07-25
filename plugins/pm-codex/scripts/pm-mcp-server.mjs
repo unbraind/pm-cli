@@ -100,7 +100,8 @@ async function launchServer(target) {
 }
 
 if (!(await launchServer(process.env.PM_CLI_MCP_SERVER)) && !(await launchServer(await locateRepoServer()))) {
-  const child = spawn("npx", ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"], { stdio: "inherit", env: process.env, shell: process.platform === "win32" });
+  const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
+  const child = spawn(npxCommand, ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"], { stdio: "inherit", env: process.env });
   child.on("exit", (code, signal) => {
     if (signal) {
       process.kill(process.pid, signal);

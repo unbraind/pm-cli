@@ -102,6 +102,7 @@ export const PM_MUTATION_ACTION_CONTRACTS = [
   { action: "focus", history_scope: "conditional" },
   { action: "gc", history_scope: "conditional" },
   { action: "history-compact", history_scope: "history" },
+  { action: "history-author-acknowledge", history_scope: "workspace" },
   { action: "history-redact", history_scope: "history" },
   { action: "history-repair", history_scope: "history" },
   { action: "init", history_scope: "workspace" },

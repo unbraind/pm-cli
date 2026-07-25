@@ -389,7 +389,7 @@ describe("GitHub workflow contract", () => {
       "is already published; skipping npm publish.",
       "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-github-release --json",
       "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-package --json",
-      "uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b",
+      "uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228",
       "tag_name: ${{ env.RELEASE_TAG }}",
       PINNED_ACTIONS.uploadArtifact,
       "path: coverage",

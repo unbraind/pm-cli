@@ -107,6 +107,10 @@ import {
 import { runConfig } from "./config.js";
 import { runInit } from "./init.js";
 import {
+  acknowledgeUnknownAuthorHistoryEvents,
+  type AcknowledgeUnknownAuthorEventsOptions,
+} from "./author-attribution.js";
+import {
   runProfileApply,
   runProfileLint,
   runProfileList,
@@ -1175,6 +1179,20 @@ export class PmClient {
     options: HistoryCompactBulkCommandOptions,
   ): Promise<HistoryCompactBulkResult> {
     return this.runTyped("history-compact", { options });
+  }
+
+  /** Disposition immutable unknown-author events through append-only audit history. */
+  historyAuthorAcknowledge(
+    options: AcknowledgeUnknownAuthorEventsOptions,
+  ): Promise<{ acknowledged: number; history_path: string }> {
+    return this.runTyped("history-author-acknowledge", {
+      historyEvent: options.events.map(
+        (event) => `${event.item_id}:${String(event.line)}`,
+      ),
+      attributedAuthor: options.attributed_author,
+      reviewer: options.reviewer,
+      reason: options.reason,
+    });
   }
 
   /** Run any typed plan workflow primitive through the shared CLI/MCP engine. */
@@ -3656,6 +3674,31 @@ function runMcpGraphAction(ctx: McpActionDispatchContext): Promise<unknown> {
   );
 }
 
+function runMcpHistoryAuthorAcknowledgeAction(
+  ctx: McpActionDispatchContext,
+): Promise<unknown> {
+  const merged = { ...ctx.args, ...ctx.options };
+  const events = readStringArray(merged.historyEvent).map((value) => {
+    const separator = value.lastIndexOf(":");
+    return {
+      item_id: value.slice(0, separator).trim(),
+      line: Number(value.slice(separator + 1)),
+    };
+  });
+  return acknowledgeUnknownAuthorHistoryEvents(
+    resolvePmRoot(process.cwd(), ctx.global.path),
+    {
+      events,
+      attributed_author:
+        readString(merged, "attributedAuthor") ??
+        readString(merged, "attributed_author") ??
+        "",
+      reviewer: readString(merged, "reviewer") ?? "",
+      reason: readString(merged, "reason") ?? "",
+    },
+  );
+}
+
 const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   init: (ctx) =>
     runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
@@ -3727,6 +3770,7 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
   "history-repair": runMcpHistoryRepairAction,
   "history-compact": runMcpHistoryCompactAction,
+  "history-author-acknowledge": runMcpHistoryAuthorAcknowledgeAction,
   plan: runMcpPlanAction,
   schema: runMcpSchemaAction,
   profile: runMcpProfileAction,

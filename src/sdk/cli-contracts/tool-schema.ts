@@ -481,6 +481,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       optional: ["id", "all", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
       oneOfRequired: [["id"], ["all"]],
     },
+    "history-author-acknowledge": {
+      required: ["historyEvent", "attributedAuthor", "reviewer", "reason"],
+    },
     "history-compact": {
       // Single-id mode (`id` + optional `before`) or bulk mode (any of `ids` /
       // `allOver` / `closed` / `allStreams`, with optional `minEntries`). Scan

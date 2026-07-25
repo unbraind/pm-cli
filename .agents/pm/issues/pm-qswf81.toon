@@ -1,0 +1,16 @@
+id: pm-qswf81
+title: "GH-677: pm-path relocation must diagnose extension discovery changes"
+description: "GitHub issue https://github.com/unbraind/pm-cli/issues/677 reports that --pm-path silently relocates extension discovery and extension commands vanish without a targeted diagnostic. Make storage and source discovery coordinates explicit and actionable."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-07-25T02:06:35.414Z"
+updated_at: "2026-07-25T02:06:35.414Z"
+author: unknown
+parent: pm-usfg
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-j4ac9a,related_to,"2026-07-25T02:06:35.414Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-25T02:06:35.414Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
+body: ""

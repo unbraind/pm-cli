@@ -142,9 +142,9 @@ describe("pm package manifest model", () => {
       dependencies?: Record<string, unknown>;
     };
 
-    // Fresh npm consumers do not inherit pnpm-lock.yaml. Keep this exact until
-    // Sentry no longer pins the NodeNext-incompatible transformer declarations.
-    expect(packageJson.dependencies?.["@sentry/node"]).toBe("10.65.0");
+    // Fresh npm consumers do not inherit pnpm-lock.yaml, so this exact version
+    // must remain covered by the packed-consumer TypeScript acceptance gates.
+    expect(packageJson.dependencies?.["@sentry/node"]).toBe("10.67.0");
   });
 
   it("reads package.json pm resources as a first-class manifest", async () => {

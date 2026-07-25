@@ -1,17 +1,21 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   applyInvocationAuthorOverride,
   acknowledgeUnknownAuthorHistoryEvents,
   createPmCliProgram,
+  detectHarnessIdentity,
   inspectHistoryAuthorStream,
+  PmClient,
+  runAction,
   runConfig,
   runInit,
   runProfileList,
   scanHistoryAuthorAttribution,
 } from "../../../src/sdk/index.js";
+import { registerMutationCommands } from "../../../src/cli/register-mutation.js";
 import {
   parseBootstrapCommandName,
   parseBootstrapGlobalOptions,
@@ -198,9 +202,31 @@ describe("SDK author attribution primitives", () => {
 
     const tempRoot = await createTempRoot();
     const pmRoot = path.join(tempRoot, ".agents", "pm");
-    const previousValues = {
-      PM_AUTHOR: process.env.PM_AUTHOR,
-    };
+    const authorEnvironmentNames = [
+      "PM_AUTHOR",
+      "CLAUDE_CODE",
+      "CLAUDECODE",
+      "CODEX_HOME",
+      "CODEX_CI",
+      "CODEX_THREAD_ID",
+      "PI_AGENT",
+      "PI_CODING_AGENT",
+      "OPENCODE",
+      "OPENCODE_SESSION_ID",
+      "CURSOR_AGENT",
+      "CURSOR_TRACE_ID",
+      "AIDER",
+      "AIDER_MODEL",
+      "GEMINI_CLI",
+      "GEMINI_CLI_HOME",
+      "CI",
+      "GITHUB_ACTIONS",
+      "BUILDKITE",
+      "GITLAB_CI",
+    ] as const;
+    const previousValues = Object.fromEntries(
+      authorEnvironmentNames.map((name) => [name, process.env[name]]),
+    ) as Record<(typeof authorEnvironmentNames)[number], string | undefined>;
     delete process.env.PM_AUTHOR;
     try {
       const result = await runInit(
@@ -211,7 +237,43 @@ describe("SDK author attribution primitives", () => {
           agentGuidance: "skip",
         },
       );
+      const harness = detectHarnessIdentity({
+        env: process.env,
+        argv: [process.execPath, ...process.argv],
+      });
       expect(result.settings.author_default).toBe(
+        harness
+          ? `harness:${harness}`
+          : `${os.userInfo().username}@${os.hostname()}`,
+      );
+
+      process.env.PM_AUTHOR = "environment-agent";
+      const environmentRoot = path.join(tempRoot, "environment", ".agents", "pm");
+      const environmentResult = await runInit(
+        undefined,
+        { path: environmentRoot },
+        {
+          defaults: true,
+          agentGuidance: "skip",
+        },
+      );
+      expect(environmentResult.settings.author_default).toBe(
+        "environment-agent",
+      );
+
+      for (const name of authorEnvironmentNames) {
+        delete process.env[name];
+      }
+      const fallbackRoot = path.join(tempRoot, "fallback", ".agents", "pm");
+      const fallbackResult = await runInit(
+        undefined,
+        { path: fallbackRoot },
+        {
+          defaults: true,
+          agentGuidance: "skip",
+        },
+      );
+      expect(fallbackResult.settings.author_default).toBe(
         `${os.userInfo().username}@${os.hostname()}`,
       );
     } finally {
@@ -414,5 +476,143 @@ describe("SDK author attribution primitives", () => {
     ).rejects.toThrow(
       "Unknown-author acknowledgment target ../outside:1 is not readable",
     );
+  });
+
+  it("exposes unknown-author disposition through the typed SDK client", async () => {
+    const tempRoot = await createTempRoot();
+    const pmRoot = path.join(tempRoot, ".agents", "pm");
+    await runInit(
+      undefined,
+      { path: pmRoot },
+      { defaults: true, agentGuidance: "skip" },
+    );
+    await writeFile(
+      path.join(pmRoot, "history", "pm-sdk-action.jsonl"),
+      `${JSON.stringify({
+        ts: "2026-07-15T09:00:00.000Z",
+        author: "unknown",
+      })}\n`,
+    );
+
+    await expect(
+      new PmClient({ pmRoot, noExtensions: true }).historyAuthorAcknowledge({
+        events: [{ item_id: "pm-sdk-action", line: 1 }],
+        attributed_author: "codex-agent",
+        reviewer: "maintainer",
+        reason: "Reviewed SDK action provenance.",
+      }),
+    ).resolves.toMatchObject({ acknowledged: 1 });
+    await expect(scanHistoryAuthorAttribution(pmRoot)).resolves.toMatchObject({
+      actionable_unknown_event_count: 0,
+      acknowledged_actionable_event_count: 1,
+    });
+  });
+
+  it("exposes unknown-author disposition through CLI and MCP action surfaces", async () => {
+    const tempRoot = await createTempRoot();
+    const pmRoot = path.join(tempRoot, ".agents", "pm");
+    await runInit(
+      undefined,
+      { path: pmRoot },
+      { defaults: true, agentGuidance: "skip" },
+    );
+    await writeFile(
+      path.join(pmRoot, "history", "pm-surface-action.jsonl"),
+      [
+        "2026-07-15T09:00:00.000Z",
+        "2026-07-15T09:01:00.000Z",
+        "2026-07-15T09:02:00.000Z",
+        "2026-07-15T09:03:00.000Z",
+      ]
+        .map((ts) => JSON.stringify({ ts, author: "unknown" }))
+        .join("\n") + "\n",
+    );
+
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    try {
+      const program = createPmCliProgram("1.0.0");
+      registerMutationCommands(program);
+      await program.parseAsync(
+        [
+          "--pm-path",
+          pmRoot,
+          "--json",
+          "history-author-acknowledge",
+          "--event",
+          "pm-surface-action:1",
+          "--attributed-author",
+          "cli-agent",
+          "--reviewer",
+          "maintainer",
+          "--reason",
+          "Reviewed CLI provenance.",
+        ],
+        { from: "user" },
+      );
+
+      for (const invalidEvent of [
+        "missing-line",
+        "../outside:1",
+        "pm-surface-action:not-a-number",
+        "pm-surface-action:0",
+      ]) {
+        const invalidProgram = createPmCliProgram("1.0.0");
+        registerMutationCommands(invalidProgram);
+        await expect(
+          invalidProgram.parseAsync(
+            [
+              "--pm-path",
+              pmRoot,
+              "history-author-acknowledge",
+              "--event",
+              invalidEvent,
+              "--attributed-author",
+              "cli-agent",
+              "--reviewer",
+              "maintainer",
+              "--reason",
+              "Invalid selector coverage.",
+            ],
+            { from: "user" },
+          ),
+        ).rejects.toThrow(
+          "expects <item-id>:<one-based-line>",
+        );
+      }
+    } finally {
+      stdout.mockRestore();
+    }
+
+    await expect(
+      runAction({
+        action: "history-author-acknowledge",
+        path: pmRoot,
+        historyEvent: ["pm-surface-action:2"],
+        attributed_author: "mcp-snake-agent",
+        reviewer: "maintainer",
+        reason: "Reviewed MCP snake-case provenance.",
+      }),
+    ).resolves.toMatchObject({ acknowledged: 1 });
+    await expect(
+      runAction({
+        action: "history-author-acknowledge",
+        path: pmRoot,
+        historyEvent: ["pm-surface-action:3"],
+        attributedAuthor: "mcp-agent",
+        reviewer: "maintainer",
+        reason: "Reviewed MCP provenance.",
+      }),
+    ).resolves.toMatchObject({ acknowledged: 1 });
+    await expect(
+      runAction({
+        action: "history-author-acknowledge",
+        path: pmRoot,
+        historyEvent: ["pm-surface-action:4"],
+      }),
+    ).rejects.toThrow("Author acknowledgment requires");
+    await expect(scanHistoryAuthorAttribution(pmRoot)).resolves.toMatchObject({
+      actionable_unknown_event_count: 1,
+      acknowledged_actionable_event_count: 3,
+    });
   });
 });
