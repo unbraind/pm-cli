@@ -4,6 +4,7 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { BUILTIN_HARNESS_SIGNAL_DESCRIPTORS } from "../../../../src/core/shared/author.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import {
   _testOnly,
@@ -158,11 +159,16 @@ describe("core/telemetry/runtime", () => {
 
   it("derives a stable, installation-keyed author_context_hash from PM_AUTHOR", () => {
     const originalAuthor = process.env.PM_AUTHOR;
-    const originalCodexHome = process.env.CODEX_HOME;
-    const originalCodexCi = process.env.CODEX_CI;
-    const originalCodexModel = process.env.CODEX_MODEL;
-    const originalCodexThreadId = process.env.CODEX_THREAD_ID;
     const originalAgentModel = process.env.PM_AGENT_MODEL;
+    const originalHarnessEnvironment = new Map(
+      BUILTIN_HARNESS_SIGNAL_DESCRIPTORS.flatMap((descriptor) =>
+        [
+          ...(descriptor.environment_keys ?? []),
+          ...(descriptor.model_environment_keys ?? []),
+          ...(descriptor.session_environment_keys ?? []),
+        ].map((key) => [key, process.env[key]] as const),
+      ),
+    );
     try {
       // Minimal capture exposes only the boolean, never a hash.
       process.env.PM_AUTHOR = "claude-code-agent";
@@ -219,10 +225,10 @@ describe("core/telemetry/runtime", () => {
       );
       expect(agentFields).not.toHaveProperty("agent_session");
 
-      delete process.env.CODEX_HOME;
-      delete process.env.CODEX_CI;
+      for (const key of originalHarnessEnvironment.keys()) {
+        delete process.env[key];
+      }
       delete process.env.CODEX_MODEL;
-      delete process.env.CODEX_THREAD_ID;
       process.env.PM_AGENT_MODEL = "operator-only-model";
       const modelOnlyFields = _testOnly.buildAuthorContextPayloadFields(
         "redacted",
@@ -239,12 +245,12 @@ describe("core/telemetry/runtime", () => {
     } finally {
       for (const [key, value] of [
         ["PM_AUTHOR", originalAuthor],
-        ["CODEX_HOME", originalCodexHome],
-        ["CODEX_CI", originalCodexCi],
-        ["CODEX_MODEL", originalCodexModel],
-        ["CODEX_THREAD_ID", originalCodexThreadId],
         ["PM_AGENT_MODEL", originalAgentModel],
       ] as const) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+      for (const [key, value] of originalHarnessEnvironment) {
         if (value === undefined) delete process.env[key];
         else process.env[key] = value;
       }
