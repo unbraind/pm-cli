@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T04:53:04.736Z"
-updated_at: "2026-07-05T04:54:59.752Z"
+updated_at: "2026-07-25T06:28:04.771Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm list --status <s...> and --all cover every variant behavior incl. per-variant defaults; all 8 old spellings still work via alias shim with identical output; help shows only pm list; contracts/MCP/completions/docs regenerated; existing list-* tests pass unchanged against aliases
 parent: pm-n7rr
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-0z7n,blocked_by,"2026-07-05T04:54:59.730Z",null,null
+  pm-1kxs,implements,"2026-07-25T06:28:04.497Z",null,null
 body: ""

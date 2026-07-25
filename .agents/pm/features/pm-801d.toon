@@ -6,16 +6,17 @@ status: open
 priority: 2
 tags[4]: "area:sdk","area:storage",performance,scale
 created_at: "2026-07-06T21:24:54.440Z"
-updated_at: "2026-07-23T08:29:02.910Z"
+updated_at: "2026-07-25T06:27:59.042Z"
 author: maintainer-agent
 estimated_minutes: 900
 acceptance_criteria: "Read commands consult a rebuildable, gitignored derived index (format per ADR pm-bl8x) maintained transactionally with item writes; index is never authoritative — pm can always rebuild it from .toon files and detects staleness automatically; benchmark shows list/context/next p95 < 1s at 1M items; falls back to full scan transparently when index is absent; zero behavior change to outputs"
 parent: pm-9rxu
 risk: high
 confidence: medium
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-bl8x,blocked_by,"2026-07-06T21:24:54.440Z",null,null
   pm-mi2x,blocked_by,"2026-07-06T21:24:54.440Z",null,null
+  pm-g2zz,implements,"2026-07-25T06:27:58.840Z",null,null
 comments[19]{created_at,author,text}:
   "2026-07-12T14:11:31.778Z",maintainer-agent,"Start evidence: dependency pm-bl8x is now closed/accepted. Work targets the existing three-tier metadata cache: add versioned per-directory generation signatures and an O(index) fast path that bypasses 100k per-item stat calls while retaining scan fallback."
   "2026-07-12T15:42:07.769Z",maintainer-agent,"Tranche evidence: delivered versioned per-directory signatures and a rebuildable cache fast path that bypasses per-item stat work while preserving source-scan fallback, staleness invalidation, index-on/off equivalence, race handling, and on-read-hook semantics. Focused cache tests passed 13/13 and the 10k local scale gate passed. Manual 100k SDK list/get are 923/440ms. This does not yet satisfy the full feature's 1M sub-second target or transactional write-path maintenance, so the canonical feature remains open for S3/S4 rather than being prematurely closed."

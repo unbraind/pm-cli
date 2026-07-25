@@ -1,0 +1,30 @@
+id: pm-e6tm5c
+title: "Public SDK surface snapshot and breaking-change gate: the exported API is a reviewed artifact, and an unintended removal or signature change cannot merge"
+description: "Every CLI and MCP capability is now reachable from the public SDK, and packages are authored against it. That makes the exported surface a compatibility obligation, but nothing records what the surface is or notices when it changes: an export can be renamed, a parameter can become required, or a return type can narrow, and the only signal is a downstream package breaking after publish. This task snapshots the full public type surface into a reviewed, committed artifact and adds a gate that fails when the snapshot changes without an accompanying update, classifying each change as additive, behaviourally compatible, or breaking. The classification is what the GA stability ADR needs to be enforceable rather than aspirational, and it gives date-based releases a way to state compatibility that version numbers cannot."
+type: Task
+status: open
+priority: 1
+tags[6]: api,"area:sdk",ci,contracts,governance,stability
+created_at: "2026-07-25T06:18:29.335Z"
+updated_at: "2026-07-25T06:27:47.585Z"
+author: unknown
+estimated_minutes: 480
+acceptance_criteria: "A committed artifact records the complete public SDK type surface: exported symbols, signatures, type parameters, and declared error codes; CI regenerates the snapshot and fails when it differs from the committed copy, printing the diff; Each detected change is classified as additive, compatible, or breaking, and a breaking change requires an explicit recorded acknowledgment in the changeset rather than silently updating the snapshot; The gate covers the SDK subpath exports and the declared error-code surface, not just top-level names; Documentation states the compatibility promise the snapshot enforces and how date-based releases communicate breakage"
+goal: sdk-complete-core
+objective: The public SDK surface changes only on purpose and only visibly
+value: "External packages already build against the SDK. Without a surface record, the first notice of a breaking change is a broken consumer, and date-based versions carry no compatibility signal by themselves."
+impact: "Makes the GA stability contract enforceable, gives package authors a reviewable compatibility record, and converts accidental breakage into a CI failure at the point of change."
+outcome: "A committed public-surface snapshot, a diffing gate, and a change classification that a breaking change cannot pass silently."
+why_now: "All promotion slices and the import-boundary capstone have landed, so the surface is now stable enough to freeze a baseline and cheap enough to gate before GA work begins."
+parent: pm-usfg
+risk: medium
+confidence: high
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-9rgaal,related,"2026-07-25T06:18:29.335Z",null,null
+  pm-agou,related,"2026-07-25T06:18:29.335Z",null,null
+  pm-feecbs,related,"2026-07-25T06:18:29.335Z",null,null
+  pm-pae3wo,related,"2026-07-25T06:18:29.335Z",null,null
+  pm-r9pudt,related,"2026-07-25T06:18:29.335Z",null,null
+  pm-xp1xsw,related,"2026-07-25T06:18:29.335Z",null,null
+  pm-xp1xsw,verifies,"2026-07-25T06:27:47.390Z",null,null
+body: ""

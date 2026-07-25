@@ -6,13 +6,17 @@ status: open
 priority: 1
 tags[6]: context-management,errors,gh-691,github,sdk,structured-contract
 created_at: "2026-07-25T01:29:45.187Z"
-updated_at: "2026-07-25T01:29:45.187Z"
+updated_at: "2026-07-25T06:27:22.750Z"
 author: codex-root
+estimated_minutes: 180
 acceptance_criteria: Every parseItemDocument failure category exposes a stable machine-readable error code and useful bounded context through the public SDK; CLI compatibility and 100 percent coverage remain intact.
 parent: pm-usfg
 risk: medium
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-rnpb,related,"2026-07-25T01:29:45.187Z",null,null
+  pm-psy1,related,"2026-07-25T06:27:22.451Z",null,null
+  pm-srns,related,"2026-07-25T06:27:22.451Z",null,null
+  pm-ulqu,related,"2026-07-25T06:27:22.451Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T01:29:45.187Z",codex-root,"Duplicate check: all-status searches for parseItemDocument empty context error_code and PmCliError structured parse failures found broad completed SDK/error work but no canonical item for GitHub issue 691; created this focused child under the SDK-first epic."
 body: ""

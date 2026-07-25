@@ -6,11 +6,16 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:34.409Z"
-updated_at: "2026-07-25T02:06:34.409Z"
+updated_at: "2026-07-25T06:27:19.332Z"
 author: unknown
+estimated_minutes: 180
+acceptance_criteria: "A project extension installed inside a sandboxed linked-test run stays discoverable across the child processes of that run; Isolation is preserved: the sandbox never discovers or mutates the real repository tracker or global extension store; Regression coverage installs an extension inside the sandbox and asserts both discovery in a subsequent child process and non-leakage to the real workspace"
 parent: pm-usfg
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-954h0o,related_to,"2026-07-25T02:06:34.409Z",null,null
+  pm-lp4j,related,"2026-07-25T06:27:19.072Z",null,null
+  pm-p5u6,related,"2026-07-25T06:27:19.072Z",null,null
+  pm-qswf81,related,"2026-07-25T06:27:19.072Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T02:06:34.409Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
 body: ""

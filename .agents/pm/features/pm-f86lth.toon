@@ -1,0 +1,29 @@
+id: pm-f86lth
+title: "Source-to-item traceability: derive which tracked work produced any given file or line, so an agent can ask why this code exists and get an evidence-backed answer"
+description: "Items link forward to the files they touched, but the reverse question - which item, decision, and rationale produced this line - has no answer inside pm. An agent reading unfamiliar code must guess from commit messages, and the decision that justified the code is usually two links away in an ADR that the code does not reference. This feature derives the reverse index from evidence that already exists: linked file paths on items, commit-to-item association, and line attribution from the version control host. Given a path and optional line range it returns the items that touched it, ranked by contribution and recency, each carrying its rationale fields and its path to the governing decision. Derivation is evidence-only: where attribution is ambiguous the answer says so rather than guessing, and nothing is written back onto items as fabricated links."
+type: Feature
+status: open
+priority: 2
+tags[6]: "area:sdk",context,evidence,governance,graph,traceability
+created_at: "2026-07-25T06:19:09.470Z"
+updated_at: "2026-07-25T06:19:09.470Z"
+author: unknown
+estimated_minutes: 900
+acceptance_criteria: "Given a file path and optional line range, the SDK returns the tracked items associated with it, ranked by contribution and recency, with the evidence that produced each association; Each returned item carries its rationale (value, why-now, outcome) and the shortest typed path to the decision that governs it, so the answer is a why and not just a what; Attribution is derived from existing evidence - linked paths, commit association, and line attribution - and ambiguity is reported explicitly rather than resolved by guessing; The reverse index is bounded and incremental at repository scale, and never blocks a command on a full history scan; The derivation writes no fabricated relationships onto items; any edge it proposes is surfaced as a reviewable suggestion; A CLI surface exposes the query in the target noun grammar, and the answer fits an explicit token budget"
+goal: universal-domain-platform
+objective: "Code carries its rationale, retrievable from the tracker without archaeology"
+value: "Project management equals context management: the context an agent most often lacks when editing unfamiliar code is why the code is the way it is, and that context already exists in the tracker but is only reachable in the forward direction."
+impact: "Closes the loop between source and rationale, making every file a query into the decision history and giving reviewers and agents an evidence-backed answer instead of a commit-log guess."
+outcome: "A bounded reverse index from paths to tracked work and its governing decisions, derived only from recorded evidence."
+why_now: "Linked-file ownership, evidence-edge reconstruction, and graph path queries have all shipped or are actively owned; the reverse direction is the missing composition and the one agents ask for most."
+parent: pm-33cw
+risk: medium
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-25T06:19:09.470Z",null,null
+  pm-bzmeaa,related,"2026-07-25T06:19:09.470Z",null,null
+  pm-j8z6,related,"2026-07-25T06:19:09.470Z",null,null
+  pm-rml5,related,"2026-07-25T06:19:09.470Z",null,null
+  pm-s5e04g,related,"2026-07-25T06:19:09.470Z",null,null
+  pm-t4d7nz,related,"2026-07-25T06:19:09.470Z",null,null
+body: ""

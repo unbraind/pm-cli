@@ -1,0 +1,31 @@
+id: pm-wt43zj
+title: "Command-grammar conformance gate: the noun-verb table and shared verb vocabulary become machine-checked contracts a non-conforming command cannot pass"
+description: "The consolidation epic can collapse 75 spellings into twelve nouns, but nothing prevents the surface from regrowing the day after: every prior census (60, 64, 65, 73, 75 commands) found new top-level spellings that had leaked in between passes. Consolidation without a gate is a one-time cleanup, not a property. This task makes the target grammar an executable contract: an allowlist of top-level nouns, a shared verb vocabulary with one meaning per verb, and the scope-before-verb ordering rule, all declared in the contracts table and enforced by a CI check that fails on any command, subcommand, or alias that does not conform. Hidden aliases are explicitly exempt and must be declared as aliases rather than as commands, which also gives pm-0mox a place to hang usage counters."
+type: Task
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:contracts",ci,governance,simplification
+created_at: "2026-07-25T06:17:12.603Z"
+updated_at: "2026-07-25T06:27:45.334Z"
+author: unknown
+estimated_minutes: 420
+acceptance_criteria: "The contracts table declares the permitted top-level nouns, the shared verb vocabulary with one documented meaning per verb, and the scope-before-verb ordering rule as data, not prose; A CI check fails when a command, subcommand, or newly registered extension surface introduces a top-level noun outside the allowlist, a verb outside the vocabulary, or a scope-after-verb ordering; Hidden deprecated spellings must be declared as aliases of a conforming target and are exempt from the noun allowlist while still being counted; The gate reports the offending spelling and the nearest conforming target so the failure is self-correcting; The gate runs on the same job as the contracts drift check and cannot be satisfied by regenerating artifacts alone"
+goal: agent-legible-grammar
+objective: The simplified surface is a maintained invariant rather than a completed migration
+value: Every census since 2026-07-05 found the surface had grown between passes. A consolidation that is not gated will be re-litigated by the next feature that wants a top-level verb.
+impact: "Turns the one-screen surface into a property enforced by CI, so agent-legibility survives contributors, extensions, and time without another manual census."
+outcome: A declared noun and verb contract plus a failing CI check that makes non-conforming surface additions impossible to merge.
+why_now: The twelve-noun target table now exists on this epic; gating it before the migrations start means each migration lands into an enforced shape instead of a convention.
+parent: pm-n7rr
+risk: medium
+confidence: high
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-0mox,related,"2026-07-25T06:17:12.603Z",null,null
+  pm-0z7n,related,"2026-07-25T06:17:12.603Z",null,null
+  pm-agou,related,"2026-07-25T06:17:12.603Z",null,null
+  pm-e2bq,related,"2026-07-25T06:17:12.603Z",null,null
+  pm-j82fd3,related,"2026-07-25T06:17:12.603Z",null,null
+  pm-mu8m,related,"2026-07-25T06:17:12.603Z",null,null
+  pm-pbyu,blocked_by,"2026-07-25T06:17:12.603Z",null,null
+  pm-j82fd3,verifies,"2026-07-25T06:27:45.129Z",null,null
+body: ""

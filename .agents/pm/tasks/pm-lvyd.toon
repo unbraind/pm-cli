@@ -6,13 +6,14 @@ status: open
 priority: 3
 tags[4]: "area:storage",concurrency,performance,scale
 created_at: "2026-07-06T21:24:56.660Z"
-updated_at: "2026-07-07T14:17:53.907Z"
+updated_at: "2026-07-25T06:27:52.390Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "Stress scenario in the scale harness drives 1000 parallel agents doing claim --next/update/close against one workspace; measures claim success latency distribution and lock contention; any throughput fixes (lock backoff tuning, claim sharding) land with before/after numbers; zero corruption and zero history drift under the stress run"
 parent: pm-9rxu
 risk: medium
 confidence: medium
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-mi2x,blocked_by,"2026-07-06T21:24:56.660Z",null,null
+  pm-o87av6,verifies,"2026-07-25T06:27:52.186Z",null,null
 body: ""

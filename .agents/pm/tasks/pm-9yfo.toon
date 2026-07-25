@@ -6,15 +6,16 @@ status: open
 priority: 2
 tags[4]: "area:history",contracts,pm-cli,quality-gate
 created_at: "2026-07-06T23:08:54.068Z"
-updated_at: "2026-07-24T22:26:09.586Z"
+updated_at: "2026-07-25T06:27:50.585Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "A test enumerates every mutating action from the contracts/register-mutation tables (single source of truth, no hand-maintained list), executes each against a sandbox workspace, and asserts a history entry is appended with correct op and author; item-scope mutations gate immediately; workspace-scope mutations gate once pm-klo8 lands (until then the test asserts the known-unaudited list explicitly so any new unaudited mutation still fails); adding a mutating command without history coverage fails CI; the invariant is documented in the history docs."
 parent: pm-o2kc
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-klo8,related,"2026-07-06T23:10:05.000Z",maintainer-agent,null
+  pm-w7ccmv,verifies,"2026-07-25T06:27:50.388Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-13T21:41:33.254Z",codex-root,"History-completeness audit 2026-07-13: before this audit mutated the tracker, all 1,792 discovered history streams and all 28,195 events were read; integrity checks found zero missing streams, unreadable logs, hash mismatches, chain mismatches, or history drift. Item mutation integrity is therefore currently healthy. Keep this item open because workspace-scoped configuration, schema, profile, initialization, and other non-item mutation paths still need explicit immutable audit coverage and restoration semantics, coordinated with pm-klo8."
   "2026-07-24T05:17:57.275Z",claude-code-agent,"Investigation evidence: the current repository has multiple overlapping mutation inventories (CLI registration families, migration write gates, telemetry roots, MCP action contracts). A truthful contract-driven execute-every-mutation gate requires first consolidating those sources into one executable registration contract; this PR does not pretend a static scope list satisfies that acceptance criterion. Returning this item to open while the three fully implemented mutation-integrity items remain active."

@@ -1,0 +1,32 @@
+id: pm-tuadp2
+title: "Delta read projections: --since <cursor> on list, search, context, and get returns only what changed plus tombstones"
+description: "An agent that re-orients every few minutes pays full projection cost each time, even when nothing it cares about moved. pm events shipped the mutation-side stream, but read projections have no incremental form: there is no way to ask list, search, context, or get for the difference since a previously returned cursor. This feature adds a server-side delta: given an opaque cursor from a prior response, the command returns only rows whose projected content changed, plus explicit tombstones for rows that left the result set, plus an unchanged-count so the agent can prove completeness without receiving the unchanged rows. The cursor is query-bound in the same way pagination cursors already are, so a delta can never be silently applied across a changed filter."
+type: Feature
+status: open
+priority: 2
+tags[6]: agent-ux,"area:cli","area:sdk",context,scale,tokens
+created_at: "2026-07-25T06:17:13.426Z"
+updated_at: "2026-07-25T06:27:58.011Z"
+author: unknown
+estimated_minutes: 900
+acceptance_criteria: "list, search, context, and get accept --since <cursor> and return changed rows, tombstones for rows that left the set, and an unchanged count that makes the delta verifiable; The cursor is query-bound and opaque: applying it to a different filter, projection, or format fails with a typed error rather than returning a misleading delta; A delta response over an unchanged workspace costs asymptotically less than the full projection and the saving is asserted by the token-cost corpus gate; Deltas are derived from the same durable substrate as the mutation event stream, with no separate bookkeeping to fall out of sync; The SDK exposes the delta as a typed primitive so packages and MCP get it without reimplementation; Correctness is proven by property tests that replay arbitrary mutation interleavings and assert delta-then-apply equals full-read"
+goal: proven-scale
+objective: "Repeat orientation costs tokens proportional to change, not to workspace size"
+value: Re-orientation is the single most repeated agent operation. Charging full projection cost for an unchanged workspace is the largest avoidable token expense in a long-lived agent session.
+impact: Makes continuous agent operation affordable at any workspace size and gives the returning-agent story a concrete mechanism instead of a manual diff.
+outcome: "Every read surface can be asked what changed since last time, and answers in bounded tokens with verifiable completeness."
+why_now: The mutation event stream and durable pagination cursors both shipped; the delta is now composable from existing primitives rather than new infrastructure.
+parent: pm-9rxu
+risk: medium
+confidence: medium
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-25T06:17:13.426Z",null,null
+  pm-5t33or,related,"2026-07-25T06:17:13.426Z",null,null
+  pm-801d,blocked_by,"2026-07-25T06:17:13.426Z",null,null
+  pm-bwyw,related,"2026-07-25T06:17:13.426Z",null,null
+  pm-e200,related,"2026-07-25T06:17:13.426Z",null,null
+  pm-o87av6,related,"2026-07-25T06:17:13.426Z",null,null
+  pm-plwm,related,"2026-07-25T06:17:13.426Z",null,null
+  pm-bwyw,implements,"2026-07-25T06:27:57.728Z",null,null
+  pm-g2zz,implements,"2026-07-25T06:27:57.728Z",null,null
+body: ""

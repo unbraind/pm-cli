@@ -1,0 +1,29 @@
+id: pm-p1g43q
+title: "Retrieval quality contract: measured recall and precision targets for pm search across corpus scales, gated in CI like latency already is"
+description: "Search latency is benchmarked at 10k, 100k, and a million items, but search quality is not measured at all: nothing states what fraction of relevant items a query should return, nothing detects a ranking regression, and the hybrid weighting was chosen by decision rather than by measurement. Context relevance has an evaluation harness owned separately; search has none, even though search is what an agent reaches for first when it does not know an identifier. This feature defines a retrieval quality contract - a labelled query set over real and synthetic corpora, declared recall and precision targets per corpus scale, and a CI gate that fails on regression - and makes the hybrid weighting an evidence-backed parameter rather than a fixed constant. The judgment corpus deliberately reuses the shapes the context harness already defines, so the two evaluations report on one methodology instead of two."
+type: Feature
+status: open
+priority: 2
+tags[6]: "area:search",ci,context,quality,relevance,scale
+created_at: "2026-07-25T06:19:47.451Z"
+updated_at: "2026-07-25T06:19:47.451Z"
+author: unknown
+estimated_minutes: 720
+acceptance_criteria: "A labelled query and relevance-judgment set exists over the real corpus and over generated corpora at multiple scales, reusing the context harness scenario shapes rather than defining a parallel methodology; Recall and precision targets are declared per corpus scale and per query class (identifier, exact phrase, conceptual, cross-lingual-free), and are measured by a repeatable command; CI fails when measured quality regresses below the declared targets, in the same way the latency gate fails on regression; The hybrid weighting is tuned against the judgment set and the chosen value is recorded with its measurement, superseding the constant chosen by decision alone; Results are published in a form the public benchmark can consume, so external claims and internal gates share one number"
+goal: proven-scale
+objective: "Retrieval quality is a measured, gated number rather than an assumption"
+value: "An agent that cannot find an existing item files a duplicate. Search quality is therefore a direct input to backlog integrity, and it is currently the only hot path with no quality measurement at all."
+impact: "Gives search the same regression protection latency already has, makes the hybrid weighting evidence-based, and supplies the retrieval half of the public context benchmark."
+outcome: "Declared recall and precision targets per scale, a repeatable measurement, and a CI gate that fails on ranking regression."
+why_now: "The search capability epic has no other open work, the scale corpus generator exists, and the duplicate-advisory work makes search quality a governance dependency rather than a nicety."
+parent: pm-ydp6
+risk: medium
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-25T06:19:47.451Z",null,null
+  pm-atfm,related,"2026-07-25T06:19:47.451Z",null,null
+  pm-kw4b,related,"2026-07-25T06:19:47.451Z",null,null
+  pm-lixy,related,"2026-07-25T06:19:47.451Z",null,null
+  pm-o87av6,related,"2026-07-25T06:19:47.451Z",null,null
+  pm-qljv,related,"2026-07-25T06:19:47.451Z",null,null
+body: ""

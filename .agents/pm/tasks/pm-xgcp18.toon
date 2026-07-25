@@ -1,0 +1,29 @@
+id: pm-xgcp18
+title: "Executable documentation gate: every command example in the docs is run against a sandbox workspace and must succeed"
+description: "Docs are the agent-facing product: an agent that reads a wrong example spends a turn on a failing command and then distrusts the rest of the page. The repository has already shipped fixes for exactly this class - an invalid scope-before-verb config invocation in the merge-safety guide, an agent-guidance example referencing a test runner that may not exist in the target repo, and hints pointing at package-only commands absent from a base install - each found by a human reading the page rather than by a gate. This task extracts every fenced command example from the documentation set, executes it against a sandboxed workspace with the base install, and fails CI when an example errors, references a command outside the active surface, or uses a flag the contracts table does not declare. Examples that are deliberately illustrative rather than runnable must be marked as such, which makes the untested fraction visible instead of implicit."
+type: Task
+status: open
+priority: 2
+tags[4]: ci,docs,governance,quality
+created_at: "2026-07-25T06:18:30.432Z"
+updated_at: "2026-07-25T06:18:30.432Z"
+author: unknown
+estimated_minutes: 600
+acceptance_criteria: "Every fenced pm command example in the documentation set is either executed against a sandbox workspace in CI or explicitly marked non-executable with a reason; Execution uses a base install with no operator-machine state, so package-only commands and repo-specific paths fail exactly as they would for a new user; The gate additionally validates that each example's command and flags exist in the contracts table, catching drift even for examples that cannot be executed; Failures name the file, line, and the specific command or flag that is wrong; The non-executable fraction is reported as a number so it cannot quietly grow"
+goal: continuous-defect-detection
+objective: Documentation is verified by execution rather than by review
+value: "Wrong examples are the highest-leverage defect in an agent-facing product: they are copied verbatim, they fail silently in the agent's plan, and they are discovered by users rather than by tests."
+impact: "Eliminates a defect class that has already produced several tracked issues, and keeps the documentation honest as the command grammar consolidates and spellings become aliases."
+outcome: "A CI gate that executes or contract-checks every documented example and fails on drift, with the non-executable remainder explicitly counted."
+why_now: The consolidation epic is about to rewrite most documented spellings; a gate that runs before the migrations means the docs cannot silently rot during them.
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-esbt,related,"2026-07-25T06:18:30.432Z",null,null
+  pm-ka6d,related,"2026-07-25T06:18:30.432Z",null,null
+  pm-mu8m,related,"2026-07-25T06:18:30.432Z",null,null
+  pm-qljv,related,"2026-07-25T06:18:30.432Z",null,null
+  pm-surv,related,"2026-07-25T06:18:30.432Z",null,null
+  pm-wt43zj,related,"2026-07-25T06:18:30.432Z",null,null
+body: ""

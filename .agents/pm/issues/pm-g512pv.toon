@@ -6,11 +6,17 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:32.672Z"
-updated_at: "2026-07-25T02:06:32.672Z"
+updated_at: "2026-07-25T06:27:16.315Z"
 author: unknown
+estimated_minutes: 180
+acceptance_criteria: "Closing a Plan whose steps are all complete transitions plan_mode to a terminal state in the same mutation, with no separate command required; Terminal Plan semantics are declared once and enforced identically across CLI, SDK, and MCP; The transition is recorded in the Plan history stream with the triggering action; Attempting to resume or update a terminal Plan fails with a typed error naming the terminal state"
 parent: pm-usfg
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-bxdlfa,related_to,"2026-07-25T02:06:32.672Z",null,null
+  pm-2tan,related,"2026-07-25T06:27:16.073Z",null,null
+  pm-96tter,related,"2026-07-25T06:27:16.073Z",null,null
+  pm-bxdlfa,related,"2026-07-25T06:27:16.073Z",null,null
+  pm-z5vamp,related,"2026-07-25T06:27:16.073Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T02:06:32.672Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
 body: ""

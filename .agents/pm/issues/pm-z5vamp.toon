@@ -6,11 +6,16 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:31.869Z"
-updated_at: "2026-07-25T02:06:31.869Z"
+updated_at: "2026-07-25T06:27:17.355Z"
 author: unknown
+estimated_minutes: 180
+acceptance_criteria: "plan update-step persists --file, --test, and --doc evidence onto the step record through CLI, SDK, and MCP; Evidence fields round-trip through storage and are visible in plan reads and history entries; Unsupported or malformed evidence input fails with a typed error instead of being silently discarded; Coverage asserts persistence and rejection paths on the same plan"
 parent: pm-usfg
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-bxdlfa,related_to,"2026-07-25T02:06:31.869Z",null,null
+  pm-2tan,related,"2026-07-25T06:27:17.113Z",null,null
+  pm-96tter,related,"2026-07-25T06:27:17.113Z",null,null
+  pm-bxdlfa,related,"2026-07-25T06:27:17.113Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T02:06:31.869Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
 body: ""

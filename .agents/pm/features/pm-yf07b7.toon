@@ -1,0 +1,29 @@
+id: pm-yf07b7
+title: "MCP resources and prompts surface: expose workspace context as addressable resources and canonical workflows as prompts, not only as tools"
+description: "The MCP server declares only the tools capability. Every piece of workspace context therefore has to be pulled through a tool call that the model must decide to make, pay a round trip for, and re-request whenever it is evicted. The protocol has two other primitives that fit pm exactly: resources, which let a host attach stable addressable context such as the current focus, the active item, an agent guide, or a bounded context pack directly into a conversation without a tool call; and prompts, which let the server publish the canonical workflows - orient, claim and start, record evidence and close - as named, parameterized entry points instead of leaving each host to reinvent them in a system prompt. Adding both reduces cold-start cost, makes the correct workflow discoverable rather than documented, and does it without adding a single tool to the count that already costs roughly five hundred cold-start tokens per tool."
+type: Feature
+status: open
+priority: 2
+tags[4]: agent-ux,"area:mcp",context,tokens
+created_at: "2026-07-25T06:19:10.696Z"
+updated_at: "2026-07-25T06:19:10.696Z"
+author: unknown
+estimated_minutes: 720
+acceptance_criteria: "The server declares and implements the resources capability, exposing at least the workspace context pack, the active focus and claims, and the agent guidance as addressable resources with stable URIs and change notifications; The server declares and implements the prompts capability, publishing the canonical agent workflows as named parameterized prompts generated from the same contracts table that generates tools; Resource and prompt payloads honour the declared output token budgets and the same projection and format contracts as the CLI; Adding these capabilities does not increase the tool count, and the cold-start token measurement is re-run to show the net effect; Hosts that support only tools are unaffected, proven by an acceptance test against a tools-only client"
+goal: agent-legible-grammar
+objective: "Every MCP primitive that fits pm is used, so context arrives without a round trip"
+value: "Tool-only servers force every piece of context through model-initiated calls. Resources and prompts move stable context and canonical workflows into the host, which is cheaper per turn and more reliable than hoping the model calls the right tool."
+impact: "Lowers cold-start and per-turn token cost, makes the intended agent loop discoverable from the protocol itself, and uses the tool budget for actions rather than for retrieval."
+outcome: "An MCP server that offers tools, resources, and prompts, all generated from one contracts table, with measured cold-start improvement."
+why_now: "The MCP capability epic has no other open work, tool-count pressure is already measured, and the contracts table that would generate prompts and resources already exists."
+parent: pm-5k4v
+risk: medium
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-5t33or,related,"2026-07-25T06:19:10.696Z",null,null
+  pm-9k90,related,"2026-07-25T06:19:10.696Z",null,null
+  pm-ka6d,related,"2026-07-25T06:19:10.696Z",null,null
+  pm-mu8m,related,"2026-07-25T06:19:10.696Z",null,null
+  pm-xwah,related,"2026-07-25T06:19:10.696Z",null,null
+  pm-z3ez,related,"2026-07-25T06:19:10.696Z",null,null
+body: ""

@@ -6,11 +6,16 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:35.414Z"
-updated_at: "2026-07-25T02:06:35.414Z"
+updated_at: "2026-07-25T06:27:20.622Z"
 author: unknown
+estimated_minutes: 180
+acceptance_criteria: "Storage root and extension discovery root are surfaced as explicit, separately named coordinates in diagnostics rather than one implied path; When --pm-path relocates discovery so that previously available extension commands are absent, the unknown-command error names the relocation as the probable cause and states the corrective flag; Coverage asserts the diagnostic on a relocated workspace whose extension set differs from the default"
 parent: pm-usfg
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-j4ac9a,related_to,"2026-07-25T02:06:35.414Z",null,null
+  pm-gdi7,related,"2026-07-25T06:27:20.400Z",null,null
+  pm-ir9vqy,related,"2026-07-25T06:27:20.400Z",null,null
+  pm-l9wl,related,"2026-07-25T06:27:20.400Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T02:06:35.414Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
 body: ""

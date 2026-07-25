@@ -1,0 +1,28 @@
+id: pm-zlv8jl
+title: "Flake detection and quarantine ratchet: nondeterministic tests are identified, tracked as items, and budgeted down instead of re-run until green"
+description: "Three separate nightly flakes have been diagnosed one at a time as individual issues, each after a red run cost a maintainer a debugging session. There is no systemic detection: a test that fails once in fifty is invisible until it fails on the wrong day, and nothing distinguishes a genuine regression from a known-unstable test at the moment a gate goes red. This task adds flake detection as a first-class CI capability: repeated-run signal collection, a recorded per-test stability score, automatic filing of a tracked item for any test that crosses the instability threshold, and a quarantine list that is budgeted and ratcheted down rather than allowed to grow. Quarantine never hides a failure: quarantined tests still run and still report, they simply cannot mask a genuine regression in the primary signal."
+type: Task
+status: open
+priority: 2
+tags[4]: ci,governance,quality,testing
+created_at: "2026-07-25T06:17:53.723Z"
+updated_at: "2026-07-25T06:17:53.723Z"
+author: unknown
+estimated_minutes: 600
+acceptance_criteria: "CI collects per-test outcome history across runs and computes a stability score for every test in the suite; A test crossing the instability threshold automatically produces or updates one tracked item carrying the observed failure rate, the platforms involved, and links to the failing runs, with no duplicate filed for an already-tracked test; A quarantine list exists with a declared maximum size that ratchets downward and cannot be raised without an explicit recorded decision; Quarantined tests continue to execute and report their results; they are excluded only from the pass/fail gate, and their exclusion is visible in the run summary; A genuine regression in a quarantined test is still detectable, proven by an acceptance test that regresses a quarantined test and asserts the signal is not lost"
+goal: continuous-defect-detection
+objective: Nondeterminism is measured and budgeted rather than rediscovered
+value: "Every unmanaged flake teaches maintainers and agents that a red gate might not mean anything, which is the failure mode that lets a real regression through."
+impact: "Preserves the meaning of a green build, converts intermittent failures into tracked work automatically, and stops the per-flake archaeology that has been repeated three times."
+outcome: "A measured stability score per test, automatic tracking of unstable tests, and a shrinking quarantine budget that keeps the primary CI signal trustworthy."
+why_now: The defect-escape ratchet and mutation-testing gate both assume the suite result is meaningful; flake management is the precondition for both.
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-a8lnoh,related,"2026-07-25T06:17:53.723Z",null,null
+  pm-ld0z,related,"2026-07-25T06:17:53.723Z",null,null
+  pm-rtn5h6,related,"2026-07-25T06:17:53.723Z",null,null
+  pm-tgq6,related,"2026-07-25T06:17:53.723Z",null,null
+  pm-zclzll,related,"2026-07-25T06:17:53.723Z",null,null
+body: ""

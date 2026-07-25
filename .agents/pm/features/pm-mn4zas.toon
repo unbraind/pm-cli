@@ -1,0 +1,29 @@
+id: pm-mn4zas
+title: "Bidirectional interop adapters: import from and export to external trackers as packages, preserving provenance and round-trip fidelity"
+description: "Adoption of a repository-native tracker is gated on the work already living somewhere else, and the exit story matters as much as the entry story: a tool that cannot export its data is a tool teams refuse to adopt. Today there are one-directional importers for two adjacent formats and a CSV export, which is enough to demonstrate the extension surface but not enough to move a real project in or out. This feature defines an interop adapter contract - a declared mapping between an external tracker's item model and the pm schema, provenance stamped on every imported item, idempotent re-import that updates rather than duplicates, and an export that a fresh workspace can re-import to an equivalent state - and delivers it as packages rather than core surface, so each adapter can evolve at the external system's pace without touching the CLI."
+type: Feature
+status: open
+priority: 3
+tags[5]: "area:extensions","area:sdk",interop,migration,platform
+created_at: "2026-07-25T06:19:48.492Z"
+updated_at: "2026-07-25T06:19:48.492Z"
+author: unknown
+estimated_minutes: 1200
+acceptance_criteria: "An interop adapter contract is published in the SDK: schema mapping declaration, provenance stamping, idempotency key derivation, and conflict policy for re-import; Imported items carry the external system, its identifier, and the import run as provenance, so a re-import updates the same items rather than creating duplicates; A round-trip acceptance test exports a non-trivial workspace, imports it into a fresh workspace, and asserts equivalence of items, relationships, and evidence links within declared lossy-field limits; History and relationships survive import where the source provides them, and where it does not the gap is declared in the adapter's capability manifest rather than silently dropped; At least one adapter beyond the existing formats ships as a package against the contract, proving the contract on a system pm does not control"
+goal: universal-domain-platform
+objective: Work can enter and leave pm without losing its provenance
+value: "A universal project management substrate that cannot ingest existing work or hand it back is a substrate nobody can adopt with existing projects, which is nearly all of them."
+impact: "Removes the largest practical adoption barrier, makes the exit story explicit rather than implied, and demonstrates the package platform on integrations the project does not own."
+outcome: "A published adapter contract with provenance and idempotency, a proven round trip, and at least one third-system adapter shipped as a package."
+why_now: "The package platform, typed relationship persistence, and bulk transaction primitives all shipped, so an adapter can now be written entirely against public SDK surface."
+parent: pm-ugqx
+risk: medium
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-8jdc,related,"2026-07-25T06:19:48.492Z",null,null
+  pm-o8um,related,"2026-07-25T06:19:48.492Z",null,null
+  pm-pae3wo,related,"2026-07-25T06:19:48.492Z",null,null
+  pm-quzx,related,"2026-07-25T06:19:48.492Z",null,null
+  pm-rml5,related,"2026-07-25T06:19:48.492Z",null,null
+  pm-t4d7nz,related,"2026-07-25T06:19:48.492Z",null,null
+body: ""

@@ -1,0 +1,30 @@
+id: pm-3oqjnc
+title: "Fleet work allocation: capability-matched, critical-path-aware assignment that keeps thousands of concurrent agents non-colliding and globally efficient"
+description: "pm next answers one question well: what should this agent do now. At fleet scale that is not the same question as what should these two thousand agents do now. Today every agent independently ranks the same queue and races for the same top item; atomic claim makes the race safe but not efficient, and nothing steers the fleet toward the critical path or away from convoying on one hot epic. This feature adds allocation as an SDK primitive: a bounded, deterministic assignment over the ready set that accounts for declared agent capabilities, current claims, dependency criticality from the graph analytics already shipped, and anti-collision spread, and that degrades to exactly today's behaviour for a fleet of one. Assignment advises; claim remains the authoritative atomic test-and-set, so a stale or partitioned advisor can never corrupt ownership."
+type: Feature
+status: open
+priority: 2
+tags[6]: agent-ux,"area:sdk",concurrency,context,graph,scale
+created_at: "2026-07-25T06:17:52.754Z"
+updated_at: "2026-07-25T06:17:52.754Z"
+author: unknown
+estimated_minutes: 1200
+acceptance_criteria: "An SDK primitive returns a bounded allocation over the ready set for a described fleet, deterministic for a fixed workspace state and fleet description; Allocation accounts for declared agent capabilities, existing claims, graph criticality (slack and critical path), and spread, and each assignment carries an explainable reason naming the deciding signals; A fleet of one produces exactly the ranking pm next produces today, so the primitive is a strict generalization with no behavioural regression; Advice never bypasses atomic claim: an agent that acts on stale advice loses the claim race safely and re-requests; Contention benchmarks show measurably higher throughput and lower wasted claim attempts than independent ranking at hundreds and thousands of simulated agents; The primitive is bounded in tokens and latency at million-item scale and degrades explicitly rather than scanning the workspace"
+goal: proven-scale
+objective: "Fleet-level throughput is a property of the tool, not of luck in the claim race"
+value: "Thousands of agents ranking the same queue independently converge on the same head of the queue, wasting claim attempts and leaving the critical path unstaffed. Safety is solved; efficiency is not."
+impact: "Turns a safe-but-uncoordinated fleet into a directed one: work flows to the critical path, capabilities are matched, and collision waste falls without adding a scheduler daemon or a central authority."
+outcome: "A deterministic, explainable, bounded allocation primitive that generalizes pm next from one agent to a fleet without changing ownership semantics."
+why_now: "Atomic claim, ranked next, graph slack and critical-path analytics, and the scale harness have all shipped; allocation is the composition step and the last unstaffed half of the thousands-of-agents story."
+parent: pm-dj98
+risk: high
+confidence: medium
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-25T06:17:52.754Z",null,null
+  pm-7ob5,related,"2026-07-25T06:17:52.754Z",null,null
+  pm-e200,related,"2026-07-25T06:17:52.754Z",null,null
+  pm-g2zz,related,"2026-07-25T06:17:52.754Z",null,null
+  pm-lvyd,blocked_by,"2026-07-25T06:17:52.754Z",null,null
+  pm-o87av6,related,"2026-07-25T06:17:52.754Z",null,null
+  pm-xc68,related,"2026-07-25T06:17:52.754Z",null,null
+body: ""
