@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: documentation,policy,scorecard,security
 created_at: "2026-07-14T22:40:30.936Z"
-updated_at: "2026-07-26T09:09:12.523Z"
+updated_at: "2026-07-26T09:11:09.179Z"
 assignee: "harness:codex"
 author: maintainer-agent
 estimated_minutes: 30
@@ -17,10 +17,11 @@ confidence: high
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-u9d0,related,"2026-07-15T06:29:49.220Z",null,null
   pm-gnzh,implements,"2026-07-26T05:55:01.465Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-18T12:39:31.544Z",codex-gpt5,"GitHub report evidence 2026-07-18: open Scorecard SecurityPolicyID alert #21 is medium severity on refs/heads/main with no file-specific location. Canonical remediation remains this item; no duplicate created."
   "2026-07-26T09:02:29.678Z","harness:codex","TDD evidence: the first full 6,413-test coverage run found the release-readiness SECURITY.md baseline heading contract after the policy expansion renamed it. Restored the established 'Reporting a Vulnerability' heading while retaining private-only guidance; focused and full gates are being rerun."
   "2026-07-26T09:09:12.523Z","harness:codex","Implementation evidence: SECURITY.md now documents current-release support, direct GitHub private vulnerability reporting, 3/7/14/30/90-day response targets, coordinated disclosure, scope, extension trust, sensitive-data handling, and safe harbor. Docs links, lint/static gates, 15-package packed smoke, and full 6,413-test 100/100/100/100 coverage pass; final closure awaits the Scorecard run."
+  "2026-07-26T09:11:09.178Z","harness:codex","PR evidence: full-depth security policy and governance docs are in PR #735 at head 39acfef6; hosted checks, bot review, merge, and main-branch Scorecard verification are pending."
 docs[4]{path,scope,note}:
   docs/README.md,project,documentation index route
   docs/SECURITY_GOVERNANCE.md,project,public security governance boundary
