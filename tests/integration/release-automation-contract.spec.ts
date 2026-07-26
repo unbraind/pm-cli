@@ -462,6 +462,21 @@ describe("release automation contract", () => {
     expect(workflow).toContain(
       "npm access set status=public @unbraind/pm-cli",
     );
+    expect(workflow).toContain(
+      "attempting access recovery before immutable publication",
+    );
+    expect(workflow).toContain(
+      "refusing immutable publication",
+    );
+    expect(workflow).toContain(
+      "grep -Eq 'E404|404 Not Found|Package not found'",
+    );
+    expect(workflow).not.toContain(
+      'elif npm view "@unbraind/pm-cli@${VERSION}"',
+    );
+    expect(workflow.indexOf("npm access set status=public")).toBeLessThan(
+      workflow.indexOf("npm publish --access public --provenance --tag latest"),
+    );
     expect(workflow).toContain('env -u NODE_AUTH_TOKEN -u NPM_TOKEN');
     expect(workflow).toContain(
       'npm_config_userconfig="${PUBLIC_NPMRC}"',

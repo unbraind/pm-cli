@@ -387,8 +387,10 @@ describe("GitHub workflow contract", () => {
       "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
       "npm publish --access public --provenance --tag latest",
       "is publicly available; skipping npm publish.",
-      "exists but is not public; restoring public access.",
+      "attempting access recovery before immutable publication.",
       "npm access set status=public @unbraind/pm-cli",
+      "grep -Eq 'E404|404 Not Found|Package not found'",
+      "refusing immutable publication.",
       "env -u NODE_AUTH_TOKEN -u NPM_TOKEN",
       'npm_config_userconfig="${PUBLIC_NPMRC}"',
       'npm_config_cache="${PUBLIC_NPM_CACHE}"',
@@ -405,6 +407,16 @@ describe("GitHub workflow contract", () => {
     const untaggedNpmPublish =
       /(?:^|[!;&|(){}]|\b(?:then|do)\b)\s*npm publish\b(?![^;&|\n]*--tag\s+latest\b)/m;
     expect(releaseWorkflow).not.toMatch(untaggedNpmPublish);
+    expect(releaseWorkflow).not.toContain(
+      'elif npm view "@unbraind/pm-cli@${VERSION}"',
+    );
+    expect(
+      releaseWorkflow.indexOf("npm access set status=public"),
+    ).toBeLessThan(
+      releaseWorkflow.indexOf(
+        "npm publish --access public --provenance --tag latest",
+      ),
+    );
     expect("if should_publish; then npm publish --access public; fi").toMatch(
       untaggedNpmPublish,
     );
