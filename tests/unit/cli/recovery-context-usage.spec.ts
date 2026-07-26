@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { recordAfterCommandContextUsage } from "../../../src/cli/after-command-context-usage.js";
 import { appendCommanderExtensionFailures } from "../../../src/cli/commander-usage.js";
@@ -91,17 +92,22 @@ describe("CLI recovery and derived usage helpers", () => {
   });
 
   it("explains storage and extension-discovery relocation for unknown commands", async () => {
+    const selectedPmRoot = path.resolve("scratch", ".agents", "pm");
+    const workspacePmRoot = path.resolve("workspace", ".agents", "pm");
     const result = await loadUnknownCommandRecoveryFailures(
       "unknown_command",
-      "/scratch/.agents/pm",
+      selectedPmRoot,
       {
-        resolveImplicitPmRoot: () => "/workspace/.agents/pm",
+        resolveImplicitPmRoot: () => workspacePmRoot,
         readSettings: async () => ({}) as never,
         loadExtensions: async ({ pmRoot }) =>
           ({
-            roots: { project: `${pmRoot}/extensions`, global: "/global" },
+            roots: {
+              project: path.join(pmRoot, "extensions"),
+              global: path.resolve("global"),
+            },
             loaded:
-              pmRoot === "/workspace/.agents/pm"
+              pmRoot === workspacePmRoot
                 ? [
                     {},
                     {
@@ -121,17 +127,17 @@ describe("CLI recovery and derived usage helpers", () => {
       layer: "runtime",
       name: "extension-root-relocation",
       error: expect.stringContaining(
-        "storage_root=/scratch/.agents/pm extension_discovery_root=/scratch/.agents/pm/extensions",
+        `storage_root=${selectedPmRoot} extension_discovery_root=${path.join(selectedPmRoot, "extensions")}`,
       ),
     });
     expect(result.at(-1)?.error).toContain(
-      "cwd_extension_discovery_root=/workspace/.agents/pm/extensions",
+      `cwd_extension_discovery_root=${path.join(workspacePmRoot, "extensions")}`,
     );
     expect(result.at(-1)?.error).toContain(
       "--pm-path selects extension discovery as well as item storage",
     );
     expect(result.at(-1)?.error).toContain(
-      "pm --pm-path /scratch/.agents/pm install <package> --project",
+      `pm --pm-path ${selectedPmRoot} install <package> --project`,
     );
   });
 

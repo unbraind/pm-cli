@@ -1,0 +1,33 @@
+id: pm-wr8utz
+title: "GH-733: Windows Node 24 nightly portability regressions in author, recovery, and drift tests"
+description: "Nightly Validation run 30191427127 on main 99b718ba failed three Windows Node 24 assertions: author-attribution compares native separators to a POSIX literal; recovery-context expects POSIX-rendered relocated paths; drift-scan assumes chmod makes a directory unreadable on Windows. Restore cross-platform semantic assertions without weakening production behavior."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: ci,cross-platform,gh-issue,tests,windows
+created_at: "2026-07-26T07:58:00.774Z"
+updated_at: "2026-07-26T08:01:07.778Z"
+assignee: "harness:codex"
+author: "harness:codex"
+acceptance_criteria: All three failing specs use platform-correct semantic assertions; focused tests pass locally; exact pushed PR head passes the Windows Node 24 required check or nightly; GH-733 is closed with PM and exact-run evidence.
+parent: pm-u9d0
+severity: high
+environment: GitHub Actions windows-latest / Node 24
+expected_result: "The Windows Node 24 nightly validates author precedence, recovery relocation, and history drift classification without OS-specific false negatives."
+actual_result: "Run 30191427127 failed 3 of 6,401 tests solely on Windows-specific path or permission assumptions."
+regression: true
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-3x8w4m,related,"2026-07-26T07:58:00.774Z",null,null
+  pm-lt6n,related,"2026-07-26T07:58:00.774Z",null,null
+  pm-tgq6,related,"2026-07-26T07:58:00.774Z",null,null
+  pm-u5zr,related,"2026-07-26T07:58:00.774Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-26T07:58:00.774Z","harness:codex","Duplicate-check evidence: all-status searches for the exact GH-733 title, run identifier, Windows Node 24, and the three failing spec names found no live canonical owner. Closed pm-3x8w4m and pm-lt6n are precedent for earlier cross-platform regressions; open pm-tgq6 is a distinct stale-cleanup flake. This item owns only run 30191427127 / GH-733."
+  "2026-07-26T08:01:07.778Z","harness:codex","Evidence: the three GH-733 regression specs pass 27/27 after switching author-source expectations to native separators, building recovery roots with node:path, and injecting the inaccessible-history errno seam directly instead of relying on chmod or parent-path behavior. Repo-wide lint also passes: ESLint, zero jscpd clones, 100% source/export/member docstrings, package boundary, token budget, SDK snapshot, SDK import-cost, and CLI transport gates. Exact Windows Node 24 proof remains pending on the pushed PR head, so this item stays in progress and claimed."
+files[3]{path,scope,note}:
+  tests/unit/cli/recovery-context-usage.spec.ts,project,Platform-native recovery relocation roots and diagnostics
+  tests/unit/core/history/drift-scan.spec.ts,project,Deterministic cross-platform inaccessible workspace history seam
+  tests/unit/sdk/author-attribution.spec.ts,project,Native-separator author source seam assertion
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/cli/recovery-context-usage.spec.ts tests/unit/core/history/drift-scan.spec.ts,project,300,GH-733 three-spec regression lane
+body: ""

@@ -17,9 +17,7 @@ import {
   runDedupeMergePackage,
   runNormalizePackage,
 } from "./runtime.ts";
-import {
-  decorateGovernanceCommandResult,
-} from "./runtime-utils.ts";
+import { decorateGovernanceCommandResult } from "./runtime-utils.ts";
 
 /** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
@@ -106,12 +104,6 @@ const dedupeMergeFlags = [
     long: "--skip-children",
     value_type: "boolean",
     description: "Do not re-parent the duplicates' active children.",
-  },
-  {
-    long: "--author",
-    value_name: "value",
-    value_type: "string",
-    description: "Author recorded on merge mutations.",
   },
   {
     long: "--message",
@@ -269,12 +261,6 @@ const normalizeFlags = [
     long: "--apply",
     value_type: "boolean",
     description: "Apply normalize mutations.",
-  },
-  {
-    long: "--author",
-    value_name: "value",
-    value_type: "string",
-    description: "Author used for apply-mode updates.",
   },
   {
     long: "--message",

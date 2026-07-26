@@ -20,10 +20,7 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { nowIso } from "../core/shared/time.js";
-import {
-  resolveGlobalPmRoot,
-  resolvePmRoot,
-} from "../core/store/paths.js";
+import { resolveGlobalPmRoot, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
 import { quoteCommandArg, renderPmCommand } from "./command-line.js";
 import { ensureTypeFolderScaffold } from "./schema.js";
@@ -2420,11 +2417,7 @@ const runBundledExtensionInstallAll = async (
     const sourceKey = path.resolve(source!);
     let result = installedSources.get(sourceKey);
     if (result === undefined) {
-      result = await runExtension(
-        alias,
-        { ...options, install: true },
-        global,
-      );
+      result = await runExtension(alias, { ...options, install: true }, global);
       installedSources.set(sourceKey, result);
     }
     packages.push({
@@ -2514,6 +2507,11 @@ const runSingleExtensionInstall = async (
   try {
     const validated = await validateExtensionDirectory(
       resolvedSource.directory,
+      {
+        source_kind: installSource.kind,
+        source_input: installSource.input,
+        source_root: resolvedSource.source_root,
+      },
     );
     const destinationDirectoryName = normalizeManagedDirectoryName(
       validated.manifest.name,
@@ -2929,7 +2927,8 @@ const runExtensionActivateDeactivateAction = async (
           );
         })
       : undefined;
-  if (activationFailure) warnings.push(`extension_activate_failed:${ctx.scope}:${candidate.name}`);
+  if (activationFailure)
+    warnings.push(`extension_activate_failed:${ctx.scope}:${candidate.name}`);
 
   return withResult(
     {
@@ -3176,7 +3175,9 @@ const runExtensionDoctorAction = async (
   warnings.push(
     ...classifyUnusedCapabilityWarnings(loadResult, activationResult),
   );
-  warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult, loadResult));
+  warnings.push(
+    ...collectGlobalOutputOverrideDoctorWarnings(activationResult, loadResult),
+  );
   warnings.push(
     ...collectSchemaNarrowActivationDoctorWarnings(
       loadResult,

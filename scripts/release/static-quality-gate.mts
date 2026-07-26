@@ -710,6 +710,31 @@ export function checkTrivialDocstrings(files) {
   );
 }
 
+/** Resolve TypeScript source entrypoints published through package export type conditions. */
+export function collectPackageExportSourceEntries(
+  packageJsonPath = path.join(repoRoot, "package.json"),
+) {
+  try {
+    const packageJson = JSON.parse(loadText(packageJsonPath));
+    const pending = [packageJson.exports];
+    const entries = new Set();
+    while (pending.length > 0) {
+      const value = pending.pop();
+      if (typeof value === "string") {
+        const match = /^\.\/dist\/(.+)\.d\.[cm]?ts$/u.exec(value);
+        if (match?.[1]) {
+          entries.add(`src/${match[1]}.ts`);
+        }
+      } else if (value && typeof value === "object") {
+        pending.push(...Object.values(value));
+      }
+    }
+    return entries;
+  } catch {
+    return new Set();
+  }
+}
+
 export function checkOrphanSourceModules(files) {
   const sourceFiles = sourceFilesOnly(files);
   const incoming = new Map(sourceFiles.map((file) => [file, 0]));
@@ -748,6 +773,7 @@ export function checkOrphanSourceModules(files) {
     "src/sdk/index.ts",
     "src/sdk/testing.ts",
     "src/types/index.ts",
+    ...collectPackageExportSourceEntries(),
   ]);
   const violations = [];
   for (const [absolutePath, incomingCount] of incoming.entries()) {

@@ -38,10 +38,11 @@ function asBoolean(value: unknown): boolean | undefined {
 
 function toBeadsImportOptions(
   options: Record<string, unknown>,
+  global: GlobalOptions,
 ): BeadsImportOptions {
   return {
     file: asOptionalString(options.file),
-    author: asOptionalString(options.author),
+    author: global.author,
     message: asOptionalString(options.message),
     preserveSourceIds: asBoolean(options.preserveSourceIds),
   };
@@ -69,24 +70,21 @@ export function activate(api: ExtensionApi): void {
     "beads",
     async (context: ImportExportContext) =>
       runBeadsImportFromRuntime(
-        toBeadsImportOptions(context.options),
+        toBeadsImportOptions(context.options, context.global),
         context.global,
       ),
     {
       action: "beads-import",
       description: "Import Beads JSONL records into pm items.",
+      failure_hints: [
+        "Use the host-global --author <id> flag when an explicit mutation identity override is required.",
+      ],
       flags: [
         {
           long: "--file",
           value_name: "path",
           value_type: "string",
           description: "Path to the Beads JSONL source file.",
-        },
-        {
-          long: "--author",
-          value_name: "author",
-          value_type: "string",
-          description: "Override import mutation author.",
         },
         {
           long: "--message",

@@ -44,6 +44,7 @@ function normalizeDedupeAuditOptions(
 
 function normalizeDedupeMergeOptions(
   raw: Record<string, unknown>,
+  author: string | undefined,
 ): DedupeMergeOptions {
   return {
     keep: readStringOption(raw, "keep"),
@@ -56,7 +57,7 @@ function normalizeDedupeMergeOptions(
       readBooleanOption(raw, "skipChildren", ["skip_children"]) === true
         ? false
         : undefined,
-    author: readStringOption(raw, "author"),
+    author,
     message: readStringOption(raw, "message"),
   };
 }
@@ -88,6 +89,7 @@ function normalizeCommentsAuditOptions(
 
 function normalizeNormalizeOptions(
   raw: Record<string, unknown>,
+  author: string | undefined,
 ): NormalizeCommandOptions {
   return {
     status: readStringOption(raw, "filterStatus", ["filter_status", "status"]),
@@ -120,7 +122,7 @@ function normalizeNormalizeOptions(
     dryRun:
       readBooleanOption(raw, "dryRun", ["dry_run"]) === true ? true : undefined,
     apply: readBooleanOption(raw, "apply") === true ? true : undefined,
-    author: readStringOption(raw, "author"),
+    author,
     message: readStringOption(raw, "message"),
     force: readBooleanOption(raw, "force") === true ? true : undefined,
     allowAuditUpdate:
@@ -144,7 +146,10 @@ export async function runDedupeMergePackage(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
-  return runDedupeMerge(normalizeDedupeMergeOptions(options), global);
+  return runDedupeMerge(
+    normalizeDedupeMergeOptions(options, global.author),
+    global,
+  );
 }
 
 /** Executes the comments audit package operation through the package runtime. */
@@ -161,7 +166,7 @@ export async function runNormalizePackage(
   global: GlobalOptions,
 ): Promise<unknown> {
   return runNormalize(
-    normalizeNormalizeOptions(options),
+    normalizeNormalizeOptions(options, global.author),
     global,
   );
 }

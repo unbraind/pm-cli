@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:extensions","area:sdk",customization,dx,refactor
 created_at: "2026-07-25T21:40:27.254Z"
-updated_at: "2026-07-26T00:58:39.676Z"
+updated_at: "2026-07-26T07:25:08.141Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "An extension can declare the standard filter-flag set by consuming an SDK export rather than by restating FlagDefinition objects, and adding a filter flag to the CLI baseline reaches consuming packages without per-package edits. The SDK provides the runtime-resolution helper that the ten first-party copies of ensureRuntimeBundle currently implement, so no package hand-joins dist paths; the first-party copies are replaced by it. Alias and cursor semantics attached to a baseline flag are inherited rather than re-declared, and pm-search-advanced's divergent aliases are either adopted into the baseline or dropped. At least one first-party package is migrated end to end as proof and its hand-written tables are deleted. A regression test asserts that a package built only against public SDK subpaths can register a command carrying the full baseline filter set."
@@ -19,7 +19,7 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-c5f0gh,related,"2026-07-25T21:40:27.254Z",null,null
   pm-usfg,related,"2026-07-25T21:40:27.254Z",null,null
   pm-x6jf,related,"2026-07-25T21:40:27.254Z",null,null
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-25T22:20:08.935Z","harness:codex","Start evidence: all-status inventory reviewed 2,043 items (1,766 closed, 265 open, 12 canceled) with zero pre-existing in-progress items. Selected one cohesive package-authoring lane spanning consumable SDK flag/runtime contracts, scaffold parity, prefix-safe naming, and dependency queue reconciliation. GitHub snapshot has zero open PRs; all 21 open issues contain canonical pm-item links; pnpm audit reports zero vulnerabilities."
   "2026-07-25T22:35:02.712Z","harness:codex","Implementation evidence: added public CLI-contract to extension-flag adapter, exported list/search baselines, migrated pm-search-advanced through the first-party runtime bridge, and passed 158 focused unit/integration tests plus targeted ESLint."
   "2026-07-25T22:38:02.233Z","harness:codex","Contract evidence: full CLI contract snapshot stayed current; SDK surface update classified eight additive exports across sdk, sdk/authoring, and sdk/runtime with no breaking or changed symbols."
@@ -28,9 +28,12 @@ comments[8]{created_at,author,text}:
   "2026-07-25T23:36:13.416Z","harness:codex","Scope status before PR: the canonical flag adapter, list-array runtime coercion, public authoring exports, and first-party search migration are complete and fully verified. The separate acceptance clause to replace remaining first-party PM_CLI_PACKAGE_ROOT loader copies is intentionally still outstanding in this same canonical item; this item must remain active through review and return to open after this PR rather than being falsely closed."
   "2026-07-25T23:43:46.607Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/718 at head 46707ab7 completed all required CI gates: four coverage shards plus 100% aggregate coverage, static/typecheck/compat/smoke gates, Windows and macOS regression, Node 22/24 runtime smoke, benchmarks, CodeQL, Semgrep, Trivy, TruffleHog, CodeFactor, DeepScan, docs, ShellCheck, PSScriptAnalyzer, and actionlint. Thread-aware review inventory found zero inline threads or actionable findings; CodeRabbit and Sourcery returned quota notices, CodSpeed reported an environment-mismatched 0.01% informational signal while the repository benchmark gate passed, and Codecov confirmed every modified coverable line is covered."
   "2026-07-26T00:58:39.676Z","harness:codex","GitHub linkage: issue #717 provides a concrete installed-extension reproduction for the remaining runtime SDK loader/resolution clause: https://github.com/unbraind/pm-cli/issues/717. Reuse this canonical item; do not create a duplicate."
-files[9]{path,scope,note}:
+  "2026-07-26T07:24:37.827Z","harness:codex","Partial delivery evidence: this PR completes canonical public host flag contracts, first-party global-author migration, Plan metadata key export, GitHub source diagnostics, and package-export-aware quality checks. The broader item remains open because replacing every remaining first-party PM_CLI_PACKAGE_ROOT runtime-loader copy is still outstanding."
+files[11]{path,scope,note}:
   packages/pm-search-advanced/extensions/search-advanced/index.ts,project,Migrated first-party registration consumer
   packages/pm-search-advanced/extensions/search-advanced/runtime.ts,project,Host runtime bridge for SDK-derived flag definitions
+  src/core/extensions/reserved-host-flags.ts,project,host baseline consumed by SDK contract projection
+  src/sdk/cli-contracts/flag-contracts.ts,project,SDK global flag contract derived from host primitive
   src/sdk/extension-contracts.ts,project,Public adapter from canonical CLI flags to extension registration definitions
   src/sdk/package-runtime-options.ts,project,Normalizes canonical repeatable extension list flags for standalone package runtimes
   src/sdk/runtime.ts,project,First-party runtime export for canonical search flag definitions
@@ -38,11 +41,13 @@ files[9]{path,scope,note}:
   tests/unit/core/search/search-advanced-runtime.spec.ts,project,Proves canonical repeated fields preserve package search projections
   tests/unit/packages/package-runtime-options.spec.ts,project,Covers scalar CSV and Commander accumulated list option shapes
   tests/unit/sdk/extension-authoring-contracts.spec.ts,project,Public adapter and scaffold parity acceptance coverage
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/extension-authoring-contracts.spec.ts tests/unit/packages/search-advanced.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,240
+  "pnpm release:gates",project,1200
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms109rnt-2g4adg,test,passed,"2026-07-25T23:33:44.353Z","2026-07-25T23:33:57.450Z","2026-07-25T23:33:57.450Z",1,0,0
-docs[2]{path,scope,note}:
+docs[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,Public package-author contract guidance
+  docs/SDK.md,project,public extension flag and GlobalOptions contracts
   packages/pm-search-advanced/README.md,project,First-party migration documentation
 body: ""

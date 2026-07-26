@@ -20,8 +20,10 @@ import {
  * sharing branch.
  */
 
-const RUNTIME_PATH = "packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.ts";
-type RuntimeModule = typeof import("../../../packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.ts");
+const RUNTIME_PATH =
+  "packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.ts";
+type RuntimeModule =
+  typeof import("../../../packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.ts");
 
 const { createTempRoot } = setupPackageRuntimeSpec();
 
@@ -31,18 +33,37 @@ async function importRuntime(queryPrefix: string): Promise<RuntimeModule> {
 
 describe("linked-test-adapters package runtime", () => {
   it("ships local ESM metadata for copied extension installs", async () => {
-    const sourceRoot = path.join(process.cwd(), "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters");
+    const sourceRoot = path.join(
+      process.cwd(),
+      "packages",
+      "pm-linked-test-adapters",
+      "extensions",
+      "linked-test-adapters",
+    );
     const tempRoot = await createTempRoot("pm-linked-extension-esm-");
     const extensionRoot = path.join(tempRoot, "linked-test-adapters");
     await mkdir(extensionRoot, { recursive: true });
-    await copyFile(path.join(sourceRoot, "package.json"), path.join(extensionRoot, "package.json"));
-    await copyFile(path.join(sourceRoot, "index.ts"), path.join(extensionRoot, "index.ts"));
-    await copyFile(path.join(sourceRoot, "runtime.ts"), path.join(extensionRoot, "runtime.ts"));
+    await copyFile(
+      path.join(sourceRoot, "package.json"),
+      path.join(extensionRoot, "package.json"),
+    );
+    await copyFile(
+      path.join(sourceRoot, "index.ts"),
+      path.join(extensionRoot, "index.ts"),
+    );
+    await copyFile(
+      path.join(sourceRoot, "runtime.ts"),
+      path.join(extensionRoot, "runtime.ts"),
+    );
 
-    const metadata = JSON.parse(await readFile(path.join(extensionRoot, "package.json"), "utf8")) as { type?: string };
+    const metadata = JSON.parse(
+      await readFile(path.join(extensionRoot, "package.json"), "utf8"),
+    ) as { type?: string };
     expect(metadata.type).toBe("module");
 
-    const imported = (await import(`${pathToFileURL(path.join(extensionRoot, "index.ts")).href}?copied=${cacheBustToken()}`)) as {
+    const imported = (await import(
+      `${pathToFileURL(path.join(extensionRoot, "index.ts")).href}?copied=${cacheBustToken()}`
+    )) as {
       manifest?: { name?: string };
       activate?: unknown;
     };
@@ -53,9 +74,9 @@ describe("linked-test-adapters package runtime", () => {
   it("covers runtime wrappers and argument validation", async () => {
     delete process.env[PM_PACKAGE_ROOT_ENV];
     const missingEnvRuntime = await importRuntime("linkedMissingEnv");
-    await expect(missingEnvRuntime.runTestRunsListPackage({}, {} as never)).rejects.toThrow(
-      "requires PM_CLI_PACKAGE_ROOT",
-    );
+    await expect(
+      missingEnvRuntime.runTestRunsListPackage({}, {} as never),
+    ).rejects.toThrow("requires PM_CLI_PACKAGE_ROOT");
 
     const invalidRoot = await createTempRoot("pm-linked-runtime-invalid-");
     process.env[PM_PACKAGE_ROOT_ENV] = invalidRoot;
@@ -67,9 +88,9 @@ export async function runTestRunsList() { return null; }
 `,
     );
     const invalidRuntime = await importRuntime("linkedInvalidSdk");
-    await expect(invalidRuntime.runTestRunsListPackage({}, {} as never)).rejects.toThrow(
-      "failed to load test-runs SDK runtime exports",
-    );
+    await expect(
+      invalidRuntime.runTestRunsListPackage({}, {} as never),
+    ).rejects.toThrow("failed to load test-runs SDK runtime exports");
 
     const root = await createTempRoot("pm-linked-runtime-success-");
     process.env[PM_PACKAGE_ROOT_ENV] = root;
@@ -147,7 +168,9 @@ export async function runTestRunsResume(runId, options, global) {
     expect((listed.options as Record<string, unknown>).status).toBe("passed");
     expect((listed.options as Record<string, unknown>).limit).toBe("4");
 
-    const status = (await runtime.runTestRunsStatusPackage(["run-1"], { path: "/tmp/pm" } as never)) as Record<string, unknown>;
+    const status = (await runtime.runTestRunsStatusPackage(["run-1"], {
+      path: "/tmp/pm",
+    } as never)) as Record<string, unknown>;
     expect(status.runId).toBe("run-1");
 
     const logs = (await runtime.runTestRunsLogsPackage(
@@ -165,33 +188,53 @@ export async function runTestRunsResume(runId, options, global) {
     )) as Record<string, unknown>;
     expect((stopped.options as Record<string, unknown>).force).toBe(true);
 
-    const resumed = (await runtime.runTestRunsResumePackage(
-      ["run-4"],
-      { author: "coverage" },
-      { path: "/tmp/pm", noExtensions: true } as never,
-    )) as Record<string, unknown>;
-    expect((resumed.options as Record<string, unknown>).author).toBe("coverage");
-    expect((resumed.options as Record<string, unknown>).noExtensions).toBe(true);
+    const resumed = (await runtime.runTestRunsResumePackage(["run-4"], {
+      path: "/tmp/pm",
+      author: "coverage",
+      noExtensions: true,
+    } as never)) as Record<string, unknown>;
+    expect((resumed.options as Record<string, unknown>).author).toBe(
+      "coverage",
+    );
+    expect((resumed.options as Record<string, unknown>).noExtensions).toBe(
+      true,
+    );
 
-    await expect(runtime.runTestRunsStatusPackage([], { path: "/tmp/pm" } as never)).rejects.toMatchObject({
+    await expect(
+      runtime.runTestRunsStatusPackage([], { path: "/tmp/pm" } as never),
+    ).rejects.toMatchObject({
       message: "test-runs status requires a runId argument.",
       exitCode: 2,
     });
-    await expect(runtime.runTestRunsLogsPackage([], {}, { path: "/tmp/pm" } as never)).rejects.toMatchObject({
+    await expect(
+      runtime.runTestRunsLogsPackage([], {}, { path: "/tmp/pm" } as never),
+    ).rejects.toMatchObject({
       message: "test-runs logs requires a runId argument.",
       exitCode: 2,
     });
-    await expect(runtime.runTestRunsStopPackage([], {}, { path: "/tmp/pm" } as never)).rejects.toMatchObject({
+    await expect(
+      runtime.runTestRunsStopPackage([], {}, { path: "/tmp/pm" } as never),
+    ).rejects.toMatchObject({
       message: "test-runs stop requires a runId argument.",
       exitCode: 2,
     });
-    await expect(runtime.runTestRunsResumePackage([], {}, { path: "/tmp/pm" } as never)).rejects.toMatchObject({
+    await expect(
+      runtime.runTestRunsResumePackage([], { path: "/tmp/pm" } as never),
+    ).rejects.toMatchObject({
       message: "test-runs resume requires a runId argument.",
       exitCode: 2,
     });
 
-    const calls = readGlobalCallLog<{ kind: string }>("__PM_LINKED_RUNTIME_CALLS");
-    expect(calls.map((entry) => entry.kind)).toEqual(["list", "status", "logs", "stop", "resume"]);
+    const calls = readGlobalCallLog<{ kind: string }>(
+      "__PM_LINKED_RUNTIME_CALLS",
+    );
+    expect(calls.map((entry) => entry.kind)).toEqual([
+      "list",
+      "status",
+      "logs",
+      "stop",
+      "resume",
+    ]);
   });
 
   it("shares a single in-flight runtime load across concurrent callers", async () => {
@@ -214,7 +257,9 @@ export async function runTestRunsResume(runId, options, global) { return { kind:
     // Two un-awaited calls race through ensureRuntimeBundle before the first
     // load settles, so the second observes the in-flight promise branch.
     const [listed, status] = await Promise.all([
-      runtime.runTestRunsListPackage({ status: "passed" }, { path: "/tmp/pm" } as never),
+      runtime.runTestRunsListPackage({ status: "passed" }, {
+        path: "/tmp/pm",
+      } as never),
       runtime.runTestRunsStatusPackage(["run-1"], { path: "/tmp/pm" } as never),
     ]);
     expect((listed as Record<string, unknown>).kind).toBe("list");

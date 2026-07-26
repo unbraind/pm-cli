@@ -33,6 +33,7 @@ import {
   assertOptionalStringField,
   normalizeOptionalStringArrayField,
 } from "./registration-validation.js";
+import { RESERVED_EXTENSION_HOST_FLAG_NAMES } from "./reserved-host-flags.js";
 import {
   compareComparableVersions,
   evaluatePmMaxVersionBound,
@@ -380,9 +381,7 @@ function parseManifestPermissions(
 }
 
 /** Parse the optional `capabilities` array, normalizing legacy aliases; returns empty lists when absent and `null` when the field is not a string array. */
-function parseManifestCapabilities(
-  value: unknown,
-): {
+function parseManifestCapabilities(value: unknown): {
   capabilities: string[];
   legacy_aliases: LegacyExtensionCapabilityAliasMapping[];
 } | null {
@@ -1189,7 +1188,8 @@ async function resolveExtensionImportHref(
     );
   }
   const baseUrl = new URL(pathToFileURL(importEntryPath).href);
-  const shouldCacheBust = options.cache_bust === true || typeof options.reload_token === "string";
+  const shouldCacheBust =
+    options.cache_bust === true || typeof options.reload_token === "string";
   if (!shouldCacheBust) {
     return baseUrl.href;
   }
@@ -1692,6 +1692,24 @@ function normalizeCommandDefinitionArguments(
   return normalized;
 }
 
+/** Reject any extension flag spelling already owned by the global host. */
+function assertExtensionFlagOwnership(
+  index: number,
+  long: unknown,
+  short: unknown,
+): void {
+  const reservedFlag = [long, short].find(
+    (flag) =>
+      typeof flag === "string" &&
+      RESERVED_EXTENSION_HOST_FLAG_NAMES.has(flag.trim()),
+  );
+  if (typeof reservedFlag === "string") {
+    throw new TypeError(
+      `registerFlags flags[${index}] cannot shadow host-owned global flag "${reservedFlag.trim()}"; read it from context.global instead`,
+    );
+  }
+}
+
 function validateFlagDefinitions(flags: unknown): void {
   if (!Array.isArray(flags)) {
     throw new TypeError(
@@ -1717,6 +1735,7 @@ function validateFlagDefinitions(flags: unknown): void {
     }
     assertOptionalStringField(`registerFlags flags[${index}].long`, long);
     assertOptionalStringField(`registerFlags flags[${index}].short`, short);
+    assertExtensionFlagOwnership(index, long, short);
     assertOptionalStringField(
       `registerFlags flags[${index}].value_name`,
       record.value_name,
@@ -2866,7 +2885,9 @@ class ExtensionApiRegistrar implements ExtensionApi {
   ): void {
     if (
       options !== undefined &&
-      (typeof options !== "object" || options === null || Array.isArray(options))
+      (typeof options !== "object" ||
+        options === null ||
+        Array.isArray(options))
     ) {
       throw new TypeError(`${method} options must be an object when provided`);
     }
@@ -2883,13 +2904,22 @@ class ExtensionApiRegistrar implements ExtensionApi {
       description: options?.description ?? defaultDescription,
       arguments: options?.arguments ?? defaultArguments,
     };
-    assertOptionalStringField(`${method} options.action`, resolvedOptions.action);
+    assertOptionalStringField(
+      `${method} options.action`,
+      resolvedOptions.action,
+    );
     assertOptionalStringField(
       `${method} options.description`,
       resolvedOptions.description,
     );
-    assertOptionalStringField(`${method} options.intent`, resolvedOptions.intent);
-    const action = resolveCommandDefinitionAction(commandPath, resolvedOptions.action);
+    assertOptionalStringField(
+      `${method} options.intent`,
+      resolvedOptions.intent,
+    );
+    const action = resolveCommandDefinitionAction(
+      commandPath,
+      resolvedOptions.action,
+    );
     const examples = normalizeOptionalStringArrayField(
       `${method} options.examples`,
       resolvedOptions.examples,

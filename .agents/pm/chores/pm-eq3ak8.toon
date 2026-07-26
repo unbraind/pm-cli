@@ -1,0 +1,41 @@
+id: pm-eq3ak8
+title: CodeFactor 2026-07-26 SDK and digital-twin regression cluster (GH-722 through GH-732)
+description: "Resolve the newly opened CodeFactor findings against the SDK barrel, CLI/tool-schema duplication, and digital-twin object spreads as one bounded static-quality tranche. Preserve runtime behavior and tighten the local ratchet so the same classes cannot recur."
+type: Chore
+status: closed
+priority: 2
+tags[4]: "area:sdk",code-quality,codefactor,duplication
+created_at: "2026-07-26T06:25:20.956Z"
+updated_at: "2026-07-26T07:25:04.572Z"
+closed_at: "2026-07-26T07:25:01.870Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: GH-722 through GH-727 empty-export findings are resolved without reducing the public SDK surface; GH-729 duplicate-code finding shares one typed primitive; GH-730 and GH-732 unnecessary spreads are removed without mutation aliasing; focused tests and full static gates pass; every GitHub issue links to this tracker item and closes with exact evidence
+parent: pm-92if
+risk: low
+confidence: high
+resolution: "The reported static-analysis cluster is resolved through public-surface cleanup, schema single-sourcing, and package-export-aware quality analysis."
+expected_result: "Reported no-op exports, redundant copies, duplicate Plan keys, and false orphan entrypoints are removed without reducing gates."
+actual_result: All mapped CodeFactor reports are addressed; strict lint/docstrings/jscpd/snapshot/budget and 100% coverage gates pass.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-xspd,related,"2026-07-26T06:25:20.956Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-26T06:25:20.956Z","harness:codex","text=Duplicate check evidence: searched all statuses for the exact CodeFactor empty-export,register-mutation/tool-schema duplicate,and digital-twin spread findings. The open pm-92if epic owns the zero-finding program and pm-xspd owns detector sensitivity, but no child owns the 2026-07-26 issue cluster. GitHub sources: #722-#727,#729,#730,#732."
+  "2026-07-26T07:24:35.544Z","harness:codex","Evidence: resolved CodeFactor GH-722-727/729/730/732 as one quality bundle: removed no-op SDK exports/redundant copies, single-sourced Plan metadata keys, and made orphan-module checks package-export aware. ESLint, zero-clone jscpd, 100% docstrings, SDK snapshot, token/import/transport budgets, and 100/100/100/100 coverage pass."
+files[9]{path,scope,note}:
+  packages/pm-digital-twin/extensions/digital-twin/index.ts,project,remove redundant object copies
+  scripts/release/static-quality-gate.mts,project,recognize package-exported SDK entrypoints
+  src/cli/register-mutation.ts,project,derive plan option targets from SDK schema
+  src/sdk/cli-contracts.ts,project,export plan metadata key contract
+  src/sdk/cli-contracts/tool-schema.ts,project,single-source plan metadata schema
+  src/sdk/index.ts,project,remove no-op subpath references
+  tests/fixtures/sdk/public-surface.json,project,classified additive SDK surface
+  tests/unit/packages/package-manifest.spec.ts,project,First-party package manifest and entrypoint parity coverage
+  tests/unit/scripts/release/static-quality-package-exports.spec.ts,project,quality gate entrypoint regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  pnpm lint,project,1200
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,SDK subpath and plan contract reference
+close_reason: Resolved the related GitHub static-analysis cluster as one cohesive strict-quality bundle.
+body: ""

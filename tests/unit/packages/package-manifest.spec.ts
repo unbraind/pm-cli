@@ -1,4 +1,11 @@
-import { access, mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  writeFile,
+} from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -14,7 +21,12 @@ import { SCAFFOLD_PM_MIN_VERSION } from "../../../src/cli/commands/extension/sca
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "..",
+);
 
 async function createExtension(root: string, name: string): Promise<string> {
   const fixture = await writeTestExtension({ root, directory: name, name });
@@ -29,11 +41,19 @@ async function collectBundledExtensionDirectories(): Promise<string[]> {
     if (!packageEntry.isDirectory() || !packageEntry.name.startsWith("pm-")) {
       continue;
     }
-    const extensionsRoot = path.join(packagesRoot, packageEntry.name, "extensions");
-    const extensionEntries = await readdir(extensionsRoot, { withFileTypes: true }).catch(() => []);
+    const extensionsRoot = path.join(
+      packagesRoot,
+      packageEntry.name,
+      "extensions",
+    );
+    const extensionEntries = await readdir(extensionsRoot, {
+      withFileTypes: true,
+    }).catch(() => []);
     for (const extensionEntry of extensionEntries) {
       if (extensionEntry.isDirectory()) {
-        extensionDirectories.push(path.join(extensionsRoot, extensionEntry.name));
+        extensionDirectories.push(
+          path.join(extensionsRoot, extensionEntry.name),
+        );
       }
     }
   }
@@ -54,13 +74,16 @@ function readStringArrayLiteral(expression: ts.Expression): string[] | null {
   return values;
 }
 
-function readManifestCapabilitiesFromObject(expression: ts.ObjectLiteralExpression): string[] | null {
+function readManifestCapabilitiesFromObject(
+  expression: ts.ObjectLiteralExpression,
+): string[] | null {
   for (const property of expression.properties) {
     if (!ts.isPropertyAssignment(property)) {
       continue;
     }
     const name = property.name;
-    const nameText = ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : null;
+    const nameText =
+      ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : null;
     if (nameText !== "capabilities") {
       continue;
     }
@@ -77,14 +100,26 @@ function unwrapManifestInitializer(expression: ts.Expression): ts.Expression {
   return current;
 }
 
-function extractModuleManifestCapabilities(modulePath: string, source: string): string[] {
-  const sourceFile = ts.createSourceFile(modulePath, source, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
+function extractModuleManifestCapabilities(
+  modulePath: string,
+  source: string,
+): string[] {
+  const sourceFile = ts.createSourceFile(
+    modulePath,
+    source,
+    ts.ScriptTarget.ESNext,
+    true,
+    ts.ScriptKind.TS,
+  );
   for (const statement of sourceFile.statements) {
     if (!ts.isVariableStatement(statement)) {
       continue;
     }
     for (const declaration of statement.declarationList.declarations) {
-      if (!ts.isIdentifier(declaration.name) || declaration.name.text !== "manifest") {
+      if (
+        !ts.isIdentifier(declaration.name) ||
+        declaration.name.text !== "manifest"
+      ) {
         continue;
       }
       if (declaration.initializer) {
@@ -99,24 +134,37 @@ function extractModuleManifestCapabilities(modulePath: string, source: string): 
       }
     }
   }
-  throw new Error(`Expected ${modulePath} to export a manifest object with string-literal capabilities.`);
+  throw new Error(
+    `Expected ${modulePath} to export a manifest object with string-literal capabilities.`,
+  );
 }
 
 describe("pm package manifest model", () => {
   it("extracts module manifest capabilities from common object shapes", () => {
-    expect(extractModuleManifestCapabilities("identifier.ts", 'export const manifest = { capabilities: ["commands"] };')).toEqual([
-      "commands",
-    ]);
-    expect(extractModuleManifestCapabilities("quoted.ts", 'export const manifest = { "capabilities": ["schema"] };')).toEqual([
-      "schema",
-    ]);
     expect(
-      extractModuleManifestCapabilities("const.ts", 'export const manifest = ({ capabilities: ["search"] } as const);'),
+      extractModuleManifestCapabilities(
+        "identifier.ts",
+        'export const manifest = { capabilities: ["commands"] };',
+      ),
+    ).toEqual(["commands"]);
+    expect(
+      extractModuleManifestCapabilities(
+        "quoted.ts",
+        'export const manifest = { "capabilities": ["schema"] };',
+      ),
+    ).toEqual(["schema"]);
+    expect(
+      extractModuleManifestCapabilities(
+        "const.ts",
+        'export const manifest = ({ capabilities: ["search"] } as const);',
+      ),
     ).toEqual(["search"]);
   });
 
   it("publishes stable SDK subpaths used by package authors", async () => {
-    const packageJson = JSON.parse(await readFile(path.join(repoRoot, "package.json"), "utf8")) as {
+    const packageJson = JSON.parse(
+      await readFile(path.join(repoRoot, "package.json"), "utf8"),
+    ) as {
       exports?: Record<string, unknown>;
     };
 
@@ -138,17 +186,21 @@ describe("pm package manifest model", () => {
   });
 
   it("pins Sentry to a packed-consumer-safe declaration release", async () => {
-    const packageJson = JSON.parse(await readFile(path.join(repoRoot, "package.json"), "utf8")) as {
+    const packageJson = JSON.parse(
+      await readFile(path.join(repoRoot, "package.json"), "utf8"),
+    ) as {
       dependencies?: Record<string, unknown>;
     };
 
-    // Fresh npm consumers do not inherit pnpm-lock.yaml, so this exact version
-    // must remain covered by the packed-consumer TypeScript acceptance gates.
+    // Sentry 10.68.0 exposes transitive declarations that reference missing
+    // modules, so retain the last release proven by the packed TS consumer.
     expect(packageJson.dependencies?.["@sentry/node"]).toBe("10.67.0");
   });
 
   it("reads package.json pm resources as a first-class manifest", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-manifest-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-manifest-"),
+    );
     await writeFile(
       path.join(tempRoot, "package.json"),
       JSON.stringify(
@@ -222,7 +274,9 @@ describe("pm package manifest model", () => {
   });
 
   it("reads asset and prompt resource kinds as first-class manifest entries", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-asset-prompt-"));
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-asset-prompt-"),
+    );
     await writeFile(
       path.join(tempRoot, "package.json"),
       JSON.stringify({
@@ -246,8 +300,14 @@ describe("pm package manifest model", () => {
   });
 
   it("declares conventional roots for every package resource kind, including assets and prompts", () => {
-    expect(PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.assets).toEqual(["assets", ".agents/pm/assets"]);
-    expect(PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.prompts).toEqual(["prompts", ".agents/pm/prompts"]);
+    expect(PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.assets).toEqual([
+      "assets",
+      ".agents/pm/assets",
+    ]);
+    expect(PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.prompts).toEqual([
+      "prompts",
+      ".agents/pm/prompts",
+    ]);
     expect(Object.keys(PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS)).toEqual([
       "extensions",
       "docs",
@@ -258,53 +318,86 @@ describe("pm package manifest model", () => {
   });
 
   it("collects extension resources from explicit and conventional package roots", async () => {
-    const explicitRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-explicit-"));
-    const explicitExtension = await createExtension(path.join(explicitRoot, "runtime"), "explicit-ext");
+    const explicitRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-explicit-"),
+    );
+    const explicitExtension = await createExtension(
+      path.join(explicitRoot, "runtime"),
+      "explicit-ext",
+    );
     await writeFile(
       path.join(explicitRoot, "package.json"),
       JSON.stringify({ pm: { extensions: ["runtime"] } }, null, 2),
       "utf8",
     );
-    await expect(collectPackageExtensionDirectories(explicitRoot)).resolves.toEqual([explicitExtension]);
+    await expect(
+      collectPackageExtensionDirectories(explicitRoot),
+    ).resolves.toEqual([explicitExtension]);
 
-    const conventionalRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-conventional-"));
-    const conventionalExtensionsRoot = path.join(conventionalRoot, PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.extensions[1]);
-    const conventionalExtension = await createExtension(conventionalExtensionsRoot, "conventional-ext");
-    await expect(collectPackageExtensionDirectories(conventionalRoot)).resolves.toEqual([conventionalExtension]);
+    const conventionalRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-conventional-"),
+    );
+    const conventionalExtensionsRoot = path.join(
+      conventionalRoot,
+      PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.extensions[1],
+    );
+    const conventionalExtension = await createExtension(
+      conventionalExtensionsRoot,
+      "conventional-ext",
+    );
+    await expect(
+      collectPackageExtensionDirectories(conventionalRoot),
+    ).resolves.toEqual([conventionalExtension]);
   });
 
   it("handles package manifest edge branches deterministically", async () => {
-    const nullPmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-null-"));
-    await writeFile(path.join(nullPmRoot, "package.json"), JSON.stringify({ name: "null-pm", pm: null }), "utf8");
+    const nullPmRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-null-"),
+    );
+    await writeFile(
+      path.join(nullPmRoot, "package.json"),
+      JSON.stringify({ name: "null-pm", pm: null }),
+      "utf8",
+    );
     await expect(readPmPackageManifest(nullPmRoot)).resolves.toMatchObject({
       source: "convention",
       package_name: "null-pm",
       resources: {},
     });
 
-    const unknownResourceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-unknown-resource-"));
+    const unknownResourceRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-unknown-resource-"),
+    );
     await writeFile(
       path.join(unknownResourceRoot, "package.json"),
       JSON.stringify({ pm: { extensions: null, unknown: ["ignored"] } }),
       "utf8",
     );
-    await expect(readPmPackageManifest(unknownResourceRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(unknownResourceRoot),
+    ).resolves.toMatchObject({
       resources: {},
     });
 
-    const scalarResourceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-scalar-resource-"));
+    const scalarResourceRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-scalar-resource-"),
+    );
     await writeFile(
       path.join(scalarResourceRoot, "package.json"),
       JSON.stringify({ pm: { extensions: "extensions" } }),
       "utf8",
     );
-    await expect(readPmPackageManifest(scalarResourceRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(scalarResourceRoot),
+    ).resolves.toMatchObject({
       resources: {
         extensions: ["extensions"],
       },
     });
 
-    const sortedResourceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-sorted-resource-"));
+    const sortedResourceRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-sorted-resource-"),
+    );
     await writeFile(
       path.join(sortedResourceRoot, "package.json"),
       JSON.stringify({
@@ -316,7 +409,9 @@ describe("pm package manifest model", () => {
       }),
       "utf8",
     );
-    await expect(readPmPackageManifest(sortedResourceRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(sortedResourceRoot),
+    ).resolves.toMatchObject({
       resources: {
         extensions: ["extensions", "z-extension"],
         docs: ["docs/a", "docs/z"],
@@ -324,7 +419,9 @@ describe("pm package manifest model", () => {
       },
     });
 
-    const stringRepositoryRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-string-repository-"));
+    const stringRepositoryRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-string-repository-"),
+    );
     await writeFile(
       path.join(stringRepositoryRoot, "package.json"),
       JSON.stringify({
@@ -337,12 +434,16 @@ describe("pm package manifest model", () => {
       }),
       "utf8",
     );
-    await expect(readPmPackageManifest(stringRepositoryRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(stringRepositoryRoot),
+    ).resolves.toMatchObject({
       package_repository_url: "https://github.com/example/string-repository",
       catalog: undefined,
     });
 
-    const emptyMetadataRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-empty-metadata-"));
+    const emptyMetadataRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-empty-metadata-"),
+    );
     await writeFile(
       path.join(emptyMetadataRoot, "package.json"),
       JSON.stringify({
@@ -362,33 +463,58 @@ describe("pm package manifest model", () => {
       }),
       "utf8",
     );
-    await expect(readPmPackageManifest(emptyMetadataRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(emptyMetadataRoot),
+    ).resolves.toMatchObject({
       package_keywords: undefined,
       package_repository_url: undefined,
       package_bugs_url: undefined,
       catalog: undefined,
     });
 
-    const rootExtension = await createExtension(await mkdtemp(path.join(os.tmpdir(), "pm-package-root-extension-")), "root-ext");
-    await expect(collectPackageExtensionDirectories(rootExtension)).resolves.toEqual([rootExtension]);
+    const rootExtension = await createExtension(
+      await mkdtemp(path.join(os.tmpdir(), "pm-package-root-extension-")),
+      "root-ext",
+    );
+    await expect(
+      collectPackageExtensionDirectories(rootExtension),
+    ).resolves.toEqual([rootExtension]);
 
-    const explicitPackageRootExtension = await mkdtemp(path.join(os.tmpdir(), "pm-package-explicit-root-extension-"));
-    const nestedPackageRootExtension = await createExtension(explicitPackageRootExtension, "nested-placeholder");
+    const explicitPackageRootExtension = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-explicit-root-extension-"),
+    );
+    const nestedPackageRootExtension = await createExtension(
+      explicitPackageRootExtension,
+      "nested-placeholder",
+    );
     await writeFile(
       path.join(explicitPackageRootExtension, "package.json"),
       JSON.stringify({ pm: { extensions: ["."] } }),
       "utf8",
     );
-    await expect(collectPackageExtensionDirectories(explicitPackageRootExtension)).resolves.toEqual([
-      nestedPackageRootExtension,
-    ]);
+    await expect(
+      collectPackageExtensionDirectories(explicitPackageRootExtension),
+    ).resolves.toEqual([nestedPackageRootExtension]);
 
-    const mixedRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-mixed-"));
+    const mixedRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-mixed-"),
+    );
     const mixedExtensionsRoot = path.join(mixedRoot, "extensions");
-    const mixedExtension = await createExtension(mixedExtensionsRoot, "mixed-ext");
-    await mkdir(path.join(mixedExtensionsRoot, "no-manifest"), { recursive: true });
-    await writeFile(path.join(mixedExtensionsRoot, "README.md"), "not an extension directory\n", "utf8");
-    await expect(collectPackageExtensionDirectories(mixedRoot)).resolves.toEqual([mixedExtension]);
+    const mixedExtension = await createExtension(
+      mixedExtensionsRoot,
+      "mixed-ext",
+    );
+    await mkdir(path.join(mixedExtensionsRoot, "no-manifest"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(mixedExtensionsRoot, "README.md"),
+      "not an extension directory\n",
+      "utf8",
+    );
+    await expect(
+      collectPackageExtensionDirectories(mixedRoot),
+    ).resolves.toEqual([mixedExtension]);
   });
 
   it("recognizes first-party package roots as installable pm packages", async () => {
@@ -399,12 +525,28 @@ describe("pm package manifest model", () => {
     const calendarRoot = path.join(repoRoot, "packages", "pm-calendar");
     const commandKitRoot = path.join(repoRoot, "packages", "pm-command-kit");
     const digitalTwinRoot = path.join(repoRoot, "packages", "pm-digital-twin");
-    const governanceAuditRoot = path.join(repoRoot, "packages", "pm-governance-audit");
+    const governanceAuditRoot = path.join(
+      repoRoot,
+      "packages",
+      "pm-governance-audit",
+    );
     const guideShellRoot = path.join(repoRoot, "packages", "pm-guide-shell");
     const kanbanRoot = path.join(repoRoot, "packages", "pm-kanban");
-    const lifecycleHooksRoot = path.join(repoRoot, "packages", "pm-lifecycle-hooks");
-    const linkedTestAdaptersRoot = path.join(repoRoot, "packages", "pm-linked-test-adapters");
-    const searchAdvancedRoot = path.join(repoRoot, "packages", "pm-search-advanced");
+    const lifecycleHooksRoot = path.join(
+      repoRoot,
+      "packages",
+      "pm-lifecycle-hooks",
+    );
+    const linkedTestAdaptersRoot = path.join(
+      repoRoot,
+      "packages",
+      "pm-linked-test-adapters",
+    );
+    const searchAdvancedRoot = path.join(
+      repoRoot,
+      "packages",
+      "pm-search-advanced",
+    );
     const templatesRoot = path.join(repoRoot, "packages", "pm-templates");
     const todosRoot = path.join(repoRoot, "packages", "pm-todos");
 
@@ -421,9 +563,9 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/beads"],
       },
     });
-    await expect(collectPackageExtensionDirectories(beadsRoot)).resolves.toEqual([
-      path.join(beadsRoot, "extensions", "beads"),
-    ]);
+    await expect(
+      collectPackageExtensionDirectories(beadsRoot),
+    ).resolves.toEqual([path.join(beadsRoot, "extensions", "beads")]);
 
     await expect(readPmPackageManifest(calendarRoot)).resolves.toMatchObject({
       source: "pm",
@@ -438,9 +580,9 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/calendar"],
       },
     });
-    await expect(collectPackageExtensionDirectories(calendarRoot)).resolves.toEqual([
-      path.join(calendarRoot, "extensions", "calendar"),
-    ]);
+    await expect(
+      collectPackageExtensionDirectories(calendarRoot),
+    ).resolves.toEqual([path.join(calendarRoot, "extensions", "calendar")]);
 
     await expect(readPmPackageManifest(commandKitRoot)).resolves.toMatchObject({
       source: "pm",
@@ -455,31 +597,42 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/command-kit"],
       },
     });
-    await expect(collectPackageExtensionDirectories(commandKitRoot)).resolves.toEqual([
+    await expect(
+      collectPackageExtensionDirectories(commandKitRoot),
+    ).resolves.toEqual([
       path.join(commandKitRoot, "extensions", "command-kit"),
     ]);
 
-    await expect(readPmPackageManifest(digitalTwinRoot)).resolves.toMatchObject({
-      source: "pm",
-      package_name: "@unbrained/pm-digital-twin",
-      package_version: rootPackage.version,
-      aliases: ["digital-twin", "twin"],
-      catalog: {
-        display_name: "Digital Twin SDK Exemplar",
-        category: "sdk",
+    await expect(readPmPackageManifest(digitalTwinRoot)).resolves.toMatchObject(
+      {
+        source: "pm",
+        package_name: "@unbrained/pm-digital-twin",
+        package_version: rootPackage.version,
+        aliases: ["digital-twin", "twin"],
+        catalog: {
+          display_name: "Digital Twin SDK Exemplar",
+          category: "sdk",
+        },
+        resources: {
+          extensions: ["extensions/digital-twin"],
+        },
       },
-      resources: {
-        extensions: ["extensions/digital-twin"],
-      },
-    });
-    await expect(collectPackageExtensionDirectories(digitalTwinRoot)).resolves.toEqual([
+    );
+    await expect(
+      collectPackageExtensionDirectories(digitalTwinRoot),
+    ).resolves.toEqual([
       path.join(digitalTwinRoot, "extensions", "digital-twin"),
     ]);
     const digitalTwinManifest = await readPmPackageManifest(digitalTwinRoot);
-    expect(digitalTwinManifest.resources.docs).toEqual(["GAP_REPORT.md", "README.md"]);
+    expect(digitalTwinManifest.resources.docs).toEqual([
+      "GAP_REPORT.md",
+      "README.md",
+    ]);
     expect(digitalTwinManifest.resources.examples).toEqual(["README.md"]);
 
-    await expect(readPmPackageManifest(governanceAuditRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(governanceAuditRoot),
+    ).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-governance-audit",
       package_version: rootPackage.version,
@@ -492,7 +645,9 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/governance-audit"],
       },
     });
-    await expect(collectPackageExtensionDirectories(governanceAuditRoot)).resolves.toEqual([
+    await expect(
+      collectPackageExtensionDirectories(governanceAuditRoot),
+    ).resolves.toEqual([
       path.join(governanceAuditRoot, "extensions", "governance-audit"),
     ]);
 
@@ -509,7 +664,9 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/guide-shell"],
       },
     });
-    await expect(collectPackageExtensionDirectories(guideShellRoot)).resolves.toEqual([
+    await expect(
+      collectPackageExtensionDirectories(guideShellRoot),
+    ).resolves.toEqual([
       path.join(guideShellRoot, "extensions", "guide-shell"),
     ]);
 
@@ -526,11 +683,13 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/kanban"],
       },
     });
-    await expect(collectPackageExtensionDirectories(kanbanRoot)).resolves.toEqual([
-      path.join(kanbanRoot, "extensions", "kanban"),
-    ]);
+    await expect(
+      collectPackageExtensionDirectories(kanbanRoot),
+    ).resolves.toEqual([path.join(kanbanRoot, "extensions", "kanban")]);
 
-    await expect(readPmPackageManifest(lifecycleHooksRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(lifecycleHooksRoot),
+    ).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-lifecycle-hooks",
       package_version: rootPackage.version,
@@ -543,11 +702,15 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/lifecycle-hooks"],
       },
     });
-    await expect(collectPackageExtensionDirectories(lifecycleHooksRoot)).resolves.toEqual([
+    await expect(
+      collectPackageExtensionDirectories(lifecycleHooksRoot),
+    ).resolves.toEqual([
       path.join(lifecycleHooksRoot, "extensions", "lifecycle-hooks"),
     ]);
 
-    await expect(readPmPackageManifest(linkedTestAdaptersRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(linkedTestAdaptersRoot),
+    ).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-linked-test-adapters",
       package_version: rootPackage.version,
@@ -560,11 +723,15 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/linked-test-adapters"],
       },
     });
-    await expect(collectPackageExtensionDirectories(linkedTestAdaptersRoot)).resolves.toEqual([
+    await expect(
+      collectPackageExtensionDirectories(linkedTestAdaptersRoot),
+    ).resolves.toEqual([
       path.join(linkedTestAdaptersRoot, "extensions", "linked-test-adapters"),
     ]);
 
-    await expect(readPmPackageManifest(searchAdvancedRoot)).resolves.toMatchObject({
+    await expect(
+      readPmPackageManifest(searchAdvancedRoot),
+    ).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-search-advanced",
       package_version: rootPackage.version,
@@ -577,7 +744,9 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/search-advanced"],
       },
     });
-    await expect(collectPackageExtensionDirectories(searchAdvancedRoot)).resolves.toEqual([
+    await expect(
+      collectPackageExtensionDirectories(searchAdvancedRoot),
+    ).resolves.toEqual([
       path.join(searchAdvancedRoot, "extensions", "search-advanced"),
     ]);
 
@@ -594,9 +763,9 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/templates"],
       },
     });
-    await expect(collectPackageExtensionDirectories(templatesRoot)).resolves.toEqual([
-      path.join(templatesRoot, "extensions", "templates"),
-    ]);
+    await expect(
+      collectPackageExtensionDirectories(templatesRoot),
+    ).resolves.toEqual([path.join(templatesRoot, "extensions", "templates")]);
 
     await expect(readPmPackageManifest(todosRoot)).resolves.toMatchObject({
       source: "pm",
@@ -611,9 +780,9 @@ describe("pm package manifest model", () => {
         extensions: ["extensions/todos"],
       },
     });
-    await expect(collectPackageExtensionDirectories(todosRoot)).resolves.toEqual([
-      path.join(todosRoot, "extensions", "todos"),
-    ]);
+    await expect(
+      collectPackageExtensionDirectories(todosRoot),
+    ).resolves.toEqual([path.join(todosRoot, "extensions", "todos")]);
 
     for (const packageRoot of [
       beadsRoot,
@@ -635,58 +804,297 @@ describe("pm package manifest model", () => {
   });
 
   it("ships TypeScript-authored sources for first-party package entrypoints", async () => {
-    await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"))).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime-loader.ts"))).resolves
-      .toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"))).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"))).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"))).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.ts"))).resolves
-      .toBeUndefined();
     await expect(
-      access(path.join(repoRoot, "packages", "pm-digital-twin", "extensions", "digital-twin", "index.ts")),
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-beads",
+          "extensions",
+          "beads",
+          "index.ts",
+        ),
+      ),
     ).resolves.toBeUndefined();
     await expect(
-      access(path.join(repoRoot, "packages", "pm-digital-twin", "extensions", "digital-twin", "domain.ts")),
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-beads",
+          "extensions",
+          "beads",
+          "runtime-loader.ts",
+        ),
+      ),
     ).resolves.toBeUndefined();
     await expect(
-      access(path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts")),
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-beads",
+          "extensions",
+          "beads",
+          "runtime.ts",
+        ),
+      ),
     ).resolves.toBeUndefined();
     await expect(
-      access(path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.ts")),
-    ).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"))).resolves
-      .toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"))).resolves
-      .toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-kanban", "extensions", "kanban", "index.ts"))).resolves
-      .toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.ts"))).resolves
-      .toBeUndefined();
-    await expect(
-      access(path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.ts")),
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-calendar",
+          "extensions",
+          "calendar",
+          "index.ts",
+        ),
+      ),
     ).resolves.toBeUndefined();
     await expect(
-      access(path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.ts")),
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-calendar",
+          "extensions",
+          "calendar",
+          "runtime.ts",
+        ),
+      ),
     ).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "index.ts"))).resolves
-      .toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "runtime.ts"))).resolves
-      .toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"))).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"))).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"))).resolves.toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime-loader.ts"))).resolves
-      .toBeUndefined();
-    await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"))).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-command-kit",
+          "extensions",
+          "command-kit",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-digital-twin",
+          "extensions",
+          "digital-twin",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-digital-twin",
+          "extensions",
+          "digital-twin",
+          "domain.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-governance-audit",
+          "extensions",
+          "governance-audit",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-governance-audit",
+          "extensions",
+          "governance-audit",
+          "runtime.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-guide-shell",
+          "extensions",
+          "guide-shell",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-guide-shell",
+          "extensions",
+          "guide-shell",
+          "runtime.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-kanban",
+          "extensions",
+          "kanban",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-lifecycle-hooks",
+          "extensions",
+          "lifecycle-hooks",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-linked-test-adapters",
+          "extensions",
+          "linked-test-adapters",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-linked-test-adapters",
+          "extensions",
+          "linked-test-adapters",
+          "runtime.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-search-advanced",
+          "extensions",
+          "search-advanced",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-search-advanced",
+          "extensions",
+          "search-advanced",
+          "runtime.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-templates",
+          "extensions",
+          "templates",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-templates",
+          "extensions",
+          "templates",
+          "runtime.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-todos",
+          "extensions",
+          "todos",
+          "index.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-todos",
+          "extensions",
+          "todos",
+          "runtime-loader.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(
+        path.join(
+          repoRoot,
+          "packages",
+          "pm-todos",
+          "extensions",
+          "todos",
+          "runtime.ts",
+        ),
+      ),
+    ).resolves.toBeUndefined();
   });
 
   it("keeps generated package runtime loaders in sync", () => {
     expect(() =>
-      execFileSync(process.execPath, [path.join(repoRoot, "scripts", "gen-package-runtime-loaders.mjs"), "--check"], {
-        cwd: repoRoot,
-        stdio: "pipe",
-      }),
+      execFileSync(
+        process.execPath,
+        [
+          path.join(repoRoot, "scripts", "gen-package-runtime-loaders.mjs"),
+          "--check",
+        ],
+        {
+          cwd: repoRoot,
+          stdio: "pipe",
+        },
+      ),
     ).not.toThrow();
   });
 
@@ -697,9 +1105,14 @@ describe("pm package manifest model", () => {
     for (const extensionDirectory of extensionDirectories) {
       const manifestPath = path.join(extensionDirectory, "manifest.json");
       const modulePath = path.join(extensionDirectory, "index.ts");
-      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { capabilities?: unknown };
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+        capabilities?: unknown;
+      };
       const source = await readFile(modulePath, "utf8");
-      const moduleCapabilities = extractModuleManifestCapabilities(modulePath, source);
+      const moduleCapabilities = extractModuleManifestCapabilities(
+        modulePath,
+        source,
+      );
       expect(moduleCapabilities, modulePath).toEqual(manifest.capabilities);
     }
   });
@@ -708,7 +1121,10 @@ describe("pm package manifest model", () => {
     const extensionDirectories = await collectBundledExtensionDirectories();
     expect(extensionDirectories.length).toBeGreaterThan(0);
 
-    const capabilityUsagePatterns: Array<{ capability: string; patterns: RegExp[] }> = [
+    const capabilityUsagePatterns: Array<{
+      capability: string;
+      patterns: RegExp[];
+    }> = [
       { capability: "commands", patterns: [/\bregisterCommand\s*\(/] },
       {
         capability: "schema",
@@ -720,19 +1136,37 @@ describe("pm package manifest model", () => {
           /\bflags\s*:/,
         ],
       },
-      { capability: "importers", patterns: [/\bregisterImporter\s*\(/, /\bregisterExporter\s*\(/] },
-      { capability: "search", patterns: [/\bregisterSearchProvider\s*\(/, /\bregisterVectorStoreAdapter\s*\(/] },
+      {
+        capability: "importers",
+        patterns: [/\bregisterImporter\s*\(/, /\bregisterExporter\s*\(/],
+      },
+      {
+        capability: "search",
+        patterns: [
+          /\bregisterSearchProvider\s*\(/,
+          /\bregisterVectorStoreAdapter\s*\(/,
+        ],
+      },
       { capability: "parser", patterns: [/\bregisterParser\s*\(/] },
       { capability: "preflight", patterns: [/\bregisterPreflight\s*\(/] },
       { capability: "services", patterns: [/\bregisterService\s*\(/] },
       { capability: "renderers", patterns: [/\bregisterRenderer\s*\(/] },
-      { capability: "hooks", patterns: [/\bapi\.hooks\.(?:beforeCommand|afterCommand|onWrite|onRead|onIndex)\s*\(/] },
+      {
+        capability: "hooks",
+        patterns: [
+          /\bapi\.hooks\.(?:beforeCommand|afterCommand|onWrite|onRead|onIndex)\s*\(/,
+        ],
+      },
     ];
 
     for (const extensionDirectory of extensionDirectories) {
       const manifestPath = path.join(extensionDirectory, "manifest.json");
-      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { capabilities?: unknown };
-      const declaredCapabilities = new Set(Array.isArray(manifest.capabilities) ? manifest.capabilities : []);
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+        capabilities?: unknown;
+      };
+      const declaredCapabilities = new Set(
+        Array.isArray(manifest.capabilities) ? manifest.capabilities : [],
+      );
       // Heuristic guard for common entry files; package doctor remains the runtime check.
       const sourcePaths = [
         path.join(extensionDirectory, "index.ts"),
@@ -746,7 +1180,11 @@ describe("pm package manifest model", () => {
         await Promise.all(
           sourcePaths.map(async (sourcePath) =>
             readFile(sourcePath, "utf8").catch((error: unknown) => {
-              if (typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT") {
+              if (
+                typeof error === "object" &&
+                error !== null &&
+                (error as { code?: unknown }).code === "ENOENT"
+              ) {
                 return "";
               }
               throw error;
@@ -758,7 +1196,10 @@ describe("pm package manifest model", () => {
       for (const { capability, patterns } of capabilityUsagePatterns) {
         const usesCapability = patterns.some((pattern) => pattern.test(source));
         if (usesCapability) {
-          expect(declaredCapabilities.has(capability), `${manifestPath} must declare ${capability}`).toBe(true);
+          expect(
+            declaredCapabilities.has(capability),
+            `${manifestPath} must declare ${capability}`,
+          ).toBe(true);
         }
       }
     }
@@ -769,7 +1210,14 @@ describe("pm package manifest model", () => {
     expect(extensionDirectories.length).toBeGreaterThan(0);
 
     const knownSandboxProfiles = new Set(["none", "restricted", "strict"]);
-    const permissionKeys = ["fs_read", "fs_write", "network", "env_read", "env_write", "process_spawn"] as const;
+    const permissionKeys = [
+      "fs_read",
+      "fs_write",
+      "network",
+      "env_read",
+      "env_write",
+      "process_spawn",
+    ] as const;
 
     for (const extensionDirectory of extensionDirectories) {
       const manifestPath = path.join(extensionDirectory, "manifest.json");
@@ -778,31 +1226,56 @@ describe("pm package manifest model", () => {
         sandbox_profile?: unknown;
         permissions?: unknown;
       };
-      expect(manifest.trusted, `trusted must be true in ${manifestPath}`).toBe(true);
+      expect(manifest.trusted, `trusted must be true in ${manifestPath}`).toBe(
+        true,
+      );
       expect(
-        typeof manifest.sandbox_profile === "string" && knownSandboxProfiles.has(manifest.sandbox_profile),
+        typeof manifest.sandbox_profile === "string" &&
+          knownSandboxProfiles.has(manifest.sandbox_profile),
         `sandbox_profile must be one of none|restricted|strict in ${manifestPath}`,
       ).toBe(true);
 
-      const permissions = manifest.permissions as Record<string, unknown> | undefined;
+      const permissions = manifest.permissions as
+        | Record<string, unknown>
+        | undefined;
       expect(
         typeof permissions === "object" && permissions !== null,
         `permissions must be declared in ${manifestPath}`,
       ).toBe(true);
-      expect(Object.keys(permissions ?? {}).sort(), manifestPath).toEqual([...permissionKeys].sort());
+      expect(Object.keys(permissions ?? {}).sort(), manifestPath).toEqual(
+        [...permissionKeys].sort(),
+      );
       for (const permissionKey of permissionKeys) {
-        expect(typeof permissions?.[permissionKey], `${permissionKey} must be boolean in ${manifestPath}`).toBe("boolean");
+        expect(
+          typeof permissions?.[permissionKey],
+          `${permissionKey} must be boolean in ${manifestPath}`,
+        ).toBe("boolean");
       }
 
       // Declared permissions must satisfy the declared sandbox profile
       // (mirrors resolvePolicySandboxReason in extension-policy.ts).
-      if (manifest.sandbox_profile === "restricted" || manifest.sandbox_profile === "strict") {
-        expect(permissions?.process_spawn, `${manifest.sandbox_profile} disallows process_spawn in ${manifestPath}`).toBe(false);
-        expect(permissions?.env_write, `${manifest.sandbox_profile} disallows env_write in ${manifestPath}`).toBe(false);
+      if (
+        manifest.sandbox_profile === "restricted" ||
+        manifest.sandbox_profile === "strict"
+      ) {
+        expect(
+          permissions?.process_spawn,
+          `${manifest.sandbox_profile} disallows process_spawn in ${manifestPath}`,
+        ).toBe(false);
+        expect(
+          permissions?.env_write,
+          `${manifest.sandbox_profile} disallows env_write in ${manifestPath}`,
+        ).toBe(false);
       }
       if (manifest.sandbox_profile === "strict") {
-        expect(permissions?.network, `strict disallows network in ${manifestPath}`).toBe(false);
-        expect(permissions?.fs_write, `strict disallows fs_write in ${manifestPath}`).toBe(false);
+        expect(
+          permissions?.network,
+          `strict disallows network in ${manifestPath}`,
+        ).toBe(false);
+        expect(
+          permissions?.fs_write,
+          `strict disallows fs_write in ${manifestPath}`,
+        ).toBe(false);
       }
     }
   });
@@ -812,7 +1285,9 @@ describe("pm package manifest model", () => {
     expect(extensionDirectories.length).toBeGreaterThan(0);
 
     const docsExamplesRoot = path.join(repoRoot, "docs", "examples");
-    const docsExampleEntries = await readdir(docsExamplesRoot, { withFileTypes: true });
+    const docsExampleEntries = await readdir(docsExamplesRoot, {
+      withFileTypes: true,
+    });
     const docsExampleManifestPathCandidates = docsExampleEntries
       .filter((entry) => entry.isDirectory())
       .map((entry) => path.join(docsExamplesRoot, entry.name, "manifest.json"));
@@ -822,7 +1297,11 @@ describe("pm package manifest model", () => {
           const exists = await access(manifestPath)
             .then(() => true)
             .catch((error: unknown) => {
-              if (typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT") {
+              if (
+                typeof error === "object" &&
+                error !== null &&
+                (error as { code?: unknown }).code === "ENOENT"
+              ) {
                 return false;
               }
               throw error;
@@ -834,7 +1313,9 @@ describe("pm package manifest model", () => {
     expect(docsExampleManifestPaths.length).toBeGreaterThan(0);
 
     const manifestPaths = [
-      ...extensionDirectories.map((extensionDirectory) => path.join(extensionDirectory, "manifest.json")),
+      ...extensionDirectories.map((extensionDirectory) =>
+        path.join(extensionDirectory, "manifest.json"),
+      ),
       ...docsExampleManifestPaths,
     ].sort();
 
@@ -844,7 +1325,8 @@ describe("pm package manifest model", () => {
         pm_min_version?: unknown;
       };
       expect(
-        typeof manifest.manifest_version === "number" && Number.isInteger(manifest.manifest_version),
+        typeof manifest.manifest_version === "number" &&
+          Number.isInteger(manifest.manifest_version),
         `manifest_version must be an integer in ${manifestPath}`,
       ).toBe(true);
       expect(
@@ -860,35 +1342,198 @@ describe("pm package manifest model", () => {
     // specifier, which self-resolves through the package's own `exports` map when
     // the runtime-loader imports the runtime from inside the installed CLI tree.
     const packageSourceFiles = [
-      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"),
-      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime-loader.ts"),
-      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"),
-      path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.ts"),
-      path.join(repoRoot, "packages", "pm-digital-twin", "extensions", "digital-twin", "index.ts"),
-      path.join(repoRoot, "packages", "pm-digital-twin", "extensions", "digital-twin", "domain.ts"),
-      path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts"),
-      path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"),
-      path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-kanban", "extensions", "kanban", "index.ts"),
-      path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.ts"),
-      path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.ts"),
-      path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "index.ts"),
-      path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"),
-      path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"),
-      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"),
-      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime-loader.ts"),
-      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-beads",
+        "extensions",
+        "beads",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-beads",
+        "extensions",
+        "beads",
+        "runtime-loader.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-beads",
+        "extensions",
+        "beads",
+        "runtime.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-calendar",
+        "extensions",
+        "calendar",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-calendar",
+        "extensions",
+        "calendar",
+        "runtime.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-command-kit",
+        "extensions",
+        "command-kit",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-digital-twin",
+        "extensions",
+        "digital-twin",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-digital-twin",
+        "extensions",
+        "digital-twin",
+        "domain.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-governance-audit",
+        "extensions",
+        "governance-audit",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-governance-audit",
+        "extensions",
+        "governance-audit",
+        "runtime.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-guide-shell",
+        "extensions",
+        "guide-shell",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-guide-shell",
+        "extensions",
+        "guide-shell",
+        "runtime.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-kanban",
+        "extensions",
+        "kanban",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-lifecycle-hooks",
+        "extensions",
+        "lifecycle-hooks",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-linked-test-adapters",
+        "extensions",
+        "linked-test-adapters",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-linked-test-adapters",
+        "extensions",
+        "linked-test-adapters",
+        "runtime.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-search-advanced",
+        "extensions",
+        "search-advanced",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-search-advanced",
+        "extensions",
+        "search-advanced",
+        "runtime.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-templates",
+        "extensions",
+        "templates",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-templates",
+        "extensions",
+        "templates",
+        "runtime.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-todos",
+        "extensions",
+        "todos",
+        "index.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-todos",
+        "extensions",
+        "todos",
+        "runtime-loader.ts",
+      ),
+      path.join(
+        repoRoot,
+        "packages",
+        "pm-todos",
+        "extensions",
+        "todos",
+        "runtime.ts",
+      ),
     ];
 
     for (const sourceFile of packageSourceFiles) {
       const source = await readFile(sourceFile, "utf8");
       // Never reach into deep CLI internals; only the public SDK surface is allowed.
-      expect(source, sourceFile).not.toMatch(/["']\.\.\/\.\.\/\.\.\/\.\.\/(?:src|dist)\/(?:core|types)\//);
+      expect(source, sourceFile).not.toMatch(
+        /["']\.\.\/\.\.\/\.\.\/\.\.\/(?:src|dist)\/(?:core|types)\//,
+      );
       // No package source carries a relative path into the CLI's src/dist SDK either:
       // the published specifier is the only sanctioned SDK surface post-ADR pm-m1uz.
       expect(source, sourceFile).not.toContain("../../../../src/sdk/");
@@ -904,53 +1549,97 @@ describe("pm package manifest model", () => {
       } else {
         // index.ts / runtime.ts author against the published SDK specifier (resolved
         // via the package's own exports map at load time).
-        expect(source, sourceFile).toMatch(/from "@unbrained\/pm-cli\/sdk(?:\/(?:runtime|testing))?"/);
+        expect(source, sourceFile).toMatch(
+          /from "@unbrained\/pm-cli\/sdk(?:\/(?:runtime|testing))?"/,
+        );
       }
     }
   });
 
   it("reports convention manifests and malformed package manifests", async () => {
-    const noPackageJsonRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-no-json-"));
-    await expect(readPmPackageManifest(noPackageJsonRoot)).resolves.toMatchObject({
+    const noPackageJsonRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-no-json-"),
+    );
+    await expect(
+      readPmPackageManifest(noPackageJsonRoot),
+    ).resolves.toMatchObject({
       source: "convention",
       resources: {},
     });
 
-    const malformedRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-malformed-"));
+    const malformedRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-malformed-"),
+    );
     await writeFile(path.join(malformedRoot, "package.json"), "{", "utf8");
     await expect(readPmPackageManifest(malformedRoot)).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
 
-    const scalarRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-scalar-"));
-    await writeFile(path.join(scalarRoot, "package.json"), '"not-object"', "utf8");
+    const scalarRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-scalar-"),
+    );
+    await writeFile(
+      path.join(scalarRoot, "package.json"),
+      '"not-object"',
+      "utf8",
+    );
     await expect(readPmPackageManifest(scalarRoot)).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
 
-    const invalidResourceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-invalid-resource-"));
-    await writeFile(path.join(invalidResourceRoot, "package.json"), JSON.stringify({ pm: "extensions" }), "utf8");
-    await expect(readPmPackageManifest(invalidResourceRoot)).rejects.toMatchObject({
+    const invalidResourceRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-invalid-resource-"),
+    );
+    await writeFile(
+      path.join(invalidResourceRoot, "package.json"),
+      JSON.stringify({ pm: "extensions" }),
+      "utf8",
+    );
+    await expect(
+      readPmPackageManifest(invalidResourceRoot),
+    ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
 
-    const invalidEntryRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-invalid-entry-"));
-    await writeFile(path.join(invalidEntryRoot, "package.json"), JSON.stringify({ pm: { extensions: [42] } }), "utf8");
-    await expect(readPmPackageManifest(invalidEntryRoot)).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-    });
+    const invalidEntryRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-invalid-entry-"),
+    );
+    await writeFile(
+      path.join(invalidEntryRoot, "package.json"),
+      JSON.stringify({ pm: { extensions: [42] } }),
+      "utf8",
+    );
+    await expect(readPmPackageManifest(invalidEntryRoot)).rejects.toMatchObject(
+      {
+        exitCode: EXIT_CODE.USAGE,
+      },
+    );
   });
 
   it("rejects extension globs and paths outside the package root", async () => {
     const globRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-glob-"));
-    await writeFile(path.join(globRoot, "package.json"), JSON.stringify({ pm: { extensions: ["extensions/*"] } }), "utf8");
-    await expect(collectPackageExtensionDirectories(globRoot)).rejects.toMatchObject({
+    await writeFile(
+      path.join(globRoot, "package.json"),
+      JSON.stringify({ pm: { extensions: ["extensions/*"] } }),
+      "utf8",
+    );
+    await expect(
+      collectPackageExtensionDirectories(globRoot),
+    ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
 
-    const outsideRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-outside-"));
-    await writeFile(path.join(outsideRoot, "package.json"), JSON.stringify({ pm: { extensions: ["../outside"] } }), "utf8");
-    await expect(collectPackageExtensionDirectories(outsideRoot)).rejects.toMatchObject({
+    const outsideRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-package-outside-"),
+    );
+    await writeFile(
+      path.join(outsideRoot, "package.json"),
+      JSON.stringify({ pm: { extensions: ["../outside"] } }),
+      "utf8",
+    );
+    await expect(
+      collectPackageExtensionDirectories(outsideRoot),
+    ).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
   });

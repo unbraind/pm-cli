@@ -11866,6 +11866,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PLAN_CREATE_METADATA_PARAMETER_KEYS",
+          "signature": "readonly [\"createMode\", \"status\", \"deadline\", \"estimate\", \"acceptanceCriteria\", \"definitionOfReady\", \"order\", \"rank\", \"goal\", \"objective\", \"value\", \"impact\", \"outcome\", \"whyNow\", \"assignee\", \"reviewer\", \"risk\", \"confidence\", \"sprint\", \"release\", \"blockedReason\", \"unblockNote\", \"reporter\", \"severity\", \"environment\", \"reproSteps\", \"resolution\", \"expectedResult\", \"actualResult\", \"affectedVersion\", \"fixedVersion\", \"component\", \"regression\", \"customerImpact\", \"comment\", \"note\", \"learning\", \"reminder\", \"event\", \"typeOption\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PLAN_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
         },
@@ -18803,6 +18809,7 @@
     "extension_dependency_spec_invalid",
     "extension_dependency_version_unsafe",
     "extension_install_source_contains_destination",
+    "github_source_entry_unbuilt",
     "init_existing_settings_requires_force",
     "init_id_prefix_conflict",
     "init_id_prefix_path_like",

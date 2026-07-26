@@ -13,7 +13,6 @@ import {
   applyInvocationAuthorOverride,
   acknowledgeUnknownAuthorHistoryEvents,
   createPmCliProgram,
-  detectHarnessIdentity,
   inspectHistoryAuthorStream,
   PmClient,
   runAction,
@@ -65,7 +64,9 @@ describe("SDK author attribution primitives", () => {
         privatePrecedenceHelpers.push(path.relative(sourceRoot, sourceFile));
       }
     }
-    expect(directEnvironmentReaders).toEqual(["core/shared/author.ts"]);
+    expect(directEnvironmentReaders).toEqual([
+      path.join("core", "shared", "author.ts"),
+    ]);
     expect(privatePrecedenceHelpers).toEqual([]);
   });
   it("inspects one in-memory stream through the public pure primitive", () => {
@@ -263,15 +264,7 @@ describe("SDK author attribution primitives", () => {
           agentGuidance: "skip",
         },
       );
-      const harness = detectHarnessIdentity({
-        env: process.env,
-        argv: [process.execPath, ...process.argv],
-      });
-      expect(result.settings.author_default).toBe(
-        harness
-          ? `harness:${harness}`
-          : `${os.userInfo().username}@${os.hostname()}`,
-      );
+      expect(result.settings.author_default).toBe("");
 
       process.env.PM_AUTHOR = "environment-agent";
       const environmentRoot = path.join(
@@ -304,9 +297,7 @@ describe("SDK author attribution primitives", () => {
           agentGuidance: "skip",
         },
       );
-      expect(fallbackResult.settings.author_default).toBe(
-        `${os.userInfo().username}@${os.hostname()}`,
-      );
+      expect(fallbackResult.settings.author_default).toBe("");
     } finally {
       for (const [key, value] of Object.entries(previousValues)) {
         if (value === undefined) {

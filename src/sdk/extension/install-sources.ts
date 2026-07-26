@@ -55,6 +55,7 @@ type InstallSource =
 interface ResolvedInstallSource {
   source: InstallSource;
   directory: string;
+  source_root?: string;
   resolved_subpath?: string;
   commit?: string;
   npm_package?: string;
@@ -778,7 +779,8 @@ function validateRuntimeDependencySpec(name: string, version: string): string {
       EXIT_CODE.USAGE,
       {
         code: "extension_dependency_name_unsafe",
-        required: "Use a valid npm package name that does not begin with a dash.",
+        required:
+          "Use a valid npm package name that does not begin with a dash.",
         why: "Extension manifests are untrusted input and dependency names must never become npm options.",
       },
     );
@@ -786,9 +788,7 @@ function validateRuntimeDependencySpec(name: string, version: string): string {
   const hasUnsafeControlOrShellCharacter = [...version].some((character) => {
     const codePoint = character.charCodeAt(0);
     return (
-      codePoint <= 31 ||
-      codePoint === 127 ||
-      "&|;()`\"'".includes(character)
+      codePoint <= 31 || codePoint === 127 || "&|;()`\"'".includes(character)
     );
   });
   if (hasUnsafeControlOrShellCharacter) {
@@ -844,10 +844,7 @@ function runtimeDependencyInstallSpecs(manifest: {
         continue;
       }
       const normalizedVersion = version.trim();
-      specs.set(
-        name,
-        validateRuntimeDependencySpec(name, normalizedVersion),
-      );
+      specs.set(name, validateRuntimeDependencySpec(name, normalizedVersion));
     }
   }
   return [...specs.values()];
@@ -1016,6 +1013,7 @@ export async function resolveInstallSource(
     return {
       source,
       directory,
+      source_root: source.absolute_path,
     };
   }
 
@@ -1024,6 +1022,7 @@ export async function resolveInstallSource(
     return {
       source,
       directory: resolved.directory,
+      source_root: path.dirname(resolved.directory),
       cleanup: resolved.cleanup,
       resolved_subpath: path
         .relative(path.dirname(resolved.directory), resolved.directory)
@@ -1054,6 +1053,7 @@ export async function resolveInstallSource(
     return {
       source,
       directory: resolved.directory,
+      source_root: cloneDirectory,
       resolved_subpath: resolved.resolved_subpath,
       commit,
       cleanup: async () => {

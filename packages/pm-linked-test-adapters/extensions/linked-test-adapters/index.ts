@@ -171,18 +171,9 @@ function testRunsResumeCommand(): CommandDefinition {
     arguments: [
       { name: "runId", required: true, description: "Background run id." },
     ],
-    flags: [
-      {
-        long: "--author",
-        value_name: "value",
-        value_type: "string",
-        description: "Resume author override.",
-      },
-    ],
     run: async (context) =>
       runTestRunsResumePackage(
         assertSingleRunId(context.args, "test-runs resume"),
-        context.options,
         context.global,
       ),
   };
