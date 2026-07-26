@@ -37,6 +37,7 @@ pm guide release --json
 - [Command Reference](COMMANDS.md) - command families with examples and when to use each family.
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
+- [Security Governance](SECURITY_GOVERNANCE.md) - vulnerability reporting, review discipline, property fuzzing, and OpenSSF limitations.
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
 - [SDK Primitive Inventory](SDK_PRIMITIVE_INVENTORY.md) - SDK-first migration map and private-import ratchet for CLI/MCP layering.
 - [Context Relevance and Packing](CONTEXT_RELEVANCE.md) - shared CLI/SDK signals, derived-store provenance, ranking explanations, and token budgets.

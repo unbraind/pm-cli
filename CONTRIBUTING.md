@@ -55,6 +55,7 @@ pnpm build
 pnpm typecheck
 pnpm test
 pnpm test:coverage
+pnpm test:fuzz
 ```
 
 For pm-linked safe execution (required when running tests through `pm test` / `pm test-all`), use:
@@ -207,6 +208,10 @@ When unmanaged extension state is expected to be managed, use `pm extension --do
 ## Pull Requests
 
 - Include focused scope and rationale.
+- Request independent human approval for security-sensitive changes whenever a
+  reviewer is available. Automated and AI reviews are defense in depth, not a
+  substitute for the human approval measured by OpenSSF Scorecard; see
+  [Security Governance](docs/SECURITY_GOVERNANCE.md).
 - Confirm all checks pass (`pnpm build && pnpm typecheck && pnpm test:coverage`).
 - CI runs the full build/test matrix — `ubuntu-latest` (Node 22, 24) and `macos-latest` (Node 24) — on every pull request and on `main` pushes (doc/markdown-only pushes to `main` are skipped via `paths-ignore`; pull requests always run regardless of the changed paths). Nightly keeps broader regression coverage (Windows and Node 25).
 - Update relevant user-facing docs when behavior changes, but keep enforcement in `pm` data and runtime tests.

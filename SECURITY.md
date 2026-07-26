@@ -1,46 +1,75 @@
 # Security Policy
 
+Security work for `pm-cli` is tracked under [pm-2d7k](.agents/pm/tasks/pm-2d7k.toon).
+
 ## Supported Versions
 
-Security fixes are applied to the latest release line and the default branch under active development.
+`pm-cli` uses date-based releases. Security fixes are made against the current
+release on the `latest` npm tag and the `main` branch. Older releases are not
+maintained as separate security branches. Upgrade to the latest published
+version before reporting an issue that may already be fixed.
 
 ## Reporting a Vulnerability
 
-If you discover a vulnerability, please report it privately first:
+Do not open a public issue, discussion, pull request, or `pm` item for a
+suspected vulnerability.
 
-1. Open a private security advisory in GitHub, if available.
-2. If advisories are unavailable, open an issue marked `security` with minimal exploit details and request private follow-up.
+Use [GitHub private vulnerability reporting](https://github.com/unbraind/pm-cli/security/advisories/new)
+to share:
 
-Please include:
+- the affected version or commit;
+- the affected CLI, SDK, package, extension, or release surface;
+- reproduction steps or a minimal proof of concept;
+- the likely impact and any known mitigations; and
+- whether the report or exploit details have been disclosed elsewhere.
 
-- A clear description of the issue
-- Affected versions/commit range
-- Reproduction steps or proof of concept
-- Suggested mitigation, if known
+Never include live credentials, private service identifiers, signed URLs, or
+other sensitive user data. Use synthetic evidence wherever possible.
 
-## Response Expectations
+## Response and Disclosure Timeline
 
-- Initial acknowledgement target: within 3 business days
-- Triage and severity assessment: as quickly as possible
-- Fix and coordinated disclosure timeline: based on severity and impact
+The maintainer aims to:
 
-Please avoid public disclosure before a fix or mitigation is available.
+- acknowledge a report within 3 business days;
+- complete initial severity and reproducibility triage within 7 business days;
+- provide a remediation or coordination update at least every 14 days;
+- remediate critical and high-severity vulnerabilities within 30 days when a
+  safe fix is available; and
+- remediate lower-severity vulnerabilities within 90 days when practical.
 
-## Private Data Handling
+Complex or upstream-dependent reports can require more time. If a target cannot
+be met, the private advisory will record the reason, current mitigation, and
+next update date.
 
-Public documentation and package output must not include credentials, host-specific operations details, unpublished evidence logs, or ignored local operations artifacts.
+Please coordinate public disclosure through the private advisory. The project
+will normally publish an advisory after a fixed release is available and users
+have had reasonable upgrade time. Early disclosure may be appropriate when a
+vulnerability is already public or actively exploited, but it should still be
+coordinated to avoid increasing user risk.
 
-- Keep secrets in environment variables or approved secret stores.
-- Do not commit `.env` files or local production operations directories.
-- Run `pnpm security:scan` before releases and after touching release/package metadata.
-- Prefer minimal reproduction details in public issues; move exploit details to private security channels.
+## Scope
 
-## Extension Runtime Trust Model
+Security reports are welcome for:
 
-`pm` extensions execute as local Node.js code and can intercept command execution, parser/preflight lifecycle, output/error/help rendering, lock/history/item-store service paths, and search/vector runtime paths.
+- the published `@unbrained/pm-cli` package and its SDK entrypoints;
+- first-party packages and extension loading or isolation boundaries;
+- tracker integrity, merge drivers, history, and mutation authorization;
+- secret handling, telemetry redaction, and diagnostic output;
+- install, update, packaging, provenance, and release workflows; and
+- command execution or path handling that crosses a trust boundary.
 
-- Treat third-party extensions as fully trusted code.
-- Prefer project-reviewed extensions committed to the repository.
-- For incident triage or hardening runs, disable extensions with `--no-extensions`.
-- In the full trusted-default model, `parser`, `preflight`, and `services` capabilities can bypass or replace core safety gates; only enable these capabilities for audited extensions.
-- Include extension manifest name/version, capability list, and active settings selectors (`search.provider`, `vector_store.adapter`) in security reports when relevant.
+General defects, feature requests, and documentation improvements that do not
+have a security impact belong in the
+[public issue tracker](https://github.com/unbraind/pm-cli/issues).
+
+`pm` extensions execute as trusted local Node.js code. A third-party extension
+can intercept command execution and access the current user's files and
+credentials. Prefer reviewed extensions, report the active manifest and
+capabilities when relevant, and use `--no-extensions` during incident triage.
+
+## Safe Harbor
+
+Good-faith research that avoids privacy violations, data destruction, service
+disruption, credential access, social engineering, and unnecessary exposure of
+vulnerability details is welcome. Stop testing and report privately if you
+encounter sensitive data or evidence of active compromise.

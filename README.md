@@ -29,6 +29,7 @@
 | Command families and examples                                  | [Command Reference](docs/COMMANDS.md)                                                                                                   |
 | Settings, storage, search, and output                          | [Configuration](docs/CONFIGURATION.md)                                                                                                  |
 | Safe test execution and linked tests                           | [Testing](docs/TESTING.md)                                                                                                              |
+| Security reporting and resilience controls                    | [Security Policy](SECURITY.md), [Security Governance](docs/SECURITY_GOVERNANCE.md)                                                      |
 | Package and extension authoring                                | [Packages and Extensions](docs/EXTENSIONS.md), [SDK](docs/SDK.md), [Customization Primitives](docs/SDK_CUSTOMIZATION_PRIMITIVES.md), and [Agent Runtime Primitives](docs/AGENT_RUNTIME_PRIMITIVES.md) |
 | Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md)                                                                                                          |
 | Contributor internals                                          | [Architecture](docs/ARCHITECTURE.md)                                                                                                    |
