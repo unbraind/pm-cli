@@ -5442,6 +5442,9 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
         makeLoaded("invalid-register-flags-default", (api) => {
           api.registerFlags("sync flags", [{ long: "--count", default: { bad: true } as never }]);
         }),
+        makeLoaded("invalid-register-flags-host-global", (api) => {
+          api.registerFlags("sync flags", [{ long: "--author" }]);
+        }),
         makeLoaded("invalid-item-fields-list", (api) => {
           api.registerItemFields({ name: "field", type: "string" } as never);
         }),
@@ -5519,6 +5522,7 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
       "invalid-command-variadic",
       "invalid-command-flags",
       "invalid-register-flags-default",
+      "invalid-register-flags-host-global",
       "invalid-item-fields-list",
       "invalid-item-fields-empty",
       "invalid-item-types-list",
@@ -5549,6 +5553,9 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
       expect.stringContaining("variadic argument must be the final argument"),
       expect.stringContaining("requires at least one of long or short"),
       expect.stringContaining("default must be a string, number, or boolean"),
+      expect.stringContaining(
+        'cannot shadow host-owned global flag "--author"; read it from context.global instead',
+      ),
       expect.stringContaining("fields requires an array"),
       expect.stringContaining("requires at least one field definition"),
       expect.stringContaining("types requires an array"),

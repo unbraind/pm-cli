@@ -23,6 +23,7 @@ import {
   writeSettings,
 } from "../../../../src/core/store/settings.js";
 import { runExtension } from "../../../../src/cli/commands/extension.js";
+import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 
 describe("workspace history", () => {
   it("starts an audit-only workspace stream without changing state", async () => {
@@ -120,7 +121,17 @@ describe("workspace history", () => {
           before: { enabled: false },
           after: { enabled: "again" },
         }),
-      ).rejects.toThrow("changed outside the audited mutation path");
+      ).rejects.toMatchObject({
+        name: "PmCliError",
+        exitCode: EXIT_CODE.CONFLICT,
+        code: "workspace_history_state_conflict",
+        context: {
+          reason: "out_of_band_workspace_state",
+          recovery: {
+            next_best_command: "pm history _workspace --verify",
+          },
+        },
+      });
 
       await appendFile(
         getWorkspaceHistoryPath(context.pmPath),

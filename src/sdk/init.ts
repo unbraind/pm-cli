@@ -7,7 +7,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { hostname, userInfo } from "node:os";
 import {
   getActiveExtensionRegistrations,
   runActiveOnWriteHooks,
@@ -40,11 +39,7 @@ import {
   SETTINGS_DEFAULTS,
 } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
-import {
-  detectHarnessIdentity,
-  readAuthorEnvironment,
-  resolveAuthor,
-} from "../core/shared/author.js";
+import { readAuthorEnvironment, resolveAuthor } from "../core/shared/author.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
@@ -927,15 +922,8 @@ async function createNewInitSettings(params: {
   settings.id_prefix = normalizedPrefix;
   applyGovernancePreset(settings, effectivePreset);
   const environmentAuthor = readAuthorEnvironment()?.trim() || undefined;
-  const detectedHarness = detectHarnessIdentity({
-    env: process.env,
-    argv: process.argv,
-  });
   settings.author_default =
-    params.normalizedOptions.authorFromOption ??
-    environmentAuthor ??
-    (detectedHarness ? `harness:${detectedHarness}` : undefined) ??
-    `${userInfo().username}@${hostname()}`;
+    params.normalizedOptions.authorFromOption ?? environmentAuthor ?? "";
   if (chosenTelemetryEnabled !== undefined) {
     settings.telemetry.enabled = chosenTelemetryEnabled;
     settings.telemetry.first_run_prompt_completed = true;

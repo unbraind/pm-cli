@@ -15,9 +15,19 @@ import type {
   ServiceOverride,
 } from "../../../src/core/extensions/loader.js";
 import { activateExtensions } from "../../../src/core/extensions/loader.js";
-import { assertRegisteredExporter, assertRegisteredHook, assertRegisteredImporter } from "../../../src/sdk/testing.js";
-import beadsBuiltin, { activate as activateBeads, manifest as beadsManifest } from "../../../packages/pm-beads/extensions/beads/index.ts";
-import calendarBuiltin, { activate as activateCalendar, manifest as calendarManifest } from "../../../packages/pm-calendar/extensions/calendar/index.ts";
+import {
+  assertRegisteredExporter,
+  assertRegisteredHook,
+  assertRegisteredImporter,
+} from "../../../src/sdk/testing.js";
+import beadsBuiltin, {
+  activate as activateBeads,
+  manifest as beadsManifest,
+} from "../../../packages/pm-beads/extensions/beads/index.ts";
+import calendarBuiltin, {
+  activate as activateCalendar,
+  manifest as calendarManifest,
+} from "../../../packages/pm-calendar/extensions/calendar/index.ts";
 import governanceBuiltin, {
   activate as activateGovernance,
   manifest as governanceManifest,
@@ -26,7 +36,10 @@ import lifecycleHooksBuiltin, {
   activate as activateLifecycleHooks,
   manifest as lifecycleHooksManifest,
 } from "../../../packages/pm-lifecycle-hooks/extensions/lifecycle-hooks/index.ts";
-import todosBuiltin, { activate as activateTodos, manifest as todosManifest } from "../../../packages/pm-todos/extensions/todos/index.ts";
+import todosBuiltin, {
+  activate as activateTodos,
+  manifest as todosManifest,
+} from "../../../packages/pm-todos/extensions/todos/index.ts";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -61,7 +74,9 @@ function cacheBustToken(): string {
 
 async function importRepoModule<T>(relativePath: string): Promise<T> {
   const absolutePath = path.join(process.cwd(), relativePath);
-  return (await import(`${pathToFileURL(absolutePath).href}?entrypoints=${cacheBustToken()}`)) as T;
+  return (await import(
+    `${pathToFileURL(absolutePath).href}?entrypoints=${cacheBustToken()}`
+  )) as T;
 }
 
 let testPackageRoot = "";
@@ -72,24 +87,40 @@ async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
   const todosPackageRoot = path.join(packageRoot, "packages", "pm-todos");
   const sdkRuntimeRoot = path.join(packageRoot, "dist", "sdk");
   const beadsRuntimeRoot = path.join(beadsPackageRoot, "extensions", "beads");
-  const calendarRuntimeRoot = path.join(calendarPackageRoot, "extensions", "calendar");
+  const calendarRuntimeRoot = path.join(
+    calendarPackageRoot,
+    "extensions",
+    "calendar",
+  );
   const todosRuntimeRoot = path.join(todosPackageRoot, "extensions", "todos");
   await mkdir(beadsPackageRoot, { recursive: true });
   await mkdir(calendarPackageRoot, { recursive: true });
   await mkdir(todosPackageRoot, { recursive: true });
   await writeFile(
     path.join(beadsPackageRoot, "package.json"),
-    JSON.stringify({ name: "@example/pm-beads", version: "0.0.0", pm: { extensions: ["extensions/beads"] } }),
+    JSON.stringify({
+      name: "@example/pm-beads",
+      version: "0.0.0",
+      pm: { extensions: ["extensions/beads"] },
+    }),
     "utf8",
   );
   await writeFile(
     path.join(calendarPackageRoot, "package.json"),
-    JSON.stringify({ name: "@example/pm-calendar", version: "0.0.0", pm: { extensions: ["extensions/calendar"] } }),
+    JSON.stringify({
+      name: "@example/pm-calendar",
+      version: "0.0.0",
+      pm: { extensions: ["extensions/calendar"] },
+    }),
     "utf8",
   );
   await writeFile(
     path.join(todosPackageRoot, "package.json"),
-    JSON.stringify({ name: "@example/pm-todos", version: "0.0.0", pm: { extensions: ["extensions/todos"] } }),
+    JSON.stringify({
+      name: "@example/pm-todos",
+      version: "0.0.0",
+      pm: { extensions: ["extensions/todos"] },
+    }),
     "utf8",
   );
   await mkdir(beadsRuntimeRoot, { recursive: true });
@@ -308,6 +339,7 @@ const globalFlags = {
   quiet: false,
   noExtensions: false,
   profile: false,
+  author: "host-agent",
 };
 
 interface CapturedImporter {
@@ -328,14 +360,16 @@ interface CapturedHook<Context> {
 
 interface CapturedHooks {
   onRead: Array<CapturedHook<{ path: string; scope: "project" | "global" }>>;
-  onWrite: Array<CapturedHook<{
-    path: string;
-    scope: "project" | "global";
-    op: string;
-    item_id?: string;
-    item_type?: string;
-    changed_fields?: string[];
-  }>>;
+  onWrite: Array<
+    CapturedHook<{
+      path: string;
+      scope: "project" | "global";
+      op: string;
+      item_id?: string;
+      item_type?: string;
+      changed_fields?: string[];
+    }>
+  >;
 }
 
 function createCommandOnlyApi(): {
@@ -350,23 +384,42 @@ function createCommandOnlyApi(): {
 } {
   const commands: CommandDefinition[] = [];
   const flags: Array<{ command: string; flags: unknown[] }> = [];
-  const services: Array<{ service: ExtensionServiceName; override: ServiceOverride }> = [];
+  const services: Array<{
+    service: ExtensionServiceName;
+    override: ServiceOverride;
+  }> = [];
   const parsers: string[] = [];
   const importers: CapturedImporter[] = [];
   const exporters: CapturedExporter[] = [];
   const hooks: CapturedHooks = { onRead: [], onWrite: [] };
   const api: ExtensionApi = {
-    extension: { name: "test-extension", layer: "project", version: "0.0.0", capabilities: [] },
-    registerCommand(first: string | CommandDefinition, _override?: CommandOverride): void {
+    extension: {
+      name: "test-extension",
+      layer: "project",
+      version: "0.0.0",
+      capabilities: [],
+    },
+    registerCommand(
+      first: string | CommandDefinition,
+      _override?: CommandOverride,
+    ): void {
       if (typeof first === "string") {
-        throw new TypeError(`Unexpected command override registration: ${first}`);
+        throw new TypeError(
+          `Unexpected command override registration: ${first}`,
+        );
       }
       commands.push(first);
     },
-    registerRenderer(_format: "toon" | "json", _renderer: RendererOverride): void {
+    registerRenderer(
+      _format: "toon" | "json",
+      _renderer: RendererOverride,
+    ): void {
       throw new Error("Unexpected renderer registration");
     },
-    registerService(service: ExtensionServiceName, override: ServiceOverride): void {
+    registerService(
+      service: ExtensionServiceName,
+      override: ServiceOverride,
+    ): void {
       services.push({ service, override });
     },
     registerParser(command: string): void {
@@ -387,10 +440,18 @@ function createCommandOnlyApi(): {
     registerMigration(): void {
       throw new Error("Unexpected migration registration");
     },
-    registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void {
+    registerImporter(
+      name: string,
+      importer: Importer,
+      options?: ImportExportRegistrationOptions,
+    ): void {
       importers.push({ name, importer, options });
     },
-    registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void {
+    registerExporter(
+      name: string,
+      exporter: Exporter,
+      options?: ImportExportRegistrationOptions,
+    ): void {
       exporters.push({ name, exporter, options });
     },
     registerSearchProvider(): void {
@@ -411,13 +472,24 @@ function createCommandOnlyApi(): {
       onIndex: () => undefined,
     },
   };
-  return { api, commands, flags, services, parsers, importers, exporters, hooks };
+  return {
+    api,
+    commands,
+    flags,
+    services,
+    parsers,
+    importers,
+    exporters,
+    hooks,
+  };
 }
 
 describe("built-in extension entrypoints", () => {
   beforeEach(async () => {
     resetRuntimeCalls();
-    testPackageRoot = await mkdtemp(path.join(os.tmpdir(), "pm-bundled-extension-runtime-"));
+    testPackageRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-bundled-extension-runtime-"),
+    );
     await seedRuntimeCommandStubs(testPackageRoot);
     process.env[PM_PACKAGE_ROOT_ENV] = testPackageRoot;
   });
@@ -497,8 +569,14 @@ describe("built-in extension entrypoints", () => {
     const { api, commands, services } = createCommandOnlyApi();
 
     activateCalendar(api);
-    expect(commands.map((command) => command.name)).toEqual(["calendar", "cal"]);
-    expect(commands.map((command) => command.action)).toEqual(["calendar", "calendar"]);
+    expect(commands.map((command) => command.name)).toEqual([
+      "calendar",
+      "cal",
+    ]);
+    expect(commands.map((command) => command.action)).toEqual([
+      "calendar",
+      "calendar",
+    ]);
     expect(commands[0]?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ long: "--view" }),
@@ -561,7 +639,10 @@ describe("built-in extension entrypoints", () => {
   it("registers governance audit commands and opt-in read/write hook sidecar logging", async () => {
     const { api, commands, flags, parsers, hooks } = createCommandOnlyApi();
     const previousLogPath = process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG;
-    const hookLogPath = path.join(await mkdtemp(path.join(os.tmpdir(), "pm-governance-hook-log-")), "audit.jsonl");
+    const hookLogPath = path.join(
+      await mkdtemp(path.join(os.tmpdir(), "pm-governance-hook-log-")),
+      "audit.jsonl",
+    );
 
     try {
       activateGovernance(api);
@@ -600,10 +681,15 @@ describe("built-in extension entrypoints", () => {
         item_type: "Task",
         changed_fields: ["status"],
       });
-      await expect(readFile(hookLogPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(hookLogPath, "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
+      });
 
       process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG = hookLogPath;
-      await hooks.onRead[0]?.run({ path: "/tmp/project/tasks/pm-demo.md", scope: "project" });
+      await hooks.onRead[0]?.run({
+        path: "/tmp/project/tasks/pm-demo.md",
+        scope: "project",
+      });
       await hooks.onWrite[0]?.run({
         path: "/tmp/project/tasks/pm-demo.md",
         scope: "project",
@@ -618,7 +704,11 @@ describe("built-in extension entrypoints", () => {
         .split("\n")
         .map((line) => JSON.parse(line) as Record<string, unknown>);
       expect(records).toEqual([
-        { kind: "on_read", path: "/tmp/project/tasks/pm-demo.md", scope: "project" },
+        {
+          kind: "on_read",
+          path: "/tmp/project/tasks/pm-demo.md",
+          scope: "project",
+        },
         {
           kind: "on_write",
           path: "/tmp/project/tasks/pm-demo.md",
@@ -631,14 +721,16 @@ describe("built-in extension entrypoints", () => {
       ]);
 
       process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG = path.dirname(hookLogPath);
-      await expect(Promise.resolve(
-        hooks.onWrite[0]?.run({
-          path: "/tmp/project/tasks/pm-demo.md",
-          scope: "project",
-          op: "update",
-          item_id: "pm-demo",
-        }),
-      )).resolves.toBeUndefined();
+      await expect(
+        Promise.resolve(
+          hooks.onWrite[0]?.run({
+            path: "/tmp/project/tasks/pm-demo.md",
+            scope: "project",
+            op: "update",
+            item_id: "pm-demo",
+          }),
+        ),
+      ).resolves.toBeUndefined();
     } finally {
       if (previousLogPath === undefined) {
         delete process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG;
@@ -735,8 +827,16 @@ describe("built-in extension entrypoints", () => {
 
     const calls = readRuntimeCalls();
     expect(calls).toHaveLength(2);
-    expect(calls[0]).toEqual({ kind: "calendar", options: { date: "now", view: "day" }, global: globalFlags });
-    expect(calls[1]).toEqual({ kind: "calendar", options: { date: "20260615", view: "day" }, global: globalFlags });
+    expect(calls[0]).toEqual({
+      kind: "calendar",
+      options: { date: "now", view: "day" },
+      global: globalFlags,
+    });
+    expect(calls[1]).toEqual({
+      kind: "calendar",
+      options: { date: "20260615", view: "day" },
+      global: globalFlags,
+    });
   });
 
   it("does not override an explicit --date with a date-like positional", async () => {
@@ -847,7 +947,10 @@ describe("built-in extension entrypoints", () => {
 
     const calls = readRuntimeCalls();
     expect(calls).toHaveLength(1);
-    expect(calls[0]).toMatchObject({ kind: "calendar", options: { view: "agenda" } });
+    expect(calls[0]).toMatchObject({
+      kind: "calendar",
+      options: { view: "agenda" },
+    });
     expect(result).toMatchObject({ view: "agenda" });
   });
 
@@ -892,7 +995,11 @@ describe("built-in extension entrypoints", () => {
     }
 
     expect(captured).toBeDefined();
-    const error = captured as { message: string; exitCode: number; name: string };
+    const error = captured as {
+      message: string;
+      exitCode: number;
+      name: string;
+    };
     expect(error.name).toBe("PmCliError");
     expect(error.exitCode).toBe(2);
     expect(error.message).toContain("but received: agenda, totally-bogus");
@@ -927,7 +1034,10 @@ describe("built-in extension entrypoints", () => {
             "lifecycle-hooks",
             "index.js",
           ),
-          module: { manifest: lifecycleHooksManifest, activate: activateLifecycleHooks },
+          module: {
+            manifest: lifecycleHooksManifest,
+            activate: activateLifecycleHooks,
+          },
         },
       ],
       failed: [],
@@ -941,16 +1051,18 @@ describe("built-in extension entrypoints", () => {
       kind: "after_command",
       extensionName: lifecycleHooksManifest.name,
     });
-    await expect(Promise.resolve(
-      hook.run({
-        command: "context",
-        args: [],
-        options: {},
-        global: globalFlags,
-        pm_root: "/tmp/pm",
-        ok: true,
-      }),
-    )).resolves.toBeUndefined();
+    await expect(
+      Promise.resolve(
+        hook.run({
+          command: "context",
+          args: [],
+          options: {},
+          global: globalFlags,
+          pm_root: "/tmp/pm",
+          ok: true,
+        }),
+      ),
+    ).resolves.toBeUndefined();
   });
 
   it("registers beads importer and coerces extension options", async () => {
@@ -960,14 +1072,21 @@ describe("built-in extension entrypoints", () => {
     expect(commands).toEqual([]);
     expect(importers.map((entry) => entry.name)).toEqual(["beads"]);
     expect(importers[0]?.options?.action).toBe("beads-import");
-    expect(importers[0]?.options?.description).toBe("Import Beads JSONL records into pm items.");
+    expect(importers[0]?.options?.description).toBe(
+      "Import Beads JSONL records into pm items.",
+    );
     expect(importers[0]?.options?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ long: "--file" }),
-        expect.objectContaining({ long: "--author" }),
         expect.objectContaining({ long: "--message" }),
         expect.objectContaining({ long: "--preserve-source-ids" }),
       ]),
+    );
+    expect(importers[0]?.options?.flags).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ long: "--author" })]),
+    );
+    expect(importers[0]?.options?.failure_hints).toContainEqual(
+      expect.stringContaining("host-global --author"),
     );
 
     const result = await importers[0]!.importer({
@@ -991,7 +1110,7 @@ describe("built-in extension entrypoints", () => {
       kind: "beads",
       options: {
         file: ".beads/issues.jsonl",
-        author: undefined,
+        author: "host-agent",
         message: "entrypoint import",
         preserveSourceIds: true,
       },
@@ -1008,12 +1127,24 @@ describe("built-in extension entrypoints", () => {
   });
 
   it("throws when the bundled beads runtime is missing runBeadsImport()", async () => {
-    const emptyRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-missing-fn-"));
+    const emptyRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-beads-missing-fn-"),
+    );
     try {
-      const runtimeDir = path.join(emptyRoot, ".agents", "pm", "extensions", "beads");
+      const runtimeDir = path.join(
+        emptyRoot,
+        ".agents",
+        "pm",
+        "extensions",
+        "beads",
+      );
       await mkdir(runtimeDir, { recursive: true });
       // runtime.ts without runBeadsImport export.
-      await writeFile(path.join(runtimeDir, "runtime.ts"), "export const marker = true;\n", "utf8");
+      await writeFile(
+        path.join(runtimeDir, "runtime.ts"),
+        "export const marker = true;\n",
+        "utf8",
+      );
       process.env[PM_PACKAGE_ROOT_ENV] = emptyRoot;
       const { api, importers } = createCommandOnlyApi();
       activateBeads(api);
@@ -1055,7 +1186,7 @@ describe("built-in extension entrypoints", () => {
       kind: "beads",
       options: {
         file: undefined,
-        author: undefined,
+        author: "host-agent",
         message: undefined,
         preserveSourceIds: undefined,
       },
@@ -1075,11 +1206,18 @@ describe("built-in extension entrypoints", () => {
     expect(importers[0]?.options?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ long: "--folder" }),
-        expect.objectContaining({ long: "--author" }),
         expect.objectContaining({ long: "--message" }),
       ]),
     );
-    expect(exporters[0]?.options?.flags).toEqual(expect.arrayContaining([expect.objectContaining({ long: "--folder" })]));
+    expect(importers[0]?.options?.flags).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ long: "--author" })]),
+    );
+    expect(importers[0]?.options?.failure_hints).toContainEqual(
+      expect.stringContaining("host-global --author"),
+    );
+    expect(exporters[0]?.options?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ long: "--folder" })]),
+    );
 
     const importResult = await importers[0]!.importer({
       registration: "todos",
@@ -1100,7 +1238,7 @@ describe("built-in extension entrypoints", () => {
       kind: "todos-import",
       options: {
         folder: "/tmp/todos",
-        author: undefined,
+        author: "host-agent",
         message: "entrypoint todos import",
       },
       global: globalFlags,
@@ -1144,12 +1282,24 @@ describe("built-in extension entrypoints", () => {
   });
 
   it("throws when the bundled todos runtime is missing runTodosImport()/runTodosExport()", async () => {
-    const emptyRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-missing-fn-"));
+    const emptyRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-todos-missing-fn-"),
+    );
     try {
-      const runtimeDir = path.join(emptyRoot, ".agents", "pm", "extensions", "todos");
+      const runtimeDir = path.join(
+        emptyRoot,
+        ".agents",
+        "pm",
+        "extensions",
+        "todos",
+      );
       await mkdir(runtimeDir, { recursive: true });
       // runtime.ts without runTodosImport / runTodosExport exports.
-      await writeFile(path.join(runtimeDir, "runtime.ts"), "export const marker = true;\n", "utf8");
+      await writeFile(
+        path.join(runtimeDir, "runtime.ts"),
+        "export const marker = true;\n",
+        "utf8",
+      );
       process.env[PM_PACKAGE_ROOT_ENV] = emptyRoot;
       const { api, importers, exporters } = createCommandOnlyApi();
       activateTodos(api);
@@ -1216,7 +1366,10 @@ describe("built-in extension entrypoints", () => {
           global: runtimeGlobal,
           pm_root: context.pmPath,
         });
-        expect(completionResult).toMatchObject({ shell: "bash", script: expect.any(String) });
+        expect(completionResult).toMatchObject({
+          shell: "bash",
+          script: expect.any(String),
+        });
 
         const renderedCompletion = services[0]!.override({
           service: "output_format",
@@ -1258,7 +1411,9 @@ describe("built-in extension entrypoints", () => {
           global: runtimeGlobal,
           pm_root: context.pmPath,
         });
-        expect(completionStatuses).toMatchObject({ statuses: expect.any(Array) });
+        expect(completionStatuses).toMatchObject({
+          statuses: expect.any(Array),
+        });
 
         const completionTypes = await commands[4]!.run({
           command: "completion-types",
@@ -1285,7 +1440,9 @@ describe("built-in extension entrypoints", () => {
       try {
         const linkedModule = await importRepoModule<
           typeof import("../../../packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts")
-        >("packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts");
+        >(
+          "packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts",
+        );
         const { api, commands } = createCommandOnlyApi();
         linkedModule.activate(api);
         expect(linkedModule.manifest.name).toBe("builtin-linked-test-adapters");
@@ -1426,7 +1583,9 @@ describe("built-in extension entrypoints", () => {
           global: runtimeGlobal,
           pm_root: context.pmPath,
         });
-        expect((listed as { templates?: string[] }).templates).toContain("entrypoint-template");
+        expect((listed as { templates?: string[] }).templates).toContain(
+          "entrypoint-template",
+        );
 
         // `templates list` shares the list runtime wrapper via its own closure.
         const listedExplicit = await commands[1]!.run({
@@ -1436,7 +1595,9 @@ describe("built-in extension entrypoints", () => {
           global: runtimeGlobal,
           pm_root: context.pmPath,
         });
-        expect((listedExplicit as { templates?: string[] }).templates).toContain("entrypoint-template");
+        expect(
+          (listedExplicit as { templates?: string[] }).templates,
+        ).toContain("entrypoint-template");
 
         await expect(
           commands[0]!.run({
@@ -1446,7 +1607,9 @@ describe("built-in extension entrypoints", () => {
             global: runtimeGlobal,
             pm_root: context.pmPath,
           }),
-        ).rejects.toThrow(/Unknown pm templates subcommand "apply".*pm create <type> <title> --template <name>/);
+        ).rejects.toThrow(
+          /Unknown pm templates subcommand "apply".*pm create <type> <title> --template <name>/,
+        );
 
         await expect(
           commands[1]!.run({
@@ -1552,18 +1715,18 @@ describe("built-in extension entrypoints", () => {
     expect(todosExporter.exporter).toBe("todos");
 
     // The importer/exporter metadata produces discoverable command definitions and backing handlers.
-    expect(activation.registrations.commands.map((entry) => entry.command).sort()).toEqual([
-      "beads import",
-      "todos export",
-      "todos import",
-    ]);
-    expect(activation.commands.handlers.map((entry) => entry.command).sort()).toEqual([
-      "beads import",
-      "todos export",
-      "todos import",
-    ]);
-    const beadsImportDefinition = activation.registrations.commands.find((entry) => entry.command === "beads import");
+    expect(
+      activation.registrations.commands.map((entry) => entry.command).sort(),
+    ).toEqual(["beads import", "todos export", "todos import"]);
+    expect(
+      activation.commands.handlers.map((entry) => entry.command).sort(),
+    ).toEqual(["beads import", "todos export", "todos import"]);
+    const beadsImportDefinition = activation.registrations.commands.find(
+      (entry) => entry.command === "beads import",
+    );
     expect(beadsImportDefinition?.action).toBe("beads-import");
-    expect(beadsImportDefinition?.description).toBe("Import Beads JSONL records into pm items.");
+    expect(beadsImportDefinition?.description).toBe(
+      "Import Beads JSONL records into pm items.",
+    );
   });
 });

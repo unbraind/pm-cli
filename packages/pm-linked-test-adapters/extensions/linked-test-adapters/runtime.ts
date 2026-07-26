@@ -181,14 +181,13 @@ export async function runTestRunsStopPackage(
 /** Executes the test runs resume package operation through the package runtime. */
 export async function runTestRunsResumePackage(
   args: string[],
-  options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<unknown> {
   const bundle = await ensureRuntimeBundle();
   return bundle.sdk.runTestRunsResume(
     requireRunId(bundle, "test-runs resume", args),
     {
-      author: bundle.sdk.readStringOption(options, "author"),
+      author: global.author,
       noExtensions: global.noExtensions === true,
     },
     global,

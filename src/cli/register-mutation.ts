@@ -13,6 +13,7 @@ import {
 } from "../sdk/runtime-primitives.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
+  PLAN_CREATE_METADATA_PARAMETER_KEYS,
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   type CommanderOptionRegistrationContract,
 } from "../sdk/cli-contracts.js";
@@ -47,48 +48,11 @@ const BUILTIN_TYPE_NAME_LOOKUP = new Set<string>(
   BUILTIN_ITEM_TYPE_VALUES.map((value) => value.toLowerCase()),
 );
 
-const PLAN_CREATE_METADATA_OPTION_TARGETS = new Set<string>([
-  "createMode",
-  "status",
-  "deadline",
-  "estimatedMinutes",
-  "acceptanceCriteria",
-  "definitionOfReady",
-  "order",
-  "rank",
-  "goal",
-  "objective",
-  "value",
-  "impact",
-  "outcome",
-  "whyNow",
-  "assignee",
-  "reviewer",
-  "risk",
-  "confidence",
-  "sprint",
-  "release",
-  "blockedReason",
-  "unblockNote",
-  "reporter",
-  "severity",
-  "environment",
-  "reproSteps",
-  "resolution",
-  "expectedResult",
-  "actualResult",
-  "affectedVersion",
-  "fixedVersion",
-  "component",
-  "regression",
-  "customerImpact",
-  "comment",
-  "note",
-  "learning",
-  "reminder",
-  "event",
-  "typeOption",
-]);
+const PLAN_CREATE_METADATA_OPTION_TARGETS = new Set<string>(
+  PLAN_CREATE_METADATA_PARAMETER_KEYS.map((key) =>
+    key === "estimate" ? "estimatedMinutes" : key,
+  ),
+);
 import {
   collect,
   applyActiveCommandResultService,

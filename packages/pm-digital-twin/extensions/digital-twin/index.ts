@@ -435,10 +435,7 @@ async function runObserve(
   for (const priorEvent of events) {
     try {
       const priorState = parseTwinStateEvent(priorEvent);
-      if (
-        priorState?.entity_id === id &&
-        priorState.replica_id === replicaId
-      )
+      if (priorState?.entity_id === id && priorState.replica_id === replicaId)
         nextCounter = Math.max(nextCounter, priorState.counter + 1);
     } catch {
       // Replay reports malformed historical events; counter derivation skips them.
@@ -547,9 +544,7 @@ async function runQuery(
   const store = await openTwinStore(context);
   const events = await readTwinEvents(store);
   const at = stringOption(context, "at", false);
-  const replay = replayTwinEvents(events, {
-    ...(at === undefined ? {} : { atTimestamp: at }),
-  });
+  const replay = replayTwinEvents(events, { atTimestamp: at });
   const graph = materializeTwinTopology(sdkFor(context), nodes, events, at);
   const violations = [
     ...replay.violations,
@@ -584,17 +579,12 @@ async function runExport(
 ): Promise<TwinCommandResult> {
   const nodes = await listTwinNodes(sdkFor(context).client);
   const events = await readTwinEvents(await openTwinStore(context));
+  const atTimestamp = stringOption(context, "at", false);
+  const limit = positiveIntegerOption(context, "limit", undefined);
   return {
     action: "twin-export",
     details: {
-      bundle: exportTwinBundle(nodes, events, {
-        ...(stringOption(context, "at", false) === undefined
-          ? {}
-          : { atTimestamp: stringOption(context, "at")! }),
-        ...(positiveIntegerOption(context, "limit", undefined) === undefined
-          ? {}
-          : { limit: positiveIntegerOption(context, "limit")! }),
-      }),
+      bundle: exportTwinBundle(nodes, events, { atTimestamp, limit }),
     },
   };
 }
@@ -653,9 +643,7 @@ async function runVerify(
     stringOption(context, "at", false),
   );
   const replay = replayTwinEvents(events, {
-    ...(checkpoint.as_of === undefined
-      ? {}
-      : { atTimestamp: checkpoint.as_of }),
+    atTimestamp: checkpoint.as_of,
   });
   const graph = materializeTwinTopology(
     sdkFor(context),

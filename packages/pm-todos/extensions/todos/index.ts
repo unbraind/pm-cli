@@ -41,10 +41,13 @@ function asOptionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-function toImportOptions(options: Record<string, unknown>): TodosImportOptions {
+function toImportOptions(
+  options: Record<string, unknown>,
+  global: GlobalOptions,
+): TodosImportOptions {
   return {
     folder: asOptionalString(options.folder),
-    author: asOptionalString(options.author),
+    author: global.author,
     message: asOptionalString(options.message),
   };
 }
@@ -91,7 +94,7 @@ export function activate(api: ExtensionApi): void {
     "todos",
     async (context: ImportExportContext) =>
       runTodosImportFromRuntime(
-        toImportOptions(context.options),
+        toImportOptions(context.options, context.global),
         context.global,
       ),
     {
@@ -99,6 +102,7 @@ export function activate(api: ExtensionApi): void {
       description: "Import Todo markdown files into pm items.",
       failure_hints: [
         "This command reads a directory, not a file. Use --folder <path> to point at the Todo markdown directory.",
+        "Use the host-global --author <id> flag when an explicit mutation identity override is required.",
       ],
       flags: [
         {
@@ -106,12 +110,6 @@ export function activate(api: ExtensionApi): void {
           value_name: "path",
           value_type: "string",
           description: "Source folder containing Todo markdown files.",
-        },
-        {
-          long: "--author",
-          value_name: "author",
-          value_type: "string",
-          description: "Override import mutation author.",
         },
         {
           long: "--message",

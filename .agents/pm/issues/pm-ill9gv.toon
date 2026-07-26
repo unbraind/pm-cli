@@ -2,21 +2,49 @@ id: pm-ill9gv
 title: "GH-719: reject or diagnose extension command flags shadowed by pm globals"
 description: "Extension command definitions can register flags such as --json whose help text appears extension-owned even though Commander routes the value only to pm global options. Add registration-time validation or an explicit bounded diagnostic, make help truthful, document reserved global names and context.global access, and cover real activation plus invocation instead of API doubles."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T00:58:26.286Z"
-updated_at: "2026-07-26T05:57:36.661Z"
+updated_at: "2026-07-26T08:29:34.746Z"
+closed_at: "2026-07-26T07:24:43.067Z"
 author: "harness:codex"
 acceptance_criteria: "Registration rejects or explicitly warns for every extension flag colliding with a canonical or aliased pm global flag; Help and runtime routing cannot imply the value reaches context.options when it is global-only; SDK authoring docs and scaffold guidance expose reserved flags and context.global access; Real installed-extension tests cover activation, help, and invocation at full repository quality gates"
 parent: pm-w7mqzt
+resolution: "Host-owned global flags are canonical, SDK-visible, activation-enforced, and consumed through context.global by first-party extensions."
+expected_result: Extensions cannot shadow host-global flags and first-party author flows remain usable through the host.
+actual_result: Reserved spellings fail activation with actionable guidance; all migrated packages consume context.global.author and pass focused/full coverage.
 dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-df9k,related,"2026-07-26T00:58:26.286Z",null,null
   pm-e9ut,related,"2026-07-26T00:58:26.286Z",null,null
   pm-fs8q9x,related,"2026-07-26T00:58:26.286Z",null,null
   pm-iqq0,related,"2026-07-26T00:58:26.286Z",null,null
   pm-w7mqzt,implements,"2026-07-26T05:57:36.389Z",null,null
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-26T00:58:26.286Z","harness:codex","Duplicate check: searched all statuses for GH-719,global flag collision,shadowed extension flags,Commander hoisting,and schema flag registration. Related closed pm-df9k covers lifecycle subcommand hoisting and open pm-fs8q9x covers lexicon conformance,but neither owns extension-vs-global registration truthfulness; this distinct issue is linked beneath canonical extension SDK feature pm-w7mqzt."
   "2026-07-26T00:58:40.355Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/719"
+  "2026-07-26T07:24:33.405Z","harness:codex","Evidence: centralized host-owned global flag declarations, derived the SDK global flag contract from that primitive, rejected extension shadowing at activation, and migrated beads/todos/governance/linked-test/templates to context.global.author. Focused suites pass; full release coverage is 100/100/100/100 with 6,408 tests."
+  "2026-07-26T08:02:09.701Z","harness:codex","PR evidence: broad SDK host-contract delivery is published as PR #734 at head 185693b9; exact hosted checks and bot reviews will be recorded before merge."
+  "2026-07-26T08:29:34.746Z","harness:codex","Final-head evidence: PR #734 e2453835 passes the complete hosted matrix, including exact extension host-contract integration, Windows, 100% coverage, security, and hosted analysis; no host-flag finding remains pending."
+files[13]{path,scope,note}:
+  packages/pm-beads/extensions/beads/index.ts,project,consume global author
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,remove local author flags
+  packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,forward global author
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts,project,remove local author flag
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.ts,project,forward global author
+  packages/pm-templates/extensions/templates/index.ts,project,reserve author to global host
+  packages/pm-todos/extensions/todos/index.ts,project,consume global author
+  src/core/extensions/loader.ts,project,reject extension flag shadowing
+  src/core/extensions/reserved-host-flags.ts,project,single-source host-owned flags
+  tests/integration/extension-host-contracts.integration.spec.ts,project,reserved flag activation regression
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,First-party host-global author contract coverage
+  tests/unit/extensions/extension-loader.spec.ts,project,Direct host-global shadowing rejection coverage
+  tests/unit/packages/linked-test-adapters-runtime.spec.ts,project,Package runtime global-author coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/extension-host-contracts.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts tests/integration/extension-host-contracts.integration.spec.ts tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/packages/linked-test-adapters-runtime.spec.ts,project,240
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated GH-719 host-global flag contract changelog entry
+  docs/SDK.md,project,global options and extension authoring contract
+close_reason: "Implemented canonical host-global flag ownership and migrated first-party author consumers; focused, installed, and full 100% coverage evidence recorded."
 body: ""

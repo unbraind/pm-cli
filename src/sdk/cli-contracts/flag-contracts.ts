@@ -7,6 +7,7 @@
  * flag surface stays single-sourced across the CLI, SDK, and MCP boundaries.
  */
 import { normalizeUniqueStringList } from "./string-lists.js";
+import { RESERVED_EXTENSION_HOST_FLAGS } from "../../core/extensions/reserved-host-flags.js";
 
 /** A single CLI flag's contract: its canonical `--flag`, optional short form, aliases, value metadata, and repeat/list semantics. One source of truth shared by Commander registration, argv normalization, shell completion, and the `pm contracts` command so every surface agrees on the flag vocabulary. */
 export interface CliFlagContract {
@@ -109,18 +110,11 @@ export function compactFlagAliasContracts(
 
 /** Public contract for subcommand global flag contracts, shared by SDK and presentation-layer consumers. */
 export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--json" },
-  { flag: "--lean" },
-  { flag: "--quiet" },
-  { flag: "--no-changed-fields" },
-  { flag: "--full-changed-fields" },
-  { flag: "--id-only" },
-  { flag: "--pm-path", aliases: ["--path"] },
-  { flag: "--no-extensions" },
-  { flag: "--no-pager" },
-  { flag: "--profile" },
-  { flag: "--help" },
-  { flag: "--author", value_name: "id" },
+  ...RESERVED_EXTENSION_HOST_FLAGS.map((definition) => ({
+    flag: definition.flag,
+    ...(definition.aliases ? { aliases: [...definition.aliases] } : {}),
+    ...(definition.value_name ? { value_name: definition.value_name } : {}),
+  })),
 ];
 
 /** Public contract for global flag contracts, shared by SDK and presentation-layer consumers. */
@@ -1711,10 +1705,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["history", HISTORY_FLAG_CONTRACTS],
     ["history-redact", HISTORY_REDACT_FLAG_CONTRACTS],
     ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],
-    [
-      "history-author-acknowledge",
-      HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
-    ],
+    ["history-author-acknowledge", HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS],
     ["history-compact", HISTORY_COMPACT_FLAG_CONTRACTS],
     ["merge", MERGE_FLAG_CONTRACTS],
     ["schema", SCHEMA_FLAG_CONTRACTS],

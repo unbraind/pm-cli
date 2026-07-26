@@ -180,6 +180,47 @@ describe("extension host contracts", () => {
     });
   });
 
+  it("rejects extension flags owned by the global host contract", async () => {
+    await withTempPmPath(async (context) => {
+      await installHostContractExtension(
+        context.pmPath,
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'host probe',",
+          "      flags: [{ long: '--json', value_type: 'boolean' }],",
+          "      run: () => ({ ok: true }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+        ["commands", "schema"],
+      );
+
+      const doctor = context.runCli(
+        ["extension", "doctor", "--project", "--json"],
+        { expectJson: true },
+      );
+
+      expect(doctor.json).toMatchObject({
+        details: {
+          summary: {
+            activation_failures: [
+              {
+                name: "host-contract-test",
+                error: expect.stringContaining(
+                  'host-owned global flag "--json"',
+                ),
+              },
+            ],
+          },
+        },
+      });
+    });
+  });
+
   it("surfaces activation causes at unknown-command, doctor, and activate boundaries", async () => {
     await withTempPmPath(async (context) => {
       const workspaceRoot = path.join(context.tempRoot, "workspace");

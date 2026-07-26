@@ -1,0 +1,39 @@
+id: pm-si2uur
+title: "GH-728: preserve live harness authorship across initialized multi-agent workspaces"
+description: "pm init persists the initializing harness as author_default, so later agents inherit a frozen effective author even though structured harness/model observation is current. Stop initialization from freezing an automatically detected harness identity while preserving explicitly configured human/operator defaults and backward-compatible workspace behavior."
+type: Issue
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:sdk",author,identity,multi-agent,provenance
+created_at: "2026-07-26T06:25:19.908Z"
+updated_at: "2026-07-26T08:29:30.361Z"
+closed_at: "2026-07-26T07:24:55.763Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Fresh pm init does not persist an automatically detected harness as a static author_default; Mutations by different harnesses in one initialized workspace record the acting harness as effective author without PM_AUTHOR; Explicit operator-configured author_default remains authoritative; SDK and CLI initialization paths share one contract; Isolated multi-harness acceptance verifies history author, harness, and model fields"
+parent: pm-33cw
+risk: medium
+confidence: high
+resolution: Initialized workspaces no longer persist auto-detected harness identity as a static default author.
+expected_result: Each harness invocation is attributed to the current harness unless the operator explicitly overrides author.
+actual_result: "One fresh installed workspace records harness:codex and harness:claude-code on successive invocations without PM_AUTHOR."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-42p9nk,related,"2026-07-26T06:25:19.908Z",null,null
+  pm-6uxhe0,related,"2026-07-26T06:25:19.908Z",null,null
+  pm-qwuber,related,"2026-07-26T06:25:19.908Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-26T06:25:19.908Z","harness:codex","text=Duplicate check evidence: searched all 2055 tracker items across every status for author_default,init identity freeze,multi-agent authorship,and GH-728. Closed pm-6uxhe0 owns independent observed provenance and pm-qwuber owns the accepted identity ADR, but neither prevents pm init from freezing a detected harness as the effective configured author. GitHub source: https://github.com/unbraind/pm-cli/issues/728"
+  "2026-07-26T07:24:34.835Z","harness:codex","Evidence: init persists only explicit --author/PM_AUTHOR overrides; detected harness identity remains transient. Fresh installed-package proof created work under Codex and Claude Code in one initialized workspace and recorded harness:codex then harness:claude-code without PM_AUTHOR."
+  "2026-07-26T08:02:11.059Z","harness:codex","PR evidence: live transient multi-agent author attribution ships in broad PR #734 at head 185693b9; exact hosted checks and bot reviews are pending."
+files[3]{path,scope,note}:
+  src/sdk/init.ts,project,keep detected harness identity transient during initialization
+  tests/unit/commands/init-author-provenance.spec.ts,project,multi-harness initialized-workspace acceptance proof
+  tests/unit/sdk/author-attribution.spec.ts,project,Automatic harness and explicit-author precedence coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/init-author-provenance.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/init-author-provenance.spec.ts tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated GH-728 live author provenance changelog entry
+  docs/CONFIGURATION.md,project,author configuration precedence
+close_reason: Kept detected authorship transient and proved cross-harness attribution in a fresh installed consumer.
+body: ""

@@ -8,7 +8,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { acquireLock } from "../lock/lock.js";
-import { EMPTY_CANONICAL_DOCUMENT } from "../shared/constants.js";
+import {
+  EMPTY_CANONICAL_DOCUMENT,
+  EXIT_CODE,
+} from "../shared/constants.js";
+import { PmCliError } from "../shared/errors.js";
 import { stableStringify } from "../shared/serialization.js";
 import type { HistoryEntry, ItemDocument, ItemMetadata } from "../../types.js";
 import { appendHistoryEntry, createHistoryEntry } from "./history.js";
@@ -171,8 +175,29 @@ async function appendWorkspaceHistoryChangeLocked(
     recordedBefore !== undefined &&
     stableStringify(recordedBefore) !== stableStringify(change.before)
   ) {
-    throw new TypeError(
+    throw new PmCliError(
       `Workspace history state for "${change.documentPath}" changed outside the audited mutation path.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "workspace_history_state_conflict",
+        reason: "out_of_band_workspace_state",
+        required:
+          "Reconcile the singleton document with its matching _workspace history state before retrying the mutation.",
+        why:
+          "Accepting the write would make the append-only audit stream describe a state that was not actually observed.",
+        examples: [
+          "pm history _workspace --verify",
+          "pm validate --check-history-drift --fix-hints",
+        ],
+        nextSteps: [
+          "Review the version-control change that altered the singleton and preserve the intended document plus its matching workspace history.",
+          "Rerun the original mutation only after the on-disk singleton agrees with the latest audited workspace state.",
+        ],
+        recovery: {
+          recovery_mode: "compact",
+          next_best_command: "pm history _workspace --verify",
+        },
+      },
     );
   }
   const afterDocument = workspaceDocument(

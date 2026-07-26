@@ -918,12 +918,6 @@ export {
   type ProjectProfileLintReport,
 } from "../core/profile/profile-lint.js";
 export * from "./authoring.js";
-export {} from "./contracts.js";
-export {} from "./core.js";
-export {} from "./governance.js";
-export {} from "./graph.js";
-export {} from "./merge.js";
-export {} from "./query.js";
 export * from "./testing.js";
 
 export type { GlobalOptions } from "../core/shared/command-types.js";

@@ -169,12 +169,6 @@ const createOptionFlags = [
     description: "Alias for --acceptance-criteria.",
   },
   {
-    long: "--author",
-    value_name: "value",
-    value_type: "string",
-    description: "Template default mutation author.",
-  },
-  {
     long: "--message",
     value_name: "value",
     value_type: "string",

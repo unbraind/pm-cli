@@ -185,6 +185,7 @@ export {
 export type { PmActionSchemaContract } from "./cli-contracts/tool-schema.js";
 export {
   CLOSE_ACTION_OPTION_KEYS,
+  PLAN_CREATE_METADATA_PARAMETER_KEYS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   PM_TOOL_PARAMETERS_SCHEMA_MAJOR,
