@@ -1,0 +1,33 @@
+id: pm-0zcwz6
+title: "Model capture is inert in practice: zero of 35,103 recorded entries carry a model, because the declared signal for the primary harness is an environment variable that harness does not set"
+description: "The recorded entry format carries agent_model and agent_model_source, the detection layer resolves a model candidate, and history writes the field when a candidate exists. All of that shipped. What did not ship is a working signal for the harness that actually drives this repository. The built-in descriptor for claude-code declares model_environment_keys of ANTHROPIC_MODEL and CLAUDE_MODEL. Neither is present in a live Claude Code session; the environment exposes CLAUDECODE, CLAUDE_CODE_SESSION_ID, CLAUDE_CODE_ENTRYPOINT, CLAUDE_CODE_EXECPATH, CLAUDE_PID and CLAUDE_EFFORT, and no model variable at all. The consequence is measurable rather than theoretical: scanning all 2,085 history streams and 35,103 recorded entries in this workspace returns zero entries carrying agent_model. Harness detection itself works correctly and is recorded on every entry as detected. So the capability reads as delivered on every surface — the type declares it, the detector resolves it, the writer persists it — and produces nothing, and no gate or check notices. Per-model attribution analytics, which depend entirely on this field, would return empty results that are indistinguishable from a fleet in which every agent happens to be unattributed."
+type: Issue
+status: open
+priority: 1
+tags[6]: attribution,history,identity,multi-agent,observability,provenance
+created_at: "2026-07-26T11:06:52.473Z"
+updated_at: "2026-07-26T11:06:52.473Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "The declared signals for each supported harness are validated against what that harness actually exposes, and a signal that cannot fire is either corrected or recorded as unavailable rather than left declared; For harnesses that expose no model variable, an alternative resolution path is defined — client handshake metadata, invocation argument, or explicit configuration — so the field can be populated without the agent naming itself; A check reports the proportion of recorded entries carrying a model, per harness, so an inert signal is visible instead of silent; The check fails when a harness that declares a model signal records no model across a window of mutations, which is the condition that exists today; Model capture is exercised end to end for at least one harness in the test suite, asserting the recorded entry rather than the detector's return value; Documentation states which harnesses currently yield a model and which do not, so the analytics that consume it can distinguish absent from unattributed"
+goal: provable-history
+objective: "Make the recorded model a fact that is either present or explicitly known to be unavailable, never silently missing"
+value: "Recording which model acted is a stated requirement for this tracker, and the mechanism has been treated as delivered since it shipped. It has never once produced a value. Everything built on per-model attribution is currently building on an empty column."
+impact: "Turns model provenance from a declared capability into a measured one, and unblocks per-model attribution analytics which cannot function without it"
+outcome: "Recorded entries carry the acting model wherever the harness can supply it, and the coverage is reported rather than assumed"
+why_now: "Every mutation written while the signal is inert is a permanently unattributable entry, and this workspace has already written 35,103 of them"
+parent: pm-o2kc
+risk: medium
+confidence: 90
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-03pq3o,discovered_from,"2026-07-26T11:06:52.473Z",null,null
+  pm-9yfo,related,"2026-07-26T11:06:52.473Z",null,null
+  pm-brxdct,related,"2026-07-26T11:06:52.473Z",null,null
+  pm-gw6uyq,blocked_by,"2026-07-26T11:06:52.473Z",null,null
+  pm-o2kc,implements,"2026-07-26T11:06:52.473Z",null,null
+  pm-qwuber,related,"2026-07-26T11:06:52.473Z",null,null
+  pm-szv11n,implements,"2026-07-26T11:06:52.473Z",null,null
+  pm-u14c,related,"2026-07-26T11:06:52.473Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T11:06:52.473Z",null,null
+  pm-z8qd4k,related,"2026-07-26T11:06:52.473Z",null,null
+body: ""
