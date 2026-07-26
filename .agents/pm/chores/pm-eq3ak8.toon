@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:sdk",code-quality,codefactor,duplication
 created_at: "2026-07-26T06:25:20.956Z"
-updated_at: "2026-07-26T07:25:04.572Z"
+updated_at: "2026-07-26T08:02:11.796Z"
 closed_at: "2026-07-26T07:25:01.870Z"
 author: "harness:codex"
 estimated_minutes: 180
@@ -19,9 +19,10 @@ expected_result: "Reported no-op exports, redundant copies, duplicate Plan keys,
 actual_result: All mapped CodeFactor reports are addressed; strict lint/docstrings/jscpd/snapshot/budget and 100% coverage gates pass.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-xspd,related,"2026-07-26T06:25:20.956Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T06:25:20.956Z","harness:codex","text=Duplicate check evidence: searched all statuses for the exact CodeFactor empty-export,register-mutation/tool-schema duplicate,and digital-twin spread findings. The open pm-92if epic owns the zero-finding program and pm-xspd owns detector sensitivity, but no child owns the 2026-07-26 issue cluster. GitHub sources: #722-#727,#729,#730,#732."
   "2026-07-26T07:24:35.544Z","harness:codex","Evidence: resolved CodeFactor GH-722-727/729/730/732 as one quality bundle: removed no-op SDK exports/redundant copies, single-sourced Plan metadata keys, and made orphan-module checks package-export aware. ESLint, zero-clone jscpd, 100% docstrings, SDK snapshot, token/import/transport budgets, and 100/100/100/100 coverage pass."
+  "2026-07-26T08:02:11.796Z","harness:codex","PR evidence: SDK/static-analysis regression cluster ships in broad PR #734 at head 185693b9; exact hosted checks and bot reviews are pending."
 files[9]{path,scope,note}:
   packages/pm-digital-twin/extensions/digital-twin/index.ts,project,remove redundant object copies
   scripts/release/static-quality-gate.mts,project,recognize package-exported SDK entrypoints

@@ -6,7 +6,7 @@ status: canceled
 priority: 3
 tags[3]: dependencies,release,security
 created_at: "2026-07-26T06:25:21.969Z"
-updated_at: "2026-07-26T07:25:06.006Z"
+updated_at: "2026-07-26T08:02:13.933Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "@sentry/node is updated to the latest compatible release; TOON 4, TypeScript 7, and npm-package-arg 14 are either upgraded with full compatibility proof or explicitly deferred to canonical migration lineage with engine evidence; pnpm audit reports zero vulnerabilities; lockfile, docs if needed, and release gates remain green"
@@ -19,9 +19,10 @@ actual_result: "Audit stayed clean, but the latest Sentry package failed packed 
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-do5b,related,"2026-07-26T06:25:21.969Z",null,null
   pm-tll8,related,"2026-07-26T06:25:21.969Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T06:25:21.969Z","harness:codex","text=Duplicate check evidence: all-status search found closed pm-tll8 for the previous dependency refresh and open pm-do5b for TypeScript 7 migration, but no current 2026-07-26 refresh item. Live pnpm outdated: @sentry/node 10.67.0->10.68.0 compatible with Node >=18; @toon-format/toon 4 requires Node ^22.22.2 or ^24.15.0 or >=26; npm-package-arg 14 and TypeScript 7 require separate compatibility/migration proof. Dependabot alerts and npm audit are empty."
   "2026-07-26T07:24:36.333Z","harness:codex","Dependency assessment: npm audit is clean, but @sentry/node 10.68.0 makes a freshly packed strict TypeScript consumer fail because published @apm-js-collab/code-transformer-bundler-plugins declarations reference missing instrumentation-serde modules. Retained proven 10.67.0; packed npx smoke passes."
+  "2026-07-26T08:02:13.933Z","harness:codex","PR evidence: the Sentry 10.68.0 compatibility rejection and retained 10.67.0 consumer proof are documented in broad PR #734 head 185693b9; the canceled item remains terminal."
 learnings[1]{created_at,author,text}:
   "2026-07-26T07:24:37.015Z","harness:codex",A semver-compatible dependency update is not releasable until the packed strict TypeScript consumer compiles; source tests alone do not expose broken published declaration graphs.
 files[2]{path,scope,note}:
