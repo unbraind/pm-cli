@@ -22,6 +22,7 @@ import {
   runServiceOverrideSync,
   runOnWriteHooks,
   type ExtensionApi,
+  type ExtensionCommandSdk,
   type ExtensionLoadResult,
   type ExtensionManifest,
 } from "../../../src/core/extensions/loader.js";
@@ -3182,6 +3183,10 @@ describe("extension loader", () => {
                   command: string;
                   options: Record<string, unknown>;
                   global: { json: boolean };
+                  source_workspace_root?: string;
+                  repo_root?: string;
+                  pm_root_rel?: string;
+                  sdk?: ExtensionCommandSdk;
                 };
                 return {
                   registration: importerContext.registration,
@@ -3189,6 +3194,10 @@ describe("extension loader", () => {
                   command: importerContext.command,
                   file: importerContext.options.file,
                   json: importerContext.global.json,
+                  sourceWorkspaceRoot: importerContext.source_workspace_root,
+                  repoRoot: importerContext.repo_root,
+                  pmRootRel: importerContext.pm_root_rel,
+                  sdkBound: importerContext.sdk !== undefined,
                 };
               });
               api.registerExporter("  todos   markdown  ", (context) => {
@@ -3198,6 +3207,10 @@ describe("extension loader", () => {
                   command: string;
                   options: Record<string, unknown>;
                   global: { json: boolean };
+                  source_workspace_root?: string;
+                  repo_root?: string;
+                  pm_root_rel?: string;
+                  sdk?: ExtensionCommandSdk;
                 };
                 return {
                   registration: exporterContext.registration,
@@ -3205,6 +3218,10 @@ describe("extension loader", () => {
                   command: exporterContext.command,
                   folder: exporterContext.options.folder,
                   json: exporterContext.global.json,
+                  sourceWorkspaceRoot: exporterContext.source_workspace_root,
+                  repoRoot: exporterContext.repo_root,
+                  pmRootRel: exporterContext.pm_root_rel,
+                  sdkBound: exporterContext.sdk !== undefined,
                 };
               });
               api.registerSearchProvider({
@@ -3309,6 +3326,11 @@ describe("extension loader", () => {
       },
     ]);
 
+    const hostSdk = {
+      client: {},
+      getItemAt: () => undefined,
+      openRelationshipEventStore: () => undefined,
+    } as unknown as ExtensionCommandSdk;
     const importerResult = await runCommandHandler(activation.commands, {
       command: "beads jsonl import",
       args: ["--file", "source.jsonl"],
@@ -3320,6 +3342,10 @@ describe("extension loader", () => {
         profile: false,
       },
       pm_root: "/tmp/project",
+      source_workspace_root: "/workspace",
+      repo_root: "/workspace",
+      pm_root_rel: ".agents/pm",
+      sdk: hostSdk,
     });
     expect(importerResult).toEqual({
       handled: true,
@@ -3329,6 +3355,10 @@ describe("extension loader", () => {
         command: "beads jsonl import",
         file: "source.jsonl",
         json: true,
+        sourceWorkspaceRoot: "/workspace",
+        repoRoot: "/workspace",
+        pmRootRel: ".agents/pm",
+        sdkBound: true,
       },
       warnings: [],
     });
@@ -3344,6 +3374,10 @@ describe("extension loader", () => {
         profile: false,
       },
       pm_root: "/tmp/project",
+      source_workspace_root: "/workspace",
+      repo_root: "/workspace",
+      pm_root_rel: ".agents/pm",
+      sdk: hostSdk,
     });
     expect(exporterResult).toEqual({
       handled: true,
@@ -3353,6 +3387,10 @@ describe("extension loader", () => {
         command: "todos markdown export",
         folder: ".pm/todos",
         json: false,
+        sourceWorkspaceRoot: "/workspace",
+        repoRoot: "/workspace",
+        pmRootRel: ".agents/pm",
+        sdkBound: true,
       },
       warnings: [],
     });

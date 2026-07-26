@@ -165,6 +165,7 @@ describe("contracts command helper coverage", () => {
     expect(_testOnlyContractsCommand.resolveActionCommandPath("package-install")).toBe("package install");
     expect(_testOnlyContractsCommand.resolveActionCommandPath("test-runs-status")).toBe("test-runs status");
     expect(_testOnlyContractsCommand.resolveActionCommandPath("templates-show")).toBe("templates show");
+    expect(_testOnlyContractsCommand.resolveActionCommandPath("duplicates")).toBe("duplicates");
     expect(_testOnlyContractsCommand.resolveActionCommandPath("not-real-action")).toBeNull();
   });
 

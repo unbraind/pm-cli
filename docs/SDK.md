@@ -7,7 +7,12 @@ Current SDK initialization and migration additions are tracked by
 [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon). Tiered entrypoints and the
 public-surface compatibility gate are tracked by
 [pm-38bskj](../.agents/pm/tasks/pm-38bskj.toon) and
-[pm-e6tm5c](../.agents/pm/tasks/pm-e6tm5c.toon).
+[pm-e6tm5c](../.agents/pm/tasks/pm-e6tm5c.toon). Aggregate completeness,
+published surface data, embedded concurrency, and duplicate discovery are
+tracked by [pm-obbh43](../.agents/pm/issues/pm-obbh43.toon),
+[pm-lnswp0](../.agents/pm/issues/pm-lnswp0.toon),
+[pm-zpoyg9](../.agents/pm/issues/pm-zpoyg9.toon), and
+[pm-n13lzc](../.agents/pm/issues/pm-n13lzc.toon).
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
@@ -53,6 +58,7 @@ barrel remains source-compatible:
 | `@unbrained/pm-cli/sdk/query`      | List/search engines, filtering, pagination, and query rendering            |
 | `@unbrained/pm-cli/sdk/runtime`    | Embedded command execution and package runtime helpers                     |
 | `@unbrained/pm-cli/sdk/testing`    | Package and extension assertion/invocation helpers                         |
+| `@unbrained/pm-cli/sdk/public-surface.json` | Published machine-readable SDK compatibility snapshot            |
 | `@unbrained/pm-cli/sdk`            | Compatibility aggregate containing every supported SDK export              |
 
 `@unbrained/pm-cli/cli` remains the runtime CLI module entrypoint for package
@@ -63,7 +69,7 @@ Every narrow entrypoint is bundled and type-tested independently.
 
 ### Public-surface compatibility
 
-[`tests/fixtures/sdk/public-surface.json`](../tests/fixtures/sdk/public-surface.json)
+[`sdk/public-surface.json`](../sdk/public-surface.json)
 is the semantic public API snapshot for every supported SDK entrypoint. It
 records exported names, declaration kinds, normalized signatures and type
 parameters, support classification, and stable SDK error codes. Run:
@@ -81,6 +87,12 @@ the reason, affected surface, package version, and date remain reviewable in the
 snapshot. Breaking SDK changes require a date-based release and matching
 package compatibility bounds or migration guidance. Never refresh the snapshot
 merely to silence an unexplained diff.
+
+The snapshot also records an aggregate-completeness census. Every public symbol
+from every non-testing SDK subpath must be available from
+`@unbrained/pm-cli/sdk`; deliberate test-only exclusions require a named reason.
+Consumers and release tooling can read the exact shipped artifact from
+`@unbrained/pm-cli/sdk/public-surface.json` without locating repository files.
 
 ## Public Exports
 
@@ -216,7 +228,7 @@ Storage format-version exports (under `@unbrained/pm-cli/sdk/runtime`):
 Command/action contract exports:
 
 - `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
-- Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, and `stats`; direct `getItemAt` reconstructs a canonical historical document without mutation
+- Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `search`, `context`, `next`, `aggregate`, `stats`, and `duplicates`; direct `getItemAt` reconstructs a canonical historical document without mutation. `duplicates` performs one bounded all-status metadata sweep and returns deterministic canonical-candidate and close-command guidance without mutating items.
 - Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`. Standard and brief `get` projections omit note bodies but expose `item.notes_count`; deep/full reads return the notes themselves, and narrow consumers can request `notes_count` explicitly.
 - Stream projection primitive: `serializeNdjsonRows` frames SDK-owned object rows as newline-delimited JSON without a trailing newline and rejects scalar/array rows, so package transports can match list/search/context CLI semantics without importing presentation code.
 - Context relevance primitives: `buildItemContextRelevanceCandidates`, `buildContextSignalSnapshot`, `ContextSignalStore`, `JsonFileContextSignalStoreAdapter`, `parseContextSignalSnapshot`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
@@ -605,7 +617,7 @@ error listing the available handler command paths. Because
 `registerImporter`/`registerExporter` register handlers under `"<name> import"` /
 `"<name> export"`, the same helper exercises importer and exporter handlers too.
 
-Production command contexts also expose `sdk`: a host-bound native-action
+Production command, importer, and exporter contexts also expose `sdk`: a host-bound native-action
 `PmClient`, point-in-time `getItemAt`, and durable relationship-store factory.
 The host client deliberately reuses the current extension activation instead of
 recursively loading packages, preserving registered schema while avoiding
@@ -1509,11 +1521,11 @@ and deterministic `ceil(UTF-8 JSON bytes / 4)` token-budget adherence. Reports
 retain attribution only for served items, while token accounting measures the
 normal packet without the opt-in ranking explanation.
 
-`PmClient` and `runAction` share the same process-wide extension activation
-queue as MCP. Calls from one process are serialized across extension load,
-activation, dispatch, cleanup, and deactivate so active extension registries stay
-consistent. Use separate processes when a host needs true parallel pm action
-throughput.
+`PmClient` and `runAction` isolate extension registries per asynchronous request.
+Clients that provide `pmRoot` can activate unrelated workspaces concurrently
+without registration leakage. Calls that explicitly override `cwd` remain
+serialized because Node's `process.chdir` is process-global; omit `cwd` when an
+explicit `pmRoot` fully identifies the workspace and parallel throughput matters.
 
 `PmClient` convenience methods (`list`, `create`, `update`, and the rest) accept
 command options only. For per-call runtime overrides such as `cwd`, `path`, or
@@ -2791,7 +2803,11 @@ pm update pm-1234 --field service=worker
 `registerImporter(name, importer)` and `registerExporter(name, exporter)` register
 a data adapter and automatically create a `<name> import` / `<name> export` command
 path that invokes it. The handler receives an `ImportExportContext`
-(`registration`, `action`, `command`, `args`, `options`, `global`, `pm_root`).
+(`registration`, `action`, `command`, `args`, `options`, `global`, `pm_root`,
+portable `source_workspace_root` / `repo_root` / `pm_root_rel` coordinates, and
+the host-bound `sdk` service bundle). Importers can therefore compose native PM
+actions and relationship stores without spawning the CLI or recursively
+activating packages.
 
 By default the auto-created command only has a handler. Pass an optional third
 `ImportExportRegistrationOptions` argument to make it a first-class command with a

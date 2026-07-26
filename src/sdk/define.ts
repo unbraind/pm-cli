@@ -53,6 +53,7 @@ import type {
   SchemaMigrationDefinition,
   SearchProviderDefinition,
   ServiceOverride,
+  ServiceOverrideDecision,
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
 import type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
@@ -287,6 +288,18 @@ export function defineServiceOverride(
   override: ServiceOverride,
 ): ServiceOverride {
   return override;
+}
+
+/** Explicitly claim a service payload and publish its replacement result. */
+export function handleServiceOverride<const TResult>(
+  result: TResult,
+): { handled: true; result: TResult } {
+  return { handled: true, result };
+}
+
+/** Explicitly decline a service payload so the next override or host handles it. */
+export function declineServiceOverride(): ServiceOverrideDecision {
+  return { handled: false };
 }
 
 /**

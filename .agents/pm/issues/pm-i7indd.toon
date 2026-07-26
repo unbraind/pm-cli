@@ -2,11 +2,12 @@ id: pm-i7indd
 title: "SDK: inject host-bound runtime into ImportExportContext"
 description: "ImportExportContext lacks the host-bound ExtensionCommandSdk already available to CommandHandlerContext, forcing importer/exporter packages such as pm-todos to spawn the pm binary for core actions. Duplicate check 2026-07-26: searched all statuses for ImportExportContext, host-bound SDK, importer/exporter execution, and pm-todos spawning; pm-7qjk and pm-1p2u cover registration/test invocation, pm-xzhz covers the runtime, and pm-13bn covers migration, but none inject the runtime into importer/exporter handlers."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:extensions","area:packages","area:sdk",github-report
 created_at: "2026-07-26T16:19:51.157Z"
-updated_at: "2026-07-26T16:21:37.429Z"
+updated_at: "2026-07-26T20:35:03.166Z"
+closed_at: "2026-07-26T19:43:28.024Z"
 author: "harness:codex"
 acceptance_criteria: ImportExportContext exposes the same host-bound SDK contract needed for in-process core actions; importer/exporter test helpers can inject and exercise it; parity tests prevent CommandHandlerContext and ImportExportContext runtime capability drift; pm-todos can migrate away from spawning pm without private imports; SDK and extension docs describe the lifecycle and compatibility contract
 goal: project management = context management
@@ -15,15 +16,33 @@ value: Package authors can build portable import/export integrations without sub
 why_now: GitHub issue #749 reports a real downstream pm-todos blocker after the SDK-first baseline landed
 parent: pm-usfg
 severity: medium
+resolution: Host-owned ExtensionCommandSdk and portable workspace coordinates now flow through ImportExportContext.
 expected_result: Importer/exporter handlers receive a typed host-bound SDK and can execute supported PM actions in process.
-actual_result: "Command handlers receive sdk, but ImportExportContext does not, so importer/exporter handlers must spawn pm or cannot reuse the public runtime."
+actual_result: Importer and exporter handlers receive the invocation-bound SDK and workspace coordinates; typed loader tests prove identity and compatibility.
 component: sdk
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-13bn,incident_from,"2026-07-26T16:19:51.157Z",null,null
   pm-1p2u,related,"2026-07-26T16:19:51.157Z",null,null
   pm-7qjk,related,"2026-07-26T16:19:51.157Z",null,null
   pm-te6elw,related,"2026-07-26T16:19:51.157Z",null,null
   pm-xzhz,discovered_from,"2026-07-26T16:19:51.157Z",null,null
-comments[1]{created_at,author,text}:
+  pm-usfg,implements,"2026-07-26T19:12:05.570Z",null,null
+  pm-xzhz,implements,"2026-07-26T19:12:05.570Z",null,null
+comments[3]{created_at,author,text}:
   "2026-07-26T16:19:51.157Z","harness:codex","GitHub report linkage: GH-749 https://github.com/unbraind/pm-cli/issues/749. Created only after an all-status duplicate search and full metadata review of the closest SDK/importer/exporter lineage."
+  "2026-07-26T19:42:52.860Z","harness:codex","Evidence: ImportExportContext now carries portable workspace coordinates and the host-bound sdk, and importer/exporter dispatch forwards the same invocation-owned client as command handlers. Typed loader tests assert identity and workspace binding while preserving existing optional compatibility. Linked tests passed; full coverage and static gates are green."
+  "2026-07-26T19:51:27.828Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
+  src/core/extensions/extension-types.ts,project,host-bound ImportExportContext contract
+  src/core/extensions/loader.ts,project,portable context and SDK forwarding
+  tests/unit/extensions/extension-loader.spec.ts,project,importer exporter host context proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms27eue7-doqieu,test,passed,"2026-07-26T19:41:23.177Z","2026-07-26T19:41:37.759Z","2026-07-26T19:41:37.759Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package author runtime guidance
+  docs/SDK.md,project,importer exporter context contract
+close_reason: Injected the host-bound SDK and portable workspace context into importer/exporter handlers with typed compatibility and test coverage.
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/749\n\nScope is the missing execution-context injection and its public testing/documentation contract. Registration metadata and name-based test invocation are already shipped; do not duplicate those surfaces."

@@ -78,6 +78,7 @@ import {
   create as createItem,
   deleteItem,
   defineExtension,
+  duplicates as findDuplicates,
   type ExtensionApi,
   type ExtensionCapability,
   type ExtensionHookRegistry,
@@ -645,6 +646,7 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTIONS).toContain("create");
     expect(PM_TOOL_ACTIONS).toContain("install");
     expect(PM_TOOL_ACTIONS).toContain("upgrade");
+    expect(PM_CORE_COMMAND_NAMES).toContain("duplicates");
     expect(PM_TOOL_ACTIONS).not.toContain("beads-import");
     expect(PM_TOOL_ACTIONS).not.toContain("todos-export");
     expect(PM_TOOL_ACTIONS).not.toContain("calendar");
@@ -1198,6 +1200,112 @@ console.log(JSON.stringify(payload));`,
       const stats = await client.stats({ metadataCoverage: true });
       expect(stats.totals.items).toBeGreaterThanOrEqual(3);
       expect(stats.metadata_coverage).toBeDefined();
+      await client.create({
+        title: "SDK duplicate discovery",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+        allowDuplicate: true,
+      });
+      await client.create({
+        title: "SDK duplicate discovery",
+        type: "Task",
+        status: "closed",
+        createMode: "progressive",
+        allowDuplicate: true,
+      });
+      const duplicateClusters = await client.duplicates({
+        status: ["open", "closed"],
+        threshold: 1,
+        limit: 5,
+      });
+      expect(duplicateClusters.clusters).toEqual([
+        expect.objectContaining({
+          canonical_id: expect.stringMatching(/^pm-/),
+          close_command: expect.stringMatching(
+            /^pm close <duplicate-id> --duplicate-of pm-/,
+          ),
+          items: expect.arrayContaining([
+            expect.objectContaining({ status: "open" }),
+            expect.objectContaining({ status: "closed" }),
+          ]),
+        }),
+      ]);
+      await expect(
+        findDuplicates(
+          { threshold: 1, limit: 5 },
+          {
+            pmRoot: pmPath,
+            cwd: path.dirname(pmPath),
+            noExtensions: true,
+          },
+        ),
+      ).resolves.toMatchObject({
+        count: 1,
+        guidance: {
+          strategy: "review_then_close_duplicate",
+        },
+      });
+      await expect(
+        findDuplicates(
+          {},
+          {
+            pmRoot: pmPath,
+            cwd: path.dirname(pmPath),
+            noExtensions: true,
+          },
+        ),
+      ).resolves.toMatchObject({ count: 1, threshold: 0.8 });
+      await expect(
+        findDuplicates(
+          { since: "2000-01-01T00:00:00.000Z" },
+          {
+            pmRoot: pmPath,
+            cwd: path.dirname(pmPath),
+            noExtensions: true,
+          },
+        ),
+      ).resolves.toMatchObject({ count: 1, threshold: 0.8 });
+      await expect(
+        client.run("duplicates", {
+          options: {
+            status: [],
+            threshold: "default",
+            limit: "default",
+          },
+        }),
+      ).resolves.toMatchObject({ count: 1, threshold: 0.8 });
+      await client.create({
+        title: "SDK second duplicate cluster",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+        allowDuplicate: true,
+      });
+      await client.create({
+        title: "SDK second duplicate cluster",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+        allowDuplicate: true,
+      });
+      await expect(
+        client.run("duplicates", {
+          options: {
+            status: "open",
+            threshold: 1,
+            limit: "5",
+          },
+        }),
+      ).resolves.toMatchObject({ count: 1 });
+      await expect(
+        client.run("duplicates", {
+          options: {
+            threshold: 1,
+            limit: "1",
+          },
+        }),
+      ).resolves.toMatchObject({ count: 1 });
       const wrapperDefaults = {
         pmRoot: pmPath,
         cwd: path.dirname(pmPath),

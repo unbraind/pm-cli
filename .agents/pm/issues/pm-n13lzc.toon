@@ -2,18 +2,58 @@ id: pm-n13lzc
 title: "GH-739: expose duplicate-cluster discovery as a first-class CLI and SDK workflow"
 description: "GitHub: https://github.com/unbraind/pm-cli/issues/739. Create-time similarity advice does not let agents sweep duplicate clusters that already exist. Promote the existing canonical batch duplicate-cluster SDK primitive into bounded CLI, MCP, and PmClient surfaces with token-efficient summaries and canonical-item remediation guidance."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T12:13:36.253Z"
-updated_at: "2026-07-26T12:13:36.253Z"
+updated_at: "2026-07-26T20:56:01.842Z"
+closed_at: "2026-07-26T20:55:58.954Z"
 author: "harness:codex"
 acceptance_criteria: "CLI, MCP, and typed SDK consumers can list existing duplicate clusters without creating an item; output is bounded and deterministic; cluster provenance and canonical merge/close guidance reuse existing duplicate governance."
 parent: pm-usfg
-dependencies[3]{id,kind,created_at,author,source_kind}:
+resolution: "Bounded duplicate-cluster discovery shipped across CLI, MCP, PmClient, and public SDK."
+expected_result: Agents can discover existing duplicate clusters without creating items and receive deterministic bounded remediation guidance.
+actual_result: All-status/status/since/threshold/limit discovery returns deterministic canonical clusters and safe close commands through every public transport.
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-2i12ti,discovered_from,"2026-07-26T12:13:36.253Z",null,null
   pm-4ri6,related,"2026-07-26T12:13:36.253Z",null,null
-  pm-jmld,blocked_by,"2026-07-26T12:13:36.253Z",null,null
-comments[1]{created_at,author,text}:
+  pm-2i12ti,implements,"2026-07-26T19:12:08.511Z",null,null
+  pm-jmld,implements,"2026-07-26T19:12:08.511Z",null,null
+  pm-usfg,implements,"2026-07-26T19:12:08.511Z",null,null
+comments[8]{created_at,author,text}:
   "2026-07-26T12:13:36.253Z","harness:codex","Duplicate check 2026-07-26: searched all statuses for GH-739, existing duplicate clusters, findDuplicateClusters CLI, and batch duplicate sweep. Closed pm-2i12ti supplies the batch primitive, pm-4ri6 covers create-time advice, and pm-jmld covers merge execution; none exposes the requested read workflow, so this is the canonical surface child."
+  "2026-07-26T19:42:55.554Z","harness:codex","Evidence: shipped bounded all-status duplicate discovery through CLI, MCP action contracts, PmClient, and top-level SDK helpers. Results provide deterministic canonical IDs, compact similarity summaries, cluster limits/status/since filters, and safe close guidance. Completion/contracts snapshots and a real temporary-tracker integration test are included. Fresh installed CLI acceptance found one two-item cluster. Linked tests passed; full coverage and static gates are green."
+  "2026-07-26T19:51:34.195Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
+  "2026-07-26T20:16:28.290Z","harness:codex","Review follow-up: CodeRabbit identified two valid integration gaps on PR #753 exact head 55635b06: scalar MCP status/string limits were discarded, and duplicates action availability did not resolve its real CLI command path. Reopened and claimed solely for these active fixes; focused regression tests and regenerated contracts will accompany the implementation."
+  "2026-07-26T20:18:20.726Z","harness:codex","Contract rationale: adding duplicates to PM_CORE_COMMAND_NAMES intentionally widens the exported readonly command tuple so SDK consumers, extension command reservation, and action availability match the already-shipped CLI. The SDK snapshot classifies any tuple signature change as breaking; this additive correction is explicitly acknowledged and regenerated."
+  "2026-07-26T20:26:24.410Z","harness:codex","Review-fix evidence: MCP duplicates now preserves scalar status strings, parses numeric string limits through the shared integer validator while retaining the documented default sentinel, and PM_CORE_COMMAND_NAMES now truthfully exposes the real duplicates command. Generated contracts report command_path=duplicates and cli_exposed=true. Both linked test bundles passed; focused 191/191 and 174/174 regressions passed; full repository coverage passed 375 files and 6425 tests at 100% statements/branches/functions/lines; full lint passed ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budgets, SDK surface, import-cost, and transport-floor gates."
+  "2026-07-26T20:35:41.774Z","harness:codex","Review implementation: duplicates --status now declares both repeatable and list semantics for contract-driven accumulation, and zsh uses the repeatable * option prefix so subsequent lifecycle filters remain discoverable. The regenerated full contract retains the earlier CLI exposure correction."
+  "2026-07-26T20:53:25.294Z","harness:codex","Final local verification: repo-wide coverage passed 375 test files and 6,428 tests at exact 100% statements (44,307/44,307), branches (31,445/31,445), functions (9,061/9,061), and lines (43,046/43,046). Full lint passed ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budgets, SDK surface, import-cost, and transport-floor gates. Security scan and pnpm audit reported no secrets or vulnerabilities; packed npx acceptance passed all 15 bundled packages."
+files[16]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
+  sdk/public-surface.json,project,acknowledged additive core-command tuple surface
+  src/cli/commands/completion.ts,project,shell completion surface
+  src/cli/commands/duplicates.ts,project,CLI compatibility adapter
+  src/cli/register-operations.ts,project,duplicates command registration
+  src/sdk/cli-contracts/enum-contracts.ts,project,canonical core-command availability
+  src/sdk/cli-contracts/flag-contracts.ts,project,repeatable list status contract
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,threshold and timestamp definitions
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP action schema
+  src/sdk/duplicates.ts,project,bounded all-status duplicate primitive
+  src/sdk/runtime.ts,project,PmClient and action dispatch
+  tests/fixtures/contracts/full.json,project,regenerated action availability contract
+  tests/integration/duplicates-command.integration.spec.ts,project,end-to-end CLI behavior
+  tests/unit/commands/completion-command.spec.ts,project,repeatable zsh completion proof
+  tests/unit/commands/contracts-command.spec.ts,project,CLI command-path mapping regression
+  tests/unit/sdk/sdk-index.spec.ts,project,scalar MCP status and string limit regressions
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/duplicates-command.integration.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/commands/completion-command.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts tests/unit/commands/contracts-command.spec.ts tests/integration/duplicates-command.integration.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,300
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms27drzl-9pgh64,test,passed,"2026-07-26T19:40:32.477Z","2026-07-26T19:40:47.985Z","2026-07-26T19:40:47.985Z",1,0,0
+  test-local-ms2904pp-yitmee,test,passed,"2026-07-26T20:25:46.588Z","2026-07-26T20:26:10.525Z","2026-07-26T20:26:10.525Z",2,0,0
+  test-local-ms2a1ay4-0yoi5f,test,passed,"2026-07-26T20:54:38.935Z","2026-07-26T20:55:04.876Z","2026-07-26T20:55:04.876Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,SDK duplicate discovery contract
+close_reason: "Shipped bounded duplicate discovery across CLI/MCP/SDK with corrected scalar transport, command availability, repeatable contracts, completion, and both linked suites green."
 body: ""

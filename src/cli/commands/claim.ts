@@ -367,7 +367,7 @@ export async function runRelease(
       bypassAssigneeConflict: ownershipReleaseBypass,
       mutate(document) {
         previousAssignee = document.metadata.assignee ?? null;
-        if (!previousAssignee) {
+        if (!previousAssignee && !document.metadata.claim_principal) {
           return { changedFields: [] };
         }
         delete document.metadata.assignee;

@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- GH-739: expose duplicate-cluster discovery as a first-class CLI and SDK workflow ([pm-n13lzc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n13lzc.toon))
+- PmClient activation queue serializes unrelated workspaces and extension-free actions ([pm-zpoyg9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpoyg9.toon))
+- GH-741: replace reference-identity service override claiming with an explicit observable contract ([pm-h3ipax](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h3ipax.toon))
+- GH-740: make the documented aggregate SDK barrel complete and continuously derived ([pm-obbh43](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-obbh43.toon))
+- GH-738: publish the machine-readable public SDK surface snapshot with the package ([pm-lnswp0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lnswp0.toon))
+- Terminal release transitions retain stale claim_principal ownership ([pm-bnrndo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bnrndo.toon))
+- SDK: inject host-bound runtime into ImportExportContext ([pm-i7indd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i7indd.toon))
 - Detected agent identity is not agent-unique, so claim mutual exclusion silently degenerates across a same-harness fleet ([pm-z8qd4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z8qd4k.toon))
 - GH-714: linked-test verbose child stdout still aborts with EAGAIN after bounded-drain fix ([pm-5sm91o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5sm91o.toon))
 - CodeFactor 2026-07-26 SDK and digital-twin regression cluster (GH-722 through GH-732) ([pm-eq3ak8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eq3ak8.toon))

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-14T21:35:50.603Z"
-updated_at: "2026-07-26T17:30:16.262Z"
+updated_at: "2026-07-26T21:13:37.689Z"
 closed_at: "2026-07-14T22:11:20.261Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -22,8 +22,9 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7rlp,related,"2026-07-14T21:35:50.603Z",null,null
   pm-mi2x,related,"2026-07-14T21:35:50.603Z",null,null
   pm-9rxu,implements,"2026-07-26T17:30:16.062Z",null,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-14T21:48:49.268Z",maintainer-agent,"PR#564 merged to main 2026-07-14 (merge commit) after review: all 25 checks green including the new 'Run benchmarks (Ubuntu, Node 24)' CodSpeed job (1m54s, 11 benchmarks uploaded in simulation mode). Workflow verified against repo conventions — SHA-pinned actions (CodSpeedHQ/action@f99becdc v4.18.5, checkout v7.0.0, pnpm/action-setup v6, setup-node v6), least-privilege permissions (contents:read + id-token:write for OIDC), timeout-minutes:20, concurrency cancel-in-progress. Bench config isolated from the 100%-coverage correctness suite (separate vitest.bench.config.ts; coverage shards passed on the PR). Awaiting: baseline run on main + a subsequent PR comparison report."
+  "2026-07-26T21:13:37.688Z","harness:codex","PR #753 exact-head CodSpeed evidence (6356953c): simulation comparison reported aggregate -1.23%, with createQueryFingerprint -3.09%, BM25 2k-document construction -1.78%, encodeQueryCursor -1.56%, and decodeQueryCursor +1.58%. The PR changes none of the pagination, cursor, BM25, or benchmark implementations, while the mandatory hosted Run benchmarks job passed in 2m06s and the prior intermediate report varied from -1.07%. Classified as non-causal simulation variance for this SDK/runtime PR; retain the signal for future repeated-baseline analysis under this canonical CodSpeed item, per its existing no-new-item note."
 notes[1]{created_at,author,text}:
   "2026-07-14T22:11:04.618Z",maintainer-agent,"Benchmark wishlist (AC follow-up, extend at fix time — candidates from PR#564 notes + pm-9rxu levers): item parsing (toon decode/encode round-trip), history JSONL replay/verify, relationship-analytics (critical path/blast radius on synthetic graphs from the pm-mi2x generator), context assembly scoring hot path (ContextRelevanceCandidate derivation), BM25 index update (incremental), cursor fingerprint canonicalization at 10k-item envelopes. File future additions as notes here or extend benchmarks/ directly — no new tracking item needed."
 close_reason: "CodSpeed continuous CPU benchmarking adopted: PR#564 merged, baseline live on main, per-PR comparison reports verified working, benchmark wishlist recorded."

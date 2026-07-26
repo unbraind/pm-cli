@@ -2142,6 +2142,7 @@ const OPERATION_COMMAND_NAMES = new Set([
   "claim",
   "close-task",
   "contracts",
+  "duplicates",
   "gc",
   "health",
   "pause-task",

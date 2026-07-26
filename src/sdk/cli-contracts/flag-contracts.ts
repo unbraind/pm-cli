@@ -997,6 +997,14 @@ export const STATS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--tag-prefix" },
 ];
 
+/** Public contract for duplicate-cluster discovery flags. */
+export const DUPLICATES_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--status", repeatable: true, list: true },
+  { flag: "--since" },
+  { flag: "--threshold" },
+  { flag: "--limit" },
+];
+
 /** Public contract for health flag contracts, shared by SDK and presentation-layer consumers. */
 export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--strict-directories" },
@@ -1734,6 +1742,7 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["validate", VALIDATE_FLAG_CONTRACTS],
     ["gc", GC_FLAG_CONTRACTS],
     ["stats", STATS_FLAG_CONTRACTS],
+    ["duplicates", DUPLICATES_FLAG_CONTRACTS],
     ["contracts", CONTRACTS_FLAG_CONTRACTS],
     ["completion", COMPLETION_FLAG_CONTRACTS],
     ["claim", CLAIM_FLAG_CONTRACTS],

@@ -16,6 +16,7 @@ import { resolveStartTaskInProgressStatus } from "../sdk/start-task-status.js";
 import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
 import { runClose } from "./commands/close.js";
 import { runContracts } from "./commands/contracts.js";
+import { runDuplicates } from "./commands/duplicates.js";
 import { runGc } from "./commands/gc.js";
 import { runHealth } from "./commands/health.js";
 import {
@@ -368,6 +369,30 @@ async function runStatsAction(
   printResult(result, globalOptions);
   if (globalOptions.profile) {
     printError(`profile:command=stats took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+async function runDuplicatesAction(
+  options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const threshold = readOptionString(options, "threshold");
+  const limit = readOptionString(options, "limit");
+  const result = await runDuplicates(globalOptions, {
+    status: Array.isArray(options.status) && options.status.length > 0
+      ? (options.status as string[])
+      : undefined,
+    since: readOptionString(options, "since"),
+    ...(threshold === undefined ? {} : { threshold: Number(threshold) }),
+    ...(limit === undefined ? {} : { limit: Number(limit) }),
+  });
+  printResult(result, globalOptions);
+  if (globalOptions.profile) {
+    printError(
+      `profile:command=duplicates took_ms=${Date.now() - startedAt}`,
+    );
   }
 }
 
@@ -829,6 +854,22 @@ export function registerOperationCommands(program: Command): void {
     .option("--limit <n>", "Maximum command groups returned by telemetry stats")
     .description("Inspect and manage local telemetry queue/runtime state.")
     .action(runTelemetryAction);
+
+  program
+    .command("duplicates")
+    .description(
+      "Find existing duplicate clusters across all statuses without creating an item.",
+    )
+    .option(
+      "--status <value>",
+      "Lifecycle status to include (repeatable or comma-separated)",
+      collect,
+      [],
+    )
+    .option("--since <value>", "Only inspect items created at or after this time")
+    .option("--threshold <value>", "Minimum similarity score from 0 through 1")
+    .option("--limit <n>", "Maximum duplicate clusters to return")
+    .action(runDuplicatesAction);
 
   program
     .command("stats")

@@ -20,8 +20,6 @@ const repoRoot = path.resolve(
 const packagePath = path.join(repoRoot, "package.json");
 const snapshotPath = path.join(
   repoRoot,
-  "tests",
-  "fixtures",
   "sdk",
   "public-surface.json",
 );
@@ -41,6 +39,13 @@ const TYPE_FORMAT_FLAGS =
   ts.TypeFormatFlags.NoTruncation |
   ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope |
   ts.TypeFormatFlags.WriteArrowStyleSignature;
+const AGGREGATE_EXCLUDED_ENTRYPOINTS = new Set(["./sdk", "./sdk/testing"]);
+const AGGREGATE_EXPORT_EXCLUSIONS = Object.freeze(
+  Object.assign(Object.create(null), {
+    _testOnlyCliContracts:
+      "Deliberately scoped to the contracts subpath for pm's own contract tests.",
+  }),
+);
 
 /** Return a stable JSON representation with recursively sorted object keys. */
 export function stableJson(value) {
@@ -165,6 +170,41 @@ export function collectEntrypointSymbols(
       };
     })
     .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+/** Prove the compatibility aggregate contains every non-testing subpath export. */
+export function analyzeAggregateSdkCompleteness(
+  entrypoints,
+  exclusions = AGGREGATE_EXPORT_EXCLUSIONS,
+) {
+  const aggregateNames = new Set(
+    entrypoints["./sdk"]?.symbols?.map((symbol) => symbol.name) ?? [],
+  );
+  const required = new Map();
+  for (const [entrypoint, contract] of Object.entries(entrypoints)) {
+    if (AGGREGATE_EXCLUDED_ENTRYPOINTS.has(entrypoint)) continue;
+    for (const symbol of contract.symbols ?? []) {
+      const owners = required.get(symbol.name) ?? [];
+      owners.push(entrypoint);
+      required.set(symbol.name, owners);
+    }
+  }
+  const missing = [...required]
+    .filter(
+      ([name]) => !aggregateNames.has(name) && !Object.hasOwn(exclusions, name),
+    )
+    .map(([name, entrypoints]) => ({ name, entrypoints }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  const excluded = Object.entries(exclusions)
+    .filter(([name]) => required.has(name) && !aggregateNames.has(name))
+    .map(([name, reason]) => ({ name, reason }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  return {
+    covered_symbols: required.size - missing.length - excluded.length,
+    required_symbols: required.size,
+    missing,
+    excluded,
+  };
 }
 
 /** Extract string-literal `code` declarations from public SDK source modules. */
@@ -299,10 +339,23 @@ export async function buildSdkSurfaceSnapshot(options = {}) {
       },
     ]),
   );
+  const aggregateCompleteness =
+    analyzeAggregateSdkCompleteness(classifiedEntrypoints);
+  if (aggregateCompleteness.missing.length > 0) {
+    throw new Error(
+      `Aggregate SDK entrypoint is incomplete:\n${aggregateCompleteness.missing
+        .map(
+          (entry) =>
+            `${entry.name} (exported by ${entry.entrypoints.join(", ")})`,
+        )
+        .join("\n")}`,
+    );
+  }
   return {
-    schema_version: 1,
+    schema_version: 2,
     package: packageJson.name,
     entrypoints: classifiedEntrypoints,
+    aggregate_completeness: aggregateCompleteness,
     error_codes: await collectDeclaredErrorCodes(root),
   };
 }

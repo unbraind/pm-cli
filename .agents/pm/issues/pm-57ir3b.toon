@@ -1,0 +1,29 @@
+id: pm-57ir3b
+title: "GH-752: list results claim completeness while unreadable items are omitted"
+description: "Make list-family and SDK query results fail closed or expose structured unreadable-item incompleteness, and report decoder compatibility evidence without misattributing environment drift to item corruption."
+type: Issue
+status: open
+priority: 1
+tags[5]: context,github,integrity,sdk,storage
+created_at: "2026-07-26T19:39:00.227Z"
+updated_at: "2026-07-26T19:39:00.227Z"
+author: "harness:codex"
+acceptance_criteria: "List-family CLI, SDK, and MCP result contracts expose structured completeness and unreadable counts; strict behavior is available without token-heavy parsing; decoder version/range diagnostics distinguish dependency drift; regression tests cover pagination and all-status reads; docs and contracts are updated."
+parent: pm-doxj
+risk: high
+confidence: high
+reporter: GitHub #752
+severity: high
+expected_result: Agents and SDK consumers can mechanically distinguish a complete item set from a partial result whenever any item cannot be decoded.
+actual_result: "Unreadable items are omitted while count, total, has_more:false, and truncated:false still present the filtered result as complete; only a warning string signals loss."
+affected_version: 2026.7.26
+component: list/query integrity
+customer_impact: Agents can make planning and mutation decisions from a silently incomplete workspace view.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,implements,"2026-07-26T19:39:00.227Z",null,null
+  pm-cxyv,related,"2026-07-26T19:39:00.227Z",null,null
+  pm-hybj,related,"2026-07-26T19:39:00.227Z",null,null
+  pm-iqgj,related,"2026-07-26T19:39:00.227Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T19:39:00.227Z","harness:codex","Duplicate-check evidence: all-status searches for GH-752, unreadable list completeness, decoder drift, and storage integrity found shipped pm-cxyv/pm-iqgj/pm-hybj plus context owner pm-4k6b, but no item representing the distinct successful-partial-result contract reported in GitHub #752. Created open and intentionally unclaimed during the active SDK delivery tranche."
+body: ""

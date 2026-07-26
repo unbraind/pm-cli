@@ -4,6 +4,7 @@
  * Implements extension runtime contracts and governance for Index.
  */
 import { existsSync } from "node:fs";
+import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import {
   runCommandHandler,
@@ -53,6 +54,44 @@ let activeExtensionRegistrations: ExtensionRegistrationRegistry | null = null;
 let activeCommandContext: Omit<CommandOverrideContext, "result"> | null = null;
 let activeCommandResult: unknown = undefined;
 let activeAfterCommandAffectedItems: AfterCommandAffectedItem[] = [];
+interface ExtensionRuntimeState {
+  hooks: ExtensionHookRegistry | null;
+  commands: ExtensionCommandRegistry | null;
+  parsers: ExtensionParserRegistry | null;
+  preflight: ExtensionPreflightRegistry | null;
+  services: ExtensionServiceRegistry | null;
+  renderers: ExtensionRendererRegistry | null;
+  registrations: ExtensionRegistrationRegistry | null;
+  commandContext: Omit<CommandOverrideContext, "result"> | null;
+  commandResult: unknown;
+  affectedItems: AfterCommandAffectedItem[];
+}
+const isolatedExtensionRuntime = new AsyncLocalStorage<ExtensionRuntimeState>();
+
+function runtimeState(): ExtensionRuntimeState | undefined {
+  return isolatedExtensionRuntime.getStore();
+}
+
+/** Run one embedded request with extension registries isolated from concurrent workspaces. */
+export function runWithIsolatedExtensionRuntime<T>(
+  run: () => Promise<T>,
+): Promise<T> {
+  return isolatedExtensionRuntime.run(
+    {
+      hooks: null,
+      commands: null,
+      parsers: null,
+      preflight: null,
+      services: null,
+      renderers: null,
+      registrations: null,
+      commandContext: null,
+      commandResult: undefined,
+      affectedItems: [],
+    },
+    run,
+  );
+}
 const AFTER_COMMAND_SNAPSHOT_OMITTED_FIELDS = new Set([
   "body",
   "comments",
@@ -120,6 +159,11 @@ export function resolvePortableWorkspaceContext(
 export function setActiveExtensionHooks(
   hooks: ExtensionHookRegistry | null,
 ): void {
+  const state = runtimeState();
+  if (state) {
+    state.hooks = hooks;
+    return;
+  }
   activeExtensionHooks = hooks;
 }
 
@@ -127,6 +171,11 @@ export function setActiveExtensionHooks(
 export function setActiveExtensionCommands(
   commands: ExtensionCommandRegistry | null,
 ): void {
+  const state = runtimeState();
+  if (state) {
+    state.commands = commands;
+    return;
+  }
   activeExtensionCommands = commands;
 }
 
@@ -134,6 +183,11 @@ export function setActiveExtensionCommands(
 export function setActiveExtensionParsers(
   parsers: ExtensionParserRegistry | null,
 ): void {
+  const state = runtimeState();
+  if (state) {
+    state.parsers = parsers;
+    return;
+  }
   activeExtensionParsers = parsers;
 }
 
@@ -141,6 +195,11 @@ export function setActiveExtensionParsers(
 export function setActiveExtensionPreflight(
   preflight: ExtensionPreflightRegistry | null,
 ): void {
+  const state = runtimeState();
+  if (state) {
+    state.preflight = preflight;
+    return;
+  }
   activeExtensionPreflight = preflight;
 }
 
@@ -148,6 +207,11 @@ export function setActiveExtensionPreflight(
 export function setActiveExtensionServices(
   services: ExtensionServiceRegistry | null,
 ): void {
+  const state = runtimeState();
+  if (state) {
+    state.services = services;
+    return;
+  }
   activeExtensionServices = services;
 }
 
@@ -155,6 +219,11 @@ export function setActiveExtensionServices(
 export function setActiveExtensionRenderers(
   renderers: ExtensionRendererRegistry | null,
 ): void {
+  const state = runtimeState();
+  if (state) {
+    state.renderers = renderers;
+    return;
+  }
   activeExtensionRenderers = renderers;
 }
 
@@ -162,24 +231,43 @@ export function setActiveExtensionRenderers(
 export function setActiveExtensionRegistrations(
   registrations: ExtensionRegistrationRegistry | null,
 ): void {
+  const state = runtimeState();
+  if (state) {
+    state.registrations = registrations;
+    return;
+  }
   activeExtensionRegistrations = registrations;
 }
 
 /** Implements get active extension registrations for the public runtime surface of this module. */
 export function getActiveExtensionRegistrations(): ExtensionRegistrationRegistry | null {
-  return activeExtensionRegistrations;
+  const state = runtimeState();
+  return state ? state.registrations : activeExtensionRegistrations;
 }
 
 /**
- * Clear every module-level active-extension registry in one step.
+ * Clear every request-local or module-level active-extension registry in one step.
  *
  * The actives describe the CURRENT invocation only. One-shot `pm` processes
- * reset them for free by exiting; long-lived embeddings (in-process test
- * runners, future SDK hosts) must call this at invocation entry, otherwise an
- * extension activated by a previous invocation leaks into workspaces where it
- * is not installed (e.g. a stale command registration rejecting core flags).
+ * reset them for free by exiting; embedded SDK requests receive an async-local
+ * state and reset it at invocation entry so concurrent workspaces cannot see
+ * each other's registrations.
  */
 export function resetActiveExtensionRuntimeState(): void {
+  const state = runtimeState();
+  if (state) {
+    state.hooks = null;
+    state.commands = null;
+    state.parsers = null;
+    state.preflight = null;
+    state.services = null;
+    state.renderers = null;
+    state.registrations = null;
+    state.commandContext = null;
+    state.commandResult = null;
+    state.affectedItems = [];
+    return;
+  }
   activeExtensionHooks = null;
   activeExtensionCommands = null;
   activeExtensionParsers = null;
@@ -195,22 +283,34 @@ export function resetActiveExtensionRuntimeState(): void {
 export function setActiveCommandContext(
   context: Omit<CommandOverrideContext, "result"> | null,
 ): void {
-  activeCommandContext = context
+  const resolved = context
     ? {
         ...context,
         ...resolvePortableWorkspaceContext(context.pm_root),
       }
     : null;
+  const state = runtimeState();
+  if (state) {
+    state.commandContext = resolved;
+    return;
+  }
+  activeCommandContext = resolved;
 }
 
 /** Implements set active command result for the public runtime surface of this module. */
 export function setActiveCommandResult(result: unknown): void {
+  const state = runtimeState();
+  if (state) {
+    state.commandResult = result;
+    return;
+  }
   activeCommandResult = result;
 }
 
 /** Implements get active command result for the public runtime surface of this module. */
 export function getActiveCommandResult(): unknown {
-  return activeCommandResult;
+  const state = runtimeState();
+  return state ? state.commandResult : activeCommandResult;
 }
 
 /** Implements record after command affected item for the public runtime surface of this module. */
@@ -220,7 +320,12 @@ export function recordAfterCommandAffectedItem(
   if (!item) {
     return;
   }
-  activeAfterCommandAffectedItems.push(item);
+  const state = runtimeState();
+  if (state) {
+    state.affectedItems.push(item);
+  } else {
+    activeAfterCommandAffectedItems.push(item);
+  }
 }
 
 /** Implements project after command item snapshot for the public runtime surface of this module. */
@@ -269,16 +374,36 @@ export function projectAfterCommandItemSnapshot(
 export function consumeAfterCommandAffectedItems():
   | AfterCommandAffectedItem[]
   | undefined {
-  if (activeAfterCommandAffectedItems.length === 0) {
+  const state = runtimeState();
+  const affectedItems = state?.affectedItems ?? activeAfterCommandAffectedItems;
+  if (affectedItems.length === 0) {
     return undefined;
   }
-  const affected = activeAfterCommandAffectedItems;
-  activeAfterCommandAffectedItems = [];
+  const affected = affectedItems;
+  if (state) {
+    state.affectedItems = [];
+  } else {
+    activeAfterCommandAffectedItems = [];
+  }
   return affected;
 }
 
 /** Implements clear active extension hooks for the public runtime surface of this module. */
 export function clearActiveExtensionHooks(): void {
+  const state = runtimeState();
+  if (state) {
+    state.hooks = null;
+    state.commands = null;
+    state.parsers = null;
+    state.preflight = null;
+    state.services = null;
+    state.renderers = null;
+    state.registrations = null;
+    state.commandContext = null;
+    state.commandResult = undefined;
+    state.affectedItems = [];
+    return;
+  }
   activeExtensionHooks = null;
   activeExtensionCommands = null;
   activeExtensionParsers = null;
@@ -295,61 +420,72 @@ export function clearActiveExtensionHooks(): void {
 export async function runActiveOnWriteHooks(
   context: OnWriteHookContext,
 ): Promise<string[]> {
-  if (!activeExtensionHooks) {
+  const state = runtimeState();
+  const hooks = state ? state.hooks : activeExtensionHooks;
+  if (!hooks) {
     return [];
   }
-  return runOnWriteHooks(activeExtensionHooks, context);
+  return runOnWriteHooks(hooks, context);
 }
 
 /** Implements run active on read hooks for the public runtime surface of this module. */
 export async function runActiveOnReadHooks(
   context: OnReadHookContext,
 ): Promise<string[]> {
-  if (!activeExtensionHooks) {
+  const state = runtimeState();
+  const hooks = state ? state.hooks : activeExtensionHooks;
+  if (!hooks) {
     return [];
   }
-  return runOnReadHooks(activeExtensionHooks, context);
+  return runOnReadHooks(hooks, context);
 }
 
 /** Synchronous fast-path predicate: true only when at least one onRead hook is registered. Bulk readers (e.g. the metadata cache scanning hundreds of files) use this to skip per-file `await runActiveOnReadHooks(...)` calls entirely when no extension observes reads, avoiding hundreds of needless microtasks. */
 export function hasActiveOnReadHooks(): boolean {
-  return (activeExtensionHooks?.onRead?.length ?? 0) > 0;
+  const state = runtimeState();
+  const hooks = state ? state.hooks : activeExtensionHooks;
+  return (hooks?.onRead?.length ?? 0) > 0;
 }
 
 /** Implements run active on index hooks for the public runtime surface of this module. */
 export async function runActiveOnIndexHooks(
   context: OnIndexHookContext,
 ): Promise<string[]> {
-  if (!activeExtensionHooks) {
+  const state = runtimeState();
+  const hooks = state ? state.hooks : activeExtensionHooks;
+  if (!hooks) {
     return [];
   }
-  return runOnIndexHooks(activeExtensionHooks, context);
+  return runOnIndexHooks(hooks, context);
 }
 
 /** Implements run active command override for the public runtime surface of this module. */
 export function runActiveCommandOverride(
   result: unknown,
 ): CommandOverrideResult {
-  if (!activeExtensionCommands || !activeCommandContext) {
+  const state = runtimeState();
+  const commands = state ? state.commands : activeExtensionCommands;
+  const commandContext = state ? state.commandContext : activeCommandContext;
+  if (!commands || !commandContext) {
     return {
       overridden: false,
       result,
       warnings: [],
     };
   }
-  return runCommandOverride(activeExtensionCommands, {
-    command: activeCommandContext.command,
-    args: [...activeCommandContext.args],
-    options: activeCommandContext.options
-      ? { ...activeCommandContext.options }
+  return runCommandOverride(commands, {
+    command: commandContext.command,
+    args: [...commandContext.args],
+    options: commandContext.options
+      ? { ...commandContext.options }
       : {},
-    global: activeCommandContext.global
-      ? { ...activeCommandContext.global }
+    global: commandContext.global
+      ? { ...commandContext.global }
       : undefined,
-    pm_root: activeCommandContext.pm_root,
-    source_workspace_root: activeCommandContext.source_workspace_root,
-    repo_root: activeCommandContext.repo_root,
-    pm_root_rel: activeCommandContext.pm_root_rel,
+    pm_root: commandContext.pm_root,
+    source_workspace_root: commandContext.source_workspace_root,
+    repo_root: commandContext.repo_root,
+    pm_root_rel: commandContext.pm_root_rel,
     result,
   });
 }
@@ -358,14 +494,16 @@ export function runActiveCommandOverride(
 export async function runActiveCommandHandler(
   context: CommandHandlerContext,
 ): Promise<CommandHandlerResult> {
-  if (!activeExtensionCommands) {
+  const state = runtimeState();
+  const commands = state ? state.commands : activeExtensionCommands;
+  if (!commands) {
     return {
       handled: false,
       result: null,
       warnings: [],
     };
   }
-  return runCommandHandler(activeExtensionCommands, {
+  return runCommandHandler(commands, {
     ...context,
     ...resolvePortableWorkspaceContext(context.pm_root),
   });
@@ -375,7 +513,9 @@ export async function runActiveCommandHandler(
 export async function runActiveParserOverride(
   context: ParserOverrideContext,
 ): Promise<ParserOverrideResult> {
-  if (!activeExtensionParsers) {
+  const state = runtimeState();
+  const parsers = state ? state.parsers : activeExtensionParsers;
+  if (!parsers) {
     return {
       overridden: false,
       context: {
@@ -388,7 +528,7 @@ export async function runActiveParserOverride(
       warnings: [],
     };
   }
-  return runParserOverride(activeExtensionParsers, {
+  return runParserOverride(parsers, {
     ...context,
     ...resolvePortableWorkspaceContext(context.pm_root),
   });
@@ -398,7 +538,9 @@ export async function runActiveParserOverride(
 export async function runActivePreflightOverride(
   context: PreflightOverrideContext,
 ): Promise<PreflightOverrideResult> {
-  if (!activeExtensionPreflight) {
+  const state = runtimeState();
+  const preflight = state ? state.preflight : activeExtensionPreflight;
+  if (!preflight) {
     return {
       overridden: false,
       context: {
@@ -412,7 +554,7 @@ export async function runActivePreflightOverride(
       warnings: [],
     };
   }
-  return runPreflightOverride(activeExtensionPreflight, {
+  return runPreflightOverride(preflight, {
     ...context,
     ...resolvePortableWorkspaceContext(context.pm_root),
   });
@@ -423,46 +565,51 @@ export function runActiveRendererOverride(
   format: OutputRendererFormat,
   result: unknown,
 ): RendererOverrideResult {
-  if (!activeExtensionRenderers) {
+  const state = runtimeState();
+  const renderers = state ? state.renderers : activeExtensionRenderers;
+  const commandContext = state ? state.commandContext : activeCommandContext;
+  if (!renderers) {
     return {
       overridden: false,
       rendered: null,
       warnings: [],
     };
   }
-  return runRendererOverride(activeExtensionRenderers, {
+  return runRendererOverride(renderers, {
     format,
-    command: activeCommandContext?.command,
-    args: activeCommandContext ? [...activeCommandContext.args] : [],
-    options: activeCommandContext?.options
-      ? { ...activeCommandContext.options }
+    command: commandContext?.command,
+    args: commandContext ? [...commandContext.args] : [],
+    options: commandContext?.options
+      ? { ...commandContext.options }
       : {},
-    global: activeCommandContext?.global
-      ? { ...activeCommandContext.global }
+    global: commandContext?.global
+      ? { ...commandContext.global }
       : undefined,
-    pm_root: activeCommandContext?.pm_root,
-    source_workspace_root: activeCommandContext?.source_workspace_root,
-    repo_root: activeCommandContext?.repo_root,
-    pm_root_rel: activeCommandContext?.pm_root_rel,
+    pm_root: commandContext?.pm_root,
+    source_workspace_root: commandContext?.source_workspace_root,
+    repo_root: commandContext?.repo_root,
+    pm_root_rel: commandContext?.pm_root_rel,
     result,
   });
 }
 
 function buildServiceContext(service: ExtensionServiceName, payload: unknown) {
+  const state = runtimeState();
+  const commandContext = state ? state.commandContext : activeCommandContext;
   return {
     service,
-    command: activeCommandContext?.command,
-    args: activeCommandContext ? [...activeCommandContext.args] : [],
-    options: activeCommandContext?.options
-      ? { ...activeCommandContext.options }
+    command: commandContext?.command,
+    args: commandContext ? [...commandContext.args] : [],
+    options: commandContext?.options
+      ? { ...commandContext.options }
       : {},
-    global: activeCommandContext?.global
-      ? { ...activeCommandContext.global }
+    global: commandContext?.global
+      ? { ...commandContext.global }
       : undefined,
-    pm_root: activeCommandContext?.pm_root,
-    source_workspace_root: activeCommandContext?.source_workspace_root,
-    repo_root: activeCommandContext?.repo_root,
-    pm_root_rel: activeCommandContext?.pm_root_rel,
+    pm_root: commandContext?.pm_root,
+    source_workspace_root: commandContext?.source_workspace_root,
+    repo_root: commandContext?.repo_root,
+    pm_root_rel: commandContext?.pm_root_rel,
     payload,
   };
 }
@@ -472,7 +619,9 @@ export async function runActiveServiceOverride(
   service: ExtensionServiceName,
   payload: unknown,
 ): Promise<ServiceOverrideResult> {
-  if (!activeExtensionServices) {
+  const state = runtimeState();
+  const services = state ? state.services : activeExtensionServices;
+  if (!services) {
     return {
       handled: false,
       result: payload,
@@ -480,7 +629,7 @@ export async function runActiveServiceOverride(
     };
   }
   return runServiceOverride(
-    activeExtensionServices,
+    services,
     buildServiceContext(service, payload),
   );
 }
@@ -490,7 +639,9 @@ export function runActiveServiceOverrideSync(
   service: ExtensionServiceName,
   payload: unknown,
 ): ServiceOverrideResult {
-  if (!activeExtensionServices) {
+  const state = runtimeState();
+  const services = state ? state.services : activeExtensionServices;
+  if (!services) {
     return {
       handled: false,
       result: payload,
@@ -498,7 +649,7 @@ export function runActiveServiceOverrideSync(
     };
   }
   return runServiceOverrideSync(
-    activeExtensionServices,
+    services,
     buildServiceContext(service, payload),
   );
 }

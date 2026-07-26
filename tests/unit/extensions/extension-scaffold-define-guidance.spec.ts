@@ -294,7 +294,7 @@ describe("extension scaffold define builder guidance", () => {
     expect(manifest.activation?.commands).toEqual(["svc kit ping"]);
     expect(entry).toContain('api.registerService("output_format", (context) => {');
     expect(entry).toContain('if (context.command !== "svc kit ping") {');
-    expect(entry).toContain("return context.payload;");
+    expect(entry).toContain("return { handled: false };");
     expect(entry).toContain('return { rendered_by: "svc-kit", payload: context.payload };');
     expect(sampleTest).toContain("  createExtensionTestHarness,");
     expect(sampleTest).toContain('ext.assertServiceOverride({ name: "output_format", extensionName: "svc-kit" });');

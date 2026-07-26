@@ -75,6 +75,7 @@
       "import": "./dist/cli-bundle/sdk-testing.js",
       "default": "./dist/cli-bundle/sdk-testing.js"
     },
+    "./sdk/public-surface.json": "./sdk/public-surface.json",
     "./cli": {
       "types": "./dist/cli/main.d.ts",
       "import": "./dist/cli/main.js",
@@ -92,6 +93,7 @@
     "LICENSE",
     "AGENTS.md",
     "docs/**",
+    "sdk/public-surface.json",
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",

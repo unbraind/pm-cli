@@ -2,21 +2,48 @@ id: pm-h3ipax
 title: "GH-741: replace reference-identity service override claiming with an explicit observable contract"
 description: "GitHub: https://github.com/unbraind/pm-cli/issues/741. A registered service override that returns ctx.payload executes but is silently treated as unhandled because claim intent is inferred from object reference identity. Define an explicit handled/declined contract or at minimum an actionable warning, align testing/runtime behavior, and repair the first-party starter example."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:extensions","area:sdk",contracts,github-issue
 created_at: "2026-07-26T12:46:39.716Z"
-updated_at: "2026-07-26T12:46:39.716Z"
+updated_at: "2026-07-26T20:55:49.206Z"
+closed_at: "2026-07-26T20:55:46.248Z"
 author: "harness:codex"
 acceptance_criteria: "Service override claim intent is explicit and type-safe rather than inferred from reference identity; same-reference pass-through, shallow-copy pass-through, modified results, and explicit decline have documented deterministic outcomes; runtime and SDK testing helpers return matching handled/result/warning envelopes; the first-party starter no longer demonstrates a silent no-op; focused and packed extension-author acceptance passes."
 goal: project management = context management
 objective: Extension service overrides cannot silently discard a handler result
 parent: pm-w7mqzt
-dependencies[4]{id,kind,created_at,author,source_kind}:
+resolution: Explicit ServiceOverrideDecision handled/declined envelopes shipped with legacy compatibility.
+expected_result: "Service override claim intent is observable, type-safe, and consistent across runtime, test helpers, and scaffolds."
+actual_result: "Same-reference results can be explicitly handled, explicit declines remain unhandled, and legacy null/undefined output-format handlers decline deterministically."
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-12tj,related,"2026-07-26T12:46:39.716Z",null,null
   pm-5teq,related,"2026-07-26T12:46:39.716Z",null,null
   pm-miqm,discovered_from,"2026-07-26T12:46:39.716Z",null,null
   pm-x395,related,"2026-07-26T12:46:39.716Z",null,null
-comments[1]{created_at,author,text}:
+  pm-miqm,implements,"2026-07-26T19:12:07.531Z",null,null
+  pm-w7mqzt,verifies,"2026-07-26T19:12:07.531Z",null,null
+comments[5]{created_at,author,text}:
   "2026-07-26T12:46:39.716Z","harness:codex","Duplicate check 2026-07-26: searched every status for service override payload identity, claimed/handled reference equality, silent override no-op, and pass-through warnings. Closed pm-miqm owns invocation helpers and pm-5teq owns global output override diagnostics, but neither owns the same-reference claiming semantic; this is the canonical GH-741 child."
+  "2026-07-26T19:42:54.725Z","harness:codex","Evidence: service overrides now support explicit handled true/false decisions, same-reference handled returns, and deterministic legacy null/undefined decline for output formatting. SDK helpers and starter scaffolds teach explicit handle/decline semantics. Linked runtime/loader/define/scaffold tests passed; full coverage and static gates are green."
+  "2026-07-26T19:51:32.226Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
+  "2026-07-26T20:35:38.913Z","harness:codex","Review implementation: explicit handled decisions now require an own result property, explicit declines require the exact one-field envelope, and domain payloads that merely contain handled booleans remain intact. handleServiceOverride preserves its concrete TResult type, and docs state the scaffold literal and helper are equivalent."
+  "2026-07-26T20:53:23.628Z","harness:codex","Final local verification: repo-wide coverage passed 375 test files and 6,428 tests at exact 100% statements (44,307/44,307), branches (31,445/31,445), functions (9,061/9,061), and lines (43,046/43,046). Full lint passed ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budgets, SDK surface, import-cost, and transport-floor gates. Security scan and pnpm audit reported no secrets or vulnerabilities; packed npx acceptance passed all 15 bundled packages."
+files[8]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
+  docs/EXTENSIONS.md,project,scaffold-compatible explicit decline guidance
+  src/core/extensions/extension-hook-runtime.ts,project,explicit handled decision runtime
+  src/core/extensions/extension-types.ts,project,ServiceOverrideDecision contract
+  src/sdk/define.ts,project,handle decline authoring helpers
+  src/sdk/extension/scaffold.ts,project,safe explicit-decline starter
+  tests/unit/extensions/extensions-runtime.spec.ts,project,legacy and explicit behavior coverage
+  tests/unit/sdk/sdk-define.spec.ts,project,helper identity and output coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-runtime.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/sdk/sdk-define.spec.ts tests/unit/extensions/extension-scaffold-define-guidance.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms27e291-fbv4ru,test,passed,"2026-07-26T19:40:48.794Z","2026-07-26T19:41:01.286Z","2026-07-26T19:41:01.286Z",1,0,0
+  test-local-ms2a0b85-pziozd,test,passed,"2026-07-26T20:54:06.730Z","2026-07-26T20:54:18.581Z","2026-07-26T20:54:18.581Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,explicit handled decline author guidance
+close_reason: "Shipped explicit service override decisions with typed helpers, domain-payload guards, documentation, and 162/162 linked tests."
 body: ""

@@ -24,6 +24,12 @@ interface SurfaceSnapshot {
     { classification: string; types: string; symbols: SurfaceSymbol[] }
   >;
   error_codes: string[];
+  aggregate_completeness?: {
+    covered_symbols: number;
+    required_symbols: number;
+    missing: Array<{ name: string; entrypoints: string[] }>;
+    excluded: Array<{ name: string; reason: string }>;
+  };
   breaking_acknowledgements?: Array<{
     package_version: string;
     reason: string;
@@ -44,6 +50,10 @@ interface SurfaceModule {
     declarationPath: string,
     classification: string,
   ): SurfaceSymbol[];
+  analyzeAggregateSdkCompleteness(
+    entrypoints: SurfaceSnapshot["entrypoints"],
+    exclusions?: Record<string, string>,
+  ): NonNullable<SurfaceSnapshot["aggregate_completeness"]>;
   buildSdkSurfaceSnapshot(options?: {
     repoRoot?: string;
   }): Promise<SurfaceSnapshot>;
@@ -94,6 +104,104 @@ afterEach(async () => {
 });
 
 describe("SDK surface snapshot semantics", () => {
+  it("fails closed when a non-testing subpath export is absent from the aggregate", async () => {
+    const mod = await loadModule();
+    expect(mod.analyzeAggregateSdkCompleteness({})).toMatchObject({
+      covered_symbols: 0,
+      required_symbols: 0,
+      missing: [],
+    });
+    expect(
+      mod.analyzeAggregateSdkCompleteness({
+        "./sdk": {
+          classification: "advanced_export",
+          types: "sdk.d.ts",
+        },
+        "./sdk/query": {
+          classification: "supported",
+          types: "query.d.ts",
+        },
+      } as SurfaceSnapshot["entrypoints"]),
+    ).toMatchObject({ required_symbols: 0, missing: [] });
+    const entrypoints = {
+      "./sdk": {
+        classification: "advanced_export",
+        types: "sdk.d.ts",
+        symbols: [],
+      },
+      "./sdk/query": {
+        classification: "supported",
+        types: "query.d.ts",
+        symbols: [
+          {
+            name: "alphaQuery",
+            kind: "function",
+            classification: "supported",
+            signature: "() => void",
+          },
+          {
+            name: "queryItems",
+            kind: "function",
+            classification: "supported",
+            signature: "() => void",
+          },
+        ],
+      },
+    };
+    expect(mod.analyzeAggregateSdkCompleteness(entrypoints)).toMatchObject({
+      covered_symbols: 0,
+      required_symbols: 2,
+      missing: [
+        { name: "alphaQuery", entrypoints: ["./sdk/query"] },
+        { name: "queryItems", entrypoints: ["./sdk/query"] },
+      ],
+    });
+    expect(
+      mod.analyzeAggregateSdkCompleteness(entrypoints, {
+        alphaQuery: "second narrow-only fixture",
+        queryItems: "intentionally narrow-only fixture",
+      }),
+    ).toMatchObject({
+      missing: [],
+      excluded: [
+        { name: "alphaQuery", reason: "second narrow-only fixture" },
+        { name: "queryItems", reason: "intentionally narrow-only fixture" },
+      ],
+    });
+    entrypoints["./sdk"]!.symbols = [
+      {
+        name: "alphaQuery",
+        kind: "function",
+        classification: "advanced_export",
+        signature: "() => void",
+      },
+    ];
+    expect(
+      mod.analyzeAggregateSdkCompleteness(entrypoints, {
+        alphaQuery: "stale exclusion for a now-covered export",
+        queryItems: "intentionally narrow-only fixture",
+      }),
+    ).toMatchObject({
+      covered_symbols: 1,
+      missing: [],
+      excluded: [
+        { name: "queryItems", reason: "intentionally narrow-only fixture" },
+      ],
+    });
+    entrypoints["./sdk/query"]!.symbols.push({
+      name: "constructor",
+      kind: "function",
+      classification: "supported",
+      signature: "() => void",
+    });
+    expect(
+      mod.analyzeAggregateSdkCompleteness(entrypoints, {}),
+    ).toMatchObject({
+      missing: expect.arrayContaining([
+        { name: "constructor", entrypoints: ["./sdk/query"] },
+      ]),
+    });
+  });
   it("sorts object keys recursively while preserving array order", async () => {
     const mod = await loadModule();
     expect(mod.stableJson({ z: [{ b: 2, a: 1 }], a: 1 })).toBe(
@@ -440,6 +548,28 @@ describe("SDK surface snapshot semantics", () => {
     await expect(
       mod.buildSdkSurfaceSnapshot({ repoRoot: root }),
     ).rejects.toThrow();
+    await writeFile(path.join(root, "aggregate.d.ts"), "export {};\n");
+    await writeFile(
+      path.join(root, "narrow.d.ts"),
+      "export declare const onlyNarrow: string;\n",
+    );
+    packageJson.exports = Object.fromEntries(
+      exportNames.map((name) => [
+        name,
+        {
+          types: name === "./sdk" ? "./aggregate.d.ts" : "./narrow.d.ts",
+        },
+      ]),
+    );
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify(packageJson),
+    );
+    await expect(
+      mod.buildSdkSurfaceSnapshot({ repoRoot: root }),
+    ).rejects.toThrow(
+      "onlyNarrow (exported by ./sdk/authoring, ./sdk/contracts",
+    );
   });
 });
 

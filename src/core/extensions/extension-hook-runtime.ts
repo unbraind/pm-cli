@@ -29,6 +29,7 @@ import type {
   PreflightRuntimeDecision,
   ExtensionServiceRegistry,
   ServiceOverrideContext,
+  ServiceOverrideDecision,
   ServiceOverrideResult,
   CommandOverrideContext,
   CommandOverrideResult,
@@ -421,6 +422,40 @@ function buildServiceOverrideContext(context: ServiceOverrideContext) {
   };
 }
 
+function isServiceOverrideDecision(
+  value: unknown,
+): value is ServiceOverrideDecision {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !Object.hasOwn(value, "handled")
+  ) {
+    return false;
+  }
+  const handled = (value as { handled?: unknown }).handled;
+  return handled === true
+    ? Object.hasOwn(value, "result")
+    : handled === false && Reflect.ownKeys(value).length === 1;
+}
+
+function resolveServiceOverrideValue(
+  result: unknown,
+  context: ServiceOverrideContext,
+): { handled: boolean; result: unknown } {
+  if (isServiceOverrideDecision(result)) {
+    return result.handled
+      ? { handled: true, result: result.result }
+      : { handled: false, result: context.payload };
+  }
+  if (
+    context.service === "output_format" &&
+    (result === null || result === undefined)
+  ) {
+    return { handled: false, result: context.payload };
+  }
+  return { handled: true, result };
+}
+
 /** Implements run service override sync for the public runtime surface of this module. */
 export function runServiceOverrideSync(
   services: ExtensionServiceRegistry,
@@ -442,17 +477,13 @@ export function runServiceOverrideSync(
         );
         continue;
       }
-      if (
-        context.service === "output_format" &&
-        (result === null ||
-          result === undefined ||
-          result === serviceContext.payload)
-      ) {
+      const decision = resolveServiceOverrideValue(result, context);
+      if (!decision.handled) {
         continue;
       }
       return {
         handled: true,
-        result,
+        result: decision.result,
         warnings,
       };
     } catch {
@@ -483,17 +514,13 @@ export async function runServiceOverride(
     try {
       const serviceContext = buildServiceOverrideContext(context);
       const result = await Promise.resolve(matched.run(serviceContext));
-      if (
-        context.service === "output_format" &&
-        (result === null ||
-          result === undefined ||
-          result === serviceContext.payload)
-      ) {
+      const decision = resolveServiceOverrideValue(result, context);
+      if (!decision.handled) {
         continue;
       }
       return {
         handled: true,
-        result,
+        result: decision.result,
         warnings,
       };
     } catch {
