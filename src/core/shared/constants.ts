@@ -162,6 +162,7 @@ export const ITEM_METADATA_KEY_ORDER: ReadonlyArray<string> = [
   "events",
   "closed_at",
   "assignee",
+  "claim_principal",
   "source_owner",
   "author",
   "estimated_minutes",

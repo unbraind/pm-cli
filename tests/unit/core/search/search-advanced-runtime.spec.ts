@@ -1,7 +1,6 @@
 import { pathToFileURL } from "node:url";
 import path from "node:path";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { activateExtensions } from "../../../../src/core/extensions/loader.js";
@@ -604,15 +603,15 @@ describe("search-advanced package runtime", () => {
     });
   });
 
-  it("reports deterministic SDK loading failures", async () => {
-    await expect(importRuntimeWithPackageRoot(undefined)).rejects.toThrow("requires PM_CLI_PACKAGE_ROOT");
-    await expect(importRuntimeWithPackageRoot("/tmp/pm-cli-missing-sdk-root")).rejects.toThrow(
-      "failed to load SDK runtime exports",
-    );
-    const partialRoot = await mkdtemp(path.join(tmpdir(), "pm-search-runtime-partial-"));
-    await mkdir(path.join(partialRoot, "dist", "sdk"), { recursive: true });
-    await writeFile(path.join(partialRoot, "dist", "sdk", "runtime.js"), "export const runSearch = true;\n", "utf8");
-    await expect(importRuntimeWithPackageRoot(partialRoot)).rejects.toThrow("failed to load SDK runtime exports");
+  it("resolves the public SDK through the installed package link instead of host-root probing", async () => {
+    await expect(importRuntimeWithPackageRoot(undefined)).resolves.toMatchObject({
+      runAdvancedReindexPackage: expect.any(Function),
+      runAdvancedSearchPackage: expect.any(Function),
+    });
+    await expect(importRuntimeWithPackageRoot("/tmp/pm-cli-missing-sdk-root")).resolves.toMatchObject({
+      runAdvancedReindexPackage: expect.any(Function),
+      runAdvancedSearchPackage: expect.any(Function),
+    });
   });
 
   it("registers the local search provider exemplar and ranks documents by lexical overlap", async () => {

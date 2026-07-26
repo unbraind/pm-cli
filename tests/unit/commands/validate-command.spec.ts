@@ -601,6 +601,27 @@ describe("runValidate", () => {
       customRegistry,
     );
     expect(customGraph.get("pm-a")).toEqual(["pm-b"]);
+    const hierarchyGraph = validateInternals.buildLifecycleParentGraph([
+      {
+        id: "pm-a",
+        dependencies: [
+          { id: "pm-b", kind: "parent" },
+          { id: "pm-c", kind: "parent" },
+          { id: "pm-missing", kind: "parent" },
+        ],
+      },
+      {
+        id: "pm-b",
+        dependencies: [{ id: "pm-a", kind: "parent" }],
+      },
+      {
+        id: "pm-c",
+        dependencies: [{ id: "pm-a", kind: "child" }],
+      },
+    ] as never);
+    expect(hierarchyGraph.get("pm-a")).toEqual(["pm-b", "pm-c"]);
+    expect(hierarchyGraph.get("pm-b")).toEqual(["pm-a"]);
+    expect(hierarchyGraph.get("pm-c")).toEqual([]);
     expect(validateInternals.extractItemIds("Ready after work-2 and pm-3.", "work")).toEqual(["work-2"]);
     expect(validateInternals.extractItemIds("Ready after x.pm-2", "x.pm")).toEqual(["x.pm-2"]);
     expect(validateInternals.extractItemIds("Ready after (x.pm-2), not ax.pm-3", "x.pm")).toEqual(["x.pm-2"]);
@@ -1314,6 +1335,44 @@ describe("runValidate", () => {
       for (const id of ids) {
         expect(cyclePath).toContain(id);
       }
+    });
+  });
+
+  it("reports hierarchy cycles expressed through typed dependency edges", async () => {
+    await withTempPmPath(async (context) => {
+      const first = createTask(context, "validate-hierarchy-dependency-a");
+      const second = createTask(context, "validate-hierarchy-dependency-b");
+      for (const [child, parent] of [
+        [first, second],
+        [second, first],
+      ]) {
+        const updated = context.runCli(
+          [
+            "update",
+            child,
+            "--dep",
+            `id=${parent},kind=child_of,author=seed-author,created_at=now`,
+            "--json",
+          ],
+          { expectJson: true },
+        );
+        expect(updated.code).toBe(0);
+      }
+
+      const result = await runValidate(
+        { checkLifecycle: true },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toContain("validate_hierarchy_parent_cycle:1");
+      const details = checkByName(result, "lifecycle").details as {
+        parent_cycle_item_ids: string[];
+        parent_cycle_sample_paths: string[];
+      };
+      expect(details.parent_cycle_item_ids).toEqual(
+        [first, second].sort((left, right) => left.localeCompare(right)),
+      );
+      expect(details.parent_cycle_sample_paths[0]).toContain(first);
+      expect(details.parent_cycle_sample_paths[0]).toContain(second);
     });
   });
 

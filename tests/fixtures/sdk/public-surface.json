@@ -49,6 +49,17 @@
       ],
       "package_version": "2026.7.25",
       "reason": "Expose npm_token and slack_token detector rules in the documented SecretGuardFinding union"
+    },
+    {
+      "changes": [
+        "signature ./sdk:DetectedAgentIdentity",
+        "signature ./sdk:ItemMetadata",
+        "signature ./sdk/core:DetectedAgentIdentity",
+        "signature ./sdk/core:ItemMetadata",
+        "signature ./sdk/runtime:ItemMetadata"
+      ],
+      "package_version": "2026.7.26",
+      "reason": "Add privacy-safe optional agent instance and claim principal metadata plus exhaustive action coverage APIs"
     }
   ],
   "entrypoints": {
@@ -2243,7 +2254,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DetectedAgentIdentity",
-          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; }"
+          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; }"
         },
         {
           "classification": "supported",
@@ -4265,7 +4276,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -7464,6 +7475,12 @@
           "kind": "function",
           "name": "resolveCalendarOutputFormat",
           "signature": "(options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat | calls: (options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveClaimPrincipal",
+          "signature": "(author: string) => string | calls: (author: string) => string"
         },
         {
           "classification": "advanced_export",
@@ -12599,7 +12616,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DetectedAgentIdentity",
-          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; }"
+          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; }"
         },
         {
           "classification": "supported",
@@ -12773,7 +12790,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -15944,6 +15961,12 @@
           "signature": "export interface AggregateRow { group: AggregateGroupRecord; group_label: string; count: number; open?: number; in_progress?: number; closed?: number; other?: number; completion_pct?: number; null_count?: number; sum?: number | null; avg?: number | null; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "analyzeSdkActionCoverage",
+          "signature": "(actions?: readonly string[]) => SdkActionCoverageRow[] | calls: (actions?: readonly string[]) => SdkActionCoverageRow[]"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "append",
@@ -16703,7 +16726,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -17838,6 +17861,12 @@
           "kind": "function",
           "name": "scoreItemSimilarity",
           "signature": "(leftTitle: string, rightTitle: string) => ItemSimilarityScore | calls: (leftTitle: string, rightTitle: string) => ItemSimilarityScore"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "SdkActionCoverageRow",
+          "signature": "export interface SdkActionCoverageRow { action: string; resolved_action: string; covered: boolean; route: \"native\" | \"alias\" | \"missing\"; }"
         },
         {
           "classification": "supported",

@@ -661,7 +661,9 @@ describe("public merge-safety SDK primitives", () => {
         installed.git_config.find(
           (entry) => entry.key === "merge.pm-relationship.driver",
         )?.value,
-      ).toBe('pm merge driver relationship "%O" "%A" "%B"');
+      ).toMatch(
+        /^'.+' '.+\/dist\/cli\.js' merge driver relationship "%O" "%A" "%B"$/,
+      );
       expect(installed.gitattributes.patterns).toContain(
         '".agents/pm/**/*.jsonl" merge=pm-relationship',
       );
@@ -669,12 +671,16 @@ describe("public merge-safety SDK primitives", () => {
         installed.git_config.find(
           (entry) => entry.key === "merge.pm-item-toon.driver",
         )?.value,
-      ).toBe('pm merge driver item "%O" "%A" "%B" --item-path item.toon');
+      ).toMatch(
+        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path item\.toon$/,
+      );
       expect(
         installed.git_config.find(
           (entry) => entry.key === "merge.pm-item-markdown.driver",
         )?.value,
-      ).toBe('pm merge driver item "%O" "%A" "%B" --item-path item.md');
+      ).toMatch(
+        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path item\.md$/,
+      );
       expect(
         installed.git_config.every((entry) => !entry.value.includes("%P")),
       ).toBe(true);

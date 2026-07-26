@@ -2,22 +2,37 @@ id: pm-5sm91o
 title: "GH-714: linked-test verbose child stdout still aborts with EAGAIN after bounded-drain fix"
 description: "The published bounded linked-test output drain still allows a verbose Bun child to abort while the identical quality command passes directly. Reproduce below the disclosed capture cap, distinguish transport backpressure from assertion failure, keep pipes draining through child completion, and preserve bounded disclosed output."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T01:00:16.908Z"
-updated_at: "2026-07-26T10:56:05.939Z"
+updated_at: "2026-07-26T12:44:30.704Z"
+closed_at: "2026-07-26T12:43:44.062Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: A deterministic verbose-child regression reproduces the released EAGAIN path without excessive fixture output; Linked tests continuously drain child pipes through completion while bounding retained and disclosed output; Transport truncation and failures are classified separately from product assertion failures; Node and Bun subprocess acceptance plus full repository gates pass
 parent: pm-usfg
+resolution: Linked-test child output is captured through blocking regular files with bounded retained output and explicit truncation disclosure.
+expected_result: Verbose Node and Bun children complete without EAGAIN while disclosed output stays bounded and transport truncation is not a test failure.
+actual_result: Focused suite passes and a packed Bun child emitted 22 MB successfully with truncation notice and zero max-buffer failures.
 dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-7rlp,related,"2026-07-26T01:00:16.908Z",null,null
   pm-vrsn,related,"2026-07-26T01:00:16.908Z",null,null
   pm-wo8,related,"2026-07-26T01:00:16.908Z",null,null
   pm-u9d0,implements,"2026-07-26T05:59:20.429Z",null,null
   pm-j36ypd,discovered_from,"2026-07-26T10:56:05.664Z",null,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-26T01:00:16.908Z","harness:codex","Duplicate check: searched all statuses for EAGAIN,Resource temporarily unavailable,verbose linked-test output,bounded drain,and max-buffer behavior. Closed pm-j36ypd owns the original GH-679 fix; GH-714 is a released-version regression with contradictory evidence and therefore needs a distinct child issue rather than reopening the completed historical result."
   "2026-07-26T01:00:28.371Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/714"
+  "2026-07-26T11:46:14.677Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
+  "2026-07-26T12:43:40.735Z","harness:codex","Acceptance evidence: linked tests now stream child stdout/stderr into blocking regular files, retain at most 20 MiB per stream, disclose truncation separately from failure, and remove capture directories in a finally path. The 56-test focused runner suite passes; an npm-packed unrelated consumer ran a Bun child emitting 22,000,000 bytes to completion with status=passed, a truncation notice, retained stdout length 20,971,627, and zero max-buffer failures."
+files[2]{path,scope,note}:
+  src/sdk/test/execution.ts,project,Blocking regular-file child output capture
+  tests/unit/commands/test-command.spec.ts,project,Verbose output and truncation regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-command.spec.ts,project,300
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated release history
+  docs/TESTING.md,project,Linked output transport contract
+close_reason: "Eliminated Bun/Rust EAGAIN backpressure by replacing nonblocking child pipes with bounded regular-file capture, preserving timeout/progress semantics and proving Node plus packed Bun acceptance."
 body: ""

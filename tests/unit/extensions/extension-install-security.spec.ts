@@ -1,20 +1,64 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlyInstallSources } from "../../../src/sdk/extension/install-sources.js";
+import { ensureInstalledExtensionSdkLink } from "../../../src/sdk/extension/install-runtime.js";
 
 const temporaryRoots: string[] = [];
 
 afterEach(async () => {
   await Promise.all(
-    temporaryRoots.splice(0).map((root) =>
-      rm(root, { recursive: true, force: true }),
-    ),
+    temporaryRoots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true })),
   );
 });
 
 describe("untrusted extension runtime dependencies", () => {
+  it("links copied extensions to the exact host public SDK", async () => {
+    const extensionRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-extension-host-sdk-"),
+    );
+    temporaryRoots.push(extensionRoot);
+
+    await ensureInstalledExtensionSdkLink(extensionRoot);
+
+    const linkPath = path.join(
+      extensionRoot,
+      "node_modules",
+      "@unbrained",
+      "pm-cli",
+    );
+    expect((await lstat(linkPath)).isSymbolicLink()).toBe(true);
+    expect(await realpath(linkPath)).toBe(await realpath(process.cwd()));
+
+    const junctionRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-extension-host-sdk-junction-"),
+    );
+    temporaryRoots.push(junctionRoot);
+    const platform = vi
+      .spyOn(process, "platform", "get")
+      .mockReturnValue("win32");
+    try {
+      await ensureInstalledExtensionSdkLink(junctionRoot);
+    } finally {
+      platform.mockRestore();
+    }
+    expect(
+      await realpath(
+        path.join(junctionRoot, "node_modules", "@unbrained", "pm-cli"),
+      ),
+    ).toBe(await realpath(process.cwd()));
+  });
+
   it("rejects option-like names and shell metacharacters before npm execution", () => {
     expect(() =>
       _testOnlyInstallSources.runtimeDependencyInstallSpecs({

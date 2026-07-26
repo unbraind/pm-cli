@@ -4,8 +4,7 @@
  * Resolves the host pm SDK runtime and exposes the typed subset consumed by
  * the governance-audit package without copying core command implementations.
  */
-import path from "node:path";
-import { pathToFileURL } from "node:url";
+import * as runtime from "@unbrained/pm-cli/sdk/runtime";
 import type {
   EXIT_CODE as RuntimeExitCode,
   PmCliError as RuntimePmCliError,
@@ -60,27 +59,6 @@ interface RuntimeSdkModule {
   runUpdate: typeof runtimeRunUpdate;
   scoreItemSimilarity: typeof runtimeScoreItemSimilarity;
 }
-
-const packageRoot = process.env.PM_CLI_PACKAGE_ROOT?.trim();
-let loadedRuntime: RuntimeSdkModule;
-/* c8 ignore start -- copied installs exercise PM_CLI_PACKAGE_ROOT in subprocess integration coverage. */
-try {
-  if (packageRoot) {
-    loadedRuntime = (await import(
-      pathToFileURL(path.join(packageRoot, "dist", "sdk", "runtime.js")).href
-    )) as RuntimeSdkModule;
-  } else {
-    loadedRuntime = await import("@unbrained/pm-cli/sdk/runtime");
-  }
-} catch (error) {
-  const detail = error instanceof Error ? error.message : String(error);
-  throw new Error(
-    `pm-governance-audit could not load the host SDK runtime (PM_CLI_PACKAGE_ROOT=${packageRoot ?? "<unset>"}). Rebuild or reinstall @unbrained/pm-cli and the audit package. ${detail}`,
-    { cause: error },
-  );
-}
-/* c8 ignore stop */
-const runtime = loadedRuntime;
 
 /** Host SDK values used by package-owned audit commands and runtime decorators. */
 export const {

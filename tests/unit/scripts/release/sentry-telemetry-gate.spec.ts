@@ -903,6 +903,32 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
     expect(json.sentry.checked).toBe(true);
   });
 
+  it("best-effort mode falls back to the sentry CLI when a configured token is rejected", async () => {
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "best-effort", "--telemetry-command", "telemetry.sh"],
+      existsSync: true,
+      env: { SENTRY_AUTH_TOKEN: "stale-token" },
+      fetchImpl: vi.fn(async () => ({ ok: false, status: 403, text: async () => "" })) as unknown as typeof fetch,
+      runCommand: (command, args) => {
+        if (command === "sentry" && args[0] === "issue") {
+          return {
+            status: 0,
+            stdout: JSON.stringify([{ shortId: "PM-91", level: "info", logger: "node", metadata: { value: "ok" } }]),
+            stderr: "",
+          };
+        }
+        if (command === "bash") {
+          return { status: 0, stdout: TELEMETRY_CSV, stderr: "" };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      },
+    });
+    expect(json.sentry.token_source).toBe("sentry_cli");
+    expect(json.sentry.checked).toBe(true);
+    expect(json.sentry.access_ok).toBe(true);
+    expect(json.ok).toBe(true);
+  });
+
   it("honors a custom SENTRY_URL when building the issues URL and dedupes tokens", async () => {
     const fetchSpy = vi.fn(async () => ({ ok: true, status: 200, text: async () => "[]" }));
     const { json } = await runSentryGate({

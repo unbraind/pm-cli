@@ -2042,13 +2042,15 @@ describe("runInit", () => {
       expect(
         await readFile(path.join(workspace, ".gitattributes"), "utf8"),
       ).toContain("# pm-cli:merge-drivers:start");
-      expect(
-        execFileSync(
-          "git",
-          ["config", "--local", "--get", "merge.pm-history.driver"],
-          { cwd: workspace, encoding: "utf8" },
-        ),
-      ).toContain("pm merge driver history");
+      const historyDriver = execFileSync(
+        "git",
+        ["config", "--local", "--get", "merge.pm-history.driver"],
+        { cwd: workspace, encoding: "utf8" },
+      );
+      expect(historyDriver).toContain(`'${process.execPath}'`);
+      expect(historyDriver).toContain(
+        `'${path.join(process.cwd(), "dist", "cli.js")}' merge driver history`,
+      );
 
       const gitignorePath = path.join(workspace, ".gitignore");
       await writeFile(gitignorePath, "sentinel\n", "utf8");

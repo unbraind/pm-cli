@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { PmToolAction } from "../../../src/sdk/cli-contracts.js";
+import {
+  PM_TOOL_ACTIONS,
+  PM_TOOL_ACTION_PARAMETER_CONTRACTS,
+  type PmToolAction,
+} from "../../../src/sdk/cli-contracts.js";
 import {
   _testOnlyCliContracts,
   resolveSubcommandFlagContractsForCommand,
 } from "../../../src/sdk/cli-contracts.js";
+import { PM_TOOL_PARAMETER_PROPERTIES } from "../../../src/sdk/cli-contracts/tool-parameter-tables.js";
+import { analyzeSdkActionCoverage } from "../../../src/sdk/runtime.js";
 
 type SchemaWithProperties = {
   properties?: Record<string, unknown>;
@@ -67,6 +73,55 @@ function camelCaseFlagName(flag: string): string {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("derives complete SDK dispatch and parameter coverage for every public action", () => {
+    const coverage = analyzeSdkActionCoverage();
+    expect(coverage).toHaveLength(PM_TOOL_ACTIONS.length);
+    expect(coverage.filter((row) => !row.covered)).toEqual([]);
+
+    for (const action of PM_TOOL_ACTIONS) {
+      const contract = PM_TOOL_ACTION_PARAMETER_CONTRACTS[action];
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
+        action,
+      ) as SchemaWithProperties;
+      const properties = new Set(Object.keys(schema.properties ?? {}));
+      for (const parameter of [
+        ...(contract.required ?? []),
+        ...(contract.optional ?? []),
+      ]) {
+        expect(
+          properties.has(parameter),
+          `${action} schema should expose contracted parameter ${parameter}`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("fails closed for an unregistered action negative control", () => {
+    expect(analyzeSdkActionCoverage(["synthetic-unregistered-action"])).toEqual(
+      [
+        {
+          action: "synthetic-unregistered-action",
+          resolved_action: "synthetic-unregistered-action",
+          covered: false,
+          route: "missing",
+        },
+      ],
+    );
+  });
+
+  it("omits a contracted parameter whose canonical definition is unavailable", () => {
+    const definition = PM_TOOL_PARAMETER_PROPERTIES.markdown;
+    delete PM_TOOL_PARAMETER_PROPERTIES.markdown;
+    try {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
+        "package-describe",
+      ) as SchemaWithProperties;
+      expect(schema.properties).not.toHaveProperty("markdown");
+    } finally {
+      PM_TOOL_PARAMETER_PROPERTIES.markdown = definition;
+    }
+  });
+
   it.each(SCHEMA_PARITY_CASES)(
     "accepts non-interactive CLI flags for action $action",
     ({ action, command, flags }) => {

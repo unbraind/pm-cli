@@ -1585,6 +1585,7 @@ export function normalizeItemMetadata(
     events: sortEvents(itemMetadata.events),
     closed_at: emptyStringToUndefined(itemMetadata.closed_at),
     assignee: trimStringOrUndefined(itemMetadata.assignee),
+    claim_principal: trimStringOrUndefined(itemMetadata.claim_principal),
     source_owner: trimStringOrUndefined(itemMetadata.source_owner),
     author: emptyStringToUndefined(itemMetadata.author),
     estimated_minutes: itemMetadata.estimated_minutes,

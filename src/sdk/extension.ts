@@ -79,6 +79,7 @@ import {
   copyExtensionDirectoryForInstall,
   copyExtensionDirectoryWithoutSelfNesting,
   ensureExtensionModuleTypeMarker,
+  ensureInstalledExtensionSdkLink,
   isErrnoCode,
   isRetriableExtensionInstallCopyError,
   resolveCanonicalExtensionInstallDestination,
@@ -2192,6 +2193,7 @@ const persistExtensionInstall = async (
         );
       }
       await ensureExtensionModuleTypeMarker(destinationDirectory);
+      await ensureInstalledExtensionSdkLink(destinationDirectory);
       await writeManagedExtensionState(
         resolvedRoots.selected_root,
         managedState,

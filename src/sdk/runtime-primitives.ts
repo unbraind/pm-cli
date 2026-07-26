@@ -246,6 +246,7 @@ export {
 export {
   readAuthorEnvironment,
   resolveAuthor,
+  resolveClaimPrincipal,
   runWithHarnessDetectionSignals,
   runWithWorkspaceHarnessSignalDescriptors,
   type AgentClientInfo,

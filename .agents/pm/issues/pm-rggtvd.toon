@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-25T20:39:41.651Z"
-updated_at: "2026-07-26T05:57:33.245Z"
+updated_at: "2026-07-26T13:11:59.263Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Cycle detection covers every dependency kind the relationship registry canonicalizes to a hierarchy edge, not only the ordering kinds, and a mutation that would close such a cycle fails fast with the same contract the scalar parent field already enforces; A regression test asserts no item can be reported as both an ancestor and a descendant of the same item by pm graph, for every accepted kind spelling in the declared dependency-kind domain; validate lifecycle, pm health, and pm graph analyze agree on cycle count for a corpus whose cycles are built from dependency rows rather than the parent scalar; The related-edge false-cycle behaviour fixed under pm-6irg does not regress: the reciprocal-related and all-related-loop corpus stays green; Hierarchy cycles already stored on terminal items are reported as legacy findings with their holders named, and are never repaired by mutating closed items; The post-merge composition case is covered: a randomized branch pair that each add one sound hierarchy edge and merge into a cycle fails the merge conformance suite"
@@ -22,4 +22,13 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-p9a4,related,"2026-07-25T20:39:41.651Z",null,null
   pm-bzmeaa,related,"2026-07-25T20:50:37.575Z",null,null
   pm-96h7,implements,"2026-07-26T05:57:33.033Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-26T11:46:25.644Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
+  "2026-07-26T12:47:23.836Z","harness:codex","Partial implementation evidence: validate lifecycle now builds one hierarchy graph from scalar parents plus every registry-declared hierarchy dependency spelling, including source_parent/target_parent directions, missing targets, aliases, dedupe, and closed holders; child_of cycles are now reported. Mutation fail-fast, graph/health agreement, legacy classification, and merge-conformance clauses remain outstanding, so this item remains incomplete."
+  "2026-07-26T13:11:37.855Z","harness:codex","Verification 2026-07-26: repository release gates passed build/typecheck/docs/static quality, SDK surface/import-cost/transport ratchets, secret scan, version policy, 374 files and 6,420 tests at exact 100% statements/branches/functions/lines, packed npx smoke, and 88-command package-first dogfood. Aggregate stopped only at hosted-analysis because the branch exact SHA was not yet pushed. Manual unrelated-directory packed consumer also proved the installed SDK link, 85-action coverage, same-harness cross-session claim exclusion, and bounded 22 MB Bun output capture."
+files[2]{path,scope,note}:
+  src/sdk/governance/validate.ts,project,Hierarchy dependency cycle diagnostics
+  tests/unit/commands/validate-command.spec.ts,project,child_of dependency cycle regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,300
 body: ""

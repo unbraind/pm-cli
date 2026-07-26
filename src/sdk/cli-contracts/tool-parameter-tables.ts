@@ -24,6 +24,36 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   id: { type: "string" },
   target: { type: "string" },
   output: { type: "string", minLength: 1 },
+  markdown: { type: "boolean" },
+  init: { type: "boolean" },
+  install: { type: "boolean" },
+  uninstall: { type: "boolean" },
+  explore: { type: "boolean" },
+  manage: { type: "boolean" },
+  describe: { type: "boolean" },
+  doctor: { type: "boolean" },
+  catalog: { type: "boolean" },
+  adopt: { type: "boolean" },
+  adoptAll: { type: "boolean" },
+  activate: { type: "boolean" },
+  deactivate: { type: "boolean" },
+  filterFilesMissing: { type: "boolean" },
+  filterDocsMissing: { type: "boolean" },
+  matchMode: { type: "string", enum: ["all", "any", "phrase"] },
+  minScore: {
+    anyOf: [{ type: "number" }, { type: "string", pattern: "^\\d+(\\.\\d+)?$" }],
+  },
+  rank: {
+    anyOf: [{ type: "number" }, { type: "string", pattern: "^-?\\d+$" }],
+  },
+  exemptIsolateType: {
+    anyOf: [
+      { type: "string" },
+      { type: "array", items: { type: "string" } },
+    ],
+  },
+  saveBaseline: { type: "boolean" },
+  rebuild: { type: "boolean" },
   github: { type: "string" },
   ref: { type: "string" },
   query: { type: "string" },
@@ -655,6 +685,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "File path for commands that write generated output, such as package/extension describe Markdown references.",
     examples: ["docs/pm-package-reference.md"],
+  },
+  markdown: {
+    description:
+      "Render the package or extension description as Markdown instead of structured output.",
+    examples: [true],
   },
   github: {
     description:

@@ -100,6 +100,7 @@ describe("agent runtime SDK primitives", () => {
       }),
     ).toEqual({
       harness: "codex",
+      instance: "6790ed693ac61e5353a1e2e4",
       model: "gpt-5.6-sol",
       model_source: "environment",
       session: "thread-123",
@@ -126,6 +127,7 @@ describe("agent runtime SDK primitives", () => {
       }),
     ).toEqual({
       harness: "claude-code",
+      instance: expect.any(String),
       model: "claude-opus",
       model_source: "mcp_client",
       session: "mcp-session",
@@ -165,6 +167,7 @@ describe("agent runtime SDK primitives", () => {
         }),
       ).toEqual({
         harness: "synthetic-agent",
+        instance: "159ec307ab8c324e240c067e",
         model: "test-model",
         model_source: "environment",
         session: "session-1",
@@ -387,6 +390,7 @@ describe("agent runtime SDK primitives", () => {
           author: "harness:codex",
           author_source: "detected",
           agent_harness: "codex",
+          agent_instance: expect.any(String),
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),
@@ -397,6 +401,7 @@ describe("agent runtime SDK primitives", () => {
           author: "harness:codex",
           author_source: "detected",
           agent_harness: "codex",
+          agent_instance: expect.any(String),
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),

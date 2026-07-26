@@ -15,6 +15,7 @@ import { getActiveExtensionRegistrations } from "../../core/extensions/index.js"
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
+import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -35,6 +36,26 @@ export const PM_GITATTRIBUTES_START = "# pm-cli:merge-drivers:start";
 export const PM_GITATTRIBUTES_END = "# pm-cli:merge-drivers:end";
 
 const MERGE_FENCE_LOCK_ID = "merge-fence";
+
+/**
+ * Quote one argument for the shell used by Git merge-driver configuration.
+ *
+ * Git executes configured driver strings through a shell even when the
+ * original `pm merge install` process was launched directly. Single-quoting
+ * both the Node executable and bundled CLI path prevents spaces or shell
+ * metacharacters in either installation path from changing the command.
+ */
+function quoteMergeDriverArgument(value: string): string {
+  return `'${value.replaceAll("'", `'\"'\"'`)}'`;
+}
+
+/** Resolve the installed CLI without relying on the collaborator's PATH. */
+function resolveMergeDriverCliCommand(): string {
+  const packageRoot = resolvePmPackageRootFromModule(import.meta.url, [
+    "../../..",
+  ]);
+  return `${quoteMergeDriverArgument(process.execPath)} ${quoteMergeDriverArgument(path.join(packageRoot, "dist", "cli.js"))}`;
+}
 
 const MERGE_DRIVER_DEFINITIONS = [
   {
@@ -467,6 +488,7 @@ export async function installMergeFence(options: {
     typeFolders,
   );
   const gitConfigEntries: Array<{ key: string; value: string }> = [];
+  const cliCommand = resolveMergeDriverCliCommand();
   for (const definition of MERGE_DRIVER_DEFINITIONS) {
     gitConfigEntries.push({
       key: `merge.${definition.key}.name`,
@@ -474,7 +496,7 @@ export async function installMergeFence(options: {
     });
     gitConfigEntries.push({
       key: `merge.${definition.key}.driver`,
-      value: `pm merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`,
+      value: `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`,
     });
   }
   if (!dryRun) {

@@ -247,6 +247,13 @@ pm test <item-id> --run --only-index 2
 pm test <item-id> --run --only-last
 ```
 
+Linked-command stdout and stderr are captured through temporary regular files,
+then read back with the 20 MiB per-stream retention bound. This keeps inherited
+descriptors blocking for Bun, Rust, and other runtimes that treat `EAGAIN` on a
+non-blocking stdout pipe as fatal. Output beyond the bound is drained to disk,
+the child still completes normally, and the result records a truncation notice
+instead of misclassifying a transport failure as a test assertion.
+
 Strict governance flags:
 
 ```bash

@@ -1856,6 +1856,7 @@ function detectLifecycleDependencyCycles(
 // structural corruption of the hierarchy.
 function buildLifecycleParentGraph(
   items: ItemWithBody[],
+  relationshipRegistry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): Map<string, string[]> {
   // PR #279 made parent matching case-insensitive (e.g. `parent: PM-FK49`
   // resolves to `id: pm-fk49`). Resolve parent references to their canonical
@@ -1864,12 +1865,14 @@ function buildLifecycleParentGraph(
   const canonicalIdByLowercase = new Map(
     items.map((item) => [item.id.toLowerCase(), item.id]),
   );
-  const graph = new Map<string, string[]>();
+  const graph = new Map<string, string[]>(
+    items.map((item) => [item.id, [] as string[]]),
+  );
   const sortedItems = [...items].sort((left, right) =>
     left.id.localeCompare(right.id),
   );
   for (const item of sortedItems) {
-    const edges: string[] = [];
+    const edges = graph.get(item.id)!;
     const parentId = toMeaningfulString(item.parent);
     const canonicalParentId = parentId
       ? canonicalIdByLowercase.get(parentId.toLowerCase())
@@ -1877,7 +1880,23 @@ function buildLifecycleParentGraph(
     if (canonicalParentId) {
       edges.push(canonicalParentId);
     }
-    graph.set(item.id, edges);
+    for (const dependency of item.dependencies ?? []) {
+      const definition = relationshipRegistry.resolve(dependency.kind);
+      if (!definition?.hierarchy) continue;
+      const target = canonicalIdByLowercase.get(dependency.id.toLowerCase());
+      if (!target) continue;
+      if (definition.hierarchyDirection === "source_parent") {
+        graph.get(target)!.push(item.id);
+      } else {
+        edges.push(target);
+      }
+    }
+  }
+  for (const [id, edges] of graph) {
+    graph.set(
+      id,
+      [...new Set(edges)].sort((left, right) => left.localeCompare(right)),
+    );
   }
   return graph;
 }
