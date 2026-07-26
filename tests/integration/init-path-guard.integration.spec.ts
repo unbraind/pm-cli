@@ -208,7 +208,7 @@ describe("init tracker-path guardrails", () => {
       expect(targetSettings.id_prefix).toBe("pm-");
       expect(targetSettings.author_default).toBe("sandbox-agent");
     });
-  });
+  }, 60_000);
 
   it("initializes an explicit workspace target under .agents/pm", async () => {
     await withTempPmPath(async (context) => {

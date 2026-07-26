@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Merged-main Windows init package acceptance exceeds generic Vitest timeout ([pm-0vkmqs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0vkmqs.toon))
 - GH-739: expose duplicate-cluster discovery as a first-class CLI and SDK workflow ([pm-n13lzc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n13lzc.toon))
 - PmClient activation queue serializes unrelated workspaces and extension-free actions ([pm-zpoyg9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpoyg9.toon))
 - GH-741: replace reference-identity service override claiming with an explicit observable contract ([pm-h3ipax](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h3ipax.toon))

@@ -1,0 +1,38 @@
+id: pm-0vkmqs
+title: Merged-main Windows init package acceptance exceeds generic Vitest timeout
+description: "Merged-main CI run 30220885849 failed only because the real init tracker-path acceptance test, including installation of all 15 bundled packages and subprocess list/context probes, completed in about 44.5 seconds on hosted Windows Node 24 under Vitest's generic 30-second ceiling. Preserve all functional assertions and assign the established 60-second installation-aware budget."
+type: Issue
+status: closed
+priority: 1
+tags[5]: ci,init,packages,regression-testing,windows
+created_at: "2026-07-26T21:28:31.812Z"
+updated_at: "2026-07-26T21:35:45.275Z"
+closed_at: "2026-07-26T21:35:41.327Z"
+author: "harness:codex"
+acceptance_criteria: The unchanged real init --with-packages acceptance assertions pass on hosted Windows Node 24; the complete exact-coverage corpus and mandatory quality gates remain green
+parent: pm-doxj
+risk: low
+confidence: high
+resolution: fixed
+expected_result: The real 15-package init acceptance completes successfully on supported hosted platforms without a false timeout.
+actual_result: "The unchanged real 15-package init acceptance passes locally; complete 375-file / 6,428-test corpus passes at exact 100/100/100/100, and all lint/static gates are green. Hosted Windows confirmation will be attached from the corrective PR exact head."
+component: Windows regression acceptance
+regression: true
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-2kkl,related,"2026-07-26T21:28:31.812Z",null,null
+  pm-b24b,related,"2026-07-26T21:28:31.812Z",null,null
+  pm-ph3i,related,"2026-07-26T21:28:31.812Z",null,null
+  pm-wo8,implements,"2026-07-26T21:28:31.812Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-26T21:28:31.812Z","harness:codex","Duplicate-check evidence: all-status searches for init path guard, Windows timeout, and regression lineage reviewed pm-ph3i, pm-wo8, pm-b24b, pm-2kkl, pm-xaib, pm-69nl, and pm-dprb. Each closed item documents shipped historical work; none tracks merged-main run 30220885849's current 44.5-second 15-package init acceptance timeout."
+  "2026-07-26T21:28:57.321Z","harness:codex","Root cause evidence: hosted job 89843116382 ran 54 files / 994 tests; 53 files passed, 991 tests passed, two skipped, and this one real multi-process 15-package init acceptance completed in 44.468 seconds after Vitest's 30-second generic limit. No product assertion failed. Canonical pm-ph3i establishes a 60-second explicit budget for genuine install acceptance on hosted Windows."
+  "2026-07-26T21:35:33.640Z","harness:codex","Local acceptance evidence: focused real sandbox test passed unchanged in 2.789 seconds; full mandatory lint passed ESLint with zero warnings, jscpd with zero clones, static quality with exact 100 percent docstrings, package boundary, token budgets, SDK surface, import costs, and CLI transport floors. Complete coverage passed 375 files / 6,428 tests at exact 100/100/100/100 (44,306 statements; 31,445 branches; 9,061 functions; 43,045 lines)."
+learnings[1]{created_at,author,text}:
+  "2026-07-26T21:35:34.454Z","harness:codex",Real package-install acceptance combines filesystem work and subprocess startup whose hosted Windows latency can legitimately exceed the generic unit-test ceiling. Preserve semantic assertions and scope an explicit budget to the external-work test only; never raise the suite-wide timeout.
+files[1]{path,scope,note}:
+  tests/integration/init-path-guard.integration.spec.ts,project,Install-aware timeout for real 15-package target-path acceptance
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,900,Complete exact 100 percent source coverage gate
+  "node scripts/run-tests.mjs test -- tests/integration/init-path-guard.integration.spec.ts -t \"treats path-like init positionals\"",project,120,Focused real init package acceptance
+close_reason: Fixed with an installation-aware 60-second Vitest timeout scoped only to the real 15-package init target-path acceptance; every functional assertion remains unchanged and all local mandatory gates pass.
+body: ""
