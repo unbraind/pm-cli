@@ -23,6 +23,7 @@ import {
   REMIND_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
+  DUPLICATES_FLAG_CONTRACTS,
   EXTENSION_FLAG_CONTRACTS,
   GRAPH_FLAG_CONTRACTS,
   GET_FLAG_CONTRACTS,
@@ -97,6 +98,7 @@ const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
 const NEXT_FLAGS = toCompletionFlagString(NEXT_FLAG_CONTRACTS);
 const DEPS_FLAGS = toCompletionFlagString(DEPS_FLAG_CONTRACTS);
+const DUPLICATES_FLAGS = toCompletionFlagString(DUPLICATES_FLAG_CONTRACTS);
 const GRAPH_FLAGS = toCompletionFlagString(GRAPH_FLAG_CONTRACTS);
 const GUIDE_FLAGS = toCompletionFlagString(GUIDE_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
@@ -146,6 +148,7 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
     "aggregate",
     "Aggregate grouped item counts and numeric stats for governance queries",
   ],
+  ["duplicates", "Find bounded duplicate clusters across lifecycle statuses"],
   ["guide", "Browse local progressive-disclosure guides"],
   ["calendar", "Show calendar views for deadlines and reminders"],
   ["cal", "Alias for calendar"],
@@ -737,6 +740,9 @@ export function generateBashScript(
     "    aggregate)",
     `      COMPREPLY=(${compgen(AGGREGATE_FLAGS)})`,
     "      ;;",
+    "    duplicates)",
+    `      COMPREPLY=(${compgen(DUPLICATES_FLAGS)})`,
+    "      ;;",
     "    create)",
     `      COMPREPLY=(${compgen(createFlags)})`,
     "      ;;",
@@ -1050,6 +1056,13 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--release[Filter by release]:release' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
+          ;;
+        duplicates)
+          _arguments \\
+            '--status[Include lifecycle status (repeatable)]:(${statusChoices})' \\
+            '--since[Only inspect items created at or after this ISO timestamp]:timestamp' \\
+            '--threshold[Minimum similarity score from zero through one]:number' \\
+            '--limit[Maximum duplicate clusters]:number'
           ;;
         create)
           _arguments \\

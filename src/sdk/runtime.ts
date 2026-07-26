@@ -28,6 +28,7 @@ import {
   deactivateExtensions,
   loadExtensions,
   runActiveCommandHandler,
+  runWithIsolatedExtensionRuntime,
   setActiveExtensionCommands,
   setActiveExtensionHooks,
   setActiveExtensionParsers,
@@ -214,6 +215,11 @@ import {
   type StatsCommandOptions,
   type StatsResult,
 } from "./stats.js";
+import {
+  runDuplicates,
+  type DuplicatesCommandOptions,
+  type DuplicatesResult,
+} from "./duplicates.js";
 import { runTelemetry } from "./telemetry.js";
 import { runTest } from "./test/execution.js";
 import { runTestAll } from "./test/batch.js";
@@ -495,6 +501,11 @@ export {
   type StatsResult,
 } from "./stats.js";
 export {
+  runDuplicates,
+  type DuplicatesCommandOptions,
+  type DuplicatesResult,
+} from "./duplicates.js";
+export {
   renderCalendarMarkdown,
   renderCalendarToon,
   resolveCalendarOutputFormat,
@@ -753,10 +764,10 @@ function splitFullClientMutationOptions(
 /**
  * Programmatic pm client for custom tools, CI jobs, bots, and embedded runtimes.
  *
- * Action execution shares the same process-wide extension activation queue used
- * by MCP. Concurrent calls from one process are serialized across extension
- * load, activation, dispatch, cleanup, and deactivate so active registries cannot
- * interleave.
+ * Extension registries are request-local, so calls that resolve workspaces from
+ * `pmRoot` can activate and dispatch concurrently without leaking registrations
+ * across clients. Calls with an explicit `cwd` remain serialized because
+ * `process.chdir` is process-global.
  *
  * Convenience methods accept command options only. Use {@link PmClient.run} for
  * per-call runtime overrides such as `cwd`, `path`, or `noExtensions`.
@@ -828,6 +839,13 @@ export class PmClient {
   /** Return project tracker statistics with the same sections as `pm stats`. */
   stats(options: StatsCommandOptions = {}): Promise<StatsResult> {
     return this.runTyped("stats", { options });
+  }
+
+  /** Discover existing duplicate clusters without mutating tracker state. */
+  duplicates(
+    options: DuplicatesCommandOptions = {},
+  ): Promise<DuplicatesResult> {
+    return this.runTyped("duplicates", { options });
   }
 
   /** List, add, edit, or delete item comments. */
@@ -1690,6 +1708,14 @@ export function stats(
   return new PmClient(clientOptions).stats(options);
 }
 
+/** Discover duplicate clusters without constructing a reusable client. */
+export function duplicates(
+  options: DuplicatesCommandOptions = {},
+  clientOptions: PmClientOptions = {},
+): Promise<DuplicatesResult> {
+  return new PmClient(clientOptions).duplicates(options);
+}
+
 /** List, add, edit, or delete item comments without constructing a reusable client. */
 export function comments(
   id: string,
@@ -2484,10 +2510,9 @@ function resetActiveExtensionRegistries(): void {
  * extension-contributed schema and profiles invisible over MCP for every built-in
  * action. Activation is skipped (`run` receives `null`) when extensions are disabled or
  * no workspace exists yet (for example `init`). EVERY action — activating or not — is
- * serialized on {@link extensionActivationQueue} so a built-in action's reads of the
- * process-global active registries can never interleave with another request's
- * activation cycle; per-request isolation therefore holds even if a truly concurrent
- * transport is added later (not just because the stdio transport is sequential today).
+ * isolated through an async-local registry context. Calls with an explicit `cwd`
+ * remain serialized because `process.chdir` is process-global; calls that use
+ * workspace/path arguments can activate independently without cross-request leakage.
  */
 async function withActiveExtensions<T>(
   global: GlobalOptions,
@@ -2495,18 +2520,13 @@ async function withActiveExtensions<T>(
   resolutionCwd: string,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
-  // Run the whole cycle on the queue so registry mutations never interleave. Only an
-  // EXPLICIT cwd mutates process.cwd() — pinned inside this serialized slot so the chdir
-  // can't be clobbered mid-flight and the built-in handler resolves against it too. A
-  // request without an explicit cwd runs in the server's current directory and never
-  // touches process.cwd() (important so concurrent direct callers can't corrupt a shared
-  // cwd). Either way activation resolves against resolutionCwd, the entry-time snapshot,
-  // so it never depends on a deferred process.cwd() read.
-  return extensionActivationQueue.enqueue(async () =>
+  return runWithIsolatedExtensionRuntime(() =>
     explicitCwd === undefined
-      ? await withActiveExtensionsExclusively(global, resolutionCwd, run)
-      : await withCwd(explicitCwd, () =>
-          withActiveExtensionsExclusively(global, resolutionCwd, run),
+      ? withActiveExtensionsExclusively(global, resolutionCwd, run)
+      : extensionActivationQueue.enqueue(() =>
+          withCwd(explicitCwd, () =>
+            withActiveExtensionsExclusively(global, resolutionCwd, run),
+          ),
         ),
   );
 }
@@ -2522,8 +2542,8 @@ export interface ActiveExtensionScopeOptions {
 }
 
 /**
- * Execute direct SDK work while workspace extensions are loaded, serialized, and
- * published to the active registries. Use this for SDK operations that bypass
+ * Execute direct SDK work while workspace extensions are loaded and published
+ * to request-local active registries. Use this for SDK operations that bypass
  * {@link runAction} but still create or update extension-owned item shapes.
  */
 export async function runWithActiveExtensions<T>(
@@ -2541,10 +2561,10 @@ export async function runWithActiveExtensions<T>(
 }
 
 /**
- * Body of the activation cycle. Must only ever run under {@link extensionActivationQueue}
- * (see {@link withActiveExtensions}): it is the exclusive owner of the process-global
- * active extension registries while it runs. Returns early with `run(null)` — still
- * inside the serialized critical section — when extensions are disabled or no workspace
+ * Body of one activation cycle. {@link withActiveExtensions} supplies an
+ * async-local registry context; explicit-cwd callers additionally hold the
+ * process-wide cwd queue. Returns early with `run(null)` when extensions are
+ * disabled or no workspace
  * exists yet, so those built-in actions also observe a stable (empty) registry. MCP and
  * PmClient callers reload + reactivate extensions per request, so each call is a fresh
  * cycle with teardown in a finally to release resources opened during activate() (the
@@ -3722,6 +3742,19 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   list: runMcpListAction,
   get: (ctx) => runGet(requireMcpItemId(ctx), ctx.global, ctx.options),
   search: runMcpSearchAction,
+  duplicates: (ctx) => {
+    const status = readStringArray(ctx.options.status);
+    return runDuplicates(ctx.global, {
+      ...(status.length === 0 ? {} : { status }),
+      since: readString(ctx.options, "since"),
+      threshold:
+        typeof ctx.options.threshold === "number"
+          ? ctx.options.threshold
+          : undefined,
+      limit:
+        typeof ctx.options.limit === "number" ? ctx.options.limit : undefined,
+    });
+  },
   create: runMcpCreateAction,
   copy: runMcpCopyAction,
   focus: (ctx) =>

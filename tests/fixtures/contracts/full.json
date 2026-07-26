@@ -171,6 +171,16 @@
       "requires_extension": false
     },
     {
+      "action": "duplicates",
+      "available": true,
+      "cli_exposed": false,
+      "command_path": null,
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "extension",
       "available": true,
       "cli_exposed": true,
@@ -869,6 +879,7 @@
     "delete",
     "deps",
     "docs",
+    "duplicates",
     "extension",
     "extension-activate",
     "extension-adopt",
@@ -2082,6 +2093,25 @@
         },
         {
           "flag": "--force"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "duplicates",
+      "flags": [
+        {
+          "flag": "--status",
+          "repeatable": true
+        },
+        {
+          "flag": "--since"
+        },
+        {
+          "flag": "--threshold"
+        },
+        {
+          "flag": "--limit"
         }
       ],
       "provider": "core"
@@ -8674,6 +8704,7 @@
     "delete",
     "deps",
     "docs",
+    "duplicates",
     "eval",
     "event",
     "events",
@@ -9957,7 +9988,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, next, history, history-redact, history-repair, history-compact, history-author-acknowledge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, graph, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, duplicates, next, history, history-redact, history-repair, history-compact, history-author-acknowledge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, graph, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions are available dynamically when their provider package is installed.",
             "type": "string"
           },
           "author": {
@@ -19673,6 +19704,95 @@
         "additionalProperties": false,
         "properties": {
           "action": {
+            "const": "duplicates",
+            "description": "Tool action to execute."
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Limit."
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "since": {
+            "description": "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
+            "examples": [
+              "2026-01-01T00:00:00.000Z"
+            ],
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "description": "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",
+            "examples": [
+              "open",
+              "in_progress"
+            ],
+            "type": "string"
+          },
+          "threshold": {
+            "description": "Minimum duplicate similarity score from zero through one.",
+            "examples": [
+              0.85
+            ],
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"duplicates\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
             "const": "next",
             "description": "Tool action to execute."
           },
@@ -26620,10 +26740,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.1.0"
+    "x-schema-version": "4.2.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.1.0",
+  "schema_version": "4.2.0",
   "selected": {
     "action": null,
     "availability_only": false,

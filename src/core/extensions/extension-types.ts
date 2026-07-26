@@ -499,8 +499,15 @@ export type ParserOverride = (
 export type PreflightOverride = (
   context: PreflightOverrideContext,
 ) => PreflightOverrideDelta | Promise<PreflightOverrideDelta>;
+/** Explicitly claims or declines one service payload without relying on object identity. */
+export type ServiceOverrideDecision =
+  | { handled: true; result: unknown }
+  | { handled: false };
+
 /** Restricts service override values accepted by command, SDK, and storage contracts. */
-export type ServiceOverride = (context: ServiceOverrideContext) => unknown;
+export type ServiceOverride = (
+  context: ServiceOverrideContext,
+) => unknown | ServiceOverrideDecision;
 
 /** Documents the registered extension hook payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredExtensionHook<THook> {
@@ -892,7 +899,7 @@ export interface SchemaMigrationDefinition {
 }
 
 /** Documents the import export context payload exchanged by command, SDK, and package integrations. */
-export interface ImportExportContext {
+export interface ImportExportContext extends PortableWorkspaceContext {
   /** Value that configures or reports registration for this contract. */
   registration: string;
   /** Value that configures or reports action for this contract. */
@@ -907,6 +914,8 @@ export interface ImportExportContext {
   global: GlobalOptions;
   /** Value that configures or reports pm root for this contract. */
   pm_root: string;
+  /** Host-bound SDK runtime for composing PM actions without spawning the CLI. */
+  sdk?: ExtensionCommandSdk;
 }
 
 /** Restricts importer values accepted by command, SDK, and storage contracts. */

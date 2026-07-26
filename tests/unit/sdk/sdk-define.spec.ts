@@ -21,6 +21,8 @@ import {
   defineSearchProvider,
   defineServiceOverride,
   defineVectorStoreAdapter,
+  declineServiceOverride,
+  handleServiceOverride,
 } from "../../../src/sdk/define.js";
 import {
   defineAfterCommandHook as defineAfterCommandHookFromBarrel,
@@ -44,6 +46,8 @@ import {
   defineSearchProvider as defineSearchProviderFromBarrel,
   defineServiceOverride as defineServiceOverrideFromBarrel,
   defineVectorStoreAdapter as defineVectorStoreAdapterFromBarrel,
+  declineServiceOverride as declineServiceOverrideFromBarrel,
+  handleServiceOverride as handleServiceOverrideFromBarrel,
   type ExtensionApi,
 } from "../../../src/sdk/index.js";
 import {
@@ -155,6 +159,14 @@ describe("sdk define builders", () => {
     expect(defineOnWriteHookFromBarrel).toBe(defineOnWriteHook);
     expect(defineOnReadHookFromBarrel).toBe(defineOnReadHook);
     expect(defineOnIndexHookFromBarrel).toBe(defineOnIndexHook);
+    expect(declineServiceOverrideFromBarrel).toBe(declineServiceOverride);
+    expect(handleServiceOverrideFromBarrel).toBe(handleServiceOverride);
+    expect(declineServiceOverride()).toEqual({ handled: false });
+    const result = { rendered: true };
+    expect(handleServiceOverride(result)).toEqual({
+      handled: true,
+      result,
+    });
   });
 
   it("authors definitions that register and run through the activation harness", async () => {

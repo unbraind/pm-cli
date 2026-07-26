@@ -2,17 +2,37 @@ id: pm-lnswp0
 title: "GH-738: publish the machine-readable public SDK surface snapshot with the package"
 description: "GitHub: https://github.com/unbraind/pm-cli/issues/738. The shipped SDK documentation directs consumers to tests/fixtures/sdk/public-surface.json, but the npm files allowlist excludes tests. Define a stable published snapshot location/export, package it, update docs, and prove packed consumers can read the exact public surface."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T12:13:26.602Z"
-updated_at: "2026-07-26T12:13:26.602Z"
+updated_at: "2026-07-26T19:49:03.775Z"
+closed_at: "2026-07-26T19:43:21.111Z"
+claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
 acceptance_criteria: Packed npm and bun consumers can resolve a documented machine-readable public SDK surface artifact; package files and docs agree; public-surface drift gates validate the shipped artifact.
 parent: pm-usfg
-dependencies[2]{id,kind,created_at,author,source_kind}:
+resolution: Stable package JSON export for the generated public SDK surface shipped.
+expected_result: Packed consumers can resolve a documented machine-readable SDK surface artifact.
+actual_result: Fresh unrelated-prefix consumers resolve ./sdk/public-surface.json schema v2 and its zero-missing aggregate census.
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-38bskj,related,"2026-07-26T12:13:26.602Z",null,null
   pm-e6tm5c,discovered_from,"2026-07-26T12:13:26.602Z",null,null
-comments[1]{created_at,author,text}:
+  pm-e6tm5c,verifies,"2026-07-26T19:12:04.673Z",null,null
+comments[3]{created_at,author,text}:
   "2026-07-26T12:13:26.602Z","harness:codex","Duplicate check 2026-07-26: searched all statuses for GH-738, public surface fixture package, snapshot packaging, and tests fixture publication. Closed pm-e6tm5c owns snapshot integrity and pm-38bskj owns capability tiering, but neither tracks npm omission; this is the canonical packaging child."
+  "2026-07-26T19:42:51.935Z","harness:codex","Evidence: package exports and files now publish ./sdk/public-surface.json from the canonical generated fixture. A fresh unrelated npm prefix resolved the packed artifact and SDK entrypoints without workspace links; schema v2 reported zero aggregate omissions. Linked package-boundary tests passed; full coverage and static gates are green."
+  "2026-07-26T19:49:03.774Z","harness:codex","Installed-package acceptance: npm pack produced the 9.3 MB package; a fresh Bun 1.3.11 project installed that tarball, local bunx --bun pm --version returned 2026.7.26, and Bun imported @unbrained/pm-cli/sdk/public-surface.json directly at schema v2."
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
+  package.json,project,published JSON subpath and package allowlist
+  tests/fixtures/sdk/public-surface.json,project,shipped compatibility artifact
+  tests/unit/scripts/release/static-quality-package-exports.spec.ts,project,package export boundary proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-package-exports.spec.ts tests/integration/smoke-pack-cleanup.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms27f1pb-69g1xy,test,passed,"2026-07-26T19:41:38.637Z","2026-07-26T19:41:47.231Z","2026-07-26T19:41:47.231Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,consumer import coordinate
+close_reason: Published the machine-readable SDK surface as a stable package export with packed Node/Bun-compatible consumer proof and drift gates.
 body: ""

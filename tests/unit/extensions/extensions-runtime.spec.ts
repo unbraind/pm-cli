@@ -4,6 +4,9 @@ import {
   runActiveCommandHandler,
   clearActiveExtensionHooks,
   consumeAfterCommandAffectedItems,
+  getActiveCommandResult,
+  getActiveExtensionRegistrations,
+  hasActiveOnReadHooks,
   projectAfterCommandItemSnapshot,
   recordAfterCommandAffectedItem,
   runActiveCommandOverride,
@@ -15,13 +18,17 @@ import {
   runActiveServiceOverrideSync,
   runActiveOnWriteHooks,
   runActiveRendererOverride,
+  runWithIsolatedExtensionRuntime,
+  resetActiveExtensionRuntimeState,
   setActiveCommandContext,
   setActiveExtensionCommands,
   setActiveExtensionHooks,
   setActiveExtensionParsers,
   setActiveExtensionPreflight,
   setActiveExtensionRenderers,
+  setActiveExtensionRegistrations,
   setActiveExtensionServices,
+  setActiveCommandResult,
   type ExtensionHookRegistry,
 } from "../../../src/core/extensions/index.js";
 import {
@@ -193,6 +200,188 @@ describe("core/extensions runtime wrappers", () => {
         total_items: 0,
       }),
     ).toEqual([]);
+  });
+
+  it("isolates concurrent embedded extension registries from module-level CLI state", async () => {
+    setActiveExtensionCommands({
+      overrides: [],
+      handlers: [
+        {
+          layer: "project",
+          name: "cli-global",
+          command: "identify",
+          run: () => "global",
+        },
+      ],
+    });
+    let releaseFirst: (() => void) | undefined;
+    const firstReady = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const first = runWithIsolatedExtensionRuntime(async () => {
+      setActiveExtensionCommands({
+        overrides: [],
+        handlers: [
+          {
+            layer: "project",
+            name: "workspace-one",
+            command: "identify",
+            run: async () => {
+              await firstReady;
+              return "one";
+            },
+          },
+        ],
+      });
+      return runActiveCommandHandler({
+        command: "identify",
+        args: [],
+        options: {},
+        global: {},
+        pm_root: "/tmp/one",
+      });
+    });
+    const second = runWithIsolatedExtensionRuntime(async () => {
+      setActiveExtensionCommands({
+        overrides: [],
+        handlers: [
+          {
+            layer: "project",
+            name: "workspace-two",
+            command: "identify",
+            run: () => "two",
+          },
+        ],
+      });
+      const result = await runActiveCommandHandler({
+        command: "identify",
+        args: [],
+        options: {},
+        global: {},
+        pm_root: "/tmp/two",
+      });
+      releaseFirst?.();
+      return result;
+    });
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      { handled: true, result: "one", warnings: [] },
+      { handled: true, result: "two", warnings: [] },
+    ]);
+    await expect(
+      runWithIsolatedExtensionRuntime(() =>
+        runActiveCommandHandler({
+          command: "identify",
+          args: [],
+          options: {},
+          global: {},
+          pm_root: "/tmp/isolated-empty",
+        }),
+      ),
+    ).resolves.toEqual({ handled: false, result: null, warnings: [] });
+  });
+
+  it("resets every request-local registry and transient result without touching fallback state", async () => {
+    await runWithIsolatedExtensionRuntime(async () => {
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [],
+        onRead: [],
+        onIndex: [],
+      });
+      expect(hasActiveOnReadHooks()).toBe(false);
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [],
+        onRead: [
+          { layer: "project", name: "local-read", run: () => undefined },
+        ],
+        onIndex: [],
+      });
+      expect(hasActiveOnReadHooks()).toBe(true);
+      setActiveExtensionCommands({ overrides: [], handlers: [] });
+      setActiveExtensionParsers({ overrides: [] });
+      setActiveExtensionPreflight({ overrides: [] });
+      setActiveExtensionServices({ overrides: [] });
+      setActiveExtensionRenderers({ overrides: [] });
+      expect(
+        runActiveServiceOverrideSync("output_format", "local"),
+      ).toEqual({ handled: false, result: "local", warnings: [] });
+      expect(runActiveRendererOverride("json", { local: true })).toEqual({
+        overridden: false,
+        rendered: null,
+        warnings: [],
+      });
+      setActiveExtensionRegistrations({
+        commands: [],
+        flags: [],
+        item_fields: [],
+        item_types: [],
+        relationship_kinds: [],
+        migrations: [],
+        profiles: [],
+        importers: [],
+        exporters: [],
+        search_providers: [],
+        vector_store_adapters: [],
+      });
+      setActiveCommandContext({
+        command: "list",
+        args: [],
+        options: {},
+        global: {},
+        pm_root: "/tmp/request-local",
+      });
+      expect(runActiveCommandOverride({ ok: true })).toEqual({
+        overridden: false,
+        result: { ok: true },
+        warnings: [],
+      });
+      const global = {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      };
+      await expect(
+        runActiveParserOverride({
+          command: "list",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/request-local",
+        }),
+      ).resolves.toMatchObject({ overridden: false, warnings: [] });
+      await expect(
+        runActivePreflightOverride({
+          command: "list",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/request-local",
+          decision: {
+            enforce_item_format_gate: true,
+            run_preflight_item_format_sync: true,
+            run_extension_migrations: true,
+            enforce_mandatory_migration_gate: true,
+          },
+        }),
+      ).resolves.toMatchObject({ overridden: false, warnings: [] });
+      setActiveCommandResult({ ok: true });
+      recordAfterCommandAffectedItem({ id: "pm-local", op: "update" });
+      expect(getActiveExtensionRegistrations()).not.toBeNull();
+      expect(getActiveCommandResult()).toEqual({ ok: true });
+      expect(consumeAfterCommandAffectedItems()).toEqual([
+        { id: "pm-local", op: "update" },
+      ]);
+      resetActiveExtensionRuntimeState();
+      expect(getActiveExtensionRegistrations()).toBeNull();
+      expect(getActiveCommandResult()).toBeNull();
+      expect(consumeAfterCommandAffectedItems()).toBeUndefined();
+      clearActiveExtensionHooks();
+      expect(getActiveCommandResult()).toBeUndefined();
+    });
   });
 
   it("dispatches active onRead/onWrite/onIndex hooks", async () => {
@@ -1079,6 +1268,29 @@ describe("core/extensions runtime wrappers", () => {
           payload: "base",
         },
       ),
+    ).toEqual({ handled: true, result: "base", warnings: [] });
+    expect(
+      runServiceOverrideSync(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "explicit-noop-output",
+              service: "output_format",
+              run: () => ({ handled: false }),
+            },
+          ],
+        },
+        {
+          service: "output_format",
+          command: "list-open",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+          payload: "base",
+        },
+      ),
     ).toEqual({ handled: false, result: "base", warnings: [] });
     expect(
       runServiceOverrideSync(
@@ -1118,6 +1330,21 @@ describe("core/extensions runtime wrappers", () => {
         { service: "output_format", pm_root: "/tmp/project", payload: "base" },
       ),
     ).toEqual({ handled: false, result: "base", warnings: [] });
+    expect(
+      await runServiceOverride(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "explicit-output",
+              service: "output_format",
+              run: () => ({ handled: true, result: "explicit" }),
+            },
+          ],
+        },
+        { service: "output_format", pm_root: "/tmp/project", payload: "base" },
+      ),
+    ).toEqual({ handled: true, result: "explicit", warnings: [] });
     expect(
       await runServiceOverride(
         {

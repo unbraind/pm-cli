@@ -35,6 +35,7 @@ vi.mock("../../../src/cli/commands/test-runs.js", () => ({
 }));
 vi.mock("../../../src/cli/commands/telemetry.js", () => ({ runTelemetry: vi.fn() }));
 vi.mock("../../../src/cli/commands/stats.js", () => ({ runStats: vi.fn() }));
+vi.mock("../../../src/cli/commands/duplicates.js", () => ({ runDuplicates: vi.fn() }));
 vi.mock("../../../src/cli/commands/health.js", () => ({ runHealth: vi.fn() }));
 vi.mock("../../../src/cli/commands/validate.js", () => ({ runValidate: vi.fn() }));
 vi.mock("../../../src/cli/commands/gc.js", () => ({ runGc: vi.fn() }));
@@ -176,6 +177,7 @@ import { runTestAll } from "../../../src/cli/commands/test-all.js";
 import { runStartBackgroundRun, runTestRunsWorker } from "../../../src/cli/commands/test-runs.js";
 import { runTelemetry } from "../../../src/cli/commands/telemetry.js";
 import { runStats } from "../../../src/cli/commands/stats.js";
+import { runDuplicates } from "../../../src/cli/commands/duplicates.js";
 import { runHealth } from "../../../src/cli/commands/health.js";
 import { runValidate } from "../../../src/cli/commands/validate.js";
 import { runGc } from "../../../src/cli/commands/gc.js";
@@ -326,6 +328,7 @@ beforeEach(() => {
   vi.mocked(runTestRunsWorker).mockResolvedValue(undefined as never);
   vi.mocked(runTelemetry).mockResolvedValue({ status: "ok" } as never);
   vi.mocked(runStats).mockResolvedValue({ totals: {} } as never);
+  vi.mocked(runDuplicates).mockResolvedValue({ count: 0, clusters: [] } as never);
   vi.mocked(runHealth).mockResolvedValue({ ok: true, warnings: [] } as never);
   vi.mocked(runValidate).mockResolvedValue({ ok: true, has_warnings: false } as never);
   vi.mocked(runGc).mockResolvedValue({ removed: [] } as never);
@@ -392,7 +395,7 @@ describe("register modules command surface", () => {
     for (const expected of [
       "list", "list-all", "list-draft", "list-open", "list-in-progress", "list-blocked",
       "list-closed", "list-canceled", "aggregate", "context", "search", "get", "history",
-      "activity", "test", "test-all", "test-runs-worker", "telemetry", "stats", "health",
+      "activity", "test", "test-all", "test-runs-worker", "telemetry", "stats", "duplicates", "health",
       "validate", "gc", "contracts", "claim", "release", "start-task", "pause-task",
       "close-task", "create", "copy", "update", "update-many", "close", "close-many",
       "delete", "append", "restore", "plan", "history-redact", "history-repair",
@@ -974,6 +977,40 @@ describe("operation command actions", () => {
     expect(contractsOptions.command).toBe("create");
     expect(contractsOptions.flagsOnly).toBe(true);
     expect(contractsOptions.runtimeOnly).toBe(true);
+  });
+
+  it("maps bounded duplicate discovery options and profile output", async () => {
+    await runCliRaw("--quiet", "duplicates");
+    expect(vi.mocked(runDuplicates)).toHaveBeenLastCalledWith(
+      expect.anything(),
+      {
+        status: undefined,
+        since: undefined,
+      },
+    );
+    await runCli(
+      "duplicates",
+      "--status",
+      "open",
+      "--status",
+      "closed",
+      "--since",
+      "2026-01-01T00:00:00.000Z",
+      "--threshold",
+      "0.9",
+      "--limit",
+      "12",
+      "--profile",
+    );
+    expect(vi.mocked(runDuplicates)).toHaveBeenLastCalledWith(
+      expect.anything(),
+      {
+        status: ["open", "closed"],
+        since: "2026-01-01T00:00:00.000Z",
+        threshold: 0.9,
+        limit: 12,
+      },
+    );
   });
 
   it("maps merge installer and driver actions including conflicts and usage errors", async () => {

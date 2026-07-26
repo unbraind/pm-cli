@@ -3030,6 +3030,10 @@ class ExtensionApiRegistrar implements ExtensionApi {
           options: cloneContextSnapshot(context.options),
           global: cloneContextSnapshot(context.global),
           pm_root: context.pm_root,
+          source_workspace_root: context.source_workspace_root,
+          repo_root: context.repo_root,
+          pm_root_rel: context.pm_root_rel,
+          ...(context.sdk === undefined ? {} : { sdk: context.sdk }),
         }),
     });
   }
@@ -3083,6 +3087,10 @@ class ExtensionApiRegistrar implements ExtensionApi {
           options: cloneContextSnapshot(context.options),
           global: cloneContextSnapshot(context.global),
           pm_root: context.pm_root,
+          source_workspace_root: context.source_workspace_root,
+          repo_root: context.repo_root,
+          pm_root_rel: context.pm_root_rel,
+          ...(context.sdk === undefined ? {} : { sdk: context.sdk }),
         }),
     });
   }

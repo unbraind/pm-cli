@@ -228,11 +228,14 @@ export type {
   CommanderOptionRegistrationContract,
 } from "./cli-contracts.js";
 export {
+  ACTIVITY_FLAG_CONTRACTS,
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
+  AGGREGATE_FLAG_CONTRACTS,
   APPEND_FLAG_CONTRACTS,
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
   CLAIM_FLAG_CONTRACTS,
+  CLOSE_ACTION_OPTION_KEYS,
   CLOSE_FLAG_CONTRACTS,
   CLOSE_MANY_FLAG_CONTRACTS,
   CLOSE_TASK_FLAG_CONTRACTS,
@@ -251,6 +254,7 @@ export {
   DEPS_FLAG_CONTRACTS,
   DOCS_FLAG_CONTRACTS,
   EVAL_FLAG_CONTRACTS,
+  EVENT_FLAG_CONTRACTS,
   EXTENSION_ACTIVATE_FLAG_CONTRACTS,
   EXTENSION_ADOPT_ALL_FLAG_CONTRACTS,
   EXTENSION_ADOPT_FLAG_CONTRACTS,
@@ -270,6 +274,7 @@ export {
   FOCUS_FLAG_CONTRACTS,
   GC_FLAG_CONTRACTS,
   GET_FLAG_CONTRACTS,
+  GRAPH_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   GUIDE_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
@@ -280,16 +285,19 @@ export {
   HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
   INSTALL_FLAG_CONTRACTS,
+  ITEM_MUTATE_FLAG_CONTRACTS,
   LEARNINGS_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
   MEET_FLAG_CONTRACTS,
+  MERGE_FLAG_CONTRACTS,
   NEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
   NOTES_FLAG_CONTRACTS,
   PACKAGE_FLAG_CONTRACTS,
   PACKAGE_INIT_FLAG_CONTRACTS,
   PAUSE_TASK_FLAG_CONTRACTS,
+  PLAN_CREATE_METADATA_PARAMETER_KEYS,
   PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_EXTENSION_CAPABILITY_CONTRACTS,
@@ -315,6 +323,7 @@ export {
   SEARCH_FLAG_CONTRACTS,
   START_TASK_FLAG_CONTRACTS,
   STATS_FLAG_CONTRACTS,
+  DUPLICATES_FLAG_CONTRACTS,
   SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
   TELEMETRY_FLAG_CONTRACTS,
   TEST_ALL_FLAG_CONTRACTS,
@@ -322,22 +331,28 @@ export {
   TEST_RUNS_FLAG_CONTRACTS,
   TOOL_ACTIVITY_OPTION_CONTRACTS,
   TOOL_AGGREGATE_OPTION_CONTRACTS,
+  TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE,
   TOOL_CALENDAR_OPTION_CONTRACTS,
   TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS,
   TOOL_CONTEXT_OPTION_CONTRACTS,
   TOOL_CREATE_OPTION_CONTRACTS,
+  TOOL_CREATE_OPTION_CONTRACT_SOURCE,
   TOOL_DEPS_OPTION_CONTRACTS,
+  TOOL_GRAPH_OPTION_CONTRACTS,
   TOOL_LIST_FILTER_OPTION_CONTRACTS,
   TOOL_SEARCH_FILTER_OPTION_CONTRACTS,
   TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS,
+  TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE,
   TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS,
   TOOL_UPDATE_OPTION_CONTRACTS,
+  TOOL_UPDATE_OPTION_CONTRACT_SOURCE,
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
   UPGRADE_FLAG_CONTRACTS,
+  VALIDATE_FLAG_CONTRACTS,
   compactFlagAliasContracts,
   isPmExtensionCapabilityContract,
   isPmExtensionPolicyModeContract,
@@ -381,6 +396,7 @@ export * from "./workspace-memory.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";
 export * from "./dependency-provenance.js";
+export * from "./duplicates.js";
 export * from "./history-compact.js";
 export * from "./history-read.js";
 export * from "./mutation-events.js";
@@ -395,6 +411,7 @@ export {
   type WorkspaceJsonWriteOptions,
 } from "../core/history/workspace-history.js";
 export * from "./history-redact.js";
+export { _testOnly } from "./history-redact.js";
 export * from "./history-repair.js";
 export * from "./item-children.js";
 export * from "./item-schedule.js";
@@ -587,6 +604,7 @@ export {
   deleteItem,
   deps,
   docs,
+  duplicates,
   extension,
   extensionActivate,
   extensionDeactivate,
@@ -816,6 +834,34 @@ export {
   type WorkspaceContracts,
   type WorkspaceContractsOptions,
 } from "./runtime.js";
+export {
+  CONTEXT_OUTPUT_VALUES,
+  NEXT_OUTPUT_VALUES,
+  PM_GITIGNORE_END,
+  PM_GITIGNORE_START,
+  analyzeSdkActionCoverage,
+  ensurePmGitignore,
+  getPmGitignoreBlock,
+  runAggregate,
+  runClose,
+  runContext,
+  runGet,
+  runNext,
+  runUpdate,
+  type CloseCommandOptions,
+  type EnsurePmGitignoreResult,
+  type HierarchyChild,
+  type HierarchyNode,
+  type HotFile,
+  type ImportPriorityValue,
+  type ProgressEntry,
+  type RecentContextItem,
+  type SdkActionCoverageRow,
+  type StaleEntry,
+  type TestHealthSummary,
+  type UpdateCommandOptions,
+  type WorkloadEntry,
+} from "./runtime.js";
 export { runStats } from "./stats.js";
 export {
   DEFAULT_EVAL_QUERIES_RELATIVE_PATH,
@@ -918,6 +964,8 @@ export {
   type ProjectProfileLintReport,
 } from "../core/profile/profile-lint.js";
 export * from "./authoring.js";
+export * from "./governance.js";
+export * from "./query.js";
 export * from "./testing.js";
 
 export type { GlobalOptions } from "../core/shared/command-types.js";

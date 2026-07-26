@@ -205,6 +205,7 @@ export const PM_TOOL_ACTIONS = [
   "ctx",
   "get",
   "search",
+  "duplicates",
   "next",
   "history",
   "history-redact",

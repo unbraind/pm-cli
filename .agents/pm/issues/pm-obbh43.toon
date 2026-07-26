@@ -2,21 +2,42 @@ id: pm-obbh43
 title: "GH-740: make the documented aggregate SDK barrel complete and continuously derived"
 description: "GitHub: https://github.com/unbraind/pm-cli/issues/740. The documented @unbrained/pm-cli/sdk compatibility aggregate omits 45 supported exports present on contracts, governance, query, and runtime subpaths. Restore the public contract or explicitly govern exclusions, and derive a CI assertion from the live subpath surface so drift cannot recur."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:sdk",compatibility,contracts,github-issue
 created_at: "2026-07-26T12:46:31.198Z"
-updated_at: "2026-07-26T12:46:31.198Z"
+updated_at: "2026-07-26T19:49:04.543Z"
+closed_at: "2026-07-26T19:43:14.162Z"
+claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
 acceptance_criteria: "Every supported non-test export from declared SDK subpaths is reachable from the aggregate barrel or appears in an explicit reviewed exclusion contract with a reason; docs match runtime truth; a derived negative-control gate fails when a subpath-only export is introduced; packed Node and Bun consumers compile representative query, contracts, governance, and runtime imports from the documented aggregate."
 goal: project management = context management
 objective: The aggregate SDK entrypoint is a truthful compatibility surface
 parent: pm-usfg
-dependencies[4]{id,kind,created_at,author,source_kind}:
+resolution: Derived aggregate completeness gate and explicit exclusion contract shipped.
+expected_result: Every supported SDK subpath export is available from the documented aggregate or explicitly excluded with rationale.
+actual_result: "Aggregate exposes 954 supported symbols, reports zero missing exports, and the packed consumer plus negative-control gate pass."
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-38bskj,related,"2026-07-26T12:46:31.198Z",null,null
   pm-e6tm5c,discovered_from,"2026-07-26T12:46:31.198Z",null,null
   pm-lnswp0,related,"2026-07-26T12:46:31.198Z",null,null
   pm-te6elw,related,"2026-07-26T12:46:31.198Z",null,null
-comments[1]{created_at,author,text}:
+  pm-e6tm5c,implements,"2026-07-26T19:12:03.773Z",null,null
+comments[3]{created_at,author,text}:
   "2026-07-26T12:46:31.198Z","harness:codex","Duplicate check 2026-07-26: searched every status for aggregate barrel completeness, 45 missing exports, SDK query/contracts/runtime/governance exports, and snapshot parity. Closed pm-e6tm5c governs per-entrypoint surface drift, pm-38bskj governs tiering, pm-lnswp0 governs snapshot packaging, and pm-te6elw governs action reachability; none owns cross-entrypoint aggregate completeness, so this is the canonical GH-740 child."
+  "2026-07-26T19:42:51.095Z","harness:codex","Evidence: completed a derived SDK aggregate census over all supported contracts, governance, query, and runtime exports. The aggregate now exposes every supported non-test symbol; the only exclusion is the documented private test hook. Snapshot schema v2 fails closed on missing aggregate symbols and packed consumer proof resolved 954 aggregate exports with zero missing symbols. Linked test passed; full repository coverage passed 6,425 tests at exact 100/100/100/100; lint/static gates are green."
+  "2026-07-26T19:49:04.543Z","harness:codex","Installed-package acceptance: the fresh Bun consumer read aggregate_completeness with 1,217 covered symbols and zero missing; the unrelated npm-prefix acceptance independently resolved 954 runtime aggregate exports and zero omissions."
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
+  scripts/sdk-surface-snapshot.mjs,project,derived completeness gate
+  src/sdk/index.ts,project,aggregate SDK barrel completeness
+  tests/fixtures/sdk/public-surface.json,project,semantic surface census
+  tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,negative and snapshot gate coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms27fcuo-8z5trx,test,passed,"2026-07-26T19:41:48.220Z","2026-07-26T19:42:01.680Z","2026-07-26T19:42:01.680Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,aggregate completeness and published surface guidance
+close_reason: "Completed derived aggregate SDK completeness with explicit exclusions, packed consumer proof, documentation, negative controls, and exact 100% coverage."
 body: ""

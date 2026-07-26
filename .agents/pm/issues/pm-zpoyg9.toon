@@ -2,28 +2,46 @@ id: pm-zpoyg9
 title: PmClient activation queue serializes unrelated workspaces and extension-free actions
 description: "GH-742: replace process-wide SDK activation serialization with request/workspace-scoped safety so independent embedded tenants can execute concurrently."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: concurrency,extensions,"gh:742",multi-tenant,performance,sdk
 created_at: "2026-07-26T13:14:50.610Z"
-updated_at: "2026-07-26T13:14:50.610Z"
+updated_at: "2026-07-26T19:45:03.826Z"
+closed_at: "2026-07-26T19:43:34.863Z"
+claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
 acceptance_criteria: noExtensions built-in actions bypass global activation serialization; independent workspace/request registries execute concurrently without cross-request leakage; shared legacy global-state activation remains safely serialized or explicitly configured; deterministic concurrency tests prove both non-blocking and isolation; public SDK docs state the concurrency contract
 parent: pm-dj98
 severity: high
 environment: Node embedded multi-workspace hosts
 repro_steps: Run a delayed PmClient action for workspace A concurrently with a built-in noExtensions list/get for workspace B; B waits behind the module-global activation queue.
+resolution: AsyncLocalStorage request isolation replaces shared embedded runtime state while explicit cwd mutation remains serialized.
 expected_result: Extension-free actions and independent workspace activation contexts execute concurrently while genuinely shared unsafe extension state remains isolated.
-actual_result: "Every PmClient.run call enters one process-wide activation queue, coupling unrelated workspace latency and making each process single-flight."
+actual_result: "Independent no-cwd PmClient actions overlap without registry, command-result, or affected-item leakage; explicit cwd calls retain process safety."
 affected_version: 2026.7.26
 component: SDK runtime activation
 customer_impact: Multi-user embedded hosts suffer cross-tenant head-of-line blocking and throughput bounded by one SDK action at a time per process.
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-bl6m,discovered_from,"2026-07-26T13:14:50.610Z",null,null
   pm-o87av6,verifies,"2026-07-26T13:14:50.610Z",null,null
   pm-szv11n,implements,"2026-07-26T13:14:50.610Z",null,null
   pm-ugqx,related,"2026-07-26T13:14:50.610Z",null,null
   pm-w7mqzt,related,"2026-07-26T13:14:50.610Z",null,null
-comments[1]{created_at,author,text}:
+  pm-bl6m,implements,"2026-07-26T19:12:06.545Z",null,null
+comments[2]{created_at,author,text}:
   "2026-07-26T13:14:50.610Z","harness:codex","Duplicate evidence 2026-07-26: all-status exact/keyword searches for PmClient process-wide activation queue, unrelated workspaces, multi-user hosts, extension activation concurrency, and registry serialization found no matching open or closed item. Closed pm-bl6m is the MCP request-scoped-registry precursor, not this PmClient cross-workspace throughput defect. Canonical GitHub issue: GH-742."
+  "2026-07-26T19:42:53.788Z","harness:codex","Evidence: extension runtime registries, command context/result, and affected-item state are request-local through AsyncLocalStorage. PmClient calls without explicit cwd run concurrently while explicit cwd remains serialized around process.chdir. The MCP integration proves two overlapping delayed actions both start, the fast action completes first, and no registry/result state leaks. Linked tests passed; full coverage and static gates are green."
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
+  src/core/extensions/index.ts,project,async-local extension runtime state
+  src/sdk/runtime.ts,project,concurrent embedded activation routing
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,real concurrent extension action proof
+  tests/unit/extensions/extensions-runtime.spec.ts,project,request isolation negative controls
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms27eij4-ec4cg5,test,passed,"2026-07-26T19:41:02.066Z","2026-07-26T19:41:22.384Z","2026-07-26T19:41:22.384Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,PmClient concurrency and cwd boundary
+close_reason: Replaced process-global embedded request state with AsyncLocalStorage isolation and proved safe concurrent independent SDK actions.
 body: ""

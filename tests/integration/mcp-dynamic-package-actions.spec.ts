@@ -1027,7 +1027,7 @@ describe("MCP dynamic package actions", () => {
     });
   });
 
-  it("serializes concurrent native extension actions so registries cannot cross-corrupt (pm-bl6m)", async () => {
+  it("isolates concurrent native extension actions without cross-corrupting registries (pm-bl6m, pm-zpoyg9)", async () => {
     await withTempPmPath(async (context) => {
       const logPath = path.join(context.tempRoot, "registry-concurrency.log");
       await writeTestExtension({
@@ -1046,6 +1046,11 @@ describe("MCP dynamic package actions", () => {
           "        description: 'Registry concurrency probe command.',",
           "        run: async () => {",
           "          fs.appendFileSync(logPath, 'start:' + probe.name + '\\n', 'utf8');",
+          "          for (let attempt = 0; attempt < 100; attempt += 1) {",
+          "            const starts = fs.readFileSync(logPath, 'utf8').split('\\n').filter((line) => line.startsWith('start:')).length;",
+          "            if (starts === 2) break;",
+          "            await delay(5);",
+          "          }",
           "          await delay(probe.wait);",
           "          fs.appendFileSync(logPath, 'end:' + probe.name + '\\n', 'utf8');",
           "          return { ok: true, marker: probe.name };",
@@ -1069,10 +1074,9 @@ describe("MCP dynamic package actions", () => {
           },
         });
 
-      // Fire both dynamic extension actions WITHOUT awaiting the first: the slow
-      // handler is still mid-await when the fast request arrives. Pre-serialization
-      // the fast request would overwrite the process-global registries mid-flight
-      // and clear them before the slow handler finished (interleaved log below).
+      // Fire both actions without awaiting the first. Each handler waits until
+      // both have started, proving unrelated request-local registries can remain
+      // active concurrently without cross-corruption.
       const [slow, fast] = await Promise.all([invoke(40, "probe-slow"), invoke(41, "probe-fast")]);
 
       expect(slow?.isError).not.toBe(true);
@@ -1082,14 +1086,12 @@ describe("MCP dynamic package actions", () => {
       expect(slowResult).toMatchObject({ ok: true, marker: "probe-slow" });
       expect(fastResult).toMatchObject({ ok: true, marker: "probe-fast" });
 
-      // Each set-globals -> run handler -> clear-globals cycle must be atomic:
-      // one probe's start/end pair fully precedes the other's, in either order.
       const log = (await readFile(logPath, "utf8")).trim().split("\n");
       expect(log).toHaveLength(4);
-      expect([
-        "start:probe-slow,end:probe-slow,start:probe-fast,end:probe-fast",
-        "start:probe-fast,end:probe-fast,start:probe-slow,end:probe-slow",
-      ]).toContain(log.join(","));
+      expect(new Set(log.slice(0, 2))).toEqual(
+        new Set(["start:probe-slow", "start:probe-fast"]),
+      );
+      expect(log.slice(2)).toEqual(["end:probe-fast", "end:probe-slow"]);
     });
   });
 

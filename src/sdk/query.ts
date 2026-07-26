@@ -17,3 +17,4 @@ export * from "./context-relevance.js";
 export * from "./context-signal-store.js";
 export * from "./context-usage.js";
 export * from "./workspace-memory.js";
+export * from "./duplicates.js";

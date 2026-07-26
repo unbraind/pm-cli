@@ -223,6 +223,7 @@ export { runSearch } from "./search.js";
 export { runEval } from "./eval.js";
 export { runRestore } from "./restore.js";
 export { runStats } from "./stats.js";
+export { runDuplicates } from "./duplicates.js";
 export {
   runTelemetry,
   TELEMETRY_SUBCOMMANDS,

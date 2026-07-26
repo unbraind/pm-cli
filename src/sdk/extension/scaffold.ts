@@ -915,7 +915,7 @@ function buildActivateBodyLines(
       "  // in manifest.json grants the registration.",
       '  api.registerService("output_format", (context) => {',
       `    if (context.command !== ${JSON.stringify(commandName)}) {`,
-      "      return context.payload;",
+      "      return { handled: false };",
       "    }",
       `    return { rendered_by: ${JSON.stringify(extensionName)}, payload: context.payload };`,
       "  });",
@@ -1732,7 +1732,7 @@ function buildDeclarativeBlueprintSurface(
         "// package's own command and passes every other command through.",
         "export const outputService = defineServiceOverride((context) => {",
         `  if (context.command !== ${JSON.stringify(commandName)}) {`,
-        "    return context.payload;",
+        "    return { handled: false };",
         "  }",
         `  return { rendered_by: ${JSON.stringify(extensionName)}, payload: context.payload };`,
         "});",
@@ -2509,7 +2509,7 @@ function buildDefineBuilderExports(
     lines.push(
       "",
       "export const outputService = defineServiceOverride((context) => {",
-      `  if (context.command !== ${JSON.stringify(commandName)}) return context.payload;`,
+      `  if (context.command !== ${JSON.stringify(commandName)}) return { handled: false };`,
       `  return { rendered_by: ${JSON.stringify(extensionName)}, payload: context.payload };`,
       "});",
     );

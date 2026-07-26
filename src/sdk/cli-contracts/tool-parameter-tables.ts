@@ -106,6 +106,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   createMode: { type: "string", enum: ["strict", "progressive"] },
   schedulePreset: { type: "string", enum: ["lightweight"] },
   status: { type: "string" },
+  since: { type: "string", format: "date-time" },
+  threshold: { type: "number", minimum: 0, maximum: 1 },
   filterStatus: { type: "string" },
   filterType: { type: "string" },
   filterTag: { type: "string" },
@@ -885,6 +887,16 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",
     examples: ["open", "in_progress"],
+  },
+  since: {
+    description:
+      "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
+    examples: ["2026-01-01T00:00:00.000Z"],
+  },
+  threshold: {
+    description:
+      "Minimum duplicate similarity score from zero through one.",
+    examples: [0.85],
   },
   priority: {
     description: "Priority value in range 0..4.",
