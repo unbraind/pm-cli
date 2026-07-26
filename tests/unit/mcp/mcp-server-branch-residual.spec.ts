@@ -555,7 +555,10 @@ describe("mcp server branch residual coverage", () => {
 
     await expect(
       runAction({ action: "toString", options: {} }),
-    ).rejects.toThrow(/Unsupported native pm action: tostring/);
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringMatching(/Unsupported native pm action: tostring/),
+    });
     await expect(
       runAction({
         action: "schema",
@@ -693,7 +696,10 @@ describe("mcp server branch residual coverage", () => {
           path: context.pmPath,
           options: {},
         }),
-      ).rejects.toThrow(/Unsupported native pm action: custom/);
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringMatching(/Unsupported native pm action: custom/),
+      });
       expect(runActiveCommandHandler).toHaveBeenCalledTimes(1);
     });
   });
@@ -754,7 +760,12 @@ describe("mcp server branch residual coverage", () => {
             path: context.pmPath,
             options: {},
           }),
-        ).rejects.toThrow(/Unsupported native pm action: custom/);
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringMatching(
+            /Unsupported native pm action: custom/,
+          ),
+        });
       });
       // The swallowed activation failure is surfaced on stderr for diagnosability.
       expect(errorSpy).toHaveBeenCalledWith(
@@ -881,7 +892,10 @@ describe("mcp server branch residual coverage", () => {
     });
     await expect(
       runAction({ action: "custom", noExtensions: true, options: {} }),
-    ).rejects.toThrow(/Unsupported native pm action: custom/);
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringMatching(/Unsupported native pm action: custom/),
+    });
 
     // Missing-workspace path: with no settings file the activation cycle is skipped
     // entirely, so a built-in action runs and a dynamic action is unsupported.
@@ -894,7 +908,10 @@ describe("mcp server branch residual coverage", () => {
       });
       await expect(
         runAction({ action: "custom", path: emptyDir, options: {} }),
-      ).rejects.toThrow(/Unsupported native pm action: custom/);
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringMatching(/Unsupported native pm action: custom/),
+      });
     } finally {
       await rm(emptyDir, { recursive: true, force: true });
     }

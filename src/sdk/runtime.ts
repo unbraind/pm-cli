@@ -42,6 +42,7 @@ import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { projectMutationResult } from "../core/output/mutation-projection.js";
 import { withQuerySummary } from "../core/output/query-summary.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { createSerialQueue } from "../core/shared/serial-queue.js";
@@ -395,7 +396,7 @@ export {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
 } from "../core/schema/runtime-schema.js";
-export { EXIT_CODE } from "../core/shared/constants.js";
+export { EXIT_CODE };
 export { PmCliError } from "../core/shared/errors.js";
 export { isTimestampLiteral, nowIso } from "../core/shared/time.js";
 export {
@@ -2645,7 +2646,10 @@ async function dispatchActiveExtensionAction(
   active: ActiveExtensionRuntime | null,
 ): Promise<unknown> {
   if (!active) {
-    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+    throw new PmCliError(
+      `Unsupported native pm action: ${action}`,
+      EXIT_CODE.USAGE,
+    );
   }
   const normalizedAction = normalizeActionName(action);
   const definition = active.registrations.commands.find(
@@ -2657,7 +2661,10 @@ async function dispatchActiveExtensionAction(
       (entry) => normalizeActionName(entry.command) === normalizedAction,
     )?.command;
   if (!command) {
-    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+    throw new PmCliError(
+      `Unsupported native pm action: ${action}`,
+      EXIT_CODE.USAGE,
+    );
   }
   const handlerResult = await runActiveCommandHandler({
     command: normalizeCommandPath(command),
@@ -2683,7 +2690,7 @@ async function dispatchActiveExtensionAction(
         : "";
     throw new PmCliError(
       `Unsupported native pm action: ${action}${suffix}`,
-      64,
+      EXIT_CODE.USAGE,
     );
   }
   return handlerResult.result;
