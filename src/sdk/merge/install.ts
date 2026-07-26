@@ -46,7 +46,7 @@ const MERGE_FENCE_LOCK_ID = "merge-fence";
  * metacharacters in either installation path from changing the command.
  */
 function quoteMergeDriverArgument(value: string): string {
-  return `'${value.replaceAll("'", `'\"'\"'`)}'`;
+  return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
 /** Resolve the installed CLI without relying on the collaborator's PATH. */

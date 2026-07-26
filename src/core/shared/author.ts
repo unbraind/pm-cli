@@ -448,9 +448,10 @@ export function detectAgentIdentity(
     descriptorMatchesSignals(candidate, env, labels, clientName),
   );
   const modelCandidate = resolveAgentModel(signals, env, descriptor);
-  const session =
-    firstEnvironmentValue(env, descriptor?.session_environment_keys) ??
-    nonBlank(signals.client_info?.session)?.slice(0, 256);
+  const session = [
+    firstEnvironmentValue(env, descriptor?.session_environment_keys),
+    nonBlank(signals.client_info?.session)?.slice(0, 256),
+  ].find((candidate) => candidate !== undefined);
   const instance =
     descriptor?.harness && session
       ? createHash("sha256")

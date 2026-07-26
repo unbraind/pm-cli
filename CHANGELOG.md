@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- GH-714: linked-test verbose child stdout still aborts with EAGAIN after bounded-drain fix ([pm-5sm91o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5sm91o.toon))
 - Detected agent identity is not agent-unique, so claim mutual exclusion silently degenerates across a same-harness fleet ([pm-z8qd4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z8qd4k.toon))
+- GH-714: linked-test verbose child stdout still aborts with EAGAIN after bounded-drain fix ([pm-5sm91o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5sm91o.toon))
 - CodeFactor 2026-07-26 SDK and digital-twin regression cluster (GH-722 through GH-732) ([pm-eq3ak8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eq3ak8.toon))
 - GH-733: Windows Node 24 nightly portability regressions in author, recovery, and drift tests ([pm-wr8utz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wr8utz.toon))
 - Sentry PM-CLI-2M: classify workspace audit-state drift as an actionable conflict ([pm-o71t68](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o71t68.toon))
