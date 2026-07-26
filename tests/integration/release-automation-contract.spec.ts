@@ -459,6 +459,14 @@ describe("release automation contract", () => {
     expect(workflow).toContain(
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
     );
+    expect(workflow).toContain(
+      "npm access set status=public @unbraind/pm-cli",
+    );
+    expect(workflow).toContain('env -u NODE_AUTH_TOKEN -u NPM_TOKEN');
+    expect(workflow).toContain(
+      'npm_config_userconfig="${PUBLIC_NPMRC}"',
+    );
+    expect(workflow).toContain('npm_config_cache="${PUBLIC_NPM_CACHE}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");
   });
 });

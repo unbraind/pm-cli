@@ -182,11 +182,20 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"
-          if npm view "@unbrained/pm-cli@${VERSION}" version --json >/dev/null 2>&1; then
-            echo "@unbrained/pm-cli@${VERSION} is already published; skipping npm publish."
-            exit 0
+          PUBLIC_NPMRC="${RUNNER_TEMP}/npmrc-public"
+          PUBLIC_NPM_CACHE="${RUNNER_TEMP}/npm-cache-public"
+          : > "${PUBLIC_NPMRC}"
+          if env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
+            npm_config_userconfig="${PUBLIC_NPMRC}" \
+            npm_config_cache="${PUBLIC_NPM_CACHE}" \
+            npm view "@unbraind/pm-cli@${VERSION}" version --json >/dev/null 2>&1; then
+            echo "@unbraind/pm-cli@${VERSION} is publicly available; skipping npm publish."
+          elif npm view "@unbraind/pm-cli@${VERSION}" version --json >/dev/null 2>&1; then
+            echo "@unbraind/pm-cli@${VERSION} exists but is not public; restoring public access."
+            npm access set status=public @unbraind/pm-cli
+          else
+            npm publish --access public --provenance --tag latest
           fi
-          npm publish --access public --provenance --tag latest
 
       - name: Verify published package on npm, npx, and bunx
         timeout-minutes: 8

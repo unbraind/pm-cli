@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { describe, expect, it, vi } from "vitest";
 
 import { createScriptHarness } from "../../../helpers/scriptModule";
@@ -19,7 +21,8 @@ async function runVerify(options: ScenarioOptions) {
 
   const mkdtempSync = vi.fn(() => "/tmp/pm-cli-published-verify-test");
   const rmSync = vi.fn();
-  vi.doMock("node:fs", () => ({ mkdtempSync, rmSync }));
+  const writeFileSync = vi.fn();
+  vi.doMock("node:fs", () => ({ mkdtempSync, rmSync, writeFileSync }));
 
   let callIndex = 0;
   const runCommand = vi.fn((command: string, args: string[]) => {
@@ -64,7 +67,17 @@ async function runVerify(options: ScenarioOptions) {
     return raw.trim().startsWith("{") ? JSON.parse(raw) : null;
   })();
 
-  return { failure, stdoutSpy, logs, errors, runCommand, mkdtempSync, rmSync, json };
+  return {
+    failure,
+    stdoutSpy,
+    logs,
+    errors,
+    runCommand,
+    mkdtempSync,
+    rmSync,
+    writeFileSync,
+    json,
+  };
 }
 
 function npmViewResult(version: string): RunCommandResult {
@@ -114,7 +127,7 @@ describe("scripts/release/verify-published-release: usage and validation", () =>
 
 describe("scripts/release/verify-published-release: success path", () => {
   it("verifies npm, npx, bunx, and the GitHub release and prints JSON", async () => {
-    const { json, rmSync } = await runVerify({
+    const { json, rmSync, runCommand, writeFileSync } = await runVerify({
       argv: ["--version", "2026.6.14", "--json", "--npm-attempts", "1", "--executor-attempts", "1"],
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
@@ -145,6 +158,31 @@ describe("scripts/release/verify-published-release: success path", () => {
     expect(json.package.npx.package.ok).toBe(true);
     expect(json.package.bunx.ok).toBe(true);
     expect(json.github_release.tagName).toBe("v2026.6.14");
+    expect(writeFileSync).toHaveBeenCalledWith(
+      path.join("/tmp/pm-cli-published-verify-test", "npmrc-public"),
+      "",
+      "utf8",
+    );
+    for (const call of runCommand.mock.calls.slice(0, 4)) {
+      expect(call[2]).toMatchObject({
+        env: {
+          NODE_AUTH_TOKEN: "",
+          NPM_TOKEN: "",
+          npm_config_cache: path.join(
+            "/tmp/pm-cli-published-verify-test",
+            "npm-cache",
+          ),
+          npm_config_userconfig: path.join(
+            "/tmp/pm-cli-published-verify-test",
+            "npmrc-public",
+          ),
+          BUN_INSTALL_CACHE_DIR: path.join(
+            "/tmp/pm-cli-published-verify-test",
+            "bun-cache",
+          ),
+        },
+      });
+    }
     expect(rmSync).toHaveBeenCalled();
   });
 

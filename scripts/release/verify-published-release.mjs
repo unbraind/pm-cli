@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
@@ -80,13 +80,13 @@ function runWithRetries(label, attempts, delayMs, action) {
   };
 }
 
-function verifyNpmMetadata(version, attempts) {
+function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   const npm = commandFor("npm");
   return runWithRetries("npm metadata", attempts, 15000, () => {
     const result = runCommand(
       npm,
       ["view", `@unbrained/pm-cli@${version}`, "version", "dist.integrity", "dist.unpackedSize", "--json"],
-      { capture: true, allowFailure: true },
+      { capture: true, allowFailure: true, env: publicRegistryEnv },
     );
     if (result.status !== 0) {
       return { ok: false, reason: result.stderr.trim() || "npm_view_failed" };
@@ -105,12 +105,13 @@ function verifyNpmMetadata(version, attempts) {
   });
 }
 
-function verifyExecutor(name, args, version, attempts, tempRoot) {
+function verifyExecutor(name, args, version, attempts, tempRoot, publicRegistryEnv) {
   return runWithRetries(name, attempts, 10000, () => {
     const result = runCommand(args[0], args.slice(1), {
       cwd: tempRoot,
       capture: true,
       allowFailure: true,
+      env: publicRegistryEnv,
     });
     const observed = lastNonEmptyLine(result.stdout);
     if (result.status === 0 && observed === version) {
@@ -123,8 +124,8 @@ function verifyExecutor(name, args, version, attempts, tempRoot) {
   });
 }
 
-function verifyRequiredExecutor(label, args, version, attempts, tempRoot) {
-  const result = verifyExecutor(label, args, version, attempts, tempRoot);
+function verifyRequiredExecutor(label, args, version, attempts, tempRoot, publicRegistryEnv) {
+  const result = verifyExecutor(label, args, version, attempts, tempRoot, publicRegistryEnv);
   if (!result.ok) {
     fail(`${label} verification failed: ${result.reason}`);
   }
@@ -132,19 +133,33 @@ function verifyRequiredExecutor(label, args, version, attempts, tempRoot) {
 }
 
 function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
-  const npmMetadata = verifyNpmMetadata(version, npmAttempts);
-  if (!npmMetadata.ok) {
-    fail(`npm metadata verification failed: ${npmMetadata.reason}`);
-  }
-
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-cli-published-verify-"));
   try {
+    const npmUserConfig = path.join(tempRoot, "npmrc-public");
+    writeFileSync(npmUserConfig, "", "utf8");
+    const publicRegistryEnv = {
+      NODE_AUTH_TOKEN: "",
+      NPM_TOKEN: "",
+      npm_config_cache: path.join(tempRoot, "npm-cache"),
+      npm_config_userconfig: npmUserConfig,
+      BUN_INSTALL_CACHE_DIR: path.join(tempRoot, "bun-cache"),
+    };
+    const npmMetadata = verifyNpmMetadata(
+      version,
+      npmAttempts,
+      publicRegistryEnv,
+    );
+    if (!npmMetadata.ok) {
+      fail(`npm metadata verification failed: ${npmMetadata.reason}`);
+    }
+
     const npxDirect = verifyRequiredExecutor(
       "npx-direct",
       [commandFor("npx"), "--yes", `@unbrained/pm-cli@${version}`, "--version"],
       version,
       executorAttempts,
       tempRoot,
+      publicRegistryEnv,
     );
 
     const npxPackage = verifyRequiredExecutor(
@@ -153,6 +168,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       version,
       executorAttempts,
       tempRoot,
+      publicRegistryEnv,
     );
 
     const bunx = verifyRequiredExecutor(
@@ -161,6 +177,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       version,
       executorAttempts,
       tempRoot,
+      publicRegistryEnv,
     );
 
     return { npm: npmMetadata, npx: { direct: npxDirect, package: npxPackage }, bunx };
