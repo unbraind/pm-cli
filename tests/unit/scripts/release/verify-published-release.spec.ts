@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { describe, expect, it, vi } from "vitest";
 
 import { createScriptHarness } from "../../../helpers/scriptModule";
@@ -157,7 +159,7 @@ describe("scripts/release/verify-published-release: success path", () => {
     expect(json.package.bunx.ok).toBe(true);
     expect(json.github_release.tagName).toBe("v2026.6.14");
     expect(writeFileSync).toHaveBeenCalledWith(
-      "/tmp/pm-cli-published-verify-test/npmrc-public",
+      path.join("/tmp/pm-cli-published-verify-test", "npmrc-public"),
       "",
       "utf8",
     );
@@ -166,12 +168,18 @@ describe("scripts/release/verify-published-release: success path", () => {
         env: {
           NODE_AUTH_TOKEN: "",
           NPM_TOKEN: "",
-          npm_config_cache:
-            "/tmp/pm-cli-published-verify-test/npm-cache",
-          npm_config_userconfig:
-            "/tmp/pm-cli-published-verify-test/npmrc-public",
-          BUN_INSTALL_CACHE_DIR:
-            "/tmp/pm-cli-published-verify-test/bun-cache",
+          npm_config_cache: path.join(
+            "/tmp/pm-cli-published-verify-test",
+            "npm-cache",
+          ),
+          npm_config_userconfig: path.join(
+            "/tmp/pm-cli-published-verify-test",
+            "npmrc-public",
+          ),
+          BUN_INSTALL_CACHE_DIR: path.join(
+            "/tmp/pm-cli-published-verify-test",
+            "bun-cache",
+          ),
         },
       });
     }
