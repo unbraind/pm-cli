@@ -1,0 +1,29 @@
+id: pm-mfy1ux
+title: "graph impact is the one traversal that ignores the default row bound its siblings honour, so the command whose help says bounded returns 1,824 rows and 57k tokens by default"
+description: "pm graph is documented as 'Bounded workspace relationship-graph queries, analytics, and governance audit'. Every subcommand honours a default row bound except impact, which returns the entire reachable set.\n\nMeasured on this tracker (2,079 nodes, 5,071 edges), default invocation, no flags:\n\n  pm graph ancestors pm-doxj         204 B\n  pm graph successors pm-doxj        205 B\n  pm graph predecessors pm-doxj      207 B\n  pm graph centrality              1,463 B     10 rows (default sample_limit 10)\n  pm graph communities             2,672 B\n  pm graph redundancy              3,119 B\n  pm graph descendants pm-doxj    15,846 B\n  pm graph impact pm-doxj        230,452 B   1,824 rows   (~57,613 tokens)\n\nThe bound already exists and already works on this exact command:\n\n  pm graph impact pm-doxj --limit 20      1,845 B   (~461 tokens)    125x smaller\n  pm graph impact pm-doxj --summary         227 B   (~56 tokens)   1,029x smaller\n\nSo this is not an output-verbosity opinion and not a missing capability. The row cap is implemented, the summary envelope is implemented, and pm graph analyze reports its own sample_limit of 10 — the default-bound concept is established in the same command group. impact simply does not apply it, and the cost scales with the workspace rather than with the question.\n\nThe consequence is specific to how the command is reached. impact is the traversal an agent is directed to for semantic questions — pm-3dyec2 records that predecessors and ancestors reject implements and verifies, and that graph impact --direction incoming is the working semantic traversal. So the one subcommand agents are steered toward for typed-edge reachability is the one that answers with a quarter of a megabyte. On a milestone root that is 1,824 rows to establish a fact the summary envelope states in 56 tokens, and an agent that has not already learned about --limit pays the full amount before it can discover that the flag exists.\n\nFix direction: give impact the same default bound its siblings use, disclose truncation in the envelope with the standard has_more/after cursor so nothing becomes unreachable, and keep unbounded traversal available behind an explicit opt-out. Sibling instance for the same class of unbounded default is pm-okgxwa (explain-ranking sized by the workspace rather than by the answer); the declared-ceiling contract those instances should ultimately satisfy is pm-5t33or."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:graph",context,perf,token-budget
+created_at: "2026-07-26T11:26:14.695Z"
+updated_at: "2026-07-26T11:32:25.056Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "pm graph impact applies a default row bound consistent with its sibling subcommands, and the bound is declared in contract data rather than hardcoded per subcommand; Truncated results disclose has_more and a resumable cursor so no reachable node becomes unreachable through the default; A test asserts default-invocation output size for every graph subcommand against a real-scale fixture, so a future subcommand cannot ship unbounded; Unbounded traversal remains available through an explicit flag and is documented; The help text's 'bounded' claim is true of every subcommand it covers, asserted structurally"
+goal: project management = context management
+objective: "A command group that declares bounded semantics must honour them on every member, especially the member agents are routed to"
+value: Removes a 57k-token default from the traversal agents are told to use for semantic reachability
+impact: Makes typed-graph reachability answerable inside an agent's context budget instead of consuming a quarter of it
+parent: pm-96h7
+risk: low
+confidence: high
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-3dyec2,related,"2026-07-26T11:26:14.695Z",null,null
+  pm-5t33or,blocked_by,"2026-07-26T11:26:14.695Z",null,null
+  pm-okgxwa,related,"2026-07-26T11:26:14.695Z",null,null
+  pm-6olc95,related,"2026-07-26T11:32:24.795Z",null,null
+  pm-cxr0jb,related,"2026-07-26T11:32:24.795Z",null,null
+  pm-du93sr,related,"2026-07-26T11:32:24.795Z",null,null
+  pm-g3n00m,implements,"2026-07-26T11:32:24.795Z",null,null
+  pm-o87av6,implements,"2026-07-26T11:32:24.795Z",null,null
+body: ""

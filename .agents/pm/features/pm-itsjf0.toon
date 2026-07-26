@@ -1,0 +1,30 @@
+id: pm-itsjf0
+title: "Identity provenance is a fixed three-dimension schema, so the reasoning level sitting in the environment right now and any session role are structurally unrepresentable"
+description: "The shipped identity contract (ADR pm-qwuber, delivered PR#713) fixed three provenance dimensions: harness, model, and session. The mandate this work exists to serve asks identity to read as 'Opus 5 xhigh' — harness, model, and thinking level — and to carry a session role. Two of those four dimensions have no field anywhere in the contract, and one of the missing two is available in the live environment.\n\nHarnessSignalDescriptor (src/core/shared/author.ts:35-39) declares exactly three signal kinds: environment_keys, model_environment_keys, session_environment_keys. All eight built-in descriptors — claude-code, codex, pi, opencode, cursor, aider, gemini, ci — repeat those same three keys. DetectedAgentIdentity carries harness, model, model_source, session. HistoryEntry (src/types.ts:909-933) persists author, author_source, agent_harness, agent_model, agent_model_source.\n\nEnvironment census from a live Claude Code session on 2026-07-26: CLAUDECODE, CLAUDE_CODE_SESSION_ID, CLAUDE_CODE_BRIDGE_SESSION_ID, CLAUDE_CODE_CHILD_SESSION, CLAUDE_CODE_ENTRYPOINT=cli, CLAUDE_CODE_EXECPATH, CLAUDE_PID, CLAUDE_EFFORT=xhigh, TERM_PROGRAM=ghostty.\n\nCLAUDE_EFFORT=xhigh is the thinking level, present, correct, and unreadable by any declared signal kind. This is not an unpopulated field of the kind pm-0zcwz6 describes for the model — there the field exists and the environment key is wrong. Here there is no field to populate. The two defects look identical from the outside (attribution comes back without the dimension) and have opposite fixes: pm-0zcwz6 needs a corrected key list, this needs a schema dimension.\n\nThe descriptor table is also extensible only along harnesses, not along dimensions. pm-brxdct made the harness rows declared data, which is why adding a ninth harness is now cheap. Adding a fourth dimension is not: it touches the descriptor interface, every built-in row, DetectedAgentIdentity, HistoryEntry, and the history writer. That asymmetry is why dimensions have arrived one per release, and it is the part worth fixing once rather than paying twice more.\n\nSub-agent lineage is the third gap and the one that matters for the multi-agent story. Both CLAUDE_CODE_BRIDGE_SESSION_ID and CLAUDE_CODE_CHILD_SESSION are set in this process: it is a child agent of another session. The descriptor reads only CLAUDE_CODE_SESSION_ID, so a forked sub-agent and its parent resolve identically before the ADR's transient-session policy is even reached.\n\nSession role or topic has no signal source at all in any harness. If it is to exist it must be supplied rather than detected — a configured or per-invocation label — which is a different mechanism from every dimension shipped so far and is the reason it needs deciding rather than implementing.\n\nScope fence. pm-0zcwz6 owns the inert model key list. pm-z8qd4k owns the operational consequence of non-unique identity for claims. pm-gw6uyq consumes whatever dimensions exist for per-model analytics. pm-qwuber is closed and stays closed; this is follow-on work, not a reopened decision."
+type: Feature
+status: open
+priority: 2
+tags[6]: agent-ux,attribution,history,identity,multi-agent,provenance
+created_at: "2026-07-26T11:29:03.253Z"
+updated_at: "2026-07-26T11:32:28.781Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "The descriptor contract expresses provenance dimensions as declared data, so adding a dimension does not require editing every built-in harness row or every consumer type; A reasoning-effort dimension is captured where the harness exposes one, verified end to end against CLAUDE_EFFORT in a live Claude Code session and asserted by a test that fails if the value stops reaching the recorded entry; The contract states how a session role or topic is supplied when no environment variable carries it, and absence of any dimension never degrades the author or the harness that were detected correctly; Sub-agent lineage is representable: two mutations from a parent agent and its forked child are distinguishable in the recorded provenance, or the contract states explicitly that they are not and why; A conformance test enumerates every declared dimension against every built-in descriptor and fails when a dimension is declared but has no populated instance in any supported harness, so a dimension cannot ship inert the way the model dimension did"
+goal: project management = context management
+objective: Make identity provenance extensible along dimensions so the mandated identity can be expressed without a schema change per dimension
+value: "Closes the gap between the identity the mandate specifies and the identity the contract can hold, and removes the per-dimension migration cost"
+impact: "Per-model and per-effort attribution across a fleet becomes possible, and forked sub-agents stop being indistinguishable from their parents"
+parent: pm-o2kc
+risk: medium
+confidence: high
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-0zcwz6,related,"2026-07-26T11:29:03.253Z",null,null
+  pm-gw6uyq,related,"2026-07-26T11:29:03.253Z",null,null
+  pm-qwuber,discovered_from,"2026-07-26T11:29:03.253Z",null,null
+  pm-szv11n,implements,"2026-07-26T11:29:03.253Z",null,null
+  pm-z8qd4k,related,"2026-07-26T11:29:03.253Z",null,null
+  pm-3oqjnc,related,"2026-07-26T11:32:28.526Z",null,null
+  pm-6uxhe0,related,"2026-07-26T11:32:28.526Z",null,null
+  pm-brxdct,discovered_from,"2026-07-26T11:32:28.526Z",null,null
+  pm-w7ccmv,implements,"2026-07-26T11:32:28.526Z",null,null
+body: ""

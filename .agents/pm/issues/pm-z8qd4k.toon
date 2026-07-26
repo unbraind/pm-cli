@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli",concurrency,identity,multi-agent,provenance
 created_at: "2026-07-25T21:37:44.433Z"
-updated_at: "2026-07-25T21:37:44.433Z"
+updated_at: "2026-07-26T11:29:37.917Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Two concurrent agents of the same harness resolve to distinct claim principals without either agent setting an identity flag, so the second pm claim on a held item is refused exactly as it is for two distinct PM_AUTHOR values. The resolved session identifier is carried into the history entry alongside agent_harness and agent_model so a completed stream can attribute a mutation to one agent process. Taking over an existing live claim is never silent: it either fails or reports the prior holder and requires --force, including when the prior holder shares the caller's harness. A regression test runs two same-harness claims against one item and asserts the second is refused, and asserts the history entries carry distinct agent identifiers."
@@ -19,4 +19,6 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-szv11n,implements,"2026-07-25T21:37:44.433Z",null,null
   pm-w8q4,related,"2026-07-25T21:37:44.433Z",null,null
   pm-z9x1r2,related,"2026-07-25T21:37:44.433Z",null,null
+notes[1]{created_at,author,text}:
+  "2026-07-26T11:29:37.917Z","harness:claude-code","End-to-end proof that the non-unique identity survives a branch merge, executed 2026-07-26 in an isolated sandbox tracker.\n\nSetup: one shared Task, two branches. Agent A added a comment and set priority 1. Agent B added a comment and added a tag. Both branches ran the same pm build under the same harness with no PM_AUTHOR anywhere, which is the mandated configuration.\n\nThe merge itself is correct and worth stating plainly, because it is the half that works: git merge auto-merged both the .toon item and the .jsonl history stream, and the merged item carried priority 1 from A, tag multi-agent from B, and both comments in timestamp order. Field-aware merge loses nothing.\n\nWhat it cannot do is say who did what. Both comments merged as author 'harness:claude-code'. Every one of the five history entries in the merged stream reads author harness:claude-code, author_source detected, agent_harness claude-code, with no further identity field of any kind. The merged artifact is the textbook multi-agent scenario this item describes, and after it completes the two agents are byte-identical in the record.\n\nThis upgrades the item's claim from a same-machine claim collision to a cross-branch attribution loss: the identity is not merely non-unique for mutual exclusion at claim time, it is non-unique in the durable record that outlives the merge. A reviewer reading the merged history has no way to attribute either comment, and pm-gw6uyq's per-agent analytics would see one agent.\n\nMethod is reproducible in about 30 seconds: sandbox PM_PATH, pm init, pm merge install, create one item, branch twice, mutate on each, merge. The full env census and the descriptor-side cause are on pm-itsjf0."
 body: ""

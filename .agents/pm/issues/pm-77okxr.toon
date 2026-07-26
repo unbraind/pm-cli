@@ -1,0 +1,27 @@
+id: pm-77okxr
+title: "Extension-mode is folded into the metadata-cache identity, so alternating --no-extensions with a normal invocation evicts a 4.5 MB cache and every command costs 5 seconds instead of 0.4"
+description: "The derived item-metadata cache is a single slot keyed by a content fingerprint that includes the loaded extension field set, so two legitimate invocation modes evict each other and each eviction pays a full corpus rebuild.\n\ncomputeContextFingerprint (src/core/store/item-metadata-cache.ts:166) hashes four inputs: preferred format, the type-to-folder map, the runtime schema, and extensionFieldNames. The last input is the problem. With extensions loaded the workspace resolves one field set; under --no-extensions it resolves a different one, so the fingerprint differs. Measured on this tracker: d6f6e38011b68a48 with extensions, 04e10970ebf6b0a2 without.\n\nThe cache is not keyed by that fingerprint on disk. getCachePath returns a fixed runtime/metadata-cache.json (4,546 KB here) with siblings for bodies, collections, delta, and manifest. The fingerprint is stored inside the envelope and compared on load; a mismatch discards the whole envelope and rebuilds all 2,076 items. One slot, two fingerprints, mutual eviction.\n\nMeasured cost of a steady state versus the alternating state, same command, same workspace:\n\n  pm list --limit 10                     757 / 749 / 733 ms\n  pm list --limit 10 --no-extensions    4599 / 456 / 402 ms   (first call rebuilds)\n\n  alternating the two forms:\n    ext     786 ms -> 5191 ms -> 5574 ms\n    no-ext 4612 ms -> 4997 ms -> 5467 ms\n\nAfter the first switch every single invocation in either mode pays the rebuild: roughly 5.0-5.5 s against a 0.40-0.75 s warm baseline, a 7-12x regression that persists for as long as the alternation continues. Steady-state same-mode runs are correctly cached and rewrite nothing (verified: md5 and mtime of metadata-cache.json unchanged across consecutive identical calls), which confirms the eviction is caused by mode identity and not by a write-amplification bug on the read path.\n\nThis is reachable by ordinary use rather than by a contrived sequence. --no-extensions is the documented way to get a faster or isolated read, agents reach for it exactly when they want a cheap query, CI mixes gated and ungated invocations, and any script that pairs a hardened read with a normal mutation alternates by construction. The mode that exists to be cheap makes the next normal command expensive, and nothing in the output attributes the cost, so the tool simply appears intermittently slow.\n\nTwo fix directions, either sufficient. Key the cache artifacts by fingerprint so distinct runtimes occupy distinct slots and neither evicts the other, bounded by a retention policy. Or make the extension-field contribution additive rather than identity-forming: extension fields already live in the heavy/collections partition, so a core-only fingerprint could serve a superset cache with extension fields overlaid, and only the schema and format inputs would remain identity-forming. The first is smaller; the second removes the class."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli",cache,multi-agent,perf,scale
+created_at: "2026-07-26T11:25:41.728Z"
+updated_at: "2026-07-26T11:32:23.733Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "Alternating pm list and pm list --no-extensions on a 2,000-item workspace holds both forms at their warm steady-state latency, with no invocation paying a full-corpus rebuild; A regression test asserts that switching extension mode does not discard a valid cache envelope, measured by rebuild count rather than by wall time; The cache retains a bounded number of distinct runtime identities with a declared eviction policy, so the fix cannot grow runtime/ without limit; The rebuild cost is attributable: when a full rebuild does occur, a diagnostic states which fingerprint input changed; Latency evidence records warm, cold, and alternating figures for at least list, get, context, and next on a real-scale workspace"
+goal: project management = context management
+objective: A cache that is correct must also be stable under the invocation patterns agents and CI actually produce
+value: Removes a 7-12x latency regression that is invisible in every existing gate and unattributable in every existing diagnostic
+impact: "Restores the instant-feel baseline for the read commands that dominate the agent loop, in the mixed-mode sequences where it currently collapses"
+parent: pm-9rxu
+risk: medium
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-801d,related,"2026-07-26T11:32:23.432Z",null,null
+  pm-9rxu,implements,"2026-07-26T11:32:23.432Z",null,null
+  pm-ag9nka,related,"2026-07-26T11:32:23.432Z",null,null
+  pm-g3n00m,implements,"2026-07-26T11:32:23.432Z",null,null
+  pm-o87av6,implements,"2026-07-26T11:32:23.432Z",null,null
+  pm-yse5dt,related,"2026-07-26T11:32:23.432Z",null,null
+body: ""

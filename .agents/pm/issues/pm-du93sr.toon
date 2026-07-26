@@ -1,0 +1,28 @@
+id: pm-du93sr
+title: "pm health --check-only, the diagnostic AGENTS.md routes agents to, reduces nothing: it costs 33k tokens where --summary states the same verdict in 142"
+description: "AGENTS.md 'When Unsure' tells agents to prefer pm health --check-only for diagnostics. That flag does not reduce the payload. Measured on this tracker:\n\n  pm health                 132,584 B   (~33,146 tokens)\n  pm health --check-only    132,585 B   (~33,146 tokens)   one byte larger\n  pm health --summary           570 B   (~142 tokens)      233x smaller\n\nAll three report the same verdict. --check-only reads as the cheap, non-mutating diagnostic and is the form the repository's own agent instructions recommend, so the guidance routes agents to the expensive path and away from the cheap one that already exists.\n\nWhere the 33k tokens go, by check, on a run where every check returned ok:\n\n     182 B  settings            ok\n     387 B  directories         ok\n      66 B  settings_values     ok\n   1,034 B  telemetry           ok\n  85,627 B  extensions          ok\n   2,282 B  storage             ok\n     138 B  locks               ok\n     706 B  integrity           ok\n     321 B  history_drift       ok\n   1,189 B  vectorization       ok\n\nThe extensions check is 65% of the total, and inside it one sub-object, activation, is 62,107 B — 47% of the entire health payload — emitted while the same check reports failed: [] and warnings: []. The remaining weight is effective (9,336 B), discovered (5,689 B), and loaded (5,857 B): three overlapping enumerations of the same 14-15 packages. A diagnostic that found nothing spends 15,500 tokens describing the machinery that found nothing.\n\nThis is a routing and flag-semantics defect rather than a verbosity complaint. The cheap surface is already built and already correct; --summary is the right default shape for a pass, and per-check detail is what an agent wants only for the check that failed. Three concrete moves, independently landable: make --check-only actually project to verdicts (or retire it as a synonym and say so), make the passing form of every check emit its verdict rather than its evidence, and route AGENTS.md to the flag that is cheap.\n\nRelated but distinct: pm-cha95z owns declaring ceilings and degradation order for diagnostics as a contract; pm-z71aoy owns making the token-budget corpus representative — health is absent from that corpus entirely, and at 33k tokens it is the largest single command payload in the agent surface after graph impact. This item owns the flag being inert and the guidance pointing at it."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:cli",context,diagnostics,token-budget
+created_at: "2026-07-26T11:26:47.669Z"
+updated_at: "2026-07-26T11:32:26.388Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "pm health --check-only produces a verdict-only projection materially smaller than the full report, or the flag is retired as a documented synonym and the guidance updated in the same change; A passing check emits its verdict and not its evidence; per-check detail is opt-in or reserved for non-passing checks; AGENTS.md and any other agent-facing guidance route to the cheapest form that answers the question, verified by a docs test rather than by review; pm health appears in the token-budget corpus with a declared ceiling measured on a real-scale workspace; The measured token cost of pm health before and after is recorded as evidence on this item"
+goal: project management = context management
+objective: The diagnostic an agent is told to run when unsure must be the cheapest form that answers the question
+value: "Removes a 33k-token cost from the recommended diagnostic path, a surface no existing gate measures"
+impact: An agent can check workspace health for the price of a rounding error instead of a sixth of its context window
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-5t33or,blocked_by,"2026-07-26T11:26:47.669Z",null,null
+  pm-cha95z,related,"2026-07-26T11:26:47.669Z",null,null
+  pm-z71aoy,related,"2026-07-26T11:26:47.669Z",null,null
+  pm-g3n00m,implements,"2026-07-26T11:32:26.158Z",null,null
+  pm-ka6d,related,"2026-07-26T11:32:26.158Z",null,null
+  pm-mfy1ux,related,"2026-07-26T11:32:26.158Z",null,null
+  pm-o87av6,implements,"2026-07-26T11:32:26.158Z",null,null
+body: ""
