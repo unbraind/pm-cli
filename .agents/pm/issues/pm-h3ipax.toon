@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:extensions","area:sdk",contracts,github-issue
 created_at: "2026-07-26T12:46:39.716Z"
-updated_at: "2026-07-26T19:45:05.044Z"
+updated_at: "2026-07-26T19:51:32.227Z"
 closed_at: "2026-07-26T19:43:42.033Z"
 claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
@@ -24,9 +24,10 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-x395,related,"2026-07-26T12:46:39.716Z",null,null
   pm-miqm,implements,"2026-07-26T19:12:07.531Z",null,null
   pm-w7mqzt,verifies,"2026-07-26T19:12:07.531Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T12:46:39.716Z","harness:codex","Duplicate check 2026-07-26: searched every status for service override payload identity, claimed/handled reference equality, silent override no-op, and pass-through warnings. Closed pm-miqm owns invocation helpers and pm-5teq owns global output override diagnostics, but neither owns the same-reference claiming semantic; this is the canonical GH-741 child."
   "2026-07-26T19:42:54.725Z","harness:codex","Evidence: service overrides now support explicit handled true/false decisions, same-reference handled returns, and deterministic legacy null/undefined decline for output formatting. SDK helpers and starter scaffolds teach explicit handle/decline semantics. Linked runtime/loader/define/scaffold tests passed; full coverage and static gates are green."
+  "2026-07-26T19:51:32.226Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
 files[7]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
   src/core/extensions/extension-hook-runtime.ts,project,explicit handled decision runtime

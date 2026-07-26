@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:sdk",compatibility,contracts,github-issue
 created_at: "2026-07-26T12:46:31.198Z"
-updated_at: "2026-07-26T19:49:04.543Z"
+updated_at: "2026-07-26T19:51:24.408Z"
 closed_at: "2026-07-26T19:43:14.162Z"
 claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
@@ -23,10 +23,11 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-lnswp0,related,"2026-07-26T12:46:31.198Z",null,null
   pm-te6elw,related,"2026-07-26T12:46:31.198Z",null,null
   pm-e6tm5c,implements,"2026-07-26T19:12:03.773Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-26T12:46:31.198Z","harness:codex","Duplicate check 2026-07-26: searched every status for aggregate barrel completeness, 45 missing exports, SDK query/contracts/runtime/governance exports, and snapshot parity. Closed pm-e6tm5c governs per-entrypoint surface drift, pm-38bskj governs tiering, pm-lnswp0 governs snapshot packaging, and pm-te6elw governs action reachability; none owns cross-entrypoint aggregate completeness, so this is the canonical GH-740 child."
   "2026-07-26T19:42:51.095Z","harness:codex","Evidence: completed a derived SDK aggregate census over all supported contracts, governance, query, and runtime exports. The aggregate now exposes every supported non-test symbol; the only exclusion is the documented private test hook. Snapshot schema v2 fails closed on missing aggregate symbols and packed consumer proof resolved 954 aggregate exports with zero missing symbols. Linked test passed; full repository coverage passed 6,425 tests at exact 100/100/100/100; lint/static gates are green."
   "2026-07-26T19:49:04.543Z","harness:codex","Installed-package acceptance: the fresh Bun consumer read aggregate_completeness with 1,217 covered symbols and zero missing; the unrelated npm-prefix acceptance independently resolved 954 runtime aggregate exports and zero omissions."
+  "2026-07-26T19:51:24.408Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
 files[5]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
   scripts/sdk-surface-snapshot.mjs,project,derived completeness gate

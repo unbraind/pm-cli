@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:extensions","area:packages","area:sdk",github-report
 created_at: "2026-07-26T16:19:51.157Z"
-updated_at: "2026-07-26T19:45:02.621Z"
+updated_at: "2026-07-26T19:51:27.830Z"
 closed_at: "2026-07-26T19:43:28.024Z"
 claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
@@ -29,9 +29,10 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-xzhz,discovered_from,"2026-07-26T16:19:51.157Z",null,null
   pm-usfg,implements,"2026-07-26T19:12:05.570Z",null,null
   pm-xzhz,implements,"2026-07-26T19:12:05.570Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T16:19:51.157Z","harness:codex","GitHub report linkage: GH-749 https://github.com/unbraind/pm-cli/issues/749. Created only after an all-status duplicate search and full metadata review of the closest SDK/importer/exporter lineage."
   "2026-07-26T19:42:52.860Z","harness:codex","Evidence: ImportExportContext now carries portable workspace coordinates and the host-bound sdk, and importer/exporter dispatch forwards the same invocation-owned client as command handlers. Typed loader tests assert identity and workspace binding while preserving existing optional compatibility. Linked tests passed; full coverage and static gates are green."
+  "2026-07-26T19:51:27.828Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
 files[4]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
   src/core/extensions/extension-types.ts,project,host-bound ImportExportContext contract

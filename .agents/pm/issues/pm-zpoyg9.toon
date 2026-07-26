@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: concurrency,extensions,"gh:742",multi-tenant,performance,sdk
 created_at: "2026-07-26T13:14:50.610Z"
-updated_at: "2026-07-26T19:45:03.826Z"
+updated_at: "2026-07-26T19:51:29.926Z"
 closed_at: "2026-07-26T19:43:34.863Z"
 claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
@@ -28,9 +28,10 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-ugqx,related,"2026-07-26T13:14:50.610Z",null,null
   pm-w7mqzt,related,"2026-07-26T13:14:50.610Z",null,null
   pm-bl6m,implements,"2026-07-26T19:12:06.545Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T13:14:50.610Z","harness:codex","Duplicate evidence 2026-07-26: all-status exact/keyword searches for PmClient process-wide activation queue, unrelated workspaces, multi-user hosts, extension activation concurrency, and registry serialization found no matching open or closed item. Closed pm-bl6m is the MCP request-scoped-registry precursor, not this PmClient cross-workspace throughput defect. Canonical GitHub issue: GH-742."
   "2026-07-26T19:42:53.788Z","harness:codex","Evidence: extension runtime registries, command context/result, and affected-item state are request-local through AsyncLocalStorage. PmClient calls without explicit cwd run concurrently while explicit cwd remains serialized around process.chdir. The MCP integration proves two overlapping delayed actions both start, the fast action completes first, and no registry/result state leaks. Linked tests passed; full coverage and static gates are green."
+  "2026-07-26T19:51:29.923Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
 files[5]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
   src/core/extensions/index.ts,project,async-local extension runtime state

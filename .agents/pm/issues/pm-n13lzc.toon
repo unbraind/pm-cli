@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T12:13:36.253Z"
-updated_at: "2026-07-26T19:45:06.113Z"
+updated_at: "2026-07-26T19:51:34.196Z"
 closed_at: "2026-07-26T19:43:51.671Z"
 claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
@@ -21,9 +21,10 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-2i12ti,implements,"2026-07-26T19:12:08.511Z",null,null
   pm-jmld,implements,"2026-07-26T19:12:08.511Z",null,null
   pm-usfg,implements,"2026-07-26T19:12:08.511Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T12:13:36.253Z","harness:codex","Duplicate check 2026-07-26: searched all statuses for GH-739, existing duplicate clusters, findDuplicateClusters CLI, and batch duplicate sweep. Closed pm-2i12ti supplies the batch primitive, pm-4ri6 covers create-time advice, and pm-jmld covers merge execution; none exposes the requested read workflow, so this is the canonical surface child."
   "2026-07-26T19:42:55.554Z","harness:codex","Evidence: shipped bounded all-status duplicate discovery through CLI, MCP action contracts, PmClient, and top-level SDK helpers. Results provide deterministic canonical IDs, compact similarity summaries, cluster limits/status/since filters, and safe close guidance. Completion/contracts snapshots and a real temporary-tracker integration test are included. Fresh installed CLI acceptance found one two-item cluster. Linked tests passed; full coverage and static gates are green."
+  "2026-07-26T19:51:34.195Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
 files[9]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
   src/cli/commands/completion.ts,project,shell completion surface
