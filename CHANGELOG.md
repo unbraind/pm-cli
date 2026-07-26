@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-733: Windows Node 24 nightly portability regressions in author, recovery, and drift tests ([pm-wr8utz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wr8utz.toon))
 - Sentry PM-CLI-2M: classify workspace audit-state drift as an actionable conflict ([pm-o71t68](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o71t68.toon))
 - CodeFactor 2026-07-26 SDK and digital-twin regression cluster (GH-722 through GH-732) ([pm-eq3ak8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eq3ak8.toon))
 - GH-728: preserve live harness authorship across initialized multi-agent workspaces ([pm-si2uur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-si2uur.toon))
