@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:sdk",author,identity,multi-agent,provenance
 created_at: "2026-07-26T06:25:19.908Z"
-updated_at: "2026-07-26T08:02:11.059Z"
+updated_at: "2026-07-26T08:29:30.361Z"
 closed_at: "2026-07-26T07:24:55.763Z"
 author: "harness:codex"
 estimated_minutes: 240
@@ -32,7 +32,8 @@ files[3]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/init-author-provenance.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/commands/init-author-provenance.spec.ts tests/unit/sdk/author-attribution.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated GH-728 live author provenance changelog entry
   docs/CONFIGURATION.md,project,author configuration precedence
 close_reason: Kept detected authorship transient and proved cross-harness attribution in a fresh installed consumer.
 body: ""

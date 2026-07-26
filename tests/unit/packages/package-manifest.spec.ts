@@ -111,8 +111,25 @@ function extractModuleManifestCapabilities(
     true,
     ts.ScriptKind.TS,
   );
+  const explicitlyExportsManifest = sourceFile.statements.some(
+    (statement) =>
+      ts.isExportDeclaration(statement) &&
+      statement.exportClause !== undefined &&
+      ts.isNamedExports(statement.exportClause) &&
+      statement.exportClause.elements.some(
+        (element) =>
+          element.name.text === "manifest" &&
+          (element.propertyName?.text ?? element.name.text) === "manifest",
+      ),
+  );
   for (const statement of sourceFile.statements) {
-    if (!ts.isVariableStatement(statement)) {
+    if (
+      !ts.isVariableStatement(statement) ||
+      (!statement.modifiers?.some(
+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+      ) &&
+        !explicitlyExportsManifest)
+    ) {
       continue;
     }
     for (const declaration of statement.declarationList.declarations) {
@@ -159,6 +176,18 @@ describe("pm package manifest model", () => {
         'export const manifest = ({ capabilities: ["search"] } as const);',
       ),
     ).toEqual(["search"]);
+    expect(
+      extractModuleManifestCapabilities(
+        "explicit.ts",
+        'const manifest = { capabilities: ["hooks"] }; export { manifest };',
+      ),
+    ).toEqual(["hooks"]);
+    expect(() =>
+      extractModuleManifestCapabilities(
+        "private.ts",
+        'const manifest = { capabilities: ["commands"] }; export default manifest;',
+      ),
+    ).toThrow("to export a manifest object");
   });
 
   it("publishes stable SDK subpaths used by package authors", async () => {

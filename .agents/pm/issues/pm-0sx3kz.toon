@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T00:58:27.183Z"
-updated_at: "2026-07-26T08:02:10.352Z"
+updated_at: "2026-07-26T08:29:29.649Z"
 closed_at: "2026-07-26T07:24:49.503Z"
 author: "harness:codex"
 acceptance_criteria: "A GitHub source with a missing manifest entry reports the copy-without-build cause without executing untrusted package scripts; When package metadata identifies a published package, remediation includes the exact npm source command; otherwise it recommends a locally built path; Extension author and install documentation distinguish GitHub source trees from built npm artifacts; Temporary-repository acceptance covers missing dist, committed dist, npm fallback, and bounded error output"
@@ -34,7 +34,8 @@ files[5]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command-github.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-shared-helpers.spec.ts,project,240
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated GH-720 install diagnostic changelog entry
   docs/EXTENSIONS.md,project,extension install source behavior
 close_reason: Implemented source-aware GitHub build diagnostics with typed recovery and regression coverage.
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T07:42:59.010Z"
-updated_at: "2026-07-26T08:02:12.500Z"
+updated_at: "2026-07-26T08:29:31.054Z"
 closed_at: "2026-07-26T07:47:48.773Z"
 author: "harness:codex"
 acceptance_criteria: Out-of-band singleton drift still blocks the mutation before an unaudited write persists; CLI and SDK callers receive a stable PmCliError conflict code with actionable history/merge reconciliation guidance; expected conflict classification is not captured as a high-severity Sentry runtime error; focused workspace-history and full release gates pass; the live PM-CLI-2M issue is resolved only after exact fix proof
@@ -29,7 +29,8 @@ files[2]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/history/workspace-history.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/core/sentry/instrument.spec.ts,project,240
   "pnpm release:gates",project,1200
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated Sentry workspace-history conflict changelog entry
   docs/CONFIGURATION.md,project,Existing workspace audit history and reconciliation contract
 close_reason: "Preserved workspace audit integrity while classifying intentional drift refusal as an actionable conflict; focused, manual, and live Sentry evidence recorded."
 body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:extensions","area:sdk",customization,dx,refactor
 created_at: "2026-07-25T21:40:27.254Z"
-updated_at: "2026-07-26T08:02:13.188Z"
+updated_at: "2026-07-26T08:29:33.976Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "An extension can declare the standard filter-flag set by consuming an SDK export rather than by restating FlagDefinition objects, and adding a filter flag to the CLI baseline reaches consuming packages without per-package edits. The SDK provides the runtime-resolution helper that the ten first-party copies of ensureRuntimeBundle currently implement, so no package hand-joins dist paths; the first-party copies are replaced by it. Alias and cursor semantics attached to a baseline flag are inherited rather than re-declared, and pm-search-advanced's divergent aliases are either adopted into the baseline or dropped. At least one first-party package is migrated end to end as proof and its hand-written tables are deleted. A regression test asserts that a package built only against public SDK subpaths can register a command carrying the full baseline filter set."
@@ -19,7 +19,7 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-c5f0gh,related,"2026-07-25T21:40:27.254Z",null,null
   pm-usfg,related,"2026-07-25T21:40:27.254Z",null,null
   pm-x6jf,related,"2026-07-25T21:40:27.254Z",null,null
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-07-25T22:20:08.935Z","harness:codex","Start evidence: all-status inventory reviewed 2,043 items (1,766 closed, 265 open, 12 canceled) with zero pre-existing in-progress items. Selected one cohesive package-authoring lane spanning consumable SDK flag/runtime contracts, scaffold parity, prefix-safe naming, and dependency queue reconciliation. GitHub snapshot has zero open PRs; all 21 open issues contain canonical pm-item links; pnpm audit reports zero vulnerabilities."
   "2026-07-25T22:35:02.712Z","harness:codex","Implementation evidence: added public CLI-contract to extension-flag adapter, exported list/search baselines, migrated pm-search-advanced through the first-party runtime bridge, and passed 158 focused unit/integration tests plus targeted ESLint."
   "2026-07-25T22:38:02.233Z","harness:codex","Contract evidence: full CLI contract snapshot stayed current; SDK surface update classified eight additive exports across sdk, sdk/authoring, and sdk/runtime with no breaking or changed symbols."
@@ -30,6 +30,7 @@ comments[10]{created_at,author,text}:
   "2026-07-26T00:58:39.676Z","harness:codex","GitHub linkage: issue #717 provides a concrete installed-extension reproduction for the remaining runtime SDK loader/resolution clause: https://github.com/unbraind/pm-cli/issues/717. Reuse this canonical item; do not create a duplicate."
   "2026-07-26T07:24:37.827Z","harness:codex","Partial delivery evidence: this PR completes canonical public host flag contracts, first-party global-author migration, Plan metadata key export, GitHub source diagnostics, and package-export-aware quality checks. The broader item remains open because replacing every remaining first-party PM_CLI_PACKAGE_ROOT runtime-loader copy is still outstanding."
   "2026-07-26T08:02:13.187Z","harness:codex","Continuation evidence: PR #734 head 185693b9 converges the SDK/extension host seams and package-export static boundary, while this item remains open for the explicitly outstanding runtime-loader copies."
+  "2026-07-26T08:29:33.976Z","harness:codex","Final-head continuation evidence: PR #734 e2453835 passes the complete hosted matrix and preserves this item as open for the remaining first-party runtime-loader convergence work."
 files[11]{path,scope,note}:
   packages/pm-search-advanced/extensions/search-advanced/index.ts,project,Migrated first-party registration consumer
   packages/pm-search-advanced/extensions/search-advanced/runtime.ts,project,Host runtime bridge for SDK-derived flag definitions

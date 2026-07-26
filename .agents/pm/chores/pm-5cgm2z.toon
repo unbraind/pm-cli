@@ -1,0 +1,21 @@
+id: pm-5cgm2z
+title: Evaluate @toon-format/toon 4 compatibility and item-format migration
+description: "Own the TOON 4.0.0 major upgrade separately from routine dependency refreshes. Upstream declares no Node engine floor, but the major storage codec must prove byte-level item/history compatibility, strict decode/encode behavior, migration safety, and all release gates before adoption."
+type: Chore
+status: open
+priority: 3
+tags[4]: dependencies,migration,storage,toon
+created_at: "2026-07-26T08:28:30.602Z"
+updated_at: "2026-07-26T08:28:30.602Z"
+author: "harness:codex"
+acceptance_criteria: TOON 4 is evaluated against canonical item files and history replay; encode/decode and migration fixtures remain lossless; Node 22/24/26 and Bun installed consumers pass; the upgrade is adopted or explicitly rejected with upstream evidence.
+parent: pm-u9d0
+risk: medium
+confidence: medium
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-8cjeut,related,"2026-07-26T08:28:30.602Z",null,null
+  pm-ae1u,related,"2026-07-26T08:28:30.602Z",null,null
+  pm-rvbt,related,"2026-07-26T08:28:30.602Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T08:28:30.602Z","harness:codex","Duplicate-check evidence: all-status searches for @toon-format/toon, TOON v4 migration, and TOON 4 found storage decisions and prior minor refreshes but no active owner for the 4.0.0 major compatibility decision. npm metadata on 2026-07-26 reports 4.0.0 with no engines field; deferral is for codec/storage compatibility proof, not a claimed engine incompatibility."
+body: ""
