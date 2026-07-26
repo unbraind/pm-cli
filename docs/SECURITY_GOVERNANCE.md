@@ -58,8 +58,11 @@ pnpm test:fuzz
 
 The same specs are included in the normal Vitest and four-shard coverage lanes,
 so every pull request exercises them under the required 100% coverage gate.
-`fast-check` reports the seed and shrunk counterexample on failure so a finding
-can be reproduced and filed as a dedicated `pm` issue.
+`fast-check` reports the seed and shrunk counterexample on failure so a
+non-sensitive, non-security finding can be reproduced and filed as a dedicated
+`pm` issue. Suspected vulnerabilities and exploit details must use GitHub
+private vulnerability reporting and must not be copied into public `pm`
+history.
 
 ClusterFuzzLite and OSS-Fuzz are not a practical first integration for this
 TypeScript CLI: the Scorecard-supported `fast-check` path runs the native
