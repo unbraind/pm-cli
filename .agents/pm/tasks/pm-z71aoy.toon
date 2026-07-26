@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-25T20:41:01.555Z"
-updated_at: "2026-07-26T05:59:43.485Z"
+updated_at: "2026-07-26T10:31:20.387Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Budgets are measured against fixtures at declared scale tiers including at least one workspace of repository size or larger, and each budget records the tier it was measured at, so a ceiling can no longer be set on a micro-workspace and read as a product guarantee; The corpus covers the MCP tools/list handshake payload and the aggregate per-command help surface, sourced from the same measurement the gate uses, so both have ceilings that fail on growth; The gate consumes scripts/measure-agent-token-surface.mjs rather than duplicating measurement, and a single command reproduces every published figure; A coverage assertion fails when a command, MCP tool, or output format exists with no budget entry, so new surfaces cannot be added outside the corpus; The gate reports the delta against the recorded baseline, not only pass or fail, so a change that consumes headroom without breaching is visible in review; The current 31-tool handshake and 76-command help surface are recorded as the new baseline with their measurement method, superseding the stale pm-a22j 28-tool figure wherever it is cited"
@@ -24,4 +24,6 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-wt43zj,related,"2026-07-25T20:41:01.555Z",null,null
   pm-5t33or,verifies,"2026-07-26T05:50:21.528Z",null,null
   pm-cha95z,verifies,"2026-07-26T05:59:43.114Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T10:31:20.386Z","harness:opencode","Corpus-gap evidence 2026-07-26 (audit plan pm-t9e3bc): in this extension-loaded dogfood workspace the agent-facing payloads exceed every gated fixture budget — pm --help renders 13,398 bytes vs the 11,688-byte fixture budget (7 loaded extensions contribute 21 command handlers the fixture never sees), and contracts --flags-only measures 117,070 bytes vs the 116,189-byte fixture budget. Both gates are green because the fixture is extension-free and micro-scale; the real workspace an agent actually reads is already over budget on both surfaces. Confirms this item's thesis from the agent side: the largest payloads (extension-loaded help/contracts) are the unmeasured ones."
 body: ""

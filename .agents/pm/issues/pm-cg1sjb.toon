@@ -1,0 +1,25 @@
+id: pm-cg1sjb
+title: "SDK entrypoint import-cost gate false-fails on cold filesystem cache: single-shot fresh-process sampling exceeds the 30ms noise margin"
+description: "Live reproduction 2026-07-26 on clean main (2026.7.26): the first pnpm lint invocation of the day failed the SDK entrypoint import-cost gate with './sdk/runtime: 545ms > 510ms' (budget 480ms + LATENCY_NOISE_MARGIN_MS 30). An immediate re-run with zero code or environment changes passed all 10 entrypoints, and every subsequent run stayed green. The gate spawns fresh Node processes per entrypoint but takes a single timing sample per check run, so a cold filesystem/module cache on the first run of a session (or a loaded CI runner) converts pure measurement noise into a hard gate failure. False failures train agents to re-run gates until green and erode trust in the pipeline — the symmetric hazard to the false-pass erosion pm-k6t4yb registers. Duplicate check: searched import-cost/noise/cold/flake all-status; pm-38bskj (closed) shaped the entrypoints, pm-ag9nka owns --profile truthfulness, pm-k6t4yb owns the gate registry and negative controls — none own per-run sampling noise of this gate. Fix directions (implementation out of scope for the filing pass): warm-up sample discarded before measurement, min-of-N sampling per entrypoint instead of single-shot, or cache-aware margin; whichever lands must register in the pm-k6t4yb gate registry with a negative-control fixture."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:ci",flake,gate-reliability,performance
+created_at: "2026-07-26T10:28:46.495Z"
+updated_at: "2026-07-26T10:29:40.904Z"
+author: "harness:opencode"
+estimated_minutes: 120
+acceptance_criteria: "The import-cost gate cannot fail solely because the first sampled process hit a cold cache: measurement uses either a discarded warm-up sample or min-of-N per entrypoint; a simulated cold-cache run is green when costs are within budget; the gate still fails on a genuinely over-budget entrypoint (negative control per pm-k6t4yb); budgets in scripts/bench/sdk-entrypoint-budgets.json are not raised to absorb noise"
+parent: pm-u9d0
+risk: low
+confidence: high
+severity: low
+expected_result: pnpm lint is deterministic green on main regardless of filesystem cache warmth when entrypoint costs are within budget
+actual_result: First cold run failed at 545ms > 510ms on ./sdk/runtime; immediate warm re-runs pass unchanged
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-ag9nka,related,"2026-07-26T10:29:40.699Z",null,null
+  pm-k6t4yb,related,"2026-07-26T10:29:40.699Z",null,null
+files[2]{path,scope,note}:
+  scripts/bench/sdk-entrypoint-budgets.json,project,budget table measured against
+  scripts/bench/sdk-entrypoint-costs.mjs,project,"gate implementation: single-shot fresh-process sampling,30ms noise margin"
+body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: architecture,"area:cli","area:contracts","area:sdk",ci-gate,ratchet,sdk-first
 created_at: "2026-07-26T05:44:44.266Z"
-updated_at: "2026-07-26T06:08:18.369Z"
+updated_at: "2026-07-26T10:31:25.247Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "The curated SCHEMA_PARITY_CASES array is replaced by a gate deriving its subjects from the command registry, so every declared action is examined without anyone maintaining a list; the gate asserts three separately-reported properties — action completeness (every dispatchable action has an SDK entry point), bidirectional parameter completeness (every flag maps to a schema parameter and every parameter is reachable from a flag), and behavioural equivalence over declared representative invocations at the result-envelope level; behavioural equivalence is enforced as a committed shrinking-only ratchet rather than as a false claim of exhaustiveness; rendering, help layout, colour and pager behaviour are explicitly excluded and the boundary is documented as the result envelope, not the rendered bytes; a negative-control fixture registering a command with no SDK action proves the gate fails, per pm-k6t4yb; each of the 75 currently unasserted actions ends up covered by the derived gate, covered by the ratchet, or carrying a recorded waiver with a stated reason; the gate runs in the existing static gate matrix beside sdk:surface:check and contracts:check"
@@ -26,6 +26,8 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-xwah,related,"2026-07-26T05:44:44.266Z",null,null
   pm-usfg,verifies,"2026-07-26T05:50:30.070Z",null,null
   pm-usfg,implements,"2026-07-26T05:55:56.605Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T10:31:25.247Z","harness:opencode","Surface-shape evidence 2026-07-26 (audit plan pm-t9e3bc): the promoted surface now spans 3,113 symbols over 10 entrypoints (census on pm-usfg same pass), including 923 advanced_export-tier symbols. The completeness-proof direction this item owns is now the load-bearing one: the boundary ratchet proves CLI cannot reach below the SDK, but with 384 symbols on ./sdk/runtime alone, only this item's reverse assertion can prove the SDK can do what each of the 74 contract command spellings does."
 files[2]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,PM_TOOL_ACTIONS declares 85 actions; the derived gate must enumerate from here
   tests/unit/sdk/action-schema-parity.spec.ts,project,SCHEMA_PARITY_CASES curates 10 literal cases
