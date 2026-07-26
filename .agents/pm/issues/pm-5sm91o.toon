@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T01:00:16.908Z"
-updated_at: "2026-07-26T13:18:25.981Z"
+updated_at: "2026-07-26T14:09:08.780Z"
 closed_at: "2026-07-26T12:43:44.062Z"
 author: "harness:codex"
 estimated_minutes: 240
@@ -21,12 +21,13 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-wo8,related,"2026-07-26T01:00:16.908Z",null,null
   pm-u9d0,implements,"2026-07-26T05:59:20.429Z",null,null
   pm-j36ypd,discovered_from,"2026-07-26T10:56:05.664Z",null,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-26T01:00:16.908Z","harness:codex","Duplicate check: searched all statuses for EAGAIN,Resource temporarily unavailable,verbose linked-test output,bounded drain,and max-buffer behavior. Closed pm-j36ypd owns the original GH-679 fix; GH-714 is a released-version regression with contradictory evidence and therefore needs a distinct child issue rather than reopening the completed historical result."
   "2026-07-26T01:00:28.371Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/714"
   "2026-07-26T11:46:14.677Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:43:40.735Z","harness:codex","Acceptance evidence: linked tests now stream child stdout/stderr into blocking regular files, retain at most 20 MiB per stream, disclose truncation separately from failure, and remove capture directories in a finally path. The 56-test focused runner suite passes; an npm-packed unrelated consumer ran a Bun child emitting 22,000,000 bytes to completion with status=passed, a truncation notice, retained stdout length 20,971,627, and zero max-buffer failures."
   "2026-07-26T13:18:25.981Z","harness:codex","PR evidence: broad delivery published as GitHub PR #744 (https://github.com/unbraind/pm-cli/pull/744) from branch feat/sdk-agent-fleet-integrity. Exact implementation commit c13e4aca; hosted checks and full AI review loop pending on the PR head."
+  "2026-07-26T14:09:08.779Z","harness:codex","Exact-head hosted evidence: PR #744 commit b28d3cb736a32cbcd54266243cd3f6848372f6df passed the complete required GitHub check matrix with zero failed checks. Thread-aware inventory found zero inline threads. CodeRabbit completed the explicitly retriggered full-review request under its external fair-usage limit and emitted no finding; all new bot surfaces were reacted to and acknowledged. Local final evidence remains 374 files, 6,420 tests, exact 100/100/100/100 coverage, clean lint/static/contracts/changelog/health, and real-time telemetry drain."
 files[2]{path,scope,note}:
   src/sdk/test/execution.ts,project,Blocking regular-file child output capture
   tests/unit/commands/test-command.spec.ts,project,Verbose output and truncation regression

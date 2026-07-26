@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-26T13:18:31.720Z"
+updated_at: "2026-07-26T14:09:10.795Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 author: maintainer-agent
@@ -20,7 +20,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-d4ns,related,"2026-07-15T18:17:35.524Z",null,null
   pm-u9d0,implements,"2026-07-26T05:59:21.492Z",null,null
   pm-lpqln4,related,"2026-07-26T10:52:22.840Z",null,null
-comments[101]{created_at,author,text}:
+comments[102]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -122,6 +122,7 @@ comments[101]{created_at,author,text}:
   "2026-07-26T12:59:17.893Z","harness:codex","Investigation 2026-07-26: broad SDK release gates passed build, static quality, literal 100/100/100/100 coverage, packed npx smoke, and 88-command package dogfood, then failed only because an environment Sentry token returned 403. The installed Sentry CLI is authenticated and successfully reads unbrained/pm-cli, exposing a gate defect: best-effort mode falls back to CLI credentials only when no token exists, not when every environment token is rejected. Reusing this canonical all-status release-health reminder; no duplicate item created."
   "2026-07-26T13:11:40.068Z","harness:codex","Fix evidence 2026-07-26: best-effort release telemetry now falls back to the authenticated Sentry CLI after all configured API tokens fail, while telemetry-off mode retains direct API diagnostics and tokenless best-effort remains optional. Focused 51-test regression suite passed. Adversarial live run with only an intentionally invalid SENTRY_AUTH_TOKEN passed via token_source=sentry_cli: critical=0, high=0, four expected handled groups, telemetry finish_error_rate_pct=1.98, and zero failures missing error_code. Full local product gates passed 6,420 tests at literal 100/100/100/100 plus packed npx and 88-command dogfood; only pre-push exact-SHA hosted analysis remains pending."
   "2026-07-26T13:18:31.719Z","harness:codex","PR evidence: broad delivery published as GitHub PR #744 (https://github.com/unbraind/pm-cli/pull/744) from branch feat/sdk-agent-fleet-integrity. Exact implementation commit c13e4aca; hosted checks and full AI review loop pending on the PR head."
+  "2026-07-26T14:09:10.793Z","harness:codex","Exact-head hosted evidence: PR #744 commit b28d3cb736a32cbcd54266243cd3f6848372f6df passed the complete required GitHub check matrix with zero failed checks. Thread-aware inventory found zero inline threads. CodeRabbit completed the explicitly retriggered full-review request under its external fair-usage limit and emitted no finding; all new bot surfaces were reacted to and acknowledged. Local final evidence remains 374 files, 6,420 tests, exact 100/100/100/100 coverage, clean lint/static/contracts/changelog/health, and real-time telemetry drain."
 notes[7]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
