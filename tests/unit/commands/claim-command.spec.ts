@@ -564,6 +564,41 @@ describe("runClaim/runRelease", () => {
     });
   });
 
+  it("clears a durable claim principal after terminal transitions remove the assignee", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "release-terminal-claim-principal",
+        status: "open",
+      });
+      await runClaim(id, false, { path: context.pmPath });
+      const closed = context.runCli(["close", id, "completed", "--json"], {
+        expectJson: true,
+      });
+      expect(closed.code).toBe(0);
+      const beforeHistory = context.runCli(
+        ["history", id, "--json", "--full"],
+        { expectJson: true },
+      );
+
+      const released = await runRelease(id, false, {
+        path: context.pmPath,
+      });
+      const afterHistory = context.runCli(
+        ["history", id, "--json", "--full"],
+        { expectJson: true },
+      );
+
+      expect(released.previous_assignee).toBeNull();
+      expect(released.item.assignee).toBeUndefined();
+      expect(released.item.claim_principal).toBeUndefined();
+      expect(
+        (afterHistory.json as { history: unknown[] }).history.length,
+      ).toBe(
+        (beforeHistory.json as { history: unknown[] }).history.length + 1,
+      );
+    });
+  });
+
   it("releases current author assignments and blocks foreign assignees unless forced", async () => {
     await withTempPmPath(async (context) => {
       setGovernancePreset(context, "strict");

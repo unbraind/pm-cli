@@ -20,8 +20,6 @@ const repoRoot = path.resolve(
 const packagePath = path.join(repoRoot, "package.json");
 const snapshotPath = path.join(
   repoRoot,
-  "tests",
-  "fixtures",
   "sdk",
   "public-surface.json",
 );
@@ -42,10 +40,12 @@ const TYPE_FORMAT_FLAGS =
   ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope |
   ts.TypeFormatFlags.WriteArrowStyleSignature;
 const AGGREGATE_EXCLUDED_ENTRYPOINTS = new Set(["./sdk", "./sdk/testing"]);
-const AGGREGATE_EXPORT_EXCLUSIONS = Object.freeze({
-  _testOnlyCliContracts:
-    "Deliberately scoped to the contracts subpath for pm's own contract tests.",
-});
+const AGGREGATE_EXPORT_EXCLUSIONS = Object.freeze(
+  Object.assign(Object.create(null), {
+    _testOnlyCliContracts:
+      "Deliberately scoped to the contracts subpath for pm's own contract tests.",
+  }),
+);
 
 /** Return a stable JSON representation with recursively sorted object keys. */
 export function stableJson(value) {
@@ -190,11 +190,13 @@ export function analyzeAggregateSdkCompleteness(
     }
   }
   const missing = [...required]
-    .filter(([name]) => !aggregateNames.has(name) && exclusions[name] === undefined)
+    .filter(
+      ([name]) => !aggregateNames.has(name) && !Object.hasOwn(exclusions, name),
+    )
     .map(([name, entrypoints]) => ({ name, entrypoints }))
     .sort((left, right) => left.name.localeCompare(right.name));
   const excluded = Object.entries(exclusions)
-    .filter(([name]) => required.has(name))
+    .filter(([name]) => required.has(name) && !aggregateNames.has(name))
     .map(([name, reason]) => ({ name, reason }))
     .sort((left, right) => left.name.localeCompare(right.name));
   return {

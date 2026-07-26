@@ -46,7 +46,7 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
-import { createSerialQueue } from "../core/shared/serial-queue.js";
+import { createAsyncReadWriteGate } from "../core/shared/serial-queue.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
@@ -2461,18 +2461,11 @@ export function readRequiredString(
   return value;
 }
 
-// pm-bl6m / pm-zumn: every native MCP action runs inside an activation cycle that
-// mutates the process-global active extension registries (set globals -> run -> clear
-// globals in a finally). The stdio transport already processes JSON-RPC lines
-// sequentially, but handleRequest is a public entry point (tests, future concurrent
-// transports) — if two requests ever ran concurrently, the newer one would overwrite
-// the globals mid-flight and whichever finished first would clear them out from under
-// the other (its lazily-read hooks/overrides would silently vanish). Serialize the
-// whole activation cycle (load -> activate -> set -> run -> clear -> deactivate) on a
-// dedicated FIFO queue so the critical section can never interleave. Full
-// request-scoped registry plumbing remains possible later if true intra-server
-// concurrency is ever needed.
-const extensionActivationQueue = createSerialQueue();
+// pm-zpoyg9: request-local registries permit independent activation cycles to
+// overlap, but explicit cwd calls still mutate process-global state. The gate
+// retains reader concurrency while making cwd mutation exclusive against every
+// activation path, including callers that resolve paths through process.cwd().
+const extensionActivationGate = createAsyncReadWriteGate();
 const activeExtensionScope = new AsyncLocalStorage<boolean>();
 
 type ExtensionActivationResult = Awaited<ReturnType<typeof activateExtensions>>;
@@ -2511,8 +2504,9 @@ function resetActiveExtensionRegistries(): void {
  * action. Activation is skipped (`run` receives `null`) when extensions are disabled or
  * no workspace exists yet (for example `init`). EVERY action — activating or not — is
  * isolated through an async-local registry context. Calls with an explicit `cwd`
- * remain serialized because `process.chdir` is process-global; calls that use
- * workspace/path arguments can activate independently without cross-request leakage.
+ * acquire exclusive access because `process.chdir` is process-global; calls that use
+ * workspace/path arguments share read access and remain concurrent when no cwd writer
+ * was already scheduled.
  */
 async function withActiveExtensions<T>(
   global: GlobalOptions,
@@ -2522,8 +2516,10 @@ async function withActiveExtensions<T>(
 ): Promise<T> {
   return runWithIsolatedExtensionRuntime(() =>
     explicitCwd === undefined
-      ? withActiveExtensionsExclusively(global, resolutionCwd, run)
-      : extensionActivationQueue.enqueue(() =>
+      ? extensionActivationGate.read(() =>
+          withActiveExtensionsExclusively(global, resolutionCwd, run),
+        )
+      : extensionActivationGate.write(() =>
           withCwd(explicitCwd, () =>
             withActiveExtensionsExclusively(global, resolutionCwd, run),
           ),

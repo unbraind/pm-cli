@@ -999,7 +999,7 @@ export const STATS_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for duplicate-cluster discovery flags. */
 export const DUPLICATES_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--status", repeatable: true },
+  { flag: "--status", repeatable: true, list: true },
   { flag: "--since" },
   { flag: "--threshold" },
   { flag: "--limit" },

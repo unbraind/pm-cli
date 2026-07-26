@@ -1,0 +1,39 @@
+id: pm-bnrndo
+title: Terminal release transitions retain stale claim_principal ownership
+description: "CodeRabbit PR #753 found that closed items remain durably owned after pm release because terminal projections retain claim_principal. Fix release semantics so both assignee and claim principal clear through append-only PM history, add regression coverage, and repair the affected PR items through the CLI."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-07-26T20:29:07.269Z"
+updated_at: "2026-07-26T20:55:29.768Z"
+closed_at: "2026-07-26T20:55:26.628Z"
+author: "harness:codex"
+acceptance_criteria: pm release clears assignee and claim_principal for terminal and active items through a recorded history transition; affected PR #753 items have no stale ownership; regression tests prove projection and history behavior
+parent: pm-dj98
+resolution: Release transitions now clear terminal claim principals through append-only history.
+expected_result: "Releasing any claimed item clears both assignee and claim_principal, including after close removed assignee."
+actual_result: Unit regression and live repairs prove terminal releases append ownership cleanup and leave no durable claim principal.
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-8t5x,related,"2026-07-26T20:29:07.269Z",null,null
+  pm-lnswp0,discovered_from,"2026-07-26T20:29:07.269Z",null,null
+  pm-z8qd4k,related,"2026-07-26T20:29:07.269Z",null,null
+  pm-h3ipax,related,"2026-07-26T20:35:31.710Z",null,null
+  pm-i7indd,verifies,"2026-07-26T20:35:31.710Z",null,null
+  pm-n13lzc,verifies,"2026-07-26T20:35:31.710Z",null,null
+  pm-obbh43,related,"2026-07-26T20:35:31.710Z",null,null
+  pm-zpoyg9,verifies,"2026-07-26T20:35:31.710Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-26T20:29:07.269Z","harness:codex","Duplicate check 2026-07-26: searched every status for closed claim_principal release ownership, release clears claim principal, and stale terminal ownership. Existing claim atomicity items pm-8t5x and pm-z8qd4k cover acquisition identity, while PR items only exhibit the symptom; no item owns release-side durable ownership cleanup, so this is the canonical review-found lifecycle defect."
+  "2026-07-26T20:35:34.178Z","harness:codex","Review implementation: runRelease now treats an orphaned claim_principal as durable ownership that requires a recorded release transition even when a terminal close already removed assignee. The rebuilt globally installed CLI successfully repaired closed pm-i7indd without force; the remaining actively reopened PR items will prove cleanup on their normal close/release path."
+  "2026-07-26T20:53:21.286Z","harness:codex","Final local verification: repo-wide coverage passed 375 test files and 6,428 tests at exact 100% statements (44,307/44,307), branches (31,445/31,445), functions (9,061/9,061), and lines (43,046/43,046). Full lint passed ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budgets, SDK surface, import-cost, and transport-floor gates. Security scan and pnpm audit reported no secrets or vulnerabilities; packed npx acceptance passed all 15 bundled packages."
+  "2026-07-26T20:55:21.435Z","harness:codex","Acceptance evidence: linked claim lifecycle test passed 24/24 through pm test in an isolated schema tracker. Live repaired pm-i7indd already has no claim_principal; the five reopened review items will exercise the same close-then-release path."
+files[2]{path,scope,note}:
+  src/cli/commands/claim.ts,project,release clears orphaned claim principals
+  tests/unit/commands/claim-command.spec.ts,project,terminal ownership regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/claim-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms29zjlw-mrqo03,test,passed,"2026-07-26T20:53:31.236Z","2026-07-26T20:53:42.788Z","2026-07-26T20:53:42.788Z",1,0,0
+close_reason: Fixed terminal release ownership cleanup; 24/24 linked tests and live closed-item repair passed.
+body: ""

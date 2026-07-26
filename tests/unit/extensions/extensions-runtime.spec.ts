@@ -1315,6 +1315,46 @@ describe("core/extensions runtime wrappers", () => {
         },
       ),
     ).toEqual({ handled: true, result: "rendered", warnings: [] });
+    const handledDomainPayload = { handled: true, items: ["pm-a"] };
+    expect(
+      runServiceOverrideSync(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "handled-domain-payload",
+              service: "item_store_read",
+              run: () => handledDomainPayload,
+            },
+          ],
+        },
+        {
+          service: "item_store_read",
+          pm_root: "/tmp/project",
+          payload: null,
+        },
+      ),
+    ).toEqual({ handled: true, result: handledDomainPayload, warnings: [] });
+    const declinedDomainPayload = { handled: false, items: ["pm-b"] };
+    expect(
+      runServiceOverrideSync(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "declined-domain-payload",
+              service: "item_store_read",
+              run: () => declinedDomainPayload,
+            },
+          ],
+        },
+        {
+          service: "item_store_read",
+          pm_root: "/tmp/project",
+          payload: null,
+        },
+      ),
+    ).toEqual({ handled: true, result: declinedDomainPayload, warnings: [] });
     expect(
       await runServiceOverride(
         {

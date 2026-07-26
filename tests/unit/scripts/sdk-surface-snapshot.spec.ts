@@ -168,6 +168,39 @@ describe("SDK surface snapshot semantics", () => {
         { name: "queryItems", reason: "intentionally narrow-only fixture" },
       ],
     });
+    entrypoints["./sdk"]!.symbols = [
+      {
+        name: "alphaQuery",
+        kind: "function",
+        classification: "advanced_export",
+        signature: "() => void",
+      },
+    ];
+    expect(
+      mod.analyzeAggregateSdkCompleteness(entrypoints, {
+        alphaQuery: "stale exclusion for a now-covered export",
+        queryItems: "intentionally narrow-only fixture",
+      }),
+    ).toMatchObject({
+      covered_symbols: 1,
+      missing: [],
+      excluded: [
+        { name: "queryItems", reason: "intentionally narrow-only fixture" },
+      ],
+    });
+    entrypoints["./sdk/query"]!.symbols.push({
+      name: "constructor",
+      kind: "function",
+      classification: "supported",
+      signature: "() => void",
+    });
+    expect(
+      mod.analyzeAggregateSdkCompleteness(entrypoints, {}),
+    ).toMatchObject({
+      missing: expect.arrayContaining([
+        { name: "constructor", entrypoints: ["./sdk/query"] },
+      ]),
+    });
   });
   it("sorts object keys recursively while preserving array order", async () => {
     const mod = await loadModule();

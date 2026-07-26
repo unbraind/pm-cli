@@ -1059,7 +1059,7 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         duplicates)
           _arguments \\
-            '--status[Include lifecycle status (repeatable)]:(${statusChoices})' \\
+            '*--status[Include lifecycle status (repeatable)]:(${statusChoices})' \\
             '--since[Only inspect items created at or after this ISO timestamp]:timestamp' \\
             '--threshold[Minimum similarity score from zero through one]:number' \\
             '--limit[Maximum duplicate clusters]:number'

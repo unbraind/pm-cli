@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[6]: concurrency,extensions,"gh:742",multi-tenant,performance,sdk
 created_at: "2026-07-26T13:14:50.610Z"
-updated_at: "2026-07-26T19:51:29.926Z"
-closed_at: "2026-07-26T19:43:34.863Z"
-claim_principal: "harness:codex#de74a49829faaec73e28ece0"
+updated_at: "2026-07-26T20:55:55.594Z"
+closed_at: "2026-07-26T20:55:52.499Z"
 author: "harness:codex"
 acceptance_criteria: noExtensions built-in actions bypass global activation serialization; independent workspace/request registries execute concurrently without cross-request leakage; shared legacy global-state activation remains safely serialized or explicitly configured; deterministic concurrency tests prove both non-blocking and isolation; public SDK docs state the concurrency contract
 parent: pm-dj98
@@ -28,21 +27,26 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-ugqx,related,"2026-07-26T13:14:50.610Z",null,null
   pm-w7mqzt,related,"2026-07-26T13:14:50.610Z",null,null
   pm-bl6m,implements,"2026-07-26T19:12:06.545Z",null,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-26T13:14:50.610Z","harness:codex","Duplicate evidence 2026-07-26: all-status exact/keyword searches for PmClient process-wide activation queue, unrelated workspaces, multi-user hosts, extension activation concurrency, and registry serialization found no matching open or closed item. Closed pm-bl6m is the MCP request-scoped-registry precursor, not this PmClient cross-workspace throughput defect. Canonical GitHub issue: GH-742."
   "2026-07-26T19:42:53.788Z","harness:codex","Evidence: extension runtime registries, command context/result, and affected-item state are request-local through AsyncLocalStorage. PmClient calls without explicit cwd run concurrently while explicit cwd remains serialized around process.chdir. The MCP integration proves two overlapping delayed actions both start, the fast action completes first, and no registry/result state leaks. Linked tests passed; full coverage and static gates are green."
   "2026-07-26T19:51:29.923Z","harness:codex","PR evidence: completed implementation is published in broad SDK delivery PR #753 https://github.com/unbraind/pm-cli/pull/753. Hosted checks and the exact-head AI review loop will be recorded after completion."
-files[5]{path,scope,note}:
+  "2026-07-26T20:35:40.392Z","harness:codex","Review implementation: replaced the unsafe explicit-cwd-only serial queue with an arrival-ordered async read/write gate. Independent no-cwd activations remain concurrent readers, while any explicit-cwd activation is a writer that waits for prior readers and blocks later readers until process.cwd is restored, eliminating the reported cross-path chdir race without reintroducing global head-of-line blocking."
+  "2026-07-26T20:53:24.516Z","harness:codex","Final local verification: repo-wide coverage passed 375 test files and 6,428 tests at exact 100% statements (44,307/44,307), branches (31,445/31,445), functions (9,061/9,061), and lines (43,046/43,046). Full lint passed ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budgets, SDK surface, import-cost, and transport-floor gates. Security scan and pnpm audit reported no secrets or vulnerabilities; packed npx acceptance passed all 15 bundled packages."
+files[7]{path,scope,note}:
   CHANGELOG.md,project,pm-changelog 2026.7.26 generated release evidence
   src/core/extensions/index.ts,project,async-local extension runtime state
+  src/core/shared/serial-queue.ts,project,fair async read write activation gate
   src/sdk/runtime.ts,project,concurrent embedded activation routing
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,real concurrent extension action proof
+  tests/unit/core/shared/shared-helpers.spec.ts,project,reader concurrency writer exclusion proof
   tests/unit/extensions/extensions-runtime.spec.ts,project,request isolation negative controls
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,project,300
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms27eij4-ec4cg5,test,passed,"2026-07-26T19:41:02.066Z","2026-07-26T19:41:22.384Z","2026-07-26T19:41:22.384Z",1,0,0
+  test-local-ms2a0qdr-gqqce7,test,passed,"2026-07-26T20:54:19.254Z","2026-07-26T20:54:38.224Z","2026-07-26T20:54:38.224Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK.md,project,PmClient concurrency and cwd boundary
-close_reason: Replaced process-global embedded request state with AsyncLocalStorage isolation and proved safe concurrent independent SDK actions.
+close_reason: Shipped request-local extension state plus reader/writer activation gating; concurrent isolation and 43/43 linked tests passed.
 body: ""

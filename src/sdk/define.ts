@@ -291,9 +291,9 @@ export function defineServiceOverride(
 }
 
 /** Explicitly claim a service payload and publish its replacement result. */
-export function handleServiceOverride(
-  result: unknown,
-): ServiceOverrideDecision {
+export function handleServiceOverride<const TResult>(
+  result: TResult,
+): { handled: true; result: TResult } {
   return { handled: true, result };
 }
 

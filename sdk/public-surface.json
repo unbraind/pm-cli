@@ -99,6 +99,14 @@
       ],
       "package_version": "2026.7.26",
       "reason": "Add the already-exposed duplicates CLI to the canonical core-command tuple so action availability and extension reservations are truthful."
+    },
+    {
+      "changes": [
+        "signature ./sdk:handleServiceOverride",
+        "signature ./sdk/authoring:handleServiceOverride"
+      ],
+      "package_version": "2026.7.26",
+      "reason": "Move the public surface to a first-class package artifact and correct aggregate exclusion accounting plus additive command contracts."
     }
   ],
   "entrypoints": {
@@ -3925,7 +3933,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "handleServiceOverride",
-          "signature": "(result: unknown) => ServiceOverrideDecision | calls: (result: unknown) => ServiceOverrideDecision"
+          "signature": "<const TResult>(result: TResult) => { handled: true; result: TResult; } | calls: <const TResult>(result: TResult) => { handled: true; result: TResult; }"
         },
         {
           "classification": "supported",
@@ -11281,7 +11289,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "handleServiceOverride",
-          "signature": "(result: unknown) => ServiceOverrideDecision | calls: (result: unknown) => ServiceOverrideDecision"
+          "signature": "<const TResult>(result: TResult) => { handled: true; result: TResult; } | calls: <const TResult>(result: TResult) => { handled: true; result: TResult; }"
         },
         {
           "classification": "supported",

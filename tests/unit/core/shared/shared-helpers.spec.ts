@@ -10,7 +10,10 @@ import {
 } from "../../../../src/core/shared/conflict-markers.js";
 import { isPathWithinDirectory } from "../../../../src/core/fs/path-utils.js";
 import { createLazyModule } from "../../../../src/core/shared/lazy-module.js";
-import { createSerialQueue } from "../../../../src/core/shared/serial-queue.js";
+import {
+  createAsyncReadWriteGate,
+  createSerialQueue,
+} from "../../../../src/core/shared/serial-queue.js";
 import {
   jaccardSimilarity,
   normalizeLowercaseWhitespace,
@@ -226,6 +229,61 @@ describe("core/shared/serial-queue: createSerialQueue (pm-3puw)", () => {
 
     await idle;
     expect(order).toEqual(["first:start", "first:end", "second", "idle"]);
+  });
+});
+
+describe("core/shared/serial-queue: createAsyncReadWriteGate (pm-zpoyg9)", () => {
+  it("overlaps readers while excluding writers in arrival order", async () => {
+    const gate = createAsyncReadWriteGate();
+    const events: string[] = [];
+    let releaseReaders: () => void = () => undefined;
+    const readersBlocked = new Promise<void>((resolve) => {
+      releaseReaders = resolve;
+    });
+    const first = gate.read(async () => {
+      events.push("reader-one:start");
+      await readersBlocked;
+      events.push("reader-one:end");
+    });
+    const second = gate.read(async () => {
+      events.push("reader-two:start");
+      await readersBlocked;
+      events.push("reader-two:end");
+    });
+    const writer = gate.write(() => {
+      events.push("writer");
+      return 7;
+    });
+    const laterReader = gate.read(() => {
+      events.push("reader-three");
+    });
+
+    await Promise.resolve();
+    expect(events).toEqual(["reader-one:start", "reader-two:start"]);
+    releaseReaders();
+    await expect(writer).resolves.toBe(7);
+    await Promise.all([first, second, laterReader]);
+    expect(events.slice(2)).toEqual([
+      "reader-one:end",
+      "reader-two:end",
+      "writer",
+      "reader-three",
+    ]);
+  });
+
+  it("continues after rejected readers and writers", async () => {
+    const gate = createAsyncReadWriteGate();
+    await expect(
+      gate.read(() => {
+        throw new Error("reader");
+      }),
+    ).rejects.toThrow("reader");
+    await expect(
+      gate.write(() => {
+        throw new Error("writer");
+      }),
+    ).rejects.toThrow("writer");
+    await expect(gate.read(() => "recovered")).resolves.toBe("recovered");
   });
 });
 

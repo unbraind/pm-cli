@@ -1088,6 +1088,9 @@ describe("runCompletion", () => {
     const result: CompletionResult = runCompletion("zsh");
     expect(result.shell).toBe("zsh");
     expect(result.script).toContain("#compdef pm");
+    expect(result.script).toContain(
+      "*--status[Include lifecycle status (repeatable)]",
+    );
     expect(result.setup_hint).toContain("~/.zshrc");
   });
 

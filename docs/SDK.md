@@ -69,7 +69,7 @@ Every narrow entrypoint is bundled and type-tested independently.
 
 ### Public-surface compatibility
 
-[`tests/fixtures/sdk/public-surface.json`](../tests/fixtures/sdk/public-surface.json)
+[`sdk/public-surface.json`](../sdk/public-surface.json)
 is the semantic public API snapshot for every supported SDK entrypoint. It
 records exported names, declaration kinds, normalized signatures and type
 parameters, support classification, and stable SDK error codes. Run:

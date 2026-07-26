@@ -18,6 +18,46 @@ export interface SerialQueue {
   idle(): Promise<void>;
 }
 
+/** Coordinates concurrent readers with FIFO-exclusive writers without serializing independent read work. */
+export interface AsyncReadWriteGate {
+  /** Run work concurrently after every writer scheduled before this call has settled. */
+  read<T>(task: () => Promise<T> | T): Promise<T>;
+  /** Run work exclusively after all readers and writers scheduled before this call have settled. */
+  write<T>(task: () => Promise<T> | T): Promise<T>;
+}
+
+/** Create an arrival-ordered asynchronous read/write gate. Readers may overlap, while writers exclude both modes and never starve behind later readers. */
+export function createAsyncReadWriteGate(): AsyncReadWriteGate {
+  let writerBarrier: Promise<void> = Promise.resolve();
+  const readers = new Set<Promise<void>>();
+  return {
+    async read<T>(task: () => Promise<T> | T): Promise<T> {
+      const precedingWriters = writerBarrier;
+      let finishReader!: () => void;
+      const readerDone = new Promise<void>((resolve) => {
+        finishReader = resolve;
+      });
+      readers.add(readerDone);
+      await precedingWriters;
+      try {
+        return await task();
+      } finally {
+        readers.delete(readerDone);
+        finishReader();
+      }
+    },
+    write<T>(task: () => Promise<T> | T): Promise<T> {
+      const precedingWork = Promise.all([writerBarrier, ...readers]);
+      const run = precedingWork.then(() => task());
+      writerBarrier = run.then(
+        () => undefined,
+        () => undefined,
+      );
+      return run;
+    },
+  };
+}
+
 /** Implements create serial queue for the public runtime surface of this module. */
 export function createSerialQueue(): SerialQueue {
   // `tail` is the error-isolated chain the next task waits on; it is kept

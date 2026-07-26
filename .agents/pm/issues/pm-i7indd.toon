@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:extensions","area:packages","area:sdk",github-report
 created_at: "2026-07-26T16:19:51.157Z"
-updated_at: "2026-07-26T19:51:27.830Z"
+updated_at: "2026-07-26T20:35:03.166Z"
 closed_at: "2026-07-26T19:43:28.024Z"
-claim_principal: "harness:codex#de74a49829faaec73e28ece0"
 author: "harness:codex"
 acceptance_criteria: ImportExportContext exposes the same host-bound SDK contract needed for in-process core actions; importer/exporter test helpers can inject and exercise it; parity tests prevent CommandHandlerContext and ImportExportContext runtime capability drift; pm-todos can migrate away from spawning pm without private imports; SDK and extension docs describe the lifecycle and compatibility contract
 goal: project management = context management

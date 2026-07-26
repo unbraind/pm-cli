@@ -163,10 +163,12 @@ describe("sdk define builders", () => {
     expect(handleServiceOverrideFromBarrel).toBe(handleServiceOverride);
     expect(declineServiceOverride()).toEqual({ handled: false });
     const result = { rendered: true };
-    expect(handleServiceOverride(result)).toEqual({
+    const handled = handleServiceOverride(result);
+    expect(handled).toEqual({
       handled: true,
       result,
     });
+    expect(handled.result.rendered).toBe(true);
   });
 
   it("authors definitions that register and run through the activation harness", async () => {

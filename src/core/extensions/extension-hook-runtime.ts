@@ -425,12 +425,17 @@ function buildServiceOverrideContext(context: ServiceOverrideContext) {
 function isServiceOverrideDecision(
   value: unknown,
 ): value is ServiceOverrideDecision {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "handled" in value &&
-    typeof (value as { handled?: unknown }).handled === "boolean"
-  );
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !Object.hasOwn(value, "handled")
+  ) {
+    return false;
+  }
+  const handled = (value as { handled?: unknown }).handled;
+  return handled === true
+    ? Object.hasOwn(value, "result")
+    : handled === false && Reflect.ownKeys(value).length === 1;
 }
 
 function resolveServiceOverrideValue(
