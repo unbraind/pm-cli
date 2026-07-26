@@ -11,6 +11,11 @@
 - GH-720: diagnose unbuilt GitHub extension sources and recommend resolvable npm artifacts ([pm-0sx3kz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0sx3kz.toon))
 - GH-719: reject or diagnose extension command flags shadowed by pm globals ([pm-ill9gv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ill9gv.toon))
 
+### Security
+
+- Scorecard Security-Policy (4→10): enrich SECURITY.md to full scoring depth ([pm-2d7k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2d7k.toon))
+- Scorecard Fuzzing (0→10): add a fuzzing/property-based harness for the parser and codec surfaces ([pm-0yi7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0yi7.toon))
+
 ## 2026.7.26 - 2026-07-26
 
 ### Added
