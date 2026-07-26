@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-07-26T15:08:42.936Z"
+updated_at: "2026-07-26T15:12:40.688Z"
 reminders[1]{at,text}:
   "2026-07-01T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
 assignee: "harness:codex"
@@ -22,7 +22,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-d4ns,related,"2026-07-15T18:17:35.524Z",null,null
   pm-u9d0,implements,"2026-07-26T05:59:21.492Z",null,null
   pm-lpqln4,related,"2026-07-26T10:52:22.840Z",null,null
-comments[105]{created_at,author,text}:
+comments[106]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -128,6 +128,7 @@ comments[105]{created_at,author,text}:
   "2026-07-26T14:27:08.367Z","harness:codex","GitHub report linkage: GH-746 https://github.com/unbraind/pm-cli/issues/746. Release run 30183263363 published v2026.7.26 with --access public and provenance, but hermetic anonymous npm metadata and tarball requests now return 404 while authenticated/cached lookup can appear healthy. Reusing the canonical recurring release-health item; no duplicate item created."
   "2026-07-26T14:47:00.530Z","harness:codex","Evidence: release publication now distinguishes fresh anonymous visibility from protected authenticated existence, can restore scoped-package public status without publishing a second immutable version, and verifies npm/npx/bunx with empty credentials plus isolated npm/Bun caches. Focused workflow/verifier tests, complete 6420-test 100% coverage, lint/static quality/contracts/docs links/audit passed. Live same-tag recovery remains intentionally deferred until this workflow change reaches protected main."
   "2026-07-26T15:08:42.936Z","harness:codex","Acceptance update: native pm test executed all 17 linked checks. Sixteen passed; the first aggregate release-gate attempt alone observed a transient CLI transport-floor slowdown after sustained concurrent/heavy validation (get 439ms>362ms, next 513ms>440ms, create 466ms>398ms, claim 495ms>415ms). The isolated transport floor immediately passed all six operations, and a fresh quiet aggregate release-gate rerun then passed end to end: static quality, 374 files/6420 tests at 100/100/100/100, secret scan, packed npx smoke, 88-command package dogfood, version policy, and release gates. The failed measurement remains recorded rather than being misreported as green."
+  "2026-07-26T15:12:40.688Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/748. Initial exact implementation commit 004790f7; protected-main same-tag npm visibility recovery remains pending merge and will not publish a second v2026.7.26 artifact."
 notes[7]{created_at,author,text}:
   "2026-07-02T06:41:55.766Z",claude-code-agent,"2026-07-02: Auto Release run 28569991109 success; tag v2026.7.2 created and npm dist-tags.latest=2026.7.2 verified live via npm view. Release-commit CI/Release/CodeQL/Docs all green. Release health verified."
   "2026-07-04T06:16:41.031Z",maintainer-agent,"2026-07-04: Release v2026.7.4 verified — Release workflow 28697208639 succeeded, npm @unbrained/pm-cli@2026.7.4 live, GH release published 06:16Z (not draft). Auto-release healthy."
