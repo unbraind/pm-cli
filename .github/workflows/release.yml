@@ -12,8 +12,7 @@ on:
         required: true
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
@@ -24,6 +23,9 @@ jobs:
     name: Build, Test, Publish
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
     environment:
       name: release
     env:

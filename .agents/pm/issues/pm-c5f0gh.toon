@@ -2,18 +2,38 @@ id: pm-c5f0gh
 title: pm package init doubles the pm- prefix and mints an unusable pm pm ... command path when given the package name every real pm package actually uses
 description: "The scaffold treats its positional argument as a bare extension name and unconditionally derives the npm package name from it as pm-${extensionName} (src/sdk/extension/scaffold.ts around line 2694), and derives the command path by splitting that same name on dashes. Neither derivation checks whether the caller already supplied the pm- prefix, and nothing warns.\n\nReproduced against dist build 2026.7.25 in a clean sandbox.\n\n  pm package init demo-thing      package.json name pm-demo-thing        command 'demo thing ping'      invoked as: pm demo thing ping\n  pm package init pm-demo-thing   package.json name pm-pm-demo-thing     command 'pm demo thing ping'   invoked as: pm pm demo thing ping\n\nThe second form is the natural input. Every first-party package in packages/ is named pm-beads, pm-calendar, pm-vcs and so on; every published ecosystem package uses the same prefix; docs and catalog listings all show pm- names. An author or agent asked to create a package called pm-demo-thing types exactly that. The generator then produces an npm name with a doubled prefix, a manifest whose activation.commands entry begins with the literal token pm, and next_steps that instruct the author to run 'pm pm demo thing ping'. The package installs and activates successfully, so nothing fails: the artifact is simply wrong, and stays wrong until someone notices the doubled token by eye.\n\nThe scaffold's own reported fields carry the contradiction without flagging it: package_name pm-demo-thing alongside a help_commands entry of 'pm pm demo thing ping'.\n\nThis runs directly against the goal of making package creation as easy and as hard to get wrong as possible, and it is the failure mode the product elsewhere treats as unacceptable: an input an agent will plausibly supply produces a silently degraded result with exit 0.\n\nScope boundary. pm-9smp7j owns the divergence between the extension and package scaffold generators and the quality of what each emits; this is a defect in the good generator's name and command derivation, present on both paths. pm-quzx owns external package naming and dependency-range policy."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:extensions",dx,scaffold
 created_at: "2026-07-25T21:38:28.090Z"
-updated_at: "2026-07-25T21:38:28.090Z"
+updated_at: "2026-07-25T23:43:48.092Z"
+closed_at: "2026-07-25T23:36:18.663Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Passing a name that already carries the pm- prefix produces the same artifact as passing the bare name, or is rejected with a message naming the bare form to use; in no case is the prefix doubled. The derived command path never begins with a literal pm token, so no next_steps or help line reads 'pm pm ...'. The scaffold reports the npm package name and the invocation path it generated so a caller can see both. A regression test scaffolds with and without the prefix for every --capability value and asserts the two runs agree on package name, manifest activation entries, and reported invocation path."
 parent: pm-ugqx
 risk: low
 confidence: high
+resolution: "Normalized repeated leading pm- prefixes before deriving package names and command paths, and exposed canonical result metadata."
+expected_result: Already prefixed package targets retain one pm- prefix and produce usable invocation commands.
+actual_result: Parameterized tests cover every capability and both vocabularies; packed acceptance produced pm-agent-workflow and pm-agent-hooks with working commands.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-9smp7j,related,"2026-07-25T21:38:28.090Z",null,null
   pm-quzx,related,"2026-07-25T21:38:28.090Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-07-25T22:35:05.130Z","harness:codex","Implementation evidence: scaffold names strip repeated leading pm- prefixes, results report package_name and invocation_command, and parameterized acceptance covers every capability across extension/package vocabulary."
+  "2026-07-25T23:27:34.296Z","harness:codex","Evidence: prefix normalization and the publishable scaffold matrix passed the full sandboxed coverage gate (371 files, 6,388 tests, 100/100/100/100)."
+  "2026-07-25T23:33:33.161Z","harness:codex","Acceptance evidence: unrelated installed consumer preserved canonical generated names (`pm-agent-workflow`, `pm-agent-hooks`) and executable commands (`pm agent workflow ping`, `pm agent hooks ping`) without doubled prefixes."
+  "2026-07-25T23:43:48.092Z","harness:codex","PR evidence: PR #718 exact head 46707ab7 passed every required CI, cross-platform, security, coverage, benchmark, and static-analysis gate; thread-aware inventory found no actionable review threads."
+files[2]{path,scope,note}:
+  src/sdk/extension/scaffold.ts,project,Idempotent repeated pm-prefix normalization and discovery fields
+  tests/unit/sdk/extension-authoring-contracts.spec.ts,project,Every-capability prefix parity proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-authoring-contracts.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms10asb3-lqmeb6,test,passed,"2026-07-25T23:34:35.603Z","2026-07-25T23:34:44.944Z","2026-07-25T23:34:44.944Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated release entry for prefix normalization fix
+  docs/EXTENSIONS.md,project,Canonical package naming and invocation output
+close_reason: Eliminated doubled prefixes and verified generated names/commands across all capabilities and an installed consumer.
 body: ""

@@ -63,6 +63,14 @@ describe("package runtime option helpers", () => {
       expect(readCsvListOption({ tags: "a,,b, ,c" }, "tags")).toEqual(["a", "b", "c"]);
     });
 
+    it("flattens repeatable Commander list values and ignores non-string entries", () => {
+      expect(readCsvListOption({ fields: ["id,title", "score", 42] }, "fields")).toEqual([
+        "id",
+        "title",
+        "score",
+      ]);
+    });
+
     it("returns an empty array when the option is absent or empty", () => {
       expect(readCsvListOption({}, "tags")).toEqual([]);
       expect(readCsvListOption({ tags: "   " }, "tags")).toEqual([]);
@@ -70,6 +78,10 @@ describe("package runtime option helpers", () => {
 
     it("resolves through aliases", () => {
       expect(readCsvListOption({ item_types: "Task,Bug" }, "itemTypes", ["item_types"])).toEqual(["Task", "Bug"]);
+      expect(readCsvListOption({ itemTypes: [], item_types: ["Task", "Bug"] }, "itemTypes", ["item_types"])).toEqual([
+        "Task",
+        "Bug",
+      ]);
     });
   });
 });

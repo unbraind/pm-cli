@@ -363,99 +363,6 @@ const PACKAGE_CAPABILITY_README_SECTIONS: Record<
   ],
 };
 
-const EXTENSION_CAPABILITY_README_SECTIONS: Record<
-  ExtensionScaffoldCapability,
-  readonly string[]
-> = {
-  commands: [],
-  hooks: [
-    "",
-    "## Lifecycle Hook",
-    "`index.ts` registers an `after_command` hook via `api.hooks.afterCommand`.",
-    "pm fires it once a command finishes, passing the command outcome and the",
-    "items it mutated (`context.affected`). React there to keep external context",
-    "in sync. The `hooks` capability in `manifest.json` grants the registration;",
-    "remove it (and the hook) if your extension only needs commands.",
-  ],
-  search: [
-    "",
-    "## Search Provider",
-    "`index.ts` registers a deterministic in-memory search provider and",
-    "vector-store adapter through `api.registerSearchProvider` and",
-    "`api.registerVectorStoreAdapter`. Replace the sample scoring, embedding,",
-    "and storage behavior with your project-specific retrieval logic. The",
-    "`search` capability in `manifest.json` grants both registrations.",
-  ],
-  importers: [
-    "",
-    "## Importer and Exporter",
-    "`index.ts` registers paired project-context import/export commands through",
-    "`api.registerImporter` and `api.registerExporter`. Replace the starter",
-    "payloads with your domain adapter. The `importers` capability grants both",
-    "registrations, and `schema` grants the example command flag metadata.",
-  ],
-  schema: [
-    "",
-    "## Custom Schema",
-    "`index.ts` models a project domain by registering a custom item type, a",
-    "custom item field, and a schema migration through `api.registerItemTypes`,",
-    "`api.registerItemFields`, and `api.registerMigration`. Replace the sample",
-    "type/field/migration with your own domain model; the `schema` capability in",
-    "`manifest.json` grants all three registrations. Once installed, the custom",
-    'type is usable everywhere, e.g. `pm create <type> "<title>"`.',
-  ],
-  profile: [
-    "",
-    "## Project Profile",
-    "`index.ts` registers a complete project-profile archetype through",
-    "`api.registerProfile` — one declarative bundle of item types, custom statuses,",
-    "fields, a per-type workflow, config knobs, create templates, and package",
-    "recommendations. Once installed the profile resolves by name through",
-    "`pm profile list`, `pm profile show <name>`, and `pm profile apply <name>`,",
-    "which stages every dimension idempotently like a core archetype. Replace the",
-    "sample archetype with your own domain; the `schema` capability in",
-    "`manifest.json` grants the registration.",
-  ],
-  renderers: [
-    "",
-    "## Output Renderer",
-    "`index.ts` registers a `toon` output renderer override through",
-    "`api.registerRenderer`. Renderer overrides run for every command's output in",
-    "that format, so this starter scopes itself to its own command and returns",
-    "`null` (pass-through to pm's default renderer) for everything else. Replace",
-    "the sample serialization with your own; the `renderers` capability in",
-    "`manifest.json` grants the registration.",
-  ],
-  parser: [
-    "",
-    "## Parser Override",
-    "`index.ts` registers a parser override for the starter command through",
-    "`api.registerParser`. pm runs it on the command's parsed options BEFORE the",
-    "handler, merging the delta you return. This starter rewrites a deprecated",
-    "`--shout` alias to the canonical `--upper` flag; replace it with your own",
-    "normalization. The `parser` capability in `manifest.json` grants the",
-    "registration.",
-  ],
-  preflight: [
-    "",
-    "## Preflight Override",
-    "`index.ts` registers a preflight override through `api.registerPreflight`. pm",
-    "calls it before every command to compute the migration/format gate decision —",
-    "the last registered override wins. This starter echoes the current decision",
-    "unchanged (a safe no-op); return only the decision keys you want to change.",
-    "The `preflight` capability in `manifest.json` grants the registration.",
-  ],
-  services: [
-    "",
-    "## Service Override",
-    "`index.ts` overrides the built-in `output_format` service through",
-    "`api.registerService`. Returning the payload unchanged passes through to pm's",
-    "default formatting, so this starter scopes itself to its own command and",
-    "passes every other command through. The `services` capability in",
-    "`manifest.json` grants the registration.",
-  ],
-};
-
 // README activation explainer for command-bearing starters (commands/hooks/
 // search/importers): they declare `activation.commands` so pm loads them lazily.
 const LAZY_ACTIVATION_README_SECTION: Record<
@@ -593,7 +500,9 @@ interface ExtensionScaffoldFileResult {
 
 interface ExtensionScaffoldResult {
   extension_name: string;
+  package_name: string;
   command_name: string;
+  invocation_command: string;
   capability: ExtensionScaffoldCapability;
   /** Authoring style of the generated entrypoint: `"imperative"` (a hand-written `activate` body, the default) or `"declarative"` (a `composeExtension` blueprint). The declarative style is package-mode only (any capability). */
   style: ExtensionScaffoldStyle;
@@ -2687,7 +2596,7 @@ function buildDefineBuilderActivate(
 export function buildStarterExtensionScaffoldFiles(
   extensionName: string,
   commandName: string,
-  vocabulary: "extension" | "package",
+  _vocabulary: "extension" | "package",
   capability: ExtensionScaffoldCapability = "commands",
   declarative: boolean = false,
 ): Record<string, string> {
@@ -2754,9 +2663,8 @@ export function buildStarterExtensionScaffoldFiles(
   // The schema/profile starters omit `activation.commands` (their surface is a
   // global contribution), so describe the manifest accurately instead of
   // referencing a field they deliberately lack.
-  const manifestBullet = buildScaffoldManifestBullet(capability, vocabulary);
-  if (vocabulary === "package") {
-    const packageJson = `${JSON.stringify(
+  const manifestBullet = buildScaffoldManifestBullet(capability, "package");
+  const packageJson = `${JSON.stringify(
       {
         name: packageName,
         version: "0.1.0",
@@ -2845,7 +2753,7 @@ export function buildStarterExtensionScaffoldFiles(
     const packageReadme = [
       `# ${packageName}`,
       "",
-      "Generated by `pm package init`.",
+      "Generated by `pm package init` or `pm extension init`.",
       "",
       "## Included Files",
       "- `package.json`: package metadata, `typecheck`/`test` scripts, and `pm` resource manifest.",
@@ -2928,57 +2836,6 @@ export function buildStarterExtensionScaffoldFiles(
         ? buildDeclarativePackageReadme(packageName, commandName, capability)
         : packageReadme,
     };
-  }
-  const readme = [
-    `# ${extensionName}`,
-    "",
-    "Generated by `pm extension init`.",
-    "",
-    "## Included Files",
-    manifestBullet,
-    entrypointBullet,
-    '- `package.json`: `{ "type": "module" }` marker so the ESM entrypoint loads even when the host project is CommonJS.',
-    TSCONFIG_BULLET,
-    "",
-    "## Quick Start",
-    "This extension is authored AND loaded as TypeScript: the manifest `entry` is",
-    "`./index.ts` and pm imports it directly via Node's native type stripping",
-    "(Node >=22.18), so there is no compile step. Install the dev dependencies for",
-    "type-checking, then install and run the extension:",
-    "```bash",
-    "npm install -D typescript @types/node @unbrained/pm-cli",
-    "npx tsc --noEmit",
-    "pm extension --install --project <scaffold-path>",
-    `pm ${commandName}`,
-    "pm extension --doctor --project --detail summary",
-    "```",
-    ...EXTENSION_CAPABILITY_README_SECTIONS[capability],
-    ...buildScaffoldActivationReadmeSection(capability, "extension"),
-    "",
-    "## Compatibility Bounds",
-    "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
-    `- \`manifest_version\` (integer): manifest schema generation. Leave at \`${SCAFFOLD_MANIFEST_VERSION}\` unless you adopt a newer manifest schema.`,
-    `- \`pm_min_version\` (string): lowest pm CLI version that may load this extension. Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\`. The loader blocks the extension on older CLIs.`,
-    "- `pm_max_version` (string, optional): highest pm CLI version that may load this extension. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the extension when the CLI exceeds this bound.",
-    "",
-    "## Policy Metadata",
-    'The starter command is pure compute, so `manifest.json` declares `trusted: true`, `sandbox_profile: "strict"`, and all six permission keys as `false`. Keep that least-privilege shape for pure extensions; relax only the specific permission your extension actually needs and verify with `pm extension --doctor --project --detail deep --trace`.',
-    "",
-    "- This scaffold is TypeScript ESM source loaded directly by pm (no compile), so it works in package scopes with `type: module`.",
-    "- Author in `index.ts` (the manifest entry); edits take effect on the next install/reload — there is no `.js` to regenerate.",
-    "- Release any resources `activate` opens (timers, connections, caches) in the `deactivate` teardown hook.",
-    "",
-  ].join("\n");
-  return {
-    "manifest.json": manifest,
-    "index.ts": entrypoint,
-    // Module-type marker: pm loads index.ts as ESM, and without a nearby
-    // package.json Node inherits the host project's module type, breaking
-    // installs into "type": "commonjs" projects (pm-r0m4).
-    "package.json": `${JSON.stringify({ type: "module" }, null, 2)}\n`,
-    "tsconfig.json": tsconfig,
-    "README.md": readme,
-  };
 }
 
 /** Implements scaffold extension project for the public runtime surface of this module. */
@@ -3017,7 +2874,7 @@ export async function scaffoldExtensionProject(
   const targetPath = path.resolve(process.cwd(), normalizedTarget);
   const extensionName = normalizeManagedDirectoryName(
     path.basename(targetPath),
-  );
+  ).replace(/^(?:pm-)+/u, "");
   // Hyphenated names become space-separated command words; reserved roots get a
   // `starter` prefix so core commands and aliases cannot intercept dispatch.
   const commandName = buildScaffoldCommandName(extensionName);
@@ -3077,7 +2934,9 @@ export async function scaffoldExtensionProject(
 
   return {
     extension_name: extensionName,
+    package_name: `pm-${extensionName}`,
     command_name: commandName,
+    invocation_command: `pm ${commandName}`,
     capability: resolvedCapability,
     style,
     target_path: targetPath,

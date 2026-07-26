@@ -7,6 +7,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type {
+  FlagDefinition,
   GlobalOptions,
   ReindexOptions,
   ReindexResult,
@@ -31,6 +32,7 @@ const VALID_EVAL_SEARCH_MODES = new Set([
 type EvalSearchMode = "keyword" | "semantic" | "hybrid";
 
 interface SearchRuntimeSdkModule {
+  SEARCH_EXTENSION_FLAG_DEFINITIONS: FlagDefinition[];
   EXIT_CODE: {
     USAGE: number;
   };
@@ -54,16 +56,23 @@ interface SearchRuntimeSdkModule {
     key: string,
     aliases?: string[],
   ) => boolean | undefined;
+  readCsvListOption: (
+    options: Record<string, unknown>,
+    key: string,
+    aliases?: string[],
+  ) => string[];
 }
 
 const sdk = await loadSearchSdkModule();
 const {
+  SEARCH_EXTENSION_FLAG_DEFINITIONS,
   EXIT_CODE,
   PmCliError,
   runSearch,
   runReindex,
   readStringOption,
   readBooleanOption,
+  readCsvListOption,
 } = sdk;
 
 interface SearchEvalFixtureInput {
@@ -142,6 +151,8 @@ async function loadSearchSdkModule(): Promise<SearchRuntimeSdkModule> {
       typeof loaded.PmCliError === "function" &&
       typeof loaded.readStringOption === "function" &&
       typeof loaded.readBooleanOption === "function" &&
+      typeof loaded.readCsvListOption === "function" &&
+      Array.isArray(loaded.SEARCH_EXTENSION_FLAG_DEFINITIONS) &&
       typeof loaded.EXIT_CODE === "object" &&
       loaded.EXIT_CODE !== null
     ) {
@@ -154,6 +165,8 @@ async function loadSearchSdkModule(): Promise<SearchRuntimeSdkModule> {
     `builtin-search-advanced failed to load SDK runtime exports from ${modulePath}.`,
   );
 }
+
+export { SEARCH_EXTENSION_FLAG_DEFINITIONS };
 
 const SEARCH_VALUE_FLAGS = new Set([
   "--mode",
@@ -216,7 +229,7 @@ function normalizeAdvancedSearchOptions(
   rawOptions: Record<string, unknown>,
   args: string[],
 ): SearchOptions {
-  const fields = readStringOption(rawOptions, "fields");
+  const fields = readCsvListOption(rawOptions, "fields").join(",") || undefined;
   const compactRequested = readBooleanOption(rawOptions, "compact") === true;
   const fullRequested = readBooleanOption(rawOptions, "full") === true;
   const defaultCompact =

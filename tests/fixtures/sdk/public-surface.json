@@ -4476,6 +4476,12 @@
           "signature": "CommanderOptionAliasContract[]"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "LIST_FILTER_EXTENSION_FLAG_DEFINITIONS",
+          "signature": "FlagDefinition[]"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "LIST_FILTER_FLAG_CONTRACTS",
@@ -8664,6 +8670,12 @@
           "signature": "CommanderOptionAliasContract[]"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "SEARCH_EXTENSION_FLAG_DEFINITIONS",
+          "signature": "FlagDefinition[]"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "SEARCH_FLAG_CONTRACTS",
@@ -9376,6 +9388,12 @@
           "kind": "function",
           "name": "toEstimatedMinutesValue",
           "signature": "(value: unknown) => number | undefined | calls: (value: unknown) => number | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toExtensionFlagDefinitions",
+          "signature": "(contracts: readonly CliFlagContract[], stringOptions?: readonly CommanderOptionAliasContract[]) => FlagDefinition[] | calls: (contracts: readonly CliFlagContract[], stringOptions?: readonly CommanderOptionAliasContract[]) => FlagDefinition[]"
         },
         {
           "classification": "advanced_export",
@@ -10747,6 +10765,12 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "LIST_FILTER_EXTENSION_FLAG_DEFINITIONS",
+          "signature": "FlagDefinition[]"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "listProfiles",
           "signature": "() => ProjectProfileDefinition[] | calls: () => ProjectProfileDefinition[]"
@@ -11233,6 +11257,12 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "SEARCH_EXTENSION_FLAG_DEFINITIONS",
+          "signature": "FlagDefinition[]"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "SearchProviderDefinition",
           "signature": "export interface SearchProviderDefinition { name: string; query?: (context: SearchProviderQueryContext) => SearchProviderQueryResult | Promise<SearchProviderQueryResult>; queryExpansion?: (context: SearchProviderQueryExpansionContext) => SearchProviderQueryExpansionResult | Promise<SearchProviderQueryExpansionResult>; query_expansion?: (context: SearchProviderQueryExpansionContext) => SearchProviderQueryExpansionResult | Promise<SearchProviderQueryExpansionResult>; rerank?: (context: SearchProviderRerankContext) => SearchProviderRerankResult | Promise<SearchProviderRerankResult>; embedBatch?: (context: SearchProviderEmbedBatchContext) => number[][] | Promise<number[][]>; embed_batch?: (context: SearchProviderEmbedBatchContext) => number[][] | Promise<number[][]>; embed?: (context: SearchProviderEmbedContext) => number[] | Promise<number[]>; [key: string]: unknown; }"
@@ -11290,6 +11320,12 @@
           "kind": "interface",
           "name": "SynthesizeExtensionManifestIdentity",
           "signature": "export interface SynthesizeExtensionManifestIdentity extends Omit<ExtensionManifest, \"capabilities\"> { additionalCapabilities?: readonly string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toExtensionFlagDefinitions",
+          "signature": "(contracts: readonly CliFlagContract[], stringOptions?: readonly CommanderOptionAliasContract[]) => FlagDefinition[] | calls: (contracts: readonly CliFlagContract[], stringOptions?: readonly CommanderOptionAliasContract[]) => FlagDefinition[]"
         },
         {
           "classification": "supported",
@@ -16363,6 +16399,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "FlagDefinition",
+          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; [key: string]: unknown; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "focus",
           "signature": "(id?: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<FocusResult> | calls: (id?: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<FocusResult>"
@@ -17788,6 +17830,12 @@
           "kind": "function",
           "name": "search",
           "signature": "(query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult> | calls: (query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "SEARCH_EXTENSION_FLAG_DEFINITIONS",
+          "signature": "FlagDefinition[]"
         },
         {
           "classification": "supported",

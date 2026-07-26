@@ -14,6 +14,7 @@ import type {
 import {
   runAdvancedReindexPackage,
   runAdvancedSearchPackage,
+  SEARCH_EXTENSION_FLAG_DEFINITIONS,
 } from "./runtime.ts";
 
 /** Declarative package manifest consumed by the extension loader. */
@@ -115,120 +116,6 @@ export function searchAdvancedLocalProvider(): SearchProviderDefinition {
   };
 }
 
-const searchAdvancedFlags = [
-  {
-    long: "--mode",
-    value_name: "value",
-    value_type: "string",
-    description: "Search mode override: keyword|semantic|hybrid.",
-  },
-  {
-    long: "--semantic",
-    value_type: "boolean",
-    description: "Alias for --mode semantic.",
-  },
-  {
-    long: "--hybrid",
-    value_type: "boolean",
-    description: "Alias for --mode hybrid.",
-  },
-  {
-    long: "--include-linked",
-    value_type: "boolean",
-    description: "Include linked docs/files/tests corpus in lexical scoring.",
-  },
-  {
-    long: "--include_linked",
-    value_type: "boolean",
-    description: "Alias for --include-linked.",
-  },
-  {
-    long: "--title-exact",
-    value_type: "boolean",
-    description: "Require exact title phrase matching before scoring.",
-  },
-  {
-    long: "--title_exact",
-    value_type: "boolean",
-    description: "Alias for --title-exact.",
-  },
-  {
-    long: "--phrase-exact",
-    value_type: "boolean",
-    description:
-      "Require exact phrase match across searchable document fields.",
-  },
-  {
-    long: "--phrase_exact",
-    value_type: "boolean",
-    description: "Alias for --phrase-exact.",
-  },
-  {
-    long: "--type",
-    value_name: "value",
-    value_type: "string",
-    description: "Filter by item type.",
-  },
-  {
-    long: "--tag",
-    value_name: "value",
-    value_type: "string",
-    description: "Filter by tag.",
-  },
-  {
-    long: "--priority",
-    value_name: "value",
-    value_type: "string",
-    description: "Filter by priority.",
-  },
-  {
-    long: "--deadline-before",
-    value_name: "date",
-    value_type: "string",
-    description: "Filter to items with deadlines before a date.",
-  },
-  {
-    long: "--deadline_before",
-    value_name: "date",
-    value_type: "string",
-    description: "Alias for --deadline-before.",
-  },
-  {
-    long: "--deadline-after",
-    value_name: "date",
-    value_type: "string",
-    description: "Filter to items with deadlines after a date.",
-  },
-  {
-    long: "--deadline_after",
-    value_name: "date",
-    value_type: "string",
-    description: "Alias for --deadline-after.",
-  },
-  {
-    long: "--limit",
-    value_name: "count",
-    value_type: "string",
-    description: "Limit the number of search results.",
-  },
-  {
-    long: "--fields",
-    value_name: "list",
-    value_type: "string",
-    description: "Return only selected result fields.",
-  },
-  {
-    long: "--compact",
-    value_type: "boolean",
-    description: "Return compact token-efficient search results.",
-  },
-  {
-    long: "--full",
-    value_type: "boolean",
-    description: "Return full search results.",
-  },
-] as const;
-
 const reindexFlags = [
   {
     long: "--mode",
@@ -301,7 +188,9 @@ function reindexCommand(): CommandDefinition {
 
 /** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
-  api.registerFlags("search-advanced", [...searchAdvancedFlags]);
+  api.registerFlags("search-advanced", [
+    ...SEARCH_EXTENSION_FLAG_DEFINITIONS,
+  ]);
   api.registerCommand(searchAdvancedCommand());
   api.registerCommand(reindexCommand());
   api.registerSearchProvider(searchAdvancedLocalProvider());

@@ -2283,22 +2283,16 @@ describe("extension command runtime", () => {
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Policy Metadata");
       expect(readme).toContain('sandbox_profile: "strict"');
-      expect(readme).toContain("npm install -D typescript @types/node @unbrained/pm-cli");
-      expect(readme).toContain("npx tsc");
+      expect(readme).toContain("npm install");
+      expect(readme).toContain("npm test");
 
-      // The sample test + .gitignore are package-mode only. An extension-only
-      // scaffold's package.json is just the { "type": "module" } marker — no
-      // deps to `npm install` the peer SDK testing helpers against — so it
-      // emits the typed source + tsconfig but no test.
+      // Both lifecycle vocabularies now emit one publishable, testable package
+      // artifact so an author never starts from a degraded extension-only shape.
       const scaffoldedFiles = (scaffold.details as { files?: Array<{ path: string }> }).files ?? [];
-      expect(scaffoldedFiles.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
+      expect(scaffoldedFiles.map((file) => file.path)).toEqual(["package.json", "manifest.json", "index.ts", "index.test.ts", "tsconfig.json", ".gitignore", "README.md"]);
       expect((scaffold.details as { next_steps?: string[] }).next_steps).toContainEqual(expect.stringContaining("npm install -D typescript @types/node @unbrained/pm-cli"));
-      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
-        code: "ENOENT",
-      });
-      await expect(readFile(path.join(scaffoldPath, ".gitignore"), "utf8")).rejects.toMatchObject({
-        code: "ENOENT",
-      });
+      expect(await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).toContain("createExtensionTestHarness");
+      expect(await readFile(path.join(scaffoldPath, ".gitignore"), "utf8")).toContain("node_modules/");
 
       const rerun = await runExtension(scaffoldPath, { scaffold: true, project: true }, { path: context.pmPath });
       const rerunFiles = (rerun.details as { files?: Array<{ status: string }> }).files ?? [];
@@ -2913,7 +2907,7 @@ describe("extension command runtime", () => {
     });
   });
 
-  it("scaffolds hook-capability standalone extensions without package test files", async () => {
+  it("scaffolds hook-capability extensions as complete package artifacts", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-hook-ext");
       const scaffold = await runExtension(
@@ -2933,7 +2927,7 @@ describe("extension command runtime", () => {
           command: "starter hook ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["package.json", "manifest.json", "index.ts", "index.test.ts", "tsconfig.json", ".gitignore", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "hooks"]);
@@ -2941,13 +2935,11 @@ describe("extension command runtime", () => {
       expect(entry).toContain("api.hooks.afterCommand((context) => {");
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Lifecycle Hook");
-      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
-        code: "ENOENT",
-      });
+      expect(await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).toContain("createExtensionTestHarness");
     });
   });
 
-  it("scaffolds search-capability standalone extensions without package test files", async () => {
+  it("scaffolds search-capability extensions as complete package artifacts", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-search-ext");
       const scaffold = await runExtension(
@@ -2967,7 +2959,7 @@ describe("extension command runtime", () => {
           command: "starter starter search ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["package.json", "manifest.json", "index.ts", "index.test.ts", "tsconfig.json", ".gitignore", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "search"]);
@@ -2977,13 +2969,11 @@ describe("extension command runtime", () => {
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Search Provider");
       expect(readme).toContain("api.registerSearchProvider");
-      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
-        code: "ENOENT",
-      });
+      expect(await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).toContain("createExtensionTestHarness");
     });
   });
 
-  it("scaffolds importers-capability standalone extensions without package test files", async () => {
+  it("scaffolds importers-capability extensions as complete package artifacts", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-importers-ext");
       const scaffold = await runExtension(
@@ -3003,7 +2993,7 @@ describe("extension command runtime", () => {
           command: "starter importers ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["package.json", "manifest.json", "index.ts", "index.test.ts", "tsconfig.json", ".gitignore", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "schema", "importers"]);
@@ -3013,13 +3003,11 @@ describe("extension command runtime", () => {
       const readme = await readFile(path.join(scaffoldPath, "README.md"), "utf8");
       expect(readme).toContain("## Importer and Exporter");
       expect(readme).toContain("api.registerImporter");
-      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
-        code: "ENOENT",
-      });
+      expect(await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).toContain("createExtensionTestHarness");
     });
   });
 
-  it("scaffolds schema-capability standalone extensions without package test files", async () => {
+  it("scaffolds schema-capability extensions as complete package artifacts", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-schema-ext");
       const scaffold = await runExtension(
@@ -3039,7 +3027,7 @@ describe("extension command runtime", () => {
           command: "starter starter schema ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["package.json", "manifest.json", "index.ts", "index.test.ts", "tsconfig.json", ".gitignore", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "schema"]);
@@ -3053,13 +3041,11 @@ describe("extension command runtime", () => {
       expect(readme).toContain("## Activation");
       expect(readme).not.toContain("## Lazy Activation");
       expect(readme).toContain("api.registerItemTypes");
-      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
-        code: "ENOENT",
-      });
+      expect(await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).toContain("createExtensionTestHarness");
     });
   });
 
-  it("scaffolds profile-capability standalone extensions without package test files", async () => {
+  it("scaffolds profile-capability extensions as complete package artifacts", async () => {
     await withTempPmPath(async (context) => {
       const scaffoldPath = path.join(context.tempRoot, "starter-profile-ext");
       const scaffold = await runExtension(
@@ -3079,7 +3065,7 @@ describe("extension command runtime", () => {
           command: "starter starter profile ext ping",
         },
       });
-      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["manifest.json", "index.ts", "package.json", "tsconfig.json", "README.md"]);
+      expect((scaffold.details as { files?: Array<{ path: string }> }).files?.map((file) => file.path)).toEqual(["package.json", "manifest.json", "index.ts", "index.test.ts", "tsconfig.json", ".gitignore", "README.md"]);
 
       const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest.capabilities).toEqual(["commands", "schema"]);
@@ -3091,9 +3077,7 @@ describe("extension command runtime", () => {
       expect(readme).toContain("## Activation");
       expect(readme).not.toContain("## Lazy Activation");
       expect(readme).toContain("api.registerProfile");
-      await expect(readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).rejects.toMatchObject({
-        code: "ENOENT",
-      });
+      expect(await readFile(path.join(scaffoldPath, "index.test.ts"), "utf8")).toContain("createExtensionTestHarness");
     });
   });
 
