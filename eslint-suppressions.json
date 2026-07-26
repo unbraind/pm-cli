@@ -291,9 +291,6 @@
   "src/sdk/governance/validate.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 6
     }
   },
   "src/sdk/package-import-adapters.ts": {

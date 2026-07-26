@@ -850,6 +850,19 @@ function realpathForWorkspaceRoot(inputPath: string): string {
   }
 }
 
+function hasFilesystemErrorCode(
+  error: unknown,
+  acceptedCodes: readonly string[],
+): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof (error as { code?: unknown }).code === "string" &&
+    acceptedCodes.includes((error as { code: string }).code)
+  );
+}
+
 /* c8 ignore start -- recursive file-walk dirent/permission edge cases are covered by filesystem integration suites */
 async function listFilesRecursive(
   basePath: string,
@@ -862,12 +875,7 @@ async function listFilesRecursive(
   try {
     entries = await fs.readdir(targetDirectory, { withFileTypes: true });
   } catch (error: unknown) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      (error as { code?: string }).code === "ENOENT"
-    ) {
+    if (hasFilesystemErrorCode(error, ["ENOENT"])) {
       return;
     }
     throw error;
@@ -1586,42 +1594,40 @@ function buildLifecycleDependencyGraph(
   relationshipRegistry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): Map<string, string[]> {
   const activeItemIds = new Set(activeItems.map((item) => item.id));
-  const graph = new Map<string, string[]>();
   const sortedItems = [...activeItems].sort((left, right) =>
     left.id.localeCompare(right.id),
   );
-  for (const item of sortedItems) {
+  return new Map(
+    sortedItems.map((item) => {
     const edges = new Set<string>();
     const blockedBy = toMeaningfulString(item.blocked_by);
     if (blockedBy && activeItemIds.has(blockedBy)) {
       edges.add(blockedBy);
     }
-    for (const dependency of item.dependencies ?? []) {
-      const dependencyKind = toMeaningfulString(dependency.kind);
-      if (!dependencyKind) continue;
-      const relationshipDefinition =
-        relationshipRegistry.resolve(dependencyKind);
-      if (!relationshipDefinition?.ordering) continue;
-      const dependencyId = toMeaningfulString(dependency.id);
-      if (!dependencyId || !activeItemIds.has(dependencyId)) {
-        continue;
-      }
-      edges.add(dependencyId);
-    }
+      (item.dependencies ?? [])
+        .filter((dependency) => {
+          const dependencyKind = toMeaningfulString(dependency.kind);
+          return (
+            dependencyKind !== undefined &&
+            relationshipRegistry.resolve(dependencyKind)?.ordering === true
+          );
+        })
+        .map((dependency) => toMeaningfulString(dependency.id))
+        .filter(
+          (dependencyId): dependencyId is string =>
+            dependencyId !== undefined && activeItemIds.has(dependencyId),
+        )
+        .forEach((dependencyId) => edges.add(dependencyId));
     const definitionOfReady = toMeaningfulString(item.definition_of_ready);
-    if (definitionOfReady) {
-      for (const referencedId of extractItemIds(definitionOfReady, idPrefix)) {
-        if (activeItemIds.has(referencedId)) {
-          edges.add(referencedId);
-        }
-      }
-    }
-    graph.set(
-      item.id,
-      [...edges].sort((left, right) => left.localeCompare(right)),
-    );
-  }
-  return graph;
+      extractItemIds(definitionOfReady ?? "", idPrefix)
+        .filter((referencedId) => activeItemIds.has(referencedId))
+        .forEach((referencedId) => edges.add(referencedId));
+      return [
+        item.id,
+        [...edges].sort((left, right) => left.localeCompare(right)),
+      ] as const;
+    }),
+  );
 }
 /* c8 ignore stop */
 
@@ -1856,6 +1862,7 @@ function detectLifecycleDependencyCycles(
 // structural corruption of the hierarchy.
 function buildLifecycleParentGraph(
   items: ItemWithBody[],
+  relationshipRegistry: RelationshipKindRegistry = createRelationshipKindRegistry(),
 ): Map<string, string[]> {
   // PR #279 made parent matching case-insensitive (e.g. `parent: PM-FK49`
   // resolves to `id: pm-fk49`). Resolve parent references to their canonical
@@ -1864,12 +1871,14 @@ function buildLifecycleParentGraph(
   const canonicalIdByLowercase = new Map(
     items.map((item) => [item.id.toLowerCase(), item.id]),
   );
-  const graph = new Map<string, string[]>();
+  const graph = new Map<string, string[]>(
+    items.map((item) => [item.id, [] as string[]]),
+  );
   const sortedItems = [...items].sort((left, right) =>
     left.id.localeCompare(right.id),
   );
-  for (const item of sortedItems) {
-    const edges: string[] = [];
+  sortedItems.forEach((item) => {
+    const edges = graph.get(item.id)!;
     const parentId = toMeaningfulString(item.parent);
     const canonicalParentId = parentId
       ? canonicalIdByLowercase.get(parentId.toLowerCase())
@@ -1877,8 +1886,24 @@ function buildLifecycleParentGraph(
     if (canonicalParentId) {
       edges.push(canonicalParentId);
     }
-    graph.set(item.id, edges);
-  }
+    (item.dependencies ?? []).forEach((dependency) => {
+      const definition = relationshipRegistry.resolve(dependency.kind);
+      if (!definition?.hierarchy) return;
+      const target = canonicalIdByLowercase.get(dependency.id.toLowerCase());
+      if (!target) return;
+      if (definition.hierarchyDirection === "source_parent") {
+        graph.get(target)!.push(item.id);
+      } else {
+        edges.push(target);
+      }
+    });
+  });
+  graph.forEach((edges, id) => {
+    graph.set(
+      id,
+      [...new Set(edges)].sort((left, right) => left.localeCompare(right)),
+    );
+  });
   return graph;
 }
 
@@ -2003,19 +2028,23 @@ function findOrphanOwnerCandidate(
         confidence: "path_prefix" | "same_directory" | "shared_directory";
       }
     | undefined;
-  for (const item of items) {
-    const links = linkKind === "docs" ? (item.docs ?? []) : (item.files ?? []);
-    for (const link of links) {
+  items
+    .flatMap((item) =>
+      (linkKind === "docs" ? (item.docs ?? []) : (item.files ?? [])).map(
+        (link) => ({ item, link }),
+      ),
+    )
+    .forEach(({ item, link }) => {
       if (link.scope !== "project") {
-        continue;
+        return;
       }
       const linkedPath = normalizeRelativePath(link.path);
       if (linkedPath.length === 0 || linkedPath === pathValue) {
-        continue;
+        return;
       }
       const scored = scoreOrphanOwnerCandidate(pathValue, linkedPath);
       if (scored === null) {
-        continue;
+        return;
       }
       if (shouldReplaceOrphanOwnerCandidate(best, item, scored.score)) {
         best = {
@@ -2024,8 +2053,7 @@ function findOrphanOwnerCandidate(
           confidence: scored.confidence,
         };
       }
-    }
-  }
+    });
   if (!best) {
     return null;
   }
@@ -2350,11 +2378,7 @@ async function linkedArtifactIsMissing(
     const stats = await fs.stat(absolutePath);
     return !stats.isFile() && !stats.isDirectory();
   } catch (error) {
-    const code =
-      typeof error === "object" && error !== null && "code" in error
-        ? (error as { code?: unknown }).code
-        : undefined;
-    return code === "ENOENT" || code === "ENOTDIR";
+    return hasFilesystemErrorCode(error, ["ENOENT", "ENOTDIR"]);
   }
 }
 
@@ -2368,13 +2392,19 @@ async function collectLinkedPathScanState(
     missingLinkedPaths: [],
     staleLinkRows: [],
   };
-  for (const item of items) {
-    const linkedArtifactGroups = [
-      { link_kind: "files" as const, artifacts: item.files ?? [] },
-      { link_kind: "docs" as const, artifacts: item.docs ?? [] },
-    ];
-    for (const group of linkedArtifactGroups) {
-      for (const artifact of group.artifacts) {
+  const linkedArtifacts = items.flatMap((item) => [
+    ...(item.files ?? []).map((artifact) => ({
+      item,
+      artifact,
+      link_kind: "files" as const,
+    })),
+    ...(item.docs ?? []).map((artifact) => ({
+      item,
+      artifact,
+      link_kind: "docs" as const,
+    })),
+  ]);
+  for (const { item, artifact, link_kind } of linkedArtifacts) {
         if (artifact.scope !== "project") {
           continue;
         }
@@ -2392,11 +2422,9 @@ async function collectLinkedPathScanState(
           state.staleLinkRows.push({
             item_id: item.id,
             path: normalizedPath,
-            link_kind: group.link_kind,
+            link_kind,
           });
         }
-      }
-    }
   }
   return state;
 }
@@ -2891,8 +2919,10 @@ function buildCommandReferencesCheck(
   const referencedPmIds = new Set<string>();
   const staleReferenceRows: string[] = [];
 
-  for (const item of items) {
-    for (const linkedTest of item.tests ?? []) {
+  const linkedTests = items.flatMap((item) =>
+    (item.tests ?? []).map((linkedTest) => ({ item, linkedTest })),
+  );
+  for (const { item, linkedTest } of linkedTests) {
       if (
         typeof linkedTest.command !== "string" ||
         linkedTest.command.trim().length === 0
@@ -2920,7 +2950,6 @@ function buildCommandReferencesCheck(
           );
         }
       }
-    }
   }
 
   const uniqueStaleReferenceRows = [...new Set(staleReferenceRows)].sort(
@@ -3093,17 +3122,16 @@ async function applyValidateFixes(
   const failed: Array<{ fix: ValidateFixRecord; error: unknown }> = [];
   const pruneBatches = new Map<string, ValidateFixRecord[]>();
 
-  for (const fix of applicable) {
-    const batchKey = pruneBatchKey(fix);
-    if (batchKey === null) {
+  for (const fix of applicable.filter((candidate) => pruneBatchKey(candidate) === null)) {
       try {
         await applyValidateFix(fix, global, services);
         applied.push(fix);
       } catch (error) {
         failed.push({ fix, error });
       }
-      continue;
-    }
+  }
+  for (const fix of applicable.filter((candidate) => pruneBatchKey(candidate) !== null)) {
+    const batchKey = pruneBatchKey(fix)!;
     const existing = pruneBatches.get(batchKey);
     if (existing) {
       existing.push(fix);

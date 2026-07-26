@@ -4,7 +4,7 @@
  * Implements the pm test command surface and its agent-facing runtime behavior.
  */
 import { spawn, type ChildProcess } from "node:child_process";
-import { cp, mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, open, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
@@ -63,7 +63,6 @@ import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
 
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
-const TEST_OUTPUT_SLAB_MAX_CHARACTERS = 64 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
 const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
 const DEFAULT_LINKED_TEST_PIPE_CLOSE_GRACE_MS = 5000;
@@ -1095,14 +1094,6 @@ interface LinkedTestTimerState {
   timedOutTimer: NodeJS.Timeout | null;
 }
 
-interface LinkedTestOutputBufferState {
-  stdout: string[];
-  stderr: string[];
-  stdoutBytes: number;
-  stderrBytes: number;
-  outputTruncated: boolean;
-}
-
 function clearLinkedTestTimers(timers: LinkedTestTimerState): void {
   if (timers.heartbeat) {
     clearInterval(timers.heartbeat);
@@ -1158,59 +1149,6 @@ function createLinkedTestTerminationRequester(
   };
 }
 
-function readLinkedTestOutputChunkText(
-  chunk: Buffer | string,
-  bytes: number,
-  remainingBytes: number,
-): string {
-  if (remainingBytes <= 0) {
-    return "";
-  }
-  if (bytes <= remainingBytes) {
-    return typeof chunk === "string" ? chunk : chunk.toString("utf8");
-  }
-  const buffer = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
-  return buffer.subarray(0, remainingBytes).toString("utf8");
-}
-
-function appendLinkedTestOutputChunk(
-  state: LinkedTestOutputBufferState,
-  chunk: Buffer | string,
-  target: "stdout" | "stderr",
-): void {
-  const bytes =
-    typeof chunk === "string" ? Buffer.byteLength(chunk) : chunk.byteLength;
-  const slabs = target === "stdout" ? state.stdout : state.stderr;
-  const retainedBytes =
-    target === "stdout" ? state.stdoutBytes : state.stderrBytes;
-  let text = readLinkedTestOutputChunkText(
-    chunk,
-    bytes,
-    TEST_OUTPUT_MAX_BUFFER_BYTES - retainedBytes,
-  );
-  while (text.length > 0) {
-    const lastIndex = slabs.length - 1;
-    const lastSlab = slabs[lastIndex];
-    const availableCharacters =
-      TEST_OUTPUT_SLAB_MAX_CHARACTERS - (lastSlab?.length ?? 0);
-    if (lastSlab !== undefined && availableCharacters > 0) {
-      slabs[lastIndex] = lastSlab + text.slice(0, availableCharacters);
-      text = text.slice(availableCharacters);
-    } else {
-      slabs.push(text.slice(0, TEST_OUTPUT_SLAB_MAX_CHARACTERS));
-      text = text.slice(TEST_OUTPUT_SLAB_MAX_CHARACTERS);
-    }
-  }
-  if (target === "stdout") state.stdoutBytes += bytes;
-  else state.stderrBytes += bytes;
-  if (
-    state.stdoutBytes > TEST_OUTPUT_MAX_BUFFER_BYTES ||
-    state.stderrBytes > TEST_OUTPUT_MAX_BUFFER_BYTES
-  ) {
-    state.outputTruncated = true;
-  }
-}
-
 function waitForLinkedTestChildClose(
   child: ReturnType<typeof spawn>,
 ): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
@@ -1263,6 +1201,8 @@ function waitForLinkedTestChildClose(
 function createLinkedTestChild(
   command: string,
   env: NodeJS.ProcessEnv,
+  stdoutFd: number,
+  stderrFd: number,
 ): ReturnType<typeof spawn> {
   return spawn(command, {
     cwd: process.cwd(),
@@ -1270,8 +1210,31 @@ function createLinkedTestChild(
     shell: true,
     windowsHide: true,
     detached: process.platform !== "win32",
-    stdio: ["pipe", "pipe", "pipe"],
+    // Regular files provide blocking writes to descendants. Node-created
+    // pipes are non-blocking; runtimes such as Bun and Rust can inherit that
+    // flag and abort on EAGAIN when their stdout briefly outruns the parent.
+    stdio: ["pipe", stdoutFd, stderrFd],
   });
+}
+
+async function readLinkedTestCapture(
+  capturePath: string,
+): Promise<{ text: string; truncated: boolean }> {
+  const handle = await open(capturePath, "r");
+  try {
+    const size = (await handle.stat()).size;
+    const retainedBytes = Math.min(size, TEST_OUTPUT_MAX_BUFFER_BYTES);
+    const buffer = Buffer.alloc(retainedBytes);
+    if (retainedBytes > 0) {
+      await handle.read(buffer, 0, retainedBytes, 0);
+    }
+    return {
+      text: buffer.toString("utf8"),
+      truncated: size > TEST_OUTPUT_MAX_BUFFER_BYTES,
+    };
+  } finally {
+    await handle.close();
+  }
 }
 
 async function runLinkedTestCommand(
@@ -1282,70 +1245,82 @@ async function runLinkedTestCommand(
   progressMode: LinkedTestProgressMode,
 ): Promise<LinkedTestExecutionResult> {
   const startedAt = Date.now();
-  const child = createLinkedTestChild(command, env);
-  closeLinkedTestStdin(child);
-  const timers: LinkedTestTimerState = {
-    heartbeat: beginLinkedTestProgress(progressContext, progressMode),
-    forceKillTimer: null,
-    timedOutTimer: null,
-  };
-  const output: LinkedTestOutputBufferState = {
-    stdout: [],
-    stderr: [],
-    stdoutBytes: 0,
-    stderrBytes: 0,
-    outputTruncated: false,
-  };
-  const requestTermination = createLinkedTestTerminationRequester(
-    child,
-    timers,
+  const captureRoot = await mkdtemp(
+    path.join(tmpdir(), "pm-linked-test-output-"),
   );
-  let timedOut = false;
-  let spawnError: string | undefined;
+  try {
+    const stdoutPath = path.join(captureRoot, "stdout.log");
+    const stderrPath = path.join(captureRoot, "stderr.log");
+    const [stdoutHandle, stderrHandle] = await Promise.all([
+      open(stdoutPath, "w"),
+      open(stderrPath, "w"),
+    ]);
+    let child: ReturnType<typeof spawn>;
+    try {
+      child = createLinkedTestChild(
+        command,
+        env,
+        stdoutHandle.fd,
+        stderrHandle.fd,
+      );
+    } finally {
+      await Promise.all([stdoutHandle.close(), stderrHandle.close()]);
+    }
+    closeLinkedTestStdin(child);
+    const timers: LinkedTestTimerState = {
+      heartbeat: beginLinkedTestProgress(progressContext, progressMode),
+      forceKillTimer: null,
+      timedOutTimer: null,
+    };
+    const requestTermination = createLinkedTestTerminationRequester(
+      child,
+      timers,
+    );
+    let timedOut = false;
+    let spawnError: string | undefined;
 
-  const appendChunk = (
-    chunk: Buffer | string,
-    target: "stdout" | "stderr",
-  ): void => {
-    appendLinkedTestOutputChunk(output, chunk, target);
-  };
+    /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
+    child.on("error", (error) => {
+      spawnError = error.message;
+    });
 
-  child.stdout?.on("data", (chunk) => appendChunk(chunk, "stdout"));
-  child.stderr?.on("data", (chunk) => appendChunk(chunk, "stderr"));
-  /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
-  child.on("error", (error) => {
-    spawnError = error.message;
-  });
+    /* c8 ignore next 4 -- callback scheduling timing is non-deterministic under coverage instrumentation. */
+    timers.timedOutTimer = setTimeout(() => {
+      timedOut = true;
+      void requestTermination();
+    }, timeoutMs);
+    timers.timedOutTimer.unref?.();
 
-  /* c8 ignore next 4 -- callback scheduling timing is non-deterministic under coverage instrumentation. */
-  timers.timedOutTimer = setTimeout(() => {
-    timedOut = true;
-    void requestTermination();
-  }, timeoutMs);
-  timers.timedOutTimer.unref?.();
-
-  const { code, signal } = await waitForLinkedTestChildClose(child);
-  clearLinkedTestTimers(timers);
-  const truncationNotice = output.outputTruncated
-    ? `\n[pm linked-test output truncated at ${TEST_OUTPUT_MAX_BUFFER_BYTES} bytes per stream; the child process continued to completion]\n`
-    : "";
-  const executionResult: LinkedTestExecutionResult = {
-    stdout: `${output.stdout.join("")}${truncationNotice}`,
-    stderr: output.stderr.join(""),
-    exitCode: code,
-    signal,
-    timedOut,
-    maxBufferExceeded: false,
-    outputTruncated: output.outputTruncated,
-    spawnError,
-  };
-  endLinkedTestProgress(
-    progressContext,
-    executionResult,
-    startedAt,
-    progressMode,
-  );
-  return executionResult;
+    const { code, signal } = await waitForLinkedTestChildClose(child);
+    clearLinkedTestTimers(timers);
+    const [stdout, stderr] = await Promise.all([
+      readLinkedTestCapture(stdoutPath),
+      readLinkedTestCapture(stderrPath),
+    ]);
+    const outputTruncated = stdout.truncated || stderr.truncated;
+    const truncationNotice = outputTruncated
+      ? `\n[pm linked-test output truncated at ${TEST_OUTPUT_MAX_BUFFER_BYTES} bytes per stream; the child process continued to completion]\n`
+      : "";
+    const executionResult: LinkedTestExecutionResult = {
+      stdout: `${stdout.text}${truncationNotice}`,
+      stderr: stderr.text,
+      exitCode: code,
+      signal,
+      timedOut,
+      maxBufferExceeded: false,
+      outputTruncated,
+      spawnError,
+    };
+    endLinkedTestProgress(
+      progressContext,
+      executionResult,
+      startedAt,
+      progressMode,
+    );
+    return executionResult;
+  } finally {
+    await rm(captureRoot, { recursive: true, force: true });
+  }
 }
 /* c8 ignore stop */
 
@@ -2912,7 +2887,6 @@ export const _testOnlyTestCommand = {
   resolveTestRunOptions,
   resolveTrackedRunId,
   runLinkedTestCommand,
-  appendLinkedTestOutputChunk,
   seedLinkedTestSandbox,
   seedLinkedTestTrackerData,
   segmentInvokesRecursiveTestAll,

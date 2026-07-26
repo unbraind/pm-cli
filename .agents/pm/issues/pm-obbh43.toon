@@ -1,0 +1,22 @@
+id: pm-obbh43
+title: "GH-740: make the documented aggregate SDK barrel complete and continuously derived"
+description: "GitHub: https://github.com/unbraind/pm-cli/issues/740. The documented @unbrained/pm-cli/sdk compatibility aggregate omits 45 supported exports present on contracts, governance, query, and runtime subpaths. Restore the public contract or explicitly govern exclusions, and derive a CI assertion from the live subpath surface so drift cannot recur."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,"area:sdk",compatibility,contracts,github-issue
+created_at: "2026-07-26T12:46:31.198Z"
+updated_at: "2026-07-26T12:46:31.198Z"
+author: "harness:codex"
+acceptance_criteria: "Every supported non-test export from declared SDK subpaths is reachable from the aggregate barrel or appears in an explicit reviewed exclusion contract with a reason; docs match runtime truth; a derived negative-control gate fails when a subpath-only export is introduced; packed Node and Bun consumers compile representative query, contracts, governance, and runtime imports from the documented aggregate."
+goal: project management = context management
+objective: The aggregate SDK entrypoint is a truthful compatibility surface
+parent: pm-usfg
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-38bskj,related,"2026-07-26T12:46:31.198Z",null,null
+  pm-e6tm5c,discovered_from,"2026-07-26T12:46:31.198Z",null,null
+  pm-lnswp0,related,"2026-07-26T12:46:31.198Z",null,null
+  pm-te6elw,related,"2026-07-26T12:46:31.198Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T12:46:31.198Z","harness:codex","Duplicate check 2026-07-26: searched every status for aggregate barrel completeness, 45 missing exports, SDK query/contracts/runtime/governance exports, and snapshot parity. Closed pm-e6tm5c governs per-entrypoint surface drift, pm-38bskj governs tiering, pm-lnswp0 governs snapshot packaging, and pm-te6elw governs action reachability; none owns cross-entrypoint aggregate completeness, so this is the canonical GH-740 child."
+body: ""

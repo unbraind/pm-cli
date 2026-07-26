@@ -4,6 +4,7 @@
  * Provides shared primitives and utilities for Author.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import { createHash } from "node:crypto";
 
 /** Stable provenance categories recorded beside newly appended history authors. */
 export type AuthorSource = "asserted" | "configured" | "detected" | "unknown";
@@ -55,6 +56,8 @@ export interface DetectedAgentIdentity {
   model_source?: AgentModelSource;
   /** Transient invocation/session identifier available only to the current host. */
   session?: string;
+  /** Privacy-safe stable fingerprint for the current harness invocation. */
+  instance?: string;
 }
 
 /** Public, privacy-safe identity resolution result shared by CLI and SDK hosts. */
@@ -445,14 +448,23 @@ export function detectAgentIdentity(
     descriptorMatchesSignals(candidate, env, labels, clientName),
   );
   const modelCandidate = resolveAgentModel(signals, env, descriptor);
-  const session =
-    firstEnvironmentValue(env, descriptor?.session_environment_keys) ??
-    nonBlank(signals.client_info?.session)?.slice(0, 256);
+  const session = [
+    firstEnvironmentValue(env, descriptor?.session_environment_keys),
+    nonBlank(signals.client_info?.session)?.slice(0, 256),
+  ].find((candidate) => candidate !== undefined);
+  const instance =
+    descriptor?.harness && session
+      ? createHash("sha256")
+          .update(`pm-agent-instance:v1\0${descriptor.harness}\0${session}`)
+          .digest("hex")
+          .slice(0, 24)
+      : undefined;
   const entries: Array<[keyof DetectedAgentIdentity, string | undefined]> = [
     ["harness", descriptor?.harness],
     ["model", modelCandidate?.value],
     ["model_source", modelCandidate?.source],
     ["session", session],
+    ["instance", instance],
   ];
   return Object.fromEntries(
     entries.filter((entry) => entry[1] !== undefined),
@@ -548,7 +560,25 @@ export function resolveHistoryAgentIdentity(
     ...(active.model ? { model: active.model } : {}),
     ...(active.model_source ? { model_source: active.model_source } : {}),
     ...(active.session ? { session: active.session } : {}),
+    ...(active.instance ? { instance: active.instance } : {}),
   };
+}
+
+/**
+ * Resolve the ownership principal for an automatically detected agent.
+ *
+ * Human-facing authors remain stable (`harness:codex`, for example), while a
+ * privacy-safe invocation fingerprint prevents two concurrent sessions of the
+ * same harness from silently sharing one claim. Explicit and configured
+ * authors intentionally retain their asserted principal.
+ */
+export function resolveClaimPrincipal(author: string): string {
+  const active = authorIdentityStorage.getStore();
+  return active?.author === author &&
+    active.source === "detected" &&
+    active.instance
+    ? `${author}#${active.instance}`
+    : author;
 }
 
 /** Resolves the effective mutation author from explicit input, environment defaults, and fallback settings. */

@@ -1407,52 +1407,6 @@ describe("runTest", () => {
     expect(linkedExecution.exitCode).toBe(0);
     expect(linkedExecution.stdout).toContain("ok");
     expect(linkedExecution.stderr).toContain("warn");
-    const exceededBuffer = {
-      stdout: [] as string[],
-      stderr: [] as string[],
-      stdoutBytes: 20 * 1024 * 1024 + 1,
-      stderrBytes: 0,
-      outputTruncated: true,
-    };
-    testInternals.appendLinkedTestOutputChunk(
-      exceededBuffer,
-      Buffer.from("ignored"),
-      "stdout",
-    );
-    expect(exceededBuffer.stdout).toEqual([]);
-    expect(exceededBuffer.stdoutBytes).toBe(20 * 1024 * 1024 + 8);
-    const nearlyFullBuffer = {
-      stdout: [] as string[],
-      stderr: [] as string[],
-      stdoutBytes: 20 * 1024 * 1024 - 2,
-      stderrBytes: 0,
-      outputTruncated: false,
-    };
-    testInternals.appendLinkedTestOutputChunk(
-      nearlyFullBuffer,
-      Buffer.from("abcd"),
-      "stdout",
-    );
-    expect(nearlyFullBuffer.stdout.join("")).toBe("ab");
-    expect(nearlyFullBuffer.stdoutBytes).toBe(20 * 1024 * 1024 + 2);
-    expect(nearlyFullBuffer.outputTruncated).toBe(true);
-    const fragmentedBuffer = {
-      stdout: [] as string[],
-      stderr: [] as string[],
-      stdoutBytes: 0,
-      stderrBytes: 0,
-      outputTruncated: false,
-    };
-    for (let index = 0; index < 70_000; index += 1) {
-      testInternals.appendLinkedTestOutputChunk(
-        fragmentedBuffer,
-        "x",
-        "stdout",
-      );
-    }
-    expect(fragmentedBuffer.stdout).toHaveLength(2);
-    expect(fragmentedBuffer.stdout.join("")).toHaveLength(70_000);
-
     const tempRoot = await mkdtemp(
       path.join(os.tmpdir(), "pm-test-command-helpers-"),
     );

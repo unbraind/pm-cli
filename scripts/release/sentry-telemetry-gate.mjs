@@ -600,16 +600,19 @@ async function main() {
     fail(`Unsupported --telemetry-mode value "${telemetryMode}". Use off, best-effort, or required.`);
   }
 
+  const sentryTokenConfigured = redactedTokenCandidates().length > 0;
+  const sentryAccessRequired = telemetryMode === "required" || sentryTokenConfigured;
+  const allowSentryCliFallback =
+    telemetryMode === "required" || (telemetryMode === "best-effort" && sentryTokenConfigured);
   const sentryFetch = await fetchSentryIssues(
     sentryProject,
     buildSentryGateQuery(sentryWindowDays),
     sentryLimit,
-    telemetryMode === "required",
+    allowSentryCliFallback,
   );
   const sentryIssues = sentryFetch.ok ? sentryFetch.issues : [];
   const sentryPartition = partitionSentryIssuesForGate(sentryIssues);
   const sentrySummary = sentrySeverityTally(sentryPartition.relevant);
-  const sentryAccessRequired = telemetryMode === "required" || redactedTokenCandidates().length > 0;
   const sentryAccessOk = sentryFetch.ok || !sentryAccessRequired;
   const sentryThresholdOk =
     sentryAccessOk && sentrySummary.critical <= maxCritical && sentrySummary.high <= maxHigh;

@@ -11,6 +11,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
 import { nowIso } from "../../core/shared/time.js";
 
 const EXTENSION_INSTALL_COPY_ATTEMPTS = 3;
@@ -74,6 +75,36 @@ export const ensureExtensionModuleTypeMarker = async (
     markerPath,
     `${JSON.stringify({ type: "module" }, null, 2)}\n`,
     "utf8",
+  );
+};
+
+/**
+ * Link an installed extension to the exact host SDK that activated it.
+ *
+ * Extension directories are copied out of their package root, so ordinary
+ * package-manager dependency ancestry no longer exists after installation.
+ * Installing this local link restores standard Node package resolution for
+ * `@unbrained/pm-cli/sdk` and its public subpaths without environment-specific
+ * absolute imports or duplicated runtime loaders.
+ */
+export const ensureInstalledExtensionSdkLink = async (
+  destinationDirectory: string,
+): Promise<void> => {
+  const hostPackageRoot = resolvePmPackageRootFromModule(import.meta.url, [
+    "../../..",
+  ]);
+  const scopedDirectory = path.join(
+    destinationDirectory,
+    "node_modules",
+    "@unbrained",
+  );
+  const linkPath = path.join(scopedDirectory, "pm-cli");
+  await fs.mkdir(scopedDirectory, { recursive: true });
+  await fs.rm(linkPath, { recursive: true, force: true });
+  await fs.symlink(
+    hostPackageRoot,
+    linkPath,
+    process.platform === "win32" ? "junction" : "dir",
   );
 };
 

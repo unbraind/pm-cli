@@ -776,6 +776,8 @@ export interface ItemMetadata {
   closed_at?: string;
   /** Value that configures or reports assignee for this contract. */
   assignee?: string;
+  /** Internal privacy-safe ownership principal for concurrent agent sessions. */
+  claim_principal?: string;
   /** Value that configures or reports source owner for this contract. */
   source_owner?: string;
   /** Value that configures or reports author for this contract. */
@@ -919,6 +921,8 @@ export interface HistoryEntry {
   agent_model?: string;
   /** Bounded signal class that supplied `agent_model`. */
   agent_model_source?: "override" | "environment" | "mcp_client" | "argv";
+  /** Privacy-safe fingerprint distinguishing concurrent harness invocations. */
+  agent_instance?: string;
   /** Value that configures or reports op for this contract. */
   op: string;
   /** Value that configures or reports patch for this contract. */

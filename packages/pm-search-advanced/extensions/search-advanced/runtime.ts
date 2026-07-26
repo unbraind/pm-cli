@@ -5,17 +5,23 @@
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import type {
-  FlagDefinition,
   GlobalOptions,
   ReindexOptions,
   ReindexResult,
   SearchOptions,
   SearchResult,
 } from "@unbrained/pm-cli/sdk/runtime";
-
-const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+import {
+  EXIT_CODE,
+  PmCliError,
+  readBooleanOption,
+  readCsvListOption,
+  readStringOption,
+  runReindex,
+  runSearch,
+  SEARCH_EXTENSION_FLAG_DEFINITIONS,
+} from "@unbrained/pm-cli/sdk/runtime";
 const DEFAULT_EVAL_FIXTURES_PATH = path.join(
   "tests",
   "search-eval",
@@ -30,50 +36,6 @@ const VALID_EVAL_SEARCH_MODES = new Set([
 ] as const);
 
 type EvalSearchMode = "keyword" | "semantic" | "hybrid";
-
-interface SearchRuntimeSdkModule {
-  SEARCH_EXTENSION_FLAG_DEFINITIONS: FlagDefinition[];
-  EXIT_CODE: {
-    USAGE: number;
-  };
-  PmCliError: new (message: string, exitCode?: number) => Error;
-  runSearch: (
-    query: string,
-    options: SearchOptions,
-    global: GlobalOptions,
-  ) => Promise<SearchResult>;
-  runReindex: (
-    options: ReindexOptions,
-    global: GlobalOptions,
-  ) => Promise<ReindexResult>;
-  readStringOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => string | undefined;
-  readBooleanOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => boolean | undefined;
-  readCsvListOption: (
-    options: Record<string, unknown>,
-    key: string,
-    aliases?: string[],
-  ) => string[];
-}
-
-const sdk = await loadSearchSdkModule();
-const {
-  SEARCH_EXTENSION_FLAG_DEFINITIONS,
-  EXIT_CODE,
-  PmCliError,
-  runSearch,
-  runReindex,
-  readStringOption,
-  readBooleanOption,
-  readCsvListOption,
-} = sdk;
 
 interface SearchEvalFixtureInput {
   query?: unknown;
@@ -126,44 +88,6 @@ interface ReindexRuntimeOptions {
   eval?: {
     fixturesPath: string;
   };
-}
-
-async function loadSearchSdkModule(): Promise<SearchRuntimeSdkModule> {
-  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
-  if (typeof envRoot !== "string" || envRoot.trim().length === 0) {
-    throw new Error(
-      `builtin-search-advanced requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
-    );
-  }
-  const modulePath = path.join(
-    path.resolve(envRoot.trim()),
-    "dist",
-    "sdk",
-    "runtime.js",
-  );
-  try {
-    const loaded = (await import(
-      pathToFileURL(modulePath).href
-    )) as Partial<SearchRuntimeSdkModule>;
-    if (
-      typeof loaded.runSearch === "function" &&
-      typeof loaded.runReindex === "function" &&
-      typeof loaded.PmCliError === "function" &&
-      typeof loaded.readStringOption === "function" &&
-      typeof loaded.readBooleanOption === "function" &&
-      typeof loaded.readCsvListOption === "function" &&
-      Array.isArray(loaded.SEARCH_EXTENSION_FLAG_DEFINITIONS) &&
-      typeof loaded.EXIT_CODE === "object" &&
-      loaded.EXIT_CODE !== null
-    ) {
-      return loaded as SearchRuntimeSdkModule;
-    }
-  } catch {
-    // Fall through to deterministic failure message below.
-  }
-  throw new Error(
-    `builtin-search-advanced failed to load SDK runtime exports from ${modulePath}.`,
-  );
 }
 
 export { SEARCH_EXTENSION_FLAG_DEFINITIONS };

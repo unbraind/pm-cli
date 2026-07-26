@@ -1,0 +1,19 @@
+id: pm-n13lzc
+title: "GH-739: expose duplicate-cluster discovery as a first-class CLI and SDK workflow"
+description: "GitHub: https://github.com/unbraind/pm-cli/issues/739. Create-time similarity advice does not let agents sweep duplicate clusters that already exist. Promote the existing canonical batch duplicate-cluster SDK primitive into bounded CLI, MCP, and PmClient surfaces with token-efficient summaries and canonical-item remediation guidance."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-26T12:13:36.253Z"
+updated_at: "2026-07-26T12:13:36.253Z"
+author: "harness:codex"
+acceptance_criteria: "CLI, MCP, and typed SDK consumers can list existing duplicate clusters without creating an item; output is bounded and deterministic; cluster provenance and canonical merge/close guidance reuse existing duplicate governance."
+parent: pm-usfg
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-2i12ti,discovered_from,"2026-07-26T12:13:36.253Z",null,null
+  pm-4ri6,related,"2026-07-26T12:13:36.253Z",null,null
+  pm-jmld,blocked_by,"2026-07-26T12:13:36.253Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T12:13:36.253Z","harness:codex","Duplicate check 2026-07-26: searched all statuses for GH-739, existing duplicate clusters, findDuplicateClusters CLI, and batch duplicate sweep. Closed pm-2i12ti supplies the batch primitive, pm-4ri6 covers create-time advice, and pm-jmld covers merge execution; none exposes the requested read workflow, so this is the canonical surface child."
+body: ""

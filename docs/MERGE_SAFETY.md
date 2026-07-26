@@ -21,6 +21,10 @@ git commit -m "chore(pm): install tracker merge drivers"
 
 `pm merge install` writes an idempotent, fenced `.gitattributes` block and repository-local `git config` entries. The attributes are committed; the driver commands are clone-local, so every collaborator and fresh CI clone that performs merges must run the install command.
 
+The clone-local driver values record the absolute Node executable and bundled
+`dist/cli.js` path resolved by the installing SDK. Git therefore does not depend
+on a bare `pm` command or the caller's later `PATH` when it merges tracker data.
+
 The installer publishes the shared `.gitattributes` fence only after the clone-local driver commands are configured. If the repository Git config is read-only or another Git process holds its lock, the command returns the stable `merge_git_config_unwritable` error with recovery guidance and leaves an absent fence absent. Use `pm merge install --dry-run --json` to inspect the contract in intentionally read-only workspaces.
 
 ### Fence coverage contract

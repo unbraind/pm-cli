@@ -48,7 +48,10 @@ import { createSerialQueue } from "../core/shared/serial-queue.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import type { PmToolAction } from "./cli-contracts/enum-contracts.js";
+import {
+  PM_TOOL_ACTIONS,
+  type PmToolAction,
+} from "./cli-contracts/enum-contracts.js";
 import {
   clearWorkspaceContractsCache,
   memoizeWorkspaceExtensionRegistrations,
@@ -3785,6 +3788,40 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   "close-many": runMcpCloseManyAction,
   gc: (ctx) => runGc(ctx.global, ctx.options),
 };
+
+/** One action's static SDK dispatch-resolution proof. */
+export interface SdkActionCoverageRow {
+  /** Public action being analyzed. */
+  action: string;
+  /** Canonical native action selected after alias normalization. */
+  resolved_action: string;
+  /** Whether the canonical action has an in-process SDK handler. */
+  covered: boolean;
+  /** How the public action reaches its handler. */
+  route: "native" | "alias" | "missing";
+}
+
+/**
+ * Derive the SDK dispatch coverage matrix from the live action and alias
+ * registries instead of a hand-maintained test list.
+ */
+export function analyzeSdkActionCoverage(
+  actions: readonly string[] = PM_TOOL_ACTIONS,
+): SdkActionCoverageRow[] {
+  return actions.map((action) => {
+    const normalized = normalizeActionName(action);
+    const alias = getOwnHandler(SDK_ACTION_ALIASES, normalized);
+    const resolvedAction = alias?.action ?? normalized;
+    const covered =
+      getOwnHandler(SDK_ACTION_HANDLERS, resolvedAction) !== undefined;
+    return {
+      action,
+      resolved_action: resolvedAction,
+      covered,
+      route: covered ? (alias ? "alias" : "native") : "missing",
+    };
+  });
+}
 
 async function dispatchAction(
   action: string,

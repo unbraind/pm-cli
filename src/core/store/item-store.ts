@@ -46,6 +46,7 @@ import {
   ITEM_FILE_EXTENSIONS,
 } from "./paths.js";
 import { resolveGovernanceKnobs } from "./settings.js";
+import { resolveClaimPrincipal } from "../shared/author.js";
 import { nowIso } from "../shared/time.js";
 import type {
   ItemDocument,
@@ -398,10 +399,13 @@ async function prepareLockedItem(params: {
     });
 
     const assigned = document.metadata.assignee?.trim();
+    const assignedPrincipal =
+      document.metadata.claim_principal?.trim() || assigned;
+    const callerPrincipal = resolveClaimPrincipal(params.author);
     const governance = resolveGovernanceKnobs(params.settings);
     const hasOwnershipConflict =
       assigned &&
-      assigned !== params.author &&
+      assignedPrincipal !== callerPrincipal &&
       !params.force &&
       !bypassesAssigneeConflict(params.op, params.bypassAssigneeConflict);
     if (hasOwnershipConflict) {

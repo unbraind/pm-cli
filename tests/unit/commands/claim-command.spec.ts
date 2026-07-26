@@ -14,7 +14,10 @@ import {
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { detectHarnessIdentity } from "../../../src/core/shared/author.js";
+import {
+  detectHarnessIdentity,
+  runWithHarnessDetectionSignals,
+} from "../../../src/core/shared/author.js";
 import { getHistoryPath } from "../../../src/core/store/paths.js";
 import {
   readSettings,
@@ -661,6 +664,45 @@ describe("runClaim/runRelease", () => {
           process.env.CODEX_THREAD_ID = previousCodexThread;
         }
       }
+    });
+  });
+
+  it("keeps concurrent sessions of one detected harness as distinct claim principals", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "same-harness-distinct-sessions",
+        status: "open",
+      });
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "" });
+      const claimFromSession = (session: string) =>
+        runWithHarnessDetectionSignals(
+          {
+            env: {
+              CODEX_HOME: "/tmp/codex",
+              CODEX_THREAD_ID: session,
+            },
+          },
+          () => runClaim(id, false, { path: context.pmPath }),
+        );
+
+      const first = await claimFromSession("thread-a");
+      expect(first.item.assignee).toBe("harness:codex");
+      expect(first.item.claim_principal).toMatch(
+        /^harness:codex#[a-f0-9]{24}$/,
+      );
+      await expect(claimFromSession("thread-b")).rejects.toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+        context: expect.objectContaining({ code: "already_claimed_by" }),
+      });
+      expect((await claimFromSession("thread-a")).skipped).toBeUndefined();
+
+      const stored = await readFile(
+        path.join(context.pmPath, "tasks", `${id}.toon`),
+        "utf8",
+      );
+      expect(stored).not.toContain("thread-a");
+      expect(stored).not.toContain("thread-b");
     });
   });
 

@@ -818,7 +818,7 @@ Common types:
 
 ## Static And Runtime Contracts
 
-`PM_TOOL_ACTIONS` and `PM_TOOL_PARAMETERS_SCHEMA` describe the always-on static core action surface. They include core project-management primitives, package lifecycle actions, and `upgrade`.
+`PM_TOOL_ACTIONS` and `PM_TOOL_PARAMETERS_SCHEMA` describe the always-on static core action surface. They include core project-management primitives, package lifecycle actions, and `upgrade`. `analyzeSdkActionCoverage()` derives every native or alias dispatch route from the live runtime registries; the release test matrix combines it with `PM_TOOL_ACTION_PARAMETER_CONTRACTS` so a new action or parameter cannot silently lack an executable SDK route or schema property.
 
 Package-owned actions such as `beads-import`, `todos-export`, `calendar`, and `templates-save` are intentionally not advertised as static core actions. Discover installed package actions with runtime contracts:
 
@@ -1934,7 +1934,7 @@ import { defineExtension } from "@unbrained/pm-cli/sdk";
 import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
 ```
 
-`PM_CLI_PACKAGE_ROOT` is reserved for first-party packages bundled inside this repository. Those packages use it to locate the running CLI's `dist/sdk/runtime.js` before they are installed as independent npm packages. External packages must not depend on `PM_CLI_PACKAGE_ROOT`, `dist/` paths, or `src/core/...`; declare `@unbrained/pm-cli` as a dependency or peer dependency and import the public SDK subpaths instead. When pm installs a registry package, it links that dependency to the running host CLI so the package gets the active SDK without downloading a second CLI copy into the project.
+`PM_CLI_PACKAGE_ROOT` is reserved for first-party packages bundled inside this repository. External packages must not depend on `PM_CLI_PACKAGE_ROOT`, `dist/` paths, or `src/core/...`; declare `@unbrained/pm-cli` as a dependency or peer dependency and import the public SDK subpaths instead. Every copied extension is linked to the exact running host package at `node_modules/@unbrained/pm-cli`, so standard imports from `@unbrained/pm-cli/sdk`, `/sdk/runtime`, and `/sdk/testing` resolve without downloading a second CLI copy into the project.
 
 ## Authoring Builders
 

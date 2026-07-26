@@ -16,6 +16,7 @@ import {
   resolvePmRoot,
   readSettings,
   resolveAuthor,
+  resolveClaimPrincipal,
 } from "../../sdk/runtime-primitives.js";
 import { wrapOwnershipConflict } from "../../sdk/annotations.js";
 import { describeItemOwnershipConflict } from "../../sdk/ownership-source.js";
@@ -135,6 +136,7 @@ export async function runClaim(
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = resolveAuthor(options.author, settings.author_default);
+  const claimPrincipal = resolveClaimPrincipal(author);
   let previousAssignee: string | null = null;
   let skipped = false;
   const mutationWarnings: string[] = [];
@@ -150,8 +152,9 @@ export async function runClaim(
     skipNoop: true,
     async mutate(document) {
       const currentAssignee = document.metadata.assignee;
-      const currentAssigneeText =
-        typeof currentAssignee === "string" ? currentAssignee : "";
+      const currentAssigneeText = currentAssignee ?? "";
+      const currentClaimPrincipal =
+        document.metadata.claim_principal?.trim() || currentAssigneeText;
       previousAssignee =
         currentAssigneeText.trim().length > 0 ? currentAssigneeText : null;
       if (
@@ -164,37 +167,41 @@ export async function runClaim(
         );
       }
       const heldByOther =
-        previousAssignee !== null && previousAssignee !== author;
-      if (heldByOther && options.ifAvailable === true) {
-        skipped = true;
-        mutationWarnings.push(`claim_skipped_held_by:${previousAssignee}`);
-        return { changedFields: [] };
-      }
-      if (heldByOther && !force) {
-        const ownershipPhrase = await describeItemOwnershipConflict(
-          pmRoot,
-          document.metadata.id,
-          currentAssigneeText,
-        );
-        throw new PmCliError(
-          `Item ${document.metadata.id} is already ${ownershipPhrase}. Use --force to take over, or --if-available to skip without failing.`,
-          EXIT_CODE.CONFLICT,
-          {
-            code: "already_claimed_by",
-            why: "Claim is an atomic test-and-set so parallel agents never proceed believing they own the same item.",
-            nextSteps: [
-              "Run pm next to pick a different unclaimed item.",
-              "Re-run with --if-available to treat a held item as a no-op skip.",
-              "Re-run with --force only when taking over the item is coordinated.",
-            ],
-          },
-        );
-      }
+        previousAssignee !== null && currentClaimPrincipal !== claimPrincipal;
       if (heldByOther) {
+        if (options.ifAvailable === true) {
+          skipped = true;
+          mutationWarnings.push(`claim_skipped_held_by:${previousAssignee}`);
+          return { changedFields: [] };
+        }
+        if (!force) {
+          const ownershipPhrase = await describeItemOwnershipConflict(
+            pmRoot,
+            document.metadata.id,
+            currentAssigneeText,
+          );
+          throw new PmCliError(
+            `Item ${document.metadata.id} is already ${ownershipPhrase}. Use --force to take over, or --if-available to skip without failing.`,
+            EXIT_CODE.CONFLICT,
+            {
+              code: "already_claimed_by",
+              why: "Claim is an atomic test-and-set so parallel agents never proceed believing they own the same item.",
+              nextSteps: [
+                "Run pm next to pick a different unclaimed item.",
+                "Re-run with --if-available to treat a held item as a no-op skip.",
+                "Re-run with --force only when taking over the item is coordinated.",
+              ],
+            },
+          );
+        }
         mutationWarnings.push(`claim_takeover:${previousAssignee}->${author}`);
       }
       document.metadata.assignee = author;
-      return { changedFields: ["assignee"], warnings: mutationWarnings };
+      document.metadata.claim_principal = claimPrincipal;
+      return {
+        changedFields: ["assignee", "claim_principal"],
+        warnings: mutationWarnings,
+      };
     },
   });
 
@@ -364,7 +371,8 @@ export async function runRelease(
           return { changedFields: [] };
         }
         delete document.metadata.assignee;
-        return { changedFields: ["assignee"] };
+        delete document.metadata.claim_principal;
+        return { changedFields: ["assignee", "claim_principal"] };
       },
     });
   } catch (error: unknown) {
