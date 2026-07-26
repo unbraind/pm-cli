@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[8]: adr,concurrency,decision,federation,long-term,merge,multi-agent,storage
 created_at: "2026-07-24T23:48:31.411Z"
-updated_at: "2026-07-26T05:49:23.363Z"
+updated_at: "2026-07-26T10:52:05.061Z"
 author: maintainer-agent
 estimated_minutes: 900
 acceptance_criteria: "The decision states the concurrency and divergence regime under which field-aware three-way merge is proven sufficient, with measured evidence; Rejected alternatives are recorded with their reasons, including full conflict-free replicated data types and operation-log-only storage; Any adopted change states its format_version and migration implications and its effect on the plain-text, git-diffable storage property; The decision names the acceptance evidence source — the merge conformance suite and the simulation harness — rather than asserting a position"
@@ -19,7 +19,7 @@ why_now: The merge-safety program has closed and federation is on the roadmap. T
 parent: pm-m2u1
 risk: high
 confidence: low
-dependencies[10]{id,kind,created_at,author,source_kind}:
+dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-76dnfg,blocked_by,"2026-07-24T23:48:31.411Z",null,null
   pm-a8lnoh,blocked_by,"2026-07-24T23:48:31.411Z",null,null
   pm-agou,related,"2026-07-24T23:48:31.411Z",null,null
@@ -30,4 +30,5 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-pae3wo,related,"2026-07-24T23:48:31.411Z",null,null
   pm-t4d7nz,related,"2026-07-24T23:48:31.411Z",null,null
   pm-o87av6,implements,"2026-07-26T05:49:23.121Z",null,null
+  pm-10l1vm,blocked_by,"2026-07-26T10:52:04.768Z",null,null
 body: "## Question\nThe product target is thousands of agents working the same workspace across many branches, merging without conflict or loss. Today that is delivered by field-aware three-way merge drivers plus history union and reanchoring. Those are correct for the divergence patterns tested. The open question is whether they remain correct — and remain conflict-free rather than merely correct — as branch count and divergence depth grow.\n\n## Tension\nConvergent replicated state buys order-independent merge by construction, which is exactly the property the merge conformance suite is being built to assert. It costs metadata weight in every record and it works against the plain-text, human-readable, git-diffable storage property that is a deliberate product commitment.\n\n## Constraint that must be respected\nStorage stays human-readable and git-native. Any convergence mechanism that turns items into opaque blobs is rejected on that ground alone, regardless of its theoretical merits.\n\n## Evidence this decision waits on\nMeasured conflict rates from the merge conformance property suite at increasing branch counts, and invariant violations found by the deterministic simulation harness. Deciding before that evidence exists would be a preference, not a decision."

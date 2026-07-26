@@ -16,6 +16,11 @@
 - Scorecard Security-Policy (4→10): enrich SECURITY.md to full scoring depth ([pm-2d7k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2d7k.toon))
 - Scorecard Fuzzing (0→10): add a fuzzing/property-based harness for the parser and codec surfaces ([pm-0yi7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0yi7.toon))
 
+### Other
+
+- 2026-07-26 agent-context readiness audit: full CLI, SDK, and ecosystem review and optimization plan ([pm-t9e3bc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-t9e3bc.toon))
+- Ecosystem review and deep-graph enrichment pass 2026-07-26: all-status inspection, CLI simplification + context-algorithm brainstorm, gap filing ([pm-e9yevx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e9yevx.toon))
+
 ## 2026.7.26 - 2026-07-26
 
 ### Added

@@ -1,0 +1,33 @@
+id: pm-10l1vm
+title: "History entries carry no branch-independent ordering identity, so causal order across concurrently recorded streams is reconstructed from wall-clock time alone"
+description: "A history entry (HistoryEntry in src/types.ts) records ts, author, author_source, agent_harness, agent_model, op, patch, before_hash, after_hash, message, and context. It records no sequence number, no per-writer counter, no logical or vector clock, and no branch or lineage identifier. Within one stream, order is the order of lines in the file and the chain is anchored by before_hash and after_hash. Across streams recorded concurrently on different branches by different agents on different machines, there is nothing to order by except ts, which is wall-clock time from an unsynchronized host. The merge driver unions those streams and must therefore infer a total order from a signal that is not causally sound: two entries whose true relationship is happens-before can be interleaved in the wrong order by ordinary clock skew, and nothing in the recorded data can detect that it happened. This is the substrate underneath both the unrecorded-merge defect and the convergence-model decision: neither can be settled while the log has no branch-independent notion of which entry came after which."
+type: Issue
+status: open
+priority: 1
+tags[7]: concurrency,history,merge,multi-agent,provenance,scale,storage
+created_at: "2026-07-26T10:46:07.190Z"
+updated_at: "2026-07-26T10:51:58.647Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "Every recorded entry carries an ordering identity that is independent of any host clock and is unique to the writer that produced it; The recorded data is sufficient to distinguish concurrent entries from causally ordered entries after an arbitrary merge, without consulting git or any external system; Replay, point-in-time reads, and restore resolve to the same item state regardless of the wall-clock skew present when the entries were written; A property suite generates skewed-clock, multi-branch interleavings and asserts that reconstructed order matches recorded causality, with the skew magnitude as an explicit parameter; The addition states its format_version implications and preserves the plain-text, git-diffable storage property; Existing streams remain verifiable, and legacy entries without ordering identity are handled by a declared rule rather than by assumption"
+goal: provable-history
+objective: "Give the immutable log an ordering that survives branching, merging, and unsynchronized clocks"
+value: "The product's central claim is a complete and unalterable record that can restore any item to any version. At one agent that claim holds. At thousands of agents on many branches, order is inferred from a field that no one controls and that routinely disagrees with reality."
+impact: "Determines whether the history stream is a proof or a heuristic once concurrency is real; every merge, replay, restore, and point-in-time read inherits the answer"
+outcome: "Recorded history has a causally sound order that is independent of clocks, and merged streams can be verified rather than trusted"
+why_now: "The convergence-model decision and the merge conformance suite are both blocked on knowing what the log can prove, and the storage format freezes at the GA contract"
+parent: pm-o2kc
+risk: high
+confidence: 70
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-2sbj8p,related,"2026-07-26T10:46:07.190Z",null,null
+  pm-4jk8kx,related,"2026-07-26T10:46:07.190Z",null,null
+  pm-76dnfg,related,"2026-07-26T10:46:07.190Z",null,null
+  pm-9j2r3b,related,"2026-07-26T10:46:07.190Z",null,null
+  pm-a8lnoh,related,"2026-07-26T10:46:07.190Z",null,null
+  pm-o2kc,implements,"2026-07-26T10:46:07.190Z",null,null
+  pm-u14c,related,"2026-07-26T10:46:07.190Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T10:46:07.190Z",null,null
+  pm-wlqxg3,related,"2026-07-26T10:46:07.190Z",null,null
+  pm-9j2r3b,discovered_from,"2026-07-26T10:51:58.407Z",null,null
+body: ""

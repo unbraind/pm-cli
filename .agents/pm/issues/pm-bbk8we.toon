@@ -1,0 +1,33 @@
+id: pm-bbk8we
+title: "The history integrity chain hard-codes SHA-256 with no algorithm identifier, so the proof it produces has no migration path across the decades it claims to cover"
+description: "before_hash and after_hash are bare hexadecimal digests produced by a literal createHash(\"sha256\") call, and the recorded entry carries no field naming the algorithm that produced them. Verification therefore assumes SHA-256 forever. The workspace format already declares a format_version for the item encoding, and the roadmap already commits to multi-decade readability and to a portable attestation bundle a third party can verify independently — both of which inherit this assumption. If the digest ever has to change, every historical entry becomes unverifiable at once, because nothing in the recorded data says which function to apply, and re-hashing the archive to a new algorithm is precisely the rewrite the immutability guarantee exists to forbid. The gap is cheap to close now and structurally expensive later: an algorithm label on each entry, plus a verification rule that selects the function per entry, lets the chain migrate forward while every historical link stays checkable under the function that created it."
+type: Issue
+status: open
+priority: 2
+tags[6]: cryptography,durability,history,long-term,provenance,storage
+created_at: "2026-07-26T10:46:36.121Z"
+updated_at: "2026-07-26T10:51:59.883Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "Each recorded entry names the digest algorithm that produced its hashes, and verification selects the function per entry rather than assuming one globally; Legacy entries with no label are verified under a declared default, and that default is stated in the format specification rather than implied by code; A second algorithm is exercised end to end in tests — written, chained, merged, verified, and replayed — proving the mechanism works before it is needed; Migration guidance states what changes and what does not when the default algorithm advances, including the effect on the portable attestation bundle and on any already-exported proof; The change states its format_version implications and leaves already-written streams verifiable without modification"
+goal: provable-history
+objective: Make the integrity proof outlive the specific hash function that currently produces it
+value: A tamper-evidence claim that spans decades cannot depend on a primitive chosen once and never named. Adding the label is inexpensive now and impossible to add retroactively without touching the archive the label exists to protect.
+impact: "Determines whether recorded history can survive a cryptographic transition at all, and whether exported attestations remain verifiable after one"
+outcome: "The chain records how it was hashed, so verification stays correct across algorithm changes and no historical entry ever needs rewriting"
+why_now: "Every entry written before the label exists becomes a legacy case that the migration must special-case, so the cost grows with every day the tracker runs"
+parent: pm-o2kc
+risk: medium
+confidence: 75
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-10l1vm,related,"2026-07-26T10:46:36.121Z",null,null
+  pm-3z0k,related,"2026-07-26T10:46:36.121Z",null,null
+  pm-4jk8kx,related,"2026-07-26T10:46:36.121Z",null,null
+  pm-e5yupa,related,"2026-07-26T10:46:36.121Z",null,null
+  pm-o2kc,implements,"2026-07-26T10:46:36.121Z",null,null
+  pm-pae3wo,related,"2026-07-26T10:46:36.121Z",null,null
+  pm-u14c,related,"2026-07-26T10:46:36.121Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T10:46:36.121Z",null,null
+  pm-hg0k,related,"2026-07-26T10:46:59.162Z",null,null
+  pm-hg0k,discovered_from,"2026-07-26T10:51:59.677Z",null,null
+body: ""

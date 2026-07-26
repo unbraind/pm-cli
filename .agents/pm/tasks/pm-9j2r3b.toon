@@ -6,14 +6,14 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-25T20:40:33.139Z"
-updated_at: "2026-07-26T06:05:38.614Z"
+updated_at: "2026-07-26T10:52:03.770Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "The merge resolution is recorded as a history entry whose patch reproduces the merged item state exactly, so the last after_hash equals the hash of the merged item file and pm history --verify passes with no manual step; The entry carries merge provenance: the contributing stream heads or branch identities, the driver that produced the resolution, and per-field attribution for any field where the branches disagreed; pm restore and pm get --at can address the merged state like any other version, asserted by a test that merges divergent branches and then restores to the post-merge version from the stream alone; A clean merge leaves pm validate with zero history-drift warnings, and a genuine tamper still fails, so the drift signal keeps its meaning; history-repair keeps declining to rewrite a verifying chain: recording the resolution is the fix, and repair is not extended to fabricate entries; Recording is deterministic and order-independent, so merging the same branch set in different orders yields the same merged state and equivalent recorded provenance; The workspace-scope equivalent is covered or explicitly deferred with a reason: settings, schema, and relationship artifacts merged by the same fence get the same treatment"
 parent: pm-o2kc
 risk: high
 confidence: 75
-dependencies[7]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-2sbj8p,related,"2026-07-25T20:40:33.139Z",null,null
   pm-76dnfg,related,"2026-07-25T20:40:33.139Z",null,null
   pm-9yfo,related,"2026-07-25T20:40:33.139Z",null,null
@@ -21,6 +21,7 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-szv11n,implements,"2026-07-25T20:40:33.139Z",null,null
   pm-w7ccmv,verifies,"2026-07-25T20:40:33.139Z",null,null
   pm-wlqxg3,related,"2026-07-25T20:40:33.139Z",null,null
+  pm-10l1vm,related,"2026-07-26T10:52:03.450Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-26T06:05:38.614Z","harness:claude-code","Live reproduction 2026-07-26 on the shipped 2026.7.26 build, recorded as evidence for the acceptance clause 'a clean merge leaves pm validate with zero history-drift warnings'. Scratch repository, pm merge install applied, two branches diverging on one item: agentA adds a comment and sets priority=1, agentB adds a different comment and sets estimated_minutes=60. git merge exits 0 with no conflict; the field-aware driver reports fields_from_theirs=[estimated_minutes], union_fields=[comments], history strategy=union_reanchor entries_total=5; the merged item correctly carries priority 1, estimated_minutes 60, and both comments. Immediately afterwards pm history <id> --verify returns ok:false with errors [verify_failed:current_item_hash_mismatch], latest_after_hash f6b6065e... against current_item_hash a1c9cbfb..., and pm validate --check-history-drift reports drifted_items_count 1 with hash_mismatches 1. So a correct, conflict-free merge leaves the workspace failing its own integrity check with no warning at merge time. Filed pm-pdr8t1 for the detection half: CI's merge-safety step verifies one history stream of 2,058 and omits --check-history-drift entirely, so this drift would not be seen in CI even after it happens."
 body: ""

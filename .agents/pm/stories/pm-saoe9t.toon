@@ -6,8 +6,9 @@ status: open
 priority: 4
 tags[6]: digital-twin,domain-pack,exemplar,horizon-far,story,universal-platform
 created_at: "2026-07-26T10:01:39.743Z"
-updated_at: "2026-07-26T10:01:57.992Z"
+updated_at: "2026-07-26T10:56:21.248Z"
 author: "harness:opencode"
+estimated_minutes: 2400
 acceptance_criteria: "A domain pack models org structure, objectives, approvals, and assets with zero pm-core changes; an independent reviewer can operate the twin for a simulated quarter using only SDK primitives; every pm-core gap encountered is filed as a tracked item"
 goal: project management = context management
 objective: Prove pm SDK primitives compose into a complete non-PM organizational system

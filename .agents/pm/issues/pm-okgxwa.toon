@@ -1,0 +1,34 @@
+id: pm-okgxwa
+title: "Ranking explanation is sized by the workspace rather than by the answer: explaining two returned rows emits one entry per active item and ignores the token budget entirely"
+description: "Measured 2026-07-26 on this workspace at 280 active items. pm context --limit 2 returns 1,784 bytes. Adding --explain-ranking returns 131,187 bytes, a 73-fold amplification to explain two rows, and the JSON form returns 161,179. The breakdown is unambiguous: ranking.items carries 280 entries totalling 102,592 bytes — one per active item in the workspace — while ranking.model is 19 bytes, available_signals 186, feature_store 146, and the whole packing object 499. The explanation therefore describes every candidate the scorer considered rather than the rows the caller received, so its size is a function of workspace size and not of the request. --token-budget does not bound it: the same call at --token-budget 200 and at --token-budget 2000 returns 131,186 and 131,190 bytes respectively. The flag that exists to cap what an agent pays is bypassed by the flag that explains what it paid for, and at the scale the proven-scale milestone targets this output has no upper bound at all."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli",context,observability,scale,token-efficiency
+created_at: "2026-07-26T10:54:37.857Z"
+updated_at: "2026-07-26T10:54:37.857Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "The explanation covers the rows that were returned, with any wider candidate detail available only when explicitly requested and bounded when it is; The declared token budget applies to the explanation as it applies to the rows, and exceeding it degrades deterministically rather than silently emitting the full set; The explanation's size is proven to scale with the result rather than the workspace, by measuring the same request against workspaces that differ by orders of magnitude; The measurement corpus for the token gate includes this payload, since it is the largest agent-facing output the CLI produces; The explanation remains sufficient to attribute a ranking decision after the reduction, verified against the evaluation harness rather than by inspection"
+goal: project management = context management
+objective: Make the cost of an explanation proportional to the thing being explained
+value: "Explainability is what makes an adaptive scorer trustworthy, and it is currently priced so far above the answer that no agent loop can afford to use it. A capability that cannot be afforded is not shipped."
+impact: "Brings the largest agent-facing payload under the same budget discipline as every other read surface, and removes an output whose size grows without bound as the workspace grows"
+outcome: An agent can ask why it received these rows and pay a cost proportional to the rows
+why_now: "The relevance engine is where the roadmap is investing, and every signal added to the scorer multiplies a payload that is already the largest in the CLI"
+parent: pm-mpbb
+risk: medium
+confidence: 90
+dependencies[11]{id,kind,created_at,author,source_kind}:
+  pm-4k6b,related,"2026-07-26T10:54:37.857Z",null,null
+  pm-5t33or,blocked_by,"2026-07-26T10:54:37.857Z",null,null
+  pm-801d,related,"2026-07-26T10:54:37.857Z",null,null
+  pm-atfm,related,"2026-07-26T10:54:37.857Z",null,null
+  pm-cxr0jb,related,"2026-07-26T10:54:37.857Z",null,null
+  pm-ez1dfg,related,"2026-07-26T10:54:37.857Z",null,null
+  pm-g3n00m,implements,"2026-07-26T10:54:37.857Z",null,null
+  pm-mpbb,implements,"2026-07-26T10:54:37.857Z",null,null
+  pm-o87av6,verifies,"2026-07-26T10:54:37.857Z",null,null
+  pm-t5dt4z,related,"2026-07-26T10:54:37.857Z",null,null
+  pm-z71aoy,related,"2026-07-26T10:54:37.857Z",null,null
+body: ""

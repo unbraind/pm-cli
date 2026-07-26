@@ -1,0 +1,33 @@
+id: pm-pj2isb
+title: "A historical bulk backfill wrote identical placeholder values into six metadata fields across hundreds of terminal items, so field completeness reads as high while the values carry no information"
+description: "Census of 2,074 items on 2026-07-26. Six fields are dominated by a single literal value repeated across hundreds of terminal items: reviewer is the string maintainer-review on 464 items, environment is one identical sentence beginning Project workspace execution context for on 422, sprint is archive-2026w14 on 286, release is archive-2026q2 on 282, definition_of_ready is one identical sentence beginning Historical lineage, affected artifacts on 271, and customer_impact is one identical sentence on 239. These are template fills from an early normalization pass, not observations. Two consequences follow. First, every completeness measurement over this tracker is inflated: a field-coverage report showing 464 items with a reviewer is describing one string, not 464 reviews, so the tracker cannot tell whether a field is genuinely adopted. Second, and more consequential given where the roadmap is investing, the relevance engine scores over metadata. A field whose value is constant across a large block of terminal items contributes no signal at best, and at worst becomes a spurious correlate of being old and closed, which is precisely the class the scorer must not learn. The forward rule already exists — the terminal evidence backfill forbids adding placeholders — but nothing owns the values already written."
+type: Chore
+status: open
+priority: 2
+tags[6]: data-quality,governance,metadata,normalization,relevance,tracker-governance
+created_at: "2026-07-26T10:59:12.234Z"
+updated_at: "2026-07-26T10:59:12.234Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "Every field dominated by a repeated literal is classified: the value is either replaced with a recoverable fact, cleared so the field is honestly empty, or retained with a recorded rationale that says explicitly it is an archival marker rather than an observation; Clearing and reclassification are ordinary history-recorded mutations, so the original values stay recoverable and the change is explainable; A validation surface reports fields whose values are dominated by a single literal beyond a declared threshold, so this condition is detectable in future rather than discovered by census; Completeness reporting distinguishes a field that is populated from a field that is populated with distinct meaningful values; The relevance engine's signal set is checked against the result, so no scoring signal depends on a field the pass emptied or reclassified; The pass runs under the release-attribution protocol so it produces no unintended changelog movement"
+goal: project management = context management
+objective: "Make populated mean informative, so both governance metrics and the scorer can trust metadata"
+value: "This tracker is the reference workspace for a product whose thesis is that recorded context is the asset. Roughly seventeen hundred field values currently assert facts that were never observed, and every metric and every learned signal computed over them inherits that."
+impact: Corrects the denominator for all metadata governance reporting and removes a block of constant-valued features from the relevance engine's input
+outcome: "Placeholder fills are classified and either replaced, cleared, or explicitly labelled as archival, with a check that prevents the pattern recurring"
+why_now: "The relevance engine is being extended with more metadata signals now, and every signal added over these fields compounds the problem"
+parent: pm-33cw
+risk: medium
+confidence: 85
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-33cw,implements,"2026-07-26T10:59:12.234Z",null,null
+  pm-4k6b,related,"2026-07-26T10:59:12.234Z",null,null
+  pm-e9zh,related,"2026-07-26T10:59:12.234Z",null,null
+  pm-g8t7b9,related,"2026-07-26T10:59:12.234Z",null,null
+  pm-htbetn,related,"2026-07-26T10:59:12.234Z",null,null
+  pm-lnrk,related,"2026-07-26T10:59:12.234Z",null,null
+  pm-pcys9n,blocked_by,"2026-07-26T10:59:12.234Z",null,null
+  pm-pww8ax,related,"2026-07-26T10:59:12.234Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T10:59:12.234Z",null,null
+  pm-wenq,related,"2026-07-26T10:59:12.234Z",null,null
+body: ""

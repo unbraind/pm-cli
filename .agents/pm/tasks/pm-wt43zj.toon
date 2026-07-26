@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",ci,governance,simplification
 created_at: "2026-07-25T06:17:12.603Z"
-updated_at: "2026-07-26T05:59:49.438Z"
+updated_at: "2026-07-26T10:50:05.719Z"
 author: unknown
 estimated_minutes: 420
 acceptance_criteria: "The contracts table declares the permitted top-level nouns, the shared verb vocabulary with one documented meaning per verb, and the scope-before-verb ordering rule as data, not prose; A CI check fails when a command, subcommand, or newly registered extension surface introduces a top-level noun outside the allowlist, a verb outside the vocabulary, or a scope-after-verb ordering; Hidden deprecated spellings must be declared as aliases of a conforming target and are exempt from the noun allowlist while still being counted; The gate reports the offending spelling and the nearest conforming target so the failure is self-correcting; The gate runs on the same job as the contracts drift check and cannot be satisfied by regenerating artifacts alone"
@@ -31,6 +31,7 @@ dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-pbyu,implements,"2026-07-25T20:44:44.591Z",null,null
   pm-n7rr,verifies,"2026-07-26T05:50:19.484Z",null,null
   pm-pbyu,verifies,"2026-07-26T05:59:49.238Z",null,null
-notes[1]{created_at,author,text}:
+notes[2]{created_at,author,text}:
   "2026-07-25T07:13:37.719Z","harness:claude-code","Surface-growth measurement for the conformance gate this item defines (2026-07-25): pm --help now lists 78 top-level commands in this repo (76 in the isolated fixture the token-budget gate measures) across 109 lines. pm-n7rr's charter was written against roughly 60 and targets roughly 15 nouns, so the surface has grown by about a third while the consolidation epic has been open. The 78 include all eight list-* status variants, four history-* commands, three completion-* data providers, three lifecycle aliases (start-task, pause-task, close-task), three calendar shortcuts (meet, event, remind), and package-registered commands (beads, changelog, dedupe-audit, dedupe-merge, comments-audit, normalize, item, pm). This is the concrete baseline the grammar gate has to freeze: without it the count has no ceiling, and every new command adds to the 49,872-token full help surface agents pay to discover the tool."
+  "2026-07-26T10:50:05.718Z","harness:claude-code","Prerequisite discovered 2026-07-26: the twelve-noun target table on pm-n7rr has no placement for five live CORE nouns — graph, merge, events, copy, normalize — three of which (graph, merge, events) shipped after the table was authored. A conformance gate built against the current table would reject shipped functionality. Sequence the placement decision (recorded on pm-n7rr, ruled by ADR pm-pbyu) before the allowlist is declared as data, otherwise the allowlist encodes the omission."
 body: ""

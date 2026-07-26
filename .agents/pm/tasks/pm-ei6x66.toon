@@ -1,0 +1,32 @@
+id: pm-ei6x66
+title: "Local and hosted verification are two independently maintained gate sets with no parity contract, so passing everything locally still says nothing about what CI will run"
+description: "The local composite runs thirteen checks: build, typecheck, docs-skills, static-quality, coverage, version-policy, secret-scan, npx-smoke, package-first dogfood, pack dry run, compatibility, telemetry, hosted-analysis, and a review gate. The hosted gates job runs a different set, including checks the local composite never runs — tracker merge-safety, the required context-relevance evaluation, the search-eval harness, plugin smokes — alongside separate jobs for coverage sharding, Windows regression, code scanning, benchmarks, security, and docs. The two sets also diverge in the other direction, because the local composite runs review and telemetry gates that the pull-request pipeline does not. Neither set is derived from the other and nothing compares them, so the honest answer to what do I have to run before pushing is unknown to a contributor and to an agent. The consequence is not a missing gate but an unmeasured one: divergence grows silently, and every gate added to one side is a coin flip on whether it reaches the other."
+type: Task
+status: open
+priority: 2
+tags[6]: ci,developer-experience,gates,governance,quality,verification
+created_at: "2026-07-26T10:47:54.428Z"
+updated_at: "2026-07-26T10:52:02.302Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "One declared registry lists every enforced gate with where it runs — local, pull request, nightly, release — and that registry is the source both sides read rather than two hand-maintained lists; A check fails when a gate exists on one side and is neither present nor explicitly waived on the other, so divergence is a build failure rather than a discovery; A single documented command gives a contributor or agent the strongest verification available locally, and its relationship to the hosted set is stated precisely rather than implied; Gates that legitimately cannot run locally — hosted analysis, matrix platforms, published-artifact checks — are recorded as such with the reason, not omitted; The agent-facing guidance names the preflight command, so the local loop is discoverable without reading workflow files"
+goal: project management = context management
+objective: Make the local and hosted gate sets one governed surface instead of two that happen to overlap
+value: "Every agent working in this repository decides what to run before pushing by guessing. The cost lands as red pipelines on work that was believed verified, and as gates that quietly exist on only one side."
+impact: Turns gate coverage into something measurable and enforceable across both execution environments
+outcome: "Local verification is one command whose relationship to hosted verification is declared, checked, and documented"
+why_now: "The gate registry work is about to define per-gate ownership, and defining it once across both environments is far cheaper than defining it twice"
+parent: pm-u9d0
+risk: medium
+confidence: 80
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-k6t4yb,blocked_by,"2026-07-26T10:47:54.428Z",null,null
+  pm-ka6d,related,"2026-07-26T10:47:54.428Z",null,null
+  pm-kpftft,related,"2026-07-26T10:47:54.428Z",null,null
+  pm-lpqln4,related,"2026-07-26T10:47:54.428Z",null,null
+  pm-rtn5h6,related,"2026-07-26T10:47:54.428Z",null,null
+  pm-u9d0,implements,"2026-07-26T10:47:54.428Z",null,null
+  pm-xgcp18,related,"2026-07-26T10:47:54.428Z",null,null
+  pm-xp1xsw,verifies,"2026-07-26T10:47:54.428Z",null,null
+  pm-k6t4yb,discovered_from,"2026-07-26T10:52:02.040Z",null,null
+body: ""

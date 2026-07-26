@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[6]: context-management,data-quality,governance,schema,standards,validation
 created_at: "2026-07-26T10:01:01.886Z"
-updated_at: "2026-07-26T10:01:18.829Z"
+updated_at: "2026-07-26T10:56:18.607Z"
 author: "harness:opencode"
+estimated_minutes: 600
 acceptance_criteria: Contract declared as schema data with built-in defaults per type; pm validate reports per-type completeness violations; warn/require follows governance policy; custom types extend via schema; negative-control fixture in CI proves a malformed item fails
 goal: project management = context management
 objective: "Make item well-formedness a declared, machine-checked contract per type and lifecycle stage"

@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[8]: backfill,changelog-safe,graph,history,relationships,task,terminal-items,"wave:2"
 created_at: "2026-07-13T22:00:29.132Z"
-updated_at: "2026-07-26T05:55:31.619Z"
+updated_at: "2026-07-26T10:48:25.941Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Start only after Wave 1 policy and tooling are accepted and pm-e9zh terminal evidence workflow is unblocked or explicitly coordinated; Partition terminal work by historical epoch, canonical parent lineage, release or incident boundary, and bounded batch size with non-overlapping claims; Infer candidate edges only from durable evidence such as original descriptions, comments, history events, linked commits or PRs, files, docs, tests, releases, and explicit identifiers; Human review is required for ambiguous retyping, inferred prerequisites, conflicting evidence, and high-impact graph hubs; unresolved cases retain uncertainty rather than fabricated links; Corrections append superseding events and preserve prior versions; each item remains restorable and explainable at every snapshot; Every batch includes package-owned changelog generation and review after the final tracker mutation plus duplicate, lifecycle, graph, health, history-chain, and release-boundary validation; Completion classifies every terminal item and demonstrates bounded resumability, stable indexes, and compact audit summaries at million-item scale"
@@ -19,13 +19,15 @@ why_now: "Terminal items are most of the tracker and carry rich history, but the
 parent: pm-a8zm
 risk: high
 confidence: low
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-e9zh,blocked_by,"2026-07-13T22:00:29.132Z",null,null
   pm-hib1,related,"2026-07-13T22:00:29.132Z",null,null
   pm-klo8,related,"2026-07-13T22:00:29.132Z",null,null
   pm-o2kc,related,"2026-07-13T22:00:29.132Z",null,null
   pm-qnl2,blocked_by,"2026-07-13T22:00:29.132Z",null,null
   pm-a8zm,implements,"2026-07-26T05:55:31.325Z",null,null
+  pm-pcys9n,blocked_by,"2026-07-26T10:48:25.731Z",null,null
+  pm-wrbe,blocked_by,"2026-07-26T10:48:25.731Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-13T22:00:29.132Z",codex-root,"Duplicate check 2026-07-13: pm-e9zh owns terminal resolution evidence and completed audits inspected history,but no open task owns typed terminal relationship reconstruction in changelog-safe epoch batches; this task is downstream and coordinated,not duplicate."
 notes[1]{created_at,author,text}:
