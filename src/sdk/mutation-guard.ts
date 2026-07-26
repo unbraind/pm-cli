@@ -25,6 +25,8 @@ export interface SecretGuardFinding {
   /** Stable detector identifier suitable for tests and telemetry. */
   rule:
     | "github_token"
+    | "npm_token"
+    | "slack_token"
     | "private_key"
     | "aws_access_key"
     | "high_entropy_assignment";
@@ -73,6 +75,9 @@ export interface MutationActionContract {
 
 const GITHUB_TOKEN_PATTERN =
   /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/;
+const NPM_TOKEN_PATTERN = /\bnpm_[A-Za-z0-9]{36}\b/;
+const SLACK_TOKEN_PATTERN =
+  /\bxox[baprs]-(?=[A-Za-z0-9-]{20,80}\b)(?=[A-Za-z0-9-]*\d)[A-Za-z0-9-]{20,80}\b/;
 const PRIVATE_KEY_PATTERN = /-----BEGIN (?:[A-Z0-9]+ )?PRIVATE KEY-----/;
 const AWS_ACCESS_KEY_PATTERN = /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/;
 const HIGH_ENTROPY_ASSIGNMENT_PATTERN =
@@ -179,6 +184,12 @@ export function scanMutationSecrets(payload: unknown): SecretGuardFinding[] {
   for (const leaf of stringLeaves(payload)) {
     if (GITHUB_TOKEN_PATTERN.test(leaf.value)) {
       findings.push({ rule: "github_token", path: leaf.path });
+    }
+    if (NPM_TOKEN_PATTERN.test(leaf.value)) {
+      findings.push({ rule: "npm_token", path: leaf.path });
+    }
+    if (SLACK_TOKEN_PATTERN.test(leaf.value)) {
+      findings.push({ rule: "slack_token", path: leaf.path });
     }
     if (PRIVATE_KEY_PATTERN.test(leaf.value)) {
       findings.push({ rule: "private_key", path: leaf.path });

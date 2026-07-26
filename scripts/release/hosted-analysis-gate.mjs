@@ -172,7 +172,45 @@ function readAnalyzerEvidence(repository, sha) {
   };
 }
 
-/** Resolve analyzer evidence, allowing only an identical-tree reviewed merge parent. */
+/** Read the immutable tree SHA for one GitHub commit. */
+function readCommitTree(repository, sha) {
+  const result = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}`]);
+  if (result.status !== 0) {
+    return null;
+  }
+  const payload = parseObject(result.stdout, "GitHub commit API");
+  const treeSha = payload.ok ? payload.value.commit?.tree?.sha : null;
+  return typeof treeSha === "string" && SHA_PATTERN.test(treeSha) ? treeSha.toLowerCase() : null;
+}
+
+/** Resolve the unique reviewed PR head that GitHub squash-merged as this commit. */
+function readSquashPullRequestHead(repository, sha) {
+  const result = runCaptured(GH, ["api", `repos/${repository}/commits/${sha}/pulls?per_page=100`]);
+  if (result.status !== 0) {
+    return null;
+  }
+  let pullRequests;
+  try {
+    pullRequests = JSON.parse(result.stdout);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(pullRequests)) {
+    return null;
+  }
+  const candidates = pullRequests.filter(
+    (pullRequest) =>
+      pullRequest?.state === "closed" &&
+      typeof pullRequest.merged_at === "string" &&
+      pullRequest.merge_commit_sha?.toLowerCase() === sha &&
+      pullRequest.base?.ref === "main" &&
+      typeof pullRequest.head?.sha === "string" &&
+      SHA_PATTERN.test(pullRequest.head.sha),
+  );
+  return candidates.length === 1 ? candidates[0].head.sha.toLowerCase() : null;
+}
+
+/** Resolve analyzer evidence from an immutable commit with identical-tree provenance. */
 function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
   const exact = {
     ...initialEvidence,
@@ -191,19 +229,34 @@ function resolveAnalyzerEvidence(repository, sha, initialEvidence) {
   const mergeParent = runCaptured(GIT, ["rev-parse", `${sha}^2`]);
   const exactTree = runCaptured(GIT, ["rev-parse", `${sha}^{tree}`]);
   const parentSha = mergeParent.stdout.trim().toLowerCase();
-  if (mergeParent.status !== 0 || !SHA_PATTERN.test(parentSha) || exactTree.status !== 0) {
+  if (mergeParent.status === 0 && SHA_PATTERN.test(parentSha) && exactTree.status === 0) {
+    const parentTree = runCaptured(GIT, ["rev-parse", `${parentSha}^{tree}`]);
+    if (parentTree.status === 0 && exactTree.stdout.trim() === parentTree.stdout.trim()) {
+      const parentEvidence = readAnalyzerEvidence(repository, parentSha);
+      if (parentEvidence.ok) {
+        return {
+          ...parentEvidence,
+          analyzedSha: parentSha,
+          analysisSource: "identical_tree_merge_parent",
+        };
+      }
+    }
+  }
+  const squashHead = readSquashPullRequestHead(repository, sha);
+  if (squashHead === null) {
     return exact;
   }
-  const parentTree = runCaptured(GIT, ["rev-parse", `${parentSha}^{tree}`]);
-  if (parentTree.status !== 0 || exactTree.stdout.trim() !== parentTree.stdout.trim()) {
+  const exactGitHubTree = readCommitTree(repository, sha);
+  const squashHeadTree = readCommitTree(repository, squashHead);
+  if (exactGitHubTree === null || squashHeadTree === null || exactGitHubTree !== squashHeadTree) {
     return exact;
   }
-  const parentEvidence = readAnalyzerEvidence(repository, parentSha);
-  return parentEvidence.ok
+  const squashEvidence = readAnalyzerEvidence(repository, squashHead);
+  return squashEvidence.ok
     ? {
-        ...parentEvidence,
-        analyzedSha: parentSha,
-        analysisSource: "identical_tree_merge_parent",
+        ...squashEvidence,
+        analyzedSha: squashHead,
+        analysisSource: "identical_tree_squash_pr_head",
       }
     : exact;
 }

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Immutable-tree DeepScan and CodeFactor zero-new-issues release gate ([pm-39cqqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-39cqqx.toon))
 - Model-aware agent identity: detection resolves harness, model, and session so an agent never types an identity flag and history still records which model acted ([pm-03pq3o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-03pq3o.toon))
 - Author-resolution bypass class: create/copy and the context, next, and usage-feedback paths re-implement author precedence without harness detection, stamping author 'unknown' on new items ([pm-42p9nk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-42p9nk.toon))
 
@@ -15,6 +16,7 @@
 
 ### Fixed
 
+- GH-716: detect npm and Slack credential shapes in mutation secret guard ([pm-fhhhlk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fhhhlk.toon))
 - pm package init doubles the pm- prefix and mints an unusable pm pm ... command path when given the package name every real pm package actually uses ([pm-c5f0gh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c5f0gh.toon))
 - pm extension --init and pm package init are divergent scaffold generators behind the same grammar; the extension path emits no tests and an unpublishable manifest ([pm-9smp7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9smp7j.toon))
 - Built-in help examples teach an explicit --author on dozens of commands, training every agent to suppress its own detected identity and pay tokens for it ([pm-sx52hr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sx52hr.toon))
@@ -48,6 +50,7 @@
 
 ### Other
 
+- CI/CD + test-suite performance: in-process CLI runner and dedupe redundant matrix legs ([pm-7rlp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7rlp.toon))
 - ADR: agent identity model — stable author namespace plus structured harness, model, and session provenance ([pm-qwuber](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-qwuber.toon))
 - Public SDK surface shape: 881 exports behind one flat entrypoint with no capability tiering and a 250ms eager import cost ([pm-38bskj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-38bskj.toon))
 - CLI transport overhead budget: gate the per-invocation bootstrap floor and the CLI-vs-SDK delta, not just absolute scale numbers ([pm-yse5dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yse5dt.toon))
@@ -58,7 +61,6 @@
 ### Added
 
 - Harness-aware author identity: pm resolves the acting agent from its runtime harness so PM_AUTHOR is never required ([pm-z9x1r2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-z9x1r2.toon))
-- Mandatory exact-head DeepScan and CodeFactor zero-new-issues release gate ([pm-39cqqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-39cqqx.toon))
 - Mutation event stream primitive: pm events --follow (NDJSON with durable cursor) + SDK subscription API for cross-process agent coordination ([pm-e200](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e200.toon))
 - Create-time near-duplicate advisory: pm create/copy surface similar existing items before new work is filed ([pm-4ri6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4ri6.toon))
 
@@ -432,7 +434,6 @@
 
 ### Other
 
-- CI/CD + test-suite performance: in-process CLI runner and dedupe redundant matrix legs ([pm-7rlp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7rlp.toon))
 - Coverage to 100%: src/core, src/mcp, and src/sdk modules ([pm-krwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-krwu.toon))
 - Baseline agent token cost of the CLI surface: measure pm --help, per-command help, and contracts payload sizes before consolidation ([pm-a22j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-a22j.toon))
 - Research and document the July 2026 native ChatGPT/Codex plugin implementation plan ([pm-n28t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-n28t.toon))

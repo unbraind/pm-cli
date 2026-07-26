@@ -179,7 +179,7 @@ The build writes `dist/cli-bundle/bundle-manifest.json` atomically with SHA-256 
 4. Run the same release pipeline locally.
 
 Push the final implementation commit first, wait for DeepScan and CodeFactor to
-finish on that exact SHA, and run the mandatory local hosted-analysis proof:
+finish on that reviewed SHA, and run the mandatory local hosted-analysis proof:
 
 ```bash
 pnpm quality:hosted-analysis
@@ -187,7 +187,13 @@ pnpm quality:hosted-analysis
 
 The gate accepts only DeepScan's explicit zero-new-issue status and
 CodeFactor's explicit no-issues result. Both contexts are required by `main`
-branch protection, and the release pipeline reruns the same exact-head proof.
+branch protection, and the release pipeline reruns the same immutable-tree
+proof. It reads the release commit first. When GitHub does not copy app results
+onto a merge commit, the gate may reuse a reviewed merge-parent or squash-PR
+head only when its immutable Git tree SHA exactly matches the release commit.
+Squash provenance additionally requires one unambiguous GitHub association to a
+closed PR merged into `main` with the release commit as its merge commit.
+Missing, ambiguous, or different-tree provenance fails closed.
 
 ```bash
 # Read-only parity check

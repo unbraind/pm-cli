@@ -56,9 +56,8 @@ so PR-local CodeFactor maintainability annotations fail locally before commit or
 push. Existing legacy high-complexity test fixtures are tracked separately and
 must not be used as precedent for new changed production/script code.
 
-The local parity rules catch analyzer classes before push. The mandatory
-exact-head hosted proof runs after the final commit is pushed and both apps have
-finished:
+The local parity rules catch analyzer classes before push. The mandatory hosted
+proof runs after the final commit is pushed and both apps have finished:
 
 ```bash
 pnpm quality:hosted-analysis
@@ -66,10 +65,14 @@ pnpm quality:hosted-analysis
 
 This command reads commit-scoped GitHub results for `git rev-parse HEAD`. It
 passes only when DeepScan explicitly reports `0 new` issues and CodeFactor
-completes successfully with `No issues found.` Missing, pending, failed,
-skipped, stale, and ambiguous results all fail. `pnpm release:gates` includes
-the same non-skippable verification, so run it only after the pushed head's
-hosted analyzers are terminal.
+completes successfully with `No issues found.` The exact commit is authoritative.
+For GitHub merge and squash commits whose apps report only on the reviewed PR
+head, the gate accepts that evidence only after proving the source and target
+have the same immutable Git tree. Squash commits also require one unambiguous
+GitHub PR association to a closed PR merged into `main`. Missing, pending,
+failed, skipped, stale, ambiguous, and different-tree results all fail.
+`pnpm release:gates` includes the same non-skippable verification, so run it
+only after the pushed reviewed head's hosted analyzers are terminal.
 
 ## Focused Test Runs
 

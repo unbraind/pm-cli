@@ -1,0 +1,20 @@
+id: pm-5ecnar
+title: "GH-715: expose mutation-guard policies through canonical config help and output"
+description: "The shipped mutation_guard settings can be changed only through an undocumented underscore key absent from config contracts and help. Add canonical dashed keys and typed policy/value domains, retain legacy aliases, expose effective values in bounded config reads, and align CLI, SDK contracts, completion, and documentation."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-26T01:00:17.799Z"
+updated_at: "2026-07-26T01:00:29.015Z"
+author: "harness:codex"
+acceptance_criteria: "config help, contracts, and completion advertise canonical mutation-guard keys and allowed value domains; Legacy underscore keys remain compatible and normalize to the canonical settings leaves; Config list and export expose effective guard posture without leaking protected content; CLI, SDK, MCP, documentation, and temporary-project acceptance pass full gates"
+parent: pm-pim7
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-e2bq,related,"2026-07-26T01:00:17.799Z",null,null
+  pm-h4zb,related,"2026-07-26T01:00:17.799Z",null,null
+  pm-mf4j,related,"2026-07-26T01:00:17.799Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-26T01:00:17.799Z","harness:codex","Duplicate check: searched all statuses for secret-guard config help,mutation-guard policy discoverability,canonical dashed keys,and block-mode configuration. Closed pm-pim7 owns write-time detection and pm-mf4j owns positional config UX,but neither exposes the mutation_guard group in current contracts; this issue is the distinct discoverability gap."
+  "2026-07-26T01:00:29.015Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/715"
+body: ""

@@ -1,0 +1,54 @@
+id: pm-fhhhlk
+title: "GH-716: detect npm and Slack credential shapes in mutation secret guard"
+description: "The write-time mutation secret guard misses fixed-prefix npm and Slack credential shapes, including registry authentication lines, so block mode can persist them into public item and history files. Add bounded low-false-positive detectors, keep matched values redacted from all errors and telemetry, cover advise and block modes across mutation surfaces, and document the rule inventory."
+type: Issue
+status: closed
+priority: 0
+tags: []
+created_at: "2026-07-26T01:00:18.735Z"
+updated_at: "2026-07-26T01:25:59.011Z"
+closed_at: "2026-07-26T01:24:28.976Z"
+author: "harness:codex"
+acceptance_criteria: "Npm and Slack fixed-prefix credential shapes are detected in bare, assignment, and registry-style text without storing or echoing matched values; Advise and block modes behave consistently across CLI, SDK, MCP, batch, and annotation mutation surfaces; False-positive fixtures for placeholders, hashes, package names, and ordinary prose remain allowed; Secret scan, full coverage, static security gates, and temporary public-tracker acceptance pass"
+parent: pm-pim7
+resolution: "Shared write-time mutation guard now detects bounded npm and Slack fixed-prefix credential shapes and returns only redacted rule/path metadata across SDK, CLI, and MCP adapters."
+expected_result: "Bare, assignment, and registry-style npm/Slack credentials are detected before persistence without false positives or raw-value disclosure across mutation surfaces."
+actual_result: "npm_token and slack_token rules block persistence in shared SDK guard paths; CLI/MCP advice is redacted; isolated acceptance persisted zero items; 371 files and 6401 tests pass with 100% statements, branches, functions, and lines; static, docstring, duplicate, type, SDK surface, health, history, dependency-audit, and secret gates pass."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-92if,related,"2026-07-26T01:00:18.735Z",null,null
+  pm-g072,related,"2026-07-26T01:00:18.735Z",null,null
+  pm-h4zb,related,"2026-07-26T01:00:18.735Z",null,null
+comments[7]{created_at,author,text}:
+  "2026-07-26T01:00:18.735Z","harness:codex","Duplicate check: searched all statuses for npm token,Slack token,secret-guard detectors,registry auth,and fixed-prefix credentials. Closed pm-h4zb covers GitHub token hygiene and pm-pim7 owns the general guard,but no item covers these missing detector classes; this is a distinct security issue linked to both."
+  "2026-07-26T01:00:29.732Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/716"
+  "2026-07-26T01:04:37.004Z","harness:codex","Implementation evidence: added bounded npm and Slack fixed-prefix detectors to the shared SDK mutation guard; CLI and MCP adapters now prove redacted advise-mode rule reporting; block-mode unit coverage proves matched values never enter errors. The intentional public SecretGuardFinding union expansion is recorded in the SDK surface snapshot. Temporary isolated CLI acceptance blocked both shapes, persisted zero items, and found no raw credential text in stdout, stderr, item, or history storage."
+  "2026-07-26T01:11:13.805Z","harness:codex","Verification note: the initial PM-linked full coverage run failed only because the default outer schema context supplied an empty tracker to ownership-validation fixtures; 11 validate-command expectations then saw the repository as globally unowned. Focused tests and the entire static/docstring/duplicate/type/surface gate passed. The coverage link now declares tracker context so the repository-owned inventory is preserved while scripts/run-tests.mjs continues to sandbox all mutations."
+  "2026-07-26T01:19:25.518Z","harness:codex","Root cause refinement: nested pm test execution always exports PM_SOURCE_WORKSPACE_ROOT for linked commands. The repository test harness inherited that outer anchor, so workspace-path tests correctly behaved differently than a direct CI run. Direct sandbox-safe coverage passed all 371 files and 6401 tests at 100/100/100/100 (44055 statements, 31265 branches, 9005 functions, 42797 lines). The linked command now explicitly removes only the outer provenance anchor before the inner harness creates its own isolated PM_PATH and PM_GLOBAL_PATH."
+  "2026-07-26T01:24:28.133Z","harness:codex","Final verification: package secret scan reports no credential-like secrets; pnpm audit reports no known vulnerabilities; focused guard suite passes after scanner-safe fixture construction; full linked coverage passed 371 files/6401 tests at 100/100/100/100; static quality, docstring coverage, zero-duplicate, typecheck, SDK surface, health, history integrity, and isolated CLI persistence checks are green."
+  "2026-07-26T01:25:59.011Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/721 (commit 8232a8c0)."
+learnings[1]{created_at,author,text}:
+  "2026-07-26T01:24:20.542Z","harness:codex","Nested pm test runs set PM_SOURCE_WORKSPACE_ROOT for provenance. A repository-wide test harness nested under pm test must remove that outer anchor before creating its own PM_PATH/PM_GLOBAL_PATH sandboxes, or workspace-anchoring and ownership-validation fixtures will intentionally observe the outer repository instead of their temporary workspace."
+files[4]{path,scope,note}:
+  src/sdk/mutation-guard.ts,project,Add npm and Slack credential detector rules
+  tests/fixtures/sdk/public-surface.json,project,Record intentional public SecretGuardFinding rule union expansion
+  tests/unit/sdk/mutation-guard-adapters.spec.ts,project,CLI and MCP npm/Slack redaction acceptance
+  tests/unit/sdk/mutation-guard.spec.ts,project,"Detector,redaction,block,advise,and false-positive coverage"
+tests[3]:
+  - command: env -u PM_SOURCE_WORKSPACE_ROOT node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+    pm_context_mode: schema
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm lint && pnpm typecheck && pnpm sdk:surface:check"
+    scope: project
+    timeout_seconds: 600
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms13q7rd-9wgwdv,test,failed,"2026-07-26T01:04:46.512Z","2026-07-26T01:10:43.657Z","2026-07-26T01:10:43.657Z",2,1,0
+  test-local-ms13vr4i-3g51z9,test,failed,"2026-07-26T01:11:22.654Z","2026-07-26T01:15:02.034Z","2026-07-26T01:15:02.034Z",0,1,0
+  test-local-ms146612-hbtkfh,test,passed,"2026-07-26T01:19:26.248Z","2026-07-26T01:23:07.910Z","2026-07-26T01:23:07.910Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/MUTATION_INTEGRITY.md,project,Document bounded detector rule inventory
+close_reason: "Implemented and verified redacted npm/Slack mutation-secret detection across shared SDK, CLI, and MCP surfaces with full coverage and isolated acceptance."
+body: ""
