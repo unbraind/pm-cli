@@ -6,14 +6,14 @@ status: open
 priority: 3
 tags[4]: dependencies,migration,storage,toon
 created_at: "2026-07-26T08:28:30.602Z"
-updated_at: "2026-07-26T10:56:17.406Z"
+updated_at: "2026-07-26T18:31:22.352Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: TOON 4 is evaluated against canonical item files and history replay; encode/decode and migration fixtures remain lossless; Node 22/24/26 and Bun installed consumers pass; the upgrade is adopted or explicitly rejected with upstream evidence.
 parent: pm-u9d0
 risk: medium
 confidence: medium
-dependencies[8]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-8cjeut,related,"2026-07-26T08:28:30.602Z",null,null
   pm-ae1u,related,"2026-07-26T08:28:30.602Z",null,null
   pm-rvbt,related,"2026-07-26T08:28:30.602Z",null,null
@@ -22,6 +22,9 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-pae3wo,related,"2026-07-26T10:51:32.640Z",null,null
   pm-u9d0,implements,"2026-07-26T10:51:32.640Z",null,null
   pm-xp1xsw,verifies,"2026-07-26T10:51:32.640Z",null,null
-comments[1]{created_at,author,text}:
+  pm-hybj,related,"2026-07-26T18:31:22.003Z",null,null
+  pm-iqgj,related,"2026-07-26T18:31:22.003Z",null,null
+comments[2]{created_at,author,text}:
   "2026-07-26T08:28:30.602Z","harness:codex","Duplicate-check evidence: all-status searches for @toon-format/toon, TOON v4 migration, and TOON 4 found storage decisions and prior minor refreshes but no active owner for the 4.0.0 major compatibility decision. npm metadata on 2026-07-26 reports 4.0.0 with no engines field; deferral is for codec/storage compatibility proof, not a claimed engine incompatibility."
+  "2026-07-26T18:31:20.767Z","harness:claude-code","Dependency-drift sweep 2026-07-26 (live npm query, whole manifest).\n\nRuntime and toolchain drift, current -> latest:\n\n| package | current | latest | gap |\n|---|---|---|---|\n| @toon-format/toon | 2.3.1 | 4.1.0 | **two majors** |\n| npm-package-arg | 13.0.2 | 14.0.0 | one major |\n| typescript | 6.0.3 | 7.0.2 | one major |\n| @sentry/node | 10.67.0 | 10.68.0 | patch |\n| typebox | 1.3.7 | 1.3.8 | patch |\n\npnpm audit reports 0 vulnerabilities at every severity (info/low/moderate/\nhigh/critical all zero), and GitHub Dependabot shows 0 open alerts, so none of\nthis is a security exposure. It is a maintenance-currency finding.\n\nWhy the TOON row is the one that matters here rather than the TypeScript row:\nTOON is the default output encoding for the entire agent-facing surface\n(output_default: \"toon\"), so this dependency sits on every read path an agent\ntouches. Published majors are 0, 1, 2 and 4 across 20 versions — the project is\npinned on 2.x while the registry has moved to 4.x, and there is no 3.x, so the\nupgrade is a single two-major step rather than an incremental walk.\n\nThis also intersects an open correctness defect on the same encoder: GH-747\n(pm-hybj) reports that the TOON encoder emits a quoted notes[] scalar its own\ndecoder rejects, making valid tracked items unreadable — the same failure family\nas pm-iqgj (closed), where the strict decoder mis-parsed bracketed tokens and 16\nitem files had to be recovered. Evaluating whether 4.x already fixes the\nencoder/decoder asymmetry is therefore part of this item's scope and may reduce\nit, not just a compatibility exercise.\n\nNo re-file: this evidence is recorded here because pm-5cgm2z already owns the\nTOON 4 evaluation and item-format migration."
 body: ""

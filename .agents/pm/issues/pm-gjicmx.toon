@@ -1,0 +1,24 @@
+id: pm-gjicmx
+title: "The merge fence covers item documents but not tracked non-item JSON, so .managed-extensions.json line-conflicts between agents on different branches"
+description: "git check-attr over every tracked file under .agents/pm shows .agents/pm/extensions/.managed-extensions.json and .agents/pm/search/eval-queries.json resolve to merge: unspecified, so git falls back to line-level merge on pm-authored JSON state while settings.json and schema/*.json correctly get the pm-json driver."
+type: Issue
+status: open
+priority: 2
+tags[5]: "area:storage",durability,git,merge-safety,multi-agent
+created_at: "2026-07-26T18:25:40.116Z"
+updated_at: "2026-07-26T18:29:14.203Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "git check-attr merge reports a pm driver for every tracked file under .agents/pm, with zero unspecified rows; The .gitattributes fence generator derives its JSON entries from tracked non-item state so a newly tracked JSON file is fenced automatically; A regression test merges two branches that each install a different extension and asserts .managed-extensions.json reconciles without conflict markers"
+goal: project management = context management
+value: Closes the last textual-conflict surface in tracked pm state so parallel agents merge cleanly without manual repair.
+impact: "Two agents installing different extensions on different branches hit a conflict in an entries[] array that pm wrote and pm should reconcile."
+outcome: "Every tracked non-item JSON file under .agents/pm resolves to a pm merge driver, and the fence generator enumerates tracked JSON state rather than item-type directories alone."
+why_now: "Multi-agent branch work is the workflow the merge fence exists to protect, and the extension manifest is both the most frequently rewritten tracked JSON and the one no human is expected to hand-resolve."
+parent: pm-o2kc
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-4020c5,related,"2026-07-26T18:29:13.960Z",null,null
+  pm-9j2r3b,related,"2026-07-26T18:29:13.960Z",null,null
+body: "## Problem\n\nThe .gitattributes merge fence is generated per item-type directory, so it\ncovers every tracked item document and both append-only streams. It does not\ncover tracked **JSON state that is not an item**, and two such files exist.\n\nVerified 2026-07-26 with git check-attr on every tracked file under .agents/pm:\n\n```\n.agents/pm/settings.json                        merge: pm-json      OK\n.agents/pm/schema/*.json                        merge: pm-json      OK\n.agents/pm/extensions/.managed-extensions.json  merge: unspecified  GAP\n.agents/pm/search/eval-queries.json             merge: unspecified  GAP\n```\n\nTracked-file census under .agents/pm: 2,109 .jsonl, 2,098 .toon, 7 .json.\nThe .toon and .jsonl populations are fully fenced. Two of the seven JSON files\nare not.\n\n## Why .managed-extensions.json is the sharp one\n\nIt is the *only* tracked file under .agents/pm/extensions, it is the\nauthoritative record of which extensions a workspace has installed, and it\nchanges often — `pnpm changelog:pm` regeneration touches it as a side effect,\nwhich is why the release runbook already tells maintainers to check it out\nbefore committing.\n\nIts payload is an `entries[]` array of per-extension objects. Under git's\ndefault line-level merge, two agents on two branches that each install a\ndifferent extension produce overlapping insertions into the same array region.\nThat is a textual conflict on a file that pm itself wrote and that no human is\nexpected to hand-resolve — and it lands in exactly the multi-agent,\nmulti-branch workflow the merge fence exists to protect. The pm-json driver\nalready performs key-level JSON merging and is already wired for settings.json\nand schema/*.json; the fence simply never lists this path.\n\n## Scope\n\n- No new merge driver is required; pm-json already exists and is registered by\n  `pm merge install`.\n- The fence generator has to enumerate tracked non-item JSON state, not just\n  item-type directories, or the same gap reappears the next time a subsystem\n  adds a tracked JSON file.\n- Untracked/derived directories (checkpoints, locks, runtime, search index\n  payloads) correctly need no driver — they carry 0 tracked files. Only\n  eval-queries.json inside .agents/pm/search is tracked.\n\n## Verification recipe\n\n```\nfor f in $(git ls-files .agents/pm | grep -E '\\.json$'); do\n  printf '%s ' \"$f\"; git check-attr merge -- \"$f\" | sed 's/.*merge: //'\ndone\n```\nAny `unspecified` row is a gap."
