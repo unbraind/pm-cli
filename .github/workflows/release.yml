@@ -190,11 +190,22 @@ jobs:
             npm_config_cache="${PUBLIC_NPM_CACHE}" \
             npm view "@unbraind/pm-cli@${VERSION}" version --json >/dev/null 2>&1; then
             echo "@unbraind/pm-cli@${VERSION} is publicly available; skipping npm publish."
-          elif npm view "@unbraind/pm-cli@${VERSION}" version --json >/dev/null 2>&1; then
-            echo "@unbraind/pm-cli@${VERSION} exists but is not public; restoring public access."
-            npm access set status=public @unbraind/pm-cli
           else
-            npm publish --access public --provenance --tag latest
+            echo "@unbraind/pm-cli@${VERSION} is not public; attempting access recovery before immutable publication."
+            if access_output="$(npm access set status=public @unbraind/pm-cli 2>&1)"; then
+              printf '%s\n' "${access_output}"
+              echo "Restored public access for @unbraind/pm-cli."
+            else
+              access_status=$?
+              printf '%s\n' "${access_output}" >&2
+              if printf '%s\n' "${access_output}" | grep -Eq 'E404|404 Not Found|Package not found'; then
+                echo "@unbraind/pm-cli does not exist for this credential; publishing ${VERSION}."
+                npm publish --access public --provenance --tag latest
+              else
+                echo "Public-access recovery failed without a definitive package-not-found response; refusing immutable publication." >&2
+                exit "${access_status}"
+              fi
+            fi
           fi
 
       - name: Verify published package on npm, npx, and bunx

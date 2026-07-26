@@ -240,10 +240,13 @@ git push origin v<version>
 - artifact uploads
 - `npm publish --access public --provenance --tag latest`, skipped on retry
   only when the exact version is anonymously visible from a fresh npm cache.
-  If authenticated metadata exists while anonymous metadata is unavailable,
-  the same-tag recovery path restores public package access without publishing
-  a second immutable version. The explicit stable dist-tag also preserves
-  correct `latest` behavior when rerunning historical ordinal tags.
+  When anonymous metadata is unavailable, the same-tag recovery path attempts
+  to restore public package access before publication because a hidden version
+  can also return 404 to authenticated metadata reads. It publishes only after
+  the access operation definitively reports that the package does not exist;
+  permission, authentication, and registry failures stop the workflow instead
+  of risking an immutable-version overwrite. The explicit stable dist-tag also
+  preserves correct `latest` behavior when rerunning historical ordinal tags.
 - post-publish npm/npx/bunx verification through
   `scripts/release/verify-published-release.mjs`, using isolated empty npm and
   Bun caches plus an empty npm user config so maintainer credentials and cached
@@ -283,9 +286,10 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   ordinal recovery version. Rerun `.github/workflows/release.yml` with
   `workflow_dispatch` and `tag=v<version>` (or close the current bot-created
   blocker once to trigger the guarded exact-run recovery). The workflow skips
-  duplicate npm publication for an anonymously visible version and repairs
-  package visibility when the protected npm credential can see an exact version
-  that anonymous clients cannot.
+  duplicate npm publication for an anonymously visible version and attempts
+  protected access recovery before publication when anonymous clients cannot
+  see it. Authenticated metadata is not used as the existence oracle because a
+  hidden immutable version can return 404 there as well.
 - If an immutable published package contains a defect that cannot be repaired
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.
