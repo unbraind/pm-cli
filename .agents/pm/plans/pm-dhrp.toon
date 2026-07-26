@@ -6,14 +6,30 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-11T15:31:51.939Z"
-updated_at: "2026-06-11T22:44:57.587Z"
+updated_at: "2026-07-26T17:12:05.528Z"
 author: maintainer-agent
 parent: pm-doxj
+release: v2026.6.12
 resolution: completed
 expected_result: 12 pm items shipped as one coherent self-repair PR with green gates
 actual_result: All items closed with per-agent tracking; coverage gate green; manual E2E in temp sandboxes passed
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-doxj,parent,"2026-06-11T15:31:51.939Z",null,null
+  pm-0hx2,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-0v2m,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-2cgu,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-6mit,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-6qi8,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-8jss,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-9ftr,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-c3sz,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-df9k,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-doxj,implements,"2026-07-26T17:12:05.237Z",null,null
+  pm-lg9i,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-pfnx,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-pmyq,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-wcaa,related,"2026-07-26T17:12:05.237Z",null,null
+  pm-xo1n,related,"2026-07-26T17:12:05.237Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-11T22:32:05.374Z",maintainer-agent,"Integration complete. 12 items shipped in branch validate-autofix-and-self-repair: pm-6qi8 (completion drift + drift test), pm-pmyq (missing_by_type), pm-c3sz (--auto-fix/--dry-run/fixes output), pm-8jss (--fix-scope lifecycle gating), pm-0v2m (moved/deleted classification + --prune-missing), pm-2cgu (calendar hint), pm-9ftr (history-repair --all), pm-xo1n (health locks check), pm-pfnx (files/docs --note), pm-6mit (plan --step accumulation), pm-0hx2 (consent CI guard), pm-df9k (optsWithGlobals at 14 lifecycle call sites + files discover). Full gate: 150 files / 2797 tests green, coverage 82.71/75.18/86.68/82.79 above ratchet. Manual E2E in 2 temp sandboxes (plain + git): plan steps x3, files/docs --note, calendar hint, missing_by_type, auto-fix dry-run+apply (resolution backfilled from close_reason), lifecycle gating (--unset parent only under --fix-scope lifecycle), moved-vs-deleted with tracked-all (moved link NOT pruned), health locks (stale+unparseable counts, locks_stale_count warning, remediation_map), history-repair --all (real chain-mismatch drift repaired, health ok:true), extension explore --global honored."
   "2026-06-11T22:37:17.260Z",code-risk-subagent,"Verification sub-agent pass: reviewed current diff around validate auto-fix/prune, history-repair --all, lock health scan, MCP pm_files discover dispatch, and related contracts/tests. No actionable bugs found. Targeted verification passed: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/core/lock/lock-gc.spec.ts tests/integration/mcp-handshake.spec.ts (4 files, 128 tests)."
@@ -22,8 +38,8 @@ comments[5]{created_at,author,text}:
   "2026-06-11T22:44:57.587Z",codex-sdk-cli-continuation,"Final end-state evidence: after closing pm-wcaa and pm-lg9i and regenerating CHANGELOG.md with pm-changelog@2026.6.10, final gates passed: pnpm build; pnpm contracts:check; pnpm changelog:pm:check; pnpm security:scan; pnpm quality:static; pnpm audit --audit-level low; pm validate --check-resolution --check-history-drift (known 122 legacy resolution warnings, 0 drift); node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0 (critical=0 high=0, telemetry finish_error_rate_pct=1.61, missing rows=0); node scripts/run-tests.mjs coverage (150 files, 2798 tests, 82.71 statements / 75.20 branches / 86.70 functions / 82.80 lines). Manual temp smoke also passed MCP pm_files discovery apply path with isolated PM_GLOBAL_PATH."
 files[1]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,contract snapshot regenerated after command/MCP surface updates
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "pnpm contracts:update && pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  "pnpm contracts:update && pnpm contracts:check",project,240
 close_reason: All 5 plan steps complete; PR follows
 plan_mode: draft
 plan_steps[5]{id,order,title,status,created_at,updated_at,completed_at}:

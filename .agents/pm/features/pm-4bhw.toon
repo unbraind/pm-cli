@@ -6,14 +6,17 @@ status: closed
 priority: 1
 tags[5]: contracts,extensions,external-audit,help,pm-cli
 created_at: "2026-04-06T09:48:52.264Z"
-updated_at: "2026-04-25T11:03:55.266Z"
+updated_at: "2026-07-26T17:03:50.791Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-o7be
+release: v2026.5.1
 resolution: Added extension action subcommands with legacy-flag compatibility and exposed type-aware create required options in contracts schema metadata.
 expected_result: Operators can discover extension workflows via explicit subcommands and machine contracts expose effective create requirements per type/mode.
 actual_result: extension install/uninstall/etc subcommands shipped with backward-compatible flags; contracts include x-create-required-options strict/progressive metadata and tests pass.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o7be,implements,"2026-07-26T17:03:50.555Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-06T09:48:52.264Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
   "2026-04-06T14:39:39.155Z",codex-agent,"Seven-issue hardening follow-up kickoff: duplicate-check evidence refreshed via pm search \"extension subcommand help discoverability\" --limit 10 and pm search \"contracts schema-only action create required dep comment note learning file test doc\" --limit 10 plus global sweeps; reusing this feature for extension subcommands + contracts create-required parity."
@@ -26,7 +29,7 @@ files[7]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,extension help subcommand discoverability assertions
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness help and JSON shape parity
   tests/unit/contracts-command.spec.ts,project,contracts create-required metadata assertions
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,extension subcommand and contracts required-option parity
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,3600,extension subcommand and contracts required-option parity
 close_reason: extension subcommands and contracts create-required metadata delivered
 body: ""

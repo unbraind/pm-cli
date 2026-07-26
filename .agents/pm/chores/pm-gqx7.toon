@@ -6,9 +6,13 @@ status: closed
 priority: 2
 tags[2]: dogfood,e2e
 created_at: "2026-05-27T17:23:26.197Z"
-updated_at: "2026-05-27T17:26:52.024Z"
+updated_at: "2026-07-26T17:14:45.939Z"
 author: e2e-agent
 parent: pm-th6y
+release: v2026.5.27
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-8nyc,related,"2026-07-26T17:14:45.775Z",null,null
+  pm-th6y,implements,"2026-07-26T17:14:45.775Z",null,null
 comments[11]{created_at,author,text}:
   "2026-05-27T17:23:53.886Z",e2e-agent,"E2E ran full surface in /tmp/pm-e2e-2026-05-27 (init/config/create all types incl custom Spike/plan/calendar/contracts/validate/guide/completion + mistake battery). pm 2026.5.24. Overall the never-block design holds well: cross-command flag hints, allowed-value lists, recovery bundles are excellent."
   "2026-05-27T17:24:42.364Z",e2e-agent,"P1 FOOTGUN: 'pm create Epic' (single positional, forgot title) silently creates a Task titled 'Epic' (type ignored, defaults Task). Same for any bare type name. Never-block produces garbage items with no warning. Suggest: if the lone positional exactly matches a known type AND no --title given, either error with a hint or create that TYPE with an empty/placeholder title + warning."

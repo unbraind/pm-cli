@@ -6,8 +6,11 @@ status: closed
 priority: 2
 tags[3]: "area:cli",gh-220,governance
 created_at: "2026-06-13T21:54:36.937Z"
-updated_at: "2026-06-13T22:31:53.166Z"
+updated_at: "2026-07-26T17:28:36.275Z"
 author: claude-code-agent
 parent: pm-yq7m
+release: v2026.6.16
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-yq7m,implements,"2026-07-26T17:28:35.996Z",null,null
 close_reason: pm update-many missing-metadata selectors shipped (reuse runList filtering via options.list; rollback rejects them). Verified bulk-backfill selection. Closes GH-220.
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:schema","area:settings",code,pm-cli
 created_at: "2026-03-31T23:48:06.252Z"
-updated_at: "2026-04-04T21:37:54.576Z"
+updated_at: "2026-07-26T17:22:39.093Z"
 deadline: "2026-04-07T23:48:06.252Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-x2k0
 blocked_reason: "Follow-up: expand built-in item types for calendar-native work has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Follow-up: expand built-in item types for calendar-native work is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: archive-2026q2
 component: core/store/settings
 regression: true
 customer_impact: Enables per-project custom workflow types
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-x2k0,parent,"2026-03-31T23:48:06.252Z",codex-agent,null
+  pm-x2k0,implements,"2026-07-26T17:22:38.822Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-31T23:48:06.252Z",codex-agent,Task created for settings schema extension.
   "2026-04-01T00:26:57.578Z",codex-agent,Implemented configurable item type schemas in settings/types plus deterministic normalization and test updates.
@@ -63,10 +64,10 @@ files[10]{path,scope,note}:
   tests/unit/settings-store.spec.ts,project,deterministic settings serialization coverage
   tests/unit/shared-constants-errors.spec.ts,project,constants regression for builtin types
   tests/unit/stats-command.spec.ts,project,stats by_type builtin coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,settings contract regression
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:37.961Z","2026-04-04T21:10:37.961Z",null,null,1,0,0,1,1,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/shared-constants-errors.spec.ts,project,2400,settings contract regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:37.961Z","2026-04-04T21:10:37.961Z",1,0,0,1,1
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,unreleased builtin type notes
   docs/ARCHITECTURE.md,project,builtin type architecture notes

@@ -6,11 +6,12 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-21T20:19:20.366Z"
-updated_at: "2026-07-21T20:36:27.867Z"
+updated_at: "2026-07-26T17:23:31.712Z"
 closed_at: "2026-07-21T20:36:26.823Z"
 author: codex
 acceptance_criteria: TDD covers changed-generation and intact-manifest call-time TypeError paths; focused and full 100/100/100/100 coverage pass; packed installed CLI operation smoke passes; live Sentry/telemetry gate returns zero critical/high blockers after resolution.
 parent: pm-u9d0
+release: v2026.7.22
 severity: high
 environment: production
 resolution: Extended the bundle-integrity candidate matcher to recognize call-time missing-function failures while retaining atomic manifest drift or file-integrity proof as the mandatory classification boundary.
@@ -20,9 +21,10 @@ affected_version: 2026.7.21
 component: cli-bundle-bootstrap
 regression: false
 customer_impact: A concurrent/partial install can abort CLI startup without the actionable reinstall diagnostic and blocks the release reliability gate.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-21T20:19:20.366Z",null,null
   pm-wfvq,related,"2026-07-21T20:19:20.366Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:23:31.450Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-21T20:19:20.366Z",codex,"Duplicate check: searched all statuses for Sentry PM-CLI-2F, torn bundle, registerOperationCommands, and call-time TypeError. No exact item exists. Closed pm-wfvq remains the completed canonical manifest-diagnostic implementation; this item records a newly observed error-shape gap and links that lineage plus standing release-health reminder pm-7zs0."
   "2026-07-21T20:20:40.912Z",codex,"TDD evidence: the new PM-CLI-2F regression failed before implementation because the call-time TypeError returned undefined; after extending the candidate error-shape matcher, all 8 focused tests pass. Classification remains fail-closed because an intact manifest returns undefined and only manifest-proven generation drift or file integrity failure emits bundle_integrity_torn_install."

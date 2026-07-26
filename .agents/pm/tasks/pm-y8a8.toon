@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:tests","area:time",compatibility,pm-cli
 created_at: "2026-04-01T11:26:42.395Z"
-updated_at: "2026-04-04T21:38:39.450Z"
+updated_at: "2026-07-26T17:30:08.466Z"
 deadline: "2026-04-08T11:26:42.395Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-lau3
 blocked_reason: "Parser update: support +m and flexible date strings has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Parser update: support +m and flexible date strings is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: core/shared/time
 regression: true
 customer_impact: Date-heavy workflows stop failing on practical values.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lau3,parent,"2026-04-01T11:26:42.395Z",codex-agent,null
+  pm-lau3,implements,"2026-07-26T17:30:08.234Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T11:26:42.395Z",codex-agent,Task carved from feature plan to isolate parser and test logic changes.
   "2026-04-01T11:39:01.722Z",codex-agent,"Implemented parser expansion in src/core/shared/time.ts: added +m month-relative support, tolerant date-string normalization (including T13-59 and compact forms), and updated usage error guidance while preserving ISO persistence. Validation evidence: node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts passed (78/78)."
@@ -57,8 +58,8 @@ files[6]{path,scope,note}:
   tests/unit/list-command.spec.ts,project,deadline filter acceptance coverage
   tests/unit/search-command.spec.ts,project,search deadline filter acceptance coverage
   tests/unit/update-command.spec.ts,project,update deadline input acceptance coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,parser regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,2400,parser regression
 docs[1]{path,scope,note}:
   PRD.md,project,parser contract references
 close_reason: Parser now accepts +m and flexible date strings while preserving deterministic ISO persistence; targeted parser/list/search/create/update tests passed.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T09:21:20.880Z"
-updated_at: "2026-04-04T21:47:52.593Z"
+updated_at: "2026-07-26T17:20:44.091Z"
 deadline: "2026-03-08T09:21:08.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: "M5 hardening: enforce extension capability declarations has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 hardening: enforce extension capability declarations is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/m5-hardening-enforce-extension-capability-declar
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 hardening: enforce extension capability declarations."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-8a2s,implements,"2026-07-26T17:20:43.769Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-06T09:21:20.880Z",cursor-maintainer,Capability list is currently descriptive only and should become an enforced safety boundary.
   "2026-03-06T09:21:38.917Z",cursor-maintainer,"Planned changeset: docs-first update PRD/README capability contracts, then enforce capability checks in extension API registration/hook methods and add extension-loader regressions."
@@ -55,9 +57,9 @@ files[4]{path,scope,note}:
   README.md,project,Capability-enforcement documentation
   src/core/extensions/loader.ts,project,Capability enforcement implementation
   tests/unit/extension-loader.spec.ts,project,Capability-enforcement regression coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Coverage gate proof
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Targeted extension-loader regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,240,Coverage gate proof
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,240,Targeted extension-loader regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,Maintainer workflow and safety contract
   PRD.md,project,Authoritative extension capability contract

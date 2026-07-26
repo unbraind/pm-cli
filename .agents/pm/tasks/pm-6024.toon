@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:parser",phase2,pm-cli
 created_at: "2026-04-01T19:27:28.540Z"
-updated_at: "2026-04-04T21:39:31.859Z"
+updated_at: "2026-07-26T17:05:10.156Z"
 deadline: "2026-04-09T19:27:28.540Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: phase2-override
-release: vnext
+release: v2026.5.1
 blocked_by: pm-k1zw
 blocked_reason: "Phase 2: parser override regression and docs coverage has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Phase 2: parser override regression and docs coverage is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: vnext
 component: extensions-runtime
 regression: true
 customer_impact: Users keep stable defaults while extensions gain deeper control.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-k1zw,parent,"2026-04-01T19:27:28.540Z",codex-agent,null
+  pm-k1zw,implements,"2026-07-26T17:05:09.942Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T19:27:28.540Z",codex-agent,Task captures regression matrix and docs parity for parser override changes.
   "2026-04-01T19:57:28.285Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:21:17.236Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,parser override integration tests
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,integration regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,3600,integration regression
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,parser override usage docs
 close_reason: Phase 2 implementation and verification complete

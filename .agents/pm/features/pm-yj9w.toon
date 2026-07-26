@@ -6,15 +6,17 @@ status: closed
 priority: 2
 tags[4]: "area:history",compaction,maintenance,ux
 created_at: "2026-06-07T10:03:18.054Z"
-updated_at: "2026-06-18T17:47:35.038Z"
+updated_at: "2026-07-26T17:30:18.299Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm history-compact --scope closed` (or `--all-closed`) compacts all closed items to a single baseline entry\n- Skips streams that are already at 1-3 entries (already compact)\n- Reports: items_compacted, items_skipped, items_errored\n- `--dry-run` mode shows plan without writing\n- Integrated with `pm health --fix` hint or `pm gc --scope history` alias"
 parent: pm-o2kc
 risk: medium
 confidence: high
+release: v2026.6.19
 resolution: "Delivered via the unified bulk path: --scope closed/all-streams corpus sweep with min-entries skip and orphan-stream handling."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-f3pa,related,"2026-06-07T10:03:18.054Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:30:18.077Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-18T17:47:22.191Z",claude-code-agent,"Shipped as part of the unified bulk path: --scope closed compacts only terminal items (lifecycle classifier), --scope all-streams sweeps every stream. Skips already-compact streams via --min-entries (default 3). Orphan streams (history file, no item) are unbucketed and excluded from scope=closed. Reports items_compacted/items_skipped/items_errored."
 files[1]{path,scope,note}:

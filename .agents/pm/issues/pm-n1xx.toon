@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: dx,packaging,sdk
 created_at: "2026-07-19T03:42:10.160Z"
-updated_at: "2026-07-19T14:06:00.277Z"
+updated_at: "2026-07-26T17:20:48.622Z"
 closed_at: "2026-07-19T14:05:59.426Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,13 +14,15 @@ acceptance_criteria: "@types/node declared (peerDependency with peerDependencies
 parent: pm-usfg
 risk: low
 confidence: high
+release: v2026.7.20
 resolution: "Ship @types/node as a package dependency, verify consumer-owned types in packed smoke, and correct public JSDoc defects."
 expected_result: Strict external TypeScript consumers compile shipped declarations without undeclared ambient dependencies.
 actual_result: Clean packed install resolves its own Node types and compiles with the repository compiler; docstring gate remains 100%.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-o8um,related,"2026-07-19T03:42:10.160Z",null,null
   pm-quzx,related,"2026-07-19T03:42:10.160Z",null,null
   pm-x29o,related,"2026-07-19T03:42:28.393Z",null,null
+  pm-usfg,implements,"2026-07-26T17:20:48.339Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-19T12:41:31.526Z",maintainer-agent,"Evidence: packed tarball smoke passed from an isolated consumer and now proves the plain install owns @types/node; shipped JSDoc and legacy flag references are corrected; static docstring coverage is 100%; full test coverage is 100/100/100/100."
   "2026-07-19T12:50:18.310Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."

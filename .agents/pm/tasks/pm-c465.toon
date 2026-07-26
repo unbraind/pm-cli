@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:learnings","area:notes","area:tests",external-audit,pm-cli
 created_at: "2026-04-01T16:22:47.797Z"
-updated_at: "2026-05-17T08:21:40.471Z"
+updated_at: "2026-07-26T17:10:50.571Z"
 deadline: "2026-04-06T16:22:47.797Z"
 author: cursor-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation
-release: vnext
+release: v2026.5.1
 blocked_by: pm-v1s1
 blocked_reason: Implement pm notes and pm learnings command stack has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement pm notes and pm learnings command stack is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: vnext
 component: cli-commands
 regression: true
 customer_impact: Users can capture ongoing notes and learnings
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-v1s1,parent,"2026-04-01T16:22:47.797Z",cursor-agent,null
+  pm-o7be,implements,"2026-07-26T17:10:50.288Z",null,null
 comments[9]{created_at,author,text}:
   "2026-04-01T16:22:47.797Z",cursor-agent,Task created for Issue1 implementation scope.
   "2026-04-01T16:34:20.737Z",cursor-agent,"Implemented notes/learnings command stack across new command modules, CLI registration/write-gate wiring, completion/help surfaces, command-aware output, Pi wrapper actions, and unit/integration coverage. Verification: node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts (all passing in reruns)."
@@ -70,9 +71,9 @@ files[13]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,Added completion assertions for notes/learnings alias flags
   tests/unit/contracts-command.spec.ts,project,Added command flag parity assertions for notes/learnings aliases
   tests/unit/notes-learnings-command.spec.ts,project,unit coverage for notes/learnings command behaviors
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,"Alias coverage across runtime,completion,contracts,and Pi wrapper"
-  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted parity verification suite
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,1200,"Alias coverage across runtime,completion,contracts,and Pi wrapper"
+  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,project,900,targeted parity verification suite
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: Added command-specific notes/learnings audit aliases with backward-compatible legacy support across runtime surfaces

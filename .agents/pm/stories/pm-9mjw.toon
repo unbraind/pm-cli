@@ -6,14 +6,16 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli",living-map,story
 created_at: "2026-05-31T19:49:44.417Z"
-updated_at: "2026-06-04T16:17:42.986Z"
+updated_at: "2026-07-26T17:08:26.838Z"
 author: maintainer-agent
 acceptance_criteria: close-many dry-run previews matches+reason; apply closes via runClose semantics with checkpoint+rollback; active-child orphan warnings per item
 parent: pm-mpbb
+release: v2026.6.5
 resolution: "Delivered via pm-i17g close-many: dry-run preview, runClose semantics per item, checkpoint+rollback, active-child warnings"
 expected_result: "one audited bulk close, no validation bypass"
 actual_result: Delivered
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-i17g,related,"2026-05-31T19:49:44.417Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:08:26.621Z",null,null
 close_reason: "Satisfied by pm-i17g: pm close-many closes a matched set in one audited command"
 body: ""

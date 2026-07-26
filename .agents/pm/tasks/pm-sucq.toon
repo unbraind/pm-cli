@@ -6,14 +6,17 @@ status: closed
 priority: 1
 tags[5]: contracts,extensions,help,pm-cli,tests
 created_at: "2026-04-06T09:49:17.322Z"
-updated_at: "2026-05-17T08:22:41.006Z"
+updated_at: "2026-07-26T17:25:53.734Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-4bhw
+release: v2026.5.1
 resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
 expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
 actual_result: Resolution metadata fields were backfilled without altering closure intent.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-4bhw,implements,"2026-07-26T17:25:53.469Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-06T09:49:17.322Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
   "2026-04-06T11:02:05.598Z",codex-agent,"Implemented extension command metadata capture and surfaced it in runtime help + help JSON payloads, while merging active extension command/action schemas into pm contracts with extension source metadata. Verification: targeted extension help/contracts suites and full-suite/coverage passes."
@@ -26,9 +29,9 @@ files[8]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,extension command help metadata integration coverage
   tests/unit/contracts-command.spec.ts,project,runtime extension contracts merge coverage
   tests/unit/extension-loader.spec.ts,project,extension command metadata registration coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,extension help/contracts runtime regression suite
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mnn3axco-inots7,test,passed,"2026-04-06T11:08:06.879Z","2026-04-06T11:11:14.520Z","2026-04-06T11:11:14.520Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts tests/unit/pi-agent-extension.spec.ts,project,3600,extension help/contracts runtime regression suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mnn3axco-inots7,test,passed,"2026-04-06T11:08:06.879Z","2026-04-06T11:11:14.520Z","2026-04-06T11:11:14.520Z",1,0,0
 close_reason: extension runtime help/contracts metadata integration implemented and verified
 body: ""

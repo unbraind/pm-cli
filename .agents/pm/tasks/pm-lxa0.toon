@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:search","area:security",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-04T21:16:24.297Z"
-updated_at: "2026-04-04T21:47:19.760Z"
+updated_at: "2026-07-26T17:19:44.453Z"
 deadline: "2026-03-06T00:00:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-j7a
 blocked_reason: Harden include-linked symlink containment has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Harden include-linked symlink containment is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/harden-include-linked-symlink-containment
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden include-linked symlink containment.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-j7a,parent,"2026-03-04T21:16:24.297Z",maintainer-agent,null
   pm-q35x,discovered_from,"2026-03-04T21:16:24.297Z",maintainer-agent,null
+  pm-j7a,implements,"2026-07-26T17:19:44.143Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-04T21:16:24.297Z",maintainer-agent,Follow-up security hardening for include-linked containment with symlink escape coverage
   "2026-03-04T21:16:37.174Z",maintainer-agent,"Planned changeset before edits: update PRD and README first to require symlink-resolved scope containment for include-linked reads, then implement realpath-aware checks in search linked-corpus loader and add regression tests for in-root symlink escape paths."
@@ -60,9 +61,9 @@ files[4]{path,scope,note}:
   README.md,project,docs-first contract update
   src/cli/commands/search.ts,project,realpath-aware containment enforcement
   tests/unit/search-command.spec.ts,project,symlink containment regression
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted search include-linked regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,900,targeted search include-linked regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,authoritative search security contract

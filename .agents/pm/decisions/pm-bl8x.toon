@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: adr,architecture,"area:storage",performance,scale
 created_at: "2026-07-06T21:23:34.365Z"
-updated_at: "2026-07-12T14:11:21.555Z"
+updated_at: "2026-07-26T17:10:24.321Z"
 closed_at: "2026-07-12T14:11:21.116Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -18,9 +18,25 @@ why_now: Product goal explicitly targets workspaces of hundreds of thousands to 
 parent: pm-m2u1
 risk: high
 confidence: medium
+release: v2026.7.13
 resolution: "Accepted: versioned rebuildable derived index, hash-bucket migration contract, stable opaque cursors with scale-threshold bounded defaults, per-item lock scaling, and advisory Git/history growth policy"
 expected_result: "Scale implementation has an SDK-first, Git-native architecture contract with explicit correctness and fallback rules"
 actual_result: Decision grounded in local 10k/100k benchmark evidence and linked to canonical implementation items; hosted GitHub performance workloads excluded
+dependencies[14]{id,kind,created_at,author,source_kind}:
+  pm-0qg5,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-114v,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-2muu,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-801d,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-9rxu,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-dfg0,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-i7i4,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-lvyd,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-m2u1,implements,"2026-07-26T17:10:24.147Z",null,null
+  pm-mi2x,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-o79o,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-rjqr,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-vnie,related,"2026-07-26T17:10:24.147Z",null,null
+  pm-z436,related,"2026-07-26T17:10:24.147Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-12T14:10:00.882Z",maintainer-agent,"Duplicate and evidence check: all-status searches for persistent metadata index and cursor pagination confirm pm-vnie is the closed three-tier stat-cache predecessor, pm-801d is the canonical derived-index implementation, and pm-dfg0 is the canonical bounded-output implementation. Local 100k evidence: CLI list 28.1s, search 32.0s, next 31.6s/192k estimated tokens; SDK reads 3.0-8.0s and next 126k tokens. Decision work is active; no GitHub-hosted performance workload will be introduced."
   "2026-07-12T14:11:20.625Z",maintainer-agent,"Decision evidence: recorded all five required decisions with implementation lineage and explicit local-only performance policy. The derived index is never authoritative, has source-scan fallback/equivalence, and avoids a singleton write lock; cursors preserve explicit full-output compatibility and small-workspace defaults."

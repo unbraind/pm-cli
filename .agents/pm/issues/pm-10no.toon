@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-04-03T17:24:45.071Z"
-updated_at: "2026-04-04T21:41:32.353Z"
+updated_at: "2026-07-26T17:00:36.388Z"
 deadline: "2026-04-17T17:24:45.071Z"
 author: codex-agent
 estimated_minutes: 45
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: 2026-w14
-release: vnext
+release: v2026.5.1
 blocked_reason: Track GitHub Dependabot alert #18 for undici (GHSA-2mjp-6q6p-2qxm) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Track GitHub Dependabot alert #18 for undici (GHSA-2mjp-6q6p-2qxm) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: github-dependabot
@@ -39,6 +39,9 @@ fixed_version: 7.24.0
 component: "dependency:undici"
 regression: true
 customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-i7w2,implements,"2026-07-26T17:00:36.116Z",null,null
+  pm-x4sy,related,"2026-07-26T17:00:36.116Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T17:24:45.071Z",codex-agent,Imported open GitHub Dependabot alert GHSA-2mjp-6q6p-2qxm.
   "2026-04-03T17:46:01.806Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
@@ -47,8 +50,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T17:24:45.071Z",codex-agent,Remediate or dismiss this alert with verification evidence.
 files[1]{path,scope,note}:
   pnpm-lock.yaml,project,affected dependency manifest
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,metadata-audit-baseline-regression
 docs[1]{path,scope,note}:
   SECURITY.md,project,security reporting and handling policy
 close_reason: "Superseded by canonical item pm-x4sy during governance duplicate-consolidation for cluster 'ghsa::ghsa-2mjp-6q6p-2qxm'; historical evidence retained in this record."

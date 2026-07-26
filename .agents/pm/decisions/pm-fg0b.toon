@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: cli,decision,governance,packages,sdk
 created_at: "2026-07-12T19:53:55.623Z"
-updated_at: "2026-07-13T00:40:16.466Z"
+updated_at: "2026-07-26T17:13:50.276Z"
 closed_at: "2026-07-12T23:09:23.191Z"
 author: maintainer-agent
 estimated_minutes: 30
@@ -14,9 +14,14 @@ acceptance_criteria: D1 mechanism chosen and recorded with rationale; D2 bare-co
 parent: pm-vjk3
 risk: medium
 confidence: medium
+release: v2026.7.13
 resolution: completed
 expected_result: "One explicit mechanism, alias, fallback, and SDK-boundary decision guides implementation."
 actual_result: "Hybrid registerFlags/package handlers, audit alias, --force fallback, and generic-only SDK primitives implemented and verified."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-27mv,related,"2026-07-26T17:13:50.050Z",null,null
+  pm-7dcf,related,"2026-07-26T17:13:50.050Z",null,null
+  pm-vjk3,implements,"2026-07-26T17:13:50.050Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-12T23:09:22.399Z",codex-pm-audit-extraction,"Decision evidence: live extension contracts expose registerFlags and command overrides; the existing pm-governance-audit package is the canonical package-first target. Chosen hybrid ownership, audit alias, --force bare-core fallback, and zero public audit SDK surface."
 close_reason: "D1/D2 resolved: hybrid extension-owned commands/flags; audit alias; --force fallback; no public audit SDK surface."

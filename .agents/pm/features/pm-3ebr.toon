@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:health","area:search",pm-cli,semantic
 created_at: "2026-04-01T14:42:18.406Z"
-updated_at: "2026-05-17T08:20:59.361Z"
+updated_at: "2026-07-26T17:03:00.309Z"
 deadline: "2026-04-10T14:42:18.406Z"
 author: codex-agent
 estimated_minutes: 260
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: health-hardening
-release: vnext
+release: v2026.5.1
 blocked_by: pm-1hkq
 blocked_reason: Health vectorization status and targeted refresh has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Health vectorization status and targeted refresh is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: vnext
 component: search-health
 regression: true
 customer_impact: Users get fresher semantic results with minimal manual maintenance
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-1hkq,parent,"2026-04-01T14:42:18.406Z",codex-agent,null
+  pm-o7be,implements,"2026-07-26T17:03:00.062Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-01T14:42:18.406Z",codex-agent,Feature created from approved targeted-refresh strategy for pm health.
   "2026-04-06T23:08:06.392Z",codex-agent,"Reopened as canonical remediation tracker under pm-o7be for current audit findings wave to avoid duplicate item creation. Scope retained from prior implementation lineage and expanded for new report deltas only. Decision rationale: duplicate-check sweep in this run found no open/in-progress item directly covering this exact delta while this closed item already contains closest historical context, linked artifacts, and verification lineage."
@@ -61,9 +62,9 @@ files[9]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,Added completion assertions for verbose health/validate flags
   tests/unit/contracts-command.spec.ts,project,Added contracts flag parity assertions for verbose health/validate flags
   tests/unit/health-command.spec.ts,project,Added default-summary vs verbose stale list regression coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1500,null,null,null,null,null,null,null,null,null,null,null,Health/validate verbosity and surface parity regression suite
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted semantic refresh regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,1500,Health/validate verbosity and surface parity regression suite
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,project,2400,targeted semantic refresh regression
 docs[1]{path,scope,note}:
   PRD.md,project,health command and semantic behavior contract
 close_reason: Reduced default health vectorization verbosity and added explicit full-list opt-in

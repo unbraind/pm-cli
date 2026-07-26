@@ -6,8 +6,24 @@ status: closed
 priority: 2
 tags[1]: gh-triage-2026-06-12
 created_at: "2026-06-12T16:05:05.652Z"
-updated_at: "2026-06-16T12:33:08.215Z"
+updated_at: "2026-07-26T17:26:23.626Z"
 author: maintainer-agent
+release: v2026.6.16
+dependencies[14]{id,kind,created_at,author,source_kind}:
+  pm-0v2m,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-1lll,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-28cf,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-4swf,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-52eh,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-72xf,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-76r5,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-7snq,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-aer3,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-b1ni,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-c24n,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-cstl,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-gcm3,related,"2026-07-26T17:26:23.325Z",null,null
+  pm-hntj,related,"2026-07-26T17:26:23.325Z",null,null
 comments[9]{created_at,author,text}:
   "2026-06-12T16:10:43.395Z",maintainer-agent,"Triage complete: 18 open GH issues reconciled. CLOSED AS SHIPPED (verified in /tmp/pm-triage-sandbox on v2026.6.12): GH-153/167/168/170/171/172/174/179/184 (all v2026.6.12) + GH-185 (v2026.6.10). ALREADY TRACKED by open pm items (each references its GH number): GH-154=pm-1lll, GH-155=pm-gcm3, GH-156=pm-j0vc, GH-157=pm-cstl (added Tracks GH-157 comment), GH-158=pm-aer3, GH-161=pm-72xf, GH-163=pm-jmld. NEW: pm-i1z6 for GH-181 remainder (--match-mode and/or/exact + keyword default limit + --count; core no-ranking complaint already fixed by weighted scoring). Quick wins for today: pm-i1z6 default-limit part, pm-cstl --min-score, pm-1lll csv/table, pm-gcm3 child rollup. Leaving this task open for the PR session to close (changelog regen is the last step)."
   "2026-06-12T16:11:30.311Z",maintainer-agent,"Addendum: GH-203 filed mid-triage (validate --check-files classifies existing DIRECTORY links as deleted; prune/auto-fix would remove valid links). Root cause confirmed at src/cli/commands/validate.ts:1287 (!stats.isFile() => missing). Created pm-b1ni (P1, regression of GH-184/pm-0v2m). This is the #1 quick win for today's PR."
@@ -29,12 +45,12 @@ files[10]{path,scope,note}:
   tests/unit/commands/test-runs-command.spec.ts,project,Relax resource snapshot assertions when metrics unavailable
   tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Normalize telemetry flush runner path separators
   tests/unit/extensions/extension-command.spec.ts,project,Compare resolved file URL package roots via realpath
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/reindex-command.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/cli/structure-exports.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[6]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1800
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/reindex-command.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/cli/structure-exports.spec.ts,project,300
+  pnpm build,project,240
+  "pnpm quality:static",project,240
+  "pnpm security:scan",project,240
+  pnpm typecheck,project,240
 close_reason: Merged in PR #246 with linked implementation + verification evidence; no remaining blockers in this scope.
 body: ""

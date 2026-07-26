@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:test-command",code,"milestone:root",pm-cli,"priority:1",tests
 created_at: "2026-03-04T18:43:55.776Z"
-updated_at: "2026-04-04T21:47:08.949Z"
+updated_at: "2026-07-26T17:17:59.613Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-j7a
 blocked_reason: Harden recursive test-all detection for global-flag invocation forms has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Harden recursive test-all detection for global-flag invocation forms is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/harden-recursive-test-all-detection-for-global-f
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden recursive test-all detection for global-flag invocation forms.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-j7a,parent,"2026-03-04T18:43:55.776Z",cursor-maintainer,null
+  pm-j7a,implements,"2026-07-26T17:17:59.386Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-04T18:43:55.776Z",cursor-maintainer,This task hardens recursive test-all guard coverage for flag-before-subcommand invocation forms.
   "2026-03-04T18:44:09.466Z",cursor-maintainer,"Planned changeset: replace substring recursion checks with token-aware invocation parsing so pm/npx/node forms still detect test-all when global flags precede the subcommand; add unit regressions for add-time rejection and runtime skip parity."
@@ -59,9 +60,9 @@ files[5]{path,scope,note}:
   README.md,project,docs-first recursion guard clarification
   src/cli/commands/test.ts,project,recursive invocation detection logic
   tests/unit/test-command.spec.ts,project,regression coverage for recursion variants
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted regression coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1800,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,project,240,targeted regression coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and test safety requirements
   PRD.md,project,authoritative test safety contract

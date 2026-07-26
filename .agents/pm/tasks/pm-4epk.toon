@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:extensions",phase2,pm-cli
 created_at: "2026-04-01T19:29:36.404Z"
-updated_at: "2026-04-04T21:39:47.170Z"
+updated_at: "2026-07-26T17:03:56.550Z"
 deadline: "2026-04-08T19:29:36.404Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: phase2-override
-release: vnext
+release: v2026.5.1
 blocked_by: pm-r9nf
 blocked_reason: "Phase 2: update extension architecture and migration docs has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Phase 2: update extension architecture and migration docs is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: vnext
 component: docs-runtime
 regression: true
 customer_impact: Users can evaluate trusted-default override model with clear operational guidance.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-r9nf,parent,"2026-04-01T19:29:36.404Z",codex-agent,null
+  pm-r9nf,implements,"2026-07-26T17:03:56.350Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T19:29:36.404Z",codex-agent,Task updates docs and migration guidance for phase-2 surfaces.
   "2026-04-01T19:57:53.441Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
@@ -57,8 +58,8 @@ files[6]{path,scope,note}:
   docs/EXTENSIONS.md,project,contract docs
   README.md,project,capability summary
   SECURITY.md,project,operational safety guidance
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,docs-backed behavior verification
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,3600,docs-backed behavior verification
 docs[1]{path,scope,note}:
   PRD.md,project,product contract alignment
 close_reason: Phase 2 implementation and verification complete

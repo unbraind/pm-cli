@@ -6,18 +6,20 @@ status: closed
 priority: 2
 tags[4]: agent-experience,"area:search",gh-issue,token-efficiency
 created_at: "2026-07-06T21:09:28.492Z"
-updated_at: "2026-07-07T08:34:55.312Z"
+updated_at: "2026-07-26T17:09:20.407Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm search --mode hybrid honors --limit identically to keyword mode (applied after fusion ranking); documented in help/contracts; spec covers limit interaction with hybrid result fusion including limit=0 determinism from pm-6mn1
 parent: pm-ydp6
 risk: low
 confidence: high
+release: v2026.7.8
 resolution: Implemented hybrid search limit parity by keeping semantic candidates at least max_results wide through fusion and applying the requested --limit only after final ranking/truncation.
 expected_result: pm search --mode hybrid honors --limit like keyword search while preserving pm-6mn1 limit=0 deterministic empty-result behavior.
 actual_result: "Packed-install dogfood confirmed npx pm search alpha --json --limit 1 returns filters.limit=1 and one hit; zero-limit regression remains covered; focused/full tests, coverage, Greptile, and PR checks passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-6mn1,related,"2026-07-06T21:09:54.714Z",null,null
+  pm-ydp6,implements,"2026-07-26T17:09:20.189Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-07T07:30:43.392Z",claude-code-agent,"Implementation start: bundling GH-474 hybrid search --limit with GH-476 context --max-items alias in one token-efficiency PR. Duplicate checks found pm-6mn1 only covered limit=0 determinism, not general hybrid --limit parity."
   "2026-07-07T08:04:41.127Z",claude-code-agent,"Evidence: changed hybrid/semantic vector candidate sizing so a small --limit no longer shrinks the semantic candidate window before hybrid fusion; final output limit is still applied after sorting/fusion. Added regression coverage for --limit 1 with max_results=3 and updated extension fallback fixture to pin max_results explicitly. Verification passed: linked focused pm test (335 tests), pnpm build, node scripts/run-tests.mjs test (264 files / 5449 tests), node scripts/run-tests.mjs coverage (100% statements/branches/functions/lines), pnpm typecheck, pnpm lint, pnpm security:scan, pnpm contracts:check. Packed-install dogfood in /tmp/tmp.FlmKN3LY44 confirmed installed npx pm search alpha --json --limit 1 returns filters.limit=1 and one hit. GitHub refresh found no open Dependabot security alerts; open Dependabot PRs #462/#465 remain separate dependency-update PRs and are behind base."

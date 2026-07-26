@@ -6,13 +6,14 @@ status: closed
 priority: 1
 tags[5]: agent-ux,extensions,gh-issue,path-safety,sdk
 created_at: "2026-07-10T11:07:07.017Z"
-updated_at: "2026-07-10T11:32:37.318Z"
+updated_at: "2026-07-26T16:52:20.704Z"
 closed_at: "2026-07-10T11:32:37.317Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Bare pm invocations from inside a root-layout workspace resolve the tracker; extension command context pm_root equals the resolved root; pm --pm-path <ctx.pm_root> stats exits 0; unrelated ancestor settings.json without pm markers never hijacks resolution; regression tests cover discovery precedence (.agents/pm wins) and foreign/array/unparseable settings.json
 risk: medium
 confidence: high
+release: v2026.7.11
 severity: high
 environment: "@unbrained/pm-cli 2026.7.10, root-layout tracker via pm init <dir>"
 repro_steps: pm init <dir>; cd <dir>; pm create task t --ac a (fails tracker_not_initialized); extension command context.pm_root = <dir>/.agents/pm (non-existent)

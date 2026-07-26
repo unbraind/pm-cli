@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:04.119Z"
-updated_at: "2026-05-17T08:22:54.708Z"
+updated_at: "2026-07-26T17:28:16.415Z"
 deadline: "2026-04-11T12:43:04.119Z"
 author: codex-agent
 estimated_minutes: 220
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
-release: vnext
+release: v2026.5.1
 blocked_reason: Implement PM-context parity mode and mismatch metadata for linked tests has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement PM-context parity mode and mismatch metadata for linked tests is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,8 +38,10 @@ fixed_version: target-vnext
 component: linked-test-runtime
 regression: true
 customer_impact: Improves trust in PM-command governance evidence from linked runs.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-6pij,related,"2026-04-04T12:43:04.119Z",codex-agent,null
+  pm-8izv,related,"2026-07-26T17:28:16.188Z",null,null
+  pm-o7be,implements,"2026-07-26T17:28:16.188Z",null,null
 comments[13]{created_at,author,text}:
   "2026-04-04T12:43:04.119Z",codex-agent,Task created after dedupe checks found no active implementation item for PM dataset parity controls and mismatch-fail behavior.
   "2026-04-04T14:01:37.286Z",codex-agent,"Implemented --pm-context schema|tracker runtime controls, execution_context telemetry, and --fail-on-context-mismatch guardrails across test/test-all surfaces. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts and pm test pm-vrsn --run --pm-context tracker --fail-on-context-mismatch passed."
@@ -67,10 +69,10 @@ files[10]{path,scope,note}:
   tests/unit/contracts-command.spec.ts,project,override-linked-pm-context contract flag parity
   tests/unit/test-all-command.spec.ts,project,context-parity-implementation
   tests/unit/test-command.spec.ts,project,context-parity-implementation
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,context-parity-regression
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,override-linked-pm-context-regression-suite
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,check-context and auto-pm-context regression suite
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,project,900,context-parity-regression
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,5400,override-linked-pm-context-regression-suite
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,3600,check-context and auto-pm-context regression suite
 docs[4]{path,scope,note}:
   AGENTS.md,project,agent-guardrail-update
   docs/ARCHITECTURE.md,project,runtime-behavior-update

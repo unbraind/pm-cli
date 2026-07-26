@@ -6,13 +6,16 @@ status: closed
 priority: 0
 tags[5]: packages,pm-cli,refactor,sdk,test-runner
 created_at: "2026-05-14T06:05:23.106Z"
-updated_at: "2026-05-14T17:56:31.800Z"
+updated_at: "2026-07-26T17:07:11.676Z"
 author: codex-agent
 acceptance_criteria: Core linked-test safety and orchestration remain stable; package boundary for adapters/reporters is documented; future packages expose optional handlers/contracts without weakening sandbox safety; focused tests cover any extracted adapter surface.
 parent: pm-59gj
+release: v2026.5.14
 resolution: Linked-test adapters were extracted to an installable package while core retained safety-critical linked-test orchestration.
 expected_result: Optional adapters/reporters are package-owned and core linked-test sandbox safety remains intact.
 actual_result: "Focused release-readiness, extension, and package-manifest tests verified the package boundary."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-59gj,implements,"2026-07-26T17:07:11.504Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-14T06:05:23.106Z",codex-agent,"Duplicate check 2026-05-14: pm search linked-test-runner package extraction found only closed sandbox runner fixes plus parent pm-59gj; net-new extraction child under pm-59gj."
   "2026-05-14T06:12:20.800Z",codex-agent,"Research correction 2026-05-14: CLI surface audit recommends keeping linked-test safety/orchestration in core for agent PM reliability, while extracting external test adapters/reporters and specialized output packs instead of moving the whole runner out of core."
@@ -24,7 +27,7 @@ files[6]{path,scope,note}:
   src/cli/register-operations.ts,project,removed core test-runs command registration
   src/core/extensions/loader.ts,project,preserve extension usage exit codes when handler throws
   tests/integration/release-readiness-runtime.spec.ts,project,assert test-runs unavailable in bare core and restored after package install
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/extension-command.spec.ts tests/unit/package-manifest.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/extension-command.spec.ts tests/unit/package-manifest.spec.ts,project,900
 close_reason: linked-test adapters extracted to package surface with core safety orchestration preserved
 body: ""

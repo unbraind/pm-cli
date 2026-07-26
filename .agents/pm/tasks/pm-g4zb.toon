@@ -6,17 +6,20 @@ status: closed
 priority: 1
 tags[5]: audit,dogfood,pm-cli,re-audit,ux
 created_at: "2026-05-03T12:08:37.173Z"
-updated_at: "2026-05-03T19:13:52.621Z"
+updated_at: "2026-07-26T17:14:13.683Z"
 deadline: "2026-05-05T12:08:37.173Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: All lifecycle ops verified in temp sandbox. Agent output modes (TOON/JSON/quiet/help/contracts) confirmed working.
 parent: pm-476d
+release: v2026.5.3
 resolution: Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.
 expected_result: Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-476d,parent,"2026-05-03T12:08:37.173Z",audit-agent,null
+  pm-476d,implements,"2026-07-26T17:14:13.463Z",null,null
+  pm-cu50,related,"2026-07-26T17:14:13.463Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-03T12:08:37.173Z",audit-agent,"Duplicate check: predecessor pm-cu50 closed. Net-new for v2026.5.2 re-audit."
 close_reason: "Full lifecycle verified in temp sandbox: init/create/claim/update/comments/notes/learnings/files/append/close/release/search/calendar/context. TOON/JSON/help/contracts output modes confirmed working. No friction or regressions found."

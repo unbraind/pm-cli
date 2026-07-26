@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: ci,cross-platform,gh-issue,tests,windows
 created_at: "2026-07-26T07:58:00.774Z"
-updated_at: "2026-07-26T08:29:32.590Z"
+updated_at: "2026-07-26T17:28:53.813Z"
 closed_at: "2026-07-26T08:07:53.639Z"
 author: "harness:codex"
 acceptance_criteria: All three failing specs use platform-correct semantic assertions; focused tests pass locally; exact pushed PR head passes the Windows Node 24 required check or nightly; GH-733 is closed with PM and exact-run evidence.
@@ -17,11 +17,12 @@ resolution: Replaced three OS-specific test assumptions with native path constru
 expected_result: "The Windows Node 24 nightly validates author precedence, recovery relocation, and history drift classification without OS-specific false negatives."
 actual_result: "PR #734 final reviewed head e2453835 passes the required Windows Node 24 regression job, focused 27-test lane, all four coverage shards, 100% aggregate coverage, and the full hosted matrix."
 regression: true
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-3x8w4m,related,"2026-07-26T07:58:00.774Z",null,null
   pm-lt6n,related,"2026-07-26T07:58:00.774Z",null,null
   pm-tgq6,related,"2026-07-26T07:58:00.774Z",null,null
   pm-u5zr,related,"2026-07-26T07:58:00.774Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:28:53.497Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-26T07:58:00.774Z","harness:codex","Duplicate-check evidence: all-status searches for the exact GH-733 title, run identifier, Windows Node 24, and the three failing spec names found no live canonical owner. Closed pm-3x8w4m and pm-lt6n are precedent for earlier cross-platform regressions; open pm-tgq6 is a distinct stale-cleanup flake. This item owns only run 30191427127 / GH-733."
   "2026-07-26T08:01:07.778Z","harness:codex","Evidence: the three GH-733 regression specs pass 27/27 after switching author-source expectations to native separators, building recovery roots with node:path, and injecting the inaccessible-history errno seam directly instead of relying on chmod or parent-path behavior. Repo-wide lint also passes: ESLint, zero jscpd clones, 100% source/export/member docstrings, package boundary, token budget, SDK snapshot, SDK import-cost, and CLI transport gates. Exact Windows Node 24 proof remains pending on the pushed PR head, so this item stays in progress and claimed."

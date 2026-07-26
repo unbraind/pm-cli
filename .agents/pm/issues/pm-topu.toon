@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: data-integrity,gh-551,relationships
 created_at: "2026-07-14T10:18:53.997Z"
-updated_at: "2026-07-21T10:14:19.230Z"
+updated_at: "2026-07-26T17:26:33.731Z"
 closed_at: "2026-07-21T10:14:18.200Z"
 author: codex-gpt5
 estimated_minutes: 180
@@ -14,13 +14,15 @@ acceptance_criteria: "The CLI either accepts and preserves documented source_kin
 parent: pm-96h7
 risk: medium
 confidence: 75
+release: v2026.7.22
 resolution: Added public dependency provenance primitives and source_kind-aware create/update/graph behavior for external IDs.
 expected_result: Cross-workspace dependency IDs remain lossless and graph validation distinguishes external targets from dangling local references.
 actual_result: "Global IDs round-trip through create, graph, update removal, and get with missing_nodes equal to zero."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-ju83,related,"2026-07-14T10:18:53.997Z",codex-gpt5,null
   pm-is1a,related,"2026-07-16T05:45:21.008Z",null,null
   pm-mfkv92,related,"2026-07-21T07:32:58.237Z",codex-root-20260721,null
+  pm-96h7,implements,"2026-07-26T17:26:33.477Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-14T10:18:53.997Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-551 --status all returned no item. This is related to the active relationship registry lineage pm-ju83 but is not implemented in the current in-memory graph primitive bundle. Source: https://github.com/unbraind/pm-cli/issues/551"
   "2026-07-21T07:33:03.401Z",codex-root-20260721,"Evidence: create and update now share public normalizeDependencySeedId semantics; source_kind=global preserves foreign IDs, removes with the same selector, materializes external graph nodes, and yields missing_nodes=0 instead of a dangling local reference."

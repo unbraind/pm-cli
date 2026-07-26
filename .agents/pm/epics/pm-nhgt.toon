@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli","area:docs","area:input","area:ux",pm-cli
 created_at: "2026-04-01T10:11:50.649Z"
-updated_at: "2026-04-04T21:31:39.339Z"
+updated_at: "2026-07-26T17:21:09.770Z"
 deadline: "2026-04-11T10:11:50.649Z"
 assignee: codex-agent
 author: codex-agent
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: no-active-blocker
 blocked_reason: Harden entry and add input resilience has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Harden entry and add input resilience is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,6 +40,10 @@ fixed_version: archive-2026q2
 component: cli-input
 regression: true
 customer_impact: Existing users get clearer failures and safer compatibility while agents gain resilient add flows
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-0pvk,related,"2026-07-26T17:21:09.554Z",null,null
+  pm-luay,related,"2026-07-26T17:21:09.554Z",null,null
+  pm-s9hl,related,"2026-07-26T17:21:09.554Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T10:11:50.649Z",codex-agent,Why this epic exists repeated agent markdown pipelines currently fail in entry add commands.
   "2026-04-01T10:37:23.465Z",codex-agent,"Epic complete: resilient CSV/markdown/stdin entry ingestion shipped across parser + mutation commands with docs and regression coverage updates."
@@ -49,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:28.359Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   README.md,project,metadata-audit-linked-context
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,metadata-audit-baseline-regression
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: Resilient entry/add input hardening delivered end-to-end.

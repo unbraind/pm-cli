@@ -6,16 +6,18 @@ status: closed
 priority: 1
 tags[4]: observability,pm-cli,telemetry,validation
 created_at: "2026-04-26T08:38:49.149Z"
-updated_at: "2026-05-03T13:54:31.143Z"
+updated_at: "2026-07-26T17:28:03.250Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Ingestion path validates UUID-typed identifiers before queueing; invalid payloads are dropped/quarantined with explicit counters and do not repeatedly fail worker inserts.
 parent: pm-lnq3
+release: v2026.5.1
 resolution: "Telemetry API now rejects invalid UUID payloads with explicit counters, and the worker drops legacy malformed UUID events without requeue churn."
 expected_result: Invalid UUID telemetry payloads are rejected at ingestion and do not create persistent queue or worker insert failures.
 actual_result: Invalid UUID payloads now return 400 with field-level detail; rejected UUID counters increment; worker drained poison backlog and queue remains at 0/0 without recurring UUID insert-failed loops.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T08:38:49.149Z",codex-agent,null
+  pm-lnq3,implements,"2026-07-26T17:28:03.010Z",null,null
 comments[11]{created_at,author,text}:
   "2026-04-26T08:38:49.149Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'telemetry worker invalid uuid' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because current telemetry open items cover docs/health visibility but not ingestion boundary UUID validation and worker retry churn."
   "2026-04-26T08:42:50.281Z",codex-agent,"Remote verification evidence 2026-04-26: docker compose services healthy on [redacted_user]@[redacted_host] (telemetry-api/worker/rabbitmq/postgres/prometheus/loki/tempo/alloy/grafana); /healthz returned ok queue pm.telemetry.events; synthetic POST /v1/events accepted=1; Postgres telemetry_events count increased (9516->9519) and live command ingest confirmed (stats delta +1); DSAR export/delete scripts executed successfully for probe installation UUID. Outstanding failure signal: telemetry-worker logs repeated worker_insert_failed invalid UUID errors for non-UUID identifiers, indicating ingestion boundary lacks strict UUID validation before worker insert."
@@ -39,10 +41,10 @@ files[5]{path,scope,note}:
   scripts/prod/telemetry/2026-04-27-remote-telemetry-api-app.py,project,local patch snapshot for remote app.py update
   scripts/prod/telemetry/2026-04-27-remote-telemetry-api-worker.py,project,local patch snapshot for remote worker.py update
   src/core/telemetry/runtime.ts,project,Client-side telemetry event shaping and redaction
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  echo remote-uuid-validation-verification-redacted,null,project,120,null,null,null,null,null,null,null,null,null,null,null,remote-health-and-queue-zero-verification-redacted
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mohllgbf-5s3s5x,test,passed,"2026-04-27T19:36:21.505Z","2026-04-27T19:36:24.027Z","2026-04-27T19:36:24.027Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  echo remote-uuid-validation-verification-redacted,project,120,remote-health-and-queue-zero-verification-redacted
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mohllgbf-5s3s5x,test,passed,"2026-04-27T19:36:21.505Z","2026-04-27T19:36:24.027Z","2026-04-27T19:36:24.027Z",1,0,0
 docs[2]{path,scope,note}:
   scripts/prod/telemetry/2026-04-27-backlog-wave-baseline.md,project,telemetry wave kickoff baseline
   scripts/prod/telemetry/2026-04-27-pm-vhdc-execution-log.md,project,remote UUID validation execution log

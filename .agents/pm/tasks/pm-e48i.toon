@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:extensions","area:packages","area:sdk",github-issue-133,github-issue-134
 created_at: "2026-06-07T05:03:46.374Z"
-updated_at: "2026-06-07T05:31:45.133Z"
+updated_at: "2026-07-26T17:12:34.795Z"
 author: codex-impl-20260607
 parent: pm-ugqx
+release: v2026.6.7
 resolution: Delivered deterministic package-install recovery and extension collision planning for agent package workflows.
 expected_result: Agents receive compact machine-readable recovery hints for unpublished npm package installs and deterministic collision remediation plans for multi-package extension overlaps.
 actual_result: npm 404 JSON errors now preserve fallback_candidates and next_best_command end-to-end; package doctor triage now includes collision_plan with ranked deactivate candidates and feature-loss hints; docs and tests cover both behaviors.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T17:12:34.610Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-07T05:03:54.475Z",codex-impl-20260607,"Orientation evidence: no open PRs; open GitHub issues #133/#134 map to this package-platform task; recent main CI/Docs/CodeQL success on f8d9f31a; pnpm audit --audit-level low reports no known vulnerabilities; pnpm outdated shows commander 15 latest but wanted/current 14.0.3, keeping out of scope due Node support history."
   "2026-06-07T05:15:08.709Z",codex-impl-20260607,"Implementation evidence: added npm 404 classification for npm:<name> installs with JSON recovery.fallback_candidates and recovery.next_best_command; added structured triage.collision_plan for extension registration collisions with deterministic deactivate candidates and feature-loss hints; preserved command-specific recovery during CLI error enrichment; documented package-source fallback and collision_plan JSON diagnostics. Sub-agent evidence: GitHub/security lane found no open PRs, current main CI/Docs/CodeQL green, no open Dependabot/code-scanning/secret/advisory alerts, pnpm audit clean, commander@15 blocked by Node engine; SDK/package-author lane recommended pm-e48i as the non-duplicate canonical item for #133/#134."
@@ -27,12 +30,12 @@ files[9]{path,scope,note}:
   tests/unit/cli-main-errors.spec.ts,project,Cover fallback recovery merge in main error path
   tests/unit/error-guidance.spec.ts,project,Cover fallback recovery JSON/text plumbing
   tests/unit/extension-command.spec.ts,project,Cover npm fallback and collision plan behavior
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts tests/unit/extension-command.spec.ts tests/unit/error-guidance.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/error-guidance.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mq3blrxa-0yh706,test,passed,"2026-06-07T05:07:01.993Z","2026-06-07T05:07:21.118Z","2026-06-07T05:07:21.118Z",null,null,2,0,0,null,null,null
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts tests/unit/extension-command.spec.ts tests/unit/error-guidance.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/error-guidance.spec.ts,project,240
+  pnpm typecheck,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mq3blrxa-0yh706,test,passed,"2026-06-07T05:07:01.993Z","2026-06-07T05:07:21.118Z","2026-06-07T05:07:21.118Z",2,0,0
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,Document npm 404 fallback and collision_plan JSON diagnostics
 close_reason: "Delivered package install fallback hints and extension collision plans for GitHub issues #133/#134 with tests, docs, temp smoke, coverage, security, contracts, health, and changelog validation evidence."

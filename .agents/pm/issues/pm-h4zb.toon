@@ -6,17 +6,20 @@ status: closed
 priority: 1
 tags[5]: ci,dogfood,guardrail,privacy,security
 created_at: "2026-05-20T20:19:27.785Z"
-updated_at: "2026-05-21T18:16:35.461Z"
+updated_at: "2026-07-26T17:15:13.594Z"
 author: claude-code-agent
 acceptance_criteria: Secret scanner detects all GitHub token prefixes (ghp_/gho_/ghu_/ghs_/ghr_/github_pat_); RULES + scanContent are exported and covered by a unit test; the scanner only auto-runs when invoked as a CLI; local-only credential material is removed from ignored operations notes; tracked secret scan remains clean; coverage stays 100%.
 parent: pm-rnpb
+release: v2026.5.23
 resolution: Secret-scan guardrail now covers all GitHub token prefixes and is unit-tested; local-only credential material was removed from ignored operations notes.
 expected_result: CI secret gate catches a wider class of GitHub tokens and the detection rules are regression-protected; no local plaintext credential material remains in ignored operations notes.
 actual_result: Additional GitHub token prefixes are now detected; RULES/scanContent are exported and covered; local credential material was redacted from ignored operations notes; tracked security scan is clean.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,implements,"2026-07-26T17:15:13.328Z",null,null
 files[2]{path,scope,note}:
   scripts/check-secrets.mjs,project,"broaden github-token rule to gh[opsru]_; export RULES+scanContent; guard run() to CLI-only invocation"
   tests/unit/check-secrets.spec.ts,project,"regression: all GitHub token prefixes + excludeFiles + clean-content negative cases"
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/check-secrets.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,secret-rule regression
+tests[1]{command,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/check-secrets.spec.ts,project,secret-rule regression
 close_reason: "Broadened the github-token rule in scripts/check-secrets.mjs from ghp_/github_pat_ to gh[opsru]_ (ghp/gho/ghu/ghs/ghr) + github_pat_. Refactored the scanner to export RULES and scanContent(file, content) and guarded run() behind a CLI-entry check (fileURLToPath(import.meta.url) === process.argv[1]) so importing it has no side effects. Added tests/unit/check-secrets.spec.ts covering all token prefixes, other high-risk shapes (private-key/aws/sentry-org/ssh-target), excludeFiles behavior, and clean-content negatives. Redacted the [redacted_local_ops_detail] from the gitignored [redacted_local_ops_detail] (replaced with a pointer to read from [redacted_local_ops_detail] / .env [redacted_local_ops_detail]); confirmed the literal exists nowhere else. pnpm security:scan passes 'No credential-like secrets detected in tracked files.'; new spec passes 5/5. scripts/ is excluded from the coverage allowlist so 100% coverage is unaffected."
 body: ""

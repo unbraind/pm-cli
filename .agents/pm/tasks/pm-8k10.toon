@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:comments",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:26.987Z"
-updated_at: "2026-05-17T08:21:22.975Z"
+updated_at: "2026-07-26T17:07:32.410Z"
 deadline: "2026-04-11T20:58:26.987Z"
 author: codex-agent
 estimated_minutes: 180
@@ -19,6 +19,7 @@ impact: Reduces ambiguity and handoff risk for future work touching Implement Is
 outcome: This record can be used as canonical context when modifying Implement Issue5 comments audit append path.
 why_now: Historical decisions for Implement Issue5 comments audit append path need durable context for future maintenance and audits.
 parent: pm-ahq1
+release: v2026.5.1
 blocked_reason: Implement Issue5 comments audit append path has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement Issue5 comments audit append path is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Implement Issue5 comments audit append path (pm CLI + Node/pnpm toolchain).
@@ -27,8 +28,9 @@ expected_result: Acceptance criteria for Implement Issue5 comments audit append 
 actual_result: Work completed and recorded with linked artifacts for Implement Issue5 comments audit append path.
 component: project-management/implement-issue5-comments-audit-append-path
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement Issue5 comments audit append path.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ahq1,parent,"2026-04-03T20:58:26.987Z",codex-agent,null
+  pm-ahq1,implements,"2026-07-26T17:07:32.192Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T20:58:26.987Z",codex-agent,Task created for direct implementation of Issue #5 workstream.
   "2026-04-03T21:17:15.212Z",codex-agent,"Implemented additive --allow-audit-comment path for comments so non-owner append-only comment_add operations can run without --force, while leaving structural mutation ownership protections unchanged. Wired CLI/completion/contracts/Pi surfaces and passed targeted suite: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts."
@@ -47,9 +49,9 @@ files[9]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,comments help parity for allow-audit-comment
   tests/unit/comments-command.spec.ts,project,ownership bypass regression coverage
   tests/unit/completion-command.spec.ts,project,comments completion flag coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,issue5 targeted suite
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,Issue5 targeted regression suite
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts,project,3600,issue5 targeted suite
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,Issue5 targeted regression suite
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,ownership mutation architecture docs
 close_reason: "Implemented allow-audit-comment append-only ownership-safe path, updated docs, and verified via full build/test/coverage/smoke."

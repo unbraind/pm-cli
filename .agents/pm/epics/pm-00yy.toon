@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-04-01T01:39:03.952Z"
-updated_at: "2026-04-04T21:31:35.856Z"
+updated_at: "2026-07-26T16:59:44.442Z"
 deadline: "2026-04-15T01:39:03.952Z"
 assignee: codex-agent
 author: codex-agent
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-r15d
 blocked_reason: Configurable option policies for core commands has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Configurable option policies for core commands is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: archive-2026q2
 component: cli/options
 regression: false
 customer_impact: "Improves agent and user command success rates with clearer, policy-aware UX."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-r15d,discovered_from,"2026-04-01T01:39:03.952Z",codex-agent,null
+  pm-5bwo,related,"2026-07-26T16:59:44.217Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T01:39:03.952Z",codex-agent,Follow-up scope extends pm-r15d with option visibility and enablement controls.
   "2026-04-01T01:58:21.515Z",codex-agent,"Follow-up epic delivered via pm-5bwo: command_option_policies model, policy-aware help/error surfaces, and extension metadata markers shipped with docs/tests updates."
@@ -51,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:35.361Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,core command/help surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,2400,full regression baseline
 docs[1]{path,scope,note}:
   PRD.md,project,contract alignment
 close_reason: Follow-up option-policy epic completed

@@ -6,14 +6,17 @@ status: closed
 priority: 0
 tags[5]: install,packages,pm-cli,sdk,upgrade
 created_at: "2026-05-11T21:40:03.472Z"
-updated_at: "2026-05-11T22:31:48.261Z"
+updated_at: "2026-07-26T17:10:27.749Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: pm upgrade supports dry-run and real execution; self upgrade plans npm install -g @unbrained/pm-cli@latest; managed package upgrades preserve install/source metadata and activation; SDK contracts and docs expose the command; focused and temp-project tests pass.
 parent: pm-59gj
+release: v2026.5.12
 resolution: "Implemented pm upgrade for CLI/SDK self-upgrade planning and managed package refresh, plus SDK/MCP/action contracts and package-first docs."
 expected_result: Users and agents can run pm upgrade dry-runs or real upgrades for the CLI/SDK and installed pm packages without losing SDK functionality or package metadata.
 actual_result: "pm upgrade command, contracts, MCP action, docs/help, focused tests, manual temp-project E2E, package smokes, and full coverage all passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-59gj,implements,"2026-07-26T17:10:27.464Z",null,null
 comments[4]{created_at,author,text}:
   "2026-05-11T21:40:03.472Z",codex-agent,"Duplicate check before create: pm search pm upgrade packages update install npm resolver --limit 10 found only closed installer/update work plus active parent pm-59gj; no open child item covered top-level pm upgrade for CLI/SDK plus managed packages."
   "2026-05-11T21:57:29.948Z",codex-agent,"Implementation update: added pm upgrade with dry-run planning, CLI/SDK npm self-upgrade orchestration, managed package refresh from recorded sources, native MCP pm_run action, SDK/action/flag contracts, and package subaction availability mapping. Focused verification passed: pnpm build; PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- upgrade/contracts/package-manifest/sdk-index/release-readiness-runtime."
@@ -31,8 +34,8 @@ files[11]{path,scope,note}:
   tests/unit/builtin-extension-entrypoints.spec.ts,project,package-root builtin entrypoint tests
   tests/unit/beads-command.spec.ts,project,beads package runtime import
   tests/unit/todos-extension.spec.ts,project,todos package runtime import
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused upgrade package contract tests
-  node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused upgrade and package-root externalization tests
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,900,focused upgrade package contract tests
+  node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,900,focused upgrade and package-root externalization tests
 close_reason: "pm upgrade CLI/SDK/package workflow implemented with contracts, docs, focused tests, manual E2E, and release gates passed."
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:extensions-pi","area:install",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T19:47:48.867Z"
-updated_at: "2026-04-05T22:45:29.282Z"
+updated_at: "2026-07-26T17:07:20.815Z"
 deadline: "2026-03-10T20:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-08
-release: v0.1
+release: v2026.5.1
 blocked_by: pm-oqe0
 blocked_reason: Sunset pm install command and migrate to extension manager installs has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Sunset pm install command and migrate to extension manager installs is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: v0.1
 component: cli-installer
 regression: false
 customer_impact: Pi users can load pm tracking tools in TUI without manual file-copy steps
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-oqe0,related,"2026-03-08T19:47:48.867Z",maintainer-agent,null
+  pm-m9jc,implements,"2026-07-26T17:07:20.618Z",null,null
 comments[7]{created_at,author,text}:
   "2026-03-08T19:47:48.867Z",maintainer-agent,Why this exists users need one-command Pi extension install for project/global scopes and reliable TUI availability.
   "2026-03-08T19:48:00.841Z",maintainer-agent,"Planned changeset before edits: update PRD/README/AGENTS with install command contract and Pi scope semantics, implement runInstallPi command + CLI wiring, add unit/integration/release-contract tests, then run temporary-folder Pi smoke validation."
@@ -62,9 +63,9 @@ files[7]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,docs/help contract
   tests/unit/completion-command.spec.ts,project,completion install command assertions
   vitest.config.ts,project,coverage include alignment
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted installer regressions
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,project,2400,targeted installer regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer Pi workflow
   PRD.md,project,command contract

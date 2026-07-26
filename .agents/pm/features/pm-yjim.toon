@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-experience,gh-issue,packages,token-efficiency
 created_at: "2026-07-06T21:09:23.206Z"
-updated_at: "2026-07-10T07:08:21.271Z"
+updated_at: "2026-07-26T17:30:19.387Z"
 closed_at: "2026-07-10T07:08:19.744Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,11 +14,14 @@ acceptance_criteria: "pm install output ends with a verification summary (activa
 parent: pm-ugqx
 risk: low
 confidence: high
+release: v2026.7.10
 resolution: "Added compact post-install verification covering activation, registrations, target root, and blocking health."
 expected_result: Agents can confirm install success without a separate doctor invocation.
 actual_result: Single and multi-package install results include coherent light verification and failure counts.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b3e9,related,"2026-07-06T21:09:54.218Z",null,null
+  pm-hj9h,related,"2026-07-26T17:30:19.133Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:30:19.133Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-10T05:53:25.929Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
   "2026-07-10T06:23:44.841Z",codex-root-20260709,"Greptile pre-push review 388e369e found and we fixed two result-contract edges: wildcard multi-package details now set installed_all from the aggregate success bit, and SDK recovery next_steps clone help commands rather than aliasing the help_commands array. Focused 149 tests, full 5,505-test exact 100/100/100/100 coverage, typecheck, contracts, lint, static quality, and zero-clone gates pass after the fixes."

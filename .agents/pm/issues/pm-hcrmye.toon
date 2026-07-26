@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:performance","area:sdk",regression,scale
 created_at: "2026-07-24T12:02:38.401Z"
-updated_at: "2026-07-24T22:26:06.421Z"
+updated_at: "2026-07-26T17:15:25.660Z"
 closed_at: "2026-07-24T22:23:05.465Z"
 author: claude-code-agent
 estimated_minutes: 240
@@ -14,12 +14,16 @@ acceptance_criteria: "The unmodified 10k scale gate passes at least three consec
 parent: pm-9rxu
 risk: high
 confidence: high
+release: v2026.7.25
 severity: high
 resolution: fixed
 expected_result: "pnpm benchmark:scale:check passes the committed latency, RSS, correctness, and token budgets without budget relaxation."
 actual_result: Current main fails cli.create latency plus cli.create and cli.claim peak RSS ceilings while all other reported product budgets pass.
 component: performance
 regression: true
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-9rxu,implements,"2026-07-26T17:15:25.413Z",null,null
+  pm-mi2x,related,"2026-07-26T17:15:25.413Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-24T12:02:38.401Z",claude-code-agent,"Duplicate-check evidence: all-status search over scale, create, claim, RSS, memory, and benchmark terms found the closed harness pm-mi2x and the living scale epic pm-9rxu, but no open item owning this current fixed-budget regression. Filed as a focused child of pm-9rxu."
   "2026-07-24T12:40:37.906Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."

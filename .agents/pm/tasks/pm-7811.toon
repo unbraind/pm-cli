@@ -6,12 +6,16 @@ status: closed
 priority: 0
 tags[5]: changelog,ci,packages,release,sdk
 created_at: "2026-05-23T20:25:40.368Z"
-updated_at: "2026-05-23T23:45:25.863Z"
+updated_at: "2026-07-26T17:06:15.189Z"
 author: codex-pm-changelog
 parent: pm-59gj
+release: v2026.5.24
 resolution: "Installed latest npm pm-changelog 2026.5.24-1, fixed pm-cli npm package runtime dependency installation for extension SDK imports, wired CI/release changelog checks to install and use the package, generated CHANGELOG.pm.md through pm changelog generate, filed upstream pm-changelog#4 for package sourcemap warnings, and verified linked package, changelog, release, and dogfood gates."
 expected_result: pm-cli installs and loads the latest npm pm-changelog package without manual changelog scripts; pm-changelog can generate the repository changelog; CI/CD release gates verify the package-generated changelog and npm/npx/bun release path.
 actual_result: "Latest npm pm-changelog installs and loads with changelog generate active; CHANGELOG.pm.md is generated and checked through the package command; CI/release scripts refresh the package before generation; package doctor, linked tests, static release slice, run-gates slice, and package-first dogfood passed."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-59gj,implements,"2026-07-26T17:06:14.935Z",null,null
+  pm-bu50,related,"2026-07-26T17:06:14.935Z",null,null
 comments[19]{created_at,author,text}:
   "2026-05-23T20:25:40.368Z",codex-pm-changelog,"Duplicate check: searched for 'pm-changelog changelog package release CI'. Existing package-first lineage pm-59gj is canonical; no dedicated open pm-changelog integration item existed, so this child task tracks the requested work."
   "2026-05-23T20:25:59.418Z",codex-pm-changelog,"Baseline before install: pm package explore/manage/doctor in project scope reported zero project packages and ok=true; npm latest for pm-changelog is 2026.5.23-1 with @unbrained/pm-cli peer >=2026.5.14."
@@ -44,21 +48,40 @@ files[11]{path,scope,note}:
   src/cli/commands/extension.ts,project,Install npm-backed package runtime dependencies before extension activation so SDK imports resolve
   src/cli/commands/test.ts,project,Adds retrying cleanup for linked-test sandbox temp directory
   tests/integration/cli.integration.spec.ts,project,Regression for packed npm package extension importing @unbrained/pm-cli/sdk
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node dist/cli.js package doctor --project --json --detail deep,null,project,60,null,null,null,null,null,null,null,null,null,null,null,Verify npm-installed pm-changelog loads with changelog generate command active
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,Regression for npm package runtime dependency install and SDK import activation
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,90,null,null,null,null,null,null,null,null,null,null,null,Focused release-readiness guard after accidental CHANGELOG.md rewrite was reverted
-  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,300,tracker,null,null,null,null,null,null,null,null,null,null,Latest npm pm-changelog install plus generated changelog freshness check
-  "pnpm version:check && pnpm changelog:pm:check && pnpm security:scan && pnpm quality:static && npm pack --dry-run",null,project,600,tracker,null,null,null,null,null,null,null,null,null,null,CI static release slice including pm-changelog freshness check against real tracker data
-test_runs[7]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mpitiu60-xtmnbi,test,passed,"2026-05-23T20:45:43.523Z","2026-05-23T20:45:47.448Z","2026-05-23T20:45:47.448Z",null,null,2,0,0,null,null,null
-  test-local-mpitm83s-u6abm0,test,passed,"2026-05-23T20:48:21.110Z","2026-05-23T20:48:25.480Z","2026-05-23T20:48:25.480Z",null,null,2,0,0,null,null,null
-  test-local-mpitn627-ocjw7e,test,passed,"2026-05-23T20:49:04.713Z","2026-05-23T20:49:09.487Z","2026-05-23T20:49:09.487Z",null,null,2,0,0,null,null,null
-  test-local-mpiuskk1-bkcura,test,passed,"2026-05-23T21:21:17.301Z","2026-05-23T21:21:21.169Z","2026-05-23T21:21:21.169Z",null,null,2,0,0,null,null,null
-  test-local-mpiylp9a-n4vyqf,test,failed,"2026-05-23T23:01:20.494Z","2026-05-23T23:07:59.134Z","2026-05-23T23:07:59.134Z",null,null,3,2,0,null,null,null
-  test-local-mpiypcfd-n23djx,test,failed,"2026-05-23T23:08:44.204Z","2026-05-23T23:10:49.129Z","2026-05-23T23:10:49.129Z",null,null,4,1,0,null,null,null
-  test-local-mpiyseom-qvq6vp,test,passed,"2026-05-23T23:11:22.043Z","2026-05-23T23:13:12.022Z","2026-05-23T23:13:12.022Z",null,null,5,0,0,null,null,null
+tests[6]:
+  - command: node dist/cli.js package doctor --project --json --detail deep
+    scope: project
+    timeout_seconds: 60
+    note: Verify npm-installed pm-changelog loads with changelog generate command active
+  - command: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 180
+    note: Regression for npm package runtime dependency install and SDK import activation
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 90
+    note: Focused release-readiness guard after accidental CHANGELOG.md rewrite was reverted
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm changelog:pm:check"
+    scope: project
+    timeout_seconds: 300
+    pm_context_mode: tracker
+    note: Latest npm pm-changelog install plus generated changelog freshness check
+  - command: "pnpm version:check && pnpm changelog:pm:check && pnpm security:scan && pnpm quality:static && npm pack --dry-run"
+    scope: project
+    timeout_seconds: 600
+    pm_context_mode: tracker
+    note: CI static release slice including pm-changelog freshness check against real tracker data
+test_runs[7]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mpitiu60-xtmnbi,test,passed,"2026-05-23T20:45:43.523Z","2026-05-23T20:45:47.448Z","2026-05-23T20:45:47.448Z",2,0,0
+  test-local-mpitm83s-u6abm0,test,passed,"2026-05-23T20:48:21.110Z","2026-05-23T20:48:25.480Z","2026-05-23T20:48:25.480Z",2,0,0
+  test-local-mpitn627-ocjw7e,test,passed,"2026-05-23T20:49:04.713Z","2026-05-23T20:49:09.487Z","2026-05-23T20:49:09.487Z",2,0,0
+  test-local-mpiuskk1-bkcura,test,passed,"2026-05-23T21:21:17.301Z","2026-05-23T21:21:21.169Z","2026-05-23T21:21:21.169Z",2,0,0
+  test-local-mpiylp9a-n4vyqf,test,failed,"2026-05-23T23:01:20.494Z","2026-05-23T23:07:59.134Z","2026-05-23T23:07:59.134Z",3,2,0
+  test-local-mpiypcfd-n23djx,test,failed,"2026-05-23T23:08:44.204Z","2026-05-23T23:10:49.129Z","2026-05-23T23:10:49.129Z",4,1,0
+  test-local-mpiyseom-qvq6vp,test,passed,"2026-05-23T23:11:22.043Z","2026-05-23T23:13:12.022Z","2026-05-23T23:13:12.022Z",5,0,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Documents generated pm changelog ownership and release pipeline refresh step
 close_reason: "Implemented pm-cli npm package runtime dependency installation for pm-changelog, installed latest npm pm-changelog 2026.5.24-1, generated and checked CHANGELOG.pm.md through the package command, wired latest install into CI/release scripts, filed pm-changelog#4 for package sourcemap warnings, and verified package doctor, linked tests, release gate slice, dogfood, and validation."

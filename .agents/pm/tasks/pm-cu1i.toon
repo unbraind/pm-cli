@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,ci,token-efficiency
 created_at: "2026-07-06T23:26:12.453Z"
-updated_at: "2026-07-26T10:04:52.351Z"
+updated_at: "2026-07-26T17:11:25.523Z"
 closed_at: "2026-07-09T17:03:25.687Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,8 +14,11 @@ acceptance_criteria: "Checked-in budget manifest (bytes + approx tokens) for a r
 parent: pm-n7rr
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+release: v2026.7.10
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-pbyu,related,"2026-07-06T23:26:12.453Z",null,null
+  pm-a22j,related,"2026-07-26T17:11:25.330Z",null,null
+  pm-n7rr,implements,"2026-07-26T17:11:25.330Z",null,null
 comments[18]{created_at,author,text}:
   "2026-07-08T16:41:53.677Z",claude-code-agent,"Measurement evidence: compact runContracts({summary:true}) is test-gated under 3000 bytes; pretty CLI JSON currently reports 4113 bytes due formatter whitespace, with compact API payload used for the regression threshold."
   "2026-07-08T17:07:59.480Z",claude-code-agent,"Verification evidence: full coverage passed at 100/100/100/100 (5462 tests), lint/static/docs/contracts gates passed, and packed-install temp proof passed in /tmp/pm-agent-ux-proof-TYSgf1 for pm list --today, pm list --recent, pm contracts --summary, and SDK runAction({action:'contracts', options:{summary:true}})."

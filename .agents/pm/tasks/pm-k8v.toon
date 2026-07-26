@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:02:06.596Z"
-updated_at: "2026-04-04T21:46:09.769Z"
+updated_at: "2026-07-26T17:18:09.021Z"
 deadline: "2026-02-23T14:44:54.941Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-2xl
 blocked_reason: "M0: Project scaffolding CLI entrypoint config loader has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M0: Project scaffolding CLI entrypoint config loader is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/project-scaffolding-cli-entrypoint-config-loader
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Project scaffolding CLI entrypoint config loader.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2xl,parent,"2026-02-17T23:02:06.596Z",steve,null
+  pm-2xl,implements,"2026-07-26T17:18:08.678Z",null,null
 comments[2]{created_at,author,text}:
   "2026-02-22T14:45:08.201Z",cursor-maintainer,"Planned validation change-set: align tracking metadata with completed milestone-0 scaffolding by linking governing docs, canonical CLI/config-loader files, and sandbox-safe verification commands before running pm test + regression sweeps."
   "2026-02-22T15:03:03.728Z",cursor-maintainer,"Evidence: pm test pm-k8v --run --timeout 2400 --json passed 2/2 linked tests (coverage + focused settings/cli integration). Regression sweeps passed: pm test-all --status in_progress --timeout 2400 --json => items=11 linked_tests=37 passed=16 failed=0 skipped=21; pm test-all --status closed --timeout 2400 --json => items=23 linked_tests=88 passed=42 failed=0 skipped=46. Coverage proof remains 100% lines/branches/functions/statements in sandbox coverage runs."
@@ -55,9 +56,9 @@ files[4]{path,scope,note}:
   src/cli/main.ts,project,canonical CLI entrypoint wiring
   src/core/store/paths.ts,project,pm root/global path resolution
   src/core/store/settings.ts,project,deterministic settings loader and defaults
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,coverage-gate-proof
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,focused-cli-config-loader-validation
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,coverage-gate-proof
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/integration/cli.integration.spec.ts,project,1200,focused-cli-config-loader-validation
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and evidence requirements
   PRD.md,project,authoritative requirements for milestone-0 foundations

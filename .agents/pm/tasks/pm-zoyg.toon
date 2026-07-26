@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:schema","milestone:7",pm-cli,tests
 created_at: "2026-03-08T03:19:06.134Z"
-updated_at: "2026-04-05T22:46:14.666Z"
+updated_at: "2026-07-26T17:31:05.843Z"
 deadline: "2026-03-10T03:19:06.134Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Preserve confidence in todos import mapping has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Preserve confidence in todos import mapping is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/preserve-confidence-in-todos-import-mapping
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Preserve confidence in todos import mapping.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2p6q,implements,"2026-07-26T17:31:05.603Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-08T03:19:06.134Z",maintainer-agent,Why this task exists todos import currently loses confidence metadata on reimport.
   "2026-03-08T03:21:35.469Z",maintainer-agent,"Docs-first and implementation pass complete: PRD and README now describe confidence preservation in todos import, parser now accepts numeric and text confidence values with med normalized to medium, and todos unit regression asserts both paths."
@@ -53,10 +55,10 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   README.md,project,planned extension behavior docs updated for confidence mapping
   tests/unit/todos-extension.spec.ts,project,todos confidence import assertions
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate after todos confidence changes
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,docs parity regression for confidence mapping
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,todos confidence regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,full coverage gate after todos confidence changes
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1200,docs parity regression for confidence mapping
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,project,1200,todos confidence regression
 docs[2]{path,scope,note}:
   PRD.md,project,todos import export behavior contract
   README.md,project,extension behavior contract narrative

@@ -6,14 +6,18 @@ status: closed
 priority: 1
 tags[4]: extensions,help,pm-cli,schema
 created_at: "2026-04-06T09:49:05.759Z"
-updated_at: "2026-04-25T11:04:15.161Z"
+updated_at: "2026-07-26T17:12:59.542Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-4bhw
+release: v2026.5.1
 resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
 expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
 actual_result: Resolution metadata fields were backfilled without altering closure intent.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-4bhw,implements,"2026-07-26T17:12:59.285Z",null,null
+  pm-sucq,related,"2026-07-26T17:12:59.285Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-06T09:49:05.759Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
 close_reason: resolved by extension command metadata help integration in task pm-sucq

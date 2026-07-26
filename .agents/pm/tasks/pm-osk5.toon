@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:hooks","area:runtime",extensions,pm-cli
 created_at: "2026-04-01T02:17:03.345Z"
-updated_at: "2026-04-04T21:38:09.946Z"
+updated_at: "2026-07-26T17:22:17.465Z"
 deadline: "2026-04-10T02:17:03.345Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-al0h
 blocked_reason: "A3: Hook context parity and lifecycle symmetry has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If A3: Hook context parity and lifecycle symmetry is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/a3-hook-context-parity-and-lifecycle-symmetry
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for A3: Hook context parity and lifecycle symmetry."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-al0h,parent,"2026-04-01T02:17:03.345Z",codex-agent,null
+  pm-al0h,implements,"2026-07-26T17:22:17.224Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T02:17:03.345Z",codex-agent,A3 task created from full-override feature A.
   "2026-04-01T03:01:06.821Z",codex-agent,Expanded before/after hook context payloads (options/global/result) and ensured extension-handled command results are propagated into afterCommand context via setActiveCommandResult in src/cli/main.ts + src/core/output/output.ts.
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:53.955Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/extensions/loader.ts,project,hook context types and execution
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,hook lifecycle regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,project,2400,hook lifecycle regression
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,hook context API docs
 close_reason: Hook context parity is implemented for options/global/result across lifecycle paths.

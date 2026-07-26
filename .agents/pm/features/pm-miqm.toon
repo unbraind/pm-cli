@@ -6,14 +6,16 @@ status: closed
 priority: 2
 tags[5]: "area:extensions","area:sdk","area:testing",context-management,living-map
 created_at: "2026-06-21T14:33:28.420Z"
-updated_at: "2026-06-21T14:58:30.639Z"
+updated_at: "2026-07-26T17:20:22.838Z"
 author: claude-code-agent
 parent: pm-ugqx
+release: v2026.6.22
 resolution: "Shipped in PR #329 (squash 28b61e92): 6 SDK testing invoke helpers (runRegisteredHookForTest + 5 override-invoke helpers) completing the command-pipeline invoke verb, exported from the SDK barrel and documented."
 expected_result: "Package authors can invoke every registered runtime surface (lifecycle hooks + parser/preflight/command/renderer/service overrides) in tests and assert behavior, symmetric to runRegisteredCommandForTest."
 actual_result: All 6 helpers added with type-safe contexts and registration guards; 100% coverage of testing.ts; full suite green (4816 tests); manual E2E against built dist passed; CodeRabbit clean; Gemini findings declined as false positives.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-owm0,related,"2026-06-21T14:33:48.888Z",claude-code-agent,null
+  pm-ugqx,implements,"2026-07-26T17:20:22.588Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-21T14:49:11.109Z",claude-code-agent,"PR #329 opened (branch feat/sdk-invoke-hooks-overrides): https://github.com/unbraind/pm-cli/pull/329 — 6 invoke helpers, 100% cov, full suite green (4816 tests)."
 notes[1]{created_at,author,text}:
@@ -21,8 +23,8 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/sdk/testing.ts,project,Add runRegisteredHookForTest + 5 override invoke helpers
   src/sdk/index.ts,project,Re-export new invoke helpers + option types from SDK barrel
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,project,240
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,Note invoke helpers in extension testing guidance
   docs/SDK.md,project,Document hook + override invoke helpers in testing section

@@ -6,18 +6,20 @@ status: closed
 priority: 2
 tags[3]: "area:extensions","area:sdk",pm-cli
 created_at: "2026-06-22T22:00:08.557Z"
-updated_at: "2026-06-22T22:02:12.649Z"
+updated_at: "2026-07-26T17:04:32.622Z"
 author: claude-code-agent
 parent: pm-ugqx
+release: v2026.6.23
 resolution: deriveExtensionCapabilities now adds schema for inline-flags command definitions.
 expected_result: deriveExtensionCapabilities(blueprint) yields a manifest grant that activates without extension_capability_missing.
 actual_result: "Added schema when any blueprint.commands[].flags !== undefined; unit-tested and pinned by the inline-flags parity test."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-iqq0,related,"2026-06-22T22:00:21.450Z",null,null
   pm-tlpv,related,"2026-06-22T22:00:22.410Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:04:32.419Z",null,null
 files[1]{path,scope,note}:
   src/sdk/compose.ts,project,null
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  tests/unit/sdk/sdk-compose.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope}:
+  tests/unit/sdk/sdk-compose.spec.ts,project
 close_reason: "Fixed: deriveExtensionCapabilities now adds schema when any blueprint.commands[].flags !== undefined, mirroring the loader's registerCommand-flags guard, so a derived manifest no longer under-grants and fails activation. Covered by a new unit test and pinned by the describeExtensionBlueprint inline-flags parity test."
 body: ""

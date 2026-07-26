@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:19.318Z"
-updated_at: "2026-04-05T22:45:43.809Z"
+updated_at: "2026-07-26T17:16:36.135Z"
 deadline: "2026-03-21T14:01:19.318Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: "M5 roadmap: Beads import extension parity polish has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 roadmap: Beads import extension parity polish is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/m5-roadmap-beads-import-extension-parity-polish
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 roadmap: Beads import extension parity polish."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-hbc1,implements,"2026-07-26T17:16:35.925Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-07T20:00:20.675Z",maintainer-agent,Extended Beads import field mapping parity (labels/created_by/closed_at/design/external_ref plus linked files/tests/docs) and validated deterministic import behavior with expanded fixture coverage.
   "2026-03-07T20:00:20.847Z",maintainer-agent,Fixed a deterministic test expectation to assert dependency created_at fallback from imported item timestamp when source created_at is absent.
@@ -55,8 +57,8 @@ files[3]{path,scope,note}:
   .gitignore,project,track beads default-path fixtures in repo
   tests/fixtures/beads/import-records.jsonl,project,null
   tests/unit/beads-command.spec.ts,project,null
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test,project,240
 docs[2]{path,scope,note}:
   PRD.md,project,beads import parity contract
   README.md,project,beads import behavior contract

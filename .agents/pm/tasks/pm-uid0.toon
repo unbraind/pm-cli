@@ -6,13 +6,25 @@ status: closed
 priority: 1
 tags[4]: audit,living-map,pm-cli,verification
 created_at: "2026-05-31T20:06:16.644Z"
-updated_at: "2026-05-31T20:26:23.218Z"
+updated_at: "2026-07-26T17:27:06.414Z"
 author: verify-hierarchy-agent
 acceptance_criteria: Hierarchy issues flagged; missing dependency edges proposed; genuinely-missing ADRs proposed; verdict returned. No existing item modified.
 parent: pm-h31a
+release: v2026.6.1
 resolution: Verification task completed during living-map closeout
 expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
 actual_result: "The closed Task 'Verify living-map: hierarchy, dependencies & ADR coverage' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-3cbk,related,"2026-07-26T17:27:06.190Z",null,null
+  pm-bwlz,related,"2026-07-26T17:27:06.190Z",null,null
+  pm-doxj,related,"2026-07-26T17:27:06.190Z",null,null
+  pm-gt82,related,"2026-07-26T17:27:06.190Z",null,null
+  pm-h31a,implements,"2026-07-26T17:27:06.190Z",null,null
+  pm-m2u1,related,"2026-07-26T17:27:06.190Z",null,null
+  pm-mpbb,related,"2026-07-26T17:27:06.190Z",null,null
+  pm-ouvu,related,"2026-07-26T17:27:06.190Z",null,null
+  pm-rvbt,related,"2026-07-26T17:27:06.190Z",null,null
+  pm-u7xx,related,"2026-07-26T17:27:06.190Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-31T20:07:06.039Z",verify-hierarchy-agent,"Phase 1 (hierarchy) complete. All 8 capability epics (pm-mpbb/o2kc/ydp6/ugqx/5k4v/5oj5/8jdc/u9d0) parent to milestone pm-doxj — milestone IS the root. All 67 open backlog items have a parent that is one of the 8 capability epics; none orphaned. Children-per-epic: mpbb=11, o2kc=7, ydp6=10, ugqx=8, 5k4v=6, 5oj5=6, 8jdc=8, u9d0=7 — every epic has >=1 open child. Now checking thematic correctness + existing dependency edges."
   "2026-05-31T20:07:52.844Z",verify-hierarchy-agent,"Phase 3 (dependencies): All 13 Stories ALREADY carry related-edges to their implementing Feature/Task/Chore (mt7k->qq69, 9mjw->i17g, 77t3->hywv, vhd9->1lkm, gbbn->d70h, ijd9->5vsv, 10ml->oh5h, sz6w->0hnu+6m3y, izsi->13bn+nf2q, arew->ec4s, g94b->puvn, ankr->y138, fhsg->22x2+7tsx, tnk5->cxdg). Story-level linkage is COMPLETE. Remaining gaps are Feature<->Feature / cross-item prerequisites not yet edged. Now reviewing ADRs."

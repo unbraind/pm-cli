@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:08.449Z"
-updated_at: "2026-05-17T08:22:33.988Z"
+updated_at: "2026-07-26T17:22:47.728Z"
 deadline: "2026-04-17T11:57:39.988Z"
 author: steve
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-c0r
 blocked_reason: "M2: RFC6902 patch generation per mutation has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M2: RFC6902 patch generation per mutation is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,9 +40,10 @@ fixed_version: archive-2026q2
 component: project-management/rfc6902-patch-generation-per-mutation
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for RFC6902 patch generation per mutation.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-c0r,parent,"2026-02-17T23:02:08.449Z",steve,null
   pm-u9r,blocks,"2026-02-17T23:02:08.449Z",steve,null
+  pm-c0r,implements,"2026-07-26T17:22:47.411Z",null,null
 comments[7]{created_at,author,text}:
   "2026-02-23T18:06:11.005Z",cursor-maintainer,"Planned change-set: audit RFC6902 patch generation determinism and strengthen unit coverage for canonical before/after patch output; update tracking links and close this task with evidence if criteria are met."
   "2026-02-23T18:07:11.136Z",cursor-maintainer,"Implemented deterministic patch-assertion coverage in tests/unit/determinism.spec.ts: asserts exact RFC6902 operations and verifies identical patch/hash output when front-matter keys are reordered."
@@ -63,10 +64,10 @@ files[6]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,history diff/verify contract parameters
   tests/unit/determinism.spec.ts,project,deterministic patch and hash assertions
   tests/unit/history-activity-command.spec.ts,project,diff/verify regression coverage
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted patch determinism coverage
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,issue8 diff verify regressions
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,project,900,targeted patch determinism coverage
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/integration/cli.integration.spec.ts,project,5400,issue8 diff verify regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and test safety rules
   PRD.md,project,authoritative history patch requirements

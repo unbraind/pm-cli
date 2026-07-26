@@ -6,16 +6,33 @@ status: closed
 priority: 2
 tags[4]: audit,backlog,governance,pm-cli
 created_at: "2026-07-06T21:26:55.847Z"
-updated_at: "2026-07-06T21:27:18.439Z"
+updated_at: "2026-07-26T17:19:23.031Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "All active items carry AC+estimate (validate metadata warnings for active items zero); every strategic goal stated for the product (simplification, SDK-first, scale to 1M items / 1000s of agents, unix composability, long-term horizons) has a dedup-checked tracker home; roadmap milestone index current incl. pm-qwoy; changelog regenerated drift-free"
 parent: pm-doxj
 risk: low
 confidence: high
+release: v2026.7.7
 resolution: completed
 expected_result: "Full-ecosystem audit finds and fixes every tracker gap: metadata coverage, index currency, and tracker homes for all stated strategic goals"
 actual_result: 41 metadata backfills applied; pm-qwoy indexed; scale-out initiative (pm-9rxu + ADR pm-bl8x + 7 children) and composability set (pm-m9xv/pm-646c/pm-psy1) created dedup-checked; long-term horizons recorded on pm-doxj; validate metadata warnings for active items now zero
+dependencies[15]{id,kind,created_at,author,source_kind}:
+  pm-0qg5,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-3rgp,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-646c,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-6e1d,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-801d,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-9rxu,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-bl8x,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-dfg0,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-doxj,implements,"2026-07-26T17:19:22.755Z",null,null
+  pm-g2zz,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-lvyd,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-m9xv,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-mi2x,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-mpbb,related,"2026-07-26T17:19:22.755Z",null,null
+  pm-n7rr,related,"2026-07-26T17:19:22.755Z",null,null
 notes[1]{created_at,author,text}:
   "2026-07-06T21:26:56.685Z",maintainer-agent,"Strategic layer completed this session: initiatives now number three (pm-n7rr simplification, pm-usfg SDK-first, pm-9rxu scale-out) plus the composability contract set (pm-m9xv/pm-646c/pm-psy1). Horizon ordering recorded on pm-doxj: near = simplification+SDK-first, mid = composability + code-scanning zero-findings, long = scale-out (implementation deliberately behind the SDK-first primitive layer). Dedupe evidence: scalability/sharding/pagination/ndjson/xargs/exit-code searches all returned only unrelated closed items before creation."
 learnings[1]{created_at,author,text}:

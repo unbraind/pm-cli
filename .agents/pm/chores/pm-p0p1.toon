@@ -6,15 +6,17 @@ status: closed
 priority: 3
 tags[3]: code-quality,pm-cli,search
 created_at: "2026-05-01T23:39:02.682Z"
-updated_at: "2026-05-02T11:28:15.337Z"
+updated_at: "2026-07-26T17:22:34.774Z"
 author: audit-agent
 acceptance_criteria: "Shared search HTTP helpers centralize timeout normalization and response-body diagnostics; semantic search behavior remains unchanged; build, targeted tests, coverage, and temp-project dogfood pass."
 parent: pm-nnhi
+release: v2026.5.3
 resolution: Shared search HTTP helper extracted and used by embedding/vector remote request paths.
 expected_result: "Duplicate timeout, fetcher, failed-response, and JSON diagnostics are centralized without behavior changes."
 actual_result: "Providers and vector stores use src/core/search/http-client.ts; targeted tests, linked pm test, typecheck, and full coverage passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-kkmo,related,"2026-05-02T06:55:15.007Z",audit-agent,null
+  pm-nnhi,implements,"2026-07-26T17:22:34.472Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-02T06:47:17.797Z",audit-agent,"Audit 2026-05-02: Duplication confirmed -- normalizeTimeoutMs and readFailedResponseBody still duplicated across providers.ts and vector-stores.ts. Both implement identical timeout normalization (DEFAULT_EMBEDDING_TIMEOUT_MS=30000) and response body extraction."
   "2026-05-02T07:45:57.175Z",audit-agent,"2026-05-02 audit: providers.ts (351 lines) and vector-stores.ts (755 lines) share identical patterns: normalizeTimeoutMs, readFailedResponseBody, resolveVectorFetcher/resolveEmbeddingFetcher. Consolidation would remove ~50 lines of duplication."
@@ -24,10 +26,10 @@ files[4]{path,scope,note}:
   src/core/search/http-client.ts,project,shared search HTTP timeout/fetch/error helper
   src/core/search/vector-stores.ts,project,remote vector requests use shared search HTTP helper
   vitest.config.ts,project,coverage include list for shared search HTTP helper
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/embedding-provider.spec.ts tests/unit/vector-store-adapter.spec.ts tests/unit/embedding-batches.spec.ts tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe search HTTP/vector/embedding regression suite
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-moo8keb4-itkbop,test,passed,"2026-05-02T11:05:50.673Z","2026-05-02T11:06:02.992Z","2026-05-02T11:06:02.992Z",null,null,1,0,0,null,null,null
-  test-local-moo8wgq3-jweffu,test,passed,"2026-05-02T11:15:13.226Z","2026-05-02T11:15:25.995Z","2026-05-02T11:15:25.995Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/embedding-provider.spec.ts tests/unit/vector-store-adapter.spec.ts tests/unit/embedding-batches.spec.ts tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts,project,240,sandbox-safe search HTTP/vector/embedding regression suite
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-moo8keb4-itkbop,test,passed,"2026-05-02T11:05:50.673Z","2026-05-02T11:06:02.992Z","2026-05-02T11:06:02.992Z",1,0,0
+  test-local-moo8wgq3-jweffu,test,passed,"2026-05-02T11:15:13.226Z","2026-05-02T11:15:25.995Z","2026-05-02T11:15:25.995Z",1,0,0
 close_reason: "Shared search HTTP helper extracted; duplication removed; targeted linked tests, typecheck, and full 100% coverage passed."
 body: ""

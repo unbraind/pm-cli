@@ -6,13 +6,16 @@ status: closed
 priority: 1
 tags[5]: "area:ci","area:quality",codefactor,living-map,pm-cli
 created_at: "2026-06-29T21:31:08.795Z"
-updated_at: "2026-06-30T00:27:21.014Z"
+updated_at: "2026-07-26T17:10:21.551Z"
 author: claude-code-agent
 acceptance_criteria: complexity ceiling lowered to 17 with committed eslint-suppressions.json baseline; pnpm lint passes on existing code and blocks net-new per-file complexity debt as the baseline is maintained; fixing a method forces a stale suppression prune where the file's baseline count drops (only-improve); greptile-review-gate.mjs added (best-effort skip when unauthenticated) and wired into run-gates.mjs + package.json; CONTRIBUTING documents the policy and its file/rule baseline semantics; all gates green; net A+ path documented.
 parent: pm-92if
+release: v2026.6.30
 resolution: "Delivered a CodeFactor no-regression quality gate, reduced the committed complexity suppression baseline from 161 to 157, hardened the Greptile local review gate after AI review feedback, stabilized hosted coverage, and recorded full local/hosted validation evidence."
 expected_result: "The repository blocks net-new local complexity debt through the committed ESLint suppression baseline, runs the Greptile review gate in local release checks, keeps package-author and temp-project workflows working, and has green PR checks before merge."
 actual_result: "PR #405 implements the quality gate, Greptile gate, docs, tests, dependency refresh, and regression fixes; local lint/typecheck/coverage and temp-project smokes passed; hosted PR checks were green before PM closeout; remaining resolution warnings are pre-existing closed-item backlog outside this item."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-92if,implements,"2026-07-26T17:10:21.332Z",null,null
 comments[14]{created_at,author,text}:
   "2026-06-29T22:12:15.408Z",claude-code-agent,"Evidence: pruned CodeFactor complexity suppressions from 161 to 157 by simplifying repeatable metadata parsing, schema field command normalization, stable serialization equality, and telemetry error-code classification; refreshed typescript-eslint to 8.62.1 while keeping @types/node at the Node 22 support floor. Verification passed: npm install -g .; pm --version 2026.6.24; pnpm build; focused linked pm test run 6/6 passed; node scripts/run-tests.mjs coverage passed 262 files, 5245 tests, 100% statements/branches/functions/lines; pnpm lint; pnpm typecheck; pnpm contracts:check; pnpm security:scan; pnpm audit --audit-level moderate; pnpm changelog:pm:check with pm-changelog 2026.6.27 and unchanged CHANGELOG.md; pm health --check-only clean; pm validate --check-history-drift clean with existing resolution-backfill warnings only; package doctor project deep clean; sentry-telemetry gate clean with zero critical/high Sentry issues and telemetry finish error rate 0.79%; isolated temp smoke passed init/create/update/files/docs/test run/close/release/health/validate plus declarative package scaffold npm test and package doctor. GitHub sweep found no open PRs at start, issue #374 still blocked by missing RELEASE_PAT, and no Dependabot/code scanning/secret scanning alerts."
   "2026-06-29T22:19:43.192Z",claude-code-agent,"Greptile follow-up evidence: fixed stale eslint.config.mjs regeneration command, hardened greptile-review-gate so non-zero review exits cannot be reported clean even when output contains 'No review comments', and mapped the wrapper base option to the installed Greptile CLI's --branch flag. Verification passed: node scripts/run-tests.mjs test -- tests/unit/scripts/release/greptile-review-gate.spec.ts (10 tests), pnpm lint, pnpm typecheck."
@@ -43,18 +46,37 @@ files[14]{path,scope,note}:
   tests/unit/commands/context-command.spec.ts,project,Stabilize no-agenda context regression after UTC date rollover exposed by hosted coverage
   tests/unit/scripts/release/greptile-review-gate.spec.ts,project,Cover Greptile nonzero clean-text edge case and branch flag mapping
   tests/unit/scripts/release/run-gates.spec.ts,project,Cover run-gates integration of the Greptile review gate
-tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,420,null,null,null,null,null,null,null,null,null,null,null,null
-  "node scripts/run-tests.mjs test -- tests/unit/commands/context-command.spec.ts -t \"renders markdown guidance when agenda has no events\"",null,project,120,null,null,null,null,null,null,null,null,null,null,null,Focused regression for date-independent no-agenda markdown guidance
-  node scripts/run-tests.mjs test -- tests/unit/core/schema/fields-file.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/core/shared/serialization-utils.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-observability.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/greptile-review-gate.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level moderate,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm lint,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqzrqceq-kk9bi5,test,passed,"2026-06-29T22:06:05.208Z","2026-06-29T22:07:25.778Z","2026-06-29T22:07:25.778Z",null,null,6,0,0,null,null,null
+tests[9]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 420
+  - command: "node scripts/run-tests.mjs test -- tests/unit/commands/context-command.spec.ts -t \"renders markdown guidance when agenda has no events\""
+    scope: project
+    timeout_seconds: 120
+    note: Focused regression for date-independent no-agenda markdown guidance
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/schema/fields-file.spec.ts tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/shared/serialization-utils.spec.ts
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-observability.spec.ts
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/greptile-review-gate.spec.ts
+    scope: project
+    timeout_seconds: 120
+  - command: pnpm audit --audit-level moderate
+    scope: project
+    timeout_seconds: 180
+  - command: pnpm lint
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqzrqceq-kk9bi5,test,passed,"2026-06-29T22:06:05.208Z","2026-06-29T22:07:25.778Z","2026-06-29T22:07:25.778Z",6,0,0
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Generated changelog entry for closed quality-gate work
 close_reason: "Delivered CodeFactor no-regression quality gate and Greptile local review gate. Evidence: local bootstrap/build and broad gates passed; local coverage passed 262 files / 5254 tests with 100% statements, branches, functions, and lines; hosted PR #405 checks green including Gates coverage, static, typecheck, compat, smokes, Windows, CodeQL, CodeFactor, CodeRabbit status, Hound, and Cubic; unresolved review threads resolved after verifying latest code; manual temp-project/package-author smoke passed earlier and is recorded in comments."

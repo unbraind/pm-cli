@@ -6,11 +6,14 @@ status: closed
 priority: 4
 tags[3]: completion,config-driven,schema
 created_at: "2026-05-31T05:42:14.222Z"
-updated_at: "2026-05-31T09:10:49.131Z"
+updated_at: "2026-07-26T17:23:39.287Z"
 author: claude-code-agent
+release: v2026.6.1
 resolution: Added runtime completion helper commands for statuses and item types and wired shell completion scripts to use them.
 expected_result: Shell completion surfaces project-defined statuses and types without hardcoded defaults.
 actual_result: completion-statuses/types returned runtime values; completion specs and release gates passed.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-jtdc,related,"2026-07-26T17:23:39.003Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-31T08:07:16.291Z",codex-gpt5-20260531,"Evidence: implemented runtime-driven --status/--type shell completion. Bash/zsh/fish now lazily call pm completion-statuses / pm completion-types with generated fallback values; guide-shell registers and activates those helper commands; completion tests cover generated fallbacks, helper command output, and runtime custom status/type IDs. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts passed (1 file, 93 tests); pm test pm-q4zx --run --progress passed linked tests (2/2: completion spec and pnpm build). Note: an earlier linked run failed before the guide-shell activation manifest included the new helper commands; rerun is passing after manifest fix."
 files[10]{path,scope,note}:
@@ -24,11 +27,11 @@ files[10]{path,scope,note}:
   src/core/telemetry/consent.ts,project,skip telemetry prompt for completion helpers
   src/core/telemetry/observability.ts,project,classify completion helpers as setup commands
   tests/unit/completion-command.spec.ts,project,focused runtime completion coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mpthssqx-wcxav8,test,failed,"2026-05-31T08:02:43.679Z","2026-05-31T08:03:04.713Z","2026-05-31T08:03:04.713Z",null,null,1,1,0,null,null,null
-  test-local-mpthxap8-am1uiy,test,passed,"2026-05-31T08:06:16.912Z","2026-05-31T08:06:34.604Z","2026-05-31T08:06:34.604Z",null,null,2,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts,project,240
+  pnpm build,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mpthssqx-wcxav8,test,failed,"2026-05-31T08:02:43.679Z","2026-05-31T08:03:04.713Z","2026-05-31T08:03:04.713Z",1,1,0
+  test-local-mpthxap8-am1uiy,test,passed,"2026-05-31T08:06:16.912Z","2026-05-31T08:06:34.604Z","2026-05-31T08:06:34.604Z",2,0,0
 close_reason: Completed runtime-resolved shell completion helpers for custom statuses/types; linked completion spec and build pass.
 body: ""

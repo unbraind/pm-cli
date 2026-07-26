@@ -6,12 +6,19 @@ status: closed
 priority: 2
 tags[5]: "area:hooks","area:packages","area:sdk",dx,living-map
 created_at: "2026-06-01T19:57:51.489Z"
-updated_at: "2026-06-02T23:20:56.612Z"
+updated_at: "2026-07-26T17:25:19.209Z"
 author: maintainer-agent
 parent: pm-ugqx
+release: v2026.6.5
 resolution: "Added pm-lifecycle-hooks as a default-inert hooks-only first-party package, documented the package-author exemplar map, added pm_min_version to runnable docs manifests, and updated Sentry gate expected handled Slack config filtering."
 expected_result: "A safe first-party hooks exemplar exists, is tested with assertRegisteredHook, and docs point package authors to importers/hooks/search exemplars."
 actual_result: pm-lifecycle-hooks registers a no-output afterCommand hook; tests and dogfood passed; Sentry/telemetry gate passed with zero relevant high/critical issues.
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-13bn,related,"2026-07-26T17:25:18.889Z",null,null
+  pm-bqpg,related,"2026-07-26T17:25:18.889Z",null,null
+  pm-izsi,related,"2026-07-26T17:25:18.889Z",null,null
+  pm-kcba,related,"2026-07-26T17:25:18.889Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:25:18.889Z",null,null
 comments[7]{created_at,author,text}:
   "2026-06-02T23:01:42.965Z",codex-continue-sdk-cli,"Start: continuing active SDK/CLI implementation, not an audit. Duplicate check: pm context/list-open/search found pm-izsi as the canonical package-author story and pm-s40s as the remaining hooks exemplar child; no new item created. Initial GitHub triage: no open PRs/issues, Dependabot alerts fixed, pnpm audit clean, commander 15.0.0 is the only pnpm outdated result and requires compatibility review."
   "2026-06-02T23:04:11.773Z",codex-continue-sdk-cli,"Sub-agent docs lane: importer/search/pm_min_version acceptance is mostly backed by package-manifest, builtin-entrypoint, and search-advanced-runtime tests; remaining docs work is to name first-party importers/hooks/search exemplars clearly for package authors, add assertRegisteredHook evidence for the hook exemplar, and add pm_min_version to runnable docs example manifests."
@@ -33,13 +40,13 @@ files[12]{path,scope,note}:
   tests/unit/builtin-extension-entrypoints.spec.ts,project,assertRegisteredHook activation evidence
   tests/unit/extension-command.spec.ts,project,bundled package catalog/install-all coverage
   tests/unit/package-manifest.spec.ts,project,first-party package manifest/source coverage
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/search-advanced-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "npm run dogfood:package-first",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[6]{command,scope,timeout_seconds}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,project,240
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/search-advanced-runtime.spec.ts,project,300
+  "npm run dogfood:package-first",project,600
+  pnpm build,project,240
+  "pnpm changelog:pm:check",project,240
 docs[4]{path,scope,note}:
   docs/examples/policy-restricted-extension/manifest.json,project,copyable manifest pm_min_version
   docs/examples/starter-extension/manifest.json,project,copyable manifest pm_min_version

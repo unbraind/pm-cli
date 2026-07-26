@@ -6,8 +6,11 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:cli",never-block
 created_at: "2026-06-07T17:03:25.100Z"
-updated_at: "2026-06-07T17:03:43.626Z"
+updated_at: "2026-07-26T17:14:19.700Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: v2026.6.8
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:14:19.444Z",null,null
 close_reason: "Shipped: actionable close-reason guidance in close.ts + close-many.ts (verified end-to-end). Resolution: never-block error now lists --reason usage, examples, and how to disable the knob."
 body: ""

@@ -6,13 +6,15 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",authoring,dx
 created_at: "2026-06-23T19:52:28.062Z"
-updated_at: "2026-06-23T21:49:29.950Z"
+updated_at: "2026-07-26T17:11:13.591Z"
 author: claude-code-agent
 parent: pm-2p38
+release: v2026.6.24
 resolution: "Added composeExtensionPackage(blueprint, identity) returning { module, manifest } with synthesized manifest as the module's authoritative mirror."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-high,related,"2026-06-23T19:52:39.653Z",null,null
   pm-u5le,related,"2026-06-23T19:52:39.653Z",null,null
+  pm-2p38,implements,"2026-07-26T17:11:13.237Z",null,null
 files[1]{path,scope,note}:
   src/sdk/compose.ts,project,composeExtensionPackage + ExtensionPackage
 close_reason: Shipped composeExtensionPackage

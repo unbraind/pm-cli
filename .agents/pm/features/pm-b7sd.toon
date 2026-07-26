@@ -6,9 +6,10 @@ status: closed
 priority: 2
 tags[5]: agent-ux,context-efficiency,list,pm-cli,token-budget
 created_at: "2026-05-17T05:50:01.041Z"
-updated_at: "2026-05-17T14:25:49.531Z"
+updated_at: "2026-07-26T16:50:14.355Z"
 deadline: "2026-05-24T05:50:01.041Z"
 author: claude-code-agent
+release: v2026.5.18
 resolution: Implemented list default brief projection and explicit --full escape hatch.
 expected_result: Bare pm list returns low-token brief rows while pm list --full preserves the prior verbose shape.
 actual_result: "Focused list/contracts/help integration tests and dogfood confirm default brief, --full, and contract exposure work."
@@ -24,9 +25,9 @@ files[8]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,integration coverage for list default brief and --full
   tests/unit/contracts-command.spec.ts,project,contracts list-open flags include --full
   tests/unit/list-command.spec.ts,project,list projection unit regressions for full/conflicts
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t filters list,null,project,300,null,null,null,null,null,null,null,null,null,null,null,integration list default brief regression
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t documents list/search projection exclusivity guidance,null,project,300,null,null,null,null,null,null,null,null,null,null,null,help projection guidance regression
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused list/contracts regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t filters list,project,300,integration list default brief regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t documents list/search projection exclusivity guidance,project,300,help projection guidance regression
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/contracts-command.spec.ts,project,300,focused list/contracts regression
 close_reason: List default brief behavior and --full compatibility are implemented and verified by focused unit/integration tests plus dogfood.
 body: ""

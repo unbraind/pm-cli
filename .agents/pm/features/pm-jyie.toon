@@ -6,13 +6,16 @@ status: closed
 priority: 2
 tags[4]: "area:search","area:semantic",corpus,relevance
 created_at: "2026-06-07T10:04:56.338Z"
-updated_at: "2026-06-14T16:24:09.338Z"
+updated_at: "2026-07-26T17:17:50.261Z"
 author: audit-data-agent
 acceptance_criteria: "- Add `type`, `priority`, `assignee`, `goal`, `value`, `why_now`, `ac`, `risk`, `confidence` to the semantic corpus\n- Make the corpus field inclusion config-driven so teams can opt fields in/out\n- Add `estimate` and `resolution` for richer closed-item recall\n- Evaluate corpus character budget impact and adjust `OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS` or truncation policy if needed"
 parent: pm-ydp6
 risk: low
 confidence: high
+release: v2026.6.16
 resolution: Shipped corpus enrichment + config-driven search.corpus_fields
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ydp6,implements,"2026-07-26T17:17:49.938Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-14T15:44:37.523Z",maintainer-agent,"Scoping (2026-06-14): buildSearchCorpus (core/search/corpus.ts) omits type/priority/assignee/parent/goal/value/why_now/ac/risk/confidence. Add them + config-driven inclusion (search.corpus_fields). Bundled into PR feat/search-relevance-filter-parity-corpus."
   "2026-06-14T15:53:25.535Z",claude-code-agent,"Enriched semantic search corpus + made field inclusion config-driven. Files: src/core/search/corpus.ts (logic), src/types.ts (PmSettings.search.corpus_fields?: string[]), src/core/store/settings-validator.ts (corpus_fields: vOptional(vArray(vString))), docs/CONFIGURATION.md, NEW tests/unit/core/search/corpus-fields.spec.ts. (a) Exact ItemMetadata field names added to corpus: type, priority, assignee, parent, goal, value, why_now, risk, confidence, estimated_minutes, acceptance_criteria, resolution, expected_result, actual_result (NOTE: real fields are expected_result/actual_result NOT expected/actual). Optional structured fields are omitted when absent/empty for token efficiency; the original always-on fields (title/description/tags/status/body/comments/notes/learnings/reminders/events/dependencies/plan) keep prior behavior. (b) Config key design: search.corpus_fields optional string[]; unset/empty/non-array => full DEFAULT_SEARCH_CORPUS_FIELDS (backward compatible), set => only those names (unknowns ignored). Added exported DEFAULT_SEARCH_CORPUS_FIELDS const + resolveSearchCorpusFields(settings) resolver + buildSearchCorpus/buildSemanticCorpusInput now accept {fields?}. NOT a nested-settings scalar (array kind unsupported; nested-settings only string/boolean/integer/number/ratio) -> documented hand-edit of settings.json instead. (c) Staleness: changing corpus_fields (or shipping new embedded fields) changes embedding input -> items flagged stale + re-embedded on next refresh/reindex. Expected and self-healing. (d) Tests: tests/unit/core/search/corpus-fields.spec.ts (19 pass w/ existing spec). Run: npx vitest run tests/unit/core/search/corpus-fields.spec.ts tests/unit/search-corpus.spec.ts"

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:files",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:12.553Z"
-updated_at: "2026-05-17T08:23:08.395Z"
+updated_at: "2026-07-26T17:29:53.678Z"
 deadline: "2026-04-11T20:58:12.553Z"
 author: codex-agent
 estimated_minutes: 180
@@ -19,6 +19,7 @@ impact: Reduces ambiguity and handoff risk for future work touching Implement Is
 outcome: This record can be used as canonical context when modifying Implement Issue3 files stable-append mutation mode.
 why_now: Historical decisions for Implement Issue3 files stable-append mutation mode need durable context for future maintenance and audits.
 parent: pm-6jps
+release: v2026.5.1
 blocked_reason: Implement Issue3 files stable-append mutation mode has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement Issue3 files stable-append mutation mode is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Implement Issue3 files stable-append mutation mode (pm CLI + Node/pnpm toolchain).
@@ -27,8 +28,9 @@ expected_result: Acceptance criteria for Implement Issue3 files stable-append mu
 actual_result: Work completed and recorded with linked artifacts for Implement Issue3 files stable-append mutation mode.
 component: project-management/implement-issue3-files-stable-append-mutation-mo
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement Issue3 files stable-append mutation mode.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-6jps,parent,"2026-04-03T20:58:12.553Z",codex-agent,null
+  pm-6jps,implements,"2026-07-26T17:29:53.437Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T20:58:12.553Z",codex-agent,Task created for direct implementation of Issue #3 workstream.
   "2026-04-03T21:08:31.321Z",codex-agent,"Implemented opt-in --append-stable mode for files mutations, preserving existing linked-file order and appending new entries without full-array resorting. Kept default sorting behavior unchanged, updated CLI/completion/contracts/Pi mappings, and passed targeted suite: node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts."
@@ -46,9 +48,9 @@ files[8]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,files help includes append-stable
   tests/unit/completion-command.spec.ts,project,completion append-stable coverage
   tests/unit/files-docs-command.spec.ts,project,append-stable ordering regression coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,issue3 targeted suite
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,Issue3 targeted regression suite
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,project,3600,issue3 targeted suite
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,Issue3 targeted regression suite
 docs[1]{path,scope,note}:
   README.md,project,files stable append option docs
 close_reason: Implemented opt-in append-stable files mutation mode with parity updates and verified via full build/test/coverage/smoke.

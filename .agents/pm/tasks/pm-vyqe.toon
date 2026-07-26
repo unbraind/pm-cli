@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:cli","area:docs",code,"milestone:1",pm-cli,"priority:1",tests
 created_at: "2026-03-07T00:21:45.673Z"
-updated_at: "2026-04-04T21:48:05.929Z"
+updated_at: "2026-07-26T17:28:21.165Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-u9r
 blocked_reason: Add --ac alias for create acceptance criteria has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add --ac alias for create acceptance criteria is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/add-ac-alias-for-create-acceptance-criteria
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add --ac alias for create acceptance criteria.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-u9r,related,"2026-03-07T00:21:45.673Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:28:20.883Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-07T00:21:45.673Z",maintainer-agent,Why this exists maintainers need concise acceptance criteria flag alias parity in create contract
   "2026-03-07T00:21:52.621Z",maintainer-agent,"Planned change-set: update PRD README AGENTS create flag contracts to include --ac alias first, then wire CLI create option alias and add regression assertions for help and parsing behavior."
@@ -60,9 +61,9 @@ files[7]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,create alias integration coverage
   tests/integration/help-runtime.spec.ts,project,help readme alias contract regression
   tests/integration/release-readiness-runtime.spec.ts,project,required create flags contract includes alias
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,help readme alias regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,project,1800,help readme alias regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer operation contract
   PRD.md,project,authoritative command contract

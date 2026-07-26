@@ -6,9 +6,10 @@ status: closed
 priority: 1
 tags[5]: auto-release,dogfood,release,sentry,telemetry
 created_at: "2026-07-10T08:30:05.775Z"
-updated_at: "2026-07-10T08:49:22.095Z"
+updated_at: "2026-07-26T16:52:17.039Z"
 closed_at: "2026-07-10T08:49:00.004Z"
 author: codex-root
+release: v2026.7.10
 resolution: fixed
 expected_result: "Handled duplicate-import dogfood refusals do not count against the release threshold, while unhandled failures with the same text remain blocking."
 actual_result: The narrow guarded classifier ignores PM-CLI-1X and the live gate reports zero blocking high/critical issues; the regression keeps the isUnhandled=true twin in blocking_short_ids.

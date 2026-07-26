@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:terminal",compatibility,doc,pm-cli
 created_at: "2026-04-01T12:00:27.553Z"
-updated_at: "2026-04-04T21:48:43.483Z"
+updated_at: "2026-07-26T17:24:06.043Z"
 deadline: "2026-04-08T12:00:27.553Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-t6f7
 blocked_reason: "T5: Update docs for terminal compatibility guarantees has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If T5: Update docs for terminal compatibility guarantees is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: docs
 regression: true
 customer_impact: Users can self-serve terminal-safe usage patterns.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-t6f7,parent,"2026-04-01T12:00:27.553Z",cursor-agent,null
+  pm-t6f7,implements,"2026-07-26T17:24:05.837Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-01T12:00:27.553Z",cursor-agent,Task corresponds to plan workstream E docs parity update.
   "2026-04-01T12:12:02.132Z",cursor-agent,"Updated docs for terminal compatibility across README.md, AGENTS.md, PRD.md, docs/ARCHITECTURE.md, CONTRIBUTING.md, and CHANGELOG.md. Also refreshed linked docs-contract test command to current integration suites. Evidence: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (24/24)."
@@ -59,8 +60,8 @@ files[6]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime behavior notes
   PRD.md,project,product contract update
   README.md,project,terminal compatibility section
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,docs/runtime contract checks
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,2400,docs/runtime contract checks
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,unreleased-hardening-notes
   docs/ARCHITECTURE.md,project,terminal-runtime-hardening-architecture

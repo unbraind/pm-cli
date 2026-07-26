@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T17:15:13.345Z"
-updated_at: "2026-06-16T19:40:35.087Z"
+updated_at: "2026-07-26T17:15:44.801Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: v2026.6.16
 resolution: Moved body into the item object in GetResult; removed top-level sibling.
 expected_result: pm get --json exposes body at .item.body alongside description.
 actual_result: body was a top-level sibling of item; .item.body was null.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:15:44.599Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-16T19:30:04.217Z",maintainer-agent,"Fixed: pm get --json now places body INSIDE the item object (.item.body), matching pm list --include-body and where description/acceptance_criteria live. Removed top-level result.body. Updated get.ts GetResult type + assignment, MCP forwards automatically, docs/COMMANDS.md, and ~20 test files that asserted top-level .body across unit+integration."
 close_reason: "Fixed: pm get --json now returns body inside .item (parity with list --include-body)."

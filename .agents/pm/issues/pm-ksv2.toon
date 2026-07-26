@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,sentry,telemetry
 created_at: "2026-07-12T08:08:23.019Z"
-updated_at: "2026-07-14T00:29:24.365Z"
+updated_at: "2026-07-26T17:18:51.203Z"
 closed_at: "2026-07-14T00:29:23.668Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,9 +14,13 @@ acceptance_criteria: "user-initiated SIGINT/Ctrl+C aborts are classified as hand
 parent: pm-5oj5
 risk: low
 confidence: high
+release: v2026.7.14
 resolution: Classified only explicit user-initiated AbortError Ctrl+C/SIGINT paths as non-captured control flow while leaving unrelated abort errors observable.
 expected_result: Deliberate terminal cancellation does not create error-level Sentry issues or block the release gate.
 actual_result: "Focused capture regressions pass, PM-CLI-27 is resolved, and the live reliability gate reports zero blocking highs."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-5oj5,implements,"2026-07-26T17:18:51.005Z",null,null
+  pm-wfvq,related,"2026-07-26T17:18:51.005Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-12T15:41:03.486Z",maintainer-agent,"Recurrence evidence 2026-07-12T15:36Z: this performance run interrupted an unintended interactive pm init prompt with Ctrl+C after pm test used schema context. Sentry correctly received PM-CLI-27 as handled=true but still reopened it at error/high; the linked runner was rerun successfully with --pm-context tracker. This is the same deliberate-abort class already owned here, not a new defect. Resolving the event group again pending the capture-time class fix."
   "2026-07-13T19:42:45.175Z",codex-root,"Live recurrence evidence 2026-07-13: release gate reports PM-CLI-27 unresolved high with count=5 and last seen 2026-07-13T16:46Z. During this lane, two linked-test attempts with an unintended interactive TTY reached the pm init wizard and were deliberately cancelled with Ctrl+C, reproducing the already-owned handled AbortError class; the non-TTY tracker-context rerun completed. No duplicate item created or claimed."

@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[7]: "area:config","area:schema",customization,mcp,packages,profiles,sdk
 created_at: "2026-06-25T04:57:08.596Z"
-updated_at: "2026-06-25T08:19:15.910Z"
+updated_at: "2026-07-26T17:27:32.666Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 480
 acceptance_criteria: "Define a profile model for agile, ops, and research archetypes; applying a profile can stage types, statuses, fields, workflows, config knobs, templates, and recommended packages; existing init --type-preset behavior remains compatible; dry-run/diff output is idempotent; CLI help/contracts/MCP docs/tests are updated; temp-project verification covers schema list, field list, package doctor, and sample item workflow."
 parent: pm-8jdc
+release: v2026.6.30
 resolution: pm profile list/show/apply with idempotent diff; core/profile presets+plan; SDK defineProjectProfile + planProfileApplication; agile/ops/research archetypes.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-8jdc,implements,"2026-07-26T17:27:32.396Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-25T04:57:08.596Z",codex-pm-ecosystem-audit-20260625,"Duplicate check: SDK/platform sub-agent ran status-all searches for project profile preset fields workflows packages, baseline profile package archetype, type preset fields workflows statuses, and arbitrary projects customization primitives. Existing items cover type-only presets and low-level primitives, but no open item covers whole-project profile composition."
 notes[1]{created_at,author,text}:

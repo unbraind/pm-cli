@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T19:41:50.932Z"
-updated_at: "2026-04-04T21:47:12.560Z"
+updated_at: "2026-07-26T17:00:02.625Z"
 deadline: "2026-03-06T19:41:50.000Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M5: Harden extension command handler context sandbox has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5: Harden extension command handler context sandbox is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/harden-extension-command-handler-context-sandbox
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden extension command handler context sandbox.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-04T19:41:50.932Z",steve,null
+  pm-b1w,implements,"2026-07-26T17:00:02.348Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-04T19:41:50.932Z",steve,"Why this exists: close a remaining Milestone 5 sandbox boundary gap where extension handlers can mutate caller runtime option state."
   "2026-03-04T19:42:14.718Z",steve,"Planned change-set: docs-first contract update for command-handler context isolation, then clone global options in runCommandHandler and add mutation-isolation unit coverage."
@@ -58,10 +59,10 @@ files[4]{path,scope,note}:
   README.md,project,document extension handler mutation isolation contract
   src/core/extensions/loader.ts,project,command-handler context snapshot hardening
   tests/unit/extension-loader.spec.ts,project,unit coverage for context isolation
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,coverage gate in sandbox
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted extension loader regression
-  pnpm build,null,project,600,null,null,null,null,null,null,null,null,null,null,null,compile verification
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1800,coverage gate in sandbox
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,900,targeted extension loader regression
+  pnpm build,project,600,compile verification
 docs[3]{path,scope,note}:
   AGENTS.md,project,workflow and dogfood policy
   PRD.md,project,governing extension sandbox boundary contract

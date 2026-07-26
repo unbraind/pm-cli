@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: background-runtime,completion,contracts,pi,pm-cli
 created_at: "2026-04-04T19:07:14.888Z"
-updated_at: "2026-05-17T08:21:04.576Z"
+updated_at: "2026-07-26T17:04:03.402Z"
 deadline: "2026-04-14T19:07:14.888Z"
 author: codex-agent
 estimated_minutes: 220
@@ -16,7 +16,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: background-service-rollout
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: medium
 environment: linux
@@ -29,8 +29,9 @@ fixed_version: target-vnext
 component: contracts-completion-pi
 regression: true
 customer_impact: Prevents automation breakage from undocumented command changes.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-elsh,parent,"2026-04-04T19:07:14.888Z",codex-agent,null
+  pm-elsh,implements,"2026-07-26T17:04:03.228Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-04T19:07:14.888Z",codex-agent,"Duplicate-check evidence: existing closed parity tasks do not include background test-run command/action surfaces; net-new parity coverage task required."
   "2026-04-04T20:22:23.130Z",codex-agent,"Synced cli contracts, completion, help content, command-aware output, and Pi wrapper action mappings for background test-run surfaces; release-readiness integration suite passed (23 tests)."
@@ -41,10 +42,28 @@ files[4]{path,scope,note}:
   src/cli/help-content.ts,project,help text for background lifecycle commands
   src/core/output/command-aware.ts,project,command summaries and next steps for test-runs
   src/sdk/cli-contracts.ts,project,tool action schema and background flags
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,contract parity and include-list alignment
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:11:50.005Z","2026-04-04T20:11:50.005Z",null,null,0,0,0,1,0,null
-  test-local-mnks0l35-5ofo7z,test,passed,"2026-04-04T20:19:11.249Z","2026-04-04T20:19:43.937Z","2026-04-04T20:19:43.937Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,project,2400,contract parity and include-list alignment
+test_runs[2]:
+  - run_id: test-all-local-mnkrqfdt-hjxetp
+    kind: test-all
+    status: passed
+    started_at: "2026-04-04T20:11:49.984Z"
+    finished_at: "2026-04-04T20:11:50.005Z"
+    recorded_at: "2026-04-04T20:11:50.005Z"
+    passed: 0
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 0
+  - run_id: test-local-mnks0l35-5ofo7z
+    kind: test
+    status: passed
+    started_at: "2026-04-04T20:19:11.249Z"
+    finished_at: "2026-04-04T20:19:43.937Z"
+    recorded_at: "2026-04-04T20:19:43.937Z"
+    passed: 1
+    failed: 0
+    skipped: 0
 close_reason: contracts completion help and Pi parity synced; integration test passed
 body: Implements contract/help/completion/Pi parity for background run management and tracking-related flags.

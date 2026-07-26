@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,attribution,history,identity,multi-agent,provenance
 created_at: "2026-07-26T11:29:03.253Z"
-updated_at: "2026-07-26T11:32:28.781Z"
+updated_at: "2026-07-26T17:09:34.752Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "The descriptor contract expresses provenance dimensions as declared data, so adding a dimension does not require editing every built-in harness row or every consumer type; A reasoning-effort dimension is captured where the harness exposes one, verified end to end against CLAUDE_EFFORT in a live Claude Code session and asserted by a test that fails if the value stops reaching the recorded entry; The contract states how a session role or topic is supplied when no environment variable carries it, and absence of any dimension never degrades the author or the harness that were detected correctly; Sub-agent lineage is representable: two mutations from a parent agent and its forked child are distinguishable in the recorded provenance, or the contract states explicitly that they are not and why; A conformance test enumerates every declared dimension against every built-in descriptor and fails when a dimension is declared but has no populated instance in any supported harness, so a dimension cannot ship inert the way the model dimension did"
@@ -27,4 +27,6 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-6uxhe0,related,"2026-07-26T11:32:28.526Z",null,null
   pm-brxdct,discovered_from,"2026-07-26T11:32:28.526Z",null,null
   pm-w7ccmv,implements,"2026-07-26T11:32:28.526Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T17:09:34.752Z","harness:claude-code","Live confirmation 2026-07-26 from a 37,202-entry census of the whole history corpus: no entry carries any key matching effort or thinking, while CLAUDE_EFFORT is set to xhigh in this very process. That is the descriptor-shape half of this item measured end to end rather than inferred from the source. The same census shows 0 entries with a session value even though the detector resolves one, which is the sub-agent lineage half. Recording here because the numbers separate the two failures cleanly: pm-0zcwz6 is a wrong key list against an existing field, this item is the absence of any field at all."
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:close","area:validation",external-audit,pm-cli
 created_at: "2026-04-03T18:07:31.764Z"
-updated_at: "2026-04-04T21:34:02.934Z"
+updated_at: "2026-07-26T17:14:51.848Z"
 deadline: "2026-04-09T18:07:31.764Z"
 author: codex-agent
 estimated_minutes: 260
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation-2026w14
-release: vnext
+release: v2026.5.1
 blocked_reason: Validation command and close-time metadata checks has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Validation command and close-time metadata checks is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -39,8 +39,10 @@ fixed_version: target-vnext
 component: cli-validation
 regression: false
 customer_impact: Improves data quality and confidence in closed-item history
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-qfg8,parent,"2026-04-03T18:07:31.764Z",codex-agent,null
+  pm-k6ml,related,"2026-07-26T17:14:51.672Z",null,null
+  pm-qfg8,implements,"2026-07-26T17:14:51.672Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T18:07:31.764Z",codex-agent,Feature created after dedup scan for validate command and close validation scope.
   "2026-04-03T18:55:48.434Z",codex-agent,"Feature scope complete: validation command and close-time validation shipped with additive compatibility defaults, contract/help/completion parity, and task-level regression evidence in pm-k6ml."
@@ -48,8 +50,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T18:07:31.764Z",codex-agent,Prefer warning-first behavior for compatibility unless strict mode is explicit.
 files[1]{path,scope,note}:
   src/cli/commands/close.ts,project,close validation option surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/health-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,validation-related regression suite
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/health-command.spec.ts,project,3600,validation-related regression suite
 docs[1]{path,scope,note}:
   PRD.md,project,validate and close command contracts
 close_reason: Validation feature complete with standalone validate and close-time checks

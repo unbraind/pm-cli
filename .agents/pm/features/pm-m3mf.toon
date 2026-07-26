@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:parser",external-audit,pm-cli
 created_at: "2026-04-04T08:23:37.509Z"
-updated_at: "2026-04-04T17:39:14.764Z"
+updated_at: "2026-07-26T17:19:53.882Z"
 deadline: "2026-04-10T08:23:37.509Z"
 author: codex-agent
 estimated_minutes: 240
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation-2026w14
-release: vnext
+release: v2026.5.1
 blocked_by: pm-pb0g
 blocked_reason: epic-sequencing
 unblock_note: Start implementation task once feature is claimed
@@ -40,8 +40,10 @@ fixed_version: target-vnext
 component: cli-create-parser
 regression: true
 customer_impact: Users avoid silent narrative truncation during seeded metadata creation.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-pb0g,parent,"2026-04-04T08:23:37.509Z",codex-agent,null
+  pm-l5tr,related,"2026-07-26T17:19:53.663Z",null,null
+  pm-pb0g,implements,"2026-07-26T17:19:53.663Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-04T08:23:37.509Z",codex-agent,Feature created as the single net-new follow-up after dedupe mapping.
   "2026-04-04T08:40:12.225Z",codex-agent,"Child task pm-l5tr is closed with evidence. Feature outcome met: create log-seed parsing now rejects unsupported parsed keys to prevent silent truncation, and quoted/markdown/stdin paths remain valid with regression + docs parity."
@@ -49,8 +51,8 @@ notes[1]{created_at,author,text}:
   "2026-04-04T08:23:37.509Z",codex-agent,Implement validation at create log-seed boundary rather than broad parser breaking changes.
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,feature implementation surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,feature regression coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,project,600,feature regression coverage
 docs[1]{path,scope,note}:
   PRD.md,project,command contract update target
 close_reason: "Issue1 feature delivered via pm-l5tr implementation, tests, docs, and verification evidence."

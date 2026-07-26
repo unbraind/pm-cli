@@ -6,13 +6,19 @@ status: closed
 priority: 2
 tags[4]: code-quality,codefactor,duplication,refactor
 created_at: "2026-06-26T13:33:10.951Z"
-updated_at: "2026-06-26T22:13:26.527Z"
+updated_at: "2026-07-26T17:13:59.318Z"
 author: claude-code-agent
 acceptance_criteria: "Narrowed completion scope: generated package/runtime loader and plugin wrapper duplication is handled by generator-emitted CodeFactor markers from PR #381; future duplicate-code regressions are guarded by pm-6sqo's local jscpd lint baseline in PR #383. The broader direct source/test clone refactor remains outside this closed item unless a new canonical item is intentionally opened after duplicate-safe all-status search."
 parent: pm-92if
+release: v2026.6.30
 resolution: PR #381 narrowed CodeFactor duplication remediation to generated marker handling; pm-6sqo now adds jscpd local duplicate reporting for regression prevention.
 expected_result: Duplication remediation is complete and future duplicate-code regressions have a local/CI detector.
 actual_result: PR #381 merged to main; pnpm lint now reports the current clone baseline and fails above threshold; full verification evidence recorded on pm-6sqo.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-1b96,related,"2026-07-26T17:13:59.066Z",null,null
+  pm-6sqo,related,"2026-07-26T17:13:59.066Z",null,null
+  pm-92if,implements,"2026-07-26T17:13:59.066Z",null,null
+  pm-arzz,related,"2026-07-26T17:13:59.066Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-26T19:05:47.033Z",codex-codefactor-sdk-cli-20260626,"Evidence: removed CodeFactor-reported shipped duplication by single-sourcing create/update --unset field metadata, create/update command option key lists, and SDK update-many/close-many filter contracts; generated package runtime loaders and plugin MCP launchers are now explicitly excluded from CodeFactor because generator check tests enforce drift. Passed: pnpm build; targeted create/update/runtime-loader/generator/plugin/package tests (7 files, 254 tests); pnpm contracts:check; pnpm quality:static; pnpm typecheck; pnpm security:scan; node scripts/run-tests.mjs coverage (256 files, 5133 tests, 100% statements/branches/functions/lines)."
   "2026-06-26T20:19:33.237Z",codex,"CodeFactor PR follow-up: after PR #381 showed 18 fixed and 16 found, the 16 found rows were all complexity findings on command/SDK files touched by the initial dedupe refactor. This branch now keeps the generated-file remediation only: CodeFactor hosted-ignore checklist wording plus auto-generated markers emitted by the package runtime-loader and plugin MCP-wrapper generators. Source command/SDK complexity remains tracked by pm-arzz for a dedicated refactor."
@@ -27,15 +33,15 @@ files[7]{path,scope,note}:
   plugins/pm-codex/scripts/pm-mcp-server.mjs,project,Regenerated plugin MCP wrapper marker
   scripts/gen-package-runtime-loaders.mjs,project,Generator emits CodeFactor auto-generated marker for package runtime loaders
   scripts/gen-plugin-mcp-wrappers.mjs,project,Generator emits CodeFactor auto-generated marker for plugin MCP wrappers
-tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/gen-package-runtime-loaders.mjs --check,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/gen-plugin-mcp-wrappers.mjs --check,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/packages/runtime-loaders.spec.ts tests/unit/scripts/gen-package-runtime-loaders.spec.ts tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[9]{command,scope,timeout_seconds}:
+  node scripts/gen-package-runtime-loaders.mjs --check,project,120
+  node scripts/gen-plugin-mcp-wrappers.mjs --check,project,120
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/packages/runtime-loaders.spec.ts tests/unit/scripts/gen-package-runtime-loaders.spec.ts tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,project,240
+  pnpm build,project,240
+  "pnpm contracts:check",project,240
+  "pnpm quality:static",project,240
+  "pnpm security:scan",project,240
+  pnpm typecheck,project,240
 close_reason: Merged generated-marker duplication remediation
 body: ""

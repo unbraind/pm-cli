@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: agent-ux,"area:calendar","area:reminders",core,pm-cli
 created_at: "2026-03-31T21:27:17.807Z"
-updated_at: "2026-04-04T21:31:31.406Z"
+updated_at: "2026-07-26T17:24:01.692Z"
 deadline: "2026-04-14T21:27:17.807Z"
 author: codex-agent
 estimated_minutes: 480
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 blocked_by: pm-2fj
 blocked_reason: Agent-optimized calendar and reminders has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Agent-optimized calendar and reminders is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -39,10 +39,23 @@ fixed_version: vnext
 component: cli/calendar
 regression: false
 customer_impact: Improves agent deadline and reminder planning workflows.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-2fj,related,"2026-03-31T21:27:17.807Z",codex-agent,null
   pm-2p6q,related,"2026-03-31T21:27:17.807Z",codex-agent,null
   pm-r0m,related,"2026-03-31T21:27:17.807Z",codex-agent,null
+  pm-0lbm,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-122q,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-2v01,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-7e6n,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-c877,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-ezri,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-kglq,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-qze9,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-r15d,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-tuhf,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-tyq3,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-x2k0,related,"2026-07-26T17:24:01.460Z",null,null
+  pm-ysgr,related,"2026-07-26T17:24:01.460Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-31T21:27:17.807Z",codex-agent,Calendar epic created after duplicate scan across existing pm items.
   "2026-03-31T21:29:17.884Z",codex-agent,"Hierarchy seeded after duplicate scan: features pm-tuhf pm-c877 pm-122q; tasks pm-7e6n pm-ysgr pm-ezri pm-kglq pm-qze9 pm-tyq3 pm-2v01. Linked related historical items pm-r0m pm-2p6q pm-0lbm pm-2fj for continuity."
@@ -55,10 +68,10 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:45.676Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,calendar command wiring
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe regression gate
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:37.966Z","2026-04-04T21:10:37.966Z",null,null,0,0,1,1,1,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,1800,sandbox-safe regression gate
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:37.966Z","2026-04-04T21:10:37.966Z",0,0,1,1,1
 docs[1]{path,scope,note}:
   PRD.md,project,calendar requirements and contract updates
 close_reason: Agent-optimized calendar and reminder epic completed

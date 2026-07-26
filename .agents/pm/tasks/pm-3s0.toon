@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-todos",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:12.078Z"
-updated_at: "2026-05-11T22:20:35.640Z"
+updated_at: "2026-07-26T17:03:23.143Z"
 deadline: "2026-03-13T23:02:12.078Z"
 author: steve
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-b1w
 blocked_reason: "M5: Built-in todos import export extension has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5: Built-in todos import export extension is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,9 +40,10 @@ fixed_version: archive-2026q2
 component: project-management/built-in-todos-import-export-extension
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Built-in todos import export extension.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:12.078Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:12.078Z",steve,null
+  pm-b1w,implements,"2026-07-26T17:03:22.942Z",null,null
 comments[11]{created_at,author,text}:
   "2026-02-19T20:12:36.006Z",cursor-agent,"Planned change-set: docs-first update to mark todos import and export as built-in extension command handlers, then implement built-in todos extension modules and command-path dispatch through extension registry, keeping beads as import-only extension command without core fallback."
   "2026-02-19T20:16:43.603Z",cursor-agent,"Docs-first update completed: README now lists pm todos import/export as built-in extension commands and clarifies beads is extension import-only; PRD command contracts now include todos import/export outputs, marks todos built-in extension as implemented baseline, and tightens beads to extension-only (no core fallback)."
@@ -69,12 +70,12 @@ files[9]{path,scope,note}:
   src/cli/main.ts,project,declare todos command paths and extension-only dispatch
   tests/integration/cli.integration.spec.ts,project,integration coverage for todos extension commands
   tests/unit/todos-extension.spec.ts,project,unit coverage for todos extension mappings
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,integration extension command coverage
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,todos extension unit coverage
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,todos install-gated runtime coverage
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,todos runtime relocation regressions
+tests[5]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1800,integration extension command coverage
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,project,900,todos extension unit coverage
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts tests/integration/cli.integration.spec.ts,project,1800,todos install-gated runtime coverage
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/integration/cli.integration.spec.ts,project,2400,todos runtime relocation regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and workflow constraints
   PRD.md,project,governing extension behavior and command contracts

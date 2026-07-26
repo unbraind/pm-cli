@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:maintenance","area:tests",code,doc,"milestone:6",pm-cli,"priority:0"
 created_at: "2026-03-09T15:52:30.417Z"
-updated_at: "2026-04-04T21:50:41.983Z"
+updated_at: "2026-07-26T17:05:37.456Z"
 deadline: "2026-03-10T16:00:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: maintainer-loop-2026-03-09-5
-release: v0.1
+release: v2026.3.12
 blocked_by: no-active-blocker
 blocked_reason: Maintain release readiness 2026-03-09 (Run 5) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Maintain release readiness 2026-03-09 (Run 5) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,9 @@ fixed_version: v0.1
 component: project-management/maintain-release-readiness-2026-03-09-run-5
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Maintain release readiness 2026-03-09 (Run 5).
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7vr0,related,"2026-07-26T17:05:37.201Z",null,null
+  pm-8a2s,implements,"2026-07-26T17:05:37.201Z",null,null
 comments[7]{created_at,author,text}:
   "2026-03-09T15:52:30.417Z",maintainer-agent,Why this exists keep post release repo state clean and release ready while enforcing dogfood tracking
   "2026-03-09T15:52:46.132Z",maintainer-agent,Intended changeset remove obsolete create_tasks.sh and keep release evidence current with full regression verification
@@ -57,9 +60,9 @@ files[3]{path,scope,note}:
   scripts/install.ps1,project,keep PowerShell installer parity for idempotent updates
   scripts/install.sh,project,make npm install idempotent under reused prefix
   tests/integration/cli.integration.spec.ts,project,add regression coverage for repeat install with same prefix
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted installer regression check
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1800,targeted installer regression check
 docs[3]{path,scope,note}:
   AGENTS.md,project,all-fields and dogfood protocol
   PRD.md,project,authoritative product requirements

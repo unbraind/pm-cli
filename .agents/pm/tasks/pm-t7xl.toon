@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:health",external-audit,implementation,pm-cli
 created_at: "2026-04-04T22:37:57.836Z"
-updated_at: "2026-05-17T08:22:45.950Z"
+updated_at: "2026-07-26T17:26:10.306Z"
 deadline: "2026-04-10T22:37:57.836Z"
 author: codex-agent
 estimated_minutes: 220
@@ -18,9 +18,12 @@ impact: Improves governance automation signal quality
 outcome: Health directory checks are deterministic and compatible
 why_now: Current defaults produce false failures on unused optional folders
 parent: pm-2i0i
+release: v2026.5.1
 resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
 expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
 actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2i0i,implements,"2026-07-26T17:26:10.026Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-04T22:37:57.836Z",codex-agent,Task created for direct implementation of optional-directory strictness behavior and CLI surface updates.
   "2026-04-04T22:44:19.735Z",codex-agent,"Implemented health optional-directory handling: added required-vs-optional directory classification, new --strict-directories command flag, completion/contracts/Pi wiring, and regression tests. Evidence: node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."
@@ -34,9 +37,9 @@ files[6]{path,scope,note}:
   src/core/shared/constants.ts,project,required-vs-optional-directory-classification
   src/sdk/cli-contracts.ts,project,health-option-contract
   tests/unit/health-command.spec.ts,project,health-optional-dir-regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,health-optional-dir-targeted
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mnkyw8bf-1e9e7v,test,passed,"2026-04-04T23:32:02.729Z","2026-04-04T23:32:18.075Z","2026-04-04T23:32:18.075Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,project,1800,health-optional-dir-targeted
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mnkyw8bf-1e9e7v,test,passed,"2026-04-04T23:32:02.729Z","2026-04-04T23:32:18.075Z","2026-04-04T23:32:18.075Z",1,0,0
 close_reason: Implemented health optional-directory defaults with strict mode and verified linked/full test coverage.
 body: "Code task for feature pm-2i0i covering constants, health command behavior, CLI/help/contracts/Pi wiring, and tests."

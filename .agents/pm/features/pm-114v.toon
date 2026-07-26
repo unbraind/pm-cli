@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,concurrency
 created_at: "2026-07-04T19:20:15.349Z"
-updated_at: "2026-07-10T21:11:59.596Z"
+updated_at: "2026-07-26T17:00:38.636Z"
 closed_at: "2026-07-10T21:11:58.702Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,11 +14,16 @@ acceptance_criteria: "pm claim --next claims a distinct item per parallel agent 
 parent: pm-dj98
 risk: medium
 confidence: medium
+release: v2026.7.11
 resolution: Added atomic ranked claim-next selection with bounded conflict retries and if-available behavior.
 expected_result: Parallel agents can claim distinct recommended work through the SDK-backed CLI without a list-then-claim race.
 actual_result: "claim --next ranks actionable candidates, retries ownership conflicts, returns recommendation evidence, and passed concurrency and packed-install acceptance tests."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-2muu,related,"2026-07-05T04:07:28.566Z",claude-code-agent,null
+  pm-8t5x,related,"2026-07-26T17:00:38.420Z",null,null
+  pm-dj98,implements,"2026-07-26T17:00:38.420Z",null,null
+  pm-hfg5,related,"2026-07-26T17:00:38.420Z",null,null
+  pm-yl6c,related,"2026-07-26T17:00:38.420Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-10T16:50:47.379Z",maintainer-agent,"Unblocked as of 2026-07-10 verification: sole blocker pm-8t5x (atomic test-and-set claim) is closed, so the atomic substrate this command needs exists. Actionable now; pairs naturally with the parallel-agent work-distribution story and pm-yl6c/pm-hfg5 pm-next defects when scheduling."
   "2026-07-10T17:51:48.842Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."

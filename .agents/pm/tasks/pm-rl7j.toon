@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",evidence,pm-cli
 created_at: "2026-04-01T02:18:07.586Z"
-updated_at: "2026-04-04T21:38:23.651Z"
+updated_at: "2026-07-26T17:25:03.011Z"
 deadline: "2026-04-10T02:18:07.586Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-qwp7
 blocked_reason: "E2: Final verification and closure evidence has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: Coverage gate alignment complete; verification rerun passing.
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/e2-final-verification-and-closure-evidence
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for E2: Final verification and closure evidence."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-qwp7,parent,"2026-04-01T02:18:07.586Z",codex-agent,null
+  pm-qwp7,implements,"2026-07-26T17:25:02.776Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-01T02:18:07.586Z",codex-agent,E2 task created from full-override feature E.
   "2026-04-01T03:01:16.337Z",codex-agent,"Verification evidence: pnpm build (pass), node scripts/run-tests.mjs test (pass, 60 files/613 tests), pm test-all --status in_progress (11/12 linked checks pass or dedupe-skip; remaining failure is coverage threshold gate at 97.14/95.91/97.09/96.96)."
@@ -55,8 +56,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:20:40.173Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   CHANGELOG.md,project,release summary anchor
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,final coverage verification
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,final coverage verification
 docs[1]{path,scope,note}:
   AGENTS.md,project,tracking and closure protocol reference
 close_reason: Verification hardening complete

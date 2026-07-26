@@ -6,13 +6,18 @@ status: closed
 priority: 2
 tags[5]: code-quality,dedup,health,history,validate
 created_at: "2026-05-22T19:00:15.512Z"
-updated_at: "2026-05-24T01:53:21.929Z"
+updated_at: "2026-07-26T17:24:16.973Z"
 author: codex-duplication-audit
 acceptance_criteria: Health and validate use one shared history-drift scan/diagnostic implementation; output differences are limited to format adapters; health and validate tests cover the shared warnings; pnpm build passes.
 parent: pm-rnpb
+release: v2026.5.24
 resolution: Closed by extracting the shared history drift scan implementation.
 expected_result: Health and validate reuse one history-drift diagnostic path while keeping command-specific output adapters.
 actual_result: scanHistoryDrift was extracted to src/core/history/drift-scan.ts and health/validate now delegate to it via PR #54.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-7vr9,related,"2026-07-26T17:24:16.747Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:24:16.747Z",null,null
+  pm-x0vj,related,"2026-07-26T17:24:16.747Z",null,null
 files[2]{path,scope,note}:
   src/cli/commands/health.ts,project,history drift check clone
   src/cli/commands/validate.ts,project,history drift check clone

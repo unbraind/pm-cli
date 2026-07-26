@@ -6,8 +6,9 @@ status: closed
 priority: 3
 tags[2]: "area:telemetry",bug
 created_at: "2026-06-10T20:20:07.984Z"
-updated_at: "2026-06-11T22:14:15.082Z"
+updated_at: "2026-07-26T16:51:11.249Z"
 author: coverage-ratchet-agent
+release: v2026.6.12
 resolution: fixed
 expected_result: CI=true (or CI=1) skips the telemetry first-run prompt; CI=false or empty behaves as unset.
 actual_result: "Previously the guard reused the disable-value set, so only CI=false/0/no/off skipped and CI=true did not (masked by the non-TTY guard in real CI); now truthy CI values skip and falsy/empty values fall through to the interactive prompt."

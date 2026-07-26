@@ -6,16 +6,18 @@ status: closed
 priority: 2
 tags[4]: "area:sdk",code-quality,codefactor,pm-cli
 created_at: "2026-06-28T18:30:43.218Z"
-updated_at: "2026-06-29T07:18:46.383Z"
+updated_at: "2026-07-26T17:03:28.201Z"
 author: claude-code-agent
 parent: pm-92if
+release: v2026.6.30
 resolution: completed
 expected_result: "cli-contracts.ts decomposition merged, SDK public surface preserved, and related schema parity closed separately"
 actual_result: "PR #396 merged on main, follow-up parity commit present, and current branch coverage/type/workflow checks passed"
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-2evy,related,"2026-06-28T18:30:56.675Z",null,null
   pm-3cbk,related,"2026-06-28T18:30:56.675Z",null,null
   pm-zx13,related,"2026-06-28T19:01:50.184Z",null,null
+  pm-92if,implements,"2026-07-26T17:03:27.931Z",null,null
 comments[2]{created_at,author,text}:
   "2026-06-28T19:01:50.634Z",claude-code-agent,"PR #396 round-2 review: applied trim-before-dedup (CodeRabbit+Gemini) and resolver completeness for guide/completion/dedupe-audit/comments-audit (CodeRabbit Major). Barrel docstring + file-link nits (cubic) fixed. Greptile surface-change flag rebutted (144 exports identical main vs branch). MCP/CLI action-schema drift deferred to pm-zx13 (changes contract + needs per-param metadata)."
   "2026-06-29T07:18:35.499Z",claude-code-agent,"Closeout evidence: PR #396 is merged into main as cb392ed6, current main includes follow-up schema parity commit 5db04224, and current branch validation passed focused SDK/workflow tests plus full coverage 5147 tests at 100/100/100/100. The remaining related action-schema drift was closed separately as pm-zx13."

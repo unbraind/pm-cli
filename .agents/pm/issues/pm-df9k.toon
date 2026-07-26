@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[3]: "area:cli",bug,extension
 created_at: "2026-06-10T20:20:04.107Z"
-updated_at: "2026-06-11T22:23:23.301Z"
+updated_at: "2026-07-26T16:51:10.772Z"
 author: coverage-ratchet-agent
+release: v2026.6.12
 resolution: fixed
 expected_result: pm extension doctor --strict-exit and pm package explore --global honor the subcommand-level flags
 actual_result: "register-setup.ts: 14 call sites switched opts()->optsWithGlobals(); register-mutation.ts files discover action merges ancestor opts; register-commands.spec.ts NOTE replaced with assertions proving subcommand --global/--strict-exit/--detail reach normalizeExtensionOptions"

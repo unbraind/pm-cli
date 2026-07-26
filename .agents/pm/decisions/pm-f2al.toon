@@ -6,22 +6,29 @@ status: closed
 priority: 2
 tags[3]: adr,"area:search","area:semantic"
 created_at: "2026-06-20T05:29:45.329Z"
-updated_at: "2026-06-25T17:45:52.646Z"
+updated_at: "2026-07-26T17:13:27.746Z"
 author: claude-code-agent
 parent: pm-ydp6
+release: v2026.6.30
 resolution: Accepted search-quality ADR; BM25 provides the zero-setup lexical baseline and pm eval provides the golden-query relevance gate.
 expected_result: Agents can use offline retrieval and measure search quality without embedding services while keeping command contracts discoverable.
 actual_result: docs/COMMANDS.md and docs/CONFIGURATION.md document BM25/eval; contracts expose pm eval flags; tracker-scoped pm eval passed with aggregate nDCG 0.8311.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-75k9,related,"2026-06-20T05:29:45.329Z",claude-code-agent,null
   pm-u8n5,related,"2026-06-20T05:29:45.329Z",claude-code-agent,null
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node dist/cli.js contracts --command eval --flags-only --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node dist/cli.js eval --json --queries .agents/pm/search/eval-queries.json --fail-under 0,null,project,180,tracker,null,null,null,null,null,null,null,null,null,null,null
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqtsjz0c-nsrpdh,test,failed,"2026-06-25T17:43:49.260Z","2026-06-25T17:43:51.036Z","2026-06-25T17:43:51.036Z",null,null,1,1,0,null,null,null
-  test-local-mqtsktab-crkdok,test,passed,"2026-06-25T17:44:28.633Z","2026-06-25T17:44:30.275Z","2026-06-25T17:44:30.275Z",null,null,2,0,0,null,null,null
-  test-local-mqtslj1w-7iygqc,test,passed,"2026-06-25T17:45:00.148Z","2026-06-25T17:45:03.668Z","2026-06-25T17:45:03.668Z",null,null,2,0,0,null,null,null
+  pm-ydp6,implements,"2026-07-26T17:13:27.561Z",null,null
+tests[2]:
+  - command: node dist/cli.js contracts --command eval --flags-only --json
+    scope: project
+    timeout_seconds: 120
+  - command: node dist/cli.js eval --json --queries .agents/pm/search/eval-queries.json --fail-under 0
+    scope: project
+    timeout_seconds: 180
+    pm_context_mode: tracker
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqtsjz0c-nsrpdh,test,failed,"2026-06-25T17:43:49.260Z","2026-06-25T17:43:51.036Z","2026-06-25T17:43:51.036Z",1,1,0
+  test-local-mqtsktab-crkdok,test,passed,"2026-06-25T17:44:28.633Z","2026-06-25T17:44:30.275Z","2026-06-25T17:44:30.275Z",2,0,0
+  test-local-mqtslj1w-7iygqc,test,passed,"2026-06-25T17:45:00.148Z","2026-06-25T17:45:03.668Z","2026-06-25T17:45:03.668Z",2,0,0
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,Documents offline BM25 search and pm eval command behavior
   docs/CONFIGURATION.md,project,Documents search.provider=bm25 and BM25 tuning config

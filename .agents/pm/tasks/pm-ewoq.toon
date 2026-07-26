@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:pi",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-09T11:39:51.674Z"
-updated_at: "2026-05-17T08:21:55.705Z"
+updated_at: "2026-07-26T17:13:16.837Z"
 deadline: "2026-03-10T11:39:51.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop
-release: v0.1
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: "Pi wrapper workflow preset: close-task has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Pi wrapper workflow preset: close-task is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: v0.1
 component: project-management/pi-wrapper-workflow-preset-close-task
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Pi wrapper workflow preset: close-task."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2p6q,implements,"2026-07-26T17:13:16.547Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-09T11:39:51.674Z",maintainer-agent,Why this exists current workflow presets cover start and pause while close and release remains manual.
   "2026-03-09T11:40:08.178Z",maintainer-agent,Planned changeset before edits docs first update PRD and README for close-task preset then implement Pi wrapper close-task sequence and add unit tests.
@@ -54,9 +56,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   PRD.md,project,docs-first Pi workflow preset coverage update
   README.md,project,docs-first action list update
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted sandbox safe unit coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,sandbox-safe full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,project,240,targeted sandbox safe unit coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow policy
   PRD.md,project,Pi wrapper action contract

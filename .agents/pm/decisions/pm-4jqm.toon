@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: adr,"area:graph","area:sdk",decision-needed,relationships,schema
 created_at: "2026-07-13T21:57:26.030Z"
-updated_at: "2026-07-14T07:46:49.297Z"
+updated_at: "2026-07-26T17:04:01.509Z"
 closed_at: "2026-07-14T07:46:31.979Z"
 author: codex-root
 estimated_minutes: 180
@@ -20,15 +20,17 @@ why_now: "The tracker already contains related and related_to drift, parent and 
 parent: pm-96h7
 risk: medium
 confidence: medium
+release: v2026.7.15
 resolution: Adopt hybrid versioned relationship registry plus immutable source events and rebuildable indexes.
 expected_result: Accepted relationship semantics ADR with compatibility and validation rules.
 actual_result: ADR documented and enforced by the public registry and tests.
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-6irg,related,"2026-07-13T21:57:26.030Z",null,null
   pm-96h7,related,"2026-07-13T21:57:26.030Z",null,null
   pm-9x6k,related,"2026-07-13T21:57:26.030Z",null,null
   pm-a859,related,"2026-07-13T21:57:26.030Z",null,null
   pm-zwpp,related,"2026-07-13T21:57:26.030Z",null,null
+  pm-96h7,implements,"2026-07-26T17:04:01.265Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-13T21:57:26.030Z",codex-root,"Duplicate check 2026-07-13: all-status searches found dependency validation and visualization decisions but no ADR that classifies relationship kinds by graph semantics and defines a schema-extensible registry; this is the decision gate for pm-96h7."
   "2026-07-14T07:46:27.742Z",codex-gpt5-root,"Decision evidence: accepted hybrid registry plus immutable events plus rebuildable indexes, documented alternatives, semantics, aliases, compatibility/migration/federation/rollback, validation invariants, consequences, and non-goals in docs/RELATIONSHIP_GRAPH.md; the executable registry and 100% covered tests enforce the decision."

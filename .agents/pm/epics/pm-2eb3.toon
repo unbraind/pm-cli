@@ -6,17 +6,19 @@ status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-05-01T18:02:37.805Z"
-updated_at: "2026-05-02T11:03:21.885Z"
+updated_at: "2026-07-26T17:01:52.371Z"
 deadline: "2026-05-08T18:02:37.805Z"
 author: audit-agent
 estimated_minutes: 480
 acceptance_criteria: All audit phases documented with evidence; all issues tracked; telemetry pipeline verified end-to-end
 parent: pm-23me
+release: v2026.5.2
 resolution: "Resolution normalized from close_reason: Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
 expected_result: "Expected closure outcome: Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
 actual_result: "Actual closure outcome: Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-23me,parent,"2026-05-01T18:02:37.805Z",audit-agent,null
+  pm-23me,implements,"2026-07-26T17:01:52.123Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-01T18:02:37.805Z",audit-agent,"Duplicate check: pm-23me is predecessor from 2026-04-30 and still open. This v2 audit covers the latest 2026.5.1-2 build with comprehensive end-to-end verification."
   "2026-05-02T11:03:21.885Z",codex-agent,"Audit reseal: current redacted item state re-recorded through pm mutation after prior hygiene edits; no secret material added."
@@ -32,7 +34,7 @@ files[3]{path,scope,note}:
   src/cli/commands/calendar.ts,project,Calendar views verified
   src/core/telemetry/runtime.ts,project,"Telemetry fix: size guard + depth limit + max attempts"
   src/sdk/index.ts,project,SDK exports verified (78 symbols)
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test,project,300
 close_reason: "Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
 body: "Full audit executed 2026-05-01 in isolated temp directory. All 10 item types, all views, all lifecycle commands, SDK exports, starter extension, telemetry queue/pipeline, remote stack (Grafana/Alloy/Loki/Tempo/Prometheus/RabbitMQ/Postgres), and governance features verified."

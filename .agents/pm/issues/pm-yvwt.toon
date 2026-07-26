@@ -6,15 +6,18 @@ status: closed
 priority: 0
 tags[5]: compatibility,migration,pm-cli,release,storage
 created_at: "2026-05-01T08:29:05.321Z"
-updated_at: "2026-05-01T08:57:23.708Z"
+updated_at: "2026-07-26T17:30:37.708Z"
 deadline: "2026-05-02T08:29:05.321Z"
 author: codex-release-agent
 estimated_minutes: 90
 acceptance_criteria: "A tracker created by @unbrained/pm-cli 2026.3.12 can be read and mutated by the current build without manual item-format setup; first mutation auto-selects/migrates to the current default format without losing items, linked artifacts, comments, history, or close metadata."
 parent: pm-x6ni
+release: v2026.5.1
 resolution: Legacy settings without item_format now auto-select the default format and run pre-mutation item-file migration.
 expected_result: Trackers created by @unbrained/pm-cli@2026.3.12 can be read and mutated by the current build without manual item-format setup or data loss.
 actual_result: "Previous-version sandbox migrated 3 markdown items to TOON on first current mutation while preserving item count, linked artifacts, comments, close metadata, health, and history integrity."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-x6ni,implements,"2026-07-26T17:30:37.455Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-01T08:29:05.321Z",codex-release-agent,"Compatibility sandbox using isolated npm install of @unbrained/pm-cli@2026.3.12 created three legacy items and then current dist/cli.js update failed with exit 4: Write command update requires explicit item format selection before mutations. Duplicate check: pm search 'item format selection before mutations previous version auto migrate' found only closed prior migration feature/task work; pm list-open --type Issue showed no active compatibility issue."
   "2026-05-01T08:36:30.340Z",codex-release-agent,"Implemented compatibility fix: legacy settings without item_format now persist the default item_format and run pre-mutation item-file sync instead of blocking. Evidence: targeted sandboxed integration test passed; previous-version sandbox created 3 items with @unbrained/pm-cli@2026.3.12 and current dist/cli.js migrated 3 .md items to 3 .toon items with item count, linked artifacts, close reason, health, and history drift checks preserved."
@@ -23,9 +26,9 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,regression for legacy item_format auto-selection and migration
   src/cli/main.ts,project,auto-select legacy item_format before pre-mutation sync
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'auto-selects default item_format|auto-migrates item files before mutation',null,project,240,null,null,null,null,null,null,null,null,null,null,null,sandboxed targeted migration regression
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-momoghn2-4chnyc,test,passed,"2026-05-01T08:54:51.934Z","2026-05-01T08:55:22.190Z","2026-05-01T08:55:22.190Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'auto-selects default item_format|auto-migrates item files before mutation',project,240,sandboxed targeted migration regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-momoghn2-4chnyc,test,passed,"2026-05-01T08:54:51.934Z","2026-05-01T08:55:22.190Z","2026-05-01T08:55:22.190Z",1,0,0
 close_reason: Legacy previous-version tracker mutation now auto-migrates and all linked regression/compatibility checks passed.
 body: ""

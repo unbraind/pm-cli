@@ -6,15 +6,20 @@ status: closed
 priority: 3
 tags[2]: "area:observability","area:telemetry"
 created_at: "2026-06-07T10:04:45.137Z"
-updated_at: "2026-06-18T14:34:46.678Z"
+updated_at: "2026-07-26T17:14:48.934Z"
 author: audit-observability-agent
 acceptance_criteria: "- Each bucket gains: ok_count, error_count (derived from command_finish ok field); error_rate (0–1 float, absent when no finish events); command_resolution_counts (map of resolution -> count).\n- ok_count + error_count == number of command_finish events in that bucket.\n- pm telemetry stats output includes these fields.\n- Unit tests assert correct tallying and that missing/malformed payload.ok is treated as not-ok (conservative)."
 parent: pm-5oj5
 risk: low
 confidence: high
+release: v2026.6.19
 resolution: pm telemetry stats now reports ok_count/error_count/error_rate and command_resolution_counts per command bucket from command_finish payloads; missing/non-true ok counted conservatively as error.
 expected_result: Each bucket reports ok_count/error_count/error_rate and command_resolution_counts from command_finish payloads.
 actual_result: Conservative ok handling and resolution tally verified; ok_count+error_count==finish count; 100/100/100/100.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-3n3b,related,"2026-07-26T17:14:48.685Z",null,null
+  pm-5oj5,implements,"2026-07-26T17:14:48.685Z",null,null
+  pm-fbyu,related,"2026-07-26T17:14:48.685Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-18T14:34:26.517Z",claude-code-agent,"Bundled with pm-3n3b/pm-fbyu in one PR (epic pm-5oj5). ok_count/error_count/error_rate (conservative: missing/non-true ok counts as error) + command_resolution_counts derived from command_finish payloads. ok_count+error_count == finish-event count by construction. Coverage 100/100/100/100."
 files[2]{path,scope,note}:

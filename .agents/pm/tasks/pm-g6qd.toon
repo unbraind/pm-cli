@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:history","area:restore",pm-cli
 created_at: "2026-04-01T15:27:26.599Z"
-updated_at: "2026-04-04T21:39:21.954Z"
+updated_at: "2026-07-26T17:14:18.613Z"
 deadline: "2026-04-06T15:27:26.599Z"
 author: cursor-agent
 estimated_minutes: 150
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: history-hardening
-release: vnext
+release: v2026.5.1
 blocked_by: pm-1tyv
 blocked_reason: Extend restore to recover missing or deleted item files from history has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: Shared policy enforcement is implemented; proceed with restore history-only recovery
@@ -40,10 +40,11 @@ fixed_version: target-vnext
 component: restore
 regression: true
 customer_impact: Users can recover deleted or missing item files without manual reconstruction
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-1tyv,blocks,"2026-04-01T15:27:26.599Z",cursor-agent,null
   pm-9lc,related,"2026-04-01T15:27:26.599Z",cursor-agent,null
   pm-kb21,parent,"2026-04-01T15:27:26.599Z",cursor-agent,null
+  pm-kb21,implements,"2026-07-26T17:14:18.386Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-01T15:27:26.599Z",cursor-agent,Task adds history-only restore fallback for missing/deleted item files.
   "2026-04-01T15:39:36.115Z",cursor-agent,"Implemented restore recovery for missing/deleted item files from history streams: restore now resolves history-only subjects when item file is absent, reconstructs current state from history for restore event diffs, and preserves lock + rollback behavior. Added unit coverage for missing-file and deleted-item recovery and integration coverage for strict policy failures and history-only restore. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts tests/integration/cli.integration.spec.ts passed."
@@ -57,8 +58,8 @@ files[3]{path,scope,note}:
   src/cli/commands/restore.ts,project,restore fallback implementation
   tests/integration/cli.integration.spec.ts,project,strict mode + deleted-item restore CLI regression
   tests/unit/restore-command.spec.ts,project,missing-item and deleted-item restore coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,restore unit and integration coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts tests/integration/cli.integration.spec.ts,project,5400,restore unit and integration coverage
 docs[1]{path,scope,note}:
   README.md,project,restore behavior contract
 close_reason: Restore history-only recovery shipped with passing linked tests

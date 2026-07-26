@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:config","area:storage",concurrency,data-integrity,merge-safety
 created_at: "2026-07-20T02:39:14.788Z"
-updated_at: "2026-07-25T15:27:29.305Z"
+updated_at: "2026-07-26T17:29:14.376Z"
 closed_at: "2026-07-25T15:27:28.406Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,13 +14,15 @@ acceptance_criteria: Setting one config key persists only that key's change (or 
 parent: pm-o2kc
 risk: medium
 confidence: medium
+release: v2026.7.26
 resolution: One-leaf config changes preserve sparse settings and explicit stored policy values without cold-read regression.
 expected_result: One-leaf config changes preserve sparse settings and explicit stored policy values without cold-read regression.
 actual_result: "One-leaf config changes preserve sparse settings and explicit stored policy values without cold-read regression. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-88cy,discovered_from,"2026-07-20T02:39:14.788Z",null,null
   pm-bgcu,related,"2026-07-20T02:39:14.788Z",null,null
   pm-xdn6,related,"2026-07-20T02:39:14.788Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:29:14.123Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-25T15:25:46.909Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."
   "2026-07-25T15:26:00.497Z","harness:codex","Implementation: settings writes apply a leaf delta against an immutable copy-on-write read provenance snapshot, preserving sparse source intent and explicit preset-owned values; cold reads retain the transport budget."

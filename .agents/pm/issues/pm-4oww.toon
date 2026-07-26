@@ -6,11 +6,14 @@ status: closed
 priority: 2
 tags[2]: extensions,performance
 created_at: "2026-07-04T06:29:59.294Z"
-updated_at: "2026-07-04T18:29:00.856Z"
+updated_at: "2026-07-26T17:04:07.318Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Warm per-command latency with all bundled packages installed within 1.5x of bare workspace (measured via best-of-3 node dist/cli.js timings).
 parent: pm-ugqx
+release: v2026.7.5
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T17:04:07.087Z",null,null
 comments[13]{created_at,author,text}:
   "2026-07-04T11:15:27.399Z",claude-code-agent,"Evidence: implemented command-scoped import filtering. loadExtensions now preserves full discovery but imports only extensions accepted by the CLI activation probe; CLI snapshot cache is scoped by activation probe; manifests with explicit activation.commands no longer load solely because they also declare hooks. Focused checks passed: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts (107 tests), node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts (119 tests), pnpm typecheck. Temp workspace with explicit install '*' installed 11 packages and improved profile list loaded extensions to 3 (governance-audit no longer always activates); shell best-of-7 still did not consistently meet the <=1.5x target (bare/list 174ms vs package/list 323ms after local lifecycle simulation), so item remains open for the next cheap-activation/persisted-manifest lever."
   "2026-07-04T11:42:53.432Z",claude-code-agent,"Evidence update: command-scoped activation filtering now preserves full discovery while filtering imports by activation probe, scopes runtime snapshot cache by normalized activation scope, avoids double activation for dynamic/template/search commands, and keeps hook/render-only extensions globally active without re-broadening command-bearing explicit activation manifests. Verification passed: node scripts/run-tests.mjs test -- tests/integration/extension-startup.integration.spec.ts; node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts; node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts; pnpm typecheck; node scripts/run-tests.mjs coverage (263 files, 5337 tests, 100/100/100/100); pnpm lint; pnpm audit --audit-level moderate; pnpm security:scan; pnpm quality:docs-skills; node scripts/gen-package-runtime-loaders.mjs --check; pnpm changelog:pm:check; pm health --check-only --summary --json. Item remains open because the package-vs-bare latency acceptance target still needs another lever."

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[2]: "area:docs","area:sdk"
 created_at: "2026-07-05T04:54:31.675Z"
-updated_at: "2026-07-23T20:21:56.318Z"
+updated_at: "2026-07-26T17:12:20.702Z"
 closed_at: "2026-07-23T19:10:51.402Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,10 +14,11 @@ acceptance_criteria: SDK reference covers all promoted primitives with runnable 
 parent: pm-usfg
 risk: low
 confidence: high
+release: v2026.7.24
 resolution: "Expanded the SDK and CLI reference for schema evolution, workspace history, governance contracts, and public layering boundaries."
 expected_result: "Promoted primitives and migration workflows have runnable, gate-verified documentation."
 actual_result: "Docs/skills, links, docstring, static quality, contracts, and full coverage gates pass."
-dependencies[11]{id,kind,created_at,author,source_kind}:
+dependencies[20]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-20T08:49:51.219Z",null,null
   pm-g9xk,related,"2026-07-20T08:49:51.219Z",null,null
   pm-kipd,related,"2026-07-20T08:49:51.219Z",null,null
@@ -29,6 +30,15 @@ dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-g072,verifies,"2026-07-23T14:59:00.987Z",null,null
   pm-llrp,verifies,"2026-07-23T14:59:00.987Z",null,null
   pm-nf7q,verifies,"2026-07-23T14:59:00.987Z",null,null
+  pm-4ak1,related,"2026-07-26T17:12:20.509Z",null,null
+  pm-96h7,related,"2026-07-26T17:12:20.509Z",null,null
+  pm-9x6e,related,"2026-07-26T17:12:20.509Z",null,null
+  pm-dijg,related,"2026-07-26T17:12:20.509Z",null,null
+  pm-ju83,related,"2026-07-26T17:12:20.509Z",null,null
+  pm-k9t17l,related,"2026-07-26T17:12:20.509Z",null,null
+  pm-kjbh,related,"2026-07-26T17:12:20.509Z",null,null
+  pm-muhw,related,"2026-07-26T17:12:20.509Z",null,null
+  pm-usfg,implements,"2026-07-26T17:12:20.509Z",null,null
 comments[41]{created_at,author,text}:
   "2026-07-13T22:03:50.226Z",codex-root,"Scope note 2026-07-13: when pm-ju83 lands, extend this task's SDK reference and migration work with relationship-kind registration, immutable relationship events, bounded adjacency/path/closure/impact queries, cursor and streaming contracts, compact CLI and MCP projections, explain/cost envelopes, legacy-kind migration, and shell pipeline examples. Link implementation docs to pm-96h7 and validate with the existing docs gates."
   "2026-07-17T13:10:37.141Z",codex-root,"Documentation progress: SDK and relationship-graph references now cover public actionability, workspace assembly, semantic traversal, governance findings, layering boundaries, and a non-PM domain reuse pattern. Docs gate passes."

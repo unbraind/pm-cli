@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: data-quality,dedupe,multi-agent,sdk-first
 created_at: "2026-07-07T06:49:49.719Z"
-updated_at: "2026-07-24T22:26:07.375Z"
+updated_at: "2026-07-26T17:04:09.226Z"
 closed_at: "2026-07-24T22:23:07.422Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -14,13 +14,21 @@ acceptance_criteria: "SDK exposes a findSimilarItems(candidate, {limit, threshol
 parent: pm-33cw
 risk: medium
 confidence: medium
+release: v2026.7.25
 resolution: completed
 expected_result: "Create and copy expose bounded SDK-backed duplicate governance with off, advisory, and strict modes while governance-audit reuses the same scorer."
 actual_result: "Installed CLI and SDK proof returned advisory matches and enforced explicit bypass behavior; contracts, MCP, docs, scale budgets, and exact coverage passed."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-4n1a,related,"2026-07-07T06:49:49.719Z",null,null
   pm-jmld,related,"2026-07-07T06:49:49.719Z",null,null
   pm-khdq,related,"2026-07-07T06:49:49.719Z",null,null
+  pm-33cw,implements,"2026-07-26T17:04:09.017Z",null,null
+  pm-801d,related,"2026-07-26T17:04:09.017Z",null,null
+  pm-cu1i,related,"2026-07-26T17:04:09.017Z",null,null
+  pm-muhw,related,"2026-07-26T17:04:09.017Z",null,null
+  pm-psy1,related,"2026-07-26T17:04:09.017Z",null,null
+  pm-ydp6,related,"2026-07-26T17:04:09.017Z",null,null
+  pm-z436,related,"2026-07-26T17:04:09.017Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-24T20:08:26.657Z",claude-code-agent,"Evidence: shared normalize/tokenize/Jaccard/exact-issue-code scorer now powers both create/copy governance and pm-governance-audit; persistent SQLite FTS supplies bounded candidates when warm, with metadata fallback when explicitly enabled without an index. Minimal/default presets remain zero-overhead off; strict preset enforces, and advisory/strict/threshold/limit are discoverable config leaves. CLI and SDK tests pass, including explicit --allow-duplicate and copy-source exclusion."
   "2026-07-24T22:21:50.343Z",claude-code-agent,"Acceptance evidence: clean packed-package proof enabled advisory governance through the public config key, created a duplicate, surfaced likely_duplicates with the canonical item id, and read two ranked matches through @unbrained/pm-cli/sdk. Full release coverage is exact 100/100/100/100. The shared index-first scorer is used by create, copy, and governance-audit; CLI/MCP contracts and docs are updated."

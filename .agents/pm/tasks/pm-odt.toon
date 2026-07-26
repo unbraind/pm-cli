@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-beads",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.883Z"
-updated_at: "2026-05-11T22:20:26.002Z"
+updated_at: "2026-07-26T17:21:48.101Z"
 deadline: "2026-03-13T23:02:11.883Z"
 author: steve
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-b1w
 blocked_reason: "M5: Built-in beads import extension has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5: Built-in beads import extension is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,9 +40,10 @@ fixed_version: archive-2026q2
 component: project-management/built-in-beads-import-extension
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Built-in beads import extension.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:11.883Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:11.883Z",steve,null
+  pm-b1w,implements,"2026-07-26T17:21:47.861Z",null,null
 comments[19]{created_at,author,text}:
   "2026-02-19T18:37:14.624Z",cursor-agent,"Planned change-set: docs-first update for built-in beads import command status, then implement pm beads import --file parser/mapping with deterministic defaults and import history evidence; add unit/integration tests and run pm test + pm test-all regression sweeps."
   "2026-02-19T18:39:22.684Z",cursor-agent,"Docs-first update completed: README command surface now includes pm beads import baseline and extension roadmap notes; PRD command matrix now includes beads import output contract, section 15 captures default file/skip-warning behavior, and Milestone 5 checklist marks beads as partial baseline in progress."
@@ -83,12 +84,12 @@ files[15]{path,scope,note}:
   tests/unit/extension-loader.spec.ts,project,unit coverage for command-definition registration
   tests/unit/extensions-runtime.spec.ts,project,runtime wrapper coverage for active command handlers
   tests/unit/output.spec.ts,project,command registry shape updates in output override coverage
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,integration beads import coverage
-  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted beads unit coverage
-  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,beads runtime relocation regressions
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,command-definition extension registration coverage
+tests[5]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1800,integration beads import coverage
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,project,900,targeted beads unit coverage
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/integration/cli.integration.spec.ts,project,2400,beads runtime relocation regressions
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,1200,command-definition extension registration coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood protocol
   PRD.md,project,governing spec

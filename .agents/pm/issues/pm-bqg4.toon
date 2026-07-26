@@ -6,16 +6,19 @@ status: closed
 priority: 1
 tags[6]: agent-ux,extensions,external-audit,pm-cli,sdk,types
 created_at: "2026-04-26T09:56:34.292Z"
-updated_at: "2026-04-26T19:59:51.568Z"
+updated_at: "2026-07-26T17:10:28.682Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "SDK exports concrete extension registration interfaces for schema/search/service payloads, examples compile with those types, and extension authoring docs reflect the typed contracts."
 parent: pm-o7be
+release: v2026.5.1
 resolution: "Replaced loose extension registration records with explicit SDK interfaces and exported them for extension authors, with docs and starter examples updated."
 expected_result: Extension authors receive compile-time contracts for schema/search/vector/service registration and corresponding SDK documentation/examples.
 actual_result: "Typed contracts are available through sdk exports, starter example/docs added, and SDK regression suites pass."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-o7be,parent,"2026-04-26T09:56:34.292Z",codex-agent,null
+  pm-1etl,related,"2026-07-26T17:10:28.475Z",null,null
+  pm-o7be,implements,"2026-07-26T17:10:28.475Z",null,null
 comments[7]{created_at,author,text}:
   "2026-04-26T09:56:34.292Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Extension SDK schema type definitions Record unknown' --limit 10; pm search 'SchemaFieldDefinition Record unknown ExtensionApi typing' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing open SDK issue pm-1etl covers module resolution/diagnostics,not compile-time contract precision for extension registration payloads."
   "2026-04-26T09:57:29.339Z",codex-agent,"SDK audit evidence: src/core/extensions/loader.ts currently aliases multiple extension registration contracts as Record<string, unknown> (SchemaFieldDefinition, SchemaItemTypeDefinition, SearchProviderDefinition, VectorStoreAdapterDefinition), which limits compile-time validation and editor guidance for extension authors. Recommend promoting these to explicit interfaces in SDK exports."
@@ -30,10 +33,10 @@ files[5]{path,scope,note}:
   src/cli/main.ts,project,early service bootstrap ensures help/error service typing paths work at parse time
   src/core/extensions/loader.ts,project,Extension API registration typing surface audited for loose payload contracts
   src/sdk/index.ts,project,SDK export surface reviewed for extension authoring DX
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts tests/unit/structure-exports.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,sdk typing and export regression bundle
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mog6oekc-x0v3j1,test,passed,"2026-04-26T19:50:42.146Z","2026-04-26T19:51:01.308Z","2026-04-26T19:51:01.308Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts tests/unit/structure-exports.spec.ts,project,300,sdk typing and export regression bundle
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mog6oekc-x0v3j1,test,passed,"2026-04-26T19:50:42.146Z","2026-04-26T19:51:01.308Z","2026-04-26T19:51:01.308Z",1,0,0
 docs[3]{path,scope,note}:
   docs/examples/starter-extension/README.md,project,starter extension walkthrough for all capabilities
   docs/EXTENSIONS.md,project,Extension authoring docs to align with stronger SDK type contracts

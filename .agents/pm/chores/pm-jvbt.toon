@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[2]: audit,quality
 created_at: "2026-05-27T16:52:38.358Z"
-updated_at: "2026-05-27T17:14:47.312Z"
+updated_at: "2026-07-26T17:17:43.813Z"
 author: code-quality-agent
 parent: pm-th6y
+release: v2026.5.27
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-th6y,implements,"2026-07-26T17:17:43.534Z",null,null
 comments[10]{created_at,author,text}:
   "2026-05-27T16:56:17.044Z",code-quality-agent,"Type-safety: ZERO 'as any', ': any', '<any>', '@ts-expect-error/@ts-ignore', or 'eslint-disable' in src/. Excellent. 39 'as unknown as' casts (mostly Record<string,unknown> widening which is centralized in item-record.ts). 6 non-null '!' assertions all in update.ts (1600,1637,1775,1807,1810,1849) guarded by prior option checks."
   "2026-05-27T16:56:19.363Z",code-quality-agent,"Deps all justified+used: @sentry/node (lazy via dynamic import in instrument.ts:216), commander (10 files), fast-glob (only linked-artifacts.ts:3), fast-json-patch (4 history/restore files), @toon-format/toon (2 files). No unused deps. No heavy eager imports."

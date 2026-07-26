@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T07:42:59.010Z"
-updated_at: "2026-07-26T08:29:31.054Z"
+updated_at: "2026-07-26T17:21:41.255Z"
 closed_at: "2026-07-26T07:47:48.773Z"
 author: "harness:codex"
 acceptance_criteria: Out-of-band singleton drift still blocks the mutation before an unaudited write persists; CLI and SDK callers receive a stable PmCliError conflict code with actionable history/merge reconciliation guidance; expected conflict classification is not captured as a high-severity Sentry runtime error; focused workspace-history and full release gates pass; the live PM-CLI-2M issue is resolved only after exact fix proof
@@ -14,11 +14,12 @@ parent: pm-o2kc
 resolution: Out-of-band workspace singleton drift remains fail-closed but is now an expected structured conflict with bounded recovery instead of a raw runtime TypeError.
 expected_result: The integrity guard blocks unaudited state without producing high-severity internal-error telemetry.
 actual_result: "CLI and SDK callers receive workspace_history_state_conflict/exit 4; compensation preserves disk state, no new Sentry event was emitted, and the prior issue is resolved."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-9yfo,related,"2026-07-26T07:42:59.010Z",null,null
   pm-c8qa,related,"2026-07-26T07:42:59.010Z",null,null
   pm-klo8,related,"2026-07-26T07:42:59.010Z",null,null
   pm-9j2r3b,related,"2026-07-26T07:47:38.995Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:21:41.017Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-26T07:42:59.010Z","harness:codex","Duplicate check: searched all 2,058 tracker items across every status for the exact workspace-history settings drift message, Sentry PM-CLI-2M, audited mutation path, and reconciliation. Closed pm-klo8 owns the audit stream and open pm-9yfo owns completeness enumeration, but neither owns expected-error classification and recovery for intentional fail-closed drift detection. Live Sentry evidence: release 2026.7.26 produced six handled events in one minute; sanitized stack metadata contains no actionable command context."
   "2026-07-26T07:47:43.709Z","harness:codex","Evidence: focused history/CLI/Sentry suite passes 143 tests; lint, zero-clone jscpd, 100% docstrings, package boundary, token/import/transport gates pass. A fresh temp workspace reproduced drift and now returns workspace_history_state_conflict with exit 4, preserves the external state, rolls back the attempted settings write, and points to pm history _workspace --verify. Live Sentry count remained six with no new event, then PM-CLI-2M was resolved."

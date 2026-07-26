@@ -6,12 +6,29 @@ status: closed
 priority: 2
 tags[3]: "area:cli","area:schema",audit
 created_at: "2026-06-07T09:57:38.219Z"
-updated_at: "2026-06-25T16:52:27.488Z"
+updated_at: "2026-07-26T17:25:47.740Z"
 author: audit-cli-schema-agent
 parent: pm-mpbb
+release: v2026.6.30
 resolution: Closed as terminal stale audit container during dedicated tracker-only normalization.
 expected_result: Audit wrapper remains open only while active findings need tracking.
 actual_result: All findings are closed or represented by current backlog; descendant check found no open child work.
+dependencies[15]{id,kind,created_at,author,source_kind}:
+  pm-13nx,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-6l17,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-6qi8,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-86ob,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-8jdc,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-96wm,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-9byd,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-ds0m,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-e7dn,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-g799,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-haak,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-izx5,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-js02,related,"2026-07-26T17:25:47.453Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:25:47.453Z",null,null
+  pm-mthy,related,"2026-07-26T17:25:47.453Z",null,null
 comments[3]{created_at,author,text}:
   "2026-06-07T17:05:16.920Z",maintainer-agent,"Audit 2026-06-07 (PR pass): CLI/agent-UX findings — SHIPPED pm-g799 (close-reason never-block), pm-ryik (--path .agents/pm discovery), pm-wrqk (dead-code+version dedup). TRACKED: pm-e7dn (runUpdate refactor), pm-vhx6 (compact trailer trim), pm-6l17 (--tags never-block alias), pm-q0kr (slim guided-error boilerplate). See ADR pm-96wm."
   "2026-06-25T00:04:16.271Z",subagent-cli-ux-20260625,"Evidence 2026-06-25 CLI/agent-UX audit: pm-mthy exists on HEAD main; current worktree has completion patch in src/cli/commands/completion.ts and tests/unit/commands/completion-command.spec.ts. Live contracts: package/packages include --declarative; extension does not. pm completion requires guide-shell here. New UX gap: pm package descirbe/catalogx --json treats typo as target and suggests --install <value> instead of did-you-mean describe/catalog."

@@ -6,12 +6,15 @@ status: closed
 priority: 0
 tags[3]: audit-followup,extensions,packaging
 created_at: "2026-07-04T08:31:41.806Z"
-updated_at: "2026-07-04T10:54:33.325Z"
+updated_at: "2026-07-26T17:12:58.490Z"
 author: maintainer-agent
 parent: pm-ugqx
+release: v2026.7.5
 resolution: gen-package-runtime-loaders.mjs templates (+ regenerated beads/todos runtime-loader.ts) now catch ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING and continue to the next runtime candidate
 expected_result: beads import / todos export work from real npm installs
 actual_result: "Verified 3x from fresh npm pack in CJS sandbox: beads import ok:true imported:1, todos export ok:true exported per-item markdown"
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T17:12:58.275Z",null,null
 notes[3]{created_at,author,text}:
   "2026-07-04T08:42:52.565Z",maintainer-agent,"Fix implemented (uncommitted): both templates in scripts/gen-package-runtime-loaders.mjs now treat Node ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING ('Stripping types is currently unsupported') as fall-through to the next runtime candidate instead of aborting, so the loader reaches the extension's co-located runtime.ts copy (outside node_modules). Regenerated beads+todos runtime-loader.ts. Verified e2e in CJS sandbox from packed tarball: pm beads import imported 1 (was extension_command_handler_failed), pm todos export exported 28. Kept candidate order (env -> argv roots -> local copy) so PM_CLI_PACKAGE_ROOT override and fresh-package preference still win when strippable. Runtime-glue dedupe across packages deferred (see description)."
   "2026-07-04T10:37:25.406Z",maintainer-agent,"2026-07-04 independent re-verification from a FRESH npm pack in a new CJS sandbox: pm beads import --file beads.jsonl → ok:true imported:1 (item pm-bd-1 visible in pm list); pm todos export --folder ./todos-out → ok:true exported:2 with per-item markdown files. Runtime-loader fall-through works end-to-end from a real npm install."

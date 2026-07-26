@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:docs","area:release","area:tests",ci,code,doc,"milestone:6",pm-cli,"priority:0"
 created_at: "2026-03-09T18:41:23.195Z"
-updated_at: "2026-04-04T21:50:51.709Z"
+updated_at: "2026-07-26T17:07:07.579Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-09-9
-release: v0.1
+release: v2026.3.12
 blocked_by: pm-2cr5
 blocked_reason: Maintain release readiness 2026-03-09 (Run 9) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Maintain release readiness 2026-03-09 (Run 9) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,15 @@ fixed_version: v0.1
 component: project-management/maintain-release-readiness-2026-03-09-run-9
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Maintain release readiness 2026-03-09 (Run 9).
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-2cr5,related,"2026-03-09T18:41:23.195Z",maintainer-agent,null
+  pm-6k5l,related,"2026-07-26T17:07:02.914Z",null,null
+  pm-eyoz,related,"2026-07-26T17:07:02.914Z",null,null
+  pm-i0iy,implements,"2026-07-26T17:07:02.914Z",null,null
+  pm-j0o4,related,"2026-07-26T17:07:02.914Z",null,null
+  pm-k4u5,related,"2026-07-26T17:07:02.914Z",null,null
+  pm-o4ky,related,"2026-07-26T17:07:02.914Z",null,null
+  pm-zre8,related,"2026-07-26T17:07:02.914Z",null,null
 comments[8]{created_at,author,text}:
   "2026-03-09T18:41:23.195Z",maintainer-agent,Run 9 exists to keep release readiness continuously verified and to fix any newly detected parity drift.
   "2026-03-09T18:41:34.467Z",maintainer-agent,"Intended changeset: run docs/help parity audit against current CLI output and integration contracts; if drift exists, apply docs-first fix then implementation/tests; complete with pm test and test-all evidence."
@@ -60,10 +67,10 @@ files[3]{path,scope,note}:
   PRD.md,project,authoritative requirements baseline
   README.md,project,parity audit target
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness parity guard
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe full suite
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted parity regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate
+  node scripts/run-tests.mjs test,project,2400,sandbox-safe full suite
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,project,1800,targeted parity regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,governing spec

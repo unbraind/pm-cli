@@ -6,13 +6,17 @@ status: closed
 priority: 2
 tags[4]: "area:search",config,hybrid,relevance
 created_at: "2026-06-07T10:05:24.769Z"
-updated_at: "2026-06-14T16:43:22.341Z"
+updated_at: "2026-07-26T17:02:26.139Z"
 author: audit-data-agent
 acceptance_criteria: "- search.hybrid_semantic_weight: number (0..1) in PmSettings (under search, not search.tuning)\n- settings-validator support; config nested-settings alias search_hybrid_semantic_weight (ratio kind)\n- pm search uses the settings value as default when --semantic-weight is not passed\n- Contract / MCP contract table updated\n- pm config set search_hybrid_semantic_weight 0.7 works end-to-end"
 parent: pm-ydp6
 risk: low
 confidence: high
+release: v2026.6.16
 resolution: Verified already-implemented persistent search.hybrid_semantic_weight setting works end-to-end
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-cy8i,related,"2026-07-26T17:02:25.886Z",null,null
+  pm-ydp6,implements,"2026-07-26T17:02:25.886Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-14T16:23:39.448Z",maintainer-agent,"Verified already-implemented (resolver resolveHybridSemanticWeight reads search.hybrid_semantic_weight, settings-validator supports it, nested-settings descriptor search_hybrid_semantic_weight + ratio kind, runSearch uses it as --semantic-weight default). Confirmed end-to-end in sandbox: config set search_hybrid_semantic_weight 0.85 persists + applies. Never documented in CHANGELOG (only per-query pm-cy8i was) -> closing here surfaces the persistent setting. No new code needed."
 close_reason: Verified already-implemented persistent search.hybrid_semantic_weight setting works end-to-end

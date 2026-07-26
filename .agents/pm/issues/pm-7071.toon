@@ -6,13 +6,14 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-13T23:36:29.498Z"
-updated_at: "2026-07-14T02:41:46.928Z"
+updated_at: "2026-07-26T17:06:04.444Z"
 closed_at: "2026-07-14T02:41:46.220Z"
 author: codex-root
 acceptance_criteria: Sentry capture skips only Error values named CommandError with an explicit numeric exitCode; raw Error and untyped CommandError values remain captured; command-finish telemetry retains the nonzero outcome; focused regressions and the live Sentry gate pass.
 parent: pm-5oj5
 risk: low
 confidence: high
+release: v2026.7.14
 reporter: codex-root
 severity: medium
 environment: pm-cli 2026.7.13; Node v26.4.0; Linux; live handled Sentry PM-CLI-16 exitCode=1
@@ -23,9 +24,10 @@ actual_result: "Current-head typed CommandError suppression is covered and corre
 component: Sentry CLI error classification and package runtime
 regression: false
 customer_impact: Expected package validation outcomes polluted Sentry and could block daily releases.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ksv2,related,"2026-07-14T00:26:41.380Z",null,null
   pm-wfvq,related,"2026-07-14T00:26:41.380Z",null,null
+  pm-5oj5,implements,"2026-07-26T17:06:04.218Z",null,null
 comments[8]:
   - created_at: "2026-07-13T23:36:29.498Z"
     author: codex-root

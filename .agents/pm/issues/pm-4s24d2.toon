@@ -6,20 +6,22 @@ status: closed
 priority: 0
 tags[4]: automation,regression,release,security
 created_at: "2026-07-24T15:16:37.435Z"
-updated_at: "2026-07-24T16:10:36.715Z"
+updated_at: "2026-07-26T17:04:11.286Z"
 closed_at: "2026-07-24T16:03:16.797Z"
 author: codex-root-agent
 acceptance_criteria: The release preparation pipeline cannot create an ordinal same-day production version; Any existing UTC-day release tag yields release_already_cut_today before mutation; Legacy same-day override requests fail closed with actionable same-tag recovery guidance; Release documentation explains retrying the existing tag after partial npm or GitHub failures
 parent: pm-u9d0
+release: v2026.7.25
 resolution: "Removed every same-day ordinal preparation path, bound explicit targets to the current UTC date before Git access, made today's tag guard unconditional, and changed blocker recovery to rerun the exact immutable tag workflow."
 expected_result: "At most one production tag and npm version can be created per UTC day, and partial publication failures recover the existing tag without another version."
 actual_result: "Legacy overrides, ordinal targets, and past/future explicit dates fail before Git inspection; an existing day tag skips preparation; blocker closure reruns/watches the exact Release run. Local/full hosted gates and two review rounds validate the behavior."
 fixed_version: next daily release after merge
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-24T15:17:28.938Z",null,null
   pm-cedo0g,related,"2026-07-24T15:17:28.938Z",null,null
   pm-ee1k,related,"2026-07-24T15:17:28.938Z",null,null
   pm-gis0qo,related,"2026-07-24T15:17:28.938Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:04:11.057Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-24T15:16:37.435Z",codex-root-agent,"Duplicate check: searched all statuses for multiple same-day releases, ordinal auto release, and allow-same-day-release; no open canonical defect exists. Related completed incidents pm-cedo0g and pm-gis0qo repaired downstream failures but exposed the still-live pipeline bypass; recurring verification item pm-7zs0 and policy decision pm-ee1k provide lineage."
   "2026-07-24T15:21:09.593Z",codex-root-agent,"TDD evidence: the focused 55-test unit/integration/workflow contract set failed against the retained bypass, then passed after removing ordinal generation, rejecting the legacy override before Git inspection, and routing blocker recovery to the exact existing tag workflow."

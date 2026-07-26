@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions-pi",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T23:13:22.240Z"
-updated_at: "2026-05-17T08:22:25.135Z"
+updated_at: "2026-07-26T17:21:12.229Z"
 deadline: "2026-03-05T23:13:22.240Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-igv
 blocked_reason: Pi wrapper numeric scalar flag parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Pi wrapper numeric scalar flag parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/pi-wrapper-numeric-scalar-flag-parity
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Pi wrapper numeric scalar flag parity.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-igv,related,"2026-03-04T23:13:22.240Z",cursor-maintainer,null
+  pm-2p6q,implements,"2026-07-26T17:21:11.995Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-04T23:13:22.240Z",cursor-maintainer,"Why this exists: Pi tool callers often emit JSON numbers for numeric flags and wrapper should accept that deterministically."
   "2026-03-04T23:13:33.716Z",cursor-maintainer,"Planned changeset: docs-first update README and PRD to document numeric scalar parity for Pi wrapper numeric flags; then update wrapper schema and arg builder to accept number|string values and add targeted unit coverage."
@@ -57,9 +58,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   PRD.md,project,docs-first parity update
   README.md,project,docs-first parity update
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted unit parity coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,project,1200,targeted unit parity coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,workflow contract
   PRD.md,project,governing spec

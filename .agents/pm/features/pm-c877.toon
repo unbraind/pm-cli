@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:reminders","area:schema",core,pm-cli
 created_at: "2026-03-31T21:27:38.931Z"
-updated_at: "2026-04-04T21:32:38.508Z"
+updated_at: "2026-07-26T17:10:53.433Z"
 deadline: "2026-04-10T21:27:38.931Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 blocked_by: pm-2p6q
 blocked_reason: Persistent reminder item fields and CLI mutation support has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Persistent reminder item fields and CLI mutation support is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,10 +41,13 @@ fixed_version: vnext
 component: core/item-format
 regression: true
 customer_impact: Lets agents store explicit reminder metadata on tasks.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-2p6q,related,"2026-03-31T21:27:38.931Z",codex-agent,null
   pm-qh3p,parent,"2026-03-31T21:27:38.931Z",codex-agent,null
   pm-r0m,related,"2026-03-31T21:27:38.931Z",codex-agent,null
+  pm-7e6n,related,"2026-07-26T17:10:53.205Z",null,null
+  pm-qh3p,implements,"2026-07-26T17:10:53.205Z",null,null
+  pm-ysgr,related,"2026-07-26T17:10:53.205Z",null,null
 comments[2]{created_at,author,text}:
   "2026-03-31T21:27:38.931Z",codex-agent,Feature created for persistent reminder field support.
   "2026-03-31T22:09:17.899Z",codex-agent,Feature complete via closed tasks pm-7e6n and pm-ysgr; reminder schema plus create/update mutation support shipped with passing tests.
@@ -54,8 +57,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:04.313Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/item/item-format.ts,project,reminder field validation and normalization
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,schema regression tests
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,1800,schema regression tests
 docs[1]{path,scope,note}:
   PRD.md,project,schema and command contract updates
 close_reason: Persistent reminder fields and CLI mutation support are fully implemented and validated.

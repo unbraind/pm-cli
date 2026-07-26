@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:files","area:history",audit,governance,pm-cli
 created_at: "2026-04-03T20:57:36.551Z"
-updated_at: "2026-04-04T21:34:06.407Z"
+updated_at: "2026-07-26T17:05:35.526Z"
 deadline: "2026-04-12T20:57:36.551Z"
 author: codex-agent
 estimated_minutes: 240
@@ -19,6 +19,7 @@ impact: "Reduces ambiguity and handoff risk for future work touching Issue3: fil
 outcome: "This record can be used as canonical context when modifying Issue3: files add stable append diff mode."
 why_now: "Historical decisions for Issue3: files add stable append diff mode need durable context for future maintenance and audits."
 parent: pm-r7t2
+release: v2026.5.1
 blocked_reason: "Issue3: files add stable append diff mode has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Issue3: files add stable append diff mode is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: "Project workspace execution context for Issue3: files add stable append diff mode (pm CLI + Node/pnpm toolchain)."
@@ -27,8 +28,10 @@ expected_result: "Acceptance criteria for Issue3: files add stable append diff m
 actual_result: "Work completed and recorded with linked artifacts for Issue3: files add stable append diff mode."
 component: project-management/issue3-files-add-stable-append-diff-mode
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Issue3: files add stable append diff mode."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-r7t2,parent,"2026-04-03T20:57:36.551Z",codex-agent,null
+  pm-r7t2,implements,"2026-07-26T17:05:35.305Z",null,null
+  pm-xv39,related,"2026-07-26T17:05:35.305Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-03T20:57:36.551Z",codex-agent,"Net-new scope after dedupe: files add currently sorts arrays and can produce noisy history patches."
 notes[1]{created_at,author,text}:
@@ -37,8 +40,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-03T20:57:36.551Z",codex-agent,History readability matters for governance and concurrent maintainer workflows.
 files[1]{path,scope,note}:
   src/cli/commands/files.ts,project,primary files mutation logic
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,files stable append regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,project,3600,files stable append regression
 docs[1]{path,scope,note}:
   PRD.md,project,files command contract update
 close_reason: "Child task pm-xv39 completed: files append-stable mode implemented with deterministic compatibility defaults and full verification pass."

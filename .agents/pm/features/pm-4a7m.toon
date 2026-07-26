@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:history","area:sdk"
 created_at: "2026-07-05T05:09:03.180Z"
-updated_at: "2026-07-14T02:22:21.060Z"
+updated_at: "2026-07-26T17:03:48.786Z"
 closed_at: "2026-07-14T02:21:49.963Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,12 +14,24 @@ acceptance_criteria: "SDK exports typed redact/repair/compact primitives preserv
 parent: pm-usfg
 risk: medium
 confidence: medium
+release: v2026.7.14
 resolution: "Promoted audited redact, repair, checkpoint/prune compact, verified stream read/replay, and MCP adapters to public SDK modules; CLI history commands are presentation shims and PmClient exposes typed maintenance methods."
 expected_result: Public SDK owns typed history maintenance primitives with audited rewrite and replay integrity while CLI behavior remains compatible.
 actual_result: "Public history maintenance, runtime-input, and MCP adapter primitives now share canonical CLI usage-error semantics; invalid integer values and mutually exclusive compaction scopes return EXIT_CODE.USAGE. Full coverage passes 5657 tests at 100/100/100/100, and linked SDK/history/MCP verification passes."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[13]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-10T17:46:37.066Z",null,null
   pm-hib1,related,"2026-07-10T17:46:37.066Z",null,null
+  pm-3mna,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-98cz,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-bzgt,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-lodl,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-muhw,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-oxrw,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-rjqr,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-tqel,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-usfg,implements,"2026-07-26T17:03:48.534Z",null,null
+  pm-xk39,related,"2026-07-26T17:03:48.534Z",null,null
+  pm-zwpp,related,"2026-07-26T17:03:48.534Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-13T22:45:34.851Z",codex-root,"Implementation evidence: maintenance domain ownership moved from three CLI command files into public SDK modules; CLI paths are compatibility shims; shared history read and verified replay kernels eliminate presentation-layer and duplicate patch replay dependencies. Focused 161-test matrix passed after extraction."
   "2026-07-14T00:09:45.639Z",codex-gpt5,"Implementation evidence: promoted redact, repair, compact, verified stream read/replay, and MCP adapters into public SDK ownership; PmClient and top-level exports now share typed runtime input normalization. SDK private-import boundary ratcheted from 761 to 713. Exact-tree build, typecheck, lint, zero-clone duplication scan, static quality, package-boundary, token-budget, contracts, and secret scan all pass; full sandboxed coverage passes 5656 tests at 100/100/100/100."

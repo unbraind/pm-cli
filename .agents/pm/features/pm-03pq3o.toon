@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:mcp","area:sdk",author,identity,provenance
 created_at: "2026-07-25T12:25:00.960Z"
-updated_at: "2026-07-25T20:06:44.528Z"
+updated_at: "2026-07-26T16:59:48.560Z"
 closed_at: "2026-07-25T20:06:43.416Z"
 author: "harness:claude-code"
 estimated_minutes: 480
@@ -20,10 +20,11 @@ why_now: The harness half shipped and closed on 2026-07-25; capturing the model 
 parent: pm-mpbb
 risk: medium
 confidence: 70
+release: v2026.7.26
 resolution: "Delivered public structured agent identity types, pure detection, invocation/workspace scoping, MCP client provenance, and supported SDK exports."
 expected_result: Packages and embedding hosts can customize automatic harness/model provenance without PM_AUTHOR or private runtime probing.
 actual_result: Packed unrelated-directory consumer proved custom SDK descriptors and installed CLI automatic provenance; session data is absent from durable history.
-dependencies[14]{id,kind,created_at,author,source_kind}:
+dependencies[15]{id,kind,created_at,author,source_kind}:
   pm-3oqjnc,related,"2026-07-25T12:25:00.960Z",null,null
   pm-42p9nk,related,"2026-07-25T12:25:00.960Z",null,null
   pm-j82fd3,related,"2026-07-25T12:25:00.960Z",null,null
@@ -38,6 +39,7 @@ dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-sx52hr,related,"2026-07-25T12:34:58.859Z",null,null
   pm-szv11n,related,"2026-07-25T12:34:58.859Z",null,null
   pm-zqsrt5,related,"2026-07-25T12:34:58.859Z",null,null
+  pm-mpbb,implements,"2026-07-26T16:59:48.374Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-25T18:18:19.318Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
   "2026-07-25T19:14:51.252Z","harness:codex","Implementation evidence: SDK now exports structured agent/model provenance types, pure detection, invocation signal scoping, workspace descriptor scoping, history provenance lookup, and collision-safe package registration. MCP initialization contributes bounded client name/version/model/session signals. Packed isolated consumer proved the public SDK configures a custom harness and the installed CLI persists model provenance without PM_AUTHOR. Full 6,376-test suite and exact 100/100/100/100 coverage passed."

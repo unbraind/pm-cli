@@ -6,7 +6,7 @@ status: closed
 priority: 4
 tags[5]: extensibility,horizon-5,long-term,sdk,universal-tool
 created_at: "2026-07-06T22:17:47.761Z"
-updated_at: "2026-07-23T11:59:28.240Z"
+updated_at: "2026-07-26T17:07:42.898Z"
 closed_at: "2026-07-23T11:27:01.945Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -14,11 +14,27 @@ acceptance_criteria: Primitive-gap inventory exists for at least one non-PM doma
 parent: pm-usfg
 risk: low
 confidence: medium
+release: v2026.7.24
 resolution: "Accepted through two independent public-SDK-only packages: @unbrained/pm-vcs proves transactional event-sourced software-delivery workflows, and @unbrained/pm-digital-twin proves temporal physical-domain state, topology, invariants, and offline reconciliation."
 expected_result: "Independent non-PM exemplars can define custom domain schemas, lifecycle behavior, immutable event history, point-in-time projections, relationship graphs, transactions, validation, and package commands through published SDK and host-injected extension contracts only."
 actual_result: "The VCS exemplar delivers refs, changesets, atomic merge/replay, and projections; the digital-twin exemplar delivers facility/assets, temporal observations, topology/impact, recoverable invariant replay, replica conflict handling, and checkpointed import/export. Both install and run in clean consumers without private CLI imports."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-xc68,related,"2026-07-13T22:02:04.058Z",null,null
+  pm-3mna,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-4a7m,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-4e12,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-8778,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-98cz,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-9rxu,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-cbwg,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-is1a,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-ju83,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-kr3t,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-oxq5,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-rjqr,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-um4g,related,"2026-07-26T17:07:42.599Z",null,null
+  pm-usfg,implements,"2026-07-26T17:07:42.599Z",null,null
+  pm-v1yo,related,"2026-07-26T17:07:42.599Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-18T05:54:11.865Z",codex-sdk-vcs-20260718,"Implementation start 2026-07-18: canonical child pm-xtrd is now active as the acceptance vehicle; pm-ju83 is active only for the durable graph/event primitives the exemplar concretely exercises. No speculative or duplicate SDK item was created."
   "2026-07-18T07:17:36.324Z",codex-sdk-vcs-20260718,"Story tranche evidence 2026-07-18: the VCS acceptance vehicle proves a non-PM domain using only public SDK primitives and includes an itemized GAP_REPORT.md. Every observed primitive need is either complete, explicitly waived as product-specific/bounded, or retained on canonical existing graph/scale lineage; no speculative duplicate SDK items were created. Linked acceptance test passes. The separate temporal digital-twin child pm-kr3t remains open, so this broader story returns to open rather than closing over an active future exemplar."

@@ -6,9 +6,15 @@ status: closed
 priority: 1
 tags[2]: audit,session-2026-07-02
 created_at: "2026-07-02T21:26:40.363Z"
-updated_at: "2026-07-02T21:56:12.543Z"
+updated_at: "2026-07-26T17:06:00.117Z"
 author: unknown
 parent: pm-fpod
+release: v2026.7.3
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-3wsi,related,"2026-07-26T17:05:59.844Z",null,null
+  pm-fpod,implements,"2026-07-26T17:05:59.844Z",null,null
+  pm-ghf1,related,"2026-07-26T17:05:59.844Z",null,null
+  pm-llrp,related,"2026-07-26T17:05:59.844Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-02T21:27:41.822Z",claude-code-agent,"Starting SDK/package-authoring DX audit (lane B): reading src/sdk/*, docs/SDK.md, then authoring a real extension in temp dir via public SDK."
   "2026-07-02T21:37:16.946Z",claude-code-agent,"Milestone: authored triage-kit (commands+schema+hooks) via npm-packed SDK, declarative scaffold, harness tests green, installed E2E into fresh workspace. Key findings so far: (1) P1: installed declarative extension fails runtime activation unless @unbrained/pm-cli resolvable from workspace ('Cannot find package' — why first-party pkgs stay import-free; scaffold next_steps don't warn); (2) P2: assertExtensionPreflight/harness pass an item field named 'severity' but runtime rejects it (reserved-metadata collision undetected at author time); (3) failed install-time activation also skips item-type folder scaffold -> lingering health warn; (4) P3 naming drift in test expectations (command/itemType/field/targetCommand/provider keys). Now auditing export surface + docs."

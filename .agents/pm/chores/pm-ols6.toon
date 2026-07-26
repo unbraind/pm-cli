@@ -6,13 +6,17 @@ status: closed
 priority: 3
 tags[3]: code-quality,dedup,ownership
 created_at: "2026-05-22T18:54:47.501Z"
-updated_at: "2026-05-24T01:58:51.740Z"
+updated_at: "2026-07-26T17:22:06.985Z"
 author: codex-duplicate-audit
 acceptance_criteria: "A shared helper owns the assignee-conflict recognition and PmCliError wrapping; comments, notes, learnings, and release/claim audit override paths keep their current user-facing guidance; tests cover at least one command-specific message and one pass-through non-conflict error; pnpm build and targeted command tests pass."
 parent: pm-rnpb
+release: v2026.5.24
 resolution: Closed by extracting the shared ownership conflict wrapper.
 expected_result: Append-only audit commands and release share the ownership-conflict predicate and wrapping while keeping command-specific guidance text.
 actual_result: "wrapOwnershipConflict now centralizes the predicate/wrapping; comments, notes, learnings, and release use it; focused tests, manual dogfood, validate, and full release gate passed."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,implements,"2026-07-26T17:22:06.719Z",null,null
+  pm-why9,related,"2026-07-26T17:22:06.719Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-22T18:54:47.501Z",codex-duplicate-audit,"Duplicate-check evidence: searched tracker for ownership/allow-audit conflict dedup. Existing pm-why9 does not mention this path; no specific open item found. Code scan found the same catch predicate across comments, notes, learnings, and claim/release logic."
   "2026-05-24T01:29:17.010Z",codex-ownership-specialist,"Investigation note: ownership/author-helper specialist explorer pass starting. Scope: inspect mutation author resolution and ownership conflict guidance across append/comments/notes/learnings/files/docs/delete/history-redact/claim plus shared CLI helpers; no file edits."
@@ -25,7 +29,7 @@ files[5]{path,scope,note}:
   src/cli/commands/comments.ts,project,duplicated conflict guidance
   src/cli/commands/learnings.ts,project,duplicated conflict guidance
   src/cli/commands/notes.ts,project,duplicated conflict guidance
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot,project,240
 close_reason: "Implemented shared ownership conflict guidance wrapper and verified command-specific guidance through focused tests, manual dogfood, and full release gate."
 body: ""

@@ -6,12 +6,18 @@ status: closed
 priority: 2
 tags[2]: enhancement,telemetry
 created_at: "2026-06-14T05:50:50.793Z"
-updated_at: "2026-06-14T11:02:38.499Z"
+updated_at: "2026-07-26T17:16:01.656Z"
 author: claude-code-agent
 parent: pm-5oj5
+release: v2026.6.16
 resolution: pm health --check-telemetry surfaces OTLP export + flush diagnostics with an advisory telemetry_otel_export_failing warning + remediation entry.
 expected_result: Agents can self-diagnose a stalled traces endpoint from pm health --json without flipping overall health to error.
 actual_result: Diagnostics + advisory warning verified in sandbox against a stuck blackhole span.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-25se,related,"2026-07-26T17:16:01.408Z",null,null
+  pm-300m,related,"2026-07-26T17:16:01.408Z",null,null
+  pm-5oj5,implements,"2026-07-26T17:16:01.408Z",null,null
+  pm-r7md,related,"2026-07-26T17:16:01.408Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-14T06:01:27.655Z",claude-code-agent,"Implemented in same branch: pm health --check-telemetry --json now surfaces pending_otel_spans + last_otel_attempt/success/failure_at + last_otel_failure_error, plus advisory warning telemetry_otel_export_failing:<n> with a remediation-registry entry. Verified in sandbox against a stuck blackhole span. Also extended env_overrides with telemetry_inline_flush + telemetry_source_context (overlaps pm-r7md health AC)."
 close_reason: Telemetry runtime state records OTLP export diagnostics; pm health surfaces them advisory-only.

@@ -6,16 +6,29 @@ status: closed
 priority: 1
 tags[4]: analysis,architecture,"area:cli","area:sdk"
 created_at: "2026-07-05T04:54:08.709Z"
-updated_at: "2026-07-05T05:51:24.476Z"
+updated_at: "2026-07-26T17:19:28.149Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Checked-in inventory (docs/ or item body) maps every CLI command to core modules + identifies business logic embedded in command handlers; each promotion task (item-lifecycle/query/annotations/governance/schema-config) gets its exact function list; findings recorded as notes on pm-usfg
 parent: pm-usfg
 risk: low
 confidence: high
+release: v2026.7.5
 resolution: "Added docs/SDK_PRIMITIVE_INVENTORY.md with a checked-in CLI/MCP-to-SDK primitive inventory, current import-boundary baseline, command-family promotion lanes, and ratchet workflow for moving private core access behind SDK primitives."
 expected_result: "Agents have an explicit, low-context inventory for SDK-first promotion work and can choose future primitive lanes without re-discovering the current CLI/MCP core coupling."
 actual_result: Inventory document now maps command families to SDK promotion lanes and records the current 101-file boundary scan / 857-edge private core baseline used by the static ratchet gate.
+dependencies[11]{id,kind,created_at,author,source_kind}:
+  pm-3mna,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-4a7m,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-8778,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-98cz,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-je50,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-n7rr,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-oslr,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-oxrw,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-rjqr,related,"2026-07-26T17:19:27.878Z",null,null
+  pm-usfg,implements,"2026-07-26T17:19:27.878Z",null,null
+  pm-zwpp,related,"2026-07-26T17:19:27.878Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-05T05:16:12.341Z",claude-code-agent,"Implementation start: live orientation complete. Pairing pm-lodl with pm-8778 in one SDK-first architecture PR because the inventory baseline is the input to the import-boundary ratchet. External checks at start: no open PRs; GH issue #427 remains open for Windows nightly confirmation; Dependabot and CodeQL open alerts are empty; pnpm audit has no known vulnerabilities; pm-changelog latest npm package is pm-changelog@2026.6.30."
   "2026-07-05T05:51:00.434Z",claude-code-agent,"Evidence: added docs/SDK_PRIMITIVE_INVENTORY.md as the checked-in SDK-first command-family inventory for parent pm-usfg. It records the current boundary baseline, maps command families to SDK promotion lanes (lifecycle, query/read, annotations/links, schema/config/profile/init, governance/maintenance, history, plan, execution/diagnostics), and documents the ratchet workflow for reducing private src/core imports as primitives move into src/sdk. Verification passed: pm linked typecheck, full coverage 263 files / 5411 tests at 100/100/100/100, pnpm lint, docs/skills gate, and isolated temp-project dogfood."

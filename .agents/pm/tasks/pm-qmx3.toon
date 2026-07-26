@@ -6,12 +6,17 @@ status: closed
 priority: 0
 tags[7]: agents,audit,dogfood,package-first,performance,sdk,telemetry
 created_at: "2026-05-30T06:05:18.203Z"
-updated_at: "2026-05-30T06:49:50.137Z"
+updated_at: "2026-07-26T17:24:09.499Z"
 author: maintainer-agent
 parent: pm-59gj
+release: v2026.5.31
 resolution: Telemetry startup overhead reduced by adding a cross-process flush spawn gate; tracked metadata collection runtime cache removed from git and ignored; package SDK/calendar/search ecosystem audit completed with no additional code defects requiring this slice.
 expected_result: "pm package-first SDK, calendar, search, telemetry, Sentry, docs/skills, static quality, typecheck, version policy, secret scan, npx smoke, compatibility, npm pack, and semantic qwen dogfood pass after the latest package changes."
 actual_result: "Final sandbox-safe pm linked test run passed 9/9, full release gate passed with 2008 coverage tests at 100 percent, required Sentry/telemetry gate passed with Sentry critical=0 high=0 total=0 and telemetry error rate 1.48 percent, direct package-owned changelog check passed unchanged."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-3mal,related,"2026-07-26T17:24:09.141Z",null,null
+  pm-59gj,implements,"2026-07-26T17:24:09.141Z",null,null
+  pm-rnpb,related,"2026-07-26T17:24:09.141Z",null,null
 comments[15]{created_at,author,text}:
   "2026-05-30T06:05:18.203Z",maintainer-agent,"Duplicate-check evidence: bootstrap passed; pm context showed only open pm-59gj and pm-3mal; pm search for broad audit SDK packages calendar telemetry semantic search performance agent UX found closed broad-audit lineage pm-rnpb plus open pm-59gj and open claimed pm-3mal. No duplicate current audit child exists, so this task is created under pm-59gj for the 2026-05-30 manual dogfood/remediation pass. GitHub preflight found no open issues or PRs, no open Dependabot alerts, no pm-cli notifications, and code scanning is unavailable with current gh token scope."
   "2026-05-30T06:05:41.858Z",maintainer-agent,"Plan: (1) run isolated temp-project dogfood for init --with-packages, package catalog/doctor/upgrade, SDK imports/runtime contracts, calendar, search/reindex, plan lifecycle, linked files/docs/tests, health/validate; (2) inspect live telemetry/Sentry and current GitHub runs, keeping host-specific notes in ignored scripts/prod/telemetry; (3) profile command hot paths and review open pm-3mal performance scope without forcing ownership; (4) implement only concrete high-impact fixes found; (5) link files/tests/docs, run focused gates plus release gate, then PR with 15-minute bot review window."
@@ -38,20 +43,20 @@ files[9]{path,scope,note}:
   CHANGELOG.md,project,Package-owned changelog regenerated after closing audit slice
   src/core/telemetry/runtime.ts,project,Telemetry flush spawn gate
   tests/unit/telemetry-runtime.spec.ts,project,Telemetry spawn gate regression coverage
-tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,Tracked secret scan
-  node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,Full release gate with telemetry required
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 10 --max-high 20 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Live Sentry telemetry gate
-  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Focused telemetry flush spawn gate regression
-  "PM_DOGFOOD_SEMANTIC=1 PM_OLLAMA_MODEL=qwen3-embedding:0.6b node scripts/dogfood-package-first.mjs",null,project,900,null,null,null,null,null,null,null,null,null,null,null,Isolated package SDK calendar search dogfood
-  "pnpm quality:docs-skills",null,project,300,null,null,null,null,null,null,null,null,null,null,null,Docs skills progressive disclosure gate
-  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,Static quality complexity directory duplicate gate
-  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,TypeScript and package typecheck
-  "pnpm version:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,Release version policy after 2026.5.30 auto release
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mprypm0x-ucjqay,test,passed,"2026-05-30T06:20:06.176Z","2026-05-30T06:20:57.153Z","2026-05-30T06:20:57.153Z",null,null,8,0,0,null,null,null
-  test-local-mprz29ud-gy937w,test,failed,"2026-05-30T06:26:18.899Z","2026-05-30T06:30:47.893Z","2026-05-30T06:30:47.893Z",null,null,9,1,0,null,null,null
-  test-local-mprz8tqj-nt0cdp,test,failed,"2026-05-30T06:31:27.307Z","2026-05-30T06:35:53.611Z","2026-05-30T06:35:53.611Z",null,null,9,1,0,null,null,null
-  test-local-mprzfsz7-kiup3u,test,passed,"2026-05-30T06:37:07.360Z","2026-05-30T06:41:19.219Z","2026-05-30T06:41:19.219Z",null,null,9,0,0,null,null,null
+tests[9]{command,scope,timeout_seconds,note}:
+  node scripts/check-secrets.mjs,project,120,Tracked secret scan
+  node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,project,1800,Full release gate with telemetry required
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 10 --max-high 20 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,project,300,Live Sentry telemetry gate
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts,project,300,Focused telemetry flush spawn gate regression
+  "PM_DOGFOOD_SEMANTIC=1 PM_OLLAMA_MODEL=qwen3-embedding:0.6b node scripts/dogfood-package-first.mjs",project,900,Isolated package SDK calendar search dogfood
+  "pnpm quality:docs-skills",project,300,Docs skills progressive disclosure gate
+  "pnpm quality:static",project,300,Static quality complexity directory duplicate gate
+  pnpm typecheck,project,300,TypeScript and package typecheck
+  "pnpm version:check",project,120,Release version policy after 2026.5.30 auto release
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mprypm0x-ucjqay,test,passed,"2026-05-30T06:20:06.176Z","2026-05-30T06:20:57.153Z","2026-05-30T06:20:57.153Z",8,0,0
+  test-local-mprz29ud-gy937w,test,failed,"2026-05-30T06:26:18.899Z","2026-05-30T06:30:47.893Z","2026-05-30T06:30:47.893Z",9,1,0
+  test-local-mprz8tqj-nt0cdp,test,failed,"2026-05-30T06:31:27.307Z","2026-05-30T06:35:53.611Z","2026-05-30T06:35:53.611Z",9,1,0
+  test-local-mprzfsz7-kiup3u,test,passed,"2026-05-30T06:37:07.360Z","2026-05-30T06:41:19.219Z","2026-05-30T06:41:19.219Z",9,0,0
 close_reason: "Completed 2026-05-30 package SDK dogfood audit and telemetry startup remediation: isolated package/calendar/search/SDK dogfood passed, live Sentry/telemetry gates passed, tracked runtime cache removed from git, telemetry flush spawn gate added with regression coverage, full release gate passed, and final linked sandbox-safe pm test run passed 9/9."
 body: ""

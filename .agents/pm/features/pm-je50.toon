@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:plan","area:sdk"
 created_at: "2026-07-05T05:09:13.638Z"
-updated_at: "2026-07-11T16:06:03.401Z"
+updated_at: "2026-07-26T17:17:23.168Z"
 closed_at: "2026-07-11T14:11:24.830Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,13 +14,20 @@ acceptance_criteria: "SDK exports typed plan primitives covering the full pm pla
 parent: pm-usfg
 risk: medium
 confidence: medium
+release: v2026.7.12
 resolution: implemented
 expected_result: pm plan create/steps/deps/decisions/discoveries/validate/materialize callable via typed PmClient without CLI shell-out
 actual_result: "PmClient.plan(...) facade shipped in PR#512 with contracts, docs/SDK.md, 100% coverage; tarball consumer verified init→materialize"
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-qd2h,related,"2026-07-10T21:31:11.790Z",null,null
   pm-ypha,related,"2026-07-10T21:31:11.790Z",null,null
   pm-zwpp,related,"2026-07-10T21:31:11.790Z",null,null
+  pm-98cz,related,"2026-07-26T17:17:22.939Z",null,null
+  pm-pmmv,related,"2026-07-26T17:17:22.939Z",null,null
+  pm-usfg,implements,"2026-07-26T17:17:22.939Z",null,null
+  pm-v7dj,related,"2026-07-26T17:17:22.939Z",null,null
+  pm-w89s,related,"2026-07-26T17:17:22.939Z",null,null
+  pm-z5nb,related,"2026-07-26T17:17:22.939Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-11T12:02:18.272Z",codex-root,"Evidence: public SDK now exports plan contracts and PmClient façade methods for every plan subcommand. Focused plan/SDK/contracts suites pass; typecheck, zero-duplication, static quality, token-budget, docs, and contracts snapshot gates pass. Packed-tarball temp consumer initialized a tracker, created a two-step plan, materialized a Task, and verified enriched title/type/parent/tags/from_step output. Full coverage run was contaminated by an accidental concurrent duplicate and surfaced pre-existing date-version sync assertions; all functional SDK/plan tests passed, and the unrelated assertions are fixed under pm-pmmv. Full clean coverage rerun remains required before closure."
   "2026-07-11T13:26:32.667Z",codex-root,"Final evidence: public SDK exposes every typed plan workflow primitive; governed materialization preserves required custom fields and returns confirmation-rich projections. Final installed-tarball temp consumer created/reordered/annotated/materialized a three-step plan. Full coverage passed 271 files / 5,541 tests / exact 100/100/100/100; lint, static quality, contracts, docs, security, health, history drift, and generator sync gates pass."

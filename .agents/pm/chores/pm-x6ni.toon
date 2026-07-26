@@ -6,15 +6,23 @@ status: closed
 priority: 0
 tags[6]: changelog,compatibility,migration,pm-cli,publishing,release
 created_at: "2026-05-01T08:23:13.900Z"
-updated_at: "2026-05-01T09:43:31.646Z"
+updated_at: "2026-07-26T17:29:23.071Z"
 deadline: "2026-05-02T08:23:13.900Z"
 author: codex-release-agent
 estimated_minutes: 240
 acceptance_criteria: Previous-version tracker data migrates without loss; CHANGELOG.md and generated release notes cover changes since v2026.3.12; release workflow is documented and stable without paid GitHub features; npm/npx and bun/bunx install paths are verified after publication.
 parent: pm-3fti
+release: v2026.5.1-2
 resolution: "Released 2026.5.1 after migration compatibility fix, release-note automation, provenance metadata correction, and successful npm/GitHub publication verification."
 expected_result: 2026.5.1 release published through GitHub workflow with npm/npx/bunx/GitHub verification and no legacy tracker data breakage.
 actual_result: "Release workflow 25209696412 succeeded; npm, npx, bunx, and GitHub Release verification all returned 2026.5.1; previous-version tracker compatibility migrated cleanly."
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-1h88,related,"2026-07-26T17:29:22.886Z",null,null
+  pm-23me,related,"2026-07-26T17:29:22.886Z",null,null
+  pm-3fti,implements,"2026-07-26T17:29:22.886Z",null,null
+  pm-e0b5,related,"2026-07-26T17:29:22.886Z",null,null
+  pm-lz4m,related,"2026-07-26T17:29:22.886Z",null,null
+  pm-yvwt,related,"2026-07-26T17:29:22.886Z",null,null
 comments[6]{created_at,author,text}:
   "2026-05-01T08:23:13.900Z",codex-release-agent,"Duplicate check before create: ran pm context --limit 10,pm search 'release changelog publishing migration compatibility' --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Only closed release chores pm-lz4m/pm-1h88 matched the release scope; active parent lineage selected as pm-23me -> pm-3fti for latest-build audit/release work."
   "2026-05-01T08:56:27.774Z",codex-release-agent,"Release gate evidence so far: pnpm typecheck passed; pnpm version:check passed for 2026.5.1; node scripts/release-version.mjs check --tag v2026.5.1 --verify-next --date 2026.5.1 passed; pnpm security:scan found no credential-like secrets; npm pack --dry-run produced @unbrained/pm-cli@2026.5.1 tarball; pnpm release:notes generated /tmp/pm-cli-release-notes.md from CHANGELOG.md and sanitized pm data; targeted workflow/migration tests passed; pnpm test passed 81 files/1087 tests; pnpm test:coverage and node scripts/run-tests.mjs coverage both passed with 100% coverage; pnpm smoke:npx passed for 2026.5.1; pm test --run passed for pm-x6ni and pm-yvwt. Validation sweeps report only pre-existing tracker hygiene warnings tracked by pm-e0b5: 18 closed-item resolution backfills, 3 history hash mismatches, and 3 missing linked paths."
@@ -34,11 +42,11 @@ files[9]{path,scope,note}:
   package.json,project,version and release notes script
   tests/integration/ci-workflow-contract.spec.ts,project,release workflow contract coverage
   tests/unit/test-command.spec.ts,project,release workflow signal fixture
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/cli.integration.spec.ts -t 'release workflow|auto-selects default item_format|auto-migrates item files before mutation',null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted workflow and migration regression
-  "node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts -t \"records progress failure reasons\"",null,project,180,null,null,null,null,null,null,null,null,null,null,null,release CI signal-progress regression
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-momogj3e-ko1amb,test,passed,"2026-05-01T08:54:51.652Z","2026-05-01T08:55:24.075Z","2026-05-01T08:55:24.075Z",null,null,1,0,0,null,null,null
-  test-local-momp95hq-5oy5tw,test,passed,"2026-05-01T09:17:22.237Z","2026-05-01T09:17:39.470Z","2026-05-01T09:17:39.470Z",null,null,2,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/cli.integration.spec.ts -t 'release workflow|auto-selects default item_format|auto-migrates item files before mutation',project,300,targeted workflow and migration regression
+  "node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts -t \"records progress failure reasons\"",project,180,release CI signal-progress regression
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-momogj3e-ko1amb,test,passed,"2026-05-01T08:54:51.652Z","2026-05-01T08:55:24.075Z","2026-05-01T08:55:24.075Z",1,0,0
+  test-local-momp95hq-5oy5tw,test,passed,"2026-05-01T09:17:22.237Z","2026-05-01T09:17:39.470Z","2026-05-01T09:17:39.470Z",2,0,0
 close_reason: 2026.5.1 published and verified via GitHub Release workflow 25209696412; previous-version tracker migration passed; npm/npx/bunx/GitHub verification all returned 2026.5.1.
 body: ""

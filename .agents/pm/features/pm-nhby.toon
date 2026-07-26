@@ -6,12 +6,14 @@ status: closed
 priority: 2
 tags[4]: "area:cli","area:packages","area:sdk",pm-cli
 created_at: "2026-06-21T20:35:07.534Z"
-updated_at: "2026-06-21T21:29:46.737Z"
+updated_at: "2026-07-26T17:21:08.814Z"
 author: claude-code-agent
 parent: pm-ugqx
-dependencies[2]{id,kind,created_at,author,source_kind}:
+release: v2026.6.22
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4ltc,related,"2026-06-21T20:35:33.909Z",null,null
   pm-miqm,related,"2026-06-21T20:35:33.909Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:21:08.596Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-21T21:20:49.034Z",claude-code-agent,"Evidence: implemented package/extension init --capability commands|hooks. Hook scaffolds declare commands+hooks, register a starter command plus after_command lifecycle hook, emit package-mode SDK sample tests with assertRegisteredHook/runRegisteredHookForTest, expose capability in init results/help/completions/contracts, and reject --capability on non-init actions. Verification passed: focused test bundle 421 tests; pnpm build && pnpm contracts:check; pnpm quality:static; pnpm security:scan; manual temp smoke at /tmp/tmp.2DM5gLYLNL with npm test, pm install, package doctor deep trace status ok warning_count 0, and pm hook-package ping; node scripts/run-tests.mjs coverage passed literal 100/100/100/100 across 4,830 tests."
   "2026-06-21T21:21:14.073Z",claude-code-agent,"Changelog/package evidence: npm view pm-changelog version returned 2026.6.20; pm package doctor --project --detail deep --trace returned status ok with warning_count 0 and pm-changelog active at 2026.6.20; pnpm changelog:pm:check reinstalled pm-changelog 2026.6.20 and reported CHANGELOG.md action unchanged, item_count 1272."
@@ -29,13 +31,13 @@ files[11]{path,scope,note}:
   tests/unit/commands/contracts-command.spec.ts,project,cover command contract exposure for --capability
   tests/unit/extensions/extension-command.spec.ts,project,"cover commands/hooks scaffold variants,invalid capabilities,and init-only guard"
   tests/unit/sdk/sdk-index.spec.ts,project,cover SDK flag contract routing for package/extension init
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "manual temp smoke: pm init,pm package init ./hook-package --capability hooks,npm install local checkout,npm test,pm install ./hook-package,pm package doctor --detail deep --trace,pm hook-package ping",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/cli-main-errors.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm build && pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+tests[6]{command,scope,timeout_seconds}:
+  "manual temp smoke: pm init,pm package init ./hook-package --capability hooks,npm install local checkout,npm test,pm install ./hook-package,pm package doctor --detail deep --trace,pm hook-package ping",project,300
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,300
+  "pnpm build && pnpm contracts:check",project,120
+  "pnpm quality:static",project,120
+  "pnpm security:scan",project,120
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,document package init --capability hooks starter workflow
   docs/SDK.md,project,document generated hook starter SDK testing helpers

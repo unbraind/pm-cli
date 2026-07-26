@@ -6,8 +6,11 @@ status: closed
 priority: 2
 tags[3]: perf,startup,telemetry
 created_at: "2026-05-29T22:28:38.724Z"
-updated_at: "2026-05-31T05:40:29.530Z"
+updated_at: "2026-07-26T17:03:12.208Z"
 author: maintainer-agent
+release: v2026.5.31
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ss1d,related,"2026-07-26T17:03:11.970Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-29T22:59:24.881Z",maintainer-agent,"Addressed the highest-frequency sub-item: scheduleTelemetryFlush now spawns the detached flush child AT MOST ONCE per process (in-process guard). Previously command_start + command_finish each spawned a child (~6.5ms fork/exec each, deduped only by lock AFTER paying Node startup). One child drains the whole queue. DEFERRED with rationale: (a) PM_TOOL_PARAMETERS_SCHEMA lazy-build — it is public SDK surface (sdk/index.ts re-exports it, contract-tested in sdk-index.spec) and the eager build is only ~3ms (~1% of a ~300ms command); churning the public API for 1% is not worth it. (b) completion.ts flag-string constants are not on the bundled CLI hot path. The dominant per-command cost is ESM module-load/bundle, tracked separately under pm-ss1d (esbuild --splitting --packages=external). Keeping open for the bundling lever."
   "2026-05-30T05:07:04.484Z",maintainer-agent,"CORRECTION: reverted the in-process flush spawn-once guard. A flush child boots (~50-100ms) before even a normal command finishes (~300ms), so spawning only at command_start would systematically defer the command_finish event to the next invocation — a real-time telemetry timeliness regression not worth ~6.5ms. The correct optimization is a cheap cross-process 'flush already in flight' check before spawn (skip redundant spawns while preserving timeliness), tracked as future work. No telemetry runtime change ships in this PR; pm-3mal stays open for the bundling lever (pm-ss1d) + the in-flight cross-process flush guard."
@@ -15,7 +18,7 @@ comments[3]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,Cross-process telemetry flush spawn gate
   tests/unit/telemetry-runtime.spec.ts,project,Telemetry spawn gate regression coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Telemetry flush spawn gate regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts,project,300,Telemetry flush spawn gate regression
 close_reason: "Resolved all three eager-startup costs. (2) MCP tool-parameter schema (PM_TOOL_PARAMETERS_SCHEMA + PM_PROVIDER_TOOL_PARAMETERS_SCHEMA in sdk/cli-contracts.ts) is now a memoized lazy Proxy — built only on first property access (pm contracts / MCP / SDK consumers), never during CLI commands; verified the action-scoped builder fires 0x during `pm list`, 1x during `pm contracts`. (1) completion flag-string constants no longer load on non-completion commands: the new per-command code-splitting (see companion item) means completion.ts only loads for `pm completion` itself (0 module refs during `pm list`). (3) telemetry flush spawn is already gated by acquireTelemetryFlushSpawnGate before spawning. Net effect verified by CPU profile: the 943KB command monolith and fast-glob tree no longer load for read commands."
 body: ""

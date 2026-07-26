@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[2]: audit-followup,extensions
 created_at: "2026-07-04T08:31:42.675Z"
-updated_at: "2026-07-25T16:31:58.512Z"
+updated_at: "2026-07-26T17:16:54.726Z"
 closed_at: "2026-07-25T16:31:57.512Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,11 +14,13 @@ acceptance_criteria: Calendar and guide-shell command-bounded output registratio
 parent: pm-ugqx
 risk: low
 confidence: medium
+release: v2026.7.26
 resolution: Extension doctor recognizes command-bounded output ownership and retains warnings for genuine global collisions.
 expected_result: Extension doctor recognizes command-bounded output ownership and retains warnings for genuine global collisions.
 actual_result: Command-bounded calendar and guide-shell output registrations coexist without false-positive warnings; intentionally global collisions remain reported.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-15T06:29:50.614Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:16:54.470Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-10T05:48:02.567Z",codex-root-20260709,"Fresh packed-package evidence (2026-07-10): path-target init --with-packages activated all 11 bundled packages with zero blocking failures, but isolated deep package doctor still reports exactly two extension_output_service_override_global:output_format warnings for builtin-calendar and builtin-guide-shell. Canonical item confirmed; no duplicate created. Temp proof: /tmp/pm-cli-sdk-path-proof-XIsSsh."
   "2026-07-25T00:58:48.364Z",codex-root,"GitHub linkage: GH-687 reproduces this still-open canonical first-party output_format ownership collision on 2026.7.24-3. The GitHub issue is linked to this item; no duplicate PM item was created."

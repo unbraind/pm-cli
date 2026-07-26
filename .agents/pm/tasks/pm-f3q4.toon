@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[9]: "area:create","area:extensions-hooks","area:restore",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-05T15:33:46.422Z"
-updated_at: "2026-04-04T21:47:37.071Z"
+updated_at: "2026-07-26T17:13:33.443Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-p8p
 blocked_reason: "M5 follow-up: dispatch onWrite hooks for create and restore has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: dispatch onWrite hooks for create and restore is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-dispatch-onwrite-hooks-for-create-a
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: dispatch onWrite hooks for create and restore."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-p8p,related,"2026-03-05T15:33:46.422Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:13:33.235Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-05T15:33:46.422Z",maintainer-agent,"Follow-up to hook lifecycle: add missing onWrite dispatch for create/restore write paths."
   "2026-03-05T15:34:12.876Z",maintainer-agent,"Planned change-set: docs-first update hook lifecycle call-site coverage in PRD/README, then add onWrite hook dispatch (item + history paths) in create/restore command paths and extend unit coverage for warning propagation and dispatch counts."
@@ -59,9 +60,9 @@ files[4]{path,scope,note}:
   src/cli/commands/restore.ts,project,restore onWrite dispatch
   tests/unit/create-command.spec.ts,project,create hook regression coverage
   tests/unit/restore-command.spec.ts,project,restore hook regression coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/restore-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted create restore hook tests
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/restore-command.spec.ts,project,1200,targeted create restore hook tests
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,hook lifecycle call-site coverage

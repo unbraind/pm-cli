@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:08.818Z"
-updated_at: "2026-04-04T21:46:25.183Z"
+updated_at: "2026-07-26T17:01:56.255Z"
 deadline: "2026-02-27T23:02:08.818Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-c0r
 blocked_reason: "M2: History and activity commands has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M2: History and activity commands is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/history-and-activity-commands
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for History and activity commands.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-c0r,parent,"2026-02-17T23:02:08.818Z",steve,null
   pm-u9r,blocks,"2026-02-17T23:02:08.818Z",steve,null
+  pm-c0r,implements,"2026-07-26T17:01:56.003Z",null,null
 comments[3]{created_at,author,text}:
   "2026-02-18T01:27:26.694Z",agent,Implementing history/activity CLI commands with deterministic output contracts and test coverage; docs will be updated before behavior changes.
   "2026-02-18T01:33:09.397Z",agent,"Implemented new history/activity command surface: added runHistory and runActivity handlers, wired CLI registration/exports, updated README+PRD command matrices first, and added unit/integration coverage for deterministic history/activity behavior."
@@ -61,9 +62,9 @@ files[8]{path,scope,note}:
   src/cli/main.ts,project,Register history/activity commands
   tests/integration/cli.integration.spec.ts,project,Add history/activity CLI integration checks
   tests/unit/history-activity-command.spec.ts,project,Unit coverage for history/activity handlers
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Sandboxed coverage gate
-  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Sandboxed regression tests
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,600,Sandboxed coverage gate
+  node scripts/run-tests.mjs test,project,600,Sandboxed regression tests
 docs[2]{path,scope,note}:
   PRD.md,project,Authoritative command and output contract
   README.md,project,Public command surface reference

@@ -6,22 +6,25 @@ status: closed
 priority: 2
 tags[5]: agent-ux,diagnostics,extensions,gh-issue,packages
 created_at: "2026-07-06T21:08:26.415Z"
-updated_at: "2026-07-07T12:35:06.379Z"
+updated_at: "2026-07-26T17:05:19.393Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm package doctor --project supports an isolation flag (--ignore-global or --isolated) that excludes global-scope registrations; doctor --help --explain documents the PM_GLOBAL_PATH recipe; when global registrations affect project diagnostics the JSON/TOON result carries an actionable isolation hint
 parent: pm-ugqx
 risk: medium
 confidence: high
+release: v2026.7.8
 resolution: GH-467 package/extension doctor isolation implemented and verified.
 expected_result: Project-scoped package doctor can run hermetically without machine-local global extension registrations leaking into package smoke tests.
 actual_result: "Fresh temp package doctor --project --isolated --detail deep --trace loaded only project:pm-temp-smoke; non-isolated project diagnostics emit actionable global-state remediation."
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-qt5d,related,"2026-07-06T21:09:52.929Z",null,null
   pm-cbwg,related,"2026-07-07T08:47:15.764Z",null,null
   pm-usfg,related,"2026-07-07T08:47:15.764Z",null,null
   pm-w89s,related,"2026-07-07T08:47:15.764Z",null,null
   pm-x6jf,related,"2026-07-07T08:47:15.764Z",null,null
+  pm-4ak1,related,"2026-07-26T17:05:19.088Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:05:19.088Z",null,null
 comments[10]{created_at,author,text}:
   "2026-07-07T09:43:54.082Z",codex-agent,"Evidence: implemented isolated package/extension doctor diagnostics with --isolated/--ignore-global, project doctor global-leak metadata/remediation, help/completion/SDK contract/tool schema updates, and a bound extension API registrar so package activators can destructure API methods. Verification: pnpm build; pm test pm-6abs --run --progress (5/5 passed); node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/scripts/release/docs-skills-gate.spec.ts (277 passed); node scripts/run-tests.mjs coverage (5450 passed, 100/100/100/100); temp-dir dogfood package init/install/doctor isolated loaded only project:pm-temp-smoke; pnpm changelog:pm:check unchanged with pm-changelog 2026.7.6 active; pm health --check-only --summary ok; pnpm audit no known vulnerabilities; GitHub Dependabot/code-scanning open alerts none. Static quality: CodeFactor-parity complexity is clear; remaining docstring coverage gate belongs to live open pm-4ak1 backlog."
   "2026-07-07T10:17:52.488Z",codex-agent,"Evidence update: refreshed tests/fixtures/contracts/full.json after CI Gates (static) reported stale contract snapshot on PR #479. Verified pnpm contracts:check and pnpm build both pass locally before amending the PR branch."

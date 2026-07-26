@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:claim","area:ownership",pm-cli,ux
 created_at: "2026-04-03T09:33:58.431Z"
-updated_at: "2026-04-04T21:33:43.197Z"
+updated_at: "2026-07-26T17:28:35.096Z"
 deadline: "2026-04-09T09:33:58.431Z"
 author: codex-agent
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: ux-hardening
-release: vnext
+release: v2026.5.1
 blocked_reason: "Feature: claim takeover on non-terminal items has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Feature: claim takeover on non-terminal items is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,8 +38,9 @@ affected_version: 2026.3.12
 component: core/item-store
 regression: true
 customer_impact: Reduces friction in ownership transfer and PM audit flows
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-hp31,parent,"2026-04-03T09:33:58.431Z",codex-agent,null
+  pm-hp31,implements,"2026-07-26T17:28:34.846Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T09:33:58.431Z",codex-agent,Feature addresses user-reported claim force friction for non-terminal items.
   "2026-04-03T14:47:18.089Z",codex-agent,"External audit follow-up dedup mapping: this closed feature resolved claim takeover force friction for non-terminal items. Remaining net-new scope is ownership conflict message clarity only."
@@ -47,8 +48,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T09:33:58.431Z",codex-agent,Will modify item-store ownership conflict guard and validate command-level terminal protections.
 files[1]{path,scope,note}:
   src/core/store/item-store.ts,project,ownership guard mutation gate
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,claim behavior regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,project,7200,claim behavior regression
 docs[1]{path,scope,note}:
   PRD.md,project,ownership model semantics
 close_reason: "Feature delivered: claim takeover semantics now allow non-terminal reassignment without force, verified by unit/integration tests."

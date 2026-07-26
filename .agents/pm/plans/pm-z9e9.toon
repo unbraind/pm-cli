@@ -6,14 +6,14 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-10T08:53:16.326Z"
-updated_at: "2026-07-22T20:18:56.611Z"
+updated_at: "2026-07-26T17:30:49.878Z"
 author: maintainer-agent
 parent: pm-mpbb
-release: 2026.6.10
+release: v2026.6.10
 resolution: "Merged PR #198 to main as df639239 with SDK/CLI mutation, context, aggregate, and linked-test primitives plus review-loop fixes."
 expected_result: "Agent-oriented pm SDK/CLI primitives are available with docs, contracts, tests, manual temp smoke, changelog gate, and GitHub CI/review evidence."
 actual_result: PR #198 merged; CI green; Gemini/CodeRabbit review loop clean or unavailable as documented; implemented child pm items closed/released; GH #191 remains open for the exact unimplemented parser form.
-dependencies[9]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-awfr,related,"2026-06-10T08:53:16.326Z",null,null
   pm-eaer,related,"2026-06-10T08:53:16.326Z",null,null
   pm-esf6,related,"2026-06-10T08:53:16.326Z",null,null
@@ -23,6 +23,7 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-p9hw,related,"2026-06-10T08:53:16.326Z",null,null
   pm-vcr2,related,"2026-06-10T08:53:16.326Z",null,null
   pm-xnkd,related,"2026-06-10T08:53:16.326Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:30:49.586Z",null,null
 comments[26]{created_at,author,text}:
   "2026-06-10T10:33:45.487Z",codex-impl,"Mutation-surface specialist read-only pass: pm-xnkd close --duplicate-of, pm-p9hw create --parent fail-fast/default escape hatch, and pm-esf6 root --id-only are not implemented in current branch. close.ts/register-mutation.ts have no duplicateOf/--duplicate-of path; create.ts still uses settings.validation.parent_reference with default governance parent_reference=warn and tests assert warning behavior; global contracts/main/MCP/completions expose --no-changed-fields/fullChangedFields only, no --id-only. Expected follow-up surfaces: src/cli/commands/close.ts, src/cli/register-mutation.ts, src/cli/commands/create.ts, src/core/item/parent-reference-policy.ts, src/core/shared/constants.ts, src/cli/main.ts, src/sdk/cli-contracts.ts, src/mcp/server.ts, src/cli/commands/completion.ts, tests/fixtures/contracts/full.json, docs/COMMANDS.md, docs/AGENT_GUIDE.md, and focused unit/integration/MCP regressions."
   "2026-06-10T10:33:54.434Z",codex-impl,"Read-surface inspection: pm-awfr is implemented via DEFAULT_COMPACT_LIST_FIELDS including parent and has unit coverage. pm-ojpq is only partially present: hierarchy/progress completion-style stats exist, but high_level entries lack children_total/children_closed/completion_pct and recently_created/unparented sections are absent from section types, defaults, builders, and renderers. pm-eaer is not implemented: aggregate has no --completion option, no completion counters/pct fields, no registration/contracts/completion/docs/tests. No files edited by specialist."

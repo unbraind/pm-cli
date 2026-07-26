@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: customization,durability,long-horizon,schema,sdk
 created_at: "2026-07-06T23:35:40.341Z"
-updated_at: "2026-07-23T20:21:54.285Z"
+updated_at: "2026-07-26T17:12:06.534Z"
 closed_at: "2026-07-23T19:10:46.438Z"
 author: maintainer-agent
 estimated_minutes: 720
@@ -14,14 +14,22 @@ acceptance_criteria: "pm schema gains migration verbs (SDK-first): rename-type, 
 parent: pm-8jdc
 risk: medium
 confidence: medium
+release: v2026.7.24
 resolution: "Delivered lossless SDK-first schema evolution with indexed planning, atomic recovery, and immutable item/workspace history."
 expected_result: "Custom type, field, and status migrations are dry-runnable, resumable, lossless, and efficient at 100k scale."
 actual_result: "Packed CLI and SDK migrations passed dry-run, apply, recovery, history verification, and a 100000-item indexed plan in 284 ms."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-0qg5,related,"2026-07-06T23:35:40.341Z",null,null
   pm-3mna,related,"2026-07-06T23:35:40.341Z",null,null
   pm-klo8,related,"2026-07-06T23:35:40.341Z",null,null
   pm-z5nb,related,"2026-07-06T23:35:40.341Z",null,null
+  pm-5qmm,related,"2026-07-26T17:12:06.304Z",null,null
+  pm-801d,related,"2026-07-26T17:12:06.304Z",null,null
+  pm-8jdc,implements,"2026-07-26T17:12:06.304Z",null,null
+  pm-b9ov,related,"2026-07-26T17:12:06.304Z",null,null
+  pm-d1ig,related,"2026-07-26T17:12:06.304Z",null,null
+  pm-hib1,related,"2026-07-26T17:12:06.304Z",null,null
+  pm-mi2x,related,"2026-07-26T17:12:06.304Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-23T17:15:35.259Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full open/closed customization lineage review, and GitHub/security/dependency reconciliation. Active scope is the complete SDK-first rename-type, rename-field, and status-remap migration surface with dry-run plans, audited per-item persistence, resumability, CLI/MCP/contracts, docs, and isolated acceptance; no duplicate item created."
   "2026-07-23T19:00:14.851Z",claude-code-agent,"Implementation evidence: delivered SDK-first rename-type, rename-field, and remap-status plans with deterministic idempotency keys, derived metadata/type index selection, atomic workspace transactions, compensation, resumable committed journals, per-item history, and workspace history. Packed-consumer acceptance exercised dry-run, apply, and committed recovery. A real pm-mi2x large-tier 100000-item workspace produced a zero-affected indexed type plan in 284 ms."

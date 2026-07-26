@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:docs","area:release","area:tests",ci,code,doc,"milestone:6",pm-cli,"priority:0"
 created_at: "2026-03-09T17:39:15.717Z"
-updated_at: "2026-04-04T21:50:49.396Z"
+updated_at: "2026-07-26T17:01:50.543Z"
 deadline: "2026-03-10T17:39:15.717Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop
-release: v0.1
+release: v2026.3.12
 blocked_by: no-active-blocker
 blocked_reason: Maintain release readiness 2026-03-09 (Run 8) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Maintain release readiness 2026-03-09 (Run 8) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,9 @@ fixed_version: v0.1
 component: project-management/maintain-release-readiness-2026-03-09-run-8
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Maintain release readiness 2026-03-09 (Run 8).
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7vr0,related,"2026-07-26T17:01:50.324Z",null,null
+  pm-i0iy,implements,"2026-07-26T17:01:50.324Z",null,null
 comments[7]{created_at,author,text}:
   "2026-03-09T17:39:15.717Z",maintainer-agent,Run 8 exists to maintain release readiness and close parity drift discovered in this pass.
   "2026-03-09T17:40:04.808Z",maintainer-agent,"Intended changeset: run docs and command-surface parity audit; if mismatch is found update docs first then implementation and tests; finally run pm test and pm test-all for regression evidence."
@@ -57,9 +60,9 @@ files[3]{path,scope,note}:
   PRD.md,project,authoritative requirements
   README.md,project,parity review target
   tests/integration/release-readiness-runtime.spec.ts,project,parity enforcement tests
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe full suite
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,coverage gate
+  node scripts/run-tests.mjs test,project,1200,sandbox-safe full suite
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative spec

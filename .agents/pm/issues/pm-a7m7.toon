@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: code-scanning,developer-scripts,high,security,semgrep,spawn-shell-true,untriaged
 created_at: "2026-07-06T18:56:15.896Z"
-updated_at: "2026-07-25T02:25:29.353Z"
+updated_at: "2026-07-26T17:08:56.123Z"
 closed_at: "2026-07-25T02:24:46.764Z"
 author: codex-cli-agent
 estimated_minutes: 45
@@ -14,6 +14,7 @@ acceptance_criteria: "The flagged shell:true spawn at scripts/release/utils.mjs#
 parent: pm-oz8u
 risk: high
 confidence: low
+release: v2026.7.25
 reporter: semgrep
 severity: high
 environment: unbraind/pm-cli refs/heads/main
@@ -22,9 +23,10 @@ expected_result: Release helpers expose no shell-enabled child-process execution
 actual_result: "The option and its test branch are removed; Semgrep, secret, static, and complete coverage gates pass."
 affected_version: main@6f511706628f18743a00a1cfe851e8d1f492684e
 component: scripts/release/utils.mjs
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ngjd,related,"2026-07-14T17:04:58.387Z",null,null
   pm-oz8u,related,"2026-07-24T23:54:32.912Z",null,null
+  pm-oz8u,implements,"2026-07-26T17:08:55.919Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T02:02:16.003Z","harness:codex","Evidence: removed the unused configurable shell execution path from release utilities and its tests. Static analysis confirms no production shell-enabled child-process call remains in the remediated surface."
 files[2]{path,scope,note}:

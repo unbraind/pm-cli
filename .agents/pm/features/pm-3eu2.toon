@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:48:12.160Z"
-updated_at: "2026-05-17T08:21:00.965Z"
+updated_at: "2026-07-26T17:03:02.421Z"
 deadline: "2026-04-13T14:48:12.160Z"
 author: codex-agent
 estimated_minutes: 240
@@ -19,6 +19,7 @@ impact: Reduces ambiguity and handoff risk for future work touching Add glob-bas
 outcome: This record can be used as canonical context when modifying Add glob-based linked artifact additions for files/docs.
 why_now: Historical decisions for Add glob-based linked artifact additions for files/docs need durable context for future maintenance and audits.
 parent: pm-iswo
+release: v2026.5.1
 blocked_reason: Add glob-based linked artifact additions for files/docs has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add glob-based linked artifact additions for files/docs is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Add glob-based linked artifact additions for files/docs (pm CLI + Node/pnpm toolchain).
@@ -27,8 +28,9 @@ expected_result: Acceptance criteria for Add glob-based linked artifact addition
 actual_result: Work completed and recorded with linked artifacts for Add glob-based linked artifact additions for files/docs.
 component: project-management/add-glob-based-linked-artifact-additions-for-fil
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add glob-based linked artifact additions for files/docs.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ap8l,related,"2026-04-03T14:48:12.160Z",codex-agent,null
+  pm-iswo,implements,"2026-07-26T17:03:02.213Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T14:48:12.160Z",codex-agent,Feature is additive and must preserve existing linked artifact mutation behavior.
   "2026-04-03T14:58:41.031Z",codex-agent,"Implemented repeatable files/docs --add-glob with deterministic expansion and dedup, wired CLI/help/completion + Pi schema/mapping parity, and added unit/integration regressions. Evidence: node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts passed (135/135)."
@@ -46,8 +48,8 @@ files[10]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,CLI integration regression for files/docs add-glob
   tests/unit/completion-command.spec.ts,project,completion regression for add-glob flag
   tests/unit/files-docs-command.spec.ts,project,unit coverage for add-glob parsing/expansion/dedup
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,add-glob + wrapper + completion regression suite
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,project,3600,add-glob + wrapper + completion regression suite
 docs[1]{path,scope,note}:
   README.md,project,glob linked-artifact add guidance
 close_reason: files/docs now support repeatable --add-glob with deterministic dedup and parity surfaces verified by linked + full test gates.

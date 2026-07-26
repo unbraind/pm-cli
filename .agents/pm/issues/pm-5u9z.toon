@@ -6,19 +6,22 @@ status: closed
 priority: 2
 tags[4]: agent-ux,extensions,health,pm-cli
 created_at: "2026-05-17T19:19:37.251Z"
-updated_at: "2026-05-17T19:45:34.155Z"
+updated_at: "2026-07-26T17:05:04.135Z"
 author: claude-code-agent
 acceptance_criteria: Default `pm init --with-packages` + `pm health` produces no warnings; collision still flagged for non-builtin conflicts; regression test added
 parent: pm-rnpb
+release: v2026.5.18
 resolution: Classified output_format service overrides as chained registrations so expected bundled package renderers do not emit collision warnings.
 expected_result: pm init --with-packages followed by pm health has no benign output_format collision warning while non-chained service collisions still warn.
 actual_result: "Extension-loader regression, isolated dogfood, semantic dogfood, and release gates verified the behavior."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,implements,"2026-07-26T17:05:03.913Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-17T19:45:02.993Z",codex-20260517,"Evidence: output_format service overrides are now treated as chained/fall-through registrations, so bundled package renderers no longer produce collision warnings; non-chained service collisions remain warned. Extension-loader regression covers both behaviors, and temp-project init --with-packages + health passed in dogfood."
 files[2]{path,scope,note}:
   src/core/extensions/loader.ts,project,suppress collision warnings for chained output_format services
   tests/unit/extension-loader.spec.ts,project,regression for chained output_format and non-chained service collision warnings
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,240
 close_reason: "Implemented suppression of benign chained output_format service collision warnings while preserving collision warnings for non-chained services. Verified through extension-loader regression, isolated dogfood, semantic dogfood, and full release gates."
 body: ""

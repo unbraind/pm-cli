@@ -6,14 +6,16 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",authoring,dx
 created_at: "2026-06-23T12:17:44.212Z"
-updated_at: "2026-06-23T12:32:07.017Z"
+updated_at: "2026-07-26T17:26:53.155Z"
 author: claude-code-agent
 parent: pm-ugqx
+release: v2026.6.24
 resolution: "Both child tasks shipped (synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint). Declarative authoring loop now complete: compose -> derive -> describe/lint -> SYNTHESIZE -> assert. 100% cov, 4911 tests, verified end-to-end via built dist."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-9ect,related,"2026-06-23T12:18:09.096Z",null,null
   pm-iqq0,related,"2026-06-23T12:18:09.096Z",null,null
   pm-tlpv,related,"2026-06-23T12:18:09.096Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:26:52.875Z",null,null
 notes[1]{created_at,author,text}:
   "2026-06-23T12:32:06.592Z",claude-code-agent,"Design: synthesizeExtensionManifest is the GENERATE verb completing compose -> derive -> describe/lint -> synthesize. It pairs with defineExtensionManifest (which only TYPES a hand-written manifest). Capabilities = deriveExtensionCapabilities(blueprint) UNION normalized additionalCapabilities (for imperative-activate escape-hatch surfaces invisible to static derivation). assertExtensionManifestMatchesBlueprint is the STRICT bookend to the lenient assertExtensionBlueprint: fails on BOTH missing (undeclared, would crash activation) AND unused (over-grant, violates least-privilege). Coverage gotcha: pre-guarding manifest.capabilities with Array.isArray makes lint's declared non-null, so result.declared ?? [] is a DEAD branch -> used an erasable cast (result.declared as ExtensionCapability[]) since the repo has zero non-null assertions in src/sdk and a runtime guard would break 100% branch cov. Verified round-trip via built dist: synthesized manifest activates with exactly its capabilities (least-privilege by construction)."
 close_reason: "Both child tasks shipped (synthesizeExtensionManifest + assertExtensionManifestMatchesBlueprint). Declarative authoring loop now complete: compose -> derive -> describe/lint -> SYNTHESIZE -> assert. 100% cov, 4911 tests, verified end-to-end via built dist."

@@ -6,11 +6,15 @@ status: closed
 priority: 2
 tags[3]: "area:ci",security,supply-chain
 created_at: "2026-06-07T10:05:02.314Z"
-updated_at: "2026-06-07T17:03:46.687Z"
+updated_at: "2026-07-26T17:17:29.249Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- codeql.yml pins both github/codeql-action/init and github/codeql-action/analyze to the current immutable SHA for @v3\n- ci-workflow-contract.spec.ts PINNED_ACTIONS check extended to cover CodeQL actions (or a comment explains why it is excluded)"
 parent: pm-u9d0
 risk: medium
 confidence: high
+release: v2026.6.8
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-hfny,related,"2026-07-26T17:17:29.063Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:17:29.063Z",null,null
 close_reason: "Fixed: codeql.yml init/analyze pinned to immutable SHA (dd903d2... # v3); added a ci-workflow-contract assertion that codeql.yml has no unpinned uses."
 body: "## Context\n.github/workflows/codeql.yml lines 39 and 44:\n```yaml\nuses: github/codeql-action/init@v3\nuses: github/codeql-action/analyze@v3\n```\n\nAll other workflows use SHA-pinned refs (e.g. actions/checkout@de0fac2e... # v6). The CodeQL actions are run on push, PR, and weekly schedule, so this is an active attack surface.\n\n## Acceptance criteria\n- codeql.yml pins both github/codeql-action/init and github/codeql-action/analyze to the current immutable SHA for @v3\n- ci-workflow-contract.spec.ts PINNED_ACTIONS check extended to cover CodeQL actions (or a comment explains why it is excluded)\n\n## Evidence\n.github/workflows/codeql.yml lines 39, 44; ci-workflow-contract.spec.ts PINNED_ACTIONS object (lines 17-25) does not include codeql entries"

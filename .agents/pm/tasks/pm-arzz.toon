@@ -6,13 +6,18 @@ status: closed
 priority: 2
 tags[4]: code-quality,codefactor,complexity,refactor
 created_at: "2026-06-26T13:33:03.901Z"
-updated_at: "2026-06-26T21:56:22.807Z"
+updated_at: "2026-07-26T17:09:28.483Z"
 author: claude-code-agent
 acceptance_criteria: "First milestone: the 3 Critical + 7 High complexity findings are eliminated. Stretch: Moderate findings trend to 0 where it does not harm readability (otherwise scoped-ignore with justification). No behavior change — full coverage suite green at 100%; pnpm typecheck, contracts:check, and quality:static pass; no directory exceeds the 120-file static-gate cap."
 parent: pm-92if
+release: v2026.6.30
 resolution: PR #382 reduced list/search filter complexity and pm-6sqo now adds preventive local CodeFactor lint coverage.
 expected_result: Critical/high complexity remediation is complete and future regressions have local/CI guardrails.
 actual_result: PR #382 merged to main at 699db578 with green checks; pm-6sqo adds pnpm lint guardrails and full verification evidence.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-6sqo,related,"2026-07-26T17:09:28.269Z",null,null
+  pm-92if,implements,"2026-07-26T17:09:28.269Z",null,null
+  pm-fmjy,related,"2026-07-26T17:09:28.269Z",null,null
 comments[6]{created_at,author,text}:
   "2026-06-26T19:05:47.336Z",codex-codefactor-sdk-cli-20260626,"Evidence: CodeFactor complexity scope now ignores generated standalone loaders, generated standalone launchers, and tests while keeping shipped source files in analysis; create/update unset parsing tables were collapsed into shared metadata to reduce command surface duplication and maintenance cost. Manual temp smoke in /tmp/tmp.XalxjTQCOu passed init, create, update --unset deadline/assignee, package install todos --project, package doctor --project --detail deep, contracts --flags-only, and health --check-only --summary with only telemetry_queue_pending local warning."
   "2026-06-26T20:18:29.140Z",codex,"CodeFactor PR follow-up: user reported the PR detail page still showed 16 found issues after the duplication/generated-marker patch. Inspection showed all 16 were complexity findings on large existing command/SDK files touched by this branch: search, list, config, create, update, and cli-contracts. To remove the PR findings without forcing an unsafe broad command rewrite into the generated-file remediation PR, this branch now narrows its net source diff to the generated-file CodeFactor marker/checklist changes only. pm-arzz remains open for a dedicated staged complexity refactor of those command handlers."
@@ -27,11 +32,11 @@ files[6]{path,scope,note}:
   src/cli/commands/search.ts,project,Reduce search filter complexity with parsed metadata filter state and shared compact filter echo
   src/cli/commands/shared-unset-fields.ts,project,Shared helper keeps create/update unset parsing smaller and aligned
   src/cli/commands/update.ts,project,Update command uses shared unset metadata without changing behavior
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "bash -lc 'tmp=$(mktemp -d); PM_PATH=\"$tmp/.agents/pm\" PM_GLOBAL_PATH=\"$tmp/.pm-global\" node dist/cli.js init temp-codefactor --force'",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/unit/commands/search-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+tests[5]{command,scope,timeout_seconds}:
+  "bash -lc 'tmp=$(mktemp -d); PM_PATH=\"$tmp/.agents/pm\" PM_GLOBAL_PATH=\"$tmp/.pm-global\" node dist/cli.js init temp-codefactor --force'",project,120
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/unit/commands/search-command.spec.ts,project,300
+  "pnpm quality:static",project,240
+  pnpm typecheck,project,300
 close_reason: Merged list/search filter complexity reduction
 body: ""

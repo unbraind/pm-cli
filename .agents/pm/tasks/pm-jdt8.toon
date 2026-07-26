@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:config","area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T14:33:25.586Z"
-updated_at: "2026-05-17T08:22:12.701Z"
+updated_at: "2026-07-26T17:17:22.231Z"
 deadline: "2026-03-09T14:33:25.586Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-08
-release: v0.1
+release: v2026.3.9
 blocked_by: pm-ote
 blocked_reason: Add definition-of-done config baseline has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add definition-of-done config baseline is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: v0.1
 component: project-management/add-definition-of-done-config-baseline
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add definition-of-done config baseline.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ote,related,"2026-03-08T14:33:25.586Z",maintainer-agent,null
+  pm-8a2s,implements,"2026-07-26T17:17:21.922Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-08T14:33:25.586Z",maintainer-agent,Why this exists because the maintainer workflow expects Definition of Done configuration but pm currently has no config command or workflow settings storage.
   "2026-03-08T14:33:33.555Z",maintainer-agent,"Planned changeset: update PRD README and AGENTS first to document a minimal pm config baseline for Definition of Done criteria, then implement settings persistence plus config command wiring and targeted release-readiness tests."
@@ -66,10 +67,10 @@ files[13]{path,scope,note}:
   tests/unit/config-command.spec.ts,project,unit coverage for config command
   tests/unit/settings-store.spec.ts,project,settings workflow compatibility coverage
   vitest.config.ts,project,coverage include for config command
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted config baseline regressions
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted config contract regressions
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts,project,2400,targeted config baseline regressions
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts,project,2400,targeted config contract regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,governing spec

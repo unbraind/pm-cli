@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cache,extensions,install
 created_at: "2026-07-18T12:18:13.064Z"
-updated_at: "2026-07-23T15:37:27.893Z"
+updated_at: "2026-07-26T17:04:18.705Z"
 closed_at: "2026-07-23T15:37:27.183Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -14,9 +14,11 @@ acceptance_criteria: Reinstall/upgrade activation verification loads the just-in
 parent: pm-doxj
 risk: medium
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
+release: v2026.7.24
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-8fxc,related,"2026-07-18T12:18:13.064Z",null,null
   pm-x6jf,related,"2026-07-18T12:18:13.064Z",null,null
+  pm-doxj,implements,"2026-07-26T17:04:18.500Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-18T12:18:13.064Z",maintainer-agent,"Duplicate check 2026-07-18: all-status AND searches for post-install activation module cache and reinstall overwrite activation stale export found no canonical item. Related closed cache-reset lineage pm-8fxc covers invocation snapshot state, not ESM dependency cache during same-process overwrite; package lifecycle primitive lineage is pm-x6jf. Finding came from required latest pm-changelog generation and was proven not to be a pm-changelog package defect by published tarball hashes/exports plus fresh-process doctor activation."
   "2026-07-23T14:21:39.953Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."

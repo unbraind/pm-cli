@@ -6,18 +6,20 @@ status: closed
 priority: 2
 tags[2]: "area:sdk",package-lifecycle
 created_at: "2026-07-07T18:49:34.713Z"
-updated_at: "2026-07-07T19:07:37.826Z"
+updated_at: "2026-07-26T17:18:20.312Z"
 author: codex-agent
 acceptance_criteria: "Public SDK exposes package lifecycle helpers with package-named types, package aliases cannot be downgraded to extension vocabulary, docs describe the contract, and focused plus repo-wide gates pass."
 parent: pm-x6jf
+release: v2026.7.8
 resolution: "Implemented package lifecycle SDK helper slice with package-named contracts, package vocabulary enforcement, public exports, SDK docs, and focused regression coverage."
 expected_result: SDK consumers can call package lifecycle helpers and import package-specific contracts from @unbrained/pm-cli/sdk without shelling out or using extension vocabulary for package commands.
 actual_result: "PmClient and top-level SDK helpers now expose package lifecycle operations, PackageCommandOptions/PackageCommandResult aliases are exported and documented, package aliases force vocabulary=package after caller options, and regression coverage verifies the behavior."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-cbwg,related,"2026-07-07T18:49:47.773Z",null,null
   pm-usfg,related,"2026-07-07T18:49:47.773Z",null,null
   pm-w89s,related,"2026-07-07T18:49:47.773Z",null,null
   pm-x6jf,related,"2026-07-07T18:49:47.773Z",null,null
+  pm-x6jf,implements,"2026-07-26T17:18:20.108Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-07T19:07:37.826Z",codex-agent,"Final verification evidence: package-named SDK contracts and vocabulary guard fixes are covered by focused tests and repo-wide gates. Passed pnpm typecheck, pnpm lint, pnpm audit --audit-level high, pnpm quality:docs-skills, pnpm changelog:pm:check using pm-changelog 2026.7.6, pnpm test:coverage with 5455 tests and 100% statements/branches/functions/lines, pnpm build, pm health, pm validate history drift, Sentry telemetry gate, and an installed-package temp project proof importing @unbrained/pm-cli/sdk."
 files[3]{path,scope,note}:

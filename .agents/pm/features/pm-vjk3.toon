@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: bare-core,cli,governance,packages,refactor,sdk
 created_at: "2026-07-12T19:53:05.226Z"
-updated_at: "2026-07-13T08:56:02.030Z"
+updated_at: "2026-07-26T17:28:08.117Z"
 closed_at: "2026-07-13T04:48:57.343Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,11 +14,22 @@ acceptance_criteria: "src/cli/commands/{dedupe-audit,dedupe-merge,comments-audit
 parent: pm-ugqx
 risk: medium
 confidence: high
+release: v2026.7.13
 resolution: completed
 expected_result: Bare-core pm ships with no audit commands/flags/contracts/MCP tools; pm install audit restores the full audit surface via pm-governance-audit
 actual_result: "PR#536 relocated dedupe-audit/dedupe-merge/comments-audit/normalize + all --audit/--allow-audit-* flags into pm-governance-audit; bare-vs-installed e2e proof green, 100% coverage retained"
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-ixt3,related,"2026-07-12T19:55:39.572Z",null,null
+  pm-2p7a,related,"2026-07-26T17:28:07.886Z",null,null
+  pm-59gj,related,"2026-07-26T17:28:07.886Z",null,null
+  pm-fg0b,related,"2026-07-26T17:28:07.886Z",null,null
+  pm-kb5h,related,"2026-07-26T17:28:07.886Z",null,null
+  pm-kvd0,related,"2026-07-26T17:28:07.886Z",null,null
+  pm-mpbb,related,"2026-07-26T17:28:07.886Z",null,null
+  pm-qfdd,related,"2026-07-26T17:28:07.886Z",null,null
+  pm-sod3,related,"2026-07-26T17:28:07.886Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:28:07.886Z",null,null
+  pm-yh8r,related,"2026-07-26T17:28:07.886Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-12T23:09:30.568Z",codex-pm-audit-extraction,"Plan established on branch agent/extract-governance-audit-from-core-runtime. Decision pm-fg0b resolved hybrid ownership, audit alias, --force fallback, and zero public audit SDK surface. All five slices claimed for coordinated implementation."
   "2026-07-13T04:48:56.630Z",codex-pm-audit-extraction,"Feature acceptance complete on PR #536 head be232cb0: four audit implementations and every named audit CLI/SDK/MCP/completion/result surface are package-owned; bare-core boundary ratchet passes; installed audit package restores behavior including cross-owner update/release and linked files/docs reports; all required hosted checks are green; Greptile 5/5 and CodeRabbit green; every bot record acknowledged and no thread unresolved."

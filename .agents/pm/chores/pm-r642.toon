@@ -6,18 +6,21 @@ status: closed
 priority: 2
 tags[4]: agent-ux,audit,ci,dependencies
 created_at: "2026-06-25T00:14:23.041Z"
-updated_at: "2026-06-25T00:42:21.137Z"
+updated_at: "2026-07-26T17:24:44.233Z"
 author: codex-audit-20260625
 parent: pm-5dbn
+release: v2026.6.30
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5dbn,implements,"2026-07-26T17:24:43.891Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-25T00:14:35.654Z",codex-audit-20260625,"Evidence: updated @sentry/node 10.59.0 -> 10.60.0 and commander 14.0.3 -> 15.0.0. Parser-sensitive focused tests passed after the update. Remaining pnpm outdated entry is @types/node latest 26.0.1, intentionally left because package engines target Node >=22.18 and dev typings currently resolve to Node 22.20.0."
 files[2]{path,scope,note}:
   package.json,project,bump compatible runtime dependencies from audit baseline
   pnpm-lock.yaml,project,lock @sentry/node 10.60.0 and commander 15.0.0
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/cli/bootstrap-args.spec.ts tests/unit/cli/commander-usage.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqsrziun-ykg1bj,test,passed,"2026-06-25T00:39:44.225Z","2026-06-25T00:40:10.799Z","2026-06-25T00:40:10.799Z",null,null,2,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/cli/bootstrap-args.spec.ts tests/unit/cli/commander-usage.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/sdk-compose.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqsrziun-ykg1bj,test,passed,"2026-06-25T00:39:44.225Z","2026-06-25T00:40:10.799Z","2026-06-25T00:40:10.799Z",2,0,0
 close_reason: "Updated compatible runtime dependencies @sentry/node to 10.60.0 and commander to 15.0.0; parser-sensitive pm-linked tests, full release gate, audit, and external package smoke passed. Node 26 typings intentionally out of scope for Node 22 target."
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: calendar,dependabot,github,pm-cli,recurrence,security
 created_at: "2026-04-03T17:22:39.406Z"
-updated_at: "2026-04-05T22:45:41.748Z"
+updated_at: "2026-07-26T17:16:24.129Z"
 deadline: "2026-04-13T17:22:39.406Z"
 author: codex-agent
 estimated_minutes: 360
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: 2026-w14
-release: vnext
+release: v2026.5.1
 blocked_reason: Remediate open GitHub findings and recurring checks has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Remediate open GitHub findings and recurring checks is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,6 +38,10 @@ fixed_version: target-vnext
 component: github-findings
 regression: true
 customer_impact: users and maintainers benefit from safer dependency and CI health
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,related,"2026-07-26T17:16:23.889Z",null,null
+  pm-rnpb,related,"2026-07-26T17:16:23.889Z",null,null
+  pm-wo8,related,"2026-07-26T17:16:23.889Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-03T17:45:22.794Z",codex-agent,"Implemented dependency/workflow remediations, cross-platform CI fixes, and weekly recurring findings-review event. Verification evidence: pnpm audit --prod and pnpm audit report 0 vulnerabilities; node scripts/run-tests.mjs test passed (70 files/789 tests); node scripts/run-tests.mjs coverage passed with global branch coverage 91.00%."
 files[11]{path,scope,note}:
@@ -52,9 +56,9 @@ files[11]{path,scope,note}:
   tests/integration/run-tests-script.integration.spec.ts,project,gh-findings-remediation-change
   tests/unit/search-command.spec.ts,project,gh-findings-remediation-change
   tests/unit/test-command.spec.ts,project,gh-findings-remediation-change
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage-gate
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full-regression
-  pnpm exec vitest run tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/search-command.spec.ts tests/unit/test-command.spec.ts tests/integration/run-tests-script.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted-cross-platform
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,coverage-gate
+  node scripts/run-tests.mjs test,project,7200,full-regression
+  pnpm exec vitest run tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/search-command.spec.ts tests/unit/test-command.spec.ts tests/integration/run-tests-script.integration.spec.ts,project,2400,targeted-cross-platform
 close_reason: Planned remediation completed and verified; recurring weekly review task remains open for ongoing monitoring.
 body: Umbrella remediation item for current GitHub findings plus recurring weekly review workflow.

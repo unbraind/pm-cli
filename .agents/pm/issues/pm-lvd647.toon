@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:ci","area:sdk",cross-platform,gh-issue,nightly,node22,windows
 created_at: "2026-07-24T12:39:52.841Z"
-updated_at: "2026-07-24T14:16:45.201Z"
+updated_at: "2026-07-26T17:19:36.426Z"
 closed_at: "2026-07-24T14:16:44.536Z"
 author: codex-root-agent
 estimated_minutes: 180
@@ -14,6 +14,7 @@ acceptance_criteria: "Optional SQLite capability loading does not leak runtime e
 parent: pm-u9d0
 risk: medium
 confidence: high
+release: v2026.7.25
 reporter: codex-root-agent
 severity: high
 repro_steps: "Inspect scheduled run 30072359707 at db1b7111: Node 22 fails three built-CLI/MCP tests because node:sqlite ExperimentalWarning pollutes stderr; Windows fails workspace-memory and drift-scan permission simulations because chmod does not make paths unreadable."
@@ -23,11 +24,12 @@ actual_result: "PR run 30099757539 passed Node 22 smoke job 89503618661 and Wind
 component: cross-runtime SDK and nightly validation
 regression: true
 customer_impact: "Daily validation reports red after otherwise-correct SDK changes, obscuring real release risk and making structured CLI/MCP channels unreliable on Node 22."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-801d,related,"2026-07-24T12:39:52.841Z",null,null
   pm-cedo0g,related,"2026-07-24T12:39:52.841Z",null,null
   pm-hcrmye,related,"2026-07-24T12:39:52.841Z",null,null
   pm-klo8,related,"2026-07-24T12:39:52.841Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:19:36.176Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-24T12:39:52.841Z",codex-root-agent,"Duplicate-check evidence: exact run/error and all-status cross-platform searches found no current item owning this five-test nightly regression. Historical Windows and Bun/SQLite items cover different root failures and remain linked as lineage."
   "2026-07-24T12:40:42.213Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."

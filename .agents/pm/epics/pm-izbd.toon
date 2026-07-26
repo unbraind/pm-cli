@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:cli","area:error","area:help","area:output","area:ux",pm-cli
 created_at: "2026-04-01T12:38:01.326Z"
-updated_at: "2026-04-04T21:31:45.927Z"
+updated_at: "2026-07-26T17:16:57.510Z"
 deadline: "2026-04-15T12:38:01.326Z"
 author: codex-agent
 estimated_minutes: 960
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-00yy
 blocked_reason: "CLI UX Overhaul: Help, Errors, and Output has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If CLI UX Overhaul: Help, Errors, and Output is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -39,12 +39,23 @@ fixed_version: archive-2026q2
 component: cli-ux
 regression: true
 customer_impact: Improves usability and lowers command failure loops for all pm users
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-00yy,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
   pm-axlr,related,"2026-04-01T12:38:01.326Z",codex-agent,null
   pm-b3id,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
   pm-r15d,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
   pm-vqam,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
+  pm-eonv,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-frk8,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-gggs,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-i0iy,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-j162,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-jfpf,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-qhcw,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-t2hj,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-vf7n,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-x3fh,related,"2026-07-26T17:16:57.360Z",null,null
+  pm-y76e,related,"2026-07-26T17:16:57.360Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-01T12:38:01.326Z",codex-agent,Duplicate scan completed against open and in-progress plus targeted search before creation.
   "2026-04-01T12:40:29.287Z",codex-agent,"PM hierarchy created: epic pm-izbd; features pm-j162/pm-frk8/pm-t2hj/pm-i0iy; tasks pm-vf7n/pm-gggs/pm-eonv/pm-x3fh/pm-qhcw/pm-jfpf/pm-y76e."
@@ -57,8 +68,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:17.292Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,Primary command registration and help/error dispatch surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,Full regression baseline
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,3600,Full regression baseline
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,release note for sparse TOON behavior update
   README.md,project,Primary user-facing command documentation

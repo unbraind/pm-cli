@@ -6,10 +6,13 @@ status: closed
 priority: 0
 tags[3]: audit,decision,pm-cli
 created_at: "2026-05-01T22:46:41.664Z"
-updated_at: "2026-05-02T07:15:35.113Z"
+updated_at: "2026-07-26T17:20:39.158Z"
 author: audit-agent
 parent: pm-rrjv
+release: v2026.5.2
 resolution: Resolution normalized from closed status because the field was missing or low-signal.
 expected_result: Expected closure outcome normalized from closed status because the field was missing or low-signal.
 actual_result: Actual closure outcome normalized from closed status because the field was missing or low-signal.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rrjv,implements,"2026-07-26T17:20:38.884Z",null,null
 body: ""

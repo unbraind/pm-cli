@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:cli","area:recurrence",code,pm-cli
 created_at: "2026-03-31T22:29:51.228Z"
-updated_at: "2026-04-04T21:37:45.772Z"
+updated_at: "2026-07-26T17:13:02.345Z"
 deadline: "2026-04-07T22:29:51.228Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-ysgr
 blocked_reason: Add create/update event and recurrence mutation flags has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add create/update event and recurrence mutation flags is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/add-create-update-event-and-recurrence-mutation-
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add create/update event and recurrence mutation flags.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ysgr,related,"2026-03-31T22:29:51.228Z",codex-agent,null
+  pm-0ab3,implements,"2026-07-26T17:13:02.127Z",null,null
 comments[2]{created_at,author,text}:
   "2026-03-31T22:29:51.228Z",codex-agent,Task created for event and recurrence mutation flag support.
   "2026-03-31T22:39:18.608Z",codex-agent,Implemented --event mutation parsing for create/update including recurrence recur_* fields and deterministic none clear semantics.
@@ -57,8 +58,8 @@ files[6]{path,scope,note}:
   src/core/item/item-format.ts,project,nested undefined cleanup for event mutation serialization
   tests/unit/create-command.spec.ts,project,create event mutation tests
   tests/unit/update-command.spec.ts,project,update event mutation tests
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,create/update event coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,project,2400,create/update event coverage
 docs[1]{path,scope,note}:
   README.md,project,create update event flag docs
 close_reason: Create/update event and recurrence mutation flags implemented with passing create/update unit tests.

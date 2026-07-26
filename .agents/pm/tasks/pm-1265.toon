@@ -6,16 +6,18 @@ status: closed
 priority: 2
 tags[6]: agent-ux,docs,guide,init,plugins,pm-cli
 created_at: "2026-05-17T09:00:17.605Z"
-updated_at: "2026-05-17T10:23:44.906Z"
+updated_at: "2026-07-26T17:00:45.750Z"
 author: codex-agent
 acceptance_criteria: "Quickstart, Agent Guide, Command Reference, help/guide surfaces, and relevant plugin guidance mention the agent-guidance init option and decline/add-later behavior; docs avoid stale copied flag lists where runtime contracts should be used; docs are linked to implementation items before closure."
 parent: pm-7t04
+release: v2026.5.18
 resolution: Documented the pm init agent guidance workflow in public docs and plugin guidance.
 expected_result: Agents can discover init guidance status/add/skip behavior through progressive docs and plugin references.
 actual_result: "Agent, quickstart, command, and plugin docs explain the guidance lifecycle and route readers to exact command contracts."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T09:00:17.605Z",codex-agent,null
   pm-b8rf,blocks,"2026-05-17T09:00:17.605Z",codex-agent,null
+  pm-7t04,implements,"2026-07-26T17:00:45.511Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-17T09:00:17.605Z",codex-agent,Child task created from pm-7t04. This docs slice should follow contract/help naming decisions so examples match shipped flags.
   "2026-05-17T10:10:52.906Z",codex-agent,"Updated operator and plugin docs to explain ask/add/skip/status behavior, decline persistence, and deterministic non-interactive usage paths for init guidance."
@@ -31,8 +33,8 @@ files[7]{path,scope,note}:
   plugins/pm-codex/README.md,project,Codex plugin guidance if applicable
   src/cli/guide-topics.ts,project,guide routing for agent workflows
   src/cli/help-content.ts,project,init help docs
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,planned docs plugin help regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600,planned docs plugin help regression
 docs[5]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,agent context guidance docs
   docs/CLAUDE_CODE_PLUGIN.md,project,Claude plugin docs if updated

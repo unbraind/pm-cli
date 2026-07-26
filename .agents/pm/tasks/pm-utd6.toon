@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[5]: "area:dependencies","area:docs","area:observability",github,maintenance
 created_at: "2026-06-09T20:26:48.461Z"
-updated_at: "2026-06-09T21:29:32.285Z"
+updated_at: "2026-07-26T17:27:20.168Z"
 author: codex-implementation-agent
 parent: pm-u9d0
+release: v2026.6.10
 resolution: "All scoped work delivered and merged: stale GH issue closures documented, dedupe-audit docs clarified, @sentry/node bumped, and full verification/security/manual smoke evidence recorded."
 expected_result: "Merged change set with green checks, preserved 100% coverage, and complete pm evidence for docs/dependency/security/verification steps."
 actual_result: PR #188 merged to main with all required checks green; 100% coverage remained intact and final pm comments/tests/files capture full execution evidence.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-u9d0,implements,"2026-07-26T17:27:19.884Z",null,null
 comments[11]{created_at,author,text}:
   "2026-06-09T20:26:48.461Z",codex-implementation-agent,"Duplicate-check evidence: pm search for dedupe-audit/docs/sentry/stale issue closure found only closed/remediated items and no active task matching this combined execution scope."
   "2026-06-09T20:31:53.228Z",codex-implementation-agent,"GitHub issues closed with evidence comments: 159, 164, 165, 166, 169, 176, and 178."
@@ -27,18 +30,18 @@ comments[11]{created_at,author,text}:
 files[2]{path,scope,note}:
   package.json,project,Upgrade sentry node dependency to 10.57.0
   pnpm-lock.yaml,project,Lockfile update for sentry node upgrade
-tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  pm health --check-only --summary,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pm validate --check-resolution --check-history-drift,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level low,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:docs-links",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[11]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  pm health --check-only --summary,project,240
+  pm validate --check-resolution --check-history-drift,project,240
+  pnpm audit --audit-level low,project,240
+  pnpm build,project,240
+  "pnpm changelog:pm:check",project,240
+  "pnpm contracts:check",project,240
+  "pnpm quality:docs-links",project,240
+  "pnpm quality:static",project,240
+  "pnpm security:scan",project,240
+  pnpm typecheck,project,240
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Clarify dedupe-audit is governance-audit package command
 close_reason: Merged PR #188 to main with green checks and full evidence.

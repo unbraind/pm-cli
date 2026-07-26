@@ -6,13 +6,17 @@ status: closed
 priority: 1
 tags[5]: "area:observability","area:telemetry",audit,living-map,pm-cli
 created_at: "2026-05-31T19:22:09.300Z"
-updated_at: "2026-05-31T20:26:15.184Z"
+updated_at: "2026-07-26T17:18:55.908Z"
 author: maintainer-agent
 acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
 parent: pm-w7f2
+release: v2026.6.1
 resolution: Verification task completed during living-map closeout
 expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
 actual_result: "The closed Task 'Audit domain: Telemetry, observability, Sentry, health/validate' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-w7f2,implements,"2026-07-26T17:18:55.697Z",null,null
+  pm-wvhs,related,"2026-07-26T17:18:55.697Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-31T19:26:09.188Z",audit-telemetry-agent,"Phase 1 complete: read all 5 source files (consent.ts, runtime.ts, observability.ts, instrument.ts, helpers.ts), health.ts (1530 LOC), validate.ts (structure). Dedup searches done for 12 query dimensions. Findings so far: (1) Sentry tracesSampleRate=0.2 (pm-wvhs closed); (2) telemetry source_context has audit_smoke but no dedicated pm telemetry query command; (3) validate has no --fix mode; (4) health advisory/blocking split is solid; (5) tracing to SLO alerting codified in Sentry dashboard - not in repo. Proceeding to final gap analysis."
   "2026-05-31T19:28:35.976Z",audit-telemetry-agent,"Phase 2 complete. All 7 source files read and linked. Key findings: (1) schema_version=1 hard-coded, no upgrade path ADR; (2) health remediation only in extensions triage, not other checks; (3) validate has remediation_hints only for resolution missing-fields, not other check types; (4) no pm telemetry local-query command (pm cakn was 'analyze persisted telemetry' but that was remote skill, not local CLI cmd); (5) Sentry instrument.ts has 44 scrub calls covering all event paths well; (6) tracesSampleRate=0.2 is correct (pm-wvhs closed); (7) TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS=15 with exponential backoff up to 1hr cap is sound; (8) advisory/blocking split in isAdvisoryHealthWarning() is well-guarded. Proceeding to write final output."

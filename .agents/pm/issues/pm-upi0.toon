@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:sdk",contracts,mcp
 created_at: "2026-07-17T20:00:29.397Z"
-updated_at: "2026-07-18T00:44:09.005Z"
+updated_at: "2026-07-26T17:27:15.592Z"
 closed_at: "2026-07-18T00:44:08.166Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,12 +14,14 @@ acceptance_criteria: tools/call surfaces a warning (matching the pm-qxwu top-lev
 parent: pm-96h7
 risk: low
 confidence: high
+release: v2026.7.18
 resolution: "Nested-option validation now composes canonical action-schema keys with an explicit action-scoped runtime compatibility contract, so ignored keys still warn while list/update/checkpoint/project wrapper options consumed by MCP dispatch remain valid."
 expected_result: Unknown or ignored nested option keys warn without rejection; runtime-consumed compatibility keys remain warning-free.
 actual_result: "pm_deps options.dep and other ignored keys warn on stderr and structuredContent; update-many/close-many wrapper grammar and extension/package project selectors do not false-positive; targeted MCP tests, static gates, and all 5,863 tests pass at 100/100/100/100 coverage."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-qxwu,related,"2026-07-17T20:00:29.397Z",null,null
   pm-xwah,related,"2026-07-17T20:00:29.397Z",null,null
+  pm-96h7,implements,"2026-07-26T17:27:15.279Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-17T23:53:18.340Z",maintainer-agent,"Implementation evidence (2026-07-18): tools/call now warns on every nested options key absent from the invoked action's contract, using the exact pm-qxwu mechanism (stderr + additive structuredContent.warnings, never rejecting). Contract tables stay the single source of truth via the new exported pmToolActionParameterKeys(action) accessor in sdk/cli-contracts/tool-schema.ts — the same composition the strict action-scoped schema builder uses (action + global transport params + mutation projection keys + required/optional). Narrow tools resolve their fixed action from the new NARROW_TOOL_ACTIONS map (HANDLERS now derived from it, no duplication); pm_run resolves options validation from its action argument; extension/package actions have no contract entry and keep arbitrary passthrough. Regression spec covers the exact original repro class (pm_deps options.dep mutation-shaped key on a read tool), near-miss suggestions (options.formt -> format), pm_run action resolution, and all skip paths. Live MCP-session proof: pm_deps options.dep warning surfaced verbatim in structuredContent.warnings."
   "2026-07-18T00:37:00.161Z",codex-root,"Review finding: contract-only nested option validation conflates canonical action-schema keys with runtime-compatible nested wrapper grammar. Full coverage remained 100/100/100/100, but integration traces proved valid list/update/checkpoint/project options were incorrectly labeled as no-ops. Fixing on the existing canonical item before merge; no duplicate item created."

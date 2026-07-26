@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:07:03.217Z"
-updated_at: "2026-04-04T21:39:08.978Z"
+updated_at: "2026-07-26T17:23:21.800Z"
 deadline: "2026-04-08T13:07:03.217Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-9k33
 blocked_reason: Update docs and release evidence for default Ollama semantic behavior has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Update docs and release evidence for default Ollama semantic behavior is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: docs/search
 regression: true
 customer_impact: Provides clear guidance and confidence for users adopting default semantic behavior.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-9k33,related,"2026-04-01T13:07:03.217Z",codex-agent,null
   pm-zvn2,parent,"2026-04-01T13:07:03.217Z",codex-agent,null
+  pm-zvn2,implements,"2026-07-26T17:23:21.492Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T13:07:03.217Z",codex-agent,Task ensures docs and changelog remain contract-accurate for the semantic default rollout.
   "2026-04-01T13:24:31.920Z",codex-agent,"Updated documentation contracts in README.md, docs/ARCHITECTURE.md, PRD.md, and CHANGELOG.md to describe Ollama-backed semantic auto defaults, precedence rules, fallback behavior, and control environment variables. Evidence: pm test pm-ptu0 --run passed linked full regression verification (62 files, 648 tests); host-level sandbox checks confirmed default hybrid mode and successful semantic reindex/search execution with local Ollama."
@@ -56,8 +57,8 @@ files[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime detection and fallback design
   PRD.md,project,search contract updates for Ollama auto defaults
   README.md,project,user-facing semantic default behavior
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,final regression verification
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,3600,final regression verification
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,release-note entry for default semantic behavior
   docs/ARCHITECTURE.md,project,architecture contract updates

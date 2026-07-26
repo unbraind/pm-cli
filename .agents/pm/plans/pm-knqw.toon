@@ -6,27 +6,35 @@ status: closed
 priority: 2
 tags[4]: audit,living-map,methodology,pm-cli
 created_at: "2026-05-31T19:50:17.050Z"
-updated_at: "2026-05-31T20:48:49.947Z"
+updated_at: "2026-07-26T17:18:38.137Z"
 author: maintainer-agent
 parent: pm-doxj
+release: v2026.6.1
 resolution: "Merged PR #90 to main at 31b4d749 after addressing AI reviewer feedback and validating post-merge CI, Sentry, telemetry, dogfood, and release gates."
 expected_result: "pm ecosystem audit produces a deduplicated living map, captures SDK/CLI/package improvement backlog, fixes actionable issues, validates temp-project dogfood and observability, and lands on main with green checks."
 actual_result: "Reused pm-knqw lineage, coordinated specialized subagent findings, fixed release/Sentry docs and tracker metadata, resolved relevant Sentry issue, passed package-first dogfood including semantic mode, passed release gates, addressed Gemini review feedback, merged PR #90, and verified post-merge CI/Docs plus telemetry stack health."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-doxj,parent,"2026-05-31T19:50:17.050Z",null,null
+  pm-0hnu,related,"2026-07-26T17:18:37.855Z",null,null
+  pm-59gj,related,"2026-07-26T17:18:37.855Z",null,null
+  pm-doxj,implements,"2026-07-26T17:18:37.855Z",null,null
+  pm-irp1,related,"2026-07-26T17:18:37.855Z",null,null
+  pm-kd9n,related,"2026-07-26T17:18:37.855Z",null,null
+  pm-m2u1,related,"2026-07-26T17:18:37.855Z",null,null
+  pm-w7f2,related,"2026-07-26T17:18:37.855Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-31T20:20:23.121Z",codex-audit-20260531,"Closeout note: resuming existing living-map plan step 4 for latest verification, changelog, PR, AI-review loop, observability, and merge. Duplicate check reused pm-knqw under pm-doxj rather than creating a new broad-audit item; latest related closed audit is pm-kd9n under pm-59gj."
   "2026-05-31T20:31:06.275Z",codex-audit-20260531,"Evidence: specialists found no immediate SDK/package, CLI/perf, or tracker-structure blockers. Fixed release docs to match the Sentry token requirement. Backfilled branch-local closed item resolution metadata, reducing validation warnings from 69 to 29 historical rows with history drift still ok. Local gates passed: pnpm build; pm health summary ok; secret scan ok; package-first dogfood ok; semantic package-first dogfood ok with qwen3-embedding:0.6b; required Sentry/telemetry gate ok with zero critical/high and telemetry error rate 1.23%; release run-gates ok including 2068 tests and 100% coverage."
   "2026-05-31T20:37:13.462Z",codex-audit-20260531,"Review feedback: addressed Gemini grammar comments on pm-irp1 startup ADR body and pm-0hnu health remediation-map acceptance criteria."
-tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/check-secrets.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/run-gates.mjs --telemetry-mode best-effort --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 6 --max-telemetry-missing-error-rows 0,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "npm run dogfood:package-first",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  pm health --check-only --summary --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pm validate --check-resolution --check-history-drift --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "PM_DOGFOOD_SEMANTIC=1 npm run dogfood:package-first",null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[8]{command,scope,timeout_seconds}:
+  node scripts/check-secrets.mjs,project,240
+  node scripts/release/run-gates.mjs --telemetry-mode best-effort --json,project,1800
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 6 --max-telemetry-missing-error-rows 0,project,240
+  "npm run dogfood:package-first",project,600
+  pm health --check-only --summary --json,project,240
+  pm validate --check-resolution --check-history-drift --json,project,240
+  "PM_DOGFOOD_SEMANTIC=1 npm run dogfood:package-first",project,900
+  pnpm build,project,240
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,generated release notes for living-map tracker changes
   docs/RELEASING.md,project,release workflow Sentry token requirement documentation

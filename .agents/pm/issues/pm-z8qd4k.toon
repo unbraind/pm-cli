@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",concurrency,identity,multi-agent,provenance
 created_at: "2026-07-25T21:37:44.433Z"
-updated_at: "2026-07-26T14:09:15.669Z"
+updated_at: "2026-07-26T17:30:48.707Z"
 closed_at: "2026-07-26T13:59:00.839Z"
 claim_principal: "harness:codex#96ff8a24670431caf98d1225"
 author: "harness:claude-code"
@@ -18,12 +18,17 @@ confidence: high
 resolution: Automatic claims now compare a privacy-safe session-derived instance principal and history records that hashed instance.
 expected_result: Same-harness agents without PM_AUTHOR are distinct claim principals and durable mutations are attributable without exposing session IDs.
 actual_result: Packed consumer session B is refused with already_claimed_by after session A claims; focused regressions cover provenance and force semantics.
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-03pq3o,related,"2026-07-25T21:37:44.433Z",null,null
   pm-3oqjnc,related,"2026-07-25T21:37:44.433Z",null,null
   pm-szv11n,implements,"2026-07-25T21:37:44.433Z",null,null
   pm-w8q4,related,"2026-07-25T21:37:44.433Z",null,null
   pm-z9x1r2,related,"2026-07-25T21:37:44.433Z",null,null
+  pm-dj98,implements,"2026-07-26T17:30:48.486Z",null,null
+  pm-gw6uyq,related,"2026-07-26T17:30:48.486Z",null,null
+  pm-itsjf0,related,"2026-07-26T17:30:48.486Z",null,null
+  pm-u14c,related,"2026-07-26T17:30:48.486Z",null,null
+  pm-xc68,related,"2026-07-26T17:30:48.486Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-26T11:46:17.291Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:43:31.406Z","harness:codex","Acceptance evidence: automatic same-harness ownership now uses a privacy-safe session-derived claim principal while preserving stable human authors; history stores only the hashed agent instance and never the raw session. Focused claim/provenance suites pass, static/API gates pass, and a packed unrelated consumer proved synthetic Codex session A claims successfully while session B receives already_claimed_by without PM_AUTHOR."

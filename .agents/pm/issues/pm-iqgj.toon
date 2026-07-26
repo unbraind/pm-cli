@@ -6,14 +6,18 @@ status: closed
 priority: 2
 tags[1]: store
 created_at: "2026-05-24T06:34:21.946Z"
-updated_at: "2026-05-24T08:21:33.046Z"
+updated_at: "2026-07-26T17:16:41.270Z"
 author: claude-code-agent
 estimated_minutes: 90
 acceptance_criteria: All 16 previously-unreadable items load via pm get/list/search; pm list emits zero item_list_item_read_failed warnings; valid files still parse strictly (duplicate-key protection retained for the non-bracket case); a focused unit test covers a bracketed-token-then-colon body round-trip; pnpm build and coverage gate pass; pm-changelog item_count rises to include recovered closed items.
 parent: pm-rnpb
+release: v2026.5.24
 resolution: TOON item parsing now preserves strict validation while falling back only for the known bracket-token strict decoder mis-parse.
 expected_result: All previously unreadable item files load without weakening duplicate-key or malformed-document validation.
 actual_result: "PR #58 merged gated strict-then-lenient TOON decode recovery, review fixes, tests, and green CI; pm-changelog propagation remains separately tracked by pm-hybj."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-hybj,related,"2026-07-26T17:16:41.090Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:16:41.090Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-24T06:36:34.360Z",claude-code-agent,"Root cause confirmed and fixed. Added src/core/item/toon-decode.ts with decodeToonItemContent(): try strict decode, fall back to lenient on failure, rethrow strict error if lenient also fails. Wired into parseToonItemDocument (item-format.ts); recovery is intentionally silent (no onWarning) to keep pm health green for legacy files. Verified against freshly-built dist: all 16 previously-unreadable items now load (16/16), pm list emits zero item_list_item_read_failed warnings, and a valid file parses identically under strict vs non-strict (duplicate-key protection retained for normal docs). New module added to vitest include for 100% coverage; item-format.ts is already in both include+exclude (not gated)."
   "2026-05-24T07:00:10.677Z",claude-code-agent,"COORDINATOR VERIFIED 2026-05-24: full coverage gate green (108 files, 1621 tests, 100% stmts/branch/funcs/lines), static-quality-gate passed, typecheck clean, secret-scan clean. Recovery is SILENT (no health-flipping warning) — pm health now ok:true (was ok:false from 16 read failures); pm validate ok:true checked_items 837 (was 820); 16/16 items load. Dogfooded in temp repo: created an item with a bracketed-token-then-colon description, read it back byte-identical, zero read-failed warnings. Downstream pm-changelog generator gap tracked separately as pm-hybj (bundled stale SDK)."
@@ -26,11 +30,11 @@ files[5]{path,scope,note}:
   src/core/item/toon-decode.ts,project,null
   tests/unit/toon-decode.spec.ts,project,null
   vitest.config.ts,project,null
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/toon-decode.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[5]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/toon-decode.spec.ts,project,240
+  "pnpm quality:static",project,240
+  "pnpm security:scan",project,240
+  pnpm typecheck,project,240
 close_reason: "Fixed in PR #58 through strict scalar-bracket TOON recovery: no lenient decode path remains, strict duplicate-key/array-length invariants are covered by tests, local gates and refreshed GitHub checks are green, and Codex/CodeRabbit found no remaining major issues."
 body: ""

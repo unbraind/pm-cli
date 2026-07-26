@@ -6,11 +6,15 @@ status: closed
 priority: 2
 tags[5]: "area:packages","area:sdk","area:search",dx,living-map
 created_at: "2026-05-31T19:44:24.904Z"
-updated_at: "2026-06-01T19:57:28.312Z"
+updated_at: "2026-07-26T17:10:29.834Z"
 author: maintainer-agent
 acceptance_criteria: Manifest gains search capability; activate() registers an Ollama/local SearchProvider (and optionally a vector-store adapter); assertion-helper test; SDK.md search-provider example references it.
 value: pm-search-advanced is the natural owner of registerSearchProvider but only uses commands+schema; the search capability has zero first-party exemplar for authors building custom embeddings/vector stores.
 parent: pm-ugqx
+release: v2026.6.2
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-kfd8,related,"2026-07-26T17:10:29.514Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:10:29.514Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-31T22:18:36.254Z",maintainer-agent,"Unblocked + ready: pm-kfd8 (closed this PR) shipped assertRegisteredSearchProvider in src/sdk/testing.ts (matches on definition.name over registrations.search_providers). When this item teaches pm-search-advanced to api.registerSearchProvider(...), its package spec should assert via assertRegisteredSearchProvider for a non-synthetic first-party exemplar. Finding: pm-search-advanced currently only registers commands+flags, not a SearchProvider — this item is the real search-capability exemplar."
   "2026-06-01T19:43:24.821Z",maintainer-agent,"Plan: add a first-party SearchProvider exemplar to pm-search-advanced via api.registerSearchProvider in activate(). Provider name 'search-advanced-local' with a deterministic, dependency-free local lexical query(context) that scores context.documents by token overlap (title weight 3, tags 2, description 1) and returns SearchProviderHit[] sorted by score — invoked by core search when settings.search.provider='search-advanced-local'. Keep it INLINE in index.ts/index.js (consistent with the package's inline commands; index.* is not coverage-gated, so no 100% burden) + add 'search' capability to manifest.json + in-module manifest const + index.js mirror. Test (new spec): set PM_CLI_PACKAGE_ROOT=cwd, import the REAL index.js, activate via the real loader, assertRegisteredSearchProvider({provider:'search-advanced-local'}), and invoke the registered query over sample docs to verify scoring (non-synthetic first-party exemplar). SDK.md Search Provider section will reference the exemplar + note authors can swap query for an Ollama embed/embedBatch-backed implementation. requires dist built (eager runtime), consistent with existing search-advanced-runtime.spec.ts."

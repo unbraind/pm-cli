@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T15:51:09.392Z"
-updated_at: "2026-04-04T21:47:05.493Z"
+updated_at: "2026-07-26T17:03:38.094Z"
 deadline: "2026-03-07T15:51:09.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M5 follow-up: normalize extension command path whitespace has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: normalize extension command path whitespace is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-normalize-extension-command-path-wh
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: normalize extension command path whitespace."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-04T15:51:09.392Z",maintainer-agent,null
+  pm-b1w,implements,"2026-07-26T17:03:37.898Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-04T15:51:09.392Z",maintainer-agent,Whitespace normalization gap found in extension command name matching; this task closes that deterministic matching hole.
   "2026-03-04T15:51:17.623Z",maintainer-agent,"Starting implementation: normalize extension command name canonicalization to collapse repeated internal whitespace for both registration and dispatch, then add loader unit tests."
@@ -57,9 +58,9 @@ files[4]{path,scope,note}:
   README.md,project,public docs for canonicalized extension command paths
   src/core/extensions/loader.ts,project,command name normalization
   tests/unit/extension-loader.spec.ts,project,whitespace normalization tests
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate regression
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted extension loader tests
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,full coverage gate regression
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,900,targeted extension loader tests
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow requirements
   PRD.md,project,governing extension semantics

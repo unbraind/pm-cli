@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[6]: "area:sdk",git,long-term,multi-agent,scale,storage
 created_at: "2026-07-06T22:56:01.193Z"
-updated_at: "2026-07-20T02:35:47.525Z"
+updated_at: "2026-07-26T17:14:15.621Z"
 closed_at: "2026-07-20T02:35:47.509Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -14,12 +14,28 @@ acceptance_criteria: Documented merge semantics for every tracker artifact class
 parent: pm-o2kc
 risk: medium
 confidence: medium
+release: v2026.7.20
 resolution: "Delivered the complete tracker merge-semantics program: field-aware merge drivers for every artifact class (items, history, relationships, config/schema, transactions), committed .gitattributes fence with drift audit and schema-triggered refresh, post-merge detection via validate --check-storage-integrity and history --verify --strict-exit with remediation wiring into history-repair, cross-branch id collision controls (configurable ids.token_length + duplicate detection), SDK-first implementation under sdk/merge with the CLI as a shim, and MERGE_SAFETY.md plus AGENT_GUIDE multi-branch workflow documentation."
 expected_result: "Multi-agent branch/worktree workflows merge tracker artifacts without conflicts or silent corruption, with documented semantics and automated post-merge verification."
 actual_result: "Shipped across PR#593/#594/#605/#614/#616/#617: merge drivers + fence + union/renumbering live, CI runs storage-integrity and strict history verification, MERGE_SAFETY.md documents every artifact class, AGENT_GUIDE routes agents into the workflow; nightly and CI green post-adoption."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[17]{id,kind,created_at,author,source_kind}:
   pm-klo8,related,"2026-07-16T05:45:16.990Z",null,null
   pm-is1a,related,"2026-07-16T05:45:17.657Z",null,null
+  pm-33cw,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-4uqm,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-85hm,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-8xod,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-9q2t,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-9rxu,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-bl8x,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-cxyv,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-dj98,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-gpo7,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-i7i4,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-iwsj,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-khdq,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-m3nl,related,"2026-07-26T17:14:15.379Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:14:15.379Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-19T04:07:48.361Z",maintainer-agent,"Family-map addition 2026-07-19: NEW artifact class - SDK workspace-transaction journals (<pmRoot>/transactions/sdk/<txid>.json, shipped PR#605). Per-branch runtime receipts that conflict on every concurrent merge if the repo tracks .agents/pm; not covered by the init gitignore block and never GC'd. Owned by new pm-8xod (parent usfg, related here) - gitignore-block coverage + retention/GC + tracked-repo merge disposition. No change to the execution order gates (cxyv, ol3p first)."
 notes[2]{created_at,author,text}:

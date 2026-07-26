@@ -6,20 +6,22 @@ status: closed
 priority: 2
 tags[6]: analytics,api,"area:graph","area:sdk",relationships,sdk-first
 created_at: "2026-07-21T03:37:40.047Z"
-updated_at: "2026-07-21T04:42:30.255Z"
+updated_at: "2026-07-26T17:12:51.630Z"
 closed_at: "2026-07-21T03:38:34.316Z"
 author: maintainer-agent
 acceptance_criteria: "pm graph slack reports earliest/latest start, total float, critical classification, and makespan over the order-bearing DAG with genuine cycles excluded; pm graph centrality reports exact Brandes betweenness, Wasserman-Faust closeness, undirected degree, and directed fan-in/fan-out ranked deterministically; pm graph articulation reports articulation points and bridges via iterative Tarjan low-link search; all three are exact on the bounded workspace, deterministic, cancellable, carry cost/truncation/cache metadata, honor --kind (centrality/articulation) and --limit/--summary bounds; CLI, MCP, contracts, completion, and docs stay in parity; exact 100/100/100/100 coverage"
 goal: project management = context management
 parent: pm-7ob5
+release: v2026.7.21
 resolution: "Shipped three exact public SDK graph primitives (analyzeRelationshipSchedule, computeRelationshipCentrality, findRelationshipCutStructure) with pm graph slack/centrality/articulation subcommands and full CLI/MCP/contracts/completion/docs parity."
 expected_result: "pm graph exposes CPM slack, betweenness/closeness centrality with fan-in/out, and articulation points/bridges; exact and deterministic; 100% coverage; all gates green."
 actual_result: All three subcommands deliver the specified exact analytics; 6038 tests pass at 100/100/100/100; lint/static/boundary/token gates green; dogfood-verified end to end.
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-6x7o,related,"2026-07-21T03:37:40.047Z",null,null
   pm-7ob5,related,"2026-07-21T03:37:40.047Z",null,null
   pm-96h7,related,"2026-07-21T03:37:40.047Z",null,null
   pm-m2il,related,"2026-07-21T03:37:40.047Z",null,null
+  pm-7ob5,implements,"2026-07-26T17:12:51.410Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-21T03:38:19.258Z",maintainer-agent,"Duplicate-check 2026-07-21: all-status search (graph/slack/centrality/betweenness/articulation/critical-path) found no existing item for these three primitives; this is the granular deliverable under umbrella pm-7ob5 (which stays open for structural-holes, temporal what-if, and the million-item eval matrix). Not a duplicate of pm-7ob5 (the 7-bullet umbrella) nor of the shipped communities/redundancy/dominators analytics."
   "2026-07-21T03:38:19.888Z",maintainer-agent,"Verification evidence 2026-07-21: full sandboxed coverage passed 324 files / 6038 tests at exact 100/100/100/100 (statements 40605/40605, branches 28585/28585, functions 8240/8240, lines 39504/39504). pnpm lint passed: ESLint 0 warnings, jscpd 0 clones, static-quality (100% docstrings incl. exported+member, complexity), package-boundary, token-budget (14 surfaces). Contracts snapshot regenerated. Manual dogfood in a temp workspace built a diamond+shortcut ordering DAG and confirmed pm graph slack (makespan 4, shortcut task slack 1, critical path A->B->C->D), pm graph centrality (betweenness ranking with directed fan-in/out), and pm graph articulation (correctly reports zero cuts on the biconnected diamond). New unit specs: scheduling.spec.ts (7), centrality.spec.ts (12); integration in run.spec.ts (+3). All three subcommands verified across CLI human + --json + --summary output."

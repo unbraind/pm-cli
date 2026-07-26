@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:reminders","area:schema",code,pm-cli
 created_at: "2026-03-31T21:28:01.402Z"
-updated_at: "2026-04-04T21:37:31.773Z"
+updated_at: "2026-07-26T17:06:25.115Z"
 deadline: "2026-04-07T21:28:01.402Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 blocked_by: pm-2p6q
 blocked_reason: Implement reminder schema validation and deterministic ordering has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement reminder schema validation and deterministic ordering is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: vnext
 component: core/item-format
 regression: true
 customer_impact: Ensures reminder data is safely persisted.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2p6q,related,"2026-03-31T21:28:01.402Z",codex-agent,null
   pm-c877,parent,"2026-03-31T21:28:01.402Z",codex-agent,null
+  pm-c877,implements,"2026-07-26T17:06:24.826Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-31T21:28:01.402Z",codex-agent,Task created for reminder schema and normalization work.
   "2026-03-31T21:43:35.258Z",codex-agent,Implemented reminder schema support across types/constants/item-format with strict validation and deterministic reminder sorting.
@@ -56,9 +57,9 @@ files[3]{path,scope,note}:
   src/core/item/item-format.ts,project,reminder validation logic
   src/core/shared/constants.ts,project,front-matter key-order includes reminders
   src/types.ts,project,add Reminder type and front-matter field
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,schema coverage
-  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,schema and constants reminder coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,project,1800,schema coverage
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/shared-constants-errors.spec.ts,project,1800,schema and constants reminder coverage
 docs[1]{path,scope,note}:
   PRD.md,project,schema contract updates
 close_reason: Reminder schema validation and deterministic ordering shipped with passing linked tests.

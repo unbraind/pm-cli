@@ -6,10 +6,14 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,ergonomics,validation
 created_at: "2026-06-17T13:05:17.178Z"
-updated_at: "2026-06-17T13:26:24.561Z"
+updated_at: "2026-07-26T17:00:27.239Z"
 author: claude-code-agent
 acceptance_criteria: "files/docs --add/--add-glob/--remove/--migrate and create/update --dep/--dep-remove/--file/--doc and --reminder/--event/--type-option reject unknown keys with the same 'does not recognize key X. Allowed keys: ...' error as test --add; plaintext-fallback parsers unchanged; 100% coverage; manual sandbox repro from GH-258 now errors."
 parent: pm-mpbb
+release: v2026.6.17
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:00:27.041Z",null,null
+  pm-swie,related,"2026-07-26T17:00:27.041Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-17T13:14:39.189Z",claude-code-agent,"Implemented (GH-258). New shared core helper src/core/item/parse.ts:assertNoUnknownCsvKeys(kv, optionName, allowedKeys) — mirrors the test --add 'does not recognize key X. Allowed keys: ...' message format, case-insensitive allowed-key match (so a downstream-readable key like Path is never falsely rejected), USAGE exit code. Wired into every structured CSV/markdown parser with an explicit allowed-key contract: linked-artifacts.ts (--add path,scope,note / --add-glob pattern,glob,path,scope,note / --remove path / --migrate from,to), create.ts (--dep id,kind,type,author,created_at / --file,--doc path,scope,note), update.ts (--dep +source_kind / --dep-remove id,kind,type,source_kind), repeatable-metadata-parsers.ts (--reminder at,date,text,title / --event start,date,end,duration,title,description,location,timezone,all_day,recur_* / --type-option key,value). Bare (non-structured) values still skip validation. DELIBERATELY EXCLUDED: plaintext-fallback parsers (--comment/--note/--learning parseLogSeed, annotation --add parseAnnotationTextInput) — unknown keys there mean 'treat whole entry as plaintext', not an error; --field is schema-driven (open-ended custom field names). Tests added to parse-utils/files-docs/create-command/update-command specs; manual sandbox repro from the issue now errors with the exact allowed-key message. Docs/COMMANDS.md Linked Artifacts section updated."
 files[5]{path,scope,note}:

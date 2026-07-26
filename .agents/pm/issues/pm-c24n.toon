@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[3]: dependabot,security,vulnerability
 created_at: "2026-06-16T12:33:02.641Z"
-updated_at: "2026-06-16T21:35:17.670Z"
+updated_at: "2026-07-26T16:51:18.712Z"
 author: codex-sdk-cli-consolidation-20260616
+release: v2026.6.16
 resolution: "Alerts #39/#40/#41 reached state=fixed on default branch via earlier dependency bumps (vite, @opentelemetry/core); verified no open Dependabot alerts remain."
 expected_result: No open Dependabot alerts on default branch.
 actual_result: Three open alerts tracked after PR #246 merge.

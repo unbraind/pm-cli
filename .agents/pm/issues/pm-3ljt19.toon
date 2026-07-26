@@ -6,16 +6,19 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:sdk",extensions,gh-issue
 created_at: "2026-07-25T09:20:04.202Z"
-updated_at: "2026-07-25T11:58:30.574Z"
+updated_at: "2026-07-26T17:03:10.752Z"
 closed_at: "2026-07-25T11:58:29.727Z"
 author: unknown
 parent: pm-ugqx
+release: v2026.7.26
 resolution: "Propagated bounded activation diagnostics into command recovery and extension lifecycle responses, with validated long-option contracts."
 expected_result: "Extension activation failures identify the failed extension and remediation at the command, activate, explore, and doctor boundaries."
 actual_result: All lifecycle and recovery boundaries return actionable structured diagnostics; full contract snapshot and 270 linked tests verify the behavior.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-s1w0sf,related,"2026-07-25T09:20:04.202Z",null,null
   pm-yffj,related,"2026-07-25T09:20:04.202Z",null,null
+  pm-e02lgu,related,"2026-07-26T17:03:10.521Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:03:10.521Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-25T09:20:04.202Z",unknown,"Duplicate-check evidence: closed pm-yffj surfaced activation diagnostics in install/explore and closed pm-s1w0sf validates descriptors,but GH-704 reproduces missing point-of-use recovery,false activate success,and unmatchable long-name acceptance. This is follow-up scope,not a duplicate of completed work."
   "2026-07-25T11:31:35.052Z","harness:codex","Evidence: unknown-command, activate, explore, and doctor paths return bounded actionable activation failures. Both linked test groups passed: 132/132 host/error tests and 138/138 recovery/extension lifecycle tests."

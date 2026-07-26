@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:observability",external-integration,sdk-adoption,sentry
 created_at: "2026-07-14T13:16:38.180Z"
-updated_at: "2026-07-15T13:31:53.135Z"
+updated_at: "2026-07-26T17:11:41.625Z"
 closed_at: "2026-07-15T13:31:24.347Z"
 author: codex-root
 estimated_minutes: 120
@@ -14,13 +14,15 @@ acceptance_criteria: Identify the emitting extension/package and release; remove
 parent: pm-5oj5
 risk: medium
 confidence: 70
+release: v2026.7.15
 resolution: Released PATH-independent pm executable resolution in pm-changelog@2026.7.15-1 and resolved the stale pre-fix Sentry group after clean publish/install proof.
 expected_result: pm-changelog item reads invoke the installed pm-cli binary without relying on a globally discoverable pm executable.
 actual_result: pm-changelog@2026.7.15-1 resolves the package binary through process.execPath; PM-CLI-2B has no recurrence and the live Sentry gate reports zero highs.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-59gj,related,"2026-07-14T13:16:38.180Z",null,null
   pm-7n5a,related,"2026-07-14T13:16:38.180Z",null,null
   pm-xzhz,related,"2026-07-14T13:16:38.180Z",null,null
+  pm-5oj5,implements,"2026-07-26T17:11:41.411Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-14T13:16:52.339Z",codex-root,"Duplicate check 2026-07-14: all-status searches for PM-CLI-2B, spawnSync pm ENOENT, and readPmItems plus direct tracker scans found no canonical item. Live Sentry issue https://unbrained.sentry.io/issues/134232002/ is one handled high event from pm-cli@2026.7.11 at 2026-07-14T11:55:59Z on external host e2b.local; repository source and installed project extensions contain no readPmItems implementation, so ownership discovery remains required."
   "2026-07-14T18:05:30.724Z",codex-root,"Live Sentry evidence 2026-07-14: PM-CLI-2B remains unresolved high, one handled event on pm-cli@2026.7.11, first/last seen 2026-07-14T11:55:59Z. Stack identifies an external extension readPmItems spawnSync('pm') ENOENT path; no recurrence was present. pnpm sentry:telemetry:gate classifies this as one of two actionable highs. This bundle does not claim or implement pm-d4ns."

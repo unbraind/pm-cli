@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags[3]: config,health,observability
 created_at: "2026-06-16T14:46:44.294Z"
-updated_at: "2026-06-16T15:26:31.743Z"
+updated_at: "2026-07-26T17:14:40.441Z"
 author: claude-code-agent
 parent: pm-8jdc
+release: v2026.6.16
 resolution: Add provider_source/vector_store_source + *_configured via resolveProviderConfigSource helper.
 expected_result: health explains auto-detected vs misconfigured providers
 actual_result: Implemented in health.ts/providers.ts; helper 100% covered.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-8jdc,implements,"2026-07-26T17:14:40.227Z",null,null
 notes[1]{created_at,author,text}:
   "2026-06-16T15:26:02.006Z",claude-code-agent,"GH-244 fix: pm health vectorization details now surface provider_source/vector_store_source (configured|auto-detected|unconfigured) plus the persisted provider_configured/vector_store_configured strings, so a config audit can tell auto-detect apart from genuine misconfiguration when settings.search.provider/vector_store.adapter are empty. New pure helper resolveProviderConfigSource in core/search/providers.ts. Files: cli/commands/health.ts, core/search/providers.ts."
 close_reason: pm health now surfaces provider/vector-store resolution source + persisted configured value so empty-but-auto-detected config is no longer a false audit gap.

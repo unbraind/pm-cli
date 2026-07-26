@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: checks,command-references,validate
 created_at: "2026-04-04T10:10:37.806Z"
-updated_at: "2026-05-17T08:20:52.604Z"
+updated_at: "2026-07-26T17:01:41.058Z"
 deadline: "2026-04-11T10:10:37.806Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: linked-test-hardening
-release: vnext
+release: v2026.5.1
 blocked_reason: "Issue3 Task: Default-on validate command reference check has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Issue3 Task: Default-on validate command reference check is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,13 +38,15 @@ fixed_version: vnext
 component: linked-test-runtime
 regression: true
 customer_impact: improves deterministic verification outcomes
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-br88,implements,"2026-07-26T17:01:40.856Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-04T11:39:57.500Z",codex-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (844 tests); node scripts/run-tests.mjs coverage passed (branches 91.02%); PM linked-test sweep passed via pm test-all --status in_progress (linked_tests=3 failed=0, failure categories all zero)."
 files[3]{path,scope,note}:
   src/cli/commands/validate.ts,project,command reference validation check
   src/cli/main.ts,project,new validate flag wiring
   src/sdk/cli-contracts.ts,project,validate flag schemas
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,validate command reference diagnostics
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,project,2400,validate command reference diagnostics
 close_reason: default-on command-reference validation implemented and verified
 body: "Scope context: Issue3 Task: Default-on validate command reference check\n\nExecution intent: This task is tracked under pm-br88 with component linked-test-runtime.\n\nCompletion signal: pm validate includes command_references check in default check set and reports stale PM-id reference diagnostics.\n\nGovernance intent: Linked test reliability. Maintain linked files/tests/docs and evidence comments so future agents can reuse this record as authoritative context."

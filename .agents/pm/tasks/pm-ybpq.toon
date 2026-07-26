@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: docs,pm-cli,tests,toon,verification
 created_at: "2026-03-31T20:13:39.416Z"
-updated_at: "2026-04-04T21:37:30.347Z"
+updated_at: "2026-07-26T17:30:13.412Z"
 deadline: "2026-04-14T20:13:39.416Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-u919
 blocked_reason: Add TOON migration tests docs and verification has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add TOON migration tests docs and verification is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/add-toon-migration-tests-docs-and-verification
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add TOON migration tests docs and verification.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-u919,parent,"2026-03-31T20:13:39.416Z",codex-agent,null
+  pm-u919,implements,"2026-07-26T17:30:13.192Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-31T20:13:39.416Z",codex-agent,Task tracks tests docs and final verification evidence.
   "2026-03-31T20:56:46.251Z",codex-agent,"Expanded TOON migration tests/docs and completed full sandbox validation: node scripts/run-tests.mjs coverage now passes at 100% lines/branches/functions/statements."
@@ -54,8 +55,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   tests/unit/item-format-migration.spec.ts,project,added migration edge-case coverage for missing dirs and target-only variants
   tests/unit/test-all-command.spec.ts,project,added deterministic timeout dedupe branch coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandbox verification evidence
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full sandbox verification evidence
 docs[2]{path,scope,note}:
   docs/ARCHITECTURE.md,project,documented dual-format item storage architecture
   README.md,project,documented TOON default and compatibility

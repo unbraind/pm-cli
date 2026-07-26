@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: concurrency,extensibility,sdk,universal-tool
 created_at: "2026-07-18T10:03:42.541Z"
-updated_at: "2026-07-18T21:35:49.979Z"
+updated_at: "2026-07-26T17:03:54.761Z"
 closed_at: "2026-07-18T20:44:03.472Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -14,14 +14,16 @@ acceptance_criteria: Public SDK primitive commits multi-item mutations + relatio
 parent: pm-usfg
 risk: medium
 confidence: medium
+release: v2026.7.19
 resolution: "Public commitWorkspaceTransaction now coordinates ordered item and relationship mutations with durable replay, reverse append-only compensation, configurable writer locking, extension-host binding, and pm-vcs acceptance."
 expected_result: SDK consumers can commit multi-item and relationship-event plans through one public crash-recoverable primitive without private core imports or history rewrites.
 actual_result: "Packed SDK and pm-vcs consumers commit, recover, compensate, and replay atomically at the journal boundary; 5,914 tests pass at exact 100% coverage and Greptile re-review is 5/5 clean."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-8ngt,related,"2026-07-18T10:03:42.541Z",null,null
   pm-dj98,related,"2026-07-18T10:03:42.541Z",null,null
   pm-ju83,related,"2026-07-18T10:03:42.541Z",null,null
   pm-klo8,related,"2026-07-18T10:03:42.541Z",null,null
+  pm-usfg,implements,"2026-07-26T17:03:54.505Z",null,null
 comments[26]{created_at,author,text}:
   "2026-07-18T14:35:43.038Z",codex-root,"Implementation start 2026-07-18: all-status duplicate review found this canonical transaction gap and no competing atomic multi-item plus relationship-event item. Scope is a public SDK transaction journal, failure injection, recovery, immutable compensation semantics, and VCS acceptance migration."
   "2026-07-18T15:19:21.122Z",codex-root,"Implementation evidence 2026-07-18: added public commitWorkspaceTransaction with a durable per-workspace journal, one writer lock, ordered idempotent inspection/application, deterministic replay, reverse append-style compensation, explicit crash interruption semantics, extension-host binding, and public SDK export. pm-vcs merge is the non-PM consumer and binds transaction identity to changeset+ref. Verification: 5,914 tests across 311 files at exact 100/100/100/100 (39,043 statements; 27,456 branches; 7,949 functions; 38,008 lines); lint/zero-clone/static/docstring/package-boundary/token/audit gates clean. Packed temp consumer committed+replayed the SDK transaction and completed VCS ref/create/propose/merge/log plus deep doctor at /tmp/pm-sdk-transaction-proof-P5Bp3l. Release gates passed through packed smoke and 88-command dogfood; only the expected pre-commit Greptile stage remained."

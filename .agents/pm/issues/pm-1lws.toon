@@ -6,12 +6,16 @@ status: closed
 priority: 3
 tags[2]: agent-ux,consistency
 created_at: "2026-05-28T10:54:04.158Z"
-updated_at: "2026-05-29T02:57:24.651Z"
+updated_at: "2026-07-26T17:01:17.449Z"
 author: maintainer-agent
 parent: pm-th6y
+release: v2026.5.29
 resolution: "Added --expected/--actual short aliases to pm update + create + update-many (matching pm close), and additive tag mutations --add-tags (create/update/update-many) + --remove-tags (update/update-many). Fixed update-many actionable-detection bug where additive-tag-only updates were skipped. Wired through commander contracts, cli-contracts flag contracts, MCP (camelCase passthrough), docs, and zsh/fish completions."
 expected_result: pm update/create/update-many accept --expected/--actual and --add-tags/--remove-tags consistently with pm close; additive tag ops never silently skipped
 actual_result: "Verified: all flags accepted and applied correctly in temp-dir dogfooding; 1973 tests + 100% coverage green"
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-th6y,implements,"2026-07-26T17:01:17.242Z",null,null
+  pm-ydkl,related,"2026-07-26T17:01:17.242Z",null,null
 comments[9]{created_at,author,text}:
   "2026-05-28T10:59:09.215Z",maintainer-agent,"Related UX inconsistency observed in same session: 'pm update pm-XXX --add-tags fix' rejects with 'missing: --tags'. The retry suggestion is even worse — it says 'pm update pm-ydkl --tags fix' which REPLACES all tags (losing existing ones) instead of adding. Either (a) pm update should accept --add-tags as it does in other places, or (b) the retry hint should preserve existing tags. Same root cause as the --expected vs --expected-result inconsistency: flag aliases that exist on one mutation but not another."
   "2026-05-29T00:07:51.484Z",maintainer-agent,"Branch feat/agent-ux-tag-mutations-and-result-aliases implements both halves of this issue: (1) --expected/--actual short aliases now accepted on pm update + pm create + pm update-many (matching pm close), wired through commander-mutation-options contracts + register-mutation + CLOSE/CREATE/UPDATE/UPDATE_MANY flag contracts in cli-contracts.ts. (2) Additive tag mutations: --add-tags (create/update/update-many) and --remove-tags (update/update-many) via new core helpers mergeAdditiveTags/applyTagRemovals/collectTagFlagValues in core/item/parse.ts (CSV + JSON-array entries, sorted+deduped+lowercased). NEW BUG FOUND & FIXED during dogfooding: update-many --add-tags/--remove-tags reported updated_count:0 skipped_count:N because buildPlannedItemDiff ignored additive tag ops -> empty diff -> every row skipped. Added buildTagMutationPlan() replicating runUpdate's tags resolution order (replace->add->remove) so dry-run preview AND apply-mode actionable detection both see additive tag changes. Removed now-dead tags scalar branch + splitCommaList import. Verified in temp dir: create/update/update-many/close all correct. 1970 unit tests green."

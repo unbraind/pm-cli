@@ -6,12 +6,14 @@ status: closed
 priority: 2
 tags[4]: "area:docs","area:sdk",authoring,dx
 created_at: "2026-06-23T20:36:03.333Z"
-updated_at: "2026-06-23T21:49:33.130Z"
+updated_at: "2026-07-26T17:19:01.714Z"
 author: claude-code-agent
 parent: pm-09rh
+release: v2026.6.24
 resolution: "docs/SDK.md, docs/EXTENSIONS.md, and define*/compose* docstrings reframed TypeScript-first; all authoring code fences are ts."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2c28,related,"2026-06-23T20:36:03.333Z",null,null
+  pm-09rh,implements,"2026-07-26T17:19:01.432Z",null,null
 files[4]{path,scope,note}:
   docs/SDK.md,project,TS-first authoring narrative + ts code fences
   docs/EXTENSIONS.md,project,TS-first extension entrypoint + scaffolder description

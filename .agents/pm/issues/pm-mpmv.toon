@@ -6,16 +6,18 @@ status: closed
 priority: 1
 tags[5]: agent-ux,external-audit,governance,item-types,pm-cli
 created_at: "2026-04-26T09:56:45.340Z"
-updated_at: "2026-04-26T20:00:58.070Z"
+updated_at: "2026-07-26T17:20:34.100Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "Default type guidance is consistent: either include Decision in the default runtime type registry/contracts or update bootstrap guidance to auto-provision Decision with clear examples."
 parent: pm-r15d
+release: v2026.5.1
 resolution: Added Decision as a built-in item type in core runtime and updated mappings/tests to align defaults with governance guidance.
 expected_result: Default item type contracts include Decision so first-run workflows match documented decision-tracking expectations.
 actual_result: Decision is now part of built-in type registry with updated constants/completion/stats coverage.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-r15d,parent,"2026-04-26T09:56:45.340Z",codex-agent,null
+  pm-r15d,implements,"2026-07-26T17:20:33.866Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-26T09:56:45.340Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Decision item type missing' --limit 10; pm search 'built-in Decision item type' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no open item currently tracks alignment between default type registry/contracts and decision-tracking guidance."
   "2026-04-26T09:57:31.949Z",codex-agent,"Governance evidence: contracts output for create runtime_schema types currently lists Chore,Epic,Event,Feature,Issue,Meeting,Milestone,Reminder,Task with no Decision type, while repository operating guidance expects decision artifacts. Aligning defaults or bootstrap guidance avoids first-run mismatch for agent workflows."

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:cli",bug,calendar,gh-issue
 created_at: "2026-07-06T08:03:07.959Z"
-updated_at: "2026-07-14T00:29:19.895Z"
+updated_at: "2026-07-26T17:29:10.403Z"
 closed_at: "2026-07-14T00:29:19.157Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,9 +14,13 @@ acceptance_criteria: pm get renders the schedule facet for scheduled types in TO
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.14
 resolution: "Added a public normalized schedule facet and integrated it into rich get across CLI, SDK, MCP, selected fields, JSON, and TOON."
 expected_result: "Meeting, Event, Reminder, and other scheduled items expose their defining schedule fields through the canonical get projection."
 actual_result: "Standard/deep get emits normalized schedule data, brief remains token-efficient, and focused/full regression suites pass."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:29:10.170Z",null,null
+  pm-uzmf,related,"2026-07-26T17:29:10.170Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-13T22:45:36.579Z",codex-root,"Implementation evidence: standard/deep get now emits a normalized schedule facet for Meeting/Event/Reminder and any item carrying deadline/reminder/event data; narrow schedule.start_at/end_at/location/events/reminders fields and brief omission are covered. CLI, SDK, and MCP dispatch share the result."
   "2026-07-14T00:09:47.240Z",codex-gpt5,"Implementation evidence: rich get now exposes a normalized public schedule facet for Meeting, Event, and Reminder data across standard, brief, JSON, TOON, and selected-field output. Focused regressions and exact-tree strict gates pass; full coverage is 100/100/100/100 across 5656 tests."

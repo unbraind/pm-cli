@@ -6,15 +6,20 @@ status: closed
 priority: 1
 tags[4]: "area:search",bug,paths,vector-store
 created_at: "2026-07-06T08:44:42.249Z"
-updated_at: "2026-07-06T09:52:59.549Z"
+updated_at: "2026-07-26T17:21:55.037Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm search/reindex/health run from a workspace subdirectory never create .agents/pm/.agents/**; regression tests cover conventional root, bare --path root, absolute path, and no-root back-compat"
 risk: medium
 confidence: high
+release: v2026.7.7
 resolution: "Relative LanceDB paths now resolve against the pmRoot-derived workspace root across search, health, reindex, and mutation semantic refresh."
 expected_result: "pm search/reindex/health from workspace subdirectories do not create .agents/pm/.agents vector stores; regression tests cover conventional root, bare root, absolute path, and back-compat."
 actual_result: "Focused linked tests passed, temp-dir subdirectory smoke proved the anchored path and absence of nested .agents/pm/.agents, and full coverage passed 100/100/100/100."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-hq28,related,"2026-07-26T17:21:54.782Z",null,null
+  pm-p4mw,related,"2026-07-26T17:21:54.782Z",null,null
+  pm-w13j,related,"2026-07-26T17:21:54.782Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-06T09:11:38.748Z",codex-agent,"Implementation continuation: claimed canonical vector-store path item after all-status duplicate search and live item read. Existing working-tree patch already anchors relative LanceDB paths to pmRoot-derived workspace roots; next step is focused verification, temp-dir dogfood, and PR-ready evidence."
   "2026-07-06T09:26:35.474Z",codex-agent,"Evidence: implemented and verified relative LanceDB path anchoring through pmRoot-aware resolveVectorStores call sites in search, health, reindex, and semantic refresh. Focused linked test passed; temp-dir smoke from inside project/.agents/pm confirmed active LanceDB path anchored to project/.agents/pm/search/lancedb and no nested .agents/pm/.agents was created. Gates passed: pnpm build, pnpm lint, pnpm contracts:check, pnpm security:scan, pnpm audit --audit-level moderate, pm health --check-only --summary --json ok, pm validate history_drift ok with pre-existing validate_resolution_missing_fields warning, full coverage 264 files / 5436 tests / 100% statements branches functions lines."

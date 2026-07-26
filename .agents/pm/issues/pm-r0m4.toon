@@ -6,12 +6,15 @@ status: closed
 priority: 0
 tags[4]: agent-ux,audit-followup,extensions,packaging
 created_at: "2026-07-04T08:31:41.429Z"
-updated_at: "2026-07-04T10:57:30.023Z"
+updated_at: "2026-07-26T17:24:34.001Z"
 author: maintainer-agent
 parent: pm-ugqx
+release: v2026.7.5
 resolution: "ensureExtensionModuleTypeMarker on install + scaffold/adopt emit package.json {type:module}"
 expected_result: Extensions installed into CJS host projects activate and dispatch
 actual_result: 11/11 bundled packages + scaffolded extension activation ok in CJS sandbox from real npm install
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T17:24:33.720Z",null,null
 notes[3]{created_at,author,text}:
   "2026-07-04T08:42:51.757Z",maintainer-agent,"Fix implemented (uncommitted) in all three places: (1) performExtensionInstallUnderLock now calls ensureExtensionModuleTypeMarker(destinationDirectory) — writes {type:module} package.json when the installed dir ships none, preserves extension-shipped package.json; (2) non-package extension scaffold emits package.json marker + README bullet; (3) all 10 bundled extension dirs now ship package.json (pm-linked-test-adapters already had one). Verified e2e in CJS sandbox: all 11 bundled extensions activation_status:ok after repack+reinstall (was 10/11 failed). Spec updates: extension-command.spec file-list assertions include package.json; two new marker tests (write + preserve)."
   "2026-07-04T10:37:23.444Z",maintainer-agent,"2026-07-04 independent re-verification from a FRESH npm pack of the working tree: new CJS sandbox (type:commonjs, Node current), pm init, installed all 11 bundled packages via pm install <alias> --project — extension --list shows activation_status ok for all 11. Full gates on the tree: fast suite 5336/5336, typecheck+eslint+jscpd+static-quality+contracts:check green."

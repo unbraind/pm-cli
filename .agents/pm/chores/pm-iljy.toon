@@ -6,15 +6,18 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:packages",exemplar,security
 created_at: "2026-06-07T10:04:41.422Z"
-updated_at: "2026-06-09T18:41:20.785Z"
+updated_at: "2026-07-26T17:16:34.226Z"
 author: audit-platform-agent
 acceptance_criteria: "- All 9 first-party manifests declare `trusted`, `sandbox_profile`, and `permissions`\n- governance-audit manifest declares a sandbox_profile consistent with its onRead/onWrite hooks\n- Governance test enforces presence of these fields on first-party manifests"
 parent: pm-ugqx
 risk: low
 confidence: high
+release: v2026.6.10
 resolution: "Added trusted, sandbox_profile, and permissions declarations to all first-party manifests."
 expected_result: Every first-party manifest declares trust and permission posture consistently.
 actual_result: "All nine existing first-party manifests now declare trusted=true, sandbox_profile, and permissions; manifest tests passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T17:16:33.993Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-09T17:46:12.335Z",packages-agent,"Starting: declaring trusted/sandbox_profile/permissions across all 9 first-party extension manifests. Reading extension-policy.ts for exact keys first."
   "2026-06-09T17:49:29.185Z",packages-agent,"Policy facts (extension-policy.ts + loader.ts): manifest fields trusted:boolean, sandbox_profile in none|restricted|strict, permissions keys fs_read/fs_write/network/env_read/env_write/process_spawn (loader rejects unknown non-boolean values). restricted disallows process_spawn+env_write; strict additionally network+fs_write; non-none profile without a permissions object = sandbox_permissions_missing. Chosen matrix: beads/todos/templates/governance-audit/search-advanced = restricted (mutate tracker or write files via SDK; search-advanced also network:true for embedding-backed reindex); calendar/guide-shell = strict (read-only views, fs_read+env_read only); lifecycle-hooks = strict (inert, all permissions false); linked-test-adapters = none + process_spawn:true (test-runs resume delegates to spawnBackgroundTestRunWorker, so restricted/strict would be violated). trusted:true everywhere."
@@ -31,7 +34,7 @@ files[10]{path,scope,note}:
   packages/pm-templates/extensions/templates/manifest.json,project,first-party policy declaration
   packages/pm-todos/extensions/todos/manifest.json,project,first-party policy declaration
   tests/unit/package-manifest.spec.ts,project,manifest policy declaration coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,first-party manifest governance coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts,project,240,first-party manifest governance coverage
 close_reason: "First-party package manifest trust, sandbox, and permissions declarations completed."
 body: ""

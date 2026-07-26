@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:update","milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-06T22:29:14.466Z"
-updated_at: "2026-04-04T21:50:09.944Z"
+updated_at: "2026-07-26T17:11:27.509Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-8mkp
 blocked_reason: Release-readiness guard for update help/contract parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release-readiness guard for update help/contract parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-guard-for-update-help-contract
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness guard for update help/contract parity.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-8mkp,related,"2026-03-06T22:29:14.466Z",maintainer-agent,null
+  pm-8a2s,implements,"2026-07-26T17:11:27.265Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-06T22:29:14.466Z",maintainer-agent,"Why this exists: release-readiness currently guards create and claim-release help but not update help parity."
   "2026-03-06T22:29:37.939Z",maintainer-agent,"Planned changeset: add a release-readiness contract assertion that validates PRD/README update flag tokens against pm update --help output to prevent docs/help drift."
@@ -55,9 +56,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   README.md,project,document update explicit-flag contract
   tests/integration/release-readiness-runtime.spec.ts,project,add update help parity guard
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted contract regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1800,targeted contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood release-readiness workflow
   PRD.md,project,update-flag contract source

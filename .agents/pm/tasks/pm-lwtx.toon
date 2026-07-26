@@ -6,10 +6,21 @@ status: closed
 priority: 0
 tags[6]: agent-ux,audit,dependency-update,ecosystem,github-issue,sdk
 created_at: "2026-06-02T21:58:47.916Z"
-updated_at: "2026-06-02T22:59:23.743Z"
+updated_at: "2026-07-26T17:19:41.608Z"
 author: codex-broad-audit-20260602
 parent: pm-doxj
+release: v2026.6.5
 expected_result: "Latest CLI/SDK/ecosystem are audited in isolated temp projects, concrete non-duplicate findings are fixed or documented, GitHub PR/issues/dependency/security reports are handled, release gates and observability checks pass, a PR is reviewed, green, and merged."
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-59gj,related,"2026-07-26T17:19:41.357Z",null,null
+  pm-5teq,related,"2026-07-26T17:19:41.357Z",null,null
+  pm-doxj,implements,"2026-07-26T17:19:41.357Z",null,null
+  pm-etxf,related,"2026-07-26T17:19:41.357Z",null,null
+  pm-kcba,related,"2026-07-26T17:19:41.357Z",null,null
+  pm-kd9n,related,"2026-07-26T17:19:41.357Z",null,null
+  pm-kddw,related,"2026-07-26T17:19:41.357Z",null,null
+  pm-qvdj,related,"2026-07-26T17:19:41.357Z",null,null
+  pm-z0ip,related,"2026-07-26T17:19:41.357Z",null,null
 comments[15]{created_at,author,text}:
   "2026-06-02T21:59:44.429Z",codex-ecosystem-lane-20260602,"Ecosystem lane start: auditing external pm packages and isolated temp-project package-first dogfood with separate PM_PATH/PM_GLOBAL_PATH; no claim/release and no repo file edits."
   "2026-06-02T21:59:49.442Z",codex-sdk-lane-20260602,"SDK/custom-item-fields lane start: auditing GitHub issue #97 / pm-qvdj for registerItemFields, create/update contracts/help, validation, tests, and SDK docs/examples. Scope is findings only; no claim/release and no code edits planned."
@@ -33,17 +44,17 @@ files[6]{path,scope,note}:
   pnpm-lock.yaml,project,Commander 15 lockfile update
   scripts/release/sentry-telemetry-gate.mjs,project,Classify handled structural validation CommandErrors as expected Sentry issues
   tests/integration/release-automation-contract.spec.ts,project,Guard expected structural validation Sentry filters
-tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  bash scripts/prod/telemetry/check-stack-health.sh,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/run-gates.mjs --json --skip-telemetry-sentry,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extensions-item-fields.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/extension-command.spec.ts tests/unit/output.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "npm run dogfood:package-first",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mpx6zthq-i6kfn1,test,passed,"2026-06-02T22:10:46.425Z","2026-06-02T22:11:41.198Z","2026-06-02T22:11:41.198Z",null,null,3,0,0,null,null,null
+tests[9]{command,scope,timeout_seconds}:
+  bash scripts/prod/telemetry/check-stack-health.sh,project,120
+  node scripts/release/run-gates.mjs --json --skip-telemetry-sentry,project,600
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0,project,120
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,120
+  node scripts/run-tests.mjs test -- tests/unit/extensions-item-fields.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/extension-command.spec.ts tests/unit/output.spec.ts tests/integration/release-automation-contract.spec.ts,project,300
+  "npm run dogfood:package-first",project,240
+  pnpm audit --json,project,120
+  pnpm build,project,240
+  "pnpm changelog:pm:check",project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mpx6zthq-i6kfn1,test,passed,"2026-06-02T22:10:46.425Z","2026-06-02T22:11:41.198Z","2026-06-02T22:11:41.198Z",3,0,0
 close_reason: "Merged PR #100 into main with SDK field setters, extension output diagnostics, review fixes, external package audit evidence, Sentry/telemetry verification, and GitHub issue closeout."
 body: ""

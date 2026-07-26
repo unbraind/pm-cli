@@ -6,12 +6,17 @@ status: closed
 priority: 3
 tags[3]: dx,extensions,sdk
 created_at: "2026-05-30T21:44:37.379Z"
-updated_at: "2026-05-31T09:10:51.701Z"
+updated_at: "2026-07-26T17:22:29.506Z"
 author: maintainer-agent
 acceptance_criteria: SDK exports a package-safe error primitive; manifest pm_min_version gate; canonical replicable example package; docs reconciled
+release: v2026.6.1
 resolution: "Added package-safe expected error helpers, SDK testing helper, manifest compatibility gates, and package authoring docs."
 expected_result: "Package authors get stable SDK primitives, compatibility failures happen before deep runtime failures, and docs avoid private internals."
 actual_result: "SDK exports and docs are updated; focused SDK/loader/package tests, full coverage, static quality, and release gates passed."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-hq28,related,"2026-07-26T17:22:29.237Z",null,null
+  pm-p4mw,related,"2026-07-26T17:22:29.237Z",null,null
+  pm-rnpb,related,"2026-07-26T17:22:29.237Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-31T05:42:10.700Z",claude-code-agent,"SDK ergonomics audit 2026-05-31 (deferred from this perf-focused PR; concrete plan for a follow-up): (1) Version negotiation gap — ExtensionManifest (core/extensions/extension-types.ts) has version + optional manifest_version but NO pm_min_version/engines gate; loader.ts loads + activates without any CLI-version compatibility check, so a package using newer SDK features silently loads in an old CLI and fails deep in a handler. Add pm_min_version?:string to the manifest and check it in the loader before activation with a clear diagnostic. (2) PM_CLI_PACKAGE_ROOT is undocumented — set in cli/main.ts, guide.ts, mcp/server.ts and consumed by bundled package runtime-loaders (packages/pm-todos/.../runtime-loader.ts), but absent from docs/SDK.md and docs/EXTENSIONS.md; document it as the first-party mechanism for bundled packages to locate dist assets, and note third-party npm packages must not rely on it. (3) Package-safe error base — packages hand-redefine `class PmCliError extends Error { name='PmCliError' }` to match the Sentry isExpectedCliErrorEvent filter; this is actually the CORRECT pattern (packages cannot value-import from src/sdk once installed), but it is tribal knowledge — document it in the extension authoring guide. None of these block agents today; tracking for a dedicated SDK PR."
   "2026-05-31T08:03:29.844Z",codex-gpt5-20260531,"Evidence: implemented focused SDK/package authoring ergonomics changes: createPmCliExpectedError/isPmCliExpectedError public runtime exports, sdk/testing assertRegisteredCommandContract subpath, pm_min_version + engines manifest typing and discovery gate, and SDK/EXTENSIONS docs for stable public subpaths, first-party-only PM_CLI_PACKAGE_ROOT, and registerService(\"output_format\") naming. Linked test evidence: pm test pm-oxyo --run --progress passed command PM_PATH=\"$(mktemp -d)/pm\" PM_GLOBAL_PATH=\"$(mktemp -d)/global\" pnpm exec vitest run tests/unit/sdk-index.spec.ts tests/unit/sdk-testing.spec.ts tests/unit/extension-loader.spec.ts tests/unit/package-manifest.spec.ts; 4 files passed, 67 tests passed. Earlier pnpm build/run-tests wrapper was blocked by unrelated vectorization-metadata TypeScript errors before the user reported main integration typecheck passing; no broad build rerun after that status update."
@@ -25,11 +30,16 @@ files[8]{path,scope,note}:
   src/sdk/index.ts,project,Expose new manifest engine typing through SDK barrel
   src/sdk/runtime.ts,project,Expose expected-error helper on runtime SDK subpath
   src/sdk/testing.ts,project,Public SDK test-harness command contract assertion helper
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/extension-loader.spec.ts tests/unit/package-manifest.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,SDK barrel/testing/version-gate/package manifest coverage
-  "PM_PATH=\"$(mktemp -d)/pm\" PM_GLOBAL_PATH=\"$(mktemp -d)/global\" pnpm exec vitest run tests/unit/sdk-index.spec.ts tests/unit/sdk-testing.spec.ts tests/unit/extension-loader.spec.ts tests/unit/package-manifest.spec.ts",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mpthswlf-ye7o0y,test,passed,"2026-05-31T08:02:57.467Z","2026-05-31T08:03:09.699Z","2026-05-31T08:03:09.699Z",null,null,1,0,0,null,null,null
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/extension-loader.spec.ts tests/unit/package-manifest.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: SDK barrel/testing/version-gate/package manifest coverage
+  - command: "PM_PATH=\"$(mktemp -d)/pm\" PM_GLOBAL_PATH=\"$(mktemp -d)/global\" pnpm exec vitest run tests/unit/sdk-index.spec.ts tests/unit/sdk-testing.spec.ts tests/unit/extension-loader.spec.ts tests/unit/package-manifest.spec.ts"
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mpthswlf-ye7o0y,test,passed,"2026-05-31T08:02:57.467Z","2026-05-31T08:03:09.699Z","2026-05-31T08:03:09.699Z",1,0,0
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,"Package authoring docs for manifest compatibility,stable SDK subpaths,and registerService output API"
   docs/SDK.md,project,"SDK package authoring docs for expected errors,pm_min_version,PM_CLI_PACKAGE_ROOT,and testing helper"

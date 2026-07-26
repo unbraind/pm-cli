@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: apps-sdk,"area:docs",chatgpt,codex,mcp,research
 created_at: "2026-07-11T11:10:58.363Z"
-updated_at: "2026-07-11T11:21:58.187Z"
+updated_at: "2026-07-26T17:20:49.685Z"
 closed_at: "2026-07-11T11:21:57.451Z"
 author: codex-native-plugin-research
 estimated_minutes: 240
@@ -15,10 +15,15 @@ value: "Future implementation can proceed from verified product terminology, cur
 parent: pm-95d7
 risk: low
 confidence: high
+release: v2026.7.12
 resolution: "Documented the verified native Codex status, installed-runtime and validator defects, ChatGPT Apps SDK gaps, architecture decision, phased remediation, security requirements, verification matrix, and pm execution plan."
 expected_result: "The repository contains an authoritative research-backed implementation plan, and the parent feature remains open and unclaimed for later approval."
 actual_result: Added a dated 775-line official-source implementation plan plus docs router updates; live isolated install evidence distinguishes the working Codex package from the missing self-contained runtime and optional ChatGPT app; all linked and broader documentation gates passed.
 component: docs/CODEX_PLUGIN.md
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-0c9q,related,"2026-07-26T17:20:49.474Z",null,null
+  pm-95d7,implements,"2026-07-26T17:20:49.474Z",null,null
+  pm-d97r,related,"2026-07-26T17:20:49.474Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-11T11:10:58.363Z",codex-native-plugin-research,"Duplicate-check evidence: all-status searches performed for the exact July 2026 pm-codex, Apps SDK, ChatGPT plugin, official docs, and cache fallback concepts returned no existing research/documentation task. Closed pm-0c9q and pm-d97r remain prior shipped lineage; this docs-only task is the scoped first child of pm-95d7."
   "2026-07-11T11:11:10.197Z",codex-native-plugin-research,"Scope checkpoint: Current Codex CLI 0.144.1 proof shows the repo marketplace installs pm-codex 2026.7.11 and registers pm-mcp. Research has also proven the installed cache lacks dist/dependencies and its launcher falls back to npx @unbrained/pm-cli@latest; the bundle has no app wiring or hosted HTTP MCP path; commands/ is not a documented Codex plugin component; current MCP tools lack Apps SDK output schemas and safety annotations. Documentation only in this task."

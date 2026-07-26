@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:calendar",output,pm-cli
 created_at: "2026-03-31T21:27:29.408Z"
-updated_at: "2026-04-04T21:32:36.492Z"
+updated_at: "2026-07-26T17:26:39.430Z"
 deadline: "2026-04-10T21:27:29.408Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 blocked_by: pm-0lbm
 blocked_reason: Calendar command with markdown default and multi-view rendering has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Calendar command with markdown default and multi-view rendering is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,10 +41,13 @@ fixed_version: vnext
 component: cli/calendar
 regression: true
 customer_impact: Improves deadline and planning visibility for agents.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-0lbm,related,"2026-03-31T21:27:29.408Z",codex-agent,null
   pm-qh3p,parent,"2026-03-31T21:27:29.408Z",codex-agent,null
   pm-r0m,related,"2026-03-31T21:27:29.408Z",codex-agent,null
+  pm-ezri,related,"2026-07-26T17:26:39.156Z",null,null
+  pm-kglq,related,"2026-07-26T17:26:39.156Z",null,null
+  pm-qh3p,implements,"2026-07-26T17:26:39.156Z",null,null
 comments[2]{created_at,author,text}:
   "2026-03-31T21:27:29.408Z",codex-agent,Feature created for calendar command and markdown default behavior.
   "2026-03-31T22:09:19.547Z",codex-agent,Feature complete via closed tasks pm-ezri and pm-kglq; calendar core views plus markdown-default output behavior verified.
@@ -54,8 +57,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:02.517Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/calendar.ts,project,new calendar command implementation
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe command regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,1800,sandbox-safe command regression
 docs[1]{path,scope,note}:
   README.md,project,calendar command user documentation
 close_reason: Calendar command core views and markdown-default output are implemented and regression-tested.

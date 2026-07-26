@@ -6,11 +6,12 @@ status: closed
 priority: 1
 tags[6]: "area:history","area:sdk","area:validation",observability,sentry,storage-integrity
 created_at: "2026-07-21T11:15:57.325Z"
-updated_at: "2026-07-21T11:57:52.221Z"
+updated_at: "2026-07-26T17:21:34.899Z"
 closed_at: "2026-07-21T11:57:51.473Z"
 author: codex-root
 acceptance_criteria: A .jsonl-named directory cannot crash scanStorageIntegrity; the malformed entry is reported with a stable tracker-relative path and actionable detail; normal history streams remain unchanged; focused and full 100% coverage gates pass; the live Sentry issue is resolved only after exact-head proof.
 parent: pm-o2kc
+release: v2026.7.22
 severity: high
 environment: production
 repro_steps: "Create a directory at .agents/pm/history/example.jsonl, then run pm validate --check-storage-integrity or pm merge reconcile."
@@ -21,10 +22,11 @@ affected_version: 2026.7.20
 fixed_version: next
 component: sdk/governance/storage-integrity
 regression: true
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-7o0s,related,"2026-07-21T11:15:57.325Z",null,null
   pm-mfkv92,discovered_from,"2026-07-21T11:15:57.325Z",null,null
   pm-p5u6,related,"2026-07-21T11:15:57.325Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:21:34.616Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-21T11:15:57.325Z",codex-root,"text=Duplicate check: searched all tracker statuses for PM-CLI-2D, EISDIR, scanHistoryStreams, illegal directory reads, and storage-integrity directory entries. No canonical item covers this exact failure; pm-mfkv92 is the merge-reconcile origin, pm-7o0s is prior disappearing-stream resilience, and pm-p5u6 owns release observability. Live evidence: Sentry PM-CLI-2D event 0705cf2439944c5f88ee0c2068c4add5 at 2026-07-21T07:29:28Z."
   "2026-07-21T11:16:35.285Z",codex-root,"Investigation: the merged main implementation still enumerates history and schema directories as bare names and unconditionally readFile()s any .jsonl/.json suffix. A directory or raced-away entry therefore escapes as EISDIR/ENOENT instead of producing a validation row. TDD scope covers both structurally identical scanner paths."

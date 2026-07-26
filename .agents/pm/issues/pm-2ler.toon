@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,legacy-data,validate
 created_at: "2026-07-10T21:27:32.454Z"
-updated_at: "2026-07-13T11:13:05.191Z"
+updated_at: "2026-07-26T17:02:06.497Z"
 closed_at: "2026-07-13T10:35:53.595Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,13 +14,18 @@ acceptance_criteria: active vs legacy(closed/canceled holder) dangling counts re
 parent: pm-33cw
 risk: low
 confidence: high
+release: v2026.7.14
 resolution: Centralized dangling dependency classification in the public SDK and changed validation to gate only active holders while reporting terminal historical debt and legacy sentinels informationally.
 expected_result: "Active and terminal dangling counts are separate, only active references warn, sentinels are identified, and terminal items receive no remediation hints."
 actual_result: "Live repository validation reports active=0, legacy_terminal=101, no_active_blocker_sentinels=98, dependency_references status=ok, and no remediation hints."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-ol5v,related,"2026-07-10T21:27:32.454Z",null,null
   pm-wrbe,related,"2026-07-10T21:27:32.454Z",null,null
   pm-jcvg,related,"2026-07-13T09:59:19.597Z",null,null
+  pm-18p8,related,"2026-07-26T17:02:06.300Z",null,null
+  pm-1p2u,related,"2026-07-26T17:02:06.300Z",null,null
+  pm-33cw,implements,"2026-07-26T17:02:06.300Z",null,null
+  pm-zdec,related,"2026-07-26T17:02:06.300Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-13T09:59:20.749Z",codex-sdk-wide-20260713,"Implementation start: bundled with pm-jcvg because dangling-reference classification must consume the same dependency semantics being promoted into the public SDK; this avoids parallel CLI-only and SDK-only logic."
   "2026-07-13T10:11:42.502Z",codex-sdk-wide-20260713,"Implementation evidence: validator now reports actionable active dangling references separately from terminal historical debt, preserves historical counts, identifies no-active-blocker sentinels, and emits remediation only for active holders. Live repository result: active=0, legacy_terminal=101, sentinel=98, status=ok."

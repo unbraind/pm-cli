@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:sdk",context,extension,relevance
 created_at: "2026-07-06T23:50:39.508Z"
-updated_at: "2026-07-09T23:01:34.761Z"
+updated_at: "2026-07-26T17:15:11.545Z"
 closed_at: "2026-07-09T19:51:46.986Z"
 author: codex-agent
 estimated_minutes: 300
@@ -14,12 +14,20 @@ acceptance_criteria: "SDK exports a documented scoreContextCandidates-style cont
 parent: pm-4k6b
 risk: medium
 confidence: medium
+release: v2026.7.10
 resolution: Implemented public deterministic context relevance scoring and governed extension overrides shared by context and next
 expected_result: "SDK, CLI, MCP-backed readers, and extensions share a documented replaceable scorer with stable small-workspace behavior"
 actual_result: "Public scorer/evaluation exports, context/next integration, extension service override, explanations, full tests, and installed-package proof pass"
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-x6jf,related,"2026-07-06T23:50:39.508Z",codex-agent,null
   pm-atfm,related,"2026-07-09T18:46:11.287Z",null,null
+  pm-3hps,related,"2026-07-26T17:15:11.285Z",null,null
+  pm-4k6b,implements,"2026-07-26T17:15:11.285Z",null,null
+  pm-55ra,related,"2026-07-26T17:15:11.285Z",null,null
+  pm-801d,related,"2026-07-26T17:15:11.285Z",null,null
+  pm-dfg0,related,"2026-07-26T17:15:11.285Z",null,null
+  pm-lixy,related,"2026-07-26T17:15:11.285Z",null,null
+  pm-xmp5,related,"2026-07-26T17:15:11.285Z",null,null
 comments[12]{created_at,author,text}:
   "2026-07-06T23:50:39.508Z",codex-agent,"Duplicate check: searched all statuses for context relevance scorer/plugin/weighting; no child item existed under pm-4k6b, only the broad parent and closed search relevance items."
   "2026-07-09T18:46:14.935Z",codex-root-20260709,"Implementation bundle: pm-h3no + pm-atfm + pm-lixy + pm-xmp5 share the context-ranking/evaluation write set. Duplicate-safe all-status orientation confirmed these are the canonical scorer, harness, corpus, and runner items; blocked index-store/packer items pm-3hps/pm-55ra remain out of scope until pm-801d/pm-dfg0 land."

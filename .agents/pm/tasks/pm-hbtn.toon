@@ -6,14 +6,17 @@ status: closed
 priority: 1
 tags[5]: docs,extensions,external-audit,pm-cli,sdk
 created_at: "2026-04-25T23:03:21.592Z"
-updated_at: "2026-04-26T08:44:57.495Z"
+updated_at: "2026-07-26T17:15:23.279Z"
 author: audit-agent
 estimated_minutes: 180
 acceptance_criteria: EXTENSIONS docs match loader hook types and SDK entrypoint provides clear extension-facing guidance.
 parent: pm-o7be
+release: v2026.5.1
 resolution: Updated extension hook documentation to match runtime contexts and exported capability contract metadata in SDK.
 expected_result: Extension docs and SDK metadata remain aligned with loader/runtime contracts.
 actual_result: docs/EXTENSIONS.md hook fields now match loader types and sdk/index exports contract constants with inline guidance.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o7be,implements,"2026-07-26T17:15:22.949Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-25T23:03:21.592Z",audit-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'audit extension sdk calendar docs' --mode keyword --limit 10; pm list-open --fields id,title,type,parent,status,priority --limit 50; pm list-in-progress --fields id,title,type,parent,status,priority --limit 50. Net-new because no active child directly tracks hook-context doc drift plus SDK surface clarity from this audit run."
   "2026-04-25T23:05:35.106Z",audit-agent,Implemented hook context doc alignment and SDK capability-contract export/javadoc improvements; targeted sdk/extension tests passed (38/38).
@@ -24,10 +27,10 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,hook context docs alignment
   src/sdk/index.ts,project,sdk capability contract exports and jsdoc
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/structure-exports.spec.ts tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-moey7k9c-owadab,test,passed,"2026-04-25T23:05:46.862Z","2026-04-25T23:06:12.432Z","2026-04-25T23:06:12.432Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/structure-exports.spec.ts tests/unit/extension-loader.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-moey7k9c-owadab,test,passed,"2026-04-25T23:05:46.862Z","2026-04-25T23:06:12.432Z","2026-04-25T23:06:12.432Z",1,0,0
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension authoring reference
 close_reason: Hook docs now match runtime types; SDK surface now exports contract metadata with inline guidance and tests pass.

@@ -6,26 +6,28 @@ status: closed
 priority: 2
 tags[3]: "area:extensions","area:sdk",pm-cli
 created_at: "2026-06-22T21:36:10.745Z"
-updated_at: "2026-06-22T22:02:10.304Z"
+updated_at: "2026-07-26T17:08:17.737Z"
 author: claude-code-agent
 parent: pm-ugqx
+release: v2026.6.23
 resolution: Shipped lintExtensionBlueprint + assertExtensionBlueprint for author-time blueprint preflight.
 expected_result: "Capability drift / duplicate / empty-surface footguns are caught at edit/test time, not at activation."
 actual_result: "Both helpers added with structured findings, legacy-alias resolution, barrel + /sdk/testing exports, docs, 100% coverage."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-fk84,related,"2026-06-22T21:36:57.686Z",null,null
   pm-iqq0,related,"2026-06-22T21:37:02.929Z",null,null
   pm-tlpv,related,"2026-06-22T21:37:03.886Z",null,null
   pm-4oio,related,"2026-06-22T21:37:04.328Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:08:17.539Z",null,null
 learnings[1]{created_at,author,text}:
   "2026-06-22T22:00:59.049Z",claude-code-agent,"lintExtensionBlueprint must resolve legacy capability aliases (migration/validation -> schema) on the author's declared set, even though the runtime reconcileExtensionCapabilityUsage only uses normalizeKnownExtensionCapability. Reason: the loader runs normalizeManifestCapabilities (which alias-resolves) BEFORE reconciliation, so by reconcile-time aliases are already canonical; but the author-time lint sees the RAW manifest.capabilities, so it must resolve aliases itself (resolveLegacyExtensionCapabilityAlias ?? normalizeKnownExtensionCapability) or it would emit a false-positive capability_undeclared error for a manifest that actually loads fine. Unknown capabilities are dropped (a separate diagnostic owns them) so a typo is not misreported as unused. capability_undeclared is the only ERROR severity (loader throws); everything else is advisory WARNING so ok stays true."
 files[3]{path,scope,note}:
   src/sdk/compose.ts,project,null
   src/sdk/index.ts,project,null
   src/sdk/testing.ts,project,null
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  tests/unit/sdk/sdk-compose.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
-  tests/unit/sdk/sdk-index.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+tests[2]{command,scope}:
+  tests/unit/sdk/sdk-compose.spec.ts,project
+  tests/unit/sdk/sdk-index.spec.ts,project
 docs[1]{path,scope,note}:
   docs/SDK.md,project,null
 close_reason: "Shipped lintExtensionBlueprint (structured author-time findings: capability_undeclared error + capability_unused/duplicate_command/command_override_conflict/empty_surface/manifest_capabilities_absent warnings) and assertExtensionBlueprint (throwing assert* family member). Legacy aliases resolved like the loader. Barrel + /sdk/testing exports, docs, 100% coverage, manual end-to-end verified."

@@ -6,14 +6,15 @@ status: closed
 priority: 1
 tags[5]: bare-core,cli,governance,packages,sdk
 created_at: "2026-07-12T23:09:24.310Z"
-updated_at: "2026-07-13T08:56:03.496Z"
+updated_at: "2026-07-26T17:28:24.612Z"
 closed_at: "2026-07-13T04:48:55.410Z"
 author: codex-pm-audit-extraction
 parent: pm-vjk3
+release: v2026.7.13
 resolution: completed
 expected_result: "Execution plan for the audit-extraction program is materialized, followed, and closed with the program"
 actual_result: Plan executed across slices 79fr/27mv/7dcf/kg18/rxp1 and closed by PR#536 with the program umbrella pm-vjk3
-dependencies[7]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-27mv,related,"2026-07-12T23:09:24.310Z",null,null
   pm-79fr,related,"2026-07-12T23:09:24.310Z",null,null
   pm-7dcf,related,"2026-07-12T23:09:24.310Z",null,null
@@ -21,6 +22,8 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-kg18,related,"2026-07-12T23:09:24.310Z",null,null
   pm-rxp1,related,"2026-07-12T23:09:24.310Z",null,null
   pm-vjk3,parent,"2026-07-12T23:09:24.310Z",null,null
+  pm-vjk3,implements,"2026-07-26T17:28:24.354Z",null,null
+  pm-yu6d,related,"2026-07-26T17:28:24.354Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-13T03:15:21.195Z",codex-pm-audit-extraction,"Step 7 pre-push evidence: the continuation boundary inventory found and removed remaining files/docs audit types/runtime, named bypass options/result markers, audit-smoke telemetry context, and PRD surface. Generic command_result extension plumbing now lets the package own result decoration. Full release:gates and exact 100% coverage pass; isolated bare-vs-installed proof passes. Next state is commit/push followed by current-head hosted review convergence."
   "2026-07-13T04:48:54.664Z",codex-pm-audit-extraction,"Plan complete: all seven steps delivered. Exact-head evidence is recorded on pm-rxp1; PR #536 is clean and mergeable with all required checks green and every review disposition complete."

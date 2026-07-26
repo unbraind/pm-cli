@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:calendar","area:tests",code,pm-cli
 created_at: "2026-03-31T21:28:54.771Z"
-updated_at: "2026-04-04T21:37:40.093Z"
+updated_at: "2026-07-26T17:26:44.167Z"
 deadline: "2026-04-07T21:28:54.771Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 blocked_by: pm-122q
 blocked_reason: Expand regression and release-readiness tests for calendar/reminders has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Expand regression and release-readiness tests for calendar/reminders is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,10 +41,11 @@ fixed_version: vnext
 component: tests/runtime-contract
 regression: true
 customer_impact: Protects existing behavior while adding calendar/reminder features.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-122q,parent,"2026-03-31T21:28:54.771Z",codex-agent,null
   pm-ezri,blocks,"2026-03-31T21:28:54.771Z",codex-agent,null
   pm-qze9,blocks,"2026-03-31T21:28:54.771Z",codex-agent,null
+  pm-122q,implements,"2026-07-26T17:26:43.817Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-31T21:28:54.771Z",codex-agent,Task created for regression and runtime contract expansion.
   "2026-03-31T21:46:07.405Z",codex-agent,Expanded unit/integration/runtime test coverage for reminders and calendar command behavior including help contracts and deterministic output assertions.
@@ -58,8 +59,8 @@ files[4]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,runtime contract updates
   tests/unit/calendar-command.spec.ts,project,calendar unit coverage
   vitest.config.ts,project,coverage include for calendar command module
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full coverage gate
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,test coverage and risk notes
 close_reason: Calendar/reminder regression and release-readiness coverage expanded with full 100% gate passing.

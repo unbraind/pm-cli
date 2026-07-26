@@ -6,11 +6,25 @@ status: closed
 priority: 0
 tags[5]: audit,decision,dogfood,"milestone:0",pm-cli
 created_at: "2026-04-26T20:20:21.167Z"
-updated_at: "2026-04-27T21:33:30.550Z"
+updated_at: "2026-07-26T17:30:46.866Z"
 author: audit-agent
+release: v2026.5.1
 resolution: "Comprehensive dogfood audit outcomes were reconciled to tracked implementation items, and all mapped findings are now closed with evidence."
 expected_result: Decision record links each audit finding to a tracked item state and closes once no mapped findings remain active.
 actual_result: "All mapped findings (pm-hb6x, pm-bhhe, pm-8qpc, pm-6y6i, pm-qrxb, pm-twtu) are closed; continuation follow-ups are closed as well, so the decision outcome is complete."
+dependencies[12]{id,kind,created_at,author,source_kind}:
+  pm-5rjn,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-6y6i,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-8qpc,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-a4z3,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-bhhe,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-cvwi,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-hb6x,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-lnq3,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-p0ij,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-qrxb,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-r15d,related,"2026-07-26T17:30:46.597Z",null,null
+  pm-twtu,related,"2026-07-26T17:30:46.597Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-27T21:31:49.692Z",codex-agent,"Outcome mapping 2026-04-27: all six audit findings recorded in this decision are now terminal -> pm-hb6x (closed), pm-bhhe (closed), pm-8qpc (closed), pm-6y6i (closed), pm-qrxb (closed), pm-twtu (closed). Additional dogfood follow-up items from continuation wave are also closed: pm-p0ij, pm-a4z3, pm-cvwi, with parent epics pm-r15d/pm-lnq3/pm-5rjn reconciled and closed."
   "2026-04-27T21:33:30.550Z",codex-agent,"Final handoff 2026-04-27: decision closure verified by final gate -> pm validate --check-resolution --check-history-drift --json (warn limited to historical rows outside this closure wave), pm normalize --dry-run --json (closed_resolution_backfill count=10), pm context --limit 20 (active_items=0)."

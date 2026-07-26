@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,concurrency,multi-agent
 created_at: "2026-07-11T03:05:51.194Z"
-updated_at: "2026-07-11T22:34:42.107Z"
+updated_at: "2026-07-26T17:13:54.626Z"
 closed_at: "2026-07-11T22:34:41.367Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,12 +14,15 @@ acceptance_criteria: "pm claim --next accepts the full pm next candidate-filter 
 parent: pm-dj98
 risk: medium
 confidence: high
+release: v2026.7.12
 resolution: Claim-next empty and error paths now preserve canonical identity and exact discoverable contracts.
 expected_result: Empty selection results and contracts match successful claim semantics and live help.
 actual_result: "author_default is resolved, zero-match diagnostics are distinct, and all claim-next flags appear in contracts."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-114v,related,"2026-07-11T03:05:58.665Z",null,null
   pm-eqk0,related,"2026-07-11T03:05:58.665Z",null,null
+  pm-dj98,implements,"2026-07-26T17:13:54.436Z",null,null
+  pm-pbyu,related,"2026-07-26T17:13:54.436Z",null,null
 comments[11]{created_at,author,text}:
   "2026-07-11T18:21:03.289Z",codex-root,"Implementation start: active in one broad PR because GH-509 candidate filters/race walking, GH-513 ready ranking, and decision-needed separation share the public SDK actionability engine, claim transaction, CLI/MCP contracts, and fleet-worker verification. Live all-status search and full item/dependency/comment history confirmed no duplicate lineage; only these three items are active."
   "2026-07-11T18:28:47.199Z",codex-root,"Implementation checkpoint: claim --next now forwards the full candidate-filter set, exposes max-attempts 1..100, walks ranked race losses, and is available through PmClient.claimNext/top-level claimNext/MCP. Focused typecheck and command suites pass after contract updates."

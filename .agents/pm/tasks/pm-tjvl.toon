@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-12T15:18:13.660Z"
-updated_at: "2026-06-12T15:34:31.478Z"
+updated_at: "2026-07-26T17:26:22.423Z"
 author: codex-sdk-cli-continuation
 parent: pm-mpbb
+release: v2026.6.13
 resolution: Compact strict-create recovery now emits low-token structured recovery metadata by default and expands invocation context only when --explain is requested.
 expected_result: Agents receive exact missing fields and suggested flags without full attempted command echo in default --json strict-create failures; humans can request full diagnostics with --explain.
 actual_result: Strict create --json returns recovery_mode=compact with missing_required_fields/suggested_flags and omits attempted_command/normalized_args; strict create --json --explain restores attempted_command and normalized_args. Focused tests and manual temp smoke passed.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:26:22.165Z",null,null
 comments[6]{created_at,author,text}:
   "2026-06-12T15:18:13.660Z",codex-sdk-cli-continuation,"Duplicate check: pm search strict pm create schema failures recovery output token returned only closed historical items and broad open epics; GitHub issue #201 is the concrete current report."
   "2026-06-12T15:18:32.701Z",codex-sdk-cli-continuation,"GitHub/release sidecar evidence: no open PRs; GitHub issue #201 is open and directly matches this work; Auto Release run 27400423759 and Release run 27400708149 both succeeded on main on 2026-06-12; Dependabot open alerts=0; CodeQL open alerts=0; pnpm audit reported no known vulnerabilities. npm outdated reported non-blocking updates: @types/node 25.9.2->25.9.3, esbuild 0.28.0->0.28.1, commander 14.0.3 with latest 15.0.0 outside wanted range."
@@ -27,13 +30,13 @@ files[7]{path,scope,note}:
   tests/integration/governance-presets.integration.spec.ts,project,Regression coverage for compact strict-create JSON and verbose --explain recovery
   tests/unit/cli-main-errors.spec.ts,project,Unit coverage for compact recovery wrapper and --explain expansion
   tests/unit/error-guidance.spec.ts,project,Regression coverage for defensive compact recovery array normalization
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/governance-presets.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm exec tsc -p tsconfig.json --noEmit,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqb2texa-7zqnjx,test,passed,"2026-06-12T15:23:13.171Z","2026-06-12T15:23:30.382Z","2026-06-12T15:23:30.382Z",null,null,3,0,0,null,null,null
-  test-local-mqb37l0w-hiwoqp,test,passed,"2026-06-12T15:34:12.653Z","2026-06-12T15:34:31.472Z","2026-06-12T15:34:31.472Z",null,null,4,0,0,null,null,null
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/governance-presets.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts,project,240
+  pnpm exec tsc -p tsconfig.json --noEmit,project,240
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqb2texa-7zqnjx,test,passed,"2026-06-12T15:23:13.171Z","2026-06-12T15:23:30.382Z","2026-06-12T15:23:30.382Z",3,0,0
+  test-local-mqb37l0w-hiwoqp,test,passed,"2026-06-12T15:34:12.653Z","2026-06-12T15:34:31.472Z","2026-06-12T15:34:31.472Z",4,0,0
 close_reason: "Implemented compact strict-create recovery for GitHub issue #201 with focused unit/integration coverage, manual isolated smoke, linked-test execution, coverage gate, static/security/docs/contracts/changelog gates, Sentry gate, and telemetry flush evidence."
 body: ""

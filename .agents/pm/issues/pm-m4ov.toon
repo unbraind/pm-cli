@@ -6,13 +6,16 @@ status: closed
 priority: 0
 tags[4]: agent-ux,dogfood,performance,pm-cli
 created_at: "2026-05-10T21:50:47.973Z"
-updated_at: "2026-05-10T22:50:42.739Z"
+updated_at: "2026-07-26T17:20:00.115Z"
 author: codex-agent
 acceptance_criteria: A benchmark covers init/create/list/context/search/calendar/health; startup hot paths are profiled; read-only commands avoid nonessential extension/telemetry/vector work; representative local commands feel sub-second where feasible.
 parent: pm-rnpb
+release: v2026.5.11
 resolution: Optimized startup telemetry flushing and semantic reindex hot path; added lock-dir resilience and CI cleanup stability.
 expected_result: "Common pm commands stay responsive, unchanged semantic reindex avoids redundant embedding work, and regression coverage plus CI stay green."
 actual_result: "Default telemetry benchmark commands complete in roughly 0.6-0.8s, unchanged hybrid reindex completes in 869ms for 686 items, coverage/static/docs/secrets/CI passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,implements,"2026-07-26T17:19:59.902Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-10T21:50:47.973Z",codex-agent,"Duplicate-check evidence: ran pm search startup performance instant command benchmark lazy initialization --limit 10. Only closed historical performance/search items matched; no open item covers current command startup latency benchmark work."
   "2026-05-10T22:26:13.341Z",codex-agent,"CI follow-up: GitHub run 25641271233 failed only on macOS Node 20 in tests/unit/comments-command.spec.ts with ENOTEMPTY while removing the temporary .agents/pm tree. Added a bounded ENOTEMPTY/EBUSY/EPERM retry to tests/helpers/withTempPmPath.ts and kept the in-progress incremental semantic reindex + lock-directory guard changes. Local focused verification passed: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts (72 tests)."
@@ -28,10 +31,10 @@ files[8]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,startup responsiveness guard
   tests/unit/core-item-lock-coverage.spec.ts,project,lock directory regression update
   tests/unit/reindex-command.spec.ts,project,reindex lock regression
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret scan
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused startup and reindex regressions
-  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,static quality gate
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/check-secrets.mjs,project,120,tracked secret scan
+  node scripts/run-tests.mjs coverage,project,1200,full 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300,focused startup and reindex regressions
+  "pnpm quality:static",project,300,static quality gate
 close_reason: "Startup telemetry and semantic reindex performance optimized; dogfood, coverage, static quality, secret scan, telemetry/Sentry review, and main CI passed."
 body: ""

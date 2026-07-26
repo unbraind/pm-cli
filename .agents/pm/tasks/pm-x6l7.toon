@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T11:27:01.828Z"
-updated_at: "2026-04-04T21:38:42.808Z"
+updated_at: "2026-07-26T17:29:22.142Z"
 deadline: "2026-04-08T11:27:01.828Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-lau3
 blocked_reason: Cross-command regression verification for date parsing expansion has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Cross-command regression verification for date parsing expansion is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: tests/cli
 regression: true
 customer_impact: Current users remain unaffected by parser enhancement.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lau3,parent,"2026-04-01T11:27:01.828Z",codex-agent,null
+  pm-lau3,implements,"2026-07-26T17:29:21.940Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T11:27:01.828Z",codex-agent,Task ensures no-regression guarantee requested by user is verified with concrete test evidence.
   "2026-04-01T11:39:02.967Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test passed full suite (61 files, 638 tests). Coverage run executed and failed only on existing global 100% threshold gate (97.98% lines, 96.29% branches, 98.38% functions, 97.79% statements), confirming functionality while highlighting pre-existing coverage policy strictness."
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:22:32.455Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/unit/determinism.spec.ts,project,parser determinism assertions
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full regression verification
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,2400,full regression verification
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,verification evidence references
 close_reason: Full sandbox test suite passed (638/638). Coverage run executed and only failed on existing global 100% threshold policy; no functional regressions detected.

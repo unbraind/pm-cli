@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags[3]: "area:storage",correctness,durability
 created_at: "2026-06-07T10:02:44.972Z"
-updated_at: "2026-06-07T13:43:36.740Z"
+updated_at: "2026-07-26T17:05:59.001Z"
 author: audit-data-agent
 acceptance_criteria: "- `writeFileAtomic` catches `EXDEV` and falls back to: write to a tmp in `os.tmpdir()`, copy to target, unlink tmp\n- OR falls back to a non-atomic `writeFile` with a warning so the file is never left corrupt\n- Both `fs-utils.ts` and the LanceDB snapshot writer handle this case\n- Unit test covering the EXDEV code path (mock `rename` to throw EXDEV)"
 parent: pm-o2kc
 risk: low
 confidence: high
+release: v2026.6.8
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o2kc,implements,"2026-07-26T17:05:54.518Z",null,null
 comments[2]{created_at,author,text}:
   "2026-06-07T12:58:08.103Z",codex-active-pm-cycle-20260607,"Implemented EXDEV-safe atomic write fallback: src/core/fs/fs-utils.ts now falls back to copyFile+cleanup when rename raises EXDEV; non-EXDEV failures still clean temp then rethrow. LanceDB snapshot persistence now uses writeFileAtomic via src/core/search/vector-stores.ts. Added regressions in tests/unit/fs-utils.spec.ts and tests/unit/vector-store-adapter.spec.ts including EXDEV fallback path. Verification: focused suite pass."
   "2026-06-07T13:01:27.891Z",codex-active-pm-cycle-20260607,Full verification stack passed (build/typecheck/coverage/contracts/static/security/audit/compatibility/sentry). Linked tests pass via pm test --run for fs-utils + vector-store adapter EXDEV scenarios.
@@ -20,9 +23,9 @@ files[4]{path,scope,note}:
   src/core/search/vector-stores.ts,project,Use shared atomic writer for LanceDB snapshot persistence
   tests/unit/fs-utils.spec.ts,project,Add EXDEV fallback regression coverage in fs utilities
   tests/unit/vector-store-adapter.spec.ts,project,Add EXDEV fallback coverage for LanceDB snapshot writes
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/fs-utils.spec.ts tests/unit/vector-store-adapter.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Validate EXDEV fallback behavior
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mq3sh1zt-ak8nga,test,passed,"2026-06-07T12:59:28.079Z","2026-06-07T12:59:34.361Z","2026-06-07T12:59:34.361Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/fs-utils.spec.ts tests/unit/vector-store-adapter.spec.ts,project,600,Validate EXDEV fallback behavior
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mq3sh1zt-ak8nga,test,passed,"2026-06-07T12:59:28.079Z","2026-06-07T12:59:34.361Z","2026-06-07T12:59:34.361Z",1,0,0
 close_reason: Hardened writeFileAtomic for EXDEV fallback and routed LanceDB snapshot persistence through shared atomic writer with regressions; linked/full verification passed; merged via PR #144.
 body: "## Context\n\n`src/core/fs/fs-utils.ts:29-38`:\n```ts\nawait fs.writeFile(tempPath, contents, 'utf8');\nawait fs.rename(tempPath, targetPath);\n```\n\nOn Linux/macOS, `rename(2)` is atomic within a filesystem but raises `EXDEV` across mounts. The same temp-in-same-dir pattern is used for both the LanceDB snapshot (`src/core/search/vector-stores.ts:458-477`) and the drift cache (`src/core/history/drift-scan.ts`). Any deployment where `.agents/pm/` is a bind mount or symlink to a different device will see silent write failures on every mutation.\n\n## Acceptance criteria\n\n- [ ] `writeFileAtomic` catches `EXDEV` and falls back to: write to a tmp in `os.tmpdir()`, copy to target, unlink tmp\n- [ ] OR falls back to a non-atomic `writeFile` with a warning so the file is never left corrupt\n- [ ] Both `fs-utils.ts` and the LanceDB snapshot writer handle this case\n- [ ] Unit test covering the EXDEV code path (mock `rename` to throw EXDEV)\n\n## Evidence\n\n- `src/core/fs/fs-utils.ts:29-38` — no EXDEV handling\n- `src/core/search/vector-stores.ts:456-478` — `persistLanceDbLocalTable` also uses writeFile+rename without EXDEV handling"

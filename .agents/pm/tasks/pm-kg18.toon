@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: bare-core,docs,mcp,packages,sdk
 created_at: "2026-07-12T19:55:01.279Z"
-updated_at: "2026-07-13T00:40:15.841Z"
+updated_at: "2026-07-26T17:18:22.343Z"
 closed_at: "2026-07-13T00:37:31.040Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,9 +14,14 @@ acceptance_criteria: "grep -riE 'allow-audit|dedupe-audit|comments-audit|--audit
 parent: pm-vjk3
 risk: medium
 confidence: high
+release: v2026.7.13
 resolution: completed
 expected_result: "Bare contracts, MCP, completion, help, and docs expose no audit surface."
 actual_result: "Contracts snapshot, tool schemas, completions, docs, token measurement, and full release gates confirm removal."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,related,"2026-07-26T17:18:22.087Z",null,null
+  pm-s9iu,related,"2026-07-26T17:18:22.087Z",null,null
+  pm-vjk3,implements,"2026-07-26T17:18:22.087Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-12T23:37:43.065Z",codex-pm-audit-extraction,"Surface evidence: default SDK contracts, MCP schemas, help, completions, and core docs no longer publish audit commands/flags; package README is canonical. contracts:update regenerated cleanly."
   "2026-07-13T00:39:59.565Z",codex-pm-audit-extraction,"Token evidence recorded on pm-mpbb: current bare-core root help 2,387 tokens, per-command help 41,595, contracts full 126,925, MCP tools/list 8,206 tokens / 28 tools. Exact origin/main replay was safely aborted by the linked-node_modules build guard; qualitative delta is the complete removal of four command help surfaces plus audit flags/schemas."

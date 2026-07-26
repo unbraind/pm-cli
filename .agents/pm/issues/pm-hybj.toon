@@ -6,14 +6,22 @@ status: closed
 priority: 2
 tags[1]: telemetry
 created_at: "2026-05-24T06:57:51.663Z"
-updated_at: "2026-05-24T13:36:40.319Z"
+updated_at: "2026-07-26T17:16:03.755Z"
 author: claude-code-agent
 estimated_minutes: 45
 acceptance_criteria: "pm-changelog generator includes all closed items readable by the current pm core (item_count equals total closed count); the bundled-SDK shadowing is either eliminated (host SDK used) or documented as release-gated; no regression to changelog:pm:check."
 parent: pm-rnpb
+release: v2026.5.27
 resolution: pm-cli now uses npm pm-changelog 2026.5.24-9 to generate and check main CHANGELOG.md with clickable pm item links.
 expected_result: pm-changelog package provides the SDK/extension functionality needed for pm-cli changelog generation and CI/CD checks.
 actual_result: pm-changelog 2026.5.24-9 is installed; contracts expose --item-url-base; CHANGELOG.md is generated from 804 closed pm items with clickable .toon links; release/changelog tests and release gates passed.
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-1etl,related,"2026-07-26T17:16:03.572Z",null,null
+  pm-3akm,related,"2026-07-26T17:16:03.572Z",null,null
+  pm-iqgj,related,"2026-07-26T17:16:03.572Z",null,null
+  pm-qfuq,related,"2026-07-26T17:16:03.572Z",null,null
+  pm-qsk8,related,"2026-07-26T17:16:03.572Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:16:03.572Z",null,null
 comments[7]{created_at,author,text}:
   "2026-05-24T06:58:06.206Z",claude-code-agent,"Evidence: total closed=798, generator item_count=782, delta=16 = exactly the pm-iqgj-recovered files (pm-3akm/ss8d/1r6p... none present in CHANGELOG.pm.md while normal closed items pm-qsk8/c98b/xh0y/dpzc are). Extension dir has node_modules/@unbrained/pm-cli (bundled). Root-cause fix shipped in this PR via pm-iqgj (src/core/item/toon-decode.ts + parseToonItemDocument); this issue tracks propagation/hardening only and is blocked_by pm-iqgj."
   "2026-05-24T07:02:51.595Z",claude-code-agent,Submitted in PR #58 (branch recover-unreadable-toon-items-and-dedup-core-helpers).
@@ -33,10 +41,10 @@ files[10]{path,scope,note}:
   scripts/release/run-release-pipeline.mjs,project,Release pipeline refreshes main changelog through pm-changelog instead of manual promotion
   tests/integration/release-automation-contract.spec.ts,project,Update release automation contract for main generated changelog
   tests/integration/release-readiness-runtime.spec.ts,project,"Update release readiness expectations after removing custom release:changelog script"
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/run-gates.mjs --skip-dogfood --skip-telemetry-sentry --telemetry-mode best-effort --json,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Release gate driver without private telemetry/Sentry dependency
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Focused release/changelog contract coverage
-  "pnpm changelog:pm:check",null,project,300,null,null,null,null,null,null,null,null,null,null,null,Latest npm pm-changelog 2026.5.24-9 verifies main CHANGELOG.md freshness
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/release/run-gates.mjs --skip-dogfood --skip-telemetry-sentry --telemetry-mode best-effort --json,project,600,Release gate driver without private telemetry/Sentry dependency
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300,Focused release/changelog contract coverage
+  "pnpm changelog:pm:check",project,300,Latest npm pm-changelog 2026.5.24-9 verifies main CHANGELOG.md freshness
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Document package-owned main CHANGELOG.md policy
 close_reason: "Installed and validated pm-changelog 2026.5.24-9, fixed upstream extension URL-base support in pm-changelog#7, switched pm-cli main CHANGELOG.md to package-owned generation with clickable item links, removed the obsolete sidecar/custom promotion path, and verified release gates."

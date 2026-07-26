@@ -6,21 +6,23 @@ status: closed
 priority: 2
 tags[4]: agent-ux,release,sentry,telemetry
 created_at: "2026-07-05T05:50:27.281Z"
-updated_at: "2026-07-07T18:15:04.411Z"
+updated_at: "2026-07-26T17:28:30.599Z"
 author: claude-code-agent
 estimated_minutes: 45
 acceptance_criteria: Duplicate-safe package script alias exists for the Sentry/telemetry gate; release docs or command references mention the alias; existing direct script entrypoint continues to work.
 parent: pm-u9d0
 risk: low
 confidence: medium
+release: v2026.7.8
 resolution: "Added pnpm sentry:telemetry:gate and documented it in the release guide; refreshed the live Sentry gate classifier for handled local ENOSPC failures."
 expected_result: "Agents and maintainers can run the Sentry/telemetry release gate through a stable package script alias, and handled local ENOSPC events do not block release gates."
 actual_result: "pnpm sentry:telemetry:gate -- --telemetry-mode best-effort --json passes live with PM-CLI-1V ignored as expected handled environment signal; focused and full coverage suites pass."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-05T05:50:36.558Z",null,null
   pm-nb08,related,"2026-07-05T05:50:36.558Z",null,null
   pm-u9d0,related,"2026-07-07T17:28:35.401Z",null,null
   pm-x6jf,related,"2026-07-07T17:28:35.401Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:28:30.340Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-05T05:50:36.470Z",claude-code-agent,"Duplicate check: searched all statuses for 'sentry telemetry gate package script alias npm script'. Found related closed release/Sentry work (pm-nb08, pm-7zs0 and historical gates) but no active item specifically for a package script alias. Finding came from this lane: pnpm sentry:telemetry:gate is a plausible agent guess but package.json only exposes sentry:inject/sentry:upload/build:sentry while the real gate is node scripts/release/sentry-telemetry-gate.mjs."
   "2026-07-07T17:44:32.826Z",codex-agent,"Evidence: added pnpm sentry:telemetry:gate package script alias, documented it in docs/RELEASING.md, and refreshed the Sentry gate classifier so handled local ENOSPC environment failures do not block releases while unhandled ENOSPC remains blocking. Linked tests passed via pm test pm-w86l --run --progress; live gate returned ok=true with PM-CLI-1V ignored_expected_cli, telemetry finish_error_rate_pct=0.46, missing error-code rows=0."

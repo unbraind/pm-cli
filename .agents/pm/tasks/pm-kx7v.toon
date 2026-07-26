@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[3]: "area:docs","area:release","extension:pm-changelog"
 created_at: "2026-06-09T22:37:46.014Z"
-updated_at: "2026-06-09T22:37:56.664Z"
+updated_at: "2026-07-26T17:18:54.815Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-u9d0
+release: v2026.6.10
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-u9d0,implements,"2026-07-26T17:18:54.539Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-09T22:37:55.993Z",codex-active-pm-cycle-20260610,"Installed pm-changelog 2026.6.9 (npm latest) via project extension flow. Validation: pnpm changelog:pm reported CHANGELOG.md action=unchanged (item_count=1059), and pnpm changelog:pm:check passed with check=true and changed=false."
 files[4]{path,scope,note}:
@@ -16,9 +19,9 @@ files[4]{path,scope,note}:
   .agents/pm/extensions/pm-changelog/dist/extension.js,project,runtime bundle updated to 2026.6.9
   .agents/pm/extensions/pm-changelog/manifest.json,project,manifest refreshed by reinstall
   .agents/pm/extensions/pm-changelog/package.json,project,pm-changelog package now at 2026.6.9
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "pm install npm:pm-changelog --project",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+tests[3]{command,scope,timeout_seconds}:
+  "pm install npm:pm-changelog --project",project,240
+  "pnpm changelog:pm",project,600
+  "pnpm changelog:pm:check",project,600
 close_reason: Upgraded pm-changelog to 2026.6.9 and verified CHANGELOG generation/check fidelity without drift.
 body: ""

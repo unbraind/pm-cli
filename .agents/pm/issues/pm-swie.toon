@@ -6,13 +6,18 @@ status: closed
 priority: 2
 tags[4]: agent-ux,consistency,dogfood,tests
 created_at: "2026-05-23T04:17:38.412Z"
-updated_at: "2026-05-23T09:39:16.111Z"
+updated_at: "2026-07-26T17:25:56.012Z"
 author: claude-code-agent
 acceptance_criteria: "pm update --test and pm create --test accept cmd as an alias for command and reject unknown structured keys with a clear error, matching pm test --add; regression tests added; no agent-blocking for bare commands."
 parent: pm-rnpb
+release: v2026.5.24
 resolution: Shared linked-test parsing now covers create/update --test and pm test --add through linked-test-entry.ts.
 expected_result: "create/update --test accept cmd as command, reject unknown structured keys, reject conflicting command/cmd values, and preserve bare commands with equals signs."
 actual_result: "Implemented shared parser helper, focused tests, manual temp-project smoke, and full release gate all passed."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-fu5d,related,"2026-07-26T17:25:55.747Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:25:55.747Z",null,null
+  pm-uz25,related,"2026-07-26T17:25:55.747Z",null,null
 comments[11]{created_at,author,text}:
   "2026-05-23T08:22:24.303Z",codex-audit-2026-05-23,"Implementation note: Hardened shared create/update --test parser to recognize cmd as command alias, reject unknown structured keys, and preserve bare commands with equals signs. Focused tests are running for create/update/test command specs."
   "2026-05-23T08:23:49.796Z",codex-audit-2026-05-23,"Evidence: Focused regression passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts --reporter=dot => 3 files passed, 144 tests passed."
@@ -32,7 +37,7 @@ files[6]{path,scope,note}:
   tests/unit/create-command.spec.ts,project,create --test cmd alias and unknown-key regressions
   tests/unit/test-command.spec.ts,project,pm test --add parser parity regression coverage
   tests/unit/update-command.spec.ts,project,update --test cmd alias and unknown-key regressions
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused linked-test parser regression suite
+tests[1]{command,scope,timeout_seconds,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts --reporter=dot,project,300,focused linked-test parser regression suite
 close_reason: "Closed with implementation evidence: create/update --test now share structured linked-test parsing with pm test --add through linked-test-entry.ts; cmd alias, unknown-key rejection, command/cmd conflict rejection, and bare '=' commands are covered by focused tests and manual temp-project smoke. Full release gate passed."
 body: ""

@@ -6,11 +6,13 @@ status: closed
 priority: 2
 tags[5]: "area:extensions","area:sdk",code-quality,codefactor,living-map
 created_at: "2026-06-30T14:47:19.790Z"
-updated_at: "2026-06-30T15:21:06.229Z"
+updated_at: "2026-07-26T17:31:13.302Z"
 author: claude-code-agent
 parent: pm-92if
-dependencies[2]{id,kind,created_at,author,source_kind}:
+release: v2026.7.1
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-arzz,related,"2026-06-30T14:47:28.247Z",null,null
   pm-ugqx,related,"2026-06-30T14:47:28.247Z",null,null
+  pm-92if,implements,"2026-07-26T17:31:13.126Z",null,null
 close_reason: "Completed: 5 behavior-preserving complexity refactors on the extension authoring/management/diagnostics surface; CC 43/37/31/29/19 all reduced below 17; 5 eslint-suppressions pruned; 100% coverage; scaffold byte-identical."
 body: Implemented all 5 behavior-preserving refactors. managed-state normalizeManagedState CC43->~7 (optionalString + hasRequiredManagedRecordFields type-guard + normalizeManagedSource/Record). activation-summary-markdown renderExtensionSurfaceMarkdown CC19->~14 (renderPreflightSection + hasAnySurface via .some). bundled-catalog buildBundledPackageCatalog CC31->~4 (buildBundledCatalogLinks + buildBundledCatalogPackageEntry). doctor buildExtensionTriageSummary CC29->~7 (TRIAGE_REMEDIATION_RULES data table + buildExtensionTriageRemediation). scaffold buildStarterExtensionScaffoldFiles CC37->~9 (buildScaffoldSnippetNames + buildDefineBuilderImports/Exports/Activate); scaffold output verified BYTE-IDENTICAL across 10 caps x 2 vocabularies x declarative via snapshot diff. Pruned all 5 entries from eslint-suppressions.json (84->79). typecheck + full eslint green. Added 2 normalizeManagedState test cases (null/non-object source on otherwise-valid record) for the newly-isolated normalizeManagedSource guard.

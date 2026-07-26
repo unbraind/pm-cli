@@ -1,0 +1,32 @@
+id: pm-nwuzaq
+title: "Changelog rows are ordered by a mutable timestamp, so a bulk maintenance pass reorders sections it never moved anything out of"
+description: "Release attribution is now stamped, so a metadata write on a published item can no longer move it between changelog sections — measured directly: 3,744 relationship edges written across 1,713 closed items produced 0 release-section moves, 0 category moves, 0 items added or removed, and an identical 296,429-byte output. What it did produce was 2,454 lines of diff, entirely from rows being reordered inside the sections they never left.\n\nThe row order within a release section is still derived from a mutable timestamp, so it permutes whenever items are touched in a different sequence than they were last touched. The practical consequence falls on CI rather than on readers: changelog:pm:check compares generated output against the committed file, so any bulk maintenance pass reddens the gate even when attribution is provably stable and no item changed section. That converts a correctness gate into a chore gate, and the standard workaround — regenerate and commit — trains everyone to treat changelog diffs as noise, which is precisely the habit that lets a genuine attribution regression through unnoticed.\n\nThe fix is the same shape as the parent's, applied one level down: order rows within a section by a key that does not change when an item is edited. Candidates that already exist in the data are the close instant derived from history, the item identifier, and the title. Whichever is chosen, the property to assert is the same one the parent asserts for sections: editing metadata on an already-published item produces no changelog diff at all, not merely no section change."
+type: Issue
+status: open
+priority: 2
+tags[6]: changelog,ci,governance,ordering,provenance,release
+created_at: "2026-07-26T17:35:13.800Z"
+updated_at: "2026-07-26T17:35:13.800Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Row order within a release section derives from a key that does not change when an item is edited; The drift check proves that a metadata write on an already-published item produces a byte-identical changelog, not merely an unchanged section assignment; The chosen key is deterministic across machines and across regeneration order, so two agents regenerating from the same tracker state produce identical bytes; Existing published sections are regenerated once under the new key and the resulting diff is reviewed as a one-time reordering rather than being suppressed; The ordering rule is documented where the changelog conventions live, so it is not rediscovered by the next bulk pass"
+goal: project management = context management
+objective: Make a published changelog section byte-stable under any edit that does not change what shipped
+value: The changelog drift gate becomes a real correctness signal instead of a chore that trains reviewers to ignore it
+impact: "Removes the last source of changelog churn from governance work, completing what the attribution stamp started"
+outcome: "Within-section row order derives from a stable key, and editing a published item produces no changelog diff at all"
+why_now: "Attribution is now stamped, so ordering is the only remaining reason a maintenance pass touches the generated file"
+parent: pm-pcys9n
+risk: low
+confidence: high
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-10l1vm,related,"2026-07-26T17:35:13.800Z",null,null
+  pm-3j6it6,discovered_from,"2026-07-26T17:35:13.800Z",null,null
+  pm-e9zh,related,"2026-07-26T17:35:13.800Z",null,null
+  pm-kpftft,related,"2026-07-26T17:35:13.800Z",null,null
+  pm-pcys9n,implements,"2026-07-26T17:35:13.800Z",null,null
+  pm-pjnu91,related,"2026-07-26T17:35:13.800Z",null,null
+  pm-qudvto,related,"2026-07-26T17:35:13.800Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T17:35:13.800Z",null,null
+  pm-wenq,related,"2026-07-26T17:35:13.800Z",null,null
+body: ""

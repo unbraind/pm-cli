@@ -6,12 +6,13 @@ status: closed
 priority: 0
 tags[3]: "area:agent-ux","area:sdk","audit:2026-04-25"
 created_at: "2026-04-25T20:01:16.224Z"
-updated_at: "2026-05-17T08:21:52.361Z"
+updated_at: "2026-07-26T17:12:52.702Z"
 deadline: "2026-04-27T20:01:16.224Z"
 author: codex-agent
 estimated_minutes: 75
 acceptance_criteria: templates-save contract schema and wrapper only expose/emit flags accepted by pm templates save --help; regression tests cover schema and arg building.
 parent: pm-o7be
+release: v2026.5.1
 reporter: codex-agent
 severity: high
 environment: cli
@@ -22,6 +23,8 @@ actual_result: Wrapper emits unsupported flags and CLI returns unknown_option.
 component: pi-wrapper-contracts
 regression: true
 customer_impact: Agent tool invocations can fail despite passing schema validation.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o7be,implements,"2026-07-26T17:12:52.459Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-25T20:01:16.224Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'templates save create-mode contracts mismatch' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no active item tracked templates-save createMode/schema parity bug."
   "2026-04-25T20:03:46.240Z",codex-agent,"Constrained templates-save schema/wrapper options to supported flags only; removed createMode/schedulePreset/unset/clear* from templates-save action contract and arg emission. Evidence: node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts (11 passed)."
@@ -31,10 +34,10 @@ learnings[1]{created_at,author,text}:
   "2026-04-25T20:01:16.224Z",codex-agent,"Action schema contracts must be constrained per subcommand support,not inherited wholesale from create."
 files[1]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,template contract key filtering
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-moermge9-mi346y,test,passed,"2026-04-25T20:01:43.218Z","2026-04-25T20:01:49.953Z","2026-04-25T20:01:49.953Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-moermge9-mi346y,test,passed,"2026-04-25T20:01:43.218Z","2026-04-25T20:01:49.953Z","2026-04-25T20:01:49.953Z",1,0,0
 docs[1]{path,scope,note}:
   README.md,project,Pi tool schema usage context
 close_reason: Templates-save Pi schema now matches CLI support; wrapper no longer emits unsupported flags.

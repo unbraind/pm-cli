@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,gh-issue
 created_at: "2026-07-13T08:57:24.341Z"
-updated_at: "2026-07-13T15:33:40.001Z"
+updated_at: "2026-07-26T17:18:27.728Z"
 closed_at: "2026-07-13T15:32:48.021Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,11 +14,19 @@ acceptance_criteria: "Unknown --status on list errors with the valid domain (inc
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.14
 resolution: Resolved by enabling strict runtime status-registry parsing for list filters.
 expected_result: Unknown statuses fail with the configured status domain instead of returning a false empty result.
 actual_result: "Unknown list status returns usage exit 2 while built-in, workflow, and custom aliases remain supported."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-96vo,related,"2026-07-13T08:57:24.341Z",null,null
+  pm-45mb,related,"2026-07-26T17:18:27.484Z",null,null
+  pm-7je0,related,"2026-07-26T17:18:27.484Z",null,null
+  pm-chyh,related,"2026-07-26T17:18:27.484Z",null,null
+  pm-hno5,related,"2026-07-26T17:18:27.484Z",null,null
+  pm-jh9t,related,"2026-07-26T17:18:27.484Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:18:27.484Z",null,null
+  pm-p9sc,related,"2026-07-26T17:18:27.484Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-13T14:32:17.252Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:37.393Z",codex-sdk-contracts-20260713,"Evidence: list status parsing now uses the runtime status registry in strict mode, preserving built-in/custom/workflow aliases while rejecting unknown tokens with usage exit 2 instead of a false empty result. Unit and acceptance coverage passed."

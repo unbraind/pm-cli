@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli",code,doc,pm-cli,tests
 created_at: "2026-03-07T13:10:28.926Z"
-updated_at: "2026-04-04T21:45:38.326Z"
+updated_at: "2026-07-26T17:28:27.003Z"
 deadline: "2026-03-09T13:10:28.926Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Add --title and -t support for pm update has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add --title and -t support for pm update is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/add-title-and-t-support-for-pm-update
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add --title and -t support for pm update.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2p6q,implements,"2026-07-26T17:28:26.702Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-07T13:10:28.926Z",maintainer-agent,Users should be able to update item title without editing files manually
   "2026-03-07T13:15:39.434Z",unknown,"Implemented --title/-t support for pm update. Updated PRD and README command contract, added option parsing in src/cli/main.ts and src/cli/commands/update.ts, added Pi wrapper action mapping. Tests updated to assert the new flag and title modification behavior."
@@ -56,9 +58,9 @@ files[6]{path,scope,note}:
   src/cli/main.ts,project,null
   tests/integration/release-readiness-runtime.spec.ts,project,migrated linked path
   tests/unit/update-command.spec.ts,project,null
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,3600
+  node scripts/run-tests.mjs test,project,240
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: Added --title update parity across CLI docs and wrapper with 100% coverage and passing tests.

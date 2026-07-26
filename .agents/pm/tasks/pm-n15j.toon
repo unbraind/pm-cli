@@ -6,13 +6,16 @@ status: closed
 priority: 1
 tags[6]: "area:extensions","area:packages","area:sdk",audit,living-map,pm-cli
 created_at: "2026-05-31T19:22:08.752Z"
-updated_at: "2026-05-31T20:26:16.731Z"
+updated_at: "2026-07-26T17:20:47.364Z"
 author: maintainer-agent
 acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
 parent: pm-w7f2
+release: v2026.6.1
 resolution: Verification task completed during living-map closeout
 expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
 actual_result: "The closed Task 'Audit domain: Extensions, packages & SDK extension API' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-w7f2,implements,"2026-07-26T17:20:47.138Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-31T19:25:02.178Z",audit-ext-agent,"Phase 1 complete: claimed task. Read loader.ts (2105 LOC), extension-types.ts (829 LOC), sdk/index.ts + testing.ts. Inventoried all 8 packages — all at 0.1.0, each with one extension under extensions/, all capabilities declared but none use 'hooks', 'importers', 'search', 'parser', or 'preflight' capabilities (only 'commands'/'schema'/'services'). All manifests missing pm_min_version, trusted, provenance, permissions fields. No sandbox_profile declared in any package manifest. Hand-maintained .js files present alongside .ts. Now reading package entry points and PRD.md."
   "2026-05-31T19:28:10.719Z",audit-ext-agent,"Phase 2 complete: read all 8 package entry points. Findings: (1) ZERO first-party packages use hooks/importers/exporters/parser/preflight/search/vectorStore capabilities — only commands+schema+services. (2) No pm_min_version declared in any package manifest (version compat enforcement is one-sided: pm-cli enforces it at load time but no package declares it). (3) sandbox_profile absent from all 8 manifests (default_sandbox_profile=none). (4) pm-beads and pm-todos use an install-safe runtime-loader.ts pattern; others import directly. (5) All packages import SDK from src/ via relative path (../../../../src/sdk/index.js) — works in-tree but requires the hand-maintained .js companion to work when installed. (6) Scaffold is implemented (extension/scaffold.ts) for both extension and package modes. (7) No pm_max_version support (one-directional compat). (8) Real process-level sandbox enforcement is metadata-only (none/restricted/strict profiles declared but no actual vm.context/Worker isolation). Now checking docs and external gaps."

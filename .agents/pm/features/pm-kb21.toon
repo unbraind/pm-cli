@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:history","area:restore",pm-cli
 created_at: "2026-04-01T15:26:50.133Z"
-updated_at: "2026-04-04T21:33:28.068Z"
+updated_at: "2026-07-26T17:18:12.233Z"
 deadline: "2026-04-07T15:26:50.133Z"
 author: cursor-agent
 estimated_minutes: 240
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: history-hardening
-release: vnext
+release: v2026.5.1
 blocked_by: pm-9lc
 blocked_reason: Implement missing-history stream policy and restore fallback has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement missing-history stream policy and restore fallback is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,10 +40,15 @@ fixed_version: target-vnext
 component: history-policy
 regression: true
 customer_impact: Prevents surprising failures when history files are missing
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-9lc,related,"2026-04-01T15:26:50.133Z",cursor-agent,null
   pm-er7n,related,"2026-04-01T15:26:50.133Z",cursor-agent,null
   pm-ofh9,parent,"2026-04-01T15:26:50.133Z",cursor-agent,null
+  pm-0vnr,related,"2026-07-26T17:18:11.959Z",null,null
+  pm-1tyv,related,"2026-07-26T17:18:11.959Z",null,null
+  pm-8wnm,related,"2026-07-26T17:18:11.959Z",null,null
+  pm-g6qd,related,"2026-07-26T17:18:11.959Z",null,null
+  pm-ofh9,implements,"2026-07-26T17:18:11.959Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-01T15:26:50.133Z",cursor-agent,Feature created from accepted implementation plan with no active duplicate scope found.
   "2026-04-01T15:59:04.817Z",cursor-agent,"Feature implementation complete across settings/config, strict-vs-auto history policy enforcement, restore history-only recovery, regression tests, and docs/changelog updates. Verification: full build + full test suite pass; coverage gate remains below repository-wide 100% thresholds (pre-existing baseline)."
@@ -54,8 +59,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:30:49.077Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/store/settings.ts,project,settings surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,final coverage gate
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,final coverage gate
 docs[1]{path,scope,note}:
   README.md,project,user-visible behavior docs
 close_reason: History policy and restore fallback feature delivered with verification evidence

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,aggregate,cli,gh-issue,validation
 created_at: "2026-07-12T18:52:48.595Z"
-updated_at: "2026-07-13T15:33:41.238Z"
+updated_at: "2026-07-26T17:08:09.130Z"
 closed_at: "2026-07-13T15:32:51.854Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,11 +14,21 @@ acceptance_criteria: "Unknown --sum/--avg field names are rejected with the same
 parent: pm-mpbb
 risk: medium
 confidence: high
+release: v2026.7.14
 resolution: Resolved by validating aggregate numeric fields against built-ins plus runtime schema number definitions.
 expected_result: Typos fail fast and registered numeric custom fields remain fully aggregatable.
 actual_result: "estimated_minutez returns usage exit 2; built-in and custom sum/avg/null cases pass unit, acceptance, and installed-package proof."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-bvns,related,"2026-07-12T18:52:48.595Z",null,null
+  pm-45mb,related,"2026-07-26T17:08:08.891Z",null,null
+  pm-7je0,related,"2026-07-26T17:08:08.891Z",null,null
+  pm-chyh,related,"2026-07-26T17:08:08.891Z",null,null
+  pm-hno5,related,"2026-07-26T17:08:08.891Z",null,null
+  pm-jh9t,related,"2026-07-26T17:08:08.891Z",null,null
+  pm-kj4k,related,"2026-07-26T17:08:08.891Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:08:08.891Z",null,null
+  pm-p9sc,related,"2026-07-26T17:08:08.891Z",null,null
+  pm-zazb,related,"2026-07-26T17:08:08.891Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-13T14:32:22.547Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:38.650Z",codex-sdk-contracts-20260713,"Evidence: aggregate validates built-in and runtime-registered numeric fields, rejects estimated_minutez with usage exit 2, retains valid sum/avg/null semantics, and supports custom number fields. Unit, acceptance, full coverage, and installed-package typo proof passed."

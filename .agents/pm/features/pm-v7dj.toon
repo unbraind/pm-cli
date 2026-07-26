@@ -6,14 +6,15 @@ status: closed
 priority: 1
 tags[6]: agent-ux,context-efficiency,plan,planning,pm-cli,progressive-disclosure
 created_at: "2026-05-17T08:39:33.695Z"
-updated_at: "2026-05-17T13:59:46.451Z"
+updated_at: "2026-07-26T17:27:45.820Z"
 author: codex-agent
 acceptance_criteria: "Built-in Plan item type exists and --type plan resolves to Plan; Plan items are stored in normal pm item storage with full history hash-chain tracking; plan metadata captures scope, harness provenance, ordered steps, step links, decisions, discoveries, validation, and resume context; pm plan create/show/add-step/update-step/complete-step/block-step/link/materialize/approve expose agent-optimized workflows; steps can link pm dependencies and related items; outputs default to low-token TOON with JSON/fields/depth projections; search indexes Plan scope/steps/decisions/discoveries/dependencies; SDK/MCP/plugins/docs/dogfood cover Codex/Claude/Cursor-style usage; focused tests and isolated dogfood prove behavior."
 parent: pm-rnpb
+release: v2026.5.18
 resolution: "First-class agent-optimized pm plan command + Plan item type shipped with full lifecycle, history hash chain, search corpus, SDK/MCP/plugin/docs exposure, and dogfood verification."
 expected_result: "Codex/Claude/Cursor-style planning workflows are first-class in pm with durable, resumable, searchable plans."
 actual_result: "Verified: 1355 tests pass at 100% coverage; pm plan + pm_plan MCP exposes 16 subcommands; dogfood-package-first.mjs ok=true; Sentry critical=0/high=0; telemetry finish_error_rate_pct=2.06."
-dependencies[7]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-0c9q,related,"2026-05-17T08:39:33.695Z",codex-agent,null
   pm-59gj,related,"2026-05-17T08:39:33.695Z",codex-agent,null
   pm-b7sd,related,"2026-05-17T08:39:33.695Z",codex-agent,null
@@ -21,6 +22,7 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-aqat,child,"2026-05-17T08:51:00.891Z",codex-agent,null
   pm-jauk,child,"2026-05-17T08:51:00.891Z",codex-agent,null
   pm-ze5g,child,"2026-05-17T08:51:00.891Z",codex-agent,null
+  pm-rnpb,implements,"2026-07-26T17:27:45.521Z",null,null
 comments[4]{created_at,author,text}:
   "2026-05-17T08:39:33.695Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10; pm search 'pm plan agent planning dependencies related items progressive disclosure' --limit 10; pm search 'pm plan planner planning update_plan claude cursor codex dependencies' --limit 20; pm list-open --fields id,title,status,type,priority,parent,tags --limit 50; pm list-in-progress --limit 20. No existing first-class pm plan command feature was found. Existing pm-planner plugin docs and Codex plugin work are related but not duplicates."
   "2026-05-17T08:40:39.988Z",codex-agent,"Evidence: brainstorming captured in pm-v7dj body/notes/learnings; related items linked: parent pm-rnpb, related pm-0c9q, pm-b7sd, pm-59gj; existing planner docs linked via pm docs. Bootstrap passed: npm install -g ., pm --version 2026.5.14, node v25.9.0, pnpm 10.33.0, pnpm build. No code changes were made."

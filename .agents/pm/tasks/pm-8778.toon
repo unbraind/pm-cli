@@ -6,16 +6,19 @@ status: closed
 priority: 1
 tags[4]: architecture,"area:ci","area:sdk",quality-gate
 created_at: "2026-07-05T04:54:30.762Z"
-updated_at: "2026-07-05T09:58:54.232Z"
+updated_at: "2026-07-26T17:07:17.581Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "Static quality gate fails CI on new src/core import edges from src/cli/src/mcp, computed dynamic imports from boundary sources, or stale baseline entries; allowlist starts at current state and ratchets down per promotion task, reaching zero when all primitives are promoted; rule documented in architecture docs and SDK inventory"
 parent: pm-usfg
 risk: low
 confidence: high
+release: v2026.7.5
 resolution: "Extended scripts/release/static-quality-gate.mjs with an SDK import-boundary ratchet backed by scripts/release/sdk-import-boundary-baseline.json and regression coverage. The gate fails on new private src/core imports from src/cli or src/mcp, unsupported computed dynamic imports, and stale baseline entries."
 expected_result: CI/static quality blocks any growth in private core imports from presentation layers while SDK primitives are promoted incrementally.
 actual_result: "Current baseline is clean at 857 unique private core import edges; focused tests, linked pm tests, lint, security scan, temp dogfood, Sentry/telemetry gate, and full coverage 100/100/100/100 all passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-usfg,implements,"2026-07-26T17:07:17.370Z",null,null
 comments[19]{created_at,author,text}:
   "2026-07-05T05:16:13.080Z",claude-code-agent,"Implementation start: boundary gate will start as a current-state allowlist/ratchet rather than pretending the CLI is already SDK-only. This keeps CI enforceable immediately and lets each primitive-promotion item shrink the baseline."
   "2026-07-05T05:51:00.392Z",claude-code-agent,"Evidence: implemented SDK import-boundary ratchet in scripts/release/static-quality-gate.mjs with current-state baseline scripts/release/sdk-import-boundary-baseline.json. The gate scans src/cli.ts, src/cli/**, and src/mcp/** and fails on new private src/core imports or stale baseline entries. Current baseline is clean: 101 boundary source files scanned, 857 unique private src/core edges, 857 baseline edges, no new_private_core_imports and no stale_baseline_imports. Verification passed: focused static-quality-gate spec 62 tests; pm linked test run 2/2; pnpm lint (ESLint, jscpd 0 clones, static quality); node scripts/run-tests.mjs coverage 263 files / 5411 tests at 100/100/100/100; pnpm security:scan clean; docs/skills gate clean; git diff --check clean."

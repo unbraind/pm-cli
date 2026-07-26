@@ -6,14 +6,17 @@ status: closed
 priority: 0
 tags[4]: ops,pm-cli,telemetry,verification
 created_at: "2026-04-26T20:17:29.359Z"
-updated_at: "2026-05-01T19:29:07.492Z"
+updated_at: "2026-07-26T17:02:54.226Z"
 deadline: "2026-04-27T20:17:29.359Z"
 author: audit-agent
 estimated_minutes: 30
 acceptance_criteria: All telemetry components verified operational
 parent: pm-lnq3
+release: v2026.5.1
 resolution: "Resolution normalized from close_reason: All telemetry components verified operational - 9/[redacted_service_count] services healthy, E2E event flow confirmed, security verified"
 expected_result: "Expected closure outcome: All telemetry components verified operational - 9/[redacted_service_count] services healthy, E2E event flow confirmed, security verified"
 actual_result: "Actual closure outcome: All telemetry components verified operational - 9/[redacted_service_count] services healthy, E2E event flow confirmed, security verified"
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-lnq3,implements,"2026-07-26T17:02:54.042Z",null,null
 close_reason: "All telemetry components verified operational - 9/[redacted_service_count] services healthy, E2E event flow confirmed, security verified"
 body: "Verification evidence:\\n- POST [redacted_telemetry_endpoint]: HTTP 200, accepted:1\\n- GET [redacted_monitoring_endpoint]: HTTP 302 ([redacted_monitoring_ui])\\n- docker compose ps: [redacted_service_count] services all Up/Healthy (api, worker, [redacted_monitoring_ui], loki, tempo, prometheus, alloy, rabbitmq, postgres)\\n- .gitignore: .agents/pm/runtime/telemetry/ excluded\\n- CLI runtime.ts uses event_type/occurred_at matching API TelemetryEnvelope\\n- Sensitive data redaction working: emails, tokens, passwords, paths all sanitized\\n- Queue flush: batch 100, retry with backoff, 2.5s timeout"

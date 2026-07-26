@@ -6,12 +6,16 @@ status: closed
 priority: 3
 tags[4]: code-quality,concurrency,history,locking
 created_at: "2026-05-22T21:06:47.968Z"
-updated_at: "2026-05-25T10:55:04.630Z"
+updated_at: "2026-07-26T17:27:04.217Z"
 author: claude-code-agent
 parent: pm-rnpb
+release: v2026.5.27
 resolution: Implemented uniform pre-lock snapshot + under-lock revalidation for history-redact/history-repair/restore to prevent stale rewrite commits.
 expected_result: Concurrent mutations that occur between precompute and lock acquisition should trigger a conflict instead of allowing stale history/item rewrites.
 actual_result: Merged in PR #67 with conflict guards and regression coverage; full CI/release gates passed and command behavior verified in manual temp-dir flow.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7rlp,related,"2026-07-26T17:27:03.973Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:27:03.973Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-25T10:00:16.815Z",codex-reliability-agent,Execution start 2026-05-25 under combined reliability PR scope with pm-7rlp. Duplicate-check evidence recorded (context/search/list-open/list-in-progress) and canonical item reuse confirmed; no new item created. Claim taken and status moved to in_progress before code edits.
   "2026-05-25T10:08:51.624Z",codex-reliability-agent,"Implementation complete: hardened TOCTOU read-then-lock windows uniformly across history-redact/history-repair/restore by snapshotting pre-lock history/item raw state and re-verifying under lock before any write. Commands now fail fast with EXIT_CODE.CONFLICT and retry guidance when the target history stream or item changed while waiting for lock, preventing stale rewrite commits. Regression coverage added in tests/unit/history-activity-command.spec.ts, tests/unit/history-repair-command.spec.ts, and tests/unit/restore-command.spec.ts via acquireLock spy mutation hooks. Verification: node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/restore-command.spec.ts --reporter=dot (3 files, 43 tests passed)."
@@ -25,7 +29,7 @@ files[6]{path,scope,note}:
   tests/unit/history-activity-command.spec.ts,project,history-redact stale snapshot conflict regression
   tests/unit/history-repair-command.spec.ts,project,history-repair stale snapshot conflict regression
   tests/unit/restore-command.spec.ts,project,restore stale snapshot conflict regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/restore-command.spec.ts --reporter=dot,null,project,600,null,null,null,null,null,null,null,null,null,null,null,lock-window stale snapshot regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/restore-command.spec.ts --reporter=dot,project,600,lock-window stale snapshot regressions
 close_reason: Merged via PR #67 with lock-window hardening and regression tests; behavior verified locally and in CI.
 body: ""

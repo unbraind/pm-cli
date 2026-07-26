@@ -6,15 +6,19 @@ status: closed
 priority: 0
 tags[7]: changelog,ci,compatibility,pm-cli,release,sentry,telemetry
 created_at: "2026-05-03T18:30:09.216Z"
-updated_at: "2026-05-03T19:34:27.710Z"
+updated_at: "2026-07-26T17:00:20.946Z"
 deadline: "2026-05-04T18:30:09.216Z"
 author: codex-release-agent
 estimated_minutes: 240
 acceptance_criteria: Temporary previous-version data migrates safely under the new build; telemetry and Sentry latest data are reviewed; release notes/changelog/docs are current and generated from pm evidence; full tests and secret scans pass; GitHub/npm/npx/bunx publish verification succeeds.
 parent: pm-rnpb
+release: v2026.5.3-2
 resolution: "Release 2026.5.3 was published through the tag-driven GitHub Actions workflow and verified across npm, npx, bunx, GitHub Releases, and Sentry."
 expected_result: "A backward-compatible 2026.5.3 release is publicly available from npm and GitHub with generated release notes, passing local and CI gates."
 actual_result: GitHub Actions run 25288517005 completed successfully; npm latest resolves to 2026.5.3; npx and bunx execute 2026.5.3; GitHub release v2026.5.3 is published; Sentry release pm-cli@2026.5.3 is visible.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-5jw8,related,"2026-07-26T17:00:20.769Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:00:20.769Z",null,null
 comments[9]{created_at,author,text}:
   "2026-05-03T18:30:09.216Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10, pm search release compatibility telemetry sentry changelog 2026.5.3 --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Only prior release item pm-5jw8 was closed and open audit parent pm-rnpb covers the lineage, so a new release chore is required."
   "2026-05-03T18:39:25.526Z",codex-release-agent,"Compatibility gate passed in isolated temp project: @unbrained/pm-cli@2026.5.2 initialized and created 3 representative items with parent/dependency links, files/docs/tests, comments, notes, learnings, reminders, events, close metadata, and history. Current built CLI read and mutated legacy data, ran linked test node --version, and passed pm validate --check-resolution --check-history-drift plus pm health --check-only without item loss (3 before, 3 after). Temp root: /tmp/pm-compat-2026-5-2.00lPcA."
@@ -33,19 +37,19 @@ files[7]{path,scope,note}:
   src/cli/main.ts,project,commander usage help_format service cleanup-order fix
   tests/unit/normalize-command.spec.ts,project,normalize privacy regression coverage
   tests/unit/shared-constants-errors.spec.ts,project,telemetry error category fallback coverage
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  ./node_modules/.bin/tsc --noEmit -p tsconfig.json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,typecheck gate
-  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,secret scan gate
-  node scripts/release-version.mjs check --verify-next,null,project,120,null,null,null,null,null,null,null,null,null,null,null,calendar version policy gate
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandboxed full coverage gate
-  node scripts/smoke-npx-from-pack.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,npx tarball smoke gate
-  npm pack --dry-run,null,project,180,null,null,null,null,null,null,null,null,null,null,null,package contents smoke gate
-test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-moq4q31v-mf6wse,test,failed,"2026-05-03T18:49:14.391Z","2026-05-03T18:54:02.227Z","2026-05-03T18:54:02.227Z",null,null,5,1,0,null,null,null
-  test-local-moq4zohf-j0xggg,test,failed,"2026-05-03T18:56:43.989Z","2026-05-03T19:01:29.907Z","2026-05-03T19:01:29.907Z",null,null,5,1,0,null,null,null
-  test-local-moq560oh-81f2ho,test,passed,"2026-05-03T19:02:28.367Z","2026-05-03T19:06:25.649Z","2026-05-03T19:06:25.649Z",null,null,6,0,0,null,null,null
-  test-local-moq5mama-oogepw,test,failed,"2026-05-03T19:14:14.643Z","2026-05-03T19:19:05.026Z","2026-05-03T19:19:05.026Z",null,null,5,1,0,null,null,null
-  test-local-moq5towo-vo61t7,test,passed,"2026-05-03T19:19:48.937Z","2026-05-03T19:24:50.137Z","2026-05-03T19:24:50.137Z",null,null,6,0,0,null,null,null
+tests[6]{command,scope,timeout_seconds,note}:
+  ./node_modules/.bin/tsc --noEmit -p tsconfig.json,project,240,typecheck gate
+  node scripts/check-secrets.mjs,project,120,secret scan gate
+  node scripts/release-version.mjs check --verify-next,project,120,calendar version policy gate
+  node scripts/run-tests.mjs coverage,project,600,sandboxed full coverage gate
+  node scripts/smoke-npx-from-pack.mjs,project,240,npx tarball smoke gate
+  npm pack --dry-run,project,180,package contents smoke gate
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-moq4q31v-mf6wse,test,failed,"2026-05-03T18:49:14.391Z","2026-05-03T18:54:02.227Z","2026-05-03T18:54:02.227Z",5,1,0
+  test-local-moq4zohf-j0xggg,test,failed,"2026-05-03T18:56:43.989Z","2026-05-03T19:01:29.907Z","2026-05-03T19:01:29.907Z",5,1,0
+  test-local-moq560oh-81f2ho,test,passed,"2026-05-03T19:02:28.367Z","2026-05-03T19:06:25.649Z","2026-05-03T19:06:25.649Z",6,0,0
+  test-local-moq5mama-oogepw,test,failed,"2026-05-03T19:14:14.643Z","2026-05-03T19:19:05.026Z","2026-05-03T19:19:05.026Z",5,1,0
+  test-local-moq5towo-vo61t7,test,passed,"2026-05-03T19:19:48.937Z","2026-05-03T19:24:50.137Z","2026-05-03T19:24:50.137Z",6,0,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,release workflow source of truth
 close_reason: "Release 2026.5.3 published and verified: GitHub Actions release run 25288517005 succeeded; npm latest is 2026.5.3; npm view returned integrity metadata; npx and bunx both returned 2026.5.3; GitHub release v2026.5.3 is published; Sentry release pm-cli@2026.5.3 is visible."

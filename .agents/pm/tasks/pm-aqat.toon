@@ -6,16 +6,18 @@ status: closed
 priority: 2
 tags[9]: agent-ux,docs,dogfood,mcp,plan,planning,plugins,pm-cli,sdk
 created_at: "2026-05-17T08:50:26.532Z"
-updated_at: "2026-05-17T13:46:52.958Z"
+updated_at: "2026-07-26T17:09:24.406Z"
 author: codex-agent
 acceptance_criteria: "SDK contracts, MCP schemas, help/docs, Codex/Claude plugin assets, and dogfood all cover Plan and pm plan; examples map Codex/Claude/Cursor planning styles to pm-native Plan items; packed/dogfood validation proves discovery and readback."
 parent: pm-v7dj
+release: v2026.5.18
 resolution: "All agent-facing surfaces now expose Plan: SDK contracts, MCP pm_plan tool, Codex/Claude plugin docs, docs/COMMANDS.md + AGENT_GUIDE.md, dogfood lifecycle assertions."
 expected_result: "Plan workflow discoverable via contracts, MCP, plugin assets, docs."
 actual_result: "Verified: pm contracts --command plan --flags-only returns full flag list; pm_plan tool callable through pm-mcp; dogfood-package-first.mjs adds 12 new plan-related assertions that pass."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-v7dj,parent,"2026-05-17T08:50:26.532Z",codex-agent,null
   pm-ze5g,blocks,"2026-05-17T08:50:26.532Z",codex-agent,null
+  pm-v7dj,implements,"2026-07-26T17:09:24.115Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-17T08:50:26.532Z",codex-agent,Child task created from pm-v7dj. This slice follows the core Plan type and pm plan command implementation so external contracts do not get ahead of runtime behavior.
   "2026-05-17T08:52:39.728Z",codex-agent,"Research evidence: external surfaces must make Plan discoverable to agents through contracts, MCP, plugin commands/skills, docs, and dogfood. Linked SDK/MCP/plugin/docs files and focused regression command for future work."
@@ -30,8 +32,8 @@ files[10]{path,scope,note}:
   tests/integration/claude-plugin-contract.spec.ts,project,Plan plugin contract regression
   tests/integration/release-readiness-runtime.spec.ts,project,Plan docs/help release-readiness regression
   tests/unit/sdk-index.spec.ts,project,Plan SDK action boundary regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused Plan SDK/plugin/docs regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600,focused Plan SDK/plugin/docs regression
 docs[3]{path,scope,note}:
   plugins/pm-claude/commands/pm-planner.md,project,existing planner command docs to migrate
   plugins/pm-claude/skills/pm-planner/SKILL.md,project,existing planner skill docs to migrate

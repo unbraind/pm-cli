@@ -6,15 +6,32 @@ status: closed
 priority: 2
 tags[3]: adr,"area:meta",review
 created_at: "2026-06-07T17:05:16.319Z"
-updated_at: "2026-07-07T14:14:13.414Z"
+updated_at: "2026-07-26T17:08:10.071Z"
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: ADR recorded with all decisions and deferred items linked as pm items; no further action beyond the linked follow-ups.
 parent: pm-m2u1
 risk: low
 confidence: high
+release: v2026.7.8
 resolution: "ADR decisions all shipped and adopted as standing practice: centralized single-writer finding recording, batched low-risk remediation PRs, settings read cache landed separately (pm-2bn5), pm_health summary default. All 9 deferred findings verified closed; ADR retired from the living log."
 expected_result: ADR stays open only until every deferred finding it indexes is confirmed filed as its own item or shipped.
 actual_result: "Verified 2026-07-07: all 9 indexed findings are closed and shipped; condition met, ADR closed."
+dependencies[15]{id,kind,created_at,author,source_kind}:
+  pm-2bn5,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-2nvw,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-6l17,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-7tvx,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-e7dn,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-g799,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-ji5c,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-jozc,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-l0jd,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-l40h,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-m2u1,implements,"2026-07-26T17:08:09.848Z",null,null
+  pm-oll8,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-q0kr,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-ryik,related,"2026-07-26T17:08:09.848Z",null,null
+  pm-t73k,related,"2026-07-26T17:08:09.848Z",null,null
 close_reason: "All 9 deferred findings indexed by this ADR (pm-2bn5, pm-e7dn, pm-ul02, pm-vhx6, pm-6l17, pm-jozc, pm-q0kr, pm-oll8, pm-l0jd) verified closed on 2026-07-07 — the stated stay-open condition is met. Decisions (centralized single-writer recording, batched low-risk remediation PRs, deferred settings cache, health summary default) all shipped and remain standing practice."
 body: "## ADR record\nContext: full manual review of pm CLI + SDK + ecosystem on 2026-06-07, run with 4 specialized READ-ONLY sub-agents in parallel (code-quality/perf, SDK/extensions/packages, agent-UX/token-efficiency, docs/CI), findings verified in a temp sandbox plus smoke harnesses (dogfood-package-first, smoke:claude-plugin) and the full coverage gate (2559 tests, 100%).\n\nDecision 1 — centralized recording: all agent findings were recorded by the single maintainer session rather than letting sub-agents mutate pm concurrently, to avoid history-drift/reindex races from cross-process writes and to guarantee no duplicate items. This became the standing review protocol (still used by the 2026-07 reviews).\n\nDecision 2 — batched remediation: ship a focused low-risk batch per PR (the first: pm-g799 close-reason never-block, pm-ryik --p alias, MCP/version coherence, docs/CI hardening) instead of one mega-PR.\n\nConsequences: review sessions are serialized through one writer (slower but race-free); finding→item→PR traceability is 1:1; the protocol is reflected in later reviews (2026-07-02 lanes, 2026-07-03 concurrency, 2026-07-04 sweeps).\n\n## Why still open\nKept open while its deferred findings index is verified — close once every finding it indexes is confirmed filed as its own item or shipped (checked during backlog reviews; most have landed via PR#406-#428 era work)."

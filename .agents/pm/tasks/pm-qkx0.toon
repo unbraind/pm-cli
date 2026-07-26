@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T16:32:27.596Z"
-updated_at: "2026-04-05T22:42:19.481Z"
+updated_at: "2026-07-26T17:24:07.202Z"
 deadline: "2026-03-06T16:32:06.000Z"
 author: cursor-maintainer
 estimated_minutes: 75
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-b1w
 blocked_reason: "M5 follow-up: validate extension registration handler types has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: validate extension registration handler types is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-validate-extension-registration-han
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: validate extension registration handler types."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-04T16:32:27.596Z",cursor-maintainer,null
+  pm-b1w,implements,"2026-07-26T17:24:06.932Z",null,null
 comments[7]{created_at,author,text}:
   "2026-03-04T16:32:27.596Z",cursor-maintainer,This exists to close a runtime hardening gap for malformed JS extension registration calls.
   "2026-03-04T16:32:35.773Z",cursor-maintainer,Implementing deterministic runtime checks for malformed registerCommand definitions and registerRenderer handlers before adding regression assertions.
@@ -57,8 +58,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/core/extensions/loader.ts,project,extension api validation logic
   tests/unit/extension-loader.spec.ts,project,regression coverage for invalid registration
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted extension loader regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,1200,targeted extension loader regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood tracking workflow
   PRD.md,project,milestone 5 extension hardening contract

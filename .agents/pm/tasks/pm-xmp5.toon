@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: ci,context,quality-gate,relevance
 created_at: "2026-07-06T23:50:40.860Z"
-updated_at: "2026-07-09T23:28:51.832Z"
+updated_at: "2026-07-26T17:29:44.730Z"
 closed_at: "2026-07-09T19:51:48.785Z"
 author: codex-agent
 estimated_minutes: 300
@@ -14,13 +14,17 @@ acceptance_criteria: "Runner consumes only public SDK read primitives; reports n
 parent: pm-atfm
 risk: medium
 confidence: medium
+release: v2026.7.10
 resolution: "Implemented the SDK-driven context evaluation runner, versioned baseline comparison, and required CI gate"
 expected_result: "CI reports rank quality, recall, continuity, token adherence, and attribution through public SDK readers"
 actual_result: "Four isolated scenarios pass all metrics at 1.0; intentional baseline update, failure paths, contracts, and required CI smoke are tested"
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-cu1i,related,"2026-07-06T23:50:40.860Z",codex-agent,null
   pm-oslr,related,"2026-07-06T23:50:40.860Z",codex-agent,null
   pm-h3no,related,"2026-07-09T18:46:14.468Z",null,null
+  pm-4k6b,related,"2026-07-26T17:29:44.514Z",null,null
+  pm-atfm,implements,"2026-07-26T17:29:44.514Z",null,null
+  pm-u8n5,related,"2026-07-26T17:29:44.514Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-06T23:50:40.860Z",codex-agent,"Duplicate check: searched all statuses for context eval runner/quality gate/rank metrics; existing pm-u8n5 is search-only and pm-atfm was the broad parent, so this runner slice is non-duplicate."
   "2026-07-09T19:10:25.501Z",codex-root-20260709,"Progress evidence: required isolated SDK-driven evaluation gate seeds temporary trackers, reads via PmClient context/next, records rank/recall/continuity/token metrics plus attribution, compares explicit thresholds and baseline, and is wired into CI."

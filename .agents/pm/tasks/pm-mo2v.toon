@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[2]: audit,session-2026-07-02
 created_at: "2026-07-02T21:26:42.208Z"
-updated_at: "2026-07-02T21:56:14.099Z"
+updated_at: "2026-07-26T17:20:29.970Z"
 author: unknown
 parent: pm-fpod
+release: v2026.7.3
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-fpod,implements,"2026-07-26T17:20:29.766Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-02T21:28:24.867Z",claude-code-agent,"Audit started: CI/CD workflows review + repo-wide secret/PII scan + npm pack inspection + gh settings check"
   "2026-07-02T21:31:16.500Z",claude-code-agent,"Audit complete. Secrets: CLEAN (0 real leaks; only test fixtures + audit-evidence text; public Sentry DSN intentional). npm tarball clean (1089 files, no .agents/tests/env; no /home/steve in dist or sourcemaps). Branch protection 12 required checks exactly match workflow job names. CI/CD hygiene strong (SHA-pinned, least-priv, concurrency, timeouts, caches). Nits: auto-release actions:write likely unneeded; release env has no protection rules/reviewers; secret_scanning_non_provider_patterns+validity_checks disabled; check-secrets lacks sk-/AIzaSy-adjacent OpenAI/Anthropic patterns (has AIza) — minor. Today's Windows nightly failure already tracked+closed via GH-416/PR-417."

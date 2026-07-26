@@ -6,14 +6,17 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",dx,testing
 created_at: "2026-06-23T14:45:59.450Z"
-updated_at: "2026-06-23T15:06:09.950Z"
+updated_at: "2026-07-26T17:15:40.170Z"
 author: claude-code-agent
 parent: pm-1w0d
+release: v2026.6.24
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1w0d,implements,"2026-07-26T17:15:39.911Z",null,null
 files[2]{path,scope,note}:
   src/sdk/testing.ts,project,assertExtensionManifestCompatible throwing guard
   src/sdk/index.ts,project,Barrel re-export of assertExtensionManifestCompatible
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,project,240
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,Author-time compat-check pointer in pm_min/max_version rules
 close_reason: "Shipped assertExtensionManifestCompatible(manifest, target) in src/sdk/testing.ts: throws on any blocking (error-severity) finding, returns the result on success so advisory warnings stay inspectable. Re-exported from SDK barrel + /sdk/testing. 100% cov."

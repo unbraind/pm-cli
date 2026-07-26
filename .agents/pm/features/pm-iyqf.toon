@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,"area:context",pm-cli
 created_at: "2026-04-01T14:10:36.966Z"
-updated_at: "2026-04-27T20:08:14.590Z"
+updated_at: "2026-07-26T17:16:56.683Z"
 deadline: "2026-05-09T17:09:59.580Z"
 author: codex-agent
 estimated_minutes: 300
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: context-rollout
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement context command runtime and surfaces (pm CLI + Node/pnpm toolchain).
@@ -37,8 +37,10 @@ fixed_version: target-vnext
 component: cli-context
 regression: false
 customer_impact: Faster and more reliable project-state triage
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-abhj,parent,"2026-04-01T14:10:36.966Z",codex-agent,null
+  pm-abhj,implements,"2026-07-26T17:16:56.449Z",null,null
+  pm-f583,related,"2026-07-26T17:16:56.449Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-01T14:10:36.966Z",codex-agent,Feature created as child of epic pm-abhj.
   "2026-04-25T11:01:36.427Z",codex-agent,Parent coverage blocker is stale after latest 100% coverage verification; unblocking and resuming feature execution.
@@ -50,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:14:51.780Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/context.ts,project,new command module
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage gate for release
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,coverage gate for release
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,architecture updates for context pipeline
 close_reason: Context runtime and integration surfaces are complete with verified closure evidence.

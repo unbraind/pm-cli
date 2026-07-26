@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:storage",benchmark,performance,scale
 created_at: "2026-07-06T21:24:53.754Z"
-updated_at: "2026-07-12T18:08:57.688Z"
+updated_at: "2026-07-26T17:20:20.826Z"
 closed_at: "2026-07-12T18:08:57.001Z"
 author: maintainer-agent
 estimated_minutes: 600
@@ -14,9 +14,25 @@ acceptance_criteria: "Repeatable script/harness generates synthetic workspaces a
 parent: pm-9rxu
 risk: low
 confidence: high
+release: v2026.7.13
 resolution: "Delivered deterministic scale generation, local CLI/SDK benchmark reporting, committed 10k/100k evidence, and an honest local regression budget."
 expected_result: "Repeatably generate isolated 10k/100k/1M-shaped trackers and measure latency, RSS, and token cost without touching the repository tracker."
 actual_result: The generator and runner cover both SDK and direct-layout modes; PM-linked 10k gates and isolated 100k dogfood passed with reports committed.
+dependencies[14]{id,kind,created_at,author,source_kind}:
+  pm-0qg5,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-25se,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-4oww,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-801d,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-9rxu,implements,"2026-07-26T17:20:20.499Z",null,null
+  pm-a22j,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-c90s,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-cu1i,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-dfg0,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-dprb,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-i7i4,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-irp1,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-lvyd,related,"2026-07-26T17:20:20.499Z",null,null
+  pm-n7rr,related,"2026-07-26T17:20:20.499Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-12T15:42:06.228Z",maintainer-agent,"Completion evidence: deterministic direct-layout and SDK workspace generation, CLI+SDK runner, p50/p95/RSS/token reporting, 10k local regression budget, and committed 10k/100k reports are implemented. PM-linked tests passed: 13 harness tests plus benchmark:scale:check at 10k. Manual 100k run completed in an isolated temp workspace; CLI list/get/next/context/search/create/claim measured 1855/1325/3470/3116/2941/723/692ms, SDK 923/440/2563/2587/2591/8/7ms, and every payload stayed below 5000 estimated tokens. Generator never targeted the real tracker."
   "2026-07-12T16:18:10.098Z",maintainer-agent,"Review findings accepted for implementation: child-spawn failure must terminate the RSS sampler; generator should avoid constructing the 1M corpus twice by creating type directories on demand. Duplicate check reused this canonical benchmark item."

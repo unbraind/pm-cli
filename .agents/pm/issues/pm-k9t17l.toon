@@ -6,18 +6,19 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:graph","area:sdk",data-integrity,gh-issue,multi-agent
 created_at: "2026-07-23T04:52:33.471Z"
-updated_at: "2026-07-23T06:14:26.922Z"
+updated_at: "2026-07-26T17:18:10.082Z"
 closed_at: "2026-07-23T05:34:02.127Z"
 author: claude-code-agent
 acceptance_criteria: "Every shared dependency mutation path rejects self edges when the resolved relationship kind disallows self links, inverse and alias spellings share the rule, custom allowSelf kinds remain writable, reads render legacy self cycles truthfully, no item or history write occurs on rejection, public SDK contracts and docs explain the invariant, focused and full coverage remain 100 percent"
 parent: pm-6x7o
+release: v2026.7.23
 reporter: GitHub GH-649
 severity: high
 resolution: "Added public assertRelationshipEdgeAllowed and shared pre-persistence dependency enforcement for create/update, with alias-aware custom allowSelf semantics and deterministic usage errors."
 expected_result: Disallowed self dependencies fail before item/history writes while extension-defined allowSelf relationships remain supported.
 actual_result: "CLI zero-write acceptance, public packed SDK import, real installed CLI usage=2 behavior, exact coverage, and full gates confirm the mutation boundary."
 affected_version: 2026.7.22
-dependencies[7]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-4jqm,related,"2026-07-23T04:52:33.471Z",null,null
   pm-6irg,related,"2026-07-23T04:52:33.471Z",null,null
   pm-i6pi,related,"2026-07-23T04:52:33.471Z",null,null
@@ -25,6 +26,7 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-3esl28,related,"2026-07-23T04:53:27.272Z",null,null
   pm-ds3b,verifies,"2026-07-23T04:53:27.272Z",null,null
   pm-mmm9o5,related,"2026-07-23T04:53:27.272Z",null,null
+  pm-6x7o,implements,"2026-07-26T17:18:09.824Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-23T04:52:33.471Z",claude-code-agent,"Duplicate check 2026-07-23: all-status searches for GH-649,self-referential ordering edge,blocked_by self edge,and dependency cycle write guard found shipped cycle advisory pm-i6pi,governance lineage pm-6x7o/pm-ju83/pm-4jqm,and closed detection work pm-6irg,but no item owns the exact write-time self-edge inconsistency. Created this canonical leaf rather than reopening shipped work."
   "2026-07-23T04:53:29.272Z",claude-code-agent,"GitHub linkage evidence: canonical pm item posted on GH-649 at https://github.com/unbraind/pm-cli/issues/649#issuecomment-5054564177. Active bundle shares the truthful-context lifecycle acceptance surface with pm-3esl28, pm-mmm9o5, and rolling SDK reference pm-ds3b."

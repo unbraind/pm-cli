@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:extensions",dx,scaffold
 created_at: "2026-07-25T21:13:51.838Z"
-updated_at: "2026-07-25T23:43:47.292Z"
+updated_at: "2026-07-26T17:08:37.160Z"
 closed_at: "2026-07-25T23:36:15.515Z"
 author: "harness:claude-code"
 estimated_minutes: 180
@@ -14,12 +14,14 @@ acceptance_criteria: "The extension and package scaffold paths share one generat
 parent: pm-ugqx
 risk: low
 confidence: high
+release: v2026.7.26
 resolution: Unified package and extension scaffold generation behind one publishable TypeScript artifact builder for all ten capabilities.
 expected_result: "Both init spellings emit installable, testable, publishable packages with identical metadata and runtime behavior."
 actual_result: "Both spellings emit the same seven-file artifact, generated tests/typechecks pass, and independently packed consumer installs and dispatches both forms."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-8mxg,related,"2026-07-25T21:13:51.838Z",null,null
   pm-quzx,related,"2026-07-25T21:13:51.838Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:08:36.970Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-25T22:35:03.905Z","harness:codex","Implementation evidence: extension and package init now emit the same publishable seven-file TypeScript package artifact for all ten capabilities, with colocated runtime tests and identical manifests/package metadata."
   "2026-07-25T22:45:43.797Z","harness:codex","Coverage triage: repository coverage run was invalidated by ENOSPC in shared /tmp (175 suites failed during transform). Two legitimate stale guidance expectations were updated to the unified package artifact; no coverage threshold or test gate was changed."

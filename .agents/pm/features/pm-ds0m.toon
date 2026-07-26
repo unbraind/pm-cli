@@ -6,11 +6,14 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli","area:context",dx
 created_at: "2026-06-07T10:07:23.497Z"
-updated_at: "2026-06-14T12:12:48.179Z"
+updated_at: "2026-07-26T17:12:19.783Z"
 author: audit-cli-schema-agent
 acceptance_criteria: "- pm context --parent <id> scopes focus items and hierarchy section to descendants of that item\n- Docs updated: AGENT_GUIDE.md and COMMANDS.md context section\n- Shell completions updated for context command --parent flag\n- CONTEXT_FLAG_CONTRACTS / MCP context tool parameters include --parent"
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.6.16
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:12:19.586Z",null,null
 close_reason: Shipped pm context --parent <id> subtree scoping. GH-related pm-ds0m.
 body: "## Context\n\nContextOptions (src/cli/commands/context.ts:34-53) has no parent field.\nThe context command registration in register-operations.ts (line 191+) adds no --parent option.\nWith 1000+ items, pm context --limit 10 still surfaces items from all epics mixed together.\nAgents assigned to a specific epic would benefit from pm context --parent pm-mpbb as the 'what's happening in my scope' command.\n\n## Acceptance criteria\n\n- pm context --parent <id> scopes focus items and hierarchy section to descendants of that item\n- Docs updated: AGENT_GUIDE.md and COMMANDS.md context section\n- Shell completions updated for context command --parent flag\n- CONTEXT_FLAG_CONTRACTS / MCP context tool parameters include --parent\n\n## Evidence\n\n- src/cli/commands/context.ts:34-53 (ContextOptions interface — no parent field)\n- src/cli/register-operations.ts:191-234 (context command registration — no --parent option added)\n- Context already computes childrenByParent (src/cli/commands/context.ts:473-487) so hierarchy grouping logic exists; parent scoping is a pre-filter step"

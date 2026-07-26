@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:health",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T06:55:04.808Z"
-updated_at: "2026-04-05T22:45:46.230Z"
+updated_at: "2026-07-26T17:19:09.390Z"
 deadline: "2026-03-07T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-pjj7
 blocked_reason: "M5 follow-up: include built-in extensions in health probe has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: include built-in extensions in health probe is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-include-built-in-extensions-in-heal
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: include built-in extensions in health probe."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-pjj7,related,"2026-03-06T06:55:04.808Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:19:09.171Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-06T06:55:04.808Z",maintainer-agent,"Why this exists: keep health diagnostics aligned with runtime extension behavior by probing built-in extensions too."
   "2026-03-06T06:55:17.798Z",maintainer-agent,"Planned changeset before edits: docs-first update README and PRD to require built-in extension inclusion in health probe, then implement shared built-in extension helper and wire health to include built-ins with deterministic activation metadata and tests."
@@ -59,11 +60,11 @@ files[5]{path,scope,note}:
   src/cli/commands/health.ts,project,health extension probe runtime parity
   src/cli/main.ts,project,reuse shared built-in extension helper
   tests/unit/health-command.spec.ts,project,health diagnostics regression coverage
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/extensions-builtins.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,built-in extension helper unit coverage
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/extension-loader.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted extension health tests
-  pnpm build,null,project,600,null,null,null,null,null,null,null,null,null,null,null,compile verification
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/extensions-builtins.spec.ts,project,900,built-in extension helper unit coverage
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/extension-loader.spec.ts,project,1800,targeted extension health tests
+  pnpm build,project,600,compile verification
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:compat","area:sdk",extensions,pm-cli
 created_at: "2026-04-01T02:17:35.097Z"
-updated_at: "2026-04-04T21:38:17.199Z"
+updated_at: "2026-07-26T17:10:38.303Z"
 deadline: "2026-04-10T02:17:35.097Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-oga6
 blocked_reason: "C2: Backward-safe extension SDK compatibility shims has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If C2: Backward-safe extension SDK compatibility shims is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/c2-backward-safe-extension-sdk-compatibility-shi
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for C2: Backward-safe extension SDK compatibility shims."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-oga6,parent,"2026-04-01T02:17:35.097Z",codex-agent,null
+  pm-oga6,implements,"2026-07-26T17:10:38.080Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T02:17:35.097Z",codex-agent,C2 task created from full-override feature C.
   "2026-04-01T03:01:12.243Z",codex-agent,Aligned built-in extension type imports to stable SDK contract (src/extensions/builtins/beads/index.ts and todos/index.ts -> ../../../sdk/index.js) and documented migration-safe import guidance.
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:41.332Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/extensions/loader.ts,project,compatibility mapping and aliases
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,extension compatibility regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,project,2400,extension compatibility regression
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,compatibility and migration guidance
 close_reason: Built-in extension imports aligned to SDK contract and compatibility guidance documented.

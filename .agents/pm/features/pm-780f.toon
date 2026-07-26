@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:templates",external-audit,pm-cli
 created_at: "2026-04-03T11:56:47.754Z"
-updated_at: "2026-05-17T08:21:21.367Z"
+updated_at: "2026-07-26T17:06:14.052Z"
 deadline: "2026-04-17T11:57:45.116Z"
 author: codex-agent
 estimated_minutes: 240
@@ -20,7 +20,7 @@ outcome: This record can be used as canonical context when modifying Add reusabl
 why_now: Historical decisions for Add reusable item templates for pm create need durable context for future maintenance and audits.
 parent: pm-pb0g
 sprint: audit-followup
-release: vnext
+release: v2026.5.1
 blocked_reason: Add reusable item templates for pm create has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add reusable item templates for pm create is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Add reusable item templates for pm create (pm CLI + Node/pnpm toolchain).
@@ -29,8 +29,9 @@ expected_result: Acceptance criteria for Add reusable item templates for pm crea
 actual_result: Work completed and recorded with linked artifacts for Add reusable item templates for pm create.
 component: project-management/add-reusable-item-templates-for-pm-create
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add reusable item templates for pm create.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-bzyr,related,"2026-04-03T11:56:47.754Z",codex-agent,null
+  pm-pb0g,implements,"2026-07-26T17:06:13.701Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-03T11:56:47.754Z",codex-agent,Created after dedup search confirmed no existing runtime template-system feature.
   "2026-04-03T11:59:31.079Z",codex-agent,"Wave3 scope: templates are optional and additive; explicit create flags continue to work and should override template defaults deterministically."
@@ -48,9 +49,9 @@ files[7]{path,scope,note}:
   src/cli/main.ts,project,template command registration surface
   src/sdk/cli-contracts.ts,project,templates actions and create --template contracts
   tests/unit/templates-command.spec.ts,project,templates command and create --template regressions
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,baseline create regression
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,issue10 template workflow regressions
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,project,2400,baseline create regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/cli.integration.spec.ts,project,5400,issue10 template workflow regressions
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased template feature notes
   PRD.md,project,template command contract

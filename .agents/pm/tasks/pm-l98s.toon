@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,audit-followup,extensions
 created_at: "2026-07-04T08:31:43.047Z"
-updated_at: "2026-07-23T14:39:28.363Z"
+updated_at: "2026-07-26T17:19:11.382Z"
 closed_at: "2026-07-23T14:39:27.643Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,8 +14,11 @@ acceptance_criteria: Installing an extension that requires new item-type folders
 parent: pm-ugqx
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+release: v2026.7.24
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-dijg,related,"2026-07-14T17:05:16.756Z",null,null
+  pm-3wsi,related,"2026-07-26T17:19:11.172Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:19:11.172Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-23T14:21:41.873Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
   "2026-07-23T14:39:26.928Z",claude-code-agent,"Live reconciliation evidence 2026-07-23: current main already implements scaffoldInstalledExtensionItemTypes in src/sdk/extension.ts, invoked after successful runtime activation for project installs, and tests/unit/extensions/extension-command.spec.ts proves installing the kanban schema package creates cards/. git blame/log trace the implementation to ec3f0ee99 / PR #568. Focused extension-command suite passed today (134/134), including the item-folder install acceptance. This item was stale-open, not outstanding implementation."

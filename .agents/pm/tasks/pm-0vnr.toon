@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:tests",pm-cli
 created_at: "2026-04-01T15:27:36.473Z"
-updated_at: "2026-04-04T21:39:23.555Z"
+updated_at: "2026-07-26T17:00:28.438Z"
 deadline: "2026-04-07T15:27:36.473Z"
 author: cursor-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: history-hardening
-release: vnext
+release: v2026.5.1
 blocked_by: pm-g6qd
 blocked_reason: Finalize tests docs verification and release evidence for history hardening has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: Implementation and regression updates are in place; finalize docs and verification evidence
@@ -40,9 +40,10 @@ fixed_version: target-vnext
 component: verification
 regression: true
 customer_impact: Users receive documented and validated resilient behavior
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-g6qd,blocks,"2026-04-01T15:27:36.473Z",cursor-agent,null
   pm-kb21,parent,"2026-04-01T15:27:36.473Z",cursor-agent,null
+  pm-kb21,implements,"2026-07-26T17:00:28.259Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-01T15:27:36.473Z",cursor-agent,Task tracks final test/doc/verification gate and closure evidence.
   "2026-04-01T15:43:03.149Z",cursor-agent,"Documentation updates completed for missing history-stream policy and history-only restore recovery in README, PRD, ARCHITECTURE, and CHANGELOG. Verification after docs/runtime updates: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts passed (40/40); node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts passed (22/22)."
@@ -60,8 +61,8 @@ files[7]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard validation
   tests/unit/restore-command.spec.ts,project,restore regression target
   vitest.config.ts,project,coverage include update for new helper module
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,final coverage gate
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,final coverage gate
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,unreleased entry updates
 close_reason: Final verification and docs gate completed with passing linked checks

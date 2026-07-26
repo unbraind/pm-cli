@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: linked-tests,metadata,shared-host
 created_at: "2026-04-04T10:10:33.168Z"
-updated_at: "2026-04-04T21:34:18.248Z"
+updated_at: "2026-07-26T17:12:10.370Z"
 deadline: "2026-04-11T10:10:33.168Z"
 author: codex-agent
 estimated_minutes: 240
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: linked-test-hardening
-release: vnext
+release: v2026.5.1
 blocked_reason: "Issue2 Feature: Per-linked-test env directives has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Issue2 Feature: Per-linked-test env directives is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,6 +38,8 @@ fixed_version: vnext
 component: linked-test-runtime
 regression: true
 customer_impact: improves deterministic verification outcomes
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-9dp3,implements,"2026-07-26T17:12:10.185Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-04T11:39:59.835Z",codex-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (844 tests); node scripts/run-tests.mjs coverage passed (branches 91.02%); PM linked-test sweep passed via pm test-all --status in_progress (linked_tests=3 failed=0, failure categories all zero)."
 files[4]{path,scope,note}:
@@ -45,8 +47,8 @@ files[4]{path,scope,note}:
   src/cli/commands/test.ts,project,linked test add parsing
   src/core/item/item-format.ts,project,linked test normalization
   src/types.ts,project,linked test metadata schema
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/create-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,metadata parser regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/create-command.spec.ts,project,2400,metadata parser regressions
 docs[1]{path,scope,note}:
   PRD.md,project,Issue2 per-linked-test env directive contract
 close_reason: per-linked-test env directives shipped and verified

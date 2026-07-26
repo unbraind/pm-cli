@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: cli,data-integrity,files,sdk
 created_at: "2026-07-13T14:23:57.531Z"
-updated_at: "2026-07-13T15:33:36.770Z"
+updated_at: "2026-07-26T17:11:11.281Z"
 closed_at: "2026-07-13T15:32:39.525Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,11 +14,21 @@ acceptance_criteria: "All linked-path resolution surfaces (files/docs --add, --a
 parent: pm-33cw
 risk: medium
 confidence: high
+release: v2026.7.14
 resolution: Resolved by separating invocation-root interpretation from workspace-root persistence and validation for linked resources.
 expected_result: Nested files/docs operations store stable workspace-relative paths and agree with validate --check-files.
 actual_result: "Nested add/discover/glob/remove and both validation surfaces use one workspace anchor; focused, full-coverage, package dogfood, and installed-tarball proof passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-j8z6,related,"2026-07-13T14:24:09.412Z",null,null
+  pm-33cw,implements,"2026-07-26T17:11:11.028Z",null,null
+  pm-45mb,related,"2026-07-26T17:11:11.028Z",null,null
+  pm-7je0,related,"2026-07-26T17:11:11.028Z",null,null
+  pm-96vo,related,"2026-07-26T17:11:11.028Z",null,null
+  pm-hno5,related,"2026-07-26T17:11:11.028Z",null,null
+  pm-jh9t,related,"2026-07-26T17:11:11.028Z",null,null
+  pm-kj4k,related,"2026-07-26T17:11:11.028Z",null,null
+  pm-og1v,related,"2026-07-26T17:11:11.028Z",null,null
+  pm-p9sc,related,"2026-07-26T17:11:11.028Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-13T14:32:03.797Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:33.818Z",codex-sdk-contracts-20260713,"Evidence: relative linked inputs now resolve at invocation cwd, persist workspace-relative, and validate from the workspace across add, remove, glob, discovery, write-time validation, and independent validate --check-files. Nested-package acceptance passed. Repository proof: 5614 tests at 100/100/100/100 coverage; release build/typecheck/docs/static-quality/package-boundary/token/security/packed-smoke gates passed; 88-command package-first dogfood passed; fresh installed tarball stored packages/app/src/entry.ts and SDK get passed."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: code-scanning,false-positive,generated-code,high,security,semgrep,spawn-shell-true
 created_at: "2026-07-06T18:56:15.125Z"
-updated_at: "2026-07-25T02:25:27.558Z"
+updated_at: "2026-07-26T17:13:40.544Z"
 closed_at: "2026-07-25T02:24:42.586Z"
 author: codex-cli-agent
 estimated_minutes: 45
@@ -14,6 +14,7 @@ acceptance_criteria: "The flagged shell:true spawn at plugins/pm-claude/scripts/
 parent: pm-oz8u
 risk: high
 confidence: low
+release: v2026.7.25
 reporter: semgrep
 severity: high
 environment: unbraind/pm-cli refs/heads/main
@@ -22,9 +23,10 @@ expected_result: Package-provided arguments cannot be interpreted by a shell and
 actual_result: "The shell-enabled path is removed and generator, wrapper, security, and full coverage gates pass."
 affected_version: main@6f511706628f18743a00a1cfe851e8d1f492684e
 component: plugins/pm-claude/scripts/pm-mcp-server.mjs
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ngjd,related,"2026-07-14T17:04:59.667Z",null,null
   pm-oz8u,related,"2026-07-24T23:54:35.332Z",null,null
+  pm-oz8u,implements,"2026-07-26T17:13:40.237Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T02:02:14.431Z","harness:codex","Evidence: generated plugin wrapper command selection now uses the platform-specific npx executable with shell disabled, preventing shell interpretation of package-provided arguments. Generator and installed-wrapper tests pass."
 files[3]{path,scope,note}:

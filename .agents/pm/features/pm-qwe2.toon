@@ -6,15 +6,17 @@ status: closed
 priority: 1
 tags[4]: audit,core,pm-cli,verification
 created_at: "2026-05-01T18:03:23.556Z"
-updated_at: "2026-05-01T19:29:07.597Z"
+updated_at: "2026-07-26T17:24:23.151Z"
 author: audit-agent
 acceptance_criteria: All core commands produce correct output in TOON and JSON modes
 parent: pm-2eb3
+release: v2026.5.2
 resolution: "Resolution normalized from close_reason: All core commands verified in dogfood temp directory with exit code 0 for success paths and structured error envelopes for failure paths"
 expected_result: "Expected closure outcome: All core commands verified in dogfood temp directory with exit code 0 for success paths and structured error envelopes for failure paths"
 actual_result: "Actual closure outcome: All core commands verified in dogfood temp directory with exit code 0 for success paths and structured error envelopes for failure paths"
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:03:23.556Z",audit-agent,null
+  pm-2eb3,implements,"2026-07-26T17:24:22.954Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-01T18:03:23.556Z",audit-agent,"Evidence: all commands tested in temp directory /tmp/pm-dogfood-audit-Wr4jVw with PM_AUTHOR=audit-agent PM_TELEMETRY_SOURCE_CONTEXT=dogfood. Exit codes 0 for all success paths. Error envelopes with --json include actionable guidance."
 close_reason: All core commands verified in dogfood temp directory with exit code 0 for success paths and structured error envelopes for failure paths

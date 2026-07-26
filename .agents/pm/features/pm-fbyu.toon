@@ -6,15 +6,20 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:observability","area:telemetry",privacy
 created_at: "2026-06-07T10:03:35.109Z"
-updated_at: "2026-06-18T14:34:46.988Z"
+updated_at: "2026-07-26T17:13:45.959Z"
 author: audit-observability-agent
 acceptance_criteria: "- When PM_AUTHOR env var is a non-empty string, include a stable `author_context_hash` field (HMAC-SHA256, keyed on installation_id) in command_start and command_finish payloads at capture_level != minimal.\n- At minimal capture_level, include only a boolean `has_author_context: true/false`.\n- No raw PM_AUTHOR value is ever included.\n- SENSITIVE_KEYWORDS check is not needed (it's a hash); document this in a comment.\n- Unit test: same PM_AUTHOR value + same installation_id = same hash; different installation_id = different hash."
 parent: pm-5oj5
 risk: low
 confidence: high
+release: v2026.6.19
 resolution: "command_start/command_finish payloads now carry an agent-identity dimension from PM_AUTHOR: author_context_hash (installation-keyed one-way hash) at redacted/max, has_author_context boolean at minimal; raw value never emitted."
 expected_result: command_start/command_finish carry author_context_hash (non-minimal) or has_author_context (minimal) derived from PM_AUTHOR without leaking the raw value.
 actual_result: Installation-keyed hash stability + cross-installation isolation verified; raw value never emitted; 100/100/100/100.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-3n3b,related,"2026-07-26T17:13:45.677Z",null,null
+  pm-5oj5,implements,"2026-07-26T17:13:45.677Z",null,null
+  pm-gsoe,related,"2026-07-26T17:13:45.677Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-18T14:34:26.894Z",claude-code-agent,"Bundled with pm-3n3b/pm-gsoe (epic pm-5oj5). PM_AUTHOR surfaces as installation-id-keyed one-way author_context_hash (same construction as pm_root_hash/cwd_hash) at redacted/max capture, and only has_author_context boolean at minimal. Raw value never emitted; bypasses SENSITIVE_KEYWORDS by design (documented in code + TELEMETRY.md). Wired into command_start + command_finish."
 files[3]{path,scope,note}:

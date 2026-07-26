@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:release",code,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-08T13:38:46.107Z"
-updated_at: "2026-04-04T21:45:49.979Z"
+updated_at: "2026-07-26T17:28:22.318Z"
 deadline: "2026-03-09T13:38:45.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Release-readiness maintenance loop 2026-03-08 run 1 has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release-readiness maintenance loop 2026-03-08 run 1 is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-08-ru
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-08 run 1.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-3tjx,related,"2026-07-26T17:28:21.996Z",null,null
+  pm-8a2s,implements,"2026-07-26T17:28:21.996Z",null,null
+  pm-knwz,related,"2026-07-26T17:28:21.996Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-08T13:38:46.107Z",maintainer-agent,"Why this exists: explicit restore help metadata contract is not covered by release-readiness guard suite yet."
   "2026-03-08T13:38:56.395Z",maintainer-agent,"Planned changeset: add explicit restore help metadata parity assertions (usage/description and --author/--message/--force) to release-readiness contract suite before running linked tests and regression sweeps."
@@ -54,9 +58,9 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:32:04.477Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,planned restore help parity test
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,coverage gate verification
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted release-contract regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,coverage gate verification
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,240,targeted release-contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract reference
   PRD.md,project,authoritative output and help contract

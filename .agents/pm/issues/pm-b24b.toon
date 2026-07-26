@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,ci,windows
 created_at: "2026-07-12T07:11:22.870Z"
-updated_at: "2026-07-15T07:56:49.553Z"
+updated_at: "2026-07-26T17:09:50.720Z"
 closed_at: "2026-07-15T07:25:47.438Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,11 +14,14 @@ acceptance_criteria: "quoteCommandArg (or a platform-aware wrapper) renders nati
 parent: pm-mpbb
 risk: medium
 confidence: high
+release: v2026.7.15
 resolution: Render command arguments using platform-specific safe tokens and preserve Windows backslashes inside quoted paths.
 expected_result: Windows init follow-up commands remain executable native paths.
 actual_result: Win32 path regression passes without doubled separators.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-dprb,related,"2026-07-12T07:12:02.961Z",null,null
+  pm-gf6f,related,"2026-07-26T17:09:50.562Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:09:50.562Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-12T13:35:09.548Z",maintainer-agent,"External-report sweep 2026-07-12: GitHub issue #522 remains the canonical open Windows nightly failure; no duplicate item created. This performance lane will not change its status or implementation scope."
   "2026-07-14T06:44:00.318Z",codex-root,"Live GitHub evidence 2026-07-14: Nightly Validation run 29310713878 on main dcd58521 failed only windows-latest/Node 24. Four init-command specs plus init-path-guard reproduced this canonical native-path quoting defect; macOS and Ubuntu Node 22/24/25 legs passed. GitHub issue #522 remains canonical; item stays open and unclaimed outside PR #549 scope."

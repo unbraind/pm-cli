@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:extensions",dx,scaffold
 created_at: "2026-07-25T21:38:28.090Z"
-updated_at: "2026-07-25T23:43:48.092Z"
+updated_at: "2026-07-26T17:10:51.485Z"
 closed_at: "2026-07-25T23:36:18.663Z"
 author: "harness:claude-code"
 estimated_minutes: 90
@@ -14,12 +14,14 @@ acceptance_criteria: "Passing a name that already carries the pm- prefix produce
 parent: pm-ugqx
 risk: low
 confidence: high
+release: v2026.7.26
 resolution: "Normalized repeated leading pm- prefixes before deriving package names and command paths, and exposed canonical result metadata."
 expected_result: Already prefixed package targets retain one pm- prefix and produce usable invocation commands.
 actual_result: Parameterized tests cover every capability and both vocabularies; packed acceptance produced pm-agent-workflow and pm-agent-hooks with working commands.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-9smp7j,related,"2026-07-25T21:38:28.090Z",null,null
   pm-quzx,related,"2026-07-25T21:38:28.090Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:10:51.264Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-25T22:35:05.130Z","harness:codex","Implementation evidence: scaffold names strip repeated leading pm- prefixes, results report package_name and invocation_command, and parameterized acceptance covers every capability across extension/package vocabulary."
   "2026-07-25T23:27:34.296Z","harness:codex","Evidence: prefix normalization and the publishable scaffold matrix passed the full sandboxed coverage gate (371 files, 6,388 tests, 100/100/100/100)."

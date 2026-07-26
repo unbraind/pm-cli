@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,diagnostics,extensions,packages,renderers
 created_at: "2026-07-15T20:00:19.764Z"
-updated_at: "2026-07-23T15:50:18.670Z"
+updated_at: "2026-07-26T17:21:04.504Z"
 closed_at: "2026-07-23T15:50:18.022Z"
 author: codex-audit-20260715
 estimated_minutes: 180
@@ -14,10 +14,12 @@ acceptance_criteria: "The renderer registration contract can declare command pat
 parent: pm-ugqx
 risk: medium
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+release: v2026.7.24
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-5teq,related,"2026-07-15T20:01:19.786Z",codex-audit-20260715,null
   pm-ixoa,related,"2026-07-15T20:01:19.786Z",codex-audit-20260715,null
   pm-x6jf,related,"2026-07-15T20:01:19.786Z",codex-audit-20260715,null
+  pm-ugqx,implements,"2026-07-26T17:21:04.240Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-15T20:00:19.764Z",codex-audit-20260715,"Duplicate check evidence: all-status searches for pm-changelog renderer warning scoped renderer command ownership and doctor false positive found only closed pm-5teq diagnostics and the distinct open pm-ixoa service collision."
   "2026-07-23T14:21:43.773Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: coverage,pm-cli,release-readiness,testing
 created_at: "2026-02-17T23:37:35.015Z"
-updated_at: "2026-04-04T21:45:11.566Z"
+updated_at: "2026-07-26T17:08:02.909Z"
 deadline: "2026-02-22T23:37:35.015Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-2c8
 blocked_reason: Testing strategy and 100 percent coverage gates has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Testing strategy and 100 percent coverage gates is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,10 +41,11 @@ fixed_version: archive-2026q2
 component: project-management/testing-strategy-and-100-percent-coverage-gates
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Testing strategy and 100 percent coverage gates.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-2c8,related,"2026-02-17T23:37:35.015Z",cursor-agent,null
   pm-ote,parent,"2026-02-17T23:37:35.015Z",cursor-agent,null
   pm-pq8,related,"2026-02-17T23:37:35.015Z",cursor-agent,null
+  pm-ote,implements,"2026-07-26T17:08:02.617Z",null,null
 comments[11]{created_at,author,text}:
   "2026-02-18T00:02:31.554Z",cursor-agent,"Evidence: pnpm test passed (19 tests across unit+integration). pnpm test:coverage passed with 100% statements/branches/functions/lines for the enforced release-hardening scope. Integration tests use withTempPmPath and spawn node dist/cli.js with PM_PATH/PM_AUTHOR/PM_SESSION sandbox env values."
   "2026-02-18T00:14:47.650Z",cursor-agent,"Removed linked pnpm test and pnpm test:coverage commands from test-all orchestration scope to avoid recursive invocation chains (integration suite itself exercises test-all)."
@@ -76,10 +77,10 @@ files[14]{path,scope,note}:
   tests/unit/structure-exports.spec.ts,project,Module boundary export checks
   tests/unit/test-all-command.spec.ts,project,runTestAll branch coverage
   vitest.config.ts,project,Vitest coverage gate configuration
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,integration verification for test-all exit code
-  node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,unit regression for sandbox-linked test execution
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,360,full 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,240,integration verification for test-all exit code
+  node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,project,240,unit regression for sandbox-linked test execution
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and validation workflow
   PRD.md,project,authoritative exit-code contract

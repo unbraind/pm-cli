@@ -6,11 +6,27 @@ status: closed
 priority: 2
 tags[4]: perf,quality,sdk,session-2026-05-27
 created_at: "2026-05-27T16:46:49.712Z"
-updated_at: "2026-05-30T05:59:25.473Z"
+updated_at: "2026-07-26T17:26:19.054Z"
 author: maintainer-agent
+release: v2026.5.30
 resolution: "Implemented bundled startup path, agent-friendly get depth alias, package-source/install hardening, and regenerated changelog via pm-changelog."
 expected_result: "pm CLI remains package-first, agent-friendly, fast, extensible, calendar/search capable, and green under full release gates."
 actual_result: "Full release gate passed with 1979 tests at 100% coverage, required Sentry/telemetry gate ok, semantic temp-project dogfood ok, health ok, changelog check ok."
+dependencies[14]{id,kind,created_at,author,source_kind}:
+  pm-1b96,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-1lgy,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-1lws,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-407c,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-4d1b,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-4r5t,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-59gj,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-7by2,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-7ilo,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-8c2s,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-9r7z,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-bpaj,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-edge,related,"2026-07-26T17:26:18.811Z",null,null
+  pm-fl0c,related,"2026-07-26T17:26:18.811Z",null,null
 comments[23]{created_at,author,text}:
   "2026-05-27T18:34:27.792Z",maintainer-agent,"Opened PR #77 (perf/cache-health-drift-startup): metadata body-split cache, skip-unchanged cache writes, onRead short-circuit, cached with-body path (removed dead listAllDocuments), drift verification cache (health 8.4s->1.3s), and advisory telemetry health warnings (ok:false fix). Closes pm-4r5t + pm-1lgy. All local gates green: 1852 tests, 100% coverage, typecheck, static/docs-skills, secrets, changelog. Awaiting CI + AI bot review."
   "2026-05-27T19:08:33.696Z",maintainer-agent,"PR #77 merged to main (merge commit 3a85a060) after full green CI (build, compat/smokes/static/typecheck/coverage gates, runtime matrix macos+ubuntu Node 20/22/24) and AI bot review. Addressed CodeRabbit+Codex P2 findings in follow-up 42cfead6: drift-cache key now includes ctime_ms; --strict-exit help clarified (gates on ok, advisory telemetry excluded); onRead hook warnings surfaced. Sourcery was rate-limited (non-blocking). Shipped: pm list 401->310ms, pm health 8.4s->1.3s, health ok:true. Closed pm-4r5t + pm-1lgy; follow-ups pm-edge/xzrx/7ilo/1b96/fl0c remain open under this epic."
@@ -65,18 +81,18 @@ files[29]{path,scope,note}:
   tests/unit/error-guidance.spec.ts,project,Allowed-value guidance covers get depth full alias
   tests/unit/extension-command.spec.ts,project,Extension install and package-source regression coverage
   tests/unit/get-append-command.spec.ts,project,Regression for get --depth full alias
-tests[12]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "mise exec node@20 -- pnpm dogfood:package-first",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  "mise exec node@20 -- pnpm smoke:npx",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/drift-scan.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/drift-scan.spec.ts -t 'detects broken chains',null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts -t 'installs runtime dependencies for packed npm package extensions|normalizes npm file-alias package specs|resolves existing cwd-relative npm package specs',null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  pm health --check-only --json,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  "PM_DOGFOOD_SEMANTIC=1 PM_OLLAMA_MODEL=qwen3-embedding:0.6b node scripts/dogfood-package-first.mjs",null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+tests[12]{command,scope,timeout_seconds}:
+  "mise exec node@20 -- pnpm dogfood:package-first",project,600
+  "mise exec node@20 -- pnpm smoke:npx",project,600
+  node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,project,1800
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/drift-scan.spec.ts,project,900
+  node scripts/run-tests.mjs test -- tests/unit/drift-scan.spec.ts -t 'detects broken chains',project,300
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts -t 'installs runtime dependencies for packed npm package extensions|normalizes npm file-alias package specs|resolves existing cwd-relative npm package specs',project,600
+  node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts,project,600
+  pm health --check-only --json,project,600
+  "PM_DOGFOOD_SEMANTIC=1 PM_OLLAMA_MODEL=qwen3-embedding:0.6b node scripts/dogfood-package-first.mjs",project,900
+  pnpm build,project,300
+  "pnpm changelog:pm:check",project,600
+  pnpm typecheck,project,300
 close_reason: "Audit and optimization session completed: agent-UX aliasing, Windows nightly fixes, package install hardening, esbuild startup bundling, semantic dogfood, telemetry/Sentry validation, health, changelog, and full release gates all passed."
 body: ""

@@ -6,12 +6,16 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-18T00:15:12.340Z"
-updated_at: "2026-06-18T06:04:29.073Z"
+updated_at: "2026-07-26T17:07:55.859Z"
 author: codex-audit-agent
 parent: pm-mpbb
+release: v2026.6.19
 resolution: "Auto-unblock, lifecycle logical-cycle detection, read-command format parity, and orphaned path diagnostics implemented with SDK contracts/docs/tests."
 expected_result: pm CLI provides safer lifecycle/context primitives and consistent agent-readable read output contracts.
 actual_result: "Targeted tests, full coverage, manual temp smoke, contracts, changelog, audit, telemetry, and Sentry gate passed."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:07:55.600Z",null,null
+  pm-x7g1,related,"2026-07-26T17:07:55.600Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-18T00:15:19.785Z",codex-audit-agent,"Audit evidence: gh issue list on 2026-06-18 showed #267, #271, and #272 still open after #268-#270 were fixed in pm-x7g1. Deferred from PR #266 because #267 changes lifecycle automation, #271 needs a robust dependency/reference model beyond substring parsing of definition_of_ready text, and #272 changes read-command output contracts. Keep as canonical pm follow-up before creating any duplicate items."
   "2026-06-18T04:54:50.530Z",codex-sdk-cli-continuation,"Orientation evidence: bootstrap passed (npm install -g ., pm 2026.6.17, node v25.9.0, pnpm 10.33.4, pnpm build); gh pr list found no open PRs; gh issue list showed open #267/#271/#272/#273 plus older backlog; pnpm audit --audit-level moderate found no known vulnerabilities; pnpm outdated --recursive failed only because docs/examples/policy-restricted-extension has no lockfile. Duplicate check: pm search found pm-8uhf canonical for #267/#271/#272 and no open #273-specific item, so GH #273 is tracked here as adjacent validate UX."
@@ -26,17 +30,17 @@ files[8]{path,scope,note}:
   tests/unit/cli/register-list-query.spec.ts,project,Read --format regression coverage
   tests/unit/commands/close-command.spec.ts,project,Auto-unblock regression coverage
   tests/unit/commands/validate-command.spec.ts,project,Lifecycle cycle and orphaned path regression coverage
-tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "manual temp-dir smoke: init/create/update/close auto-unblock/get --format json/validate lifecycle cycle/validate orphan rows/search --format json",null,project,60,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/sentry-telemetry-gate.mjs --max-critical 0 --max-high 0,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/close-command.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level moderate,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:update",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+tests[10]{command,scope,timeout_seconds}:
+  "manual temp-dir smoke: init/create/update/close auto-unblock/get --format json/validate lifecycle cycle/validate orphan rows/search --format json",project,60
+  node scripts/release/sentry-telemetry-gate.mjs --max-critical 0 --max-high 0,project,120
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts tests/unit/commands/close-command.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/commands/validate-command.spec.ts,project,180
+  pnpm audit --audit-level moderate,project,120
+  pnpm build,project,120
+  "pnpm changelog:pm:check",project,120
+  "pnpm contracts:check",project,120
+  "pnpm contracts:update",project,120
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,"Document read --format,auto-unblock,lifecycle cycle,and orphaned path diagnostics"
 close_reason: "Implemented GH #267/#271/#272 plus adjacent GH #273 validate orphan diagnostics; verified build, contracts, 100/100/100/100 coverage, manual temp smoke, changelog, audit, telemetry, and Sentry gate."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: adr,agent-ux,"area:sdk",author,governance,identity,provenance
 created_at: "2026-07-25T12:24:02.830Z"
-updated_at: "2026-07-26T11:28:28.522Z"
+updated_at: "2026-07-26T17:24:25.181Z"
 closed_at: "2026-07-25T20:06:39.645Z"
 author: "harness:claude-code"
 estimated_minutes: 180
@@ -20,10 +20,11 @@ why_now: Model capture is about to be implemented; identity fields are append-on
 parent: pm-m2u1
 risk: medium
 confidence: 75
+release: v2026.7.26
 resolution: Accepted durable identity is stable author plus optional harness/model/model-source; session signals remain transient and non-serializable.
 expected_result: "A written, privacy-bounded, backward-compatible identity decision governs SDK, CLI, MCP, history, and telemetry."
 actual_result: "ADR amended and implemented; raw branch-local session fields were scrubbed and all 2,028 history streams verify without drift."
-dependencies[11]{id,kind,created_at,author,source_kind}:
+dependencies[13]{id,kind,created_at,author,source_kind}:
   pm-33cw,related,"2026-07-25T12:24:02.830Z",null,null
   pm-42p9nk,related,"2026-07-25T12:24:02.830Z",null,null
   pm-u14c,related,"2026-07-25T12:24:02.830Z",null,null
@@ -35,6 +36,8 @@ dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-gw6uyq,related,"2026-07-25T12:34:57.387Z",null,null
   pm-j82fd3,related,"2026-07-25T12:34:57.387Z",null,null
   pm-szv11n,related,"2026-07-25T12:34:57.387Z",null,null
+  pm-m2u1,implements,"2026-07-26T17:24:24.930Z",null,null
+  pm-z8qd4k,related,"2026-07-26T17:24:24.930Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-25T18:18:16.583Z","harness:codex","Implementation start: active in the cohesive automatic identity platform PR spanning the identity ADR, structured SDK provenance, precedence-safe observation, declarative harness registry, MCP/plugin configuration, and token-minimal help guidance. Duplicate check covered all 2,028 tracker items and live GitHub reports; no new item created."
   "2026-07-25T19:14:50.527Z","harness:codex","Implementation evidence: accepted agent identity ADR is now embodied in shared SDK/runtime contracts. History records author_source independently from observed agent_harness, agent_model, agent_model_source, and local-only transient_session_signal. Telemetry emits only presence at minimal capture and installation-keyed harness/model hashes plus fixed model-source enums at redacted/max; session is never emitted. Verification: 6,376 tests passed with 100/100/100/100 coverage, strict 100% docstring/static/API/token gates passed, secret scan clean, packed isolated acceptance passed."

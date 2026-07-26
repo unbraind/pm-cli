@@ -6,13 +6,16 @@ status: closed
 priority: 1
 tags[4]: cache,ci,performance,pm-cli
 created_at: "2026-05-16T22:07:50.563Z"
-updated_at: "2026-05-17T11:30:59.931Z"
+updated_at: "2026-07-26T17:01:22.307Z"
 author: maintainer-agent
 acceptance_criteria: "actions/cache restores .tsbuildinfo and vitest cache on warm runs; tsconfig has incremental:true; second consecutive CI run measurably faster than first; cache key invalidates on lockfile or source changes."
 parent: pm-tzwy
+release: v2026.5.18
 resolution: Validation workflows restore TypeScript and Vitest caches with deterministic keys and restore-keys.
 expected_result: Warm CI runs reuse .cache/tsbuildinfo and .cache/vitest safely for faster incremental validation.
 actual_result: Cache steps are present across CI/nightly/release/auto-release with contract coverage and green main evidence.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-tzwy,implements,"2026-07-26T17:01:21.961Z",null,null
 comments[7]{created_at,author,text}:
   "2026-05-17T00:14:26.274Z",codex-agent,"Evidence 2026-05-17: implemented free-tier CI validation caches using pinned actions/cache@v5 for CI, nightly, release, and auto-release validation paths; TypeScript now writes incremental build info to .cache/tsbuildinfo and Vitest cache uses .cache/vitest with .cache ignored. Verification passed: pnpm build, pnpm typecheck, focused CI workflow contract test (4 tests), pm test pm-1pah --run with sandboxed 48-command dogfood, static quality, secret scan, and full release gate with 93 files / 1316 tests at 100 percent coverage. Sentry/telemetry gate passed with Sentry critical/high/total 0 and telemetry finish_error_rate_pct 2.27, missing error-code rows 0."
   "2026-05-17T00:14:51.628Z",codex-agent,"Tracker hygiene note 2026-05-17: after concurrent evidence mutations, health briefly reported pm-1pah history drift and stale vector. Adding this serialized mutation after the full gate and refresh-vector check to restore a clean latest hash anchor before final validation."
@@ -36,14 +39,14 @@ files[14]{path,scope,note}:
   tests/integration/release-automation-contract.spec.ts,project,build script contract coverage
   package.json,project,build script guards cached incremental output and bin modes
   tests/integration/release-readiness-runtime.spec.ts,project,release readiness build script coverage
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mp90pxlc-io7j99,test,passed,"2026-05-17T00:09:04.612Z","2026-05-17T00:09:34.032Z","2026-05-17T00:09:34.032Z",null,null,3,0,0,null,null,null
-  test-local-mp912713-fw2qdk,test,passed,"2026-05-17T00:18:27.606Z","2026-05-17T00:19:06.135Z","2026-05-17T00:19:06.135Z",null,null,3,0,0,null,null,null
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/dogfood-package-first.mjs,project,300
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600
+  pnpm typecheck,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mp90pxlc-io7j99,test,passed,"2026-05-17T00:09:04.612Z","2026-05-17T00:09:34.032Z","2026-05-17T00:09:34.032Z",3,0,0
+  test-local-mp912713-fw2qdk,test,passed,"2026-05-17T00:18:27.606Z","2026-05-17T00:19:06.135Z","2026-05-17T00:19:06.135Z",3,0,0
 docs[1]{path,scope,note}:
   CONTRIBUTING.md,project,CI workflow behavior remains documented from parent optimization
 close_reason: Incremental TypeScript/Vitest cache strategy is implemented across workflows with regression coverage and green main CI evidence; acceptance criteria met.

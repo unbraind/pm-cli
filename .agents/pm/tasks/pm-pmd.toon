@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-keyword",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.065Z"
-updated_at: "2026-05-17T08:22:35.619Z"
+updated_at: "2026-07-26T17:23:12.644Z"
 deadline: "2026-04-15T11:57:42.084Z"
 author: steve
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-54d
 blocked_reason: "M4: Keyword indexing and search command has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4: Keyword indexing and search command is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,9 +40,10 @@ fixed_version: archive-2026q2
 component: project-management/keyword-indexing-and-search-command
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Keyword indexing and search command.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-54d,blocks,"2026-02-17T23:02:10.065Z",steve,null
   pm-f45,parent,"2026-02-17T23:02:10.065Z",steve,null
+  pm-f45,implements,"2026-07-26T17:23:12.392Z",null,null
 comments[7]{created_at,author,text}:
   "2026-02-18T18:03:38.258Z",cursor-maintainer,"Plan: docs-first update PRD/README to move keyword search from roadmap to implemented, then add deterministic keyword search command with ranking and tests before running linked pm test + pm test-all."
   "2026-02-18T18:04:43.179Z",cursor-maintainer,"Docs-first update complete: README and PRD now declare pm search keyword mode in implemented command surface, while semantic/hybrid, reindex, close, and delete remain roadmap work."
@@ -70,10 +71,10 @@ files[13]{path,scope,note}:
   tests/unit/search-command.spec.ts,project,Search ranking and corpus coverage tests
   tests/unit/structure-exports.spec.ts,project,Ensure runSearch is exported from command index
   vitest.config.ts,project,Include search command in strict 100 percent coverage gate
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Sandboxed full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Targeted sandboxed search unit tests
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/completion-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,issue12 tag suggestion regressions
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,Sandboxed full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,300,Targeted sandboxed search unit tests
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/completion-command.spec.ts,project,3600,issue12 tag suggestion regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,Dogfood workflow rules
   PRD.md,project,Authoritative product contract

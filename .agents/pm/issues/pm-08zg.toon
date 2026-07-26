@@ -6,14 +6,18 @@ status: closed
 priority: 1
 tags[3]: filtering,list,pm-cli
 created_at: "2026-04-06T09:49:00.487Z"
-updated_at: "2026-04-25T11:03:47.417Z"
+updated_at: "2026-07-26T16:59:52.486Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-v7o7
+release: v2026.5.1
 resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
 expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
 actual_result: Resolution metadata fields were backfilled without altering closure intent.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-jlsh,related,"2026-07-26T16:59:52.302Z",null,null
+  pm-v7o7,implements,"2026-07-26T16:59:52.302Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-06T09:49:00.487Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
 close_reason: resolved by parent filter support in list/list-* via task pm-jlsh

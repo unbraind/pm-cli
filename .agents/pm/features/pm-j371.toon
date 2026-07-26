@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:files","area:validation",audit,governance,pm-cli
 created_at: "2026-04-03T20:57:28.175Z"
-updated_at: "2026-04-04T21:34:05.008Z"
+updated_at: "2026-07-26T17:17:12.633Z"
 deadline: "2026-04-12T20:57:28.175Z"
 author: codex-agent
 estimated_minutes: 240
@@ -19,6 +19,7 @@ impact: "Reduces ambiguity and handoff risk for future work touching Issue1: val
 outcome: "This record can be used as canonical context when modifying Issue1: validate check-files full tracked scan mode."
 why_now: "Historical decisions for Issue1: validate check-files full tracked scan mode need durable context for future maintenance and audits."
 parent: pm-r7t2
+release: v2026.5.1
 blocked_reason: "Issue1: validate check-files full tracked scan mode has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Issue1: validate check-files full tracked scan mode is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: "Project workspace execution context for Issue1: validate check-files full tracked scan mode (pm CLI + Node/pnpm toolchain)."
@@ -27,8 +28,10 @@ expected_result: "Acceptance criteria for Issue1: validate check-files full trac
 actual_result: "Work completed and recorded with linked artifacts for Issue1: validate check-files full tracked scan mode."
 component: project-management/issue1-validate-check-files-full-tracked-scan-mo
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Issue1: validate check-files full tracked scan mode."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-r7t2,parent,"2026-04-03T20:57:28.175Z",codex-agent,null
+  pm-a228,related,"2026-07-26T17:17:12.448Z",null,null
+  pm-r7t2,implements,"2026-07-26T17:17:12.448Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T20:57:28.175Z",codex-agent,"Net-new scope after dedupe: validate check-files needs full tracked scan mode and explicit totals."
   "2026-04-03T21:59:36.647Z",codex-agent,"External issue report reproduced in current repo: validate --check-files --scan-mode tracked-all orphaned output is dominated by .agents/pm internals. Tracking additive remediation in new child task."
@@ -39,8 +42,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-03T20:57:28.175Z",codex-agent,Governance checks need transparent candidate accounting to avoid false confidence.
 files[1]{path,scope,note}:
   src/cli/commands/validate.ts,project,primary implementation surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,validate scan regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,project,3600,validate scan regression
 docs[1]{path,scope,note}:
   README.md,project,validate command behavior docs
 close_reason: Follow-up child task pm-a228 closed with validated tracked-all PM-internal filtering improvements.

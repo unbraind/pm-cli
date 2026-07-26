@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags: []
 created_at: "2026-07-14T21:48:02.061Z"
-updated_at: "2026-07-14T22:46:17.432Z"
+updated_at: "2026-07-26T17:02:50.843Z"
 closed_at: "2026-07-14T22:46:17.431Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,12 +14,14 @@ acceptance_criteria: "DeepSource activated and green on main (JavaScript+Secrets
 parent: pm-92if
 risk: low
 confidence: medium
+release: v2026.7.15
 resolution: completed
 expected_result: Free-OSS analyzer configs shipped with documented activation; analyzers reporting on PRs
 actual_result: "DeepSource activated by maintainer and green on main (JavaScript, Secrets, auto-added Shell); DeepScan already active with exclusions committed and README grade badge; Scrutinizer dropped by explicit maintainer decision after its build image (glibc < 2.27) proved incompatible with any Node >=18 — config and badge removed"
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4ris,related,"2026-07-14T21:48:02.061Z",null,null
   pm-yh6t,related,"2026-07-14T21:48:02.061Z",null,null
+  pm-92if,implements,"2026-07-26T17:02:50.598Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-14T21:55:57.900Z",maintainer-agent,"Implementation: .deepsource.toml (javascript analyzer environment=nodejs + secrets analyzer; exclude dist/coverage/.agents/.tmp/docs-examples; test_patterns tests/benchmarks/spec/bench), .deepscan.json exclusions (DeepScan app already active — team 30234 / project 32092 / branch 1043829, badge added to README), .scrutinizer.yml (javascript checks, node v22, js-scrutinizer-run analysis node). ACTIVATION (maintainer, both free for OSS): DeepSource → app.deepsource.com, sign in with GitHub, activate unbraind/pm-cli (Starter plan, free for open source) — config auto-detected; Scrutinizer → scrutinizer-ci.com, add unbraind/pm-cli as Open Source (free) — .scrutinizer.yml auto-detected. Badges for these two can follow activation."
   "2026-07-14T22:23:05.683Z",maintainer-agent,"Activation reconcile: maintainer activated BOTH services 2026-07-14. DeepSource fully green on main d062b573 — three analyzers reporting commit statuses (JavaScript, Secrets, and auto-added Shell), 'Analysis passed: no blocking issues'. Scrutinizer connected but first inspection ERRORED (analysis + tests both): the effective config via the public API is the add-repo wizard preset, not the repo .scrutinizer.yml — it defines a bare 'tests: true' node and inferred npm dependency install, which cannot work on Scrutinizer's build image for a pnpm/Node>=22.18 repo. Fix pushed: repo config made self-sufficient — analysis node skips dependency install ('true' no-op override) and runs js-scrutinizer-run only; wizard's tests node stubbed to a green no-op (real tests live in GitHub Actions). Scrutinizer quality badge added to README. Maintainer follow-up (optional cleanup): clear the dashboard Settings→Configuration field so .scrutinizer.yml is the single source of truth, then the tests-node stub can be dropped. DeepSource badge needs the dashboard badge token (Settings→Badges) — grab it there if wanted in README."

@@ -6,20 +6,24 @@ status: closed
 priority: 3
 tags[3]: agent-ux,dogfood,mcp
 created_at: "2026-06-11T22:13:41.473Z"
-updated_at: "2026-06-11T22:42:05.186Z"
+updated_at: "2026-07-26T17:28:39.619Z"
 author: cli-fixes-agent
 parent: pm-mpbb
+release: v2026.6.12
 resolution: implemented
 expected_result: MCP pm_files discover/apply/discoveryNote parameters perform file discovery and apply discovered links through the narrow MCP tool.
 actual_result: "pm_files discover=true now routes to runFilesDiscover, maps discoveryNote to note, preserves normal runFiles behavior, and passes MCP integration plus temp-project smoke."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:28:39.346Z",null,null
+  pm-pfnx,related,"2026-07-26T17:28:39.346Z",null,null
 comments[2]{created_at,author,text}:
   "2026-06-11T22:34:40.599Z",codex-sdk-cli-continuation,"Evidence: fixed narrow MCP pm_files discover/apply dispatch; focused MCP handshake regression passed (19 tests)."
   "2026-06-11T22:39:15.765Z",codex-sdk-cli-continuation,"Manual temp smoke: fresh temp project with isolated PM_GLOBAL_PATH passed init --type-preset agile, create, files --note, MCP pm_files discover/apply with discoveryNote, validate --check-files, and health --check-only --summary (health ok, warning_count 0)."
 files[2]{path,scope,note}:
   src/mcp/server.ts,project,route narrow pm_files discover=true to runFilesDiscover and map discoveryNote to note
   tests/integration/mcp-handshake.spec.ts,project,MCP tools/call regression for pm_files discovery apply path
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "manual temp smoke: init/create/files --note/MCP pm_files discover apply/validate/health",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[2]{command,scope,timeout_seconds}:
+  "manual temp smoke: init/create/files --note/MCP pm_files discover apply/validate/health",project,240
+  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,project,240
 close_reason: "Fixed MCP pm_files discover/apply dispatch by routing discover=true to runFilesDiscover, mapping discoveryNote to note, preserving normal file link behavior, and verifying with MCP integration test plus fresh temp-project smoke."
 body: ""

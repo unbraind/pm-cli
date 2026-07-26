@@ -6,8 +6,11 @@ status: closed
 priority: 3
 tags[3]: backlog,cli,ux
 created_at: "2026-06-10T09:00:58.047Z"
-updated_at: "2026-06-14T12:12:47.778Z"
+updated_at: "2026-07-26T17:14:27.332Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: v2026.6.16
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:14:27.084Z",null,null
 close_reason: "Verified already shipped (commit 4014ea69, unreleased): pm get on Milestone/Epic returns children {count,active,by_status}; calendar warning suggests pm update --deadline; pm aggregate --parent works. GH-155."
 body: ""

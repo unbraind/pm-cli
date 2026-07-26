@@ -6,8 +6,13 @@ status: closed
 priority: 0
 tags[2]: performance,startup
 created_at: "2026-05-16T15:07:08.622Z"
-updated_at: "2026-05-26T22:58:23.413Z"
+updated_at: "2026-07-26T17:14:49.943Z"
 author: claude-code-agent
+release: v2026.5.27
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-p7av,related,"2026-07-26T17:14:49.727Z",null,null
+  pm-rnpb,related,"2026-07-26T17:14:49.727Z",null,null
+  pm-xk39,related,"2026-07-26T17:14:49.727Z",null,null
 comments[32]{created_at,author,text}:
   "2026-05-16T16:48:23.232Z",codex-agent,"Audit update 2026-05-16: latest isolated dogfood after init --with-packages passed 44 workflows; slowest normal commands were create 753ms, comments 683ms, package wildcard 634ms, notes/docs/learnings/get brief around 560-600ms. Release gate is green, but sub-200ms startup remains the largest remaining perceived-speed opportunity."
   "2026-05-16T16:59:45.913Z",codex-audit,"Implementation update: adding a build-time bundled dist/cli.js path for the pm binary while keeping SDK/module exports emitted by tsc. Package-root resolution is being made independent of unbundled dist/cli/** module paths so package discovery, guide docs, upgrade version reads, telemetry flush, and Sentry release tagging continue to work from the bundled entrypoint."
@@ -59,18 +64,41 @@ files[12]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,telemetry flush runner root resolution
   tests/integration/release-readiness-runtime.spec.ts,project,version/root coverage contract
   tests/unit/settings-validator.spec.ts,project,regression coverage for finite and safe-integer validation
-tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "node --input-type=module -e \"import { spawnSync } from 'node:child_process'; const cases=[['help',['--help']],['list',['list-open','--limit','1','--json']],['get',['get','pm-gt82','--depth','brief','--json']],['contracts',['contracts','--command','list-open','--flags-only','--json']]]; const run=(args)=>{const t=Date.now(); spawnSync(process.execPath,['dist/cli.js',...args],{encoding:'utf8'}); return Date.now()-t;}; const stats=(arr)=>{const sorted=[...arr].sort((a,b)=>a-b); const avg=arr.reduce((a,b)=>a+b,0)/arr.length; const mid=Math.floor(sorted.length/2); const median=sorted.length%2===0 ? (sorted[mid-1]+sorted[mid])/2 : sorted[mid]; return {min:sorted[0],median,avg:Number(avg.toFixed(1)),max:sorted[sorted.length-1]};}; const out={}; for (const [name,args] of cases){const normal=[]; const noext=[]; for(let i=0;i<20;i++){normal.push(run(args)); noext.push(run(['--no-extensions',...args]));} out[name]={normal:stats(normal),no_extensions:stats(noext)};} console.log(JSON.stringify(out,null,2));\"",null,project,600,null,null,null,null,null,null,null,null,null,null,null,startup timing probe for help/list/get/contracts
-  node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project package-first dogfood
-  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full release gate with telemetry and sentry required
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/cli.integration.spec.ts tests/unit/contracts-command.spec.ts tests/unit/list-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,focused startup regressions
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/settings-validator.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused validator regression test
-  PM_DOGFOOD_SEMANTIC=1 node scripts/dogfood-package-first.mjs,null,project,600,null,null,null,null,null,null,null,null,null,null,null,isolated semantic hybrid dogfood
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts --reporter=dot,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused release-readiness regression for startup bootstrap
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mp8lnyio-0qq3g4,test,passed,"2026-05-16T17:07:21.171Z","2026-05-16T17:08:07.680Z","2026-05-16T17:08:07.680Z",null,null,1,0,0,null,null,null
-  test-local-mph4xiq8-jlp467,test,passed,"2026-05-22T16:22:28.206Z","2026-05-22T16:29:35.889Z","2026-05-22T16:29:35.889Z",null,null,6,0,0,null,null,null
-  test-local-mpi8dn40-s2fcer,test,failed,"2026-05-23T10:47:37.266Z","2026-05-23T10:53:53.088Z","2026-05-23T10:53:53.088Z",null,null,6,1,0,null,null,null
+tests[8]:
+  - command: "node --input-type=module -e \"import { spawnSync } from 'node:child_process'; const cases=[['help',['--help']],['list',['list-open','--limit','1','--json']],['get',['get','pm-gt82','--depth','brief','--json']],['contracts',['contracts','--command','list-open','--flags-only','--json']]]; const run=(args)=>{const t=Date.now(); spawnSync(process.execPath,['dist/cli.js',...args],{encoding:'utf8'}); return Date.now()-t;}; const stats=(arr)=>{const sorted=[...arr].sort((a,b)=>a-b); const avg=arr.reduce((a,b)=>a+b,0)/arr.length; const mid=Math.floor(sorted.length/2); const median=sorted.length%2===0 ? (sorted[mid-1]+sorted[mid])/2 : sorted[mid]; return {min:sorted[0],median,avg:Number(avg.toFixed(1)),max:sorted[sorted.length-1]};}; const out={}; for (const [name,args] of cases){const normal=[]; const noext=[]; for(let i=0;i<20;i++){normal.push(run(args)); noext.push(run(['--no-extensions',...args]));} out[name]={normal:stats(normal),no_extensions:stats(noext)};} console.log(JSON.stringify(out,null,2));\""
+    scope: project
+    timeout_seconds: 600
+    note: startup timing probe for help/list/get/contracts
+  - command: node scripts/dogfood-package-first.mjs
+    scope: project
+    timeout_seconds: 300
+    note: isolated temp-project package-first dogfood
+  - command: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json
+    scope: project
+    timeout_seconds: 2400
+    note: full release gate with telemetry and sentry required
+  - command: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/cli.integration.spec.ts tests/unit/contracts-command.spec.ts tests/unit/list-command.spec.ts
+    scope: project
+    timeout_seconds: 1200
+    note: focused startup regressions
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/settings-validator.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: focused validator regression test
+  - command: PM_DOGFOOD_SEMANTIC=1 node scripts/dogfood-package-first.mjs
+    scope: project
+    timeout_seconds: 600
+    note: isolated semantic hybrid dogfood
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 900
+    note: focused release-readiness regression for startup bootstrap
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mp8lnyio-0qq3g4,test,passed,"2026-05-16T17:07:21.171Z","2026-05-16T17:08:07.680Z","2026-05-16T17:08:07.680Z",1,0,0
+  test-local-mph4xiq8-jlp467,test,passed,"2026-05-22T16:22:28.206Z","2026-05-22T16:29:35.889Z","2026-05-22T16:29:35.889Z",6,0,0
+  test-local-mpi8dn40-s2fcer,test,failed,"2026-05-23T10:47:37.266Z","2026-05-23T10:53:53.088Z","2026-05-23T10:53:53.088Z",6,1,0
 close_reason: Merged bounded startup optimization and regression verification in PR #75.
 body: "Current: pm list ~890ms, pm context ~1.5s, pm health ~2.1s even with --skip-*. Root: 126+ unbundled ESM files loaded per invocation. Fix: add esbuild bundle step alongside tsc. Expected improvement: 5-10x."

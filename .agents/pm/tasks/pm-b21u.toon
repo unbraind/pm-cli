@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:contracts","area:error","area:help","area:schema",implementation,pm-cli
 created_at: "2026-04-03T15:42:04.739Z"
-updated_at: "2026-05-17T08:21:33.393Z"
+updated_at: "2026-07-26T17:09:49.650Z"
 deadline: "2026-04-10T15:42:04.739Z"
 author: codex-agent
 estimated_minutes: 480
@@ -19,6 +19,7 @@ impact: Reduces ambiguity and handoff risk for future work touching Execute Agen
 outcome: This record can be used as canonical context when modifying Execute Agent-First CLI UX v3 implementation.
 why_now: Historical decisions for Execute Agent-First CLI UX v3 implementation need durable context for future maintenance and audits.
 parent: pm-dqqa
+release: v2026.5.1
 blocked_reason: Execute Agent-First CLI UX v3 implementation has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Execute Agent-First CLI UX v3 implementation is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Execute Agent-First CLI UX v3 implementation (pm CLI + Node/pnpm toolchain).
@@ -27,8 +28,9 @@ expected_result: Acceptance criteria for Execute Agent-First CLI UX v3 implement
 actual_result: Work completed and recorded with linked artifacts for Execute Agent-First CLI UX v3 implementation.
 component: project-management/execute-agent-first-cli-ux-v3-implementation
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Execute Agent-First CLI UX v3 implementation.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-dqqa,parent,"2026-04-03T15:42:04.739Z",codex-agent,null
+  pm-dqqa,implements,"2026-07-26T17:09:49.453Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-03T15:42:04.739Z",codex-agent,Task created and ready to claim for implementation.
   "2026-04-03T15:42:13.574Z",codex-agent,"Implementation started: working through help semantics, JSON help surfaces, contracts command, schema v4, and context-aware diagnostics."
@@ -46,11 +48,11 @@ files[7]{path,scope,note}:
   src/cli/help-content.ts,project,help model and rendering
   src/cli/main.ts,project,"help routing,command registration,and error dispatch"
   src/sdk/cli-contracts.ts,project,schema v4 and action metadata
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full sandbox coverage suite
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full sandbox test suite
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,targeted suites
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,targeted regression suite
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,full sandbox coverage suite
+  node scripts/run-tests.mjs test,project,7200,full sandbox test suite
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts,project,7200,targeted suites
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,targeted regression suite
 docs[5]{path,scope,note}:
   CHANGELOG.md,project,unreleased release notes for UX v3
   docs/ARCHITECTURE.md,project,internal pipeline and source tree updates

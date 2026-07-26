@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: ci,release,telemetry
 created_at: "2026-07-12T06:09:21.399Z"
-updated_at: "2026-07-14T00:29:22.838Z"
+updated_at: "2026-07-26T17:28:43.400Z"
 closed_at: "2026-07-14T00:29:22.156Z"
 author: maintainer-agent
 estimated_minutes: 150
@@ -14,11 +14,13 @@ acceptance_criteria: Build emits a chunk manifest; boot-time resolution failures
 parent: pm-u9d0
 risk: medium
 confidence: high
+release: v2026.7.14
 resolution: "Added an atomic SHA-256 bundle generation manifest, startup integrity diagnosis with bundle_integrity_torn_install, exact-code release-gate classification, and intact-manifest fail-closed behavior."
 expected_result: Only manifest-proven partial upgrades receive a handled reinstall diagnostic; genuine missing-module/export regressions keep blocking releases.
 actual_result: "Manifest generation, changed/missing/hash-invalid classification, genuine-error blocking, packed install, and live Sentry gate paths all pass."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-12T06:09:21.399Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:28:42.801Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-12T15:41:03.738Z",maintainer-agent,"Live reliability evidence 2026-07-12: PM-CLI-10 remains the second 14-day Sentry gate blocker; latest event is handled=true ERR_MODULE_NOT_FOUND from the operator host on release 2026.7.12 and matches this item's torn-install signature. Current build/packed-consumer and 10k/100k performance dogfood do not reproduce it. Resolving the already-triaged event group pending this item's distinct bundle-integrity code fix; genuine module failures remain blocking by design."
   "2026-07-12T18:10:50.205Z",maintainer-agent,"Live recurrence 2026-07-12 17:27Z: PM-CLI-26 count is now 2. Latest handled production event on release pm-cli@2026.7.12 reports stale chunk-BVCWZQR4.js missing createStdinTokenResolver; the earlier event used a different stale chunk/export. This strengthens the canonical torn-generation diagnosis and acceptance criteria; no duplicate item created. Current build, full 5588-test coverage, installed-package dogfood, and strict 10k benchmark do not reproduce it. Resolving the observed group pending the distinct bundle-integrity code implementation; genuine module failures remain gate-blocking."

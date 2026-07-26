@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: ci,cross-platform,github-actions,pm-cli,tests
 created_at: "2026-04-03T17:25:23.654Z"
-updated_at: "2026-04-04T21:35:22.269Z"
+updated_at: "2026-07-26T17:25:45.111Z"
 deadline: "2026-04-10T17:25:23.654Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: 2026-w14
-release: vnext
+release: v2026.5.1
 blocked_reason: Fix cross-platform CI regressions surfaced by GitHub checks has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Fix cross-platform CI regressions surfaced by GitHub checks is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -39,6 +39,8 @@ fixed_version: target-vnext
 component: ci-cross-platform
 regression: true
 customer_impact: Users and contributors are blocked by inconsistent CI failures
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-i7w2,implements,"2026-07-26T17:25:44.821Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T17:25:23.654Z",codex-agent,Created from gh run evidence showing platform-specific failures in Test step.
   "2026-04-03T17:46:31.228Z",codex-agent,"Implemented cross-platform fixes (macOS path canonicalization assertions, Windows-safe hook path expectation, linked-test exit-code normalization) and verified with targeted + full suites."
@@ -46,8 +48,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T17:25:23.654Z",codex-agent,Prioritize deterministic path normalization and platform-safe assertions.
 files[1]{path,scope,note}:
   .github/workflows/ci.yml,project,matrix and failing lane context
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full suite baseline
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,full suite baseline
 docs[1]{path,scope,note}:
   README.md,project,testing and CI contract context
 close_reason: Cross-platform CI regressions fixed and verified across targeted and full test suites.

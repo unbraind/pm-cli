@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[2]: audit,session-2026-07-02
 created_at: "2026-07-02T21:26:41.769Z"
-updated_at: "2026-07-02T21:56:13.356Z"
+updated_at: "2026-07-26T17:22:43.919Z"
 author: unknown
 parent: pm-fpod
+release: v2026.7.3
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-fpod,implements,"2026-07-26T17:22:43.510Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-02T21:28:10.564Z",claude-code-agent,"Docs audit started: inventorying docs, link graph, freshness cross-checks."
   "2026-07-02T21:31:07.729Z",claude-code-agent,"Milestone: link graph built over 83 md files (root+docs+packages+plugins+.agents/skills). 0 broken relative links. Orphans from README: AGENTS.md, PRD.md, .agents/skills/*, 9/11 package READMEs. Stale found: README.md:66 claims 26 MCP tools (actual 28). 3 parallel freshness audits running (COMMANDS, SDK/EXTENSIONS, remaining docs)."

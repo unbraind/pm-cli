@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:calendar","area:output",code,pm-cli
 created_at: "2026-03-31T21:28:33.277Z"
-updated_at: "2026-04-27T17:44:22.752Z"
+updated_at: "2026-07-26T17:18:23.485Z"
 deadline: "2026-05-09T17:10:36.266Z"
 author: codex-agent
 estimated_minutes: 90
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 unblock_note: "If Follow-up: enhance calendar UX for agents and LLM parsing is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
@@ -38,10 +38,11 @@ fixed_version: vnext
 component: core/output
 regression: true
 customer_impact: Ensures human/agent-readable default output for calendar workflows.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-3aga,related,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-ezri,blocks,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-122q,parent,"2026-04-04T21:29:28.438Z",codex-agent,null
+  pm-o7be,implements,"2026-07-26T17:18:23.275Z",null,null
 comments[15]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Task created for markdown-default calendar output handling.
   "2026-03-31T21:45:12.525Z",codex-agent,Added calendar-specific markdown default rendering with explicit --format and --json override precedence checks.
@@ -73,13 +74,31 @@ files[8]{path,scope,note}:
   tests/unit/context-command.spec.ts,project,context agenda regression coverage alongside calendar output checks
   src/core/item/parse.ts,project,event CSV parse guidance now includes recurrence delimiter hint
   tests/unit/parse-utils.spec.ts,project,coverage for recurrence delimiter guidance in malformed --event payloads
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,calendar/context agent-format regression bundle
-  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,3000,null,null,null,null,null,null,null,null,null,null,null,calendar today alias and recurrence parse guidance regression bundle
-  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/unit/calendar-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,output behavior coverage
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:32.449Z","2026-04-04T21:10:32.449Z",null,null,1,0,0,1,1,null
-  test-local-mohhju1i-ykecx7,test,passed,"2026-04-27T17:42:03.126Z","2026-04-27T17:43:10.038Z","2026-04-27T17:43:10.038Z",null,null,3,0,0,null,null,null
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts,project,300,calendar/context agent-format regression bundle
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts tests/unit/parse-utils.spec.ts,project,3000,calendar today alias and recurrence parse guidance regression bundle
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/unit/calendar-command.spec.ts,project,1800,output behavior coverage
+test_runs[2]:
+  - run_id: test-all-local-mnktqphw-natg7c
+    kind: test-all
+    status: passed
+    started_at: "2026-04-04T21:08:02.324Z"
+    finished_at: "2026-04-04T21:10:32.449Z"
+    recorded_at: "2026-04-04T21:10:32.449Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+  - run_id: test-local-mohhju1i-ykecx7
+    kind: test
+    status: passed
+    started_at: "2026-04-27T17:42:03.126Z"
+    finished_at: "2026-04-27T17:43:10.038Z"
+    recorded_at: "2026-04-27T17:43:10.038Z"
+    passed: 3
+    failed: 0
+    skipped: 0
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,calendar ux release notes
   docs/ARCHITECTURE.md,project,calendar summary and markdown pipeline

@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[4]: coverage,docs,quality,source
 created_at: "2026-06-18T14:50:06.093Z"
-updated_at: "2026-06-18T16:01:44.232Z"
+updated_at: "2026-07-26T17:22:37.021Z"
 author: codex-gpt5
 parent: pm-u9d0
+release: v2026.6.19
 resolution: Implemented repo-wide static docstring coverage enforcement and closed after full verification.
 expected_result: "Every source file has module documentation, exported declarations are documented, boilerplate docstrings are rejected, and repository gates remain green."
 actual_result: "Static quality reports source_docstrings 218/218, exported_docstrings 1594/1594, boilerplate_docstrings empty; full coverage passed 100/100/100/100 and release-style gates passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-u9d0,implements,"2026-07-26T17:22:36.695Z",null,null
 comments[10]{created_at,author,text}:
   "2026-06-18T14:50:06.093Z",codex-gpt5,"Created from explicit 2026-06-18 user requirement: 100% Docstring Coverage repo wide for all source code files. No duplicate open item found by pm search before creation."
   "2026-06-18T14:55:04.273Z",codex-gpt5,"Scope correction from user: module-level source-file docstrings are insufficient. Continue pm-p4mw with AST-level docstring coverage for all source code function-like declarations and manual quality review requirements."
@@ -244,13 +247,13 @@ files[220]{path,scope,note}:
   src/sdk/testing.ts,project,Source files covered by repo-wide docstring coverage gate
   src/types.ts,project,Source files covered by repo-wide docstring coverage gate
   src/types/index.ts,project,Source files covered by repo-wide docstring coverage gate
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqjonkxa-zby950,test,failed,"2026-06-18T15:52:42.756Z","2026-06-18T15:56:59.182Z","2026-06-18T15:56:59.182Z",null,null,2,1,0,null,null,null
-  test-local-mqjot7yz-qlebsb,test,failed,"2026-06-18T15:57:27.765Z","2026-06-18T16:01:22.331Z","2026-06-18T16:01:22.331Z",null,null,0,1,0,null,null,null
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts,project,240
+  "pnpm quality:static",project,120
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqjonkxa-zby950,test,failed,"2026-06-18T15:52:42.756Z","2026-06-18T15:56:59.182Z","2026-06-18T15:56:59.182Z",2,1,0
+  test-local-mqjot7yz-qlebsb,test,failed,"2026-06-18T15:57:27.765Z","2026-06-18T16:01:22.331Z","2026-06-18T16:01:22.331Z",0,1,0
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,Document static docstring coverage gate
 close_reason: "PR #287 review feedback addressed: exported docstring coverage no longer attributes module docs to first exports, static gate scans top-level exports and boilerplate comments more efficiently, all newly exposed declarations have specific TSDoc, focused spec/static quality pass, and direct repo coverage is 100/100/100/100."

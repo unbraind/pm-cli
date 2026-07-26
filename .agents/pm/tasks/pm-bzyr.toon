@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:docs",code,pm-cli
 created_at: "2026-03-31T23:48:39.334Z"
-updated_at: "2026-04-05T02:20:00.973Z"
+updated_at: "2026-07-26T17:10:46.644Z"
 deadline: "2026-04-13T11:57:36.591Z"
 author: codex-agent
 estimated_minutes: 140
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-b3id
 blocked_reason: Improve required option error/help guidance with examples has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Improve required option error/help guidance with examples is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: archive-2026q2
 component: cli/main
 regression: true
 customer_impact: Clearer help and fewer failed command retries
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b3id,parent,"2026-03-31T23:48:39.334Z",codex-agent,null
+  pm-b3id,implements,"2026-07-26T17:10:46.455Z",null,null
 comments[9]{created_at,author,text}:
   "2026-03-31T23:48:39.334Z",codex-agent,Task created for required option UX improvements.
   "2026-04-01T00:28:01.016Z",codex-agent,"Improved missing --type usage guidance with rationale, active allowed values, and examples; updated user-facing docs for custom types/options."
@@ -66,9 +67,9 @@ files[8]{path,scope,note}:
   src/cli/main.ts,project,usage error handling
   tests/integration/help-runtime.spec.ts,project,integration guidance assertions
   tests/unit/create-command.spec.ts,project,unit regression for aggregate errors
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/create-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,required option guidance regression
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,issue1 aggregate required-option regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/create-command.spec.ts,project,2400,required option guidance regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts,project,3600,issue1 aggregate required-option regression
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased issue1 notes
   PRD.md,project,create validation contract

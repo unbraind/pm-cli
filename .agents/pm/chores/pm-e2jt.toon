@@ -6,8 +6,11 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-16T06:55:47.669Z"
-updated_at: "2026-06-16T07:23:52.646Z"
+updated_at: "2026-07-26T17:12:31.729Z"
 author: claude-code-agent
+release: v2026.6.16
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-xau3,related,"2026-07-26T17:12:31.540Z",null,null
 comments[8]{created_at,author,text}:
   "2026-06-16T06:55:57.208Z",claude-code-agent,"RISKY-1 (highest) src/core/schema/runtime-schema.ts:687-689 resolveRuntimeStatusRegistry. Changed open_status/close_status/canceled_status from 'openStatus ?? definitions[0]?.id ?? \"open\"' to 'openStatus as string'. preferredStatusForRole (line 618) returns 'definitions[0]?.id' which is undefined when definitions is empty. normalizeRuntimeSchemaSettings (line 285) substitutes DEFAULT_RUNTIME_STATUS_DEFINITIONS when schema has no statuses, BUT definitions is then filtered through normalizeRuntimeStatusDefinition(...).filter(!==null) (line 623-625). If a CUSTOM schema supplies a non-empty but entirely-INVALID status set, statusesSource stays the custom list (not defaults), all entries normalize to null, definitions becomes empty, and open_status/close_status/canceled_status become undefined cast as string — a runtime type-contract violation that the old literal '\"open\"'/'\"closed\"'/'\"canceled\"' fallback prevented. RECOMMENDED FIX: keep a literal fallback, e.g. open_status: openStatus ?? \"open\" (and closed/canceled), or guarantee definitions is never empty (fall back to DEFAULT defs when the post-filter list is empty). Unreachable for built-in/valid schemas; the all-invalid-custom-status edge is the only trigger."
   "2026-06-16T06:56:09.086Z",claude-code-agent,"RISKY-2 src/core/test/background-runs.ts:569 (spawnBackgroundTestRunWorker) and :618 (runBackgroundTestRunWorker). worker_pid/child_pid changed from 'child.pid && child.pid>0 ? child.pid : record.worker_pid' (resp. ':undefined') to 'child.pid as number | undefined'. Behavior change: when child.pid is 0/undefined, old code preserved the prior record.worker_pid (line 569) or used undefined (line 618); new code stores whatever child.pid is (could be 0). In practice a successful synchronous spawn always sets a positive pid and the records are freshly built (prior worker_pid undefined), so production behavior is equivalent — but the as-cast removes the >0 sanitization. LOW risk. RECOMMENDED: harmless to leave; if defensiveness is wanted, restore 'child.pid && child.pid>0 ? child.pid : undefined'."

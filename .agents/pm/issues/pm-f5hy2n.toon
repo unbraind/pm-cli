@@ -6,13 +6,14 @@ status: closed
 priority: 1
 tags[5]: denial-of-service,dependabot,dependencies,dev-dependency,security
 created_at: "2026-07-21T12:14:06.396Z"
-updated_at: "2026-07-21T12:55:04.415Z"
+updated_at: "2026-07-26T17:13:37.324Z"
 closed_at: "2026-07-21T12:54:50.616Z"
 author: codex-root
 acceptance_criteria: "Dependabot alert #42 is fixed; pnpm-lock.yaml resolves brace-expansion to a non-vulnerable release; frozen installation, pnpm audit, full 100/100/100/100 coverage, security gates, and release validation pass; the GitHub alert closes on the merged head."
 parent: pm-qwoy
 risk: high
 confidence: high
+release: v2026.7.22
 severity: high
 environment: development
 resolution: Raised the 5.x brace-expansion override floor to patched 5.0.7 and regenerated the deterministic lockfile.
@@ -22,10 +23,11 @@ affected_version: brace-expansion@5.0.6
 fixed_version: brace-expansion@5.0.7
 component: pnpm-lock.yaml / eslint-minimatch dependency graph
 regression: false
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-6ixn,related,"2026-07-21T12:14:06.396Z",null,null
   pm-o1c53b,discovered_from,"2026-07-21T12:14:06.396Z",null,null
   pm-tll8,related,"2026-07-21T12:14:06.396Z",null,null
+  pm-qwoy,implements,"2026-07-26T17:13:37.099Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-21T12:14:06.396Z",codex-root,"Duplicate check: searched all pm statuses for GHSA-3jxr-9vmj-r5cp,CVE-2026-13149,brace-expansion,and Dependabot alert #42; no canonical item exists. GitHub alert #42 is open/high,affects transitive development brace-expansion 5.0.6 through minimatch/ESLint,and identifies 5.0.7 as the first patched 5.x release. No open dependency PR exists."
   "2026-07-21T12:18:39.430Z",codex-root,"Verification correction: the first linked matrix proved coverage, frozen install, and audit, but the generic command pnpm validate:release does not exist in pm-cli and failed before any gate. Replacing it with this repository's canonical pnpm release:gates contract; this is a test-link configuration error, not a product regression."

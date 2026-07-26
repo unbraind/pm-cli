@@ -6,11 +6,15 @@ status: closed
 priority: 2
 tags[2]: quality,refactor
 created_at: "2026-05-27T18:24:11.482Z"
-updated_at: "2026-05-28T10:54:55.780Z"
+updated_at: "2026-07-26T17:01:00.828Z"
 author: maintainer-agent
 parent: pm-th6y
+release: v2026.5.29
 resolution: "Shipped two of the listed small-scope wins: (1) splitCommaList helper at src/core/shared/split-comma-list.ts consolidating 7 hand-rolled split/trim/filter/dedup idioms (aggregate.ts, linked-test-parsers.ts x2, update-many.ts, plan.ts x2, extension/bundled-catalog.ts). (2) Dropped 16 dead exports across help-json-payload.ts (10) and registration-helpers.ts (6); verified zero external usages of each before downgrading. NOT in this PR (separate followups): runUpdate/runCreate split, cli-contracts barrel move, toItemMetadata helper, parseEvents/parseEventEntries dedup, @deprecated ItemFrontMatter rename."
 expected_result: splitCommaList consolidates 7 sites with no observable semantic change; help-json-payload + registration-helpers no longer expose 16 module-private symbols as public exports; 100% coverage maintained.
 actual_result: "Verified: 1930/1930 unit tests pass at 100% coverage. 14 new tests for splitCommaList cover undefined/null/empty/whitespace/custom-separator/unique-false/sort/sort+dedup. tsc --noEmit clean. update-many.ts retains externally-applied localeCompare to keep exact prior semantics for non-ASCII tags."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-jvbt,related,"2026-07-26T17:01:00.529Z",null,null
+  pm-th6y,implements,"2026-07-26T17:01:00.529Z",null,null
 close_reason: "Shipped splitCommaList helper + dropped 16 dead exports; bigger items (runUpdate/runCreate split, cli-contracts barrel, toItemMetadata, parseEvents dedup) deferred to followup PRs."
 body: ""

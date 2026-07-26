@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-06T19:14:09.143Z"
-updated_at: "2026-06-06T19:39:58.281Z"
+updated_at: "2026-07-26T17:03:36.176Z"
 author: codex-sdk-continuation
 parent: pm-mpbb
+release: v2026.6.7
 resolution: Delivered repeatable list --ids support for focused agent working-set refresh.
 expected_result: Agents can pass repeated --ids flags to list commands and receive the same focused set as comma-separated ids.
 actual_result: Bootstrap list filtering now merges repeated --ids; command help/docs/tests/manual smoke verify list-open returns exactly the requested item set.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:03:35.950Z",null,null
 comments[3]{created_at,author,text}:
   "2026-06-06T19:32:32.171Z",codex-sdk-continuation,"Evidence: list-family --ids is now bootstrap-mergeable so repeated --ids filters accumulate like comma-separated ids; docs and help text updated. Verification: linked bootstrap/list specs passed; focused combined tests passed 115 tests; full coverage passed 2526 tests with 100% statements/branches/functions/lines; manual isolated PM_PATH smoke created three items and list-open --ids first --ids second returned exactly the two requested ids; pnpm build passed; audit/security/Sentry/telemetry gates passed."
   "2026-06-06T19:38:58.937Z",codex-sdk-continuation,"CI follow-up evidence: reproduced PR static failure locally as stale contracts:check after adding list --ids to the list commander contract; ran pnpm contracts:update, linked tests/fixtures/contracts/full.json, and exact static CI block now passes: version:check, changelog:pm:check, contracts:check, security:scan, quality:static, npm pack --dry-run."
@@ -22,12 +25,12 @@ files[5]{path,scope,note}:
   tests/fixtures/contracts/full.json,project,Refresh contract snapshot for repeatable list --ids option surface.
   tests/unit/bootstrap-args.spec.ts,project,Cover repeated ids bootstrap merge.
   tests/unit/list-command.spec.ts,project,Cover list-open repeated --ids behavior.
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/list-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mq2r0wf6-zmhcjy,test,passed,"2026-06-06T19:30:55.211Z","2026-06-06T19:31:14.850Z","2026-06-06T19:31:14.850Z",null,null,1,0,0,null,null,null
-  test-local-mq2rb7sq-ix7rqv,test,failed,"2026-06-06T19:38:59.188Z","2026-06-06T19:39:16.154Z","2026-06-06T19:39:16.154Z",null,null,1,1,0,null,null,null
-  test-local-mq2rc4as-hu0hr8,test,passed,"2026-06-06T19:39:42.100Z","2026-06-06T19:39:58.276Z","2026-06-06T19:39:58.276Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/list-command.spec.ts,project,300
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mq2r0wf6-zmhcjy,test,passed,"2026-06-06T19:30:55.211Z","2026-06-06T19:31:14.850Z","2026-06-06T19:31:14.850Z",1,0,0
+  test-local-mq2rb7sq-ix7rqv,test,failed,"2026-06-06T19:38:59.188Z","2026-06-06T19:39:16.154Z","2026-06-06T19:39:16.154Z",1,1,0
+  test-local-mq2rc4as-hu0hr8,test,passed,"2026-06-06T19:39:42.100Z","2026-06-06T19:39:58.276Z","2026-06-06T19:39:58.276Z",1,0,0
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Document repeated --ids agent refresh pattern.
 close_reason: "Delivered repeatable list --ids focused working-set refresh with docs, linked tests, manual temp smoke, and 100% coverage."

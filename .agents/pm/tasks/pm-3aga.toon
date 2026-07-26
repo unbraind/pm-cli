@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: commands,extensions,pm-cli,toon
 created_at: "2026-03-31T20:13:39.356Z"
-updated_at: "2026-04-04T21:37:28.982Z"
+updated_at: "2026-07-26T17:02:53.241Z"
 deadline: "2026-04-14T20:13:39.356Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-u919
 blocked_reason: Integrate command and extension format behavior has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Integrate command and extension format behavior is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/integrate-command-and-extension-format-behavior
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Integrate command and extension format behavior.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-u919,parent,"2026-03-31T20:13:39.356Z",codex-agent,null
+  pm-u919,implements,"2026-07-26T17:02:53.062Z",null,null
 comments[2]{created_at,author,text}:
   "2026-03-31T20:13:39.356Z",codex-agent,Task tracks command and extension integration changes.
   "2026-03-31T20:56:45.630Z",codex-agent,Integrated configured item_format behavior across create/beads/todos/search/reindex/get/list/history/restore/stats/health and Pi wrapper command mapping.
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:41.670Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   README.md,project,metadata-audit-linked-context
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,metadata-audit-baseline-regression
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: command and extension item_format integration completed

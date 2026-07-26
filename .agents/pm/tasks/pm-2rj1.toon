@@ -6,13 +6,16 @@ status: closed
 priority: 0
 tags[6]: packages,pm-cli,refactor,sdk,search,vectorization
 created_at: "2026-05-14T06:05:23.591Z"
-updated_at: "2026-05-14T17:56:30.177Z"
+updated_at: "2026-07-26T17:02:20.506Z"
 author: codex-agent
 acceptance_criteria: "Keyword search remains core; semantic/hybrid/vector features are package-owned with dynamic contracts; SDK search provider APIs are preserved; package dogfood verifies install, reindex, search, health, and telemetry."
 parent: pm-59gj
+release: v2026.5.14
 resolution: Advanced search and reindex were extracted into the pm-search-advanced package while keyword search stayed in core.
 expected_result: "Semantic/hybrid/vector search is package-owned, installable, and verified without breaking core keyword search."
 actual_result: "Package-first release gates, dogfood, package smoke, and full coverage verified the extraction."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-59gj,implements,"2026-07-26T17:02:20.262Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-14T06:05:23.591Z",codex-agent,"Duplicate check 2026-05-14: pm search semantic reindex vector extraction found closed search/vector implementation items plus parent pm-59gj; net-new extraction child under pm-59gj."
   "2026-05-14T08:27:36.484Z",codex-agent,"Progress 2026-05-14: bare-core pruning removed core reindex command registration and forced core search command dispatch to keyword mode in src/cli/register-list-query.ts; MCP pm_run static reindex dispatch removed from src/mcp/server.ts so package-owned advanced search actions route dynamically. Validation: pnpm build and node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
@@ -35,8 +38,8 @@ files[15]{path,scope,note}:
   tests/unit/builtin-extension-entrypoints.spec.ts,project,calendar runtime stub now provides dist/sdk/runtime exports for deterministic loader
   tests/unit/extension-command.spec.ts,project,bundled package catalog/install-all counts include search-advanced
   tests/unit/package-manifest.spec.ts,project,first-party package source guardrails include pm-search-advanced
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,project,1800
 close_reason: advanced search/reindex extraction verified through package-first release gates
 body: ""

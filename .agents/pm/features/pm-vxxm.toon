@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:contracts",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:05.225Z"
-updated_at: "2026-07-08T20:07:38.764Z"
+updated_at: "2026-07-26T17:28:20.122Z"
 closed_at: "2026-07-08T17:09:37.828Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,12 +14,14 @@ acceptance_criteria: "contracts --summary emits one {command,intent} line per to
 parent: pm-n7rr
 risk: low
 confidence: high
+release: v2026.7.9
 resolution: Implemented a compact contracts summary projection for agent bootstrap.
 expected_result: Agents can request pm contracts --summary for command+intent rows before heavier command-specific contracts.
 actual_result: "pm contracts --summary returns compact command_summaries through CLI and SDK options, updates contracts/MCP schema/completions/docs, and is covered by 100% coverage plus packed-install proof."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-a22j,related,"2026-07-06T08:03:05.225Z",null,null
   pm-e2bq,related,"2026-07-06T08:03:05.225Z",null,null
+  pm-n7rr,implements,"2026-07-26T17:28:19.874Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-08T16:41:52.001Z",claude-code-agent,"Implementation evidence: added pm contracts --summary lightweight command+intent projection, mutually exclusive projection validation, SDK/MCP/action-schema contract wiring, contract snapshot refresh, and sub-3KB compact result coverage."
   "2026-07-08T17:07:58.335Z",claude-code-agent,"Verification evidence: full coverage passed at 100/100/100/100 (5462 tests), lint/static/docs/contracts gates passed, and packed-install temp proof passed in /tmp/pm-agent-ux-proof-TYSgf1 for pm list --today, pm list --recent, pm contracts --summary, and SDK runAction({action:'contracts', options:{summary:true}})."

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: context-management,living-map,manual-inspection,pm-cli,tracker-governance
 created_at: "2026-06-25T04:44:17.429Z"
-updated_at: "2026-06-25T05:40:57.075Z"
+updated_at: "2026-07-26T17:04:34.540Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 420
 acceptance_criteria: Duplicate-safe status-all lineage search is recorded; all open capability epics are inspected; missing backlog is added under canonical parents; tracker health and validation pass; repo gates pass; PR review agents report no remaining findings; GitHub checks are green; Sentry and telemetry freshness are verified.
@@ -16,9 +16,22 @@ objective: "Normalize the pm-cli tracker so features, code, tests, docs, goals, 
 value: "A clean, non-duplicated tracker gives humans and agents a reliable context graph for the entire pm ecosystem."
 why_now: "The user requested a detailed manual inspection of all pm items and a best-practice organization pass before PR, review, merge, Sentry, and telemetry closeout."
 parent: pm-doxj
+release: v2026.6.30
 resolution: "Completed the 2026-06-25 PM ecosystem review: current work is tracked under pm-57vh; four sub-agent lanes are closed with evidence; product fixes pm-bhtx and pm-7o0s are closed; non-release-safe historical cleanup is represented as open tracker-only backlog; PR #361 passed all GitHub checks and CodeRabbit produced no actionable comments."
 expected_result: "Tracker reflects the current PM ecosystem without duplicate new items, product reliability fixes are verified, GitHub checks are green, available AI bot feedback is addressed or documented, Sentry/telemetry are recent and non-blocking, and the branch is ready to merge."
 actual_result: "All local gates passed, GitHub checks are green, CodeRabbit found no actionable comments, quota/setup-limited bots produced no actionable findings, Sentry has 0 critical/high blockers, telemetry required-mode is ok, and PR #361 is merge-ready pending final tracking commit/check loop."
+dependencies[11]{id,kind,created_at,author,source_kind}:
+  pm-7o0s,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-8u2a,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-a7o4,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-bhmk,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-bhtx,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-doxj,implements,"2026-07-26T17:04:34.344Z",null,null
+  pm-e9zh,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-j8z6,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-psc0,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-v37g,related,"2026-07-26T17:04:34.344Z",null,null
+  pm-y1o4,related,"2026-07-26T17:04:34.344Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-25T04:44:17.429Z",codex-pm-ecosystem-audit-20260625,"Duplicate check before create: ran pm search \"2026-06-25 PM ecosystem taxonomy backlog normalization context management\" --status all --limit 20. The closest prior item is closed pm-8u2a from 2026-06-07; no live duplicate exists for this 2026-06-25 normalization/review loop."
   "2026-06-25T05:09:13.145Z",codex-ecosystem-auditor,"Evidence: tracker governance normalization pass reduced metadata close_reason gaps from 18 to 0 using title/description/resolution context. validate --check-files now reports 0 missing linked paths and 0 orphaned paths after pm-j8z6 reconciliation. Remaining historical resolution metadata debt is tracked in pm-e9zh to avoid placeholder backfills."
@@ -27,9 +40,9 @@ comments[5]{created_at,author,text}:
   "2026-06-25T05:40:56.192Z",codex-ecosystem-auditor,"PR review/check evidence: PR #361 opened at https://github.com/unbraind/pm-cli/pull/361. GitHub checks all green on d4f26218: Build foundation, Docs and Skills, CodeQL, compat, coverage, smokes, static, typecheck, Windows regression, and runtime smokes passed; CodeRabbit status passed and comment says no actionable comments were generated. Gemini Code Assist reported daily quota exhausted twice; Sourcery reported weekly diff-character quota exhausted; Codex connector replied that a Codex account/GitHub connector setup is required, so those produced no actionable review findings to fix."
 files[1]{path,scope,note}:
   .agents/pm,project,"Tracker normalization,sub-agent lane evidence,and new backlog items recorded through pm CLI"
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-command.spec.ts tests/unit/commands/stats-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pm stats --storage --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/aggregate-command.spec.ts tests/unit/commands/stats-command.spec.ts,project,240
+  pm stats --storage --json,project,120
+  pnpm build,project,240
 close_reason: "PM ecosystem audit, backlog normalization, reliability fixes, local gates, PR checks, and available AI review loop completed."
 body: "Scope: inspect the current pm-cli tracker as a living context map, verify the capability epic taxonomy, add or refine only non-duplicated actionable items, and record evidence through pm comments/files/tests/docs. Philosophy: project management = context management. Boundaries: use pm CLI mutations only; keep public docs free of private runbook details; do not hand-edit .agents/pm files."

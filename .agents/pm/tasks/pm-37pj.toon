@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:schema",code,pm-cli
 created_at: "2026-03-31T23:48:31.346Z"
-updated_at: "2026-04-04T21:37:59.004Z"
+updated_at: "2026-07-26T17:02:45.365Z"
 deadline: "2026-04-07T23:48:31.346Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-x2k0
 blocked_reason: Add extension registration support for custom item types/options has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add extension registration support for custom item types/options is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: core/extensions
 regression: true
 customer_impact: Integrations can model external domains directly
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-x2k0,parent,"2026-03-31T23:48:31.346Z",codex-agent,null
+  pm-x2k0,implements,"2026-07-26T17:02:45.164Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-31T23:48:31.346Z",codex-agent,Task tracks extension registration additions for type metadata.
   "2026-04-01T00:27:45.859Z",codex-agent,"Added extension item-type registration API, metadata capture, capability enforcement, and runtime registration plumbing."
@@ -55,8 +56,8 @@ files[3]{path,scope,note}:
   src/core/extensions/index.ts,project,active registration state plumbing
   src/core/extensions/loader.ts,project,registration API surface
   tests/unit/extension-loader.spec.ts,project,registration metadata/count coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,extension registration regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,2400,extension registration regression
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,new extension API docs
 close_reason: extension API now supports registering item type definitions/options with deterministic validation

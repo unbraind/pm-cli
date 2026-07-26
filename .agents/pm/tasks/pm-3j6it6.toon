@@ -1,0 +1,37 @@
+id: pm-3j6it6
+title: "Historical release attribution backfill: stamp every terminal item with the release tag that contains its close event"
+description: "Terminal items are attributed to a changelog release by closed_at ?? updated_at ?? created_at, and 1,488 of 1,795 carry no closed_at, so 83 percent of shipped history buckets by last-touch time. This makes every metadata write on a closed item a changelog mutation, which is the standing blocker on the terminal relationship backfill, the close-reason backfill, and the duplicate-code rename. The generator already honours an item release field as the attribution authority under --all-release-tags. Derive each terminal item's true close instant from its immutable history stream, map it to the release tag whose window contains it, and stamp that value so attribution becomes a recorded fact rather than a side effect of the last edit."
+type: Task
+status: closed
+priority: 1
+tags[6]: backfill,changelog,governance,provenance,release,tracker-governance
+created_at: "2026-07-26T16:48:11.851Z"
+updated_at: "2026-07-26T17:36:14.115Z"
+closed_at: "2026-07-26T17:36:10.325Z"
+claim_principal: "harness:claude-code#ad0de54baae9cc12afd5a5a6"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Close instants derive only from immutable history entries (close/cancel ops or explicit status transitions), never from title, guesswork, or current updated_at; The derivation agrees with every already-populated closed_at value with zero disagreement before any write occurs; Items whose close event falls after the newest release tag are deliberately left unstamped so they remain in the pending release window; Legacy release values that match no real tag are replaced with the derived tag rather than left in a state that reads as adopted; Every stamp is an ordinary history-recorded mutation so the change is itself immutable proof and restorable; Changelog regeneration after the backfill is reviewed, and a subsequent metadata write on a stamped item provokes zero changelog diff"
+goal: project management = context management
+objective: "Make release attribution a stamped, immutable fact so editing a closed item can never rewrite what shipped"
+value: "Unblocks every deferred backfill that touches terminal items, starting with the terminal relationship graph"
+impact: Changelog sections stop drifting under maintenance writes; release archaeology becomes reproducible from tracker data alone
+outcome: "Every terminal item carries the release tag containing its close event, derived from history with zero fabricated values"
+why_now: The relationship-graph deep-link mandate cannot execute over closed items until attribution stops depending on updated_at
+parent: pm-pcys9n
+risk: medium
+confidence: high
+resolution: "Derived every terminal item's close instant from its immutable history stream and stamped the containing release tag on 1,782 of 1,795 items, making changelog attribution a recorded fact instead of a side effect of the last edit."
+expected_result: "Terminal items carry the release tag whose window contains their close event, derived only from history with no fabricated values, and subsequent metadata writes on those items no longer move them between changelog sections."
+actual_result: "1,782 stamped and 13 deliberately unstamped (they close after the newest tag); post-write verification found 0 of 1,795 disagreeing with the derivation; the derivation matched all 307 pre-existing closed_at values with zero disagreement; regeneration moved 295 items, every move matching the derivation, with none added or removed and Unreleased unchanged; changelog:pm:check returns check true; the neutrality claim was then proved at scale by 3,744 subsequent edge writes producing 0 section moves."
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-33cw,implements,"2026-07-26T16:48:11.851Z",null,null
+  pm-e9zh,blocks,"2026-07-26T16:48:11.851Z",null,null
+  pm-lnrk,blocks,"2026-07-26T16:48:11.851Z",null,null
+  pm-pivf,blocks,"2026-07-26T16:48:11.851Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T16:48:11.851Z",null,null
+  pm-wrbe,related,"2026-07-26T16:48:11.851Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T16:48:31.868Z","harness:claude-code","Derivation verified before any write. Parsed all 2,099 history streams; every one of the 1,795 terminal items resolves a close instant from a real mutation entry — 1,683 from an op:close entry, 90 from an update that moved status into a terminal value, 22 from a create that was already terminal, zero fallbacks and zero unresolved. Legacy streams use /front_matter/<field> patch paths while current streams use /metadata/<field>; a parser that reads only the modern prefix silently finds no transition on 674 of them and would have mis-derived every pre-May item. Control: of the 307 terminal items that already carry closed_at, the history-derived instant matches the stored value on 307 and disagrees on 0, so the derivation is validated against ground truth rather than asserted. Mapping is ts -> earliest release tag whose creatordate is at or after the close instant, over the 76 real tags. 13 items close after v2026.7.26 and are deliberately left unstamped so they stay in the pending window; they are exactly the current Unreleased membership."
+close_reason: "Delivered and verified. Close instants for all 1,795 terminal items derived from immutable history (1,683 op:close, 90 status-moving update, 22 already-terminal create, zero fallbacks); validated against ground truth first with 307 of 307 agreement and zero disagreement on items that already carried closed_at; 1,782 items stamped with the tag whose window contains their close event and 13 deliberately left unstamped because they close after the newest tag; post-write verification shows 0 of 1,795 disagreeing with the derivation. Changelog regeneration moved 295 items, every move matched the derivation, none were added or removed, Unreleased was unchanged, and changelog:pm:check returns check true. The attribution-neutrality of a subsequent metadata write was then proved at scale by the terminal graph backfill in the same lane."
+body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: automation,governance,ownership,pm-cli
 created_at: "2026-04-04T21:55:27.146Z"
-updated_at: "2026-04-25T11:02:33.815Z"
+updated_at: "2026-07-26T17:19:40.453Z"
 deadline: "2026-04-25T21:55:27.146Z"
 author: codex-agent
 estimated_minutes: 300
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: high
 confidence: medium
 sprint: governance-followups
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: medium
 environment: linux
@@ -35,6 +35,10 @@ affected_version: 2026.3.12
 component: governance-batch-ownership
 regression: false
 customer_impact: Maintainers can execute approved governance maintenance faster with explicit safety evidence.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-5rjn,implements,"2026-07-26T17:19:40.172Z",null,null
+  pm-lf6s,related,"2026-07-26T17:19:40.172Z",null,null
+  pm-umhv,related,"2026-07-26T17:19:40.172Z",null,null
 comments[6]{created_at,author,text}:
   "2026-04-04T21:55:27.146Z",codex-agent,"Duplicate-check evidence: pm search 'ownership conflict force audit override workflow' --limit 20; pm search 'ownership-safe batch mutation mode governance override' --limit 20; pm list-open --limit 20. Net-new because current items improve guidance only; no feature currently provides plan+execute batch ownership override workflow for governance operations."
   "2026-04-05T20:39:58.011Z",codex-agent,Duplicate-check evidence refreshed; existing open feature reused as canonical parent for transactional annotate/batch mutation implementation (no duplicate item created).
@@ -56,10 +60,10 @@ files[11]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,update-help-required-flags-coverage
   tests/unit/completion-command.spec.ts,project,completion-update-flags-coverage
   tests/unit/update-command.spec.ts,project,transactional-update-regression-tests
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,transactional-update-integration-regression
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,ownership workflow regression baseline
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,transactional-update-unit-regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,transactional-update-integration-regression
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,project,2400,ownership workflow regression baseline
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,project,5400,transactional-update-unit-regression
 docs[1]{path,scope,note}:
   AGENTS.md,project,policy constraints for approved ownership overrides
 close_reason: governance batch mutation and scoped ownership override delivered with passing verification

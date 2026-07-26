@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-01T16:22:26.127Z"
-updated_at: "2026-05-17T08:21:30.121Z"
+updated_at: "2026-07-26T17:09:23.331Z"
 deadline: "2026-04-17T11:57:38.765Z"
 author: cursor-agent
 estimated_minutes: 200
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation
-release: vnext
+release: v2026.5.1
 blocked_by: pm-my6o
 blocked_reason: Stability regressions and update/file UX guidance hardening has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Stability regressions and update/file UX guidance hardening is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,10 @@ fixed_version: vnext
 component: cli-runtime
 regression: true
 customer_impact: Users get safer file/doc flows and clearer update guidance
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-my6o,parent,"2026-04-01T16:22:26.127Z",cursor-agent,null
+  pm-e0ab,related,"2026-07-26T17:09:23.154Z",null,null
+  pm-my6o,implements,"2026-07-26T17:09:23.154Z",null,null
 comments[8]{created_at,author,text}:
   "2026-04-01T16:22:26.127Z",cursor-agent,Feature created for unresolved Issue4/5/6 hardening after de-dup audit.
   "2026-04-01T17:00:10.411Z",cursor-agent,"Feature scope complete: child task pm-e0ab closed with repeated files/docs add regression protection and explicit update --file/--doc guidance."
@@ -65,9 +67,9 @@ files[8]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,files/docs migrate-validate-audit contract surfaces
   tests/integration/release-readiness-runtime.spec.ts,project,coverage include allowlist updates for new additive modules
   tests/unit/files-docs-command.spec.ts,project,linked-path command regressions
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,issues346 linked-path regressions
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,metadata-audit-baseline-regression
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/integration/cli.integration.spec.ts,project,5400,issues346 linked-path regressions
 docs[3]{path,scope,note}:
   docs/ARCHITECTURE.md,project,linked artifact data-flow updates
   PRD.md,project,linked artifact command contract

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: background-runtime,linked-tests,pm-cli,test-runs
 created_at: "2026-04-04T19:06:35.921Z"
-updated_at: "2026-05-17T08:22:32.292Z"
+updated_at: "2026-07-26T17:22:14.053Z"
 deadline: "2026-04-13T19:06:35.921Z"
 author: codex-agent
 estimated_minutes: 240
@@ -16,7 +16,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: background-service-rollout
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: medium
 environment: linux
@@ -29,8 +29,9 @@ fixed_version: target-vnext
 component: cli-main
 regression: true
 customer_impact: Agents can run and monitor tests asynchronously.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-bi0z,parent,"2026-04-04T19:06:35.921Z",codex-agent,null
+  pm-o7be,implements,"2026-07-26T17:22:13.826Z",null,null
 comments[6]{created_at,author,text}:
   "2026-04-04T19:06:35.921Z",codex-agent,"Duplicate-check evidence: no active command-path item exposes background lifecycle commands for linked tests; this task scopes command wiring only."
   "2026-04-04T20:22:20.333Z",codex-agent,Implemented --background wiring for pm test/test-all and new test-runs list/status/logs/stop/resume command surface; linked test regression suite passed (55 tests).
@@ -45,11 +46,29 @@ files[4]{path,scope,note}:
   src/cli/commands/test-runs.ts,project,start list status logs stop resume surfaces
   src/cli/main.ts,project,background flags and command registration
   tests/unit/test-runs-command.spec.ts,project,background requested_by fallback regression coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,background option regression coverage
-  node scripts/run-tests.mjs test -- tests/unit/test-runs-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,background requested_by fallback chain regression
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:16:28.097Z","2026-04-04T20:16:28.097Z",null,null,0,0,0,1,0,null
-  test-local-mnkrz42y-a77a5c,test,passed,"2026-04-04T20:18:07.241Z","2026-04-04T20:18:35.242Z","2026-04-04T20:18:35.242Z",null,null,1,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,project,2400,background option regression coverage
+  node scripts/run-tests.mjs test -- tests/unit/test-runs-command.spec.ts,project,600,background requested_by fallback chain regression
+test_runs[2]:
+  - run_id: test-all-local-mnkrqfdt-hjxetp
+    kind: test-all
+    status: passed
+    started_at: "2026-04-04T20:11:49.984Z"
+    finished_at: "2026-04-04T20:16:28.097Z"
+    recorded_at: "2026-04-04T20:16:28.097Z"
+    passed: 0
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 0
+  - run_id: test-local-mnkrz42y-a77a5c
+    kind: test
+    status: passed
+    started_at: "2026-04-04T20:18:07.241Z"
+    finished_at: "2026-04-04T20:18:35.242Z"
+    recorded_at: "2026-04-04T20:18:35.242Z"
+    passed: 1
+    failed: 0
+    skipped: 0
 close_reason: background requested_by attribution fallback chain hardened and verified
 body: Implements command wiring and runtime command surface for background test orchestration.

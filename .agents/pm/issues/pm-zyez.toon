@@ -6,9 +6,15 @@ status: closed
 priority: 2
 tags[3]: cli,observability,reliability
 created_at: "2026-06-17T06:05:47.354Z"
-updated_at: "2026-06-17T14:36:05.984Z"
+updated_at: "2026-07-26T17:31:25.257Z"
 author: claude-code-agent
 parent: pm-ugqx
+release: v2026.6.17
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-7by2,related,"2026-07-26T17:31:24.996Z",null,null
+  pm-nb08,related,"2026-07-26T17:31:24.996Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:31:24.996Z",null,null
+  pm-yohx,related,"2026-07-26T17:31:24.996Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-17T13:32:56.110Z",claude-code-agent,"Fixed (PM-CLI-1R). Root cause confirmed via Sentry latest event + stacktrace (runPmCli -> registerCoreCommandFamilies -> registerSetupCommands -> Command.command -> _registerCommand; release pm-cli@2026.6.16, env=production): the root program is a MODULE-LEVEL SINGLETON (main.ts:1740), so any path that enters runPmCli a second time in one process re-runs core command registration against it and Commander throws the raw 'cannot add command init as already have command init' Error. Because it is a raw Error (not a CommandError), it escapes the Sentry release-gate CLI-error allowlist and silently blocks the daily auto-release (the pm-nb08 fragility class; confirmed today's Auto Release run 27673362890 failed with sentry high=1 threshold_ok=false blocking_short_ids=[PM-CLI-1R]). FIX: new ensureIdempotentTopLevelCommandRegistration(program) installed once per program (Symbol flag) at the top of registerCoreCommandFamilies; it wraps program.command so a DUPLICATE top-level name returns a throwaway Command (chained .argument/.option/.action apply harmlessly) while the already-wired original is preserved. Handles all filtered/full selection re-entry combinations (per-command-name, not per-family). First-time registration flows through Commander untouched. Verified: 3x runPmCli in one process no longer crashes; unit test in cli-main-errors.spec.ts covers first-register/duplicate/distinct/guard-reentry branches. NEXT: after merge, resolve Sentry PM-CLI-1R so the release gate clears."
 files[1]{path,scope,note}:

@@ -6,11 +6,14 @@ status: closed
 priority: 3
 tags[4]: "area:history","area:storage",living-map,performance
 created_at: "2026-05-31T19:43:38.117Z"
-updated_at: "2026-06-06T17:39:20.951Z"
+updated_at: "2026-07-26T17:03:18.213Z"
 author: maintainer-agent
 acceptance_criteria: "pm history-compact <id> [--before] [--dry-run] replays to a synthetic baseline entry, removes prior entries, re-anchors chain; passes verifyHistoryChain; restore+history work; rollback on failure."
 value: Each mutation appends a JSONL line; long-lived high-activity items grow unboundedly. No checkpoint/snapshot primitive collapses early entries.
 parent: pm-o2kc
+release: v2026.6.7
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o2kc,implements,"2026-07-26T17:03:17.961Z",null,null
 comments[6]{created_at,author,text}:
   "2026-06-06T16:21:57.739Z",codex-agent,"Orientation baseline: branch=feat/history-compact-toon-tracking-coverage, repo clean on main before claim, no duplicate open item beyond pm-3pbq for history compaction. GH baseline: open issues=0, open PRs=0, dependabot alerts=0, code-scanning endpoint returns no-analysis for current token scope. CI on main green; recent feature-branch failures traced to deterministic test assertion drift (search-command), not current scope."
   "2026-06-06T16:31:01.313Z",codex-agent,"Implemented history-compact end-to-end: added command runtime (checkpoint boundary parsing, synthetic baseline + retained-tail re-anchoring, verifyHistoryChain gate, dry-run, lock+ownership checks, drift detection, rollback-safe atomic writes, audit marker), wired CLI registration/exports/help/completions/contracts/MCP action routing, regenerated full contracts fixture, and added unit+integration assertions. Focused verification passed: pnpm build; pnpm contracts:update; node scripts/run-tests.mjs test -- tests/unit/history-compact-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts."
@@ -36,10 +39,10 @@ files[17]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,Completion assertions for new command
   tests/unit/contracts-command.spec.ts,project,Contracts assertions for history-compact flags
   vitest.config.ts,project,Coverage gate configuration adjustments for strict 100% threshold pass
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,null,null,null,null,null,null,null,null,null,null,null,null,Full-suite coverage gate run (strict 100% thresholds)
-  "node scripts/run-tests.mjs test -- tests/integration/history-compact-command.spec.ts tests/integration/release-readiness-runtime.spec.ts && pnpm quality:static",null,project,null,null,null,null,null,null,null,null,null,null,null,null,Post-review verification after timestamp-boundary and static-gate fixes
-  "pnpm build && pnpm typecheck && node scripts/run-tests.mjs coverage && pnpm contracts:check && pnpm changelog:pm:check && pnpm security:scan && pm validate --check-resolution --check-history-drift && pm health --check-only",null,project,null,null,null,null,null,null,null,null,null,null,null,null,Full local verification gate suite
+tests[3]{command,scope,note}:
+  node scripts/run-tests.mjs coverage,project,Full-suite coverage gate run (strict 100% thresholds)
+  "node scripts/run-tests.mjs test -- tests/integration/history-compact-command.spec.ts tests/integration/release-readiness-runtime.spec.ts && pnpm quality:static",project,Post-review verification after timestamp-boundary and static-gate fixes
+  "pnpm build && pnpm typecheck && node scripts/run-tests.mjs coverage && pnpm contracts:check && pnpm changelog:pm:check && pnpm security:scan && pm validate --check-resolution --check-history-drift && pm health --check-only",project,Full local verification gate suite
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Documented history-compact examples and behavior
 close_reason: "Delivered history-compact command with end-to-end wiring, review-driven correctness fixes, and full verification evidence including 100% coverage gates."

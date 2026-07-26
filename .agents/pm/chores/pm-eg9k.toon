@@ -6,15 +6,18 @@ status: closed
 priority: 3
 tags[4]: "area:docs","area:tests",eval,search
 created_at: "2026-06-07T10:06:09.752Z"
-updated_at: "2026-06-19T22:18:38.215Z"
+updated_at: "2026-07-26T17:12:54.636Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- TESTING.md has a 'Search quality evaluation' section explaining:\n- location of golden-queries.json\n- how to run locally: reindex --eval --eval-fixtures\n- how to add new golden queries\n- advisory nature (continue-on-error in CI)\n- COMMANDS.md reindex section mentions --eval and --eval-fixtures flags"
 parent: pm-u9d0
 risk: low
 confidence: high
+release: v2026.6.20
 resolution: "Docs were added in a prior session but the item was never closed. The TESTING.md 'Search Quality Evaluation' section covers fixture location (tests/search-eval/golden-queries.json), local run (pm reindex --mode keyword --eval --eval-fixtures), fixture authoring notes, and the advisory continue-on-error nature. The COMMANDS.md 'Search Reindex and Eval' section documents --eval (nDCG@5) and --eval-fixtures. No further changes needed."
 expected_result: TESTING.md search-eval section + COMMANDS.md --eval/--eval-fixtures flags.
 actual_result: Both present and complete; closed as already-satisfied (no doc changes in this PR for this item).
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-u9d0,implements,"2026-07-26T17:12:54.421Z",null,null
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,Search Quality Evaluation section + COMMANDS.md reindex --eval flags
 close_reason: "Verified already satisfied: TESTING.md 'Search Quality Evaluation' section and COMMANDS.md reindex --eval/--eval-fixtures docs already exist and meet all acceptance criteria."

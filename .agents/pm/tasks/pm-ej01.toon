@@ -6,14 +6,21 @@ status: closed
 priority: 0
 tags[5]: agent-ux,audit,commands,dogfood,pm-cli
 created_at: "2026-05-10T08:29:09.798Z"
-updated_at: "2026-05-14T17:22:10.815Z"
+updated_at: "2026-07-26T17:12:57.556Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: Commands accept intuitive rich agent input without dropping metadata; validation failures preserve actionable recovery guidance; temp project end-to-end dogfood passes; changed files/tests/docs are linked; full coverage and GitHub checks are green.
 parent: pm-rnpb
+release: v2026.5.14
 resolution: Implemented forgiving repeatable-entry parsing while preserving all rich agent-provided metadata as text when it cannot fit a narrower log schema.
 expected_result: "Agents can pass intuitive bare IDs, paths, commands, and rich log text once without needing lossy retry simplification after a validation failure."
 actual_result: Create/update/files/docs/test workflows accept the intuitive forms in unit tests and an isolated temp-project dogfood run; rich key-like comment/note/learning payloads remain stored verbatim.
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-dhie,related,"2026-07-26T17:12:57.294Z",null,null
+  pm-f3q4,related,"2026-07-26T17:12:57.294Z",null,null
+  pm-fdla,related,"2026-07-26T17:12:57.294Z",null,null
+  pm-mb4n,related,"2026-07-26T17:12:57.294Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:12:57.294Z",null,null
 comments[8]{created_at,author,text}:
   "2026-05-10T08:29:09.798Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search simplify commands parameters schema strict agent input intuitive --limit 10,pm list-open --limit 20,pm list-in-progress --limit 20,and pm search create strict repeatable metadata shorthand command intuitive agents retry --limit 10. Existing agent UX items are closed or broad parent work; pm-rnpb is the canonical parent,so this dedicated child tracks the current command-simplification audit."
   "2026-05-10T08:47:54.924Z",codex-agent,"Evidence: implemented forgiving repeatable-entry parsing for create/update/files/docs/test so bare dependency IDs infer kind=related, bare file/doc paths infer path with project scope, bare linked test values infer command, and rich comment/note/learning seeds with extra key-like metadata are preserved as text instead of failing and causing lossy retries. Verification passed: temp project end-to-end dogfood with isolated PM_PATH/PM_GLOBAL_PATH; pm linked tests passed including coverage 90 files/1252 tests at 100%; focused command suite 129 tests passed; pnpm quality:static passed; scripts/check-secrets passed. pm validate and pm health still report only the pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1."
@@ -61,23 +68,62 @@ files[37]{path,scope,note}:
   tests/unit/store-paths.spec.ts,project,path discovery and initialization guard regressions
   tests/unit/test-command.spec.ts,project,bare test command regression
   tests/unit/update-command.spec.ts,project,update dependency ergonomic regression
-tests[14]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/bootstrap-args.spec.ts tests/unit/store-paths.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,recovery bundle and bootstrap/path focused regressions
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/bootstrap-args.spec.ts tests/unit/store-paths.spec.ts tests/unit/contracts-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,full-surface simplification focused suite (normalization/path/recovery/none-null)
-  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,bootstrap normalization focused regression
-  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/search-command.spec.ts tests/unit/sentry-helpers.spec.ts tests/integration/help-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,targeted cli/search/sentry regression suite
-  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,legacy none/null compatibility create+update regressions
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused command ergonomics regression
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/embedding-batches.spec.ts tests/unit/calendar-command.spec.ts tests/unit/docs-skills-gate.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,targeted search/calendar/docs gate suite
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/store-paths.spec.ts tests/unit/bootstrap-args.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,bootstrap + path discovery focused regression
-  "pnpm build && node scripts/run-tests.mjs coverage && pnpm quality:static && node scripts/check-secrets.mjs && node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 1 --max-sentry-high 4",null,project,3600,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm build && node scripts/run-tests.mjs coverage && pnpm quality:static && pnpm quality:docs-skills && node scripts/check-secrets.mjs && node scripts/smoke-npx-from-pack.mjs",null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full verification stack
-  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,docs migration and skills gate
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mozj4sya-ogilw0,test,passed,"2026-05-10T08:40:13.688Z","2026-05-10T08:47:19.186Z","2026-05-10T08:47:19.186Z",null,null,2,0,0,null,null,null
+tests[14]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 900
+    note: full coverage gate
+  - command: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/bootstrap-args.spec.ts tests/unit/store-paths.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: recovery bundle and bootstrap/path focused regressions
+  - command: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/bootstrap-args.spec.ts tests/unit/store-paths.spec.ts tests/unit/contracts-command.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: full-surface simplification focused suite (normalization/path/recovery/none-null)
+  - command: node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: bootstrap normalization focused regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/search-command.spec.ts tests/unit/sentry-helpers.spec.ts tests/integration/help-runtime.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: targeted cli/search/sentry regression suite
+  - command: node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: legacy none/null compatibility create+update regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused command ergonomics regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/embedding-batches.spec.ts tests/unit/calendar-command.spec.ts tests/unit/docs-skills-gate.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: targeted search/calendar/docs gate suite
+  - command: node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/store-paths.spec.ts tests/unit/bootstrap-args.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: bootstrap + path discovery focused regression
+  - command: "pnpm build && node scripts/run-tests.mjs coverage && pnpm quality:static && node scripts/check-secrets.mjs && node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 1 --max-sentry-high 4"
+    scope: project
+    timeout_seconds: 3600
+  - command: "pnpm build && node scripts/run-tests.mjs coverage && pnpm quality:static && pnpm quality:docs-skills && node scripts/check-secrets.mjs && node scripts/smoke-npx-from-pack.mjs"
+    scope: project
+    timeout_seconds: 7200
+    note: full verification stack
+  - command: "pnpm quality:docs-skills"
+    scope: project
+    timeout_seconds: 240
+    note: docs migration and skills gate
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mozj4sya-ogilw0,test,passed,"2026-05-10T08:40:13.688Z","2026-05-10T08:47:19.186Z","2026-05-10T08:47:19.186Z",2,0,0
 docs[4]{path,scope,note}:
   docs/CLAUDE_CODE_PLUGIN.md,project,plugin compatibility notes for simplified invocation flow
   docs/EXTENSIONS.md,project,deduplicated canonical extensions reference

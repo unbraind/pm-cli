@@ -6,9 +6,12 @@ status: closed
 priority: 3
 tags[4]: audit-2026-06-13,disk,extensions,performance
 created_at: "2026-06-12T22:48:14.706Z"
-updated_at: "2026-06-19T15:10:20.108Z"
+updated_at: "2026-07-26T17:22:26.047Z"
 author: audit-quality-agent
 parent: pm-y7sc
+release: v2026.6.20
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-y7sc,implements,"2026-07-26T17:22:25.823Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-18T00:03:43.439Z",codex-audit-agent,"Audit evidence from PR #266 on 2026-06-18: pnpm changelog:pm regenerated CHANGELOG.md successfully, but the subsequent pnpm changelog:pm:check wrapper stalled for several minutes inside pm install npm:pm-changelog --project -> npm install @unbrained/pm-cli@>=2026.6.7. Direct installed-extension check via node dist/cli.js changelog generate --check returned unchanged. This confirms the project-scope extension peer install cost can block release/check workflows, not just consume disk."
   "2026-06-19T14:35:41.446Z",codex-impl,"Evidence: Full coverage passed after branch-fixture follow-up: 230 files, 4655 tests, statements 100% (29786/29786), branches 100% (23309/23309), functions 100% (4955/4955), lines 100% (28619/28619). Manual temp smoke passed in /tmp/pm-sdk-install-smoke-lAsXNs: npm package installed, doctor ok, SDK command discovered, installed @unbrained/pm-cli realpath matched checkout, nested @sentry absent."
@@ -20,18 +23,18 @@ files[4]{path,scope,note}:
   pnpm-lock.yaml,project,Lock @sentry/node 10.59.0 patch update
   src/cli/commands/extension/install-sources.ts,project,Skip nested host CLI package install for npm extension sources and link the active SDK root
   tests/unit/extensions/extension-command.spec.ts,project,Regression coverage for hosted pm-cli dependency filtering and SDK link creation
-tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "manual temp smoke: install npm:pm-sdk-link-smoke@file:<tmp package> in fresh workspace; verify package doctor ok,SDK command discovered,@unbrained/pm-cli symlink realpath equals checkout,nested @sentry absent",null,project,60,null,null,null,null,null,null,null,null,null,null,null,null
-  node dist/cli.js package doctor --project --detail deep --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level moderate,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+tests[11]{command,scope,timeout_seconds}:
+  "manual temp smoke: install npm:pm-sdk-link-smoke@file:<tmp package> in fresh workspace; verify package doctor ok,SDK command discovered,@unbrained/pm-cli symlink realpath equals checkout,nested @sentry absent",project,60
+  node dist/cli.js package doctor --project --detail deep --json,project,120
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,120
+  node scripts/run-tests.mjs coverage,project,300
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/integration/cli.integration.spec.ts,project,240
+  pnpm audit --audit-level moderate,project,120
+  pnpm build,project,120
+  "pnpm changelog:pm:check",project,180
+  "pnpm contracts:check",project,120
+  "pnpm quality:static",project,120
+  "pnpm security:scan",project,120
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,Document host SDK linking behavior for package-backed extensions
   docs/SDK.md,project,Document registry package installs reuse the active host SDK

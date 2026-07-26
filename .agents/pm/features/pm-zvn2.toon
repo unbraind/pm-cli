@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:06:19.646Z"
-updated_at: "2026-04-04T21:33:20.170Z"
+updated_at: "2026-07-26T17:31:17.746Z"
 deadline: "2026-04-11T13:06:19.646Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-67uh
 blocked_reason: Activate semantic defaults via local Ollama runtime detection has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Activate semantic defaults via local Ollama runtime detection is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,13 @@ fixed_version: archive-2026q2
 component: search/runtime
 regression: true
 customer_impact: Enables semantic defaults where available while preserving stable behavior for existing users.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-67uh,parent,"2026-04-01T13:06:19.646Z",codex-agent,null
   pm-yv2,discovered_from,"2026-04-01T13:06:19.646Z",codex-agent,null
+  pm-67uh,implements,"2026-07-26T17:31:17.512Z",null,null
+  pm-9k33,related,"2026-07-26T17:31:17.512Z",null,null
+  pm-ptu0,related,"2026-07-26T17:31:17.512Z",null,null
+  pm-wn3r,related,"2026-07-26T17:31:17.512Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T13:06:19.646Z",codex-agent,Feature created from audited semantic search roadmap and Ollama fixes to add default-on behavior safely.
   "2026-04-01T13:25:05.107Z",codex-agent,"Feature delivered via closed child tasks pm-wn3r (runtime), pm-9k33 (tests), and pm-ptu0 (docs). Evidence: linked task test runs passed including full node scripts/run-tests.mjs test (62 files, 648 tests), host sandbox validation confirmed automatic hybrid default and successful semantic reindex/search with local Ollama, and coverage run was executed with only the existing global threshold shortfall."
@@ -54,8 +58,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/search.ts,project,default mode and fallback orchestration
   src/core/search/providers.ts,project,provider-resolution and ollama behavior
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/embedding-provider.spec.ts tests/unit/reindex-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,targeted semantic runtime regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/embedding-provider.spec.ts tests/unit/reindex-command.spec.ts,project,3600,targeted semantic runtime regressions
 docs[1]{path,scope,note}:
   README.md,project,document default semantic behavior
 close_reason: runtime defaults tests docs and host validation complete

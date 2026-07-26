@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:sdk",code-quality,codefactor,duplication
 created_at: "2026-07-26T06:25:20.956Z"
-updated_at: "2026-07-26T08:38:02.413Z"
+updated_at: "2026-07-26T17:13:06.537Z"
 closed_at: "2026-07-26T08:37:58.960Z"
 author: "harness:codex"
 estimated_minutes: 180
@@ -17,8 +17,9 @@ confidence: high
 resolution: "The static-analysis cluster and review follow-up are resolved through public-surface cleanup, schema single-sourcing, package-export-aware quality analysis, and export-accurate manifest parity validation."
 expected_result: "Reported no-op exports, redundant copies, duplicate Plan keys, and false orphan entrypoints are removed without reducing gates."
 actual_result: "All mapped CodeFactor reports are addressed; CodeRabbit follow-up now requires manifest capability extraction to accept only direct named exports or explicit export lists; packed npm smoke, strict lint/static gates, and 373-file/6408-test 100/100/100/100 coverage pass."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-xspd,related,"2026-07-26T06:25:20.956Z",null,null
+  pm-92if,implements,"2026-07-26T17:13:06.322Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-26T06:25:20.956Z","harness:codex","text=Duplicate check evidence: searched all statuses for the exact CodeFactor empty-export,register-mutation/tool-schema duplicate,and digital-twin spread findings. The open pm-92if epic owns the zero-finding program and pm-xspd owns detector sensitivity, but no child owns the 2026-07-26 issue cluster. GitHub sources: #722-#727,#729,#730,#732."
   "2026-07-26T07:24:35.544Z","harness:codex","Evidence: resolved CodeFactor GH-722-727/729/730/732 as one quality bundle: removed no-op SDK exports/redundant copies, single-sourced Plan metadata keys, and made orphan-module checks package-export aware. ESLint, zero-clone jscpd, 100% docstrings, SDK snapshot, token/import/transport budgets, and 100/100/100/100 coverage pass."

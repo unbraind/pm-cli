@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:commands",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:08.240Z"
-updated_at: "2026-05-17T08:20:40.513Z"
+updated_at: "2026-07-26T16:59:50.669Z"
 deadline: "2026-02-23T23:02:08.240Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-2xl
 blocked_reason: "M1: Core command set init create get update append delete claim release close has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M1: Core command set init create get update append delete claim release close is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/core-command-set-init-create-get-update-append-d
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Core command set init create get update append delete claim release close.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2xl,blocks,"2026-02-17T23:02:08.240Z",steve,null
   pm-u9r,parent,"2026-02-17T23:02:08.240Z",steve,null
+  pm-u9r,implements,"2026-07-26T16:59:50.365Z",null,null
 comments[18]{created_at,author,text}:
   "2026-02-17T23:13:38.874Z",steve,Implemented init/create plus list/get/update/append/comments/files/test/docs/claim/release with deterministic serialization atomic writes and history patches. Verified with pnpm build and list-open/get/update flows.
   "2026-02-17T23:13:49.374Z",steve,"Verification run succeeded: linked test command list-open passed and pnpm build passed after session-id persistence fixes."
@@ -86,13 +87,13 @@ files[18]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,doc/help command alignment contract
   tests/unit/close-command.spec.ts,project,unit coverage for runClose
   tests/unit/todos-extension.spec.ts,project,update create fixtures for required assigned-to-session contract
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate in sandbox
-  node scripts/run-tests.mjs test,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Sandboxed core command regression
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,sandboxed focused validation for close command
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted create/PI parity regression
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,validate create-required assigned flag across todos fixtures
-  pnpm build,null,project,120,null,null,null,null,null,null,null,null,null,null,null,TypeScript build verification
+tests[6]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,full coverage gate in sandbox
+  node scripts/run-tests.mjs test,project,1200,Sandboxed core command regression
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,project,1800,sandboxed focused validation for close command
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,project,1800,targeted create/PI parity regression
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,project,900,validate create-required assigned flag across todos fixtures
+  pnpm build,project,120,TypeScript build verification
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and dogfood protocol
   PRD.md,project,authoritative behavior contract

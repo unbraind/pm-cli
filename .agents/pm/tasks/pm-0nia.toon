@@ -6,18 +6,20 @@ status: closed
 priority: 1
 tags[5]: agent-ux,contracts,init,pm-cli,tests
 created_at: "2026-05-17T09:00:02.257Z"
-updated_at: "2026-05-17T10:23:32.239Z"
+updated_at: "2026-07-26T17:00:16.541Z"
 author: codex-agent
 acceptance_criteria: All new behavior has focused unit and integration coverage; non-interactive init regression proves no prompt hang; JSON output ordering remains deterministic; linked focused command passes; full coverage remains 100 percent when the implementation closes.
 parent: pm-7t04
+release: v2026.5.18
 resolution: Added regression coverage for init agent guidance workflows.
 expected_result: "Status, skip, add, non-interactive behavior, contracts, SDK, and completion surfaces are covered by focused tests."
 actual_result: "Focused unit, integration, contracts, SDK, completion, dogfood, coverage, and release gates verified the guidance lifecycle."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T09:00:02.257Z",codex-agent,null
   pm-8rjn,blocks,"2026-05-17T09:00:02.257Z",codex-agent,null
   pm-b8rf,blocks,"2026-05-17T09:00:02.257Z",codex-agent,null
   pm-g2nd,blocks,"2026-05-17T09:00:02.257Z",codex-agent,null
+  pm-7t04,implements,"2026-07-26T17:00:16.307Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-17T09:00:02.257Z",codex-agent,Child task created from pm-7t04. This slice should be executed with or after the implementation slices.
   "2026-05-17T10:11:58.540Z",codex-agent,"Executed focused unit+integration regressions, temp-dir dogfood, full coverage, release gates, security scan, and explicit Sentry/telemetry gate; all completed successfully after adding release-readiness coverage list entry for the new helper module."
@@ -36,16 +38,16 @@ files[10]{path,scope,note}:
   tests/unit/init-command.spec.ts,project,unit coverage for detection prompt and writer
   tests/unit/sdk-index.spec.ts,project,SDK action optional keys regression
   tests/unit/settings-store.spec.ts,project,settings persistence coverage
-tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/check-secrets.mjs,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Tracked-file secret scan
-  node scripts/dogfood-package-first.mjs,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Temporary-directory package-first dogfood including guidance lifecycle
-  node scripts/release/run-gates.mjs --telemetry-mode best-effort,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,Full release-readiness gate suite
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Sentry and telemetry readiness evidence
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,Full 100 percent coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Targeted integration regression run
-  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,planned full focused guidance regression
-  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Linked verification suite from parent item
-  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/completion-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,Focused unit regression run
-  "pnpm quality:static",null,project,900,null,null,null,null,null,null,null,null,null,null,null,Static quality gate
+tests[10]{command,scope,timeout_seconds,note}:
+  node scripts/check-secrets.mjs,project,600,Tracked-file secret scan
+  node scripts/dogfood-package-first.mjs,project,1200,Temporary-directory package-first dogfood including guidance lifecycle
+  node scripts/release/run-gates.mjs --telemetry-mode best-effort,project,7200,Full release-readiness gate suite
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,1200,Sentry and telemetry readiness evidence
+  node scripts/run-tests.mjs coverage,project,3600,Full 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,1200,Targeted integration regression run
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600,planned full focused guidance regression
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,1200,Linked verification suite from parent item
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/completion-command.spec.ts,project,900,Focused unit regression run
+  "pnpm quality:static",project,900,Static quality gate
 close_reason: "Regression suite, temp-dir dogfood, release gates, security scan, and Sentry/telemetry checks all passed for init guidance delivery."
 body: "Focused coverage plan:\n- tests/unit/init-command.spec.ts: helper-level present/missing/outdated detection, writer idempotence, AGENTS-only, CLAUDE-only, both files, absent files, and TTY-decline/add state transitions.\n- tests/unit/settings-store.spec.ts: agent_guidance defaults, schema migration from missing state, deterministic serialization key order, and persistence of declined metadata.\n- tests/unit/config-command.spec.ts if config key is added: inspect/reset behavior and settings write op.\n- tests/unit/contracts-command.spec.ts and tests/integration/help-runtime.spec.ts: init flag/help/contract visibility.\n- tests/integration/release-readiness-runtime.spec.ts: JSON key ordering for any new init result field, non-interactive init does not hang, and explicit add/status behavior works in a temp repository.\n- Use node scripts/run-tests.mjs so PM_PATH and PM_GLOBAL_PATH remain sandboxed."

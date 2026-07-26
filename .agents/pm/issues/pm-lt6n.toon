@@ -6,16 +6,19 @@ status: closed
 priority: 2
 tags[3]: ci,tests,windows
 created_at: "2026-07-04T08:11:35.792Z"
-updated_at: "2026-07-06T21:52:27.334Z"
+updated_at: "2026-07-26T17:19:31.988Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: windows-latest Node 24 nightly is green with platform-tolerant error-code assertions; GH-427 closed.
 parent: pm-u9d0
 risk: low
 confidence: high
+release: v2026.7.7
 resolution: fixed
 expected_result: windows-latest Node 24 nightly passes restore-command and history-rewrite specs
 actual_result: PR #430 merged 2026-07-05; GH-427 closed COMPLETED 2026-07-06; Nightly Validation 2026-07-06 run concluded success
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-u9d0,implements,"2026-07-26T17:19:31.757Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-04T11:15:27.740Z",claude-code-agent,"Evidence: focused Windows-tolerant filesystem assertion lane remains linked. Focused test command is linked on the item; local Linux suite accepts EACCES|EPERM and EISDIR|EPERM while preserving POSIX coverage. GH-427 should be confirmed by the next Windows Node 24 nightly after push."
   "2026-07-04T11:42:53.435Z",claude-code-agent,"Evidence update: Windows-tolerant filesystem assertion lane remains covered in the combined branch. Local verification passed: node scripts/run-tests.mjs test -- tests/unit/commands/restore-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts; full coverage 263 files / 5337 tests / 100% statements, branches, functions, lines; pnpm typecheck; pnpm lint. GH-427 still needs confirmation from GitHub Windows Node 24 CI/nightly after push."

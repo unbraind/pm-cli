@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:locking",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T05:46:45.784Z"
-updated_at: "2026-04-04T21:47:43.613Z"
+updated_at: "2026-07-26T17:05:15.918Z"
 deadline: "2026-03-07T23:59:00.000Z"
 assignee: codex-maintainer
 author: codex-maintainer
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M5 follow-up: dispatch lock lifecycle hooks has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: dispatch lock lifecycle hooks is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-dispatch-lock-lifecycle-hooks
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: dispatch lock lifecycle hooks."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,related,"2026-03-06T05:46:45.784Z",codex-maintainer,null
+  pm-8a2s,implements,"2026-07-26T17:05:15.728Z",null,null
 comments[7]{created_at,author,text}:
   "2026-03-06T05:46:45.784Z",codex-maintainer,Add lock lifecycle hook dispatch to advance remaining Milestone 5 call-site expansion.
   "2026-03-06T05:46:58.630Z",codex-maintainer,"Planned changeset: update PRD and README hook lifecycle wording first, then implement lock read/write hook dispatch in core lock flow, then add tests for deterministic hook events."
@@ -63,9 +64,9 @@ files[7]{path,scope,note}:
   tests/unit/create-command.spec.ts,project,align create hook assertions with lock lifecycle events
   tests/unit/extensions-runtime.spec.ts,project,hook dispatch behavior coverage
   tests/unit/restore-command.spec.ts,project,align restore hook assertions with lock lifecycle events
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate regression
-  node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted lock hook coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate regression
+  node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,project,240,targeted lock hook coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and dogfood requirements
   PRD.md,project,hook lifecycle call-site contract

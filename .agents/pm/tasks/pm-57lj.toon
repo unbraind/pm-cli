@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[10]: "area:docs","area:extensions","area:tests",code,docs,"milestone:5",pm-cli,"priority:1",release-readiness,tests
 created_at: "2026-03-08T15:28:23.866Z"
-updated_at: "2026-04-04T21:48:14.921Z"
+updated_at: "2026-07-26T17:04:33.594Z"
 deadline: "2026-03-09T15:35:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintainer-loop-2026-03-08
-release: v0.1
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: Guard todos import hierarchical ID preservation has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Guard todos import hierarchical ID preservation is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: v0.1
 component: project-management/guard-todos-import-hierarchical-id-preservation
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Guard todos import hierarchical ID preservation.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-08T15:28:23.866Z",maintainer-agent,null
+  pm-b1w,implements,"2026-07-26T17:04:33.353Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-08T15:28:23.866Z",maintainer-agent,Why this exists because todos import should keep hierarchical IDs stable and that contract needs an explicit release hardening guard
   "2026-03-08T15:28:33.138Z",maintainer-agent,"Planned changeset: clarify PRD and README that todos import preserves hierarchical imported IDs, then add focused unit and CLI integration assertions for ids like pm-legacy.1.2 before running mandatory pm verification sweeps."
@@ -57,9 +58,9 @@ files[4]{path,scope,note}:
   README.md,project,public import contract clarification
   tests/integration/cli.integration.spec.ts,project,CLI-level hierarchical import guard
   tests/unit/todos-extension.spec.ts,project,hierarchical ID regression guard
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted todos import contract regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,project,2400,targeted todos import contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,authoritative import behavior contract

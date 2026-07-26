@@ -6,11 +6,16 @@ status: closed
 priority: 3
 tags[3]: agent-ux,fix,token-efficiency
 created_at: "2026-05-28T05:13:46.095Z"
-updated_at: "2026-05-28T10:58:46.182Z"
+updated_at: "2026-07-26T17:30:14.426Z"
 author: maintainer-agent
 parent: pm-th6y
+release: v2026.5.29
 resolution: "Added defensive HTML-entity decode (5 core entities) at the MCP server boundary in src/mcp/server.ts:792. Decodes &lt; &gt; &quot; &#39; &amp; only when &lt; or &gt; is present in the input (no-op for normal text). Single-pass via lookup map so &amp;lt; stays as literal &lt; (preserves intentional double-encoding). Walker handles nested options/arrays. Pure helper in src/core/shared/html-entity-decode.ts with 100% test coverage."
 expected_result: "pm comments/notes/learnings/create/update --add via MCP store text verbatim with literal angle brackets preserved, matching the direct-CLI behavior."
 actual_result: "Verified 19 unit tests pass (idempotent, no double-decode, deep nesting, non-string passthrough). Direct CLI continues to pass &lt;type&gt; verbatim. MCP wiring in src/mcp/server.ts:792 ensures every tool-call argument tree is normalized before reaching any handler."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-edge,related,"2026-07-26T17:30:14.175Z",null,null
+  pm-fl0c,related,"2026-07-26T17:30:14.175Z",null,null
+  pm-th6y,implements,"2026-07-26T17:30:14.175Z",null,null
 close_reason: Shipped defensive HTML-entity decode at MCP server boundary.
 body: ""

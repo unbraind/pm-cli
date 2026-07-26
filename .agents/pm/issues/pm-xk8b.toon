@@ -6,13 +6,23 @@ status: closed
 priority: 2
 tags[4]: audit,hygiene,pm-cli,security
 created_at: "2026-04-28T17:34:52.401Z"
-updated_at: "2026-05-02T11:03:22.064Z"
+updated_at: "2026-07-26T17:29:38.852Z"
 author: audit-agent
 parent: pm-wg1d
+release: v2026.5.1
 severity: low
 resolution: "Resolution normalized from close_reason: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
 expected_result: "Expected closure outcome: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
 actual_result: "Actual closure outcome: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-0kjv,related,"2026-07-26T17:29:38.633Z",null,null
+  pm-2eb3,related,"2026-07-26T17:29:38.633Z",null,null
+  pm-cakn,related,"2026-07-26T17:29:38.633Z",null,null
+  pm-e0b5,related,"2026-07-26T17:29:38.633Z",null,null
+  pm-jkip,related,"2026-07-26T17:29:38.633Z",null,null
+  pm-mb4n,related,"2026-07-26T17:29:38.633Z",null,null
+  pm-ny6y,related,"2026-07-26T17:29:38.633Z",null,null
+  pm-wg1d,implements,"2026-07-26T17:29:38.633Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-28T17:36:32.951Z",audit-agent,Redacted SSH test command in pm-cakn. Added audit note to pm-mb4n. Historical comments contain private host references as audit artifacts but no credentials.
   "2026-05-01T22:54:27.307Z",audit-agent,"2026-05-02 remediation: (1) pm-ny6y description redacted to remove private IP, (2) pm-jkip body redacted, (3) audit comments added to pm-ny6y, pm-mb4n, pm-0kjv, pm-e0b5, pm-2eb3 documenting historical IP references in append-only comments/notes, (4) check-secrets.mjs passes clean, (5) no passwords or tokens found in any tracked file."

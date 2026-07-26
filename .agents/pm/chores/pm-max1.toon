@@ -6,13 +6,18 @@ status: closed
 priority: 3
 tags[4]: calendar,code-quality,dedup,recurrence
 created_at: "2026-05-22T19:16:52.926Z"
-updated_at: "2026-05-24T08:21:15.396Z"
+updated_at: "2026-07-26T17:20:07.191Z"
 author: codex-duplicate-audit
 acceptance_criteria: "One shared recurrence weekday ordering helper is exported from the appropriate item/time module; item serialization, create/update parsing, and calendar expansion use it; recurrence ordering behavior stays covered; focused recurrence/calendar tests and pnpm build pass."
 parent: pm-rnpb
+release: v2026.5.24
 resolution: Shared recurrence weekday ordering helper now lives with the canonical recurrence weekday values.
 expected_result: "Create/update parsing, item formatting, and calendar expansion use one ordering helper with behavior preserved."
 actual_result: PR #58 merged weekdayOrderIndex reuse with focused recurrence/calendar tests and green CI.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-8fx3,related,"2026-07-26T17:20:06.982Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:20:06.982Z",null,null
+  pm-why9,related,"2026-07-26T17:20:06.982Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-22T19:16:52.926Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'weekdayOrderIndex RECURRENCE_WEEKDAY_VALUES recurrence weekday order' found only closed recurrence work plus unrelated pm-8fx3; no active exact helper-dedup item."
   "2026-05-24T06:40:22.635Z",weekday-order-dedup,"START (weekday-order-dedup sub-agent): Claimed pm-max1. Plan: export a single shared `weekdayOrderIndex(value: RecurrenceWeekday): number` from src/types.ts next to RECURRENCE_WEEKDAY_VALUES (its canonical home, already imported by all 4 sites), then remove the 4 local copies in item-format.ts, create.ts, update.ts, calendar.ts and import the shared one. Will add a focused test since src/types.ts is coverage-gated at 100%. Pure dedup, behavior preserved."

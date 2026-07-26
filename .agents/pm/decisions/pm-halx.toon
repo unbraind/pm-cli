@@ -6,11 +6,15 @@ status: closed
 priority: 1
 tags[3]: activation,"area:extensions","area:schema"
 created_at: "2026-06-24T13:13:24.134Z"
-updated_at: "2026-06-24T13:32:21.904Z"
+updated_at: "2026-07-26T17:15:19.189Z"
 author: claude-code-agent
 parent: pm-d1ig
+release: v2026.6.30
 resolution: "Decided and implemented: the schema scaffold OMITS activation.commands. Verified empirically — a schema package with narrow activation.commands fails 'pm create <type>' (Invalid type value) because lazy activation never fires for built-in create; with the field omitted, conservative activation (schema in CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) loads the package for every command and the custom type + alias resolve correctly. Encoded in buildScaffoldActivationCommands (schema -> []) + conditional manifest activation spread, and documented in the generated README '## Activation' section. Follow-up doctor warning tracked as pm-ok47."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-5wb6,related,"2026-06-24T13:13:51.486Z",null,null
+  pm-d1ig,implements,"2026-07-26T17:15:18.972Z",null,null
+  pm-ok47,related,"2026-07-26T17:15:18.972Z",null,null
+  pm-yxb5,related,"2026-07-26T17:15:18.972Z",null,null
 close_reason: "Decided and implemented: the schema scaffold OMITS activation.commands. Verified empirically — a schema package with narrow activation.commands fails 'pm create <type>' (Invalid type value) because lazy activation never fires for built-in create; with the field omitted, conservative activation (schema in CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) loads the package for every command and the custom type + alias resolve correctly. Encoded in buildScaffoldActivationCommands (schema -> []) + conditional manifest activation spread, and documented in the generated README '## Activation' section. Follow-up doctor warning tracked as pm-ok47."
 body: ""

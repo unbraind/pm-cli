@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:cli","area:docs",code,doc,"milestone:1",pm-cli,"priority:0",tests
 created_at: "2026-03-07T11:19:34.615Z"
-updated_at: "2026-04-04T21:45:36.465Z"
+updated_at: "2026-07-26T17:03:21.193Z"
 deadline: "2026-03-09T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-cujj
 blocked_reason: Add --ac alias parity for pm update acceptance criteria has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add --ac alias parity for pm update acceptance criteria is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/add-ac-alias-parity-for-pm-update-acceptance-cri
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add --ac alias parity for pm update acceptance criteria.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-cujj,related,"2026-03-07T11:19:34.615Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:03:20.983Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-07T11:19:34.615Z",maintainer-agent,Gap discovered during release-readiness audit update accepts only --acceptance-criteria while create already supports --ac alias.
   "2026-03-07T11:19:40.777Z",maintainer-agent,"Intended change-set: update PRD and README update-option contracts to include --ac alias, then wire Commander option/normalizeUpdateOptions alias handling and add integration assertions for help and alias behavior."
@@ -58,10 +59,10 @@ files[6]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,update alias behavior regression
   tests/integration/release-readiness-runtime.spec.ts,project,update help contract regression
   tests/integration/run-tests-script.integration.spec.ts,project,fixed vitest output check
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,update alias integration
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,contract parity regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1800,update alias integration
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1800,contract parity regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative command contract

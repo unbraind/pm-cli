@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:search",code,doc,"milestone:4",pm-cli,"priority:1",roadmap,tests
 created_at: "2026-03-06T22:11:04.906Z"
-updated_at: "2026-05-17T08:21:02.855Z"
+updated_at: "2026-07-26T17:04:00.453Z"
 deadline: "2026-03-08T22:11:04.906Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-f45
 blocked_reason: "M4 follow-up: exact-title lexical boost for deterministic search ranking has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4 follow-up: exact-title lexical boost for deterministic search ranking is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: archive-2026q2
 component: project-management/m4-follow-up-exact-title-lexical-boost-for-deter
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 follow-up: exact-title lexical boost for deterministic search ranking."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-f45,related,"2026-03-06T22:11:04.906Z",maintainer-agent,null
+  pm-o7be,implements,"2026-07-26T17:04:00.246Z",null,null
 comments[8]{created_at,author,text}:
   "2026-03-06T22:11:04.906Z",maintainer-agent,"Why this exists: Milestone 4 still tracks advanced relevance tuning and exact-title boosting is a bounded deterministic increment."
   "2026-03-06T22:11:18.394Z",maintainer-agent,"Planned changeset: docs-first update PRD/README search tuning notes for exact-title boost, then implement deterministic title-token bonus in keyword/hybrid scoring and add ranking assertions in search command tests."
@@ -65,10 +66,10 @@ files[9]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,search-completion-flag-coverage
   tests/unit/search-command.spec.ts,project,exact-title ranking regression coverage
   tests/unit/test-all-command.spec.ts,project,stabilize deterministic coverage for timeout max-branch
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,search ranking regression
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,search-exactness-targeted-suite
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,1800,search ranking regression
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts,project,7200,search-exactness-targeted-suite
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow rules
   PRD.md,project,authoritative search roadmap contract

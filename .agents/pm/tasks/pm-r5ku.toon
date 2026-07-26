@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:search-keyword",code,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-02-22T14:11:09.924Z"
-updated_at: "2026-04-04T21:46:57.196Z"
+updated_at: "2026-07-26T17:24:42.616Z"
 deadline: "2026-02-25T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-f45
 blocked_reason: "M4: Strict keyword search filter validation parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4: Strict keyword search filter validation parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/strict-keyword-search-filter-validation-parity
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Strict keyword search filter validation parity.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-f45,parent,"2026-02-22T14:11:09.924Z",maintainer-agent,null
   pm-pmd,related,"2026-02-22T14:11:09.924Z",maintainer-agent,null
+  pm-f45,implements,"2026-07-26T17:24:42.343Z",null,null
 comments[6]{created_at,author,text}:
   "2026-02-22T14:11:09.924Z",maintainer-agent,Gap found in search filter validation branch coverage and strictness.
   "2026-02-22T14:11:30.945Z",maintainer-agent,"Planned change-set: enforce strict search filter parsing parity with list (validate type enum and integer priority), then add focused unit coverage and run full pm-linked regression commands."
@@ -60,9 +61,9 @@ files[4]{path,scope,note}:
   README.md,project,docs-first search filter contract
   src/cli/commands/search.ts,project,search filter parsing update
   tests/unit/search-command.spec.ts,project,strict filter parsing regressions
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,coverage gate regression
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,search regression suite
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,900,coverage gate regression
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,300,search regression suite
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and testing protocol
   PRD.md,project,governing command contract

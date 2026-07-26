@@ -6,11 +6,15 @@ status: closed
 priority: 2
 tags[4]: adr,agent-ux,"area:cli",context-management
 created_at: "2026-06-24T15:56:19.824Z"
-updated_at: "2026-06-24T16:44:32.876Z"
+updated_at: "2026-07-26T17:08:41.497Z"
 author: claude-code-agent
 parent: pm-m2u1
+release: v2026.6.30
 resolution: "Adopted: actionability is a pure corpus function — ready = active leaf with no open blocked_by; containers (open descendants) excluded; recommended = top READY by compareCriticalItems (in-progress first). Implemented in pm-nj90."
 expected_result: "A documented, schema-agnostic readiness model reusing the existing blocked_by resolver and criticality comparator, with no type allowlist."
 actual_result: Implemented in core/item/actionability.ts (computeActionabilityReport) and consumed by pm next; collectBlockedByIds shared with close.ts; compareCriticalItems/collectSubtreeIds promoted to public context.ts exports.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-m2u1,implements,"2026-07-26T17:08:41.336Z",null,null
+  pm-nj90,related,"2026-07-26T17:08:41.336Z",null,null
 close_reason: "Decision implemented by pm-nj90: dependency-aware actionability (ready = active leaf with no open blocked_by; containers excluded; recommended = top READY by compareCriticalItems, in-progress first). collectBlockedByIds extracted to core/item/actionability.ts as the single source of truth shared with close.ts auto-unblock; compareCriticalItems/collectSubtreeIds promoted to public context.ts exports. Shipped and verified."
 body: ""

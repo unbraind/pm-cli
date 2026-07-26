@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: contracts,docs,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:21.381Z"
-updated_at: "2026-04-04T21:45:09.961Z"
+updated_at: "2026-07-26T17:23:17.021Z"
 deadline: "2026-02-19T23:37:21.381Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-ote
 blocked_reason: Docs contract sync for release readiness has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Docs contract sync for release readiness is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/docs-contract-sync-for-release-readiness
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Docs contract sync for release readiness.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ote,parent,"2026-02-17T23:37:21.381Z",cursor-agent,null
+  pm-ote,implements,"2026-07-26T17:23:16.819Z",null,null
 comments[9]{created_at,author,text}:
   "2026-02-17T23:38:07.132Z",cursor-agent,"Phase 0 complete: created epic pm-ote and child items pm-pq8, pm-2c8, pm-912, pm-wo8, pm-cyj, pm-tq1 with explicit dependencies."
   "2026-02-17T23:42:24.565Z",cursor-agent,"Updated docs-first contracts before code behavior changes: command surface scoped to v0.1, release-ready structure defined, sandbox PM_PATH test safety codified, and release checklist added."
@@ -67,8 +68,8 @@ files[9]{path,scope,note}:
   README.md,project,Docs-first release contract alignment
   scripts/run-tests.mjs,project,sandbox-safe pm-linked test runner
   SECURITY.md,project,recommended security policy
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Sandbox coverage gate for docs and release baseline
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,Sandbox coverage gate for docs and release baseline
 docs[8]{path,scope,note}:
   AGENTS.md,project,Contributor workflow contract
   CHANGELOG.md,project,release changelog baseline

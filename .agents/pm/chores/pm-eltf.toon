@@ -6,13 +6,17 @@ status: closed
 priority: 2
 tags[3]: code-quality,dedup,tests
 created_at: "2026-05-22T18:54:16.326Z"
-updated_at: "2026-05-23T19:58:51.350Z"
+updated_at: "2026-07-26T17:13:01.458Z"
 author: codex-duplicate-audit
 acceptance_criteria: Shared test helper covers common create-item setup with explicit overrides; repeated long createTask/createSeedItem blocks are removed from affected specs; migrated tests still make command-specific setup obvious; targeted unit/integration specs and pnpm build pass.
 parent: pm-rnpb
+release: v2026.5.24
 resolution: Shared test item factory extracted and merged in PR #52.
 expected_result: Tests create representative pm items through one helper without changing item lifecycle semantics.
 actual_result: "tests/helpers/itemFactory.ts covers representative create-item setup; focused tests, full release gate, manual dogfood, GitHub checks, and AI review follow-up passed."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7rlp,related,"2026-07-26T17:13:01.196Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:13:01.196Z",null,null
 comments[4]{created_at,author,text}:
   "2026-05-22T18:54:16.326Z",codex-duplicate-audit,"Duplicate-check evidence: searched tracker for createTask helper and repeated create item test duplication. No open item covers this fixture clone; pm-7rlp covers runner/CI performance only. Scan found 9 files with identical create flag windows."
   "2026-05-23T19:14:26.335Z",codex-test-helper-agent,"Start: inspecting representative create-item helper duplication in comments-command, notes/learnings, close/delete/restore/test/validate, and task-lifecycle aliases; will add a shared test item factory with explicit overrides and migrate only clear repeated setup blocks."
@@ -30,7 +34,7 @@ files[11]{path,scope,note}:
   tests/unit/search-cache.spec.ts,project,migrated search cache seed item setup to shared item factory
   tests/unit/test-command.spec.ts,project,migrated repeated createTask setup to shared item factory
   tests/unit/validate-command.spec.ts,project,migrated repeated createTask setup to shared item factory
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/unit/close-command.spec.ts tests/unit/delete-command.spec.ts tests/unit/restore-command.spec.ts tests/unit/test-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/task-lifecycle-aliases.spec.ts tests/unit/search-cache.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/unit/close-command.spec.ts tests/unit/delete-command.spec.ts tests/unit/restore-command.spec.ts tests/unit/test-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/task-lifecycle-aliases.spec.ts tests/unit/search-cache.spec.ts,project,240
 close_reason: Shared test item factory extracted and representative command specs migrated; PR #52 merged with local release gate and GitHub checks green.
 body: ""

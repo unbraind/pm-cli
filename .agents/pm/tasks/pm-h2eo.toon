@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:ux",code,pm-cli
 created_at: "2026-04-01T01:40:02.062Z"
-updated_at: "2026-04-04T21:40:59.178Z"
+updated_at: "2026-07-26T17:15:07.512Z"
 deadline: "2026-04-09T01:40:02.062Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-5bwo
 blocked_reason: Align extension metadata and completion/wrapper parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Align extension metadata and completion/wrapper parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: extensions/tooling
 regression: true
 customer_impact: Improves discoverability and consistency across extension and tooling paths.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-5bwo,parent,"2026-04-01T01:40:02.062Z",codex-agent,null
+  pm-5bwo,implements,"2026-07-26T17:15:07.344Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T01:40:02.062Z",codex-agent,Task covers extension metadata handling and completion plus Pi wrapper parity.
   "2026-04-01T01:52:43.746Z",codex-agent,Extended dynamic extension flag help metadata to support required/disabled markers and hidden visibility behavior; verified with integration coverage.
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:37:14.378Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/extensions/loader.ts,project,extension registration metadata
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,extension and tooling parity regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,project,2400,extension and tooling parity regression
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension policy metadata documentation
 close_reason: Extension metadata and tooling parity updates implemented

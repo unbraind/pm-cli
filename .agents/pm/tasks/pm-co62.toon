@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli",code,pm-cli
 created_at: "2026-04-01T01:39:45.534Z"
-updated_at: "2026-04-04T21:38:03.253Z"
+updated_at: "2026-07-26T17:11:20.176Z"
 deadline: "2026-04-08T01:39:45.534Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-5bwo
 blocked_reason: Enforce option policies in create/update and help errors has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Enforce option policies in create/update and help errors is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: cli/runtime
 regression: true
 customer_impact: Fewer failed runs and clearer remediation when options are missing or disabled.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-5bwo,parent,"2026-04-01T01:39:45.534Z",codex-agent,null
+  pm-5bwo,implements,"2026-07-26T17:11:19.958Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T01:39:45.534Z",codex-agent,Task covers create update enforcement and commander usage guidance paths.
   "2026-04-01T01:52:40.868Z",codex-agent,"Added create/update option policy enforcement, disabled-option runtime errors, and policy-aware help/error guidance including missing --type improvements."
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:24:06.516Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,policy enforcement in create
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,runtime enforcement regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,2400,runtime enforcement regressions
 docs[1]{path,scope,note}:
   README.md,project,user-facing policy behavior examples
 close_reason: Runtime enforcement and help/error option-policy guidance implemented

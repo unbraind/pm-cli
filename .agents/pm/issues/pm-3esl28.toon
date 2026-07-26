@@ -6,22 +6,26 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",gh-issue,json,token-efficiency
 created_at: "2026-07-22T19:01:44.269Z"
-updated_at: "2026-07-23T06:14:26.106Z"
+updated_at: "2026-07-26T17:03:01.497Z"
 closed_at: "2026-07-23T05:34:00.488Z"
 author: codex-sdk-boundary-20260722
 acceptance_criteria: "Default standard-depth get/show JSON reports notes_count whenever notes are omitted; full/deep projections remain backward compatible and include notes; CLI aliases, SDK result contracts, MCP projections, TOON/JSON docs, and contract fixtures remain coherent; regression tests cover zero, one, and multiple notes plus explicit depth modes"
 parent: pm-mpbb
+release: v2026.7.23
 reporter: GitHub GH-645
 severity: medium
 resolution: "Standard and brief get projections now expose item.notes_count whenever note bodies are omitted; deep/full reads retain note bodies without a redundant count, and narrow fields accept notes_count."
 expected_result: Agents can distinguish zero notes from omitted note context without requesting a full item payload.
 actual_result: "CLI, PmClient, aliases, field projection, SDK docs, focused tests, full coverage, and packed installed-consumer acceptance all confirm the truthful count contract."
 affected_version: 2026.7.22
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-22T19:01:44.269Z",null,null
   pm-ds3b,verifies,"2026-07-23T04:53:26.301Z",null,null
   pm-k9t17l,related,"2026-07-23T04:53:26.301Z",null,null
   pm-mmm9o5,related,"2026-07-23T04:53:26.301Z",null,null
+  pm-cfed,related,"2026-07-26T17:03:01.303Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:03:01.303Z",null,null
+  pm-wrss,related,"2026-07-26T17:03:01.303Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-22T19:01:44.269Z",codex-sdk-boundary-20260722,"Duplicate check 2026-07-22: all-status searches for GH-645,show/get JSON notes_count,standard depth omitted notes,and projection metadata found adjacent output-contract lineage pm-srns and completed JSON work pm-cfed/pm-wrss,but no item owns this exact missing-context signal. Created open and unclaimed; not part of the active SDK boundary PR."
   "2026-07-22T19:01:57.175Z",codex-sdk-boundary-20260722,"GitHub linkage evidence: posted the canonical pm item link on GH-645 at https://github.com/unbraind/pm-cli/issues/645. Item remains open/unclaimed and outside the active SDK boundary implementation."

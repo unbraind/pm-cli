@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: merge,multi-agent,toon
 created_at: "2026-07-19T03:41:13.881Z"
-updated_at: "2026-07-19T05:39:52.556Z"
+updated_at: "2026-07-26T17:19:54.903Z"
 closed_at: "2026-07-19T05:39:08.729Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -14,12 +14,14 @@ acceptance_criteria: "Two branches editing disjoint fields of one item merge cle
 parent: pm-g5sx
 risk: medium
 confidence: high
+release: v2026.7.19
 resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
 expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
 actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-9q2t,related,"2026-07-19T03:41:13.881Z",null,null
   pm-wc1r,related,"2026-07-19T03:41:13.881Z",null,null
+  pm-g5sx,implements,"2026-07-26T17:19:54.653Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-19T05:38:29.049Z",maintainer-agent,"Evidence: item merge resolves updated_at independently by latest timestamp while other scalar fields retain true three-way semantics; clean/disputed field fixtures pass."
   "2026-07-19T05:39:07.728Z",maintainer-agent,"Final local gates: 315 test files / 5,944 tests passed with 100% statements, branches, functions, and lines; typecheck, ESLint, jscpd zero clones, static complexity/docstring/package-boundary checks, token budgets, docs/skills links, contracts snapshot, and secret scan passed."

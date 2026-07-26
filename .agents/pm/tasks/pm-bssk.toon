@@ -6,12 +6,21 @@ status: closed
 priority: 2
 tags[4]: code-quality,codefactor,complexity,duplication
 created_at: "2026-07-02T15:11:04.147Z"
-updated_at: "2026-07-02T17:44:08.593Z"
+updated_at: "2026-07-26T17:10:31.611Z"
 author: claude-code-agent
 parent: pm-92if
+release: v2026.7.3
 resolution: Extracted focused helpers and dispatch tables across residual complexity hotspots while preserving command behavior and SDK surfaces.
 expected_result: "CodeFactor-facing complexity debt is reduced without regressions, duplicate detection stays clean, and package-installed pm CLI smoke workflows continue to work."
 actual_result: "Reduced local strict complexity(max=15) findings from 65 to 48, kept jscpd at 0 clones, passed 100/100/100/100 coverage, pm-linked gates, lint/static quality/typecheck, security/audit/changelog checks, health/validate history-drift, and packed temp install smoke."
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-0n6p,related,"2026-07-26T17:10:31.412Z",null,null
+  pm-92if,implements,"2026-07-26T17:10:31.412Z",null,null
+  pm-arzz,related,"2026-07-26T17:10:31.412Z",null,null
+  pm-fmjy,related,"2026-07-26T17:10:31.412Z",null,null
+  pm-g7vl,related,"2026-07-26T17:10:31.412Z",null,null
+  pm-lzzp,related,"2026-07-26T17:10:31.412Z",null,null
+  pm-zro7,related,"2026-07-26T17:10:31.412Z",null,null
 comments[10]{created_at,author,text}:
   "2026-07-02T15:11:16.507Z",claude-code-agent,"Investigation note: duplicate-safe all-status search found canonical CodeFactor epic pm-92if and closed category children pm-arzz/pm-fmjy/pm-0n6p/pm-g7vl/pm-zro7/pm-lzzp; no active child covered the fresh 2026-07-02 CodeFactor main snapshot. Public CodeFactor currently reports 27 active issues: 16 complexity and 11 duplication. GitHub sweep found no open PRs, no open issues, and no open Dependabot/code-scanning/secret-scanning alerts."
   "2026-07-02T15:50:28.169Z",claude-code-agent,"Evidence: refactored residual CodeFactor complexity hotspots across 15 production files plus focused branch coverage in health/error-guidance tests. Live CodeFactor snapshot at start was 27 issues on main; local stricter ESLint complexity(max=15) probe reduced from 65 to 48 findings. Verification passed: pm test pm-bssk --run --progress (git diff --check, node scripts/run-tests.mjs coverage at 100/100/100/100, focused create/health/init/next/profile/cli-main/sdk tests, pnpm lint with 0 jscpd clones, pnpm quality:static, pnpm typecheck). Manual packed install smoke passed in a fresh temp project using pnpm pack + npm install tarball: pm init --defaults --json, pm create --json, pm list --format json, pm search --status all, pm health --check-only --summary --json, pm validate --check-history-drift --json."

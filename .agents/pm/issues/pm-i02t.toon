@@ -6,15 +6,19 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",context-management,query
 created_at: "2026-06-20T00:12:19.204Z"
-updated_at: "2026-06-20T00:50:27.593Z"
+updated_at: "2026-07-26T17:16:07.130Z"
 author: codex-sdk-cli-continuation
 parent: pm-mpbb
+release: v2026.6.20
 resolution: Added a shared all-status sentinel for list/search filters and documented it across CLI/MCP/contracts/docs.
 expected_result: Agents can run pm search --status all and pm list --status all to deliberately scan every lifecycle bucket for duplicate-safe context discovery.
 actual_result: Standalone all now resolves to no status set while preserving explicit filter intent; search and list return open and closed items and echo filters.status=all; mixed all with other statuses is rejected.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-ec4s,related,"2026-06-20T00:12:59.537Z",null,null
   pm-j2ig,related,"2026-06-20T00:12:59.537Z",null,null
+  pm-e7dn,related,"2026-07-26T17:16:06.876Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:16:06.876Z",null,null
+  pm-srex,related,"2026-07-26T17:16:06.876Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-20T00:12:27.661Z",codex-sdk-cli-continuation,"Duplicate-check evidence: pm list --parent pm-mpbb --status open showed only pm-srex and pm-e7dn; pm search 'status all duplicate discovery' across default/open and closed results found historical closed lineage pm-j2ig and pm-ec4s but no active item for the current --status all rejection. Live reproduction: pm search '<query>' --status all exits with Invalid --status value all."
   "2026-06-20T00:30:47.457Z",codex-sdk-cli-continuation,"Evidence: implemented standalone --status all as explicit no-op lifecycle filter for search and list. Search now returns all lifecycle buckets and echoes filters.status=all; list now disables active-only terminal exclusion when --status all is supplied and echoes filters.status=all. Focused tests passed (149 tests); full coverage passed 4699 tests with Statements/Branches/Functions/Lines all 100%; contracts:check and quality:static passed; manual temp-dir smoke with sandboxed PM_PATH/PM_GLOBAL_PATH passed for init/create/close/search/list."
@@ -30,12 +34,12 @@ files[9]{path,scope,note}:
   tests/unit/commands/list-command.spec.ts,project,List regression for --status all overriding active-only default filtering.
   tests/unit/commands/search-command.spec.ts,project,Command-level regression proving search --status all keeps all statuses.
   tests/unit/core/item/status-normalization.spec.ts,project,Parser regressions for standalone all and mixed all rejection.
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,700,null,null,null,null,null,null,null,null,null,null,null,Full repo coverage proof after list/search --status all fixes.
-  node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/commands/search-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Focused parser and search regressions for --status all.
-  node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/list-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Focused parser/search/list regressions for --status all.
-  "pnpm changelog:pm:check",null,project,180,null,null,null,null,null,null,null,null,null,null,null,Package-owned changelog freshness check with pm-changelog.
-  "pnpm contracts:check && pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,Contract snapshot and static/docstring quality gate.
+tests[5]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,700,Full repo coverage proof after list/search --status all fixes.
+  node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/commands/search-command.spec.ts,project,240,Focused parser and search regressions for --status all.
+  node scripts/run-tests.mjs test -- tests/unit/core/item/status-normalization.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/list-command.spec.ts,project,300,Focused parser/search/list regressions for --status all.
+  "pnpm changelog:pm:check",project,180,Package-owned changelog freshness check with pm-changelog.
+  "pnpm contracts:check && pnpm quality:static",project,120,Contract snapshot and static/docstring quality gate.
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Command reference documents duplicate-check --status all usage.
 close_reason: "Implemented and verified --status all lifecycle-wide search/list behavior with docs, contracts, focused tests, full 100% coverage, and temp-dir smoke evidence."

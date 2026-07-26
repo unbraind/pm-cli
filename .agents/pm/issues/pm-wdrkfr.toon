@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[9]: agent-ux,"area:history","area:storage",delete,gc,gh-issue,"gh:unbraind/pm-cli#708",multi-agent,observability
 created_at: "2026-07-25T12:10:49.472Z"
-updated_at: "2026-07-25T16:54:15.967Z"
+updated_at: "2026-07-26T17:28:41.966Z"
 closed_at: "2026-07-25T16:31:45.722Z"
 author: "harness:codex"
 estimated_minutes: 240
@@ -16,16 +16,18 @@ value: Agents can distinguish intentional audit proof from orphaned residue and 
 parent: pm-o2kc
 risk: medium
 confidence: high
+release: v2026.7.26
 resolution: Delete tombstones are explicit in mutation output and health policy while orphan histories remain warnings.
 expected_result: Delete tombstones are explicit in mutation output and health policy while orphan histories remain warnings.
 actual_result: "Delete tombstones are explicit in mutation output and health policy while orphan histories remain warnings. Verification: linked tests, full coverage, static/security gates, packed consumer, clean-runner CI follow-up, and synchronized terminal metadata passed."
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-4yl0,related,"2026-07-25T12:11:51.320Z",null,null
   pm-9yfo,related,"2026-07-25T12:11:51.320Z",null,null
   pm-l709,related,"2026-07-25T12:11:51.320Z",null,null
   pm-o79o,related,"2026-07-25T12:11:51.320Z",null,null
   pm-tqel,related,"2026-07-25T12:11:51.320Z",null,null
   pm-wwfd,related,"2026-07-25T12:11:51.320Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:28:41.709Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-25T12:10:49.472Z","harness:codex","Duplicate-check evidence: all-status search and full metadata review covered closed delete implementation pm-4yl0,closed storage observability plan pm-l709,open history namespace work pm-tqel,open mutation-completeness gate pm-9yfo,parent epic pm-o2kc,and closed delete/modify merge fix pm-wwfd. Those items own delete execution,generic storage stats,command naming,append completeness,durability,and resurrection detection respectively; none owns enumeration/explanation/retention policy for legitimate history-only tombstones. GH-708 is the canonical new owner."
   "2026-07-25T15:25:45.793Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."

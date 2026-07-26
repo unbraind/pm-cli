@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: codefactor,gh-553,gh-584
 created_at: "2026-07-14T10:18:54.607Z"
-updated_at: "2026-07-21T07:39:43.270Z"
+updated_at: "2026-07-26T17:31:14.377Z"
 closed_at: "2026-07-21T07:35:45.340Z"
 author: codex-gpt5
 estimated_minutes: 30
@@ -14,12 +14,14 @@ acceptance_criteria: "The redundant spread is removed, the history-read focused 
 parent: pm-92if
 risk: low
 confidence: 90
+release: v2026.7.22
 resolution: Removed the history-test and graph-option unnecessary spreads while preserving deterministic ordering and exact optional typing.
 expected_result: Both CodeFactor unnecessary-spread reports clear without weaker tests or new suppression entries.
 actual_result: Focused graph/history suites and the static CodeFactor-parity gate pass.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ofgc,related,"2026-07-14T10:18:54.607Z",codex-gpt5,null
   pm-j8vq,related,"2026-07-21T07:32:59.882Z",codex-root-20260721,null
+  pm-92if,implements,"2026-07-26T17:31:14.150Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-14T10:18:54.607Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-553 --status all returned no item. GH-555 is separately resolved as pm-ofgc because it touches the active relationship test; GH-553 remains open and unclaimed. Source: https://github.com/unbraind/pm-cli/issues/553"
   "2026-07-21T07:33:04.618Z",codex-root-20260721,"Evidence: removed both CodeFactor unnecessary-spread sites while retaining deterministic ordering and exact-optional graph option typing; focused graph/history suites and static CodeFactor-parity gate pass."

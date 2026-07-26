@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:packaging","area:sdk","area:types",pm-cli
 created_at: "2026-04-01T02:17:28.241Z"
-updated_at: "2026-04-25T17:55:04.985Z"
+updated_at: "2026-07-26T17:18:59.427Z"
 deadline: "2026-04-10T02:17:28.241Z"
 author: codex-agent
 estimated_minutes: 90
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-oga6
 blocked_reason: "C1: Publish explicit extension SDK exports has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If C1: Publish explicit extension SDK exports is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: archive-2026q2
 component: project-management/c1-publish-explicit-extension-sdk-exports
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for C1: Publish explicit extension SDK exports."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-oga6,parent,"2026-04-01T02:17:28.241Z",codex-agent,null
+  pm-oga6,implements,"2026-07-26T17:18:59.200Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-01T02:17:28.241Z",codex-agent,C1 task created from full-override feature C.
   "2026-04-01T03:01:11.228Z",codex-agent,Published explicit SDK surface with package exports/types and new src/sdk/index.ts entrypoint; added packaging contract assertions in tests/integration/release-readiness-runtime.spec.ts.
@@ -56,8 +57,8 @@ files[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,SDK dependency setup guidance
   package.json,project,exports and types entrypoints
   src/sdk/index.ts,project,public SDK entrypoint
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,packaging export contract regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,project,1800,packaging export contract regression
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,Updated authoring setup instructions
   README.md,project,scoped SDK import examples

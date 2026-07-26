@@ -6,13 +6,20 @@ status: closed
 priority: 0
 tags[6]: agent-ux,codex,mcp,plugin,pm-cli,skills
 created_at: "2026-05-09T15:54:11.396Z"
-updated_at: "2026-05-25T10:21:16.135Z"
+updated_at: "2026-07-26T17:00:00.675Z"
 author: codex-agent
 acceptance_criteria: Pi can install the package via local/package source; native pm tool covers pm CLI feature actions without shelling out to pm; bundled skills/prompts/resources are discovered by Pi; tests verify action mapping and package/resource shape; docs explain installation and workflows.
 parent: pm-rnpb
+release: v2026.5.27
 resolution: Shipped native Codex plugin + pm-mcp integration and verified runtime smoke behavior.
 expected_result: Codex plugin resources and MCP execution should be installable and operational from the repository package.
 actual_result: Smoke and recorded tests confirm plugin/MCP behavior; open status was stale and item is now closed with metadata.
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-4z9m,related,"2026-07-26T17:00:00.465Z",null,null
+  pm-f3q4,related,"2026-07-26T17:00:00.465Z",null,null
+  pm-fdla,related,"2026-07-26T17:00:00.465Z",null,null
+  pm-mb4n,related,"2026-07-26T17:00:00.465Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:00:00.465Z",null,null
 comments[16]{created_at,author,text}:
   "2026-05-09T15:54:11.396Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search codex plugin native mcp extension --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing pm-4z9m is docs/skills modernization and does not package a Codex plugin/MCP server,so this is net-new child scope under pm-rnpb."
   "2026-05-09T16:10:37.829Z",codex-agent,"Evidence: implemented native Codex plugin with pm-mcp MCP server, repo marketplace, bundled skills/commands/docs, and package inclusion. Verification passed: codex plugin marketplace add <repo-root> on Codex 0.130.0; pm-mcp initialize; native MCP smoke; pm linked tests (focused packaging suite, smoke, build); full coverage 89 files/1242 tests with 100%; quality:static; quality:docs-skills; check-secrets; npm pack --dry-run includes dist/mcp and plugin files. pm validate/health only report pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1."
@@ -45,20 +52,20 @@ files[14]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,provider-compatible flat Pi tool schema
   tests/integration/release-readiness-runtime.spec.ts,project,coverage include allowlist for MCP server binary
   tests/unit/contracts-command.spec.ts,project,schema version regression for Pi tool contract root type
-tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/docs-skills-gate.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,Pi docs and skills gate
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,full coverage
-  node scripts/run-tests.mjs test -- tests/unit/docs-skills-gate.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused plugin packaging regression
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,native Pi package regression
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused Pi schema and package regression
-  node scripts/smoke-codex-plugin-mcp.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,native Codex MCP smoke
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,TypeScript build includes pm-mcp
-  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,static quality gate
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-moyj9k4k-65fwnv,test,passed,"2026-05-09T16:03:06.962Z","2026-05-09T16:03:14.852Z","2026-05-09T16:03:14.852Z",null,null,2,0,0,null,null,null
-  test-local-moyjislx-sgyqb4,test,passed,"2026-05-09T16:09:35.127Z","2026-05-09T16:10:25.749Z","2026-05-09T16:10:25.749Z",null,null,3,0,0,null,null,null
-  test-local-moyjm5h6-toiery,test,passed,"2026-05-09T16:12:10.259Z","2026-05-09T16:13:02.394Z","2026-05-09T16:13:02.394Z",null,null,3,0,0,null,null,null
-  test-local-moz0jvtq-469j3j,test,passed,"2026-05-10T00:01:34.391Z","2026-05-10T00:07:10.047Z","2026-05-10T00:07:10.047Z",null,null,6,0,0,null,null,null
+tests[8]{command,scope,timeout_seconds,note}:
+  node scripts/release/docs-skills-gate.mjs,project,120,Pi docs and skills gate
+  node scripts/run-tests.mjs coverage,project,600,full coverage
+  node scripts/run-tests.mjs test -- tests/unit/docs-skills-gate.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300,focused plugin packaging regression
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300,native Pi package regression
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300,focused Pi schema and package regression
+  node scripts/smoke-codex-plugin-mcp.mjs,project,120,native Codex MCP smoke
+  pnpm build,project,240,TypeScript build includes pm-mcp
+  "pnpm quality:static",project,300,static quality gate
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-moyj9k4k-65fwnv,test,passed,"2026-05-09T16:03:06.962Z","2026-05-09T16:03:14.852Z","2026-05-09T16:03:14.852Z",2,0,0
+  test-local-moyjislx-sgyqb4,test,passed,"2026-05-09T16:09:35.127Z","2026-05-09T16:10:25.749Z","2026-05-09T16:10:25.749Z",3,0,0
+  test-local-moyjm5h6-toiery,test,passed,"2026-05-09T16:12:10.259Z","2026-05-09T16:13:02.394Z","2026-05-09T16:13:02.394Z",3,0,0
+  test-local-moz0jvtq-469j3j,test,passed,"2026-05-10T00:01:34.391Z","2026-05-10T00:07:10.047Z","2026-05-10T00:07:10.047Z",6,0,0
 docs[1]{path,scope,note}:
   docs/CODEX_PLUGIN.md,project,native Codex plugin install and tool docs
 close_reason: Native Codex plugin scope is implemented and currently verified by smoke/test evidence; open status was stale.

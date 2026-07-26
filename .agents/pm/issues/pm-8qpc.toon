@@ -6,15 +6,18 @@ status: closed
 priority: 2
 tags[3]: agent-ux,calendar,pm-cli
 created_at: "2026-04-26T20:16:53.254Z"
-updated_at: "2026-05-01T19:29:07.537Z"
+updated_at: "2026-07-26T17:07:48.660Z"
 deadline: "2026-05-03T20:16:53.254Z"
 author: audit-agent
 estimated_minutes: 30
 acceptance_criteria: Either --full-period works with agenda or error message suggests --from/--to alternative
 parent: pm-kglq
+release: v2026.5.1
 resolution: "Resolution normalized from close_reason: Calendar agenda full-period rejection now includes actionable --from/--to guidance, with matching help-text and regression coverage."
 expected_result: "Expected closure outcome: Calendar agenda full-period rejection now includes actionable --from/--to guidance, with matching help-text and regression coverage."
 actual_result: "Actual closure outcome: Calendar agenda full-period rejection now includes actionable --from/--to guidance, with matching help-text and regression coverage."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-kglq,implements,"2026-07-26T17:07:48.460Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-26T21:14:06.449Z",codex-agent,"Improved agenda UX for full-period misuse: calendar now returns a constructive error explaining that --full-period applies to day/week/month and recommending --from and --to for agenda windows; help narrative tips mirror the same guidance."
   "2026-04-26T21:14:20.252Z",codex-agent,"Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/help-runtime.spec.ts passed (33 tests)."
@@ -23,9 +26,9 @@ files[4]{path,scope,note}:
   src/cli/help-content.ts,project,calendar tips now direct agenda users to --from/--to instead of --full-period
   tests/unit/calendar-command.spec.ts,project,regression assertion for agenda full-period guidance message
   CHANGELOG.md,project,unreleased note for calendar full-period agenda guidance
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/help-runtime.spec.ts,tests/unit/calendar-command.spec.ts,project,360,null,null,null,null,null,null,null,null,null,null,null,verify agenda full-period error guidance and help text parity
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mog9mmjt-knm1k6,test,passed,"2026-04-26T21:12:55.087Z","2026-04-26T21:13:37.193Z","2026-04-26T21:13:37.193Z",null,null,1,0,0,null,null,null
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/help-runtime.spec.ts,tests/unit/calendar-command.spec.ts,project,360,verify agenda full-period error guidance and help text parity
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mog9mmjt-knm1k6,test,passed,"2026-04-26T21:12:55.087Z","2026-04-26T21:13:37.193Z","2026-04-26T21:13:37.193Z",1,0,0
 close_reason: "Calendar agenda full-period rejection now includes actionable --from/--to guidance, with matching help-text and regression coverage."
 body: "Error: --full-period is only supported for --view day|week|month. For agent UX, a constructive error suggesting alternatives (--from/--to) would be better than a bare rejection."

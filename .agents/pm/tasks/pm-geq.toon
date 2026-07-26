@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-renderers",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.686Z"
-updated_at: "2026-04-04T21:46:47.328Z"
+updated_at: "2026-07-26T17:14:28.285Z"
 deadline: "2026-03-13T23:02:11.686Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M5: Renderer and command extension points has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5: Renderer and command extension points is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/renderer-and-command-extension-points
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Renderer and command extension points.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:11.686Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:11.686Z",steve,null
+  pm-b1w,implements,"2026-07-26T17:14:28.047Z",null,null
 comments[13]{created_at,author,text}:
   "2026-02-19T17:58:50.080Z",maintainer-agent,"Planned change-set: docs-first update describing command/renderer extension-point baseline, then implement deterministic extension API registration + runtime dispatch with failure containment and add focused unit/integration coverage before pm test/pm test-all evidence logging."
   "2026-02-19T18:23:27.398Z",maintainer-agent,"Implemented docs-first command/renderer extension-point baseline: README.md and PRD.md now define deterministic command-result override and renderer override behavior; loader activation now exposes registerCommand/registerRenderer registries with deterministic precedence and failure containment; runtime state in core/extensions now tracks active command context + command/renderer registries; output formatting applies command-result overrides before renderer overrides with fallback to core rendering; CLI preAction wires active command context and registries from activated extensions."
@@ -73,10 +74,10 @@ files[10]{path,scope,note}:
   tests/unit/extension-loader.spec.ts,project,unit coverage for command and renderer registration
   tests/unit/extensions-runtime.spec.ts,project,runtime wrapper coverage for active command and renderer override registries
   tests/unit/output.spec.ts,project,coverage for renderer and command-result override formatting behavior
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,integration override behavior regression
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted extension API regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1800,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1200,integration override behavior regression
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,900,targeted extension API regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and test safety protocol
   PRD.md,project,governing spec for extension API and milestones

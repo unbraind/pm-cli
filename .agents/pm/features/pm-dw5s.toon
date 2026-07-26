@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: governance,metadata,pm-cli,validation
 created_at: "2026-04-04T21:55:14.472Z"
-updated_at: "2026-05-17T08:21:47.006Z"
+updated_at: "2026-07-26T17:12:22.679Z"
 deadline: "2026-04-18T21:55:14.472Z"
 author: codex-agent
 estimated_minutes: 240
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: governance-followups
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: medium
 environment: linux
@@ -35,6 +35,10 @@ affected_version: 2026.3.12
 component: validate-metadata-quality
 regression: false
 customer_impact: Teams gain earlier detection of tracker quality drift and lower remediation cost.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-5rjn,implements,"2026-07-26T17:12:22.468Z",null,null
+  pm-i4ef,related,"2026-07-26T17:12:22.468Z",null,null
+  pm-urxb,related,"2026-07-26T17:12:22.468Z",null,null
 comments[13]{created_at,author,text}:
   "2026-04-04T21:55:14.472Z",codex-agent,"Duplicate-check evidence: pm search 'validate placeholder metadata blocked_reason unblock_note repro_steps' --limit 20; pm search 'External audit follow-up: validation and large-output ergonomics' --limit 20; pm list-open --limit 20. Net-new because existing validation items focus on structural checks,not semantic low-signal metadata detection."
   "2026-04-05T03:08:05.985Z",codex-agent,"Scope extension for external issue #4: add default-on remediation command templates for missing resolution metadata in pm validate output details."
@@ -67,12 +71,12 @@ files[15]{path,scope,note}:
   tests/unit/config-command.spec.ts,project,config-metadata-policy-regressions
   tests/unit/settings-store.spec.ts,project,validation-settings-key-order-regression
   tests/unit/validate-command.spec.ts,project,metadata-profile-custom-strict-regressions
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,metadata quality rule coverage
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,validate-lifecycle-guardrails-regression-suite
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,validate-profile-and-config-policy-regression-suite
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mnmdo246-is70zr,test,passed,"2026-04-05T23:06:42.979Z","2026-04-05T23:13:37.206Z","2026-04-05T23:13:37.206Z",null,null,3,0,0,null,null,null
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,project,2400,metadata quality rule coverage
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,validate-lifecycle-guardrails-regression-suite
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,3600,validate-profile-and-config-policy-regression-suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mnmdo246-is70zr,test,passed,"2026-04-05T23:06:42.979Z","2026-04-05T23:13:37.206Z","2026-04-05T23:13:37.206Z",3,0,0
 docs[3]{path,scope,note}:
   docs/ARCHITECTURE.md,project,validate-lifecycle-architecture-notes
   PRD.md,project,validation contract extension

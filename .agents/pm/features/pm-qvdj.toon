@@ -6,9 +6,13 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:sdk",custom-fields,extensions,github-issue
 created_at: "2026-06-02T15:55:03.159Z"
-updated_at: "2026-06-02T22:19:39.198Z"
+updated_at: "2026-07-26T17:24:22.089Z"
 author: codex-gpt5
 parent: pm-8jdc
+release: v2026.6.5
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-8jdc,implements,"2026-07-26T17:24:21.852Z",null,null
+  pm-lwtx,related,"2026-07-26T17:24:21.852Z",null,null
 comments[3]{created_at,author,text}:
   "2026-06-02T21:59:49.447Z",codex-sdk-lane-20260602,"SDK/custom-item-fields lane start under pm-lwtx: reviewing current registerItemFields support and create/update mutation surface for generic extension field setters. Scope is findings and minimal implementation/test recommendations only; no claim/release."
   "2026-06-02T22:02:45.759Z",codex-sdk-lane-20260602,"SDK/custom-item-fields lane final: recommend minimal implementation: keep repeatable --field <name=value> on create/update contracts, add field?: string[] options, normalize/read it in registration-helpers, parse/coerce only active registerItemFields names, merge parsed fields into create frontMatter before applyRegisteredItemFieldDefaultsAndValidation, apply update values in mutateItem with changed_fields and stable equality, add tool/MCP param + docs/examples. Current partial work also needs PmCliErrorContext.known_fields fixed or moved into nextSteps/recovery."
@@ -25,10 +29,10 @@ files[11]{path,scope,note}:
   tests/unit/create-command.spec.ts,project,Coverage for create --field
   tests/unit/extensions-item-fields.spec.ts,project,Coverage for typed field parser
   tests/unit/update-command.spec.ts,project,Coverage for update --field
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions-item-fields.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mpx6zspc-07em0n,test,passed,"2026-06-02T22:10:46.370Z","2026-06-02T22:11:40.176Z","2026-06-02T22:11:40.176Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions-item-fields.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mpx6zspc-07em0n,test,passed,"2026-06-02T22:10:46.370Z","2026-06-02T22:11:40.176Z","2026-06-02T22:11:40.176Z",1,0,0
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,Document registerItemFields CLI setter
   docs/SDK.md,project,Document create/update --field for declared item fields

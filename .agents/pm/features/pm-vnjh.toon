@@ -6,12 +6,19 @@ status: closed
 priority: 2
 tags[5]: agent-ux,ecosystem,external-packages,package-first,test-harness
 created_at: "2026-06-02T22:19:14.844Z"
-updated_at: "2026-06-04T06:43:44.451Z"
+updated_at: "2026-07-26T17:28:12.924Z"
 author: codex-broad-audit-20260602
 parent: pm-ugqx
+release: v2026.6.5
 resolution: "Shipped reusable external package smoke harness, public SDK in-memory activation test helper, docs, and Sentry gate handled-validation hygiene."
 expected_result: Agents can verify external pm packages in isolated temp projects and package authors can test SDK extension registration through public helpers without private loader imports.
 actual_result: "Added pnpm smoke:external-packages, activateExtensionForTest, package-author docs, release-gate allowlist coverage, and linked 11-command verification evidence with all commands passing."
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-59gj,related,"2026-07-26T17:28:12.666Z",null,null
+  pm-etxf,related,"2026-07-26T17:28:12.666Z",null,null
+  pm-kd9n,related,"2026-07-26T17:28:12.666Z",null,null
+  pm-lwtx,related,"2026-07-26T17:28:12.666Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:28:12.666Z",null,null
 comments[10]{created_at,author,text}:
   "2026-06-04T05:36:36.013Z",codex-sdk-cli-impl,"Start: continuing implementation-mode SDK/package-platform work. Duplicate check: pm context, pm search 'SDK package author customizable primitives context management', pm list-open, and pm list-in-progress found no active duplicate; reusing pm-vnjh under pm-ugqx. Sidecar agents launched for GitHub/security/release triage and SDK/package-author surface review."
   "2026-06-04T05:40:29.721Z",codex-sdk-cli-impl,"Evidence: focused external package smoke passed after harness argument-separator fix: pnpm smoke:external-packages -- --package pm-changelog returned ok=true, tested=1, failed=0, package doctor activation_failure_count=0, blocking_failure_count=0, and runtime contracts included changelog actions."
@@ -33,27 +40,27 @@ files[9]{path,scope,note}:
   src/sdk/testing.ts,project,Add package-author in-memory activation test helper
   tests/integration/release-automation-contract.spec.ts,project,Cover Sentry release-gate handled validation allowlist
   tests/unit/sdk-index.spec.ts,project,Cover public SDK testing helper export and capability guardrails
-tests[12]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  bash scripts/prod/telemetry/check-stack-health.sh,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  cd scripts && node smoke-external-packages.mjs --discover-only --limit 1,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/sentry-telemetry-gate.mjs --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/package-runtime-options.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm smoke:external-packages -- --package pm-changelog",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[7]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mpz2jc65-w6elc6,test,passed,"2026-06-04T05:42:06.334Z","2026-06-04T05:42:26.142Z","2026-06-04T05:42:26.142Z",null,null,3,0,0,null,null,null
-  test-local-mpz35bm5-2iv3ny,test,passed,"2026-06-04T05:56:11.241Z","2026-06-04T05:59:31.853Z","2026-06-04T05:59:31.853Z",null,null,11,0,0,null,null,null
-  test-local-mpz3ooe3-8asdfp,test,failed,"2026-06-04T06:11:31.651Z","2026-06-04T06:14:34.875Z","2026-06-04T06:14:34.875Z",null,null,11,1,0,null,null,null
-  test-local-mpz3tm99-viqnkv,test,passed,"2026-06-04T06:14:50.894Z","2026-06-04T06:18:25.389Z","2026-06-04T06:18:25.389Z",null,null,12,0,0,null,null,null
-  test-local-mpz43e64-02vpmf,test,failed,"2026-06-04T06:22:48.232Z","2026-06-04T06:26:01.468Z","2026-06-04T06:26:01.468Z",null,null,11,1,0,null,null,null
-  test-local-mpz4d0zy-2x9q1e,test,passed,"2026-06-04T06:30:47.509Z","2026-06-04T06:33:30.958Z","2026-06-04T06:33:30.958Z",null,null,12,0,0,null,null,null
-  test-local-mpz4q0lw-37nd2j,test,passed,"2026-06-04T06:40:22.731Z","2026-06-04T06:43:36.980Z","2026-06-04T06:43:36.980Z",null,null,12,0,0,null,null,null
+tests[12]{command,scope,timeout_seconds}:
+  bash scripts/prod/telemetry/check-stack-health.sh,project,240
+  cd scripts && node smoke-external-packages.mjs --discover-only --limit 1,project,120
+  node scripts/release/sentry-telemetry-gate.mjs --json,project,240
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/package-runtime-options.spec.ts,project,240
+  pnpm build,project,240
+  "pnpm quality:docs-skills",project,240
+  "pnpm quality:static",project,240
+  "pnpm security:scan",project,240
+  "pnpm smoke:external-packages -- --package pm-changelog",project,240
+  pnpm typecheck,project,240
+test_runs[7]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mpz2jc65-w6elc6,test,passed,"2026-06-04T05:42:06.334Z","2026-06-04T05:42:26.142Z","2026-06-04T05:42:26.142Z",3,0,0
+  test-local-mpz35bm5-2iv3ny,test,passed,"2026-06-04T05:56:11.241Z","2026-06-04T05:59:31.853Z","2026-06-04T05:59:31.853Z",11,0,0
+  test-local-mpz3ooe3-8asdfp,test,failed,"2026-06-04T06:11:31.651Z","2026-06-04T06:14:34.875Z","2026-06-04T06:14:34.875Z",11,1,0
+  test-local-mpz3tm99-viqnkv,test,passed,"2026-06-04T06:14:50.894Z","2026-06-04T06:18:25.389Z","2026-06-04T06:18:25.389Z",12,0,0
+  test-local-mpz43e64-02vpmf,test,failed,"2026-06-04T06:22:48.232Z","2026-06-04T06:26:01.468Z","2026-06-04T06:26:01.468Z",11,1,0
+  test-local-mpz4d0zy-2x9q1e,test,passed,"2026-06-04T06:30:47.509Z","2026-06-04T06:33:30.958Z","2026-06-04T06:33:30.958Z",12,0,0
+  test-local-mpz4q0lw-37nd2j,test,passed,"2026-06-04T06:40:22.731Z","2026-06-04T06:43:36.980Z","2026-06-04T06:43:36.980Z",12,0,0
 docs[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,Document external package ecosystem smoke workflow
   docs/SDK.md,project,Document package-author in-memory SDK activation helper

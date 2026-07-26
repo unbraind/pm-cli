@@ -6,15 +6,18 @@ status: closed
 priority: 0
 tags[5]: dependabot,dependencies,pm-cli,release,security
 created_at: "2026-05-01T11:06:16.117Z"
-updated_at: "2026-05-01T11:40:03.912Z"
+updated_at: "2026-07-26T17:23:41.292Z"
 deadline: "2026-05-02T11:06:16.117Z"
 author: codex-release-agent
 estimated_minutes: 60
 acceptance_criteria: package.json no longer uses latest dependency specs; undici resolves to a non-vulnerable pinned range; changelog and release notes mention the dependency hygiene release; release workflow publishes and verifies the follow-up package.
 parent: pm-3fti
+release: v2026.5.2
 resolution: Pinned all direct latest dependency specifiers to deterministic SemVer ranges and published the 2026.5.1-2 same-day follow-up through the tag-driven release workflow.
 expected_result: No direct latest dependency specifiers remain; undici resolves to the non-vulnerable ^8.1.0 range; npm/npx/bunx/GitHub release all verify 2026.5.1-2; Dependabot reports no open alerts.
 actual_result: package.json and pnpm-lock.yaml use deterministic ranges; release workflow 25212693114 succeeded; GitHub release v2026.5.1-2 is published; npm latest is 2026.5.1-2; npx and bunx return 2026.5.1-2; Dependabot open-alert query is clean.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-3fti,implements,"2026-07-26T17:23:41.073Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-01T11:06:16.117Z",codex-release-agent,"Duplicate check before create: pm context --limit 10 showed only audit parent pm-3fti and tracker hygiene; pm search 'dependabot undici latest dependency manifest' found older closed Dependabot tasks and no active item for the current GitHub advisory banner; pm list-open/list-in-progress found no active dependency release hygiene item. Net-new issue is required for the same-day follow-up release."
   "2026-05-01T11:13:21.500Z",codex-release-agent,"Implemented dependency release hygiene follow-up: bumped package version to 2026.5.1-2, replaced all direct latest dependency specs with explicit SemVer ranges, kept undici on non-vulnerable ^8.1.0, updated pnpm-lock specifiers, CHANGELOG.md, and docs/RELEASING.md. Evidence: node scripts/release-version.mjs check --tag v2026.5.1-2 --verify-next --date 2026.5.1 passed; pnpm security:scan passed; pnpm audit --audit-level low found no known vulnerabilities; pnpm build and pnpm typecheck passed; npm pack --dry-run produced @unbrained/pm-cli@2026.5.1-2; pnpm smoke:npx passed; pm test pm-q71q --run --progress passed coverage with 81 files, 1087 tests, 100% coverage; no direct latest dependency specifiers remain."
@@ -26,10 +29,10 @@ files[4]{path,scope,note}:
   docs/RELEASING.md,project,document deterministic dependency range release requirement
   package.json,project,pin dependency ranges and bump follow-up release version
   pnpm-lock.yaml,project,lockfile specifiers match pinned dependency ranges
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release-version.mjs check --tag v2026.5.1-2 --verify-next --date 2026.5.1,null,project,120,null,null,null,null,null,null,null,null,null,null,null,same-day follow-up version policy gate
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage release gate
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-momtdbh9-4jn6uu,test,passed,"2026-05-01T11:09:02.781Z","2026-05-01T11:12:52.317Z","2026-05-01T11:12:52.317Z",null,null,2,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/release-version.mjs check --tag v2026.5.1-2 --verify-next --date 2026.5.1,project,120,same-day follow-up version policy gate
+  node scripts/run-tests.mjs coverage,project,600,sandboxed coverage release gate
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-momtdbh9-4jn6uu,test,passed,"2026-05-01T11:09:02.781Z","2026-05-01T11:12:52.317Z","2026-05-01T11:12:52.317Z",2,0,0
 close_reason: 2026.5.1-2 published and verified; dependency ranges pinned; Dependabot open-alert query clean; release workflow 25212693114 passed.
 body: ""

@@ -6,13 +6,21 @@ status: closed
 priority: 0
 tags[7]: agents,audit,dogfood,package-first,performance,sdk,telemetry
 created_at: "2026-05-31T10:09:36.633Z"
-updated_at: "2026-05-31T18:36:34.821Z"
+updated_at: "2026-07-26T17:18:15.246Z"
 author: codex-audit-20260531
 acceptance_criteria: "Changes are committed, pushed to a descriptive PR, AI review window is observed, valid feedback is addressed, checks are green, and main is verified after merge."
 parent: pm-59gj
+release: v2026.6.1
 resolution: Merged PR #89 after addressing latest reviewer feedback and validating green local/GitHub gates.
 expected_result: "Branch changes are committed and pushed, reviewers have no new actionable feedback, all required checks are green, PR is merged, and checkout is back on main."
 actual_result: PR #89 merged at bace566ec8c9e7b9131c75205586b3f10ebd1f94; main matches origin/main; post-merge pm health summary is ok with zero warnings.
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-11ag,related,"2026-07-26T17:18:14.977Z",null,null
+  pm-59gj,implements,"2026-07-26T17:18:14.977Z",null,null
+  pm-crpv,related,"2026-07-26T17:18:14.977Z",null,null
+  pm-lql3,related,"2026-07-26T17:18:14.977Z",null,null
+  pm-oxyo,related,"2026-07-26T17:18:14.977Z",null,null
+  pm-qmx3,related,"2026-07-26T17:18:14.977Z",null,null
 comments[17]{created_at,author,text}:
   "2026-05-31T10:09:36.633Z",codex-audit-20260531,"Duplicate check 2026-05-31: ran pm context, pm search for broad audit/sdk/ecosystem/agent UX/telemetry/external packages, pm list-open, and pm list-in-progress. No open or in-progress audit items existed. Reusing canonical package-first lineage pm-59gj; recent related children pm-qmx3 and pm-oxyo are closed, so this item tracks only the new latest-main 2026-05-31 pass."
   "2026-05-31T10:09:51.519Z",codex-audit-20260531,"Audit plan: bootstrap latest main and contracts; dogfood in isolated temp PM_PATH/PM_GLOBAL_PATH; inspect SDK/package authoring surfaces and external package install/upgrade; review agent low-token outputs and forgiving command contracts; scan docs/CI/dependencies/security/performance/telemetry/Sentry; implement the smallest durable fixes; link files/docs/tests; run local gates, push PR, wait for AI review, address valid feedback, and merge after green checks."
@@ -62,24 +70,58 @@ files[30]{path,scope,note}:
   tests/unit/get-append-command.spec.ts,project,get standard projection regression
   tests/unit/health-command.spec.ts,project,health collision remediation regression coverage
   tests/unit/update-many-command.spec.ts,project,full projection helper for linked tests
-tests[15]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/check-secrets.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/docs-skills-gate.mjs --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/static-quality-gate.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/list-flag-accumulation.integration.spec.ts tests/unit/beads-command.spec.ts tests/unit/update-many-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused PR review regression suite
-  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/help-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused collision remediation tests
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  "npm run dogfood:package-first",null,project,600,null,null,null,null,null,null,null,null,null,null,null,bundled package-first temp dogfood
-  "PM_DOGFOOD_SEMANTIC=1 npm run dogfood:package-first",null,project,900,null,null,null,null,null,null,null,null,null,null,null,semantic package-first temp dogfood
-  pnpm audit --audit-level moderate,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mptow8a9-qsy9gx,test,passed,"2026-05-31T11:17:40.363Z","2026-05-31T11:21:42.129Z","2026-05-31T11:21:42.129Z",null,null,12,0,0,null,null,null
+tests[15]:
+  - command: node scripts/check-secrets.mjs
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/release/docs-skills-gate.mjs --json
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/release/static-quality-gate.mjs
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+  - command: node scripts/run-tests.mjs test -- tests/integration/list-flag-accumulation.integration.spec.ts tests/unit/beads-command.spec.ts tests/unit/update-many-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: focused PR review regression suite
+  - command: node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/help-runtime.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+    note: focused collision remediation tests
+  - command: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 600
+  - command: "npm run dogfood:package-first"
+    scope: project
+    timeout_seconds: 600
+    note: bundled package-first temp dogfood
+  - command: "PM_DOGFOOD_SEMANTIC=1 npm run dogfood:package-first"
+    scope: project
+    timeout_seconds: 900
+    note: semantic package-first temp dogfood
+  - command: pnpm audit --audit-level moderate
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm changelog:pm:check"
+    scope: project
+    timeout_seconds: 240
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mptow8a9-qsy9gx,test,passed,"2026-05-31T11:17:40.363Z","2026-05-31T11:21:42.129Z","2026-05-31T11:21:42.129Z",12,0,0
 docs[4]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,standard get projection guidance
   docs/CONFIGURATION.md,project,full get projection guidance

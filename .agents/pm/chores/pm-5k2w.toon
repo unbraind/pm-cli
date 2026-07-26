@@ -6,13 +6,19 @@ status: closed
 priority: 3
 tags[5]: agent-ux,cli,docs,dogfood,polish
 created_at: "2026-05-20T20:33:06.671Z"
-updated_at: "2026-05-25T10:21:11.903Z"
+updated_at: "2026-07-26T17:04:49.797Z"
 author: claude-code-agent
 acceptance_criteria: Each listed sub-item is either fixed with a regression test or explicitly declined with rationale; no change drops coverage below 100%; doc/validator drift (L6) resolved; default-safety inconsistencies (L10) reviewed.
 parent: pm-rnpb
+release: v2026.5.27
 resolution: Delivered and merged the low-severity dogfood polish backlog slices captured under this chore lineage.
 expected_result: Backlog UX polish items should be shipped with focused regression coverage and no remaining unresolved sub-scope in this chore.
 actual_result: Targeted polish slices are merged and verified; item remained open only as stale workflow state and is now normalized.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-fuat,related,"2026-07-26T17:04:49.602Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:04:49.602Z",null,null
+  pm-tobi,related,"2026-07-26T17:04:49.602Z",null,null
+  pm-ypqp,related,"2026-07-26T17:04:49.602Z",null,null
 comments[20]{created_at,author,text}:
   "2026-05-21T04:30:32.081Z",codex-full-manual-audit,"Evidence: focused manual smoke passed config list shorthand, cal week positional view, close active-child warning, gc reindex install guidance, and PM_NO_TELEMETRY health reporting. Local checks passed so far: pnpm build; focused 7-file suite 37 tests after calendar runtime fix and 6-file suite 129 tests before that; pnpm quality:static; node scripts/check-secrets.mjs."
   "2026-05-21T04:40:05.493Z",codex-full-manual-audit,"Evidence: full release gate passed after stale GC expectation update. Passed build, typecheck, docs-skills, static quality, coverage 96 files / 1399 tests at 100 percent, version policy, secret scan, npx packed smoke, package-first dogfood 84 workflows, npm pack dry-run, compatibility, and required Sentry/telemetry gate with Sentry critical=0 high=1 and telemetry finish_error_rate_pct=2.71."
@@ -61,16 +67,38 @@ files[26]{path,scope,note}:
   tests/unit/health-command.spec.ts,project,Regression test for telemetry env override reporting
   tests/unit/telemetry-runtime.spec.ts,project,Regression test for PM_NO_TELEMETRY opt-out
   tests/unit/update-command.spec.ts,project,Regression test for dependency kind guidance
-tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "manual temp smoke via dist/cli.js in isolated PM_PATH/PM_GLOBAL_PATH for create changed_fields,equal event recovery,calendar help,and completion aliases",null,project,120,null,null,null,null,null,null,null,null,null,null,null,manual temp-project smoke passed at /tmp/pm-manual-20260521-AjBVn7
-  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,420,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts --reporter=dot,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts -t \"extension|PM_NO_TELEMETRY|config\" --reporter=dot",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/update-command.spec.ts tests/unit/close-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts --reporter=dot,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused create/update/calendar completion UX regressions
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts tests/unit/calendar-command.spec.ts --reporter=dot,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+tests[10]:
+  - command: "manual temp smoke via dist/cli.js in isolated PM_PATH/PM_GLOBAL_PATH for create changed_fields,equal event recovery,calendar help,and completion aliases"
+    scope: project
+    timeout_seconds: 120
+    note: manual temp-project smoke passed at /tmp/pm-manual-20260521-AjBVn7
+  - command: node scripts/check-secrets.mjs
+    scope: project
+    timeout_seconds: 120
+  - command: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json
+    scope: project
+    timeout_seconds: 420
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 240
+  - command: "PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts -t \"extension|PM_NO_TELEMETRY|config\" --reporter=dot"
+    scope: project
+    timeout_seconds: 240
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/update-command.spec.ts tests/unit/close-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 180
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 900
+    note: focused create/update/calendar completion UX regressions
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts tests/unit/calendar-command.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 120
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 120
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 120
 close_reason: Backlog resolved by merged slices; remaining listed polish points have shipped and are covered by focused regressions.
 body: ""

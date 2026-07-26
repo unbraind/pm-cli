@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:cli",code,docs,"milestone:3",pm-cli,"priority:0",tests
 created_at: "2026-03-06T23:44:33.076Z"
-updated_at: "2026-05-17T08:21:57.369Z"
+updated_at: "2026-07-26T17:13:17.893Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-54d
 blocked_reason: Add list-draft command parity for draft status has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add list-draft command parity for draft status is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/add-list-draft-command-parity-for-draft-status
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add list-draft command parity for draft status.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,related,"2026-03-06T23:44:33.076Z",maintainer-agent,null
+  pm-8a2s,implements,"2026-07-26T17:13:17.692Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-06T23:44:33.076Z",maintainer-agent,Draft is a canonical status but lacks a dedicated list command; add parity command for agent workflow loops.
   "2026-03-06T23:45:01.873Z",maintainer-agent,"Planned change-set: update PRD and README command matrices first, then add list-draft command wiring in CLI and extend integration contract tests for draft-status listing and help output."
@@ -57,10 +58,10 @@ files[4]{path,scope,note}:
   README.md,project,document list-draft command
   src/cli/main.ts,project,add list-draft command registration
   tests/integration/cli.integration.spec.ts,project,integration coverage for list-draft
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full sandbox regression
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,cli command surface regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,coverage gate
+  node scripts/run-tests.mjs test,project,3600,full sandbox regression
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1800,cli command surface regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow command usage
   PRD.md,project,command surface contract

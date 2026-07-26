@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:metadata","area:update",close-reason,pm-cli,ux
 created_at: "2026-04-03T09:33:47.173Z"
-updated_at: "2026-04-04T21:33:41.670Z"
+updated_at: "2026-07-26T17:20:01.100Z"
 deadline: "2026-04-09T09:33:47.173Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: ux-hardening
-release: vnext
+release: v2026.5.1
 blocked_reason: "Feature: update close_reason lifecycle integrity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Feature: update close_reason lifecycle integrity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,16 +38,17 @@ affected_version: 2026.3.12
 component: cli/update
 regression: true
 customer_impact: Reduces confusion in reopened work tracking
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-hp31,parent,"2026-04-03T09:33:47.173Z",codex-agent,null
+  pm-hp31,implements,"2026-07-26T17:20:00.887Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-03T09:33:47.173Z",codex-agent,Feature spun from user-reported close_reason integrity issue.
 notes[1]{created_at,author,text}:
   "2026-04-03T09:33:47.173Z",codex-agent,Will change update runtime plus schema/contract/help/completion/wrapper surfaces.
 files[1]{path,scope,note}:
   src/cli/commands/update.ts,project,primary runtime logic
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,targeted update regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,project,7200,targeted update regression
 docs[1]{path,scope,note}:
   PRD.md,project,status and close_reason contract
 close_reason: "Feature delivered: update close_reason flag support and reopen auto-clear behavior with docs/contracts/tests parity."

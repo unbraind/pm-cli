@@ -6,11 +6,14 @@ status: closed
 priority: 3
 tags[6]: "area:search",hybrid,living-map,post-v0.1,roadmap,tuning
 created_at: "2026-05-31T19:44:23.684Z"
-updated_at: "2026-06-06T06:59:19.609Z"
+updated_at: "2026-07-26T17:11:35.699Z"
 author: maintainer-agent
 acceptance_criteria: pm search --mode hybrid --semantic-weight <0..1>; in SEARCH_FLAG_CONTRACTS+MCP+completions; range-validated; falls back to setting; effective value in filters; tests.
 value: PRD line 1680 defers broader hybrid tuning; hybrid_semantic_weight is global-only. A per-query --semantic-weight lets agents bias keyword-heavy (exact IDs) vs concept-heavy queries.
 parent: pm-ydp6
+release: v2026.6.7
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ydp6,implements,"2026-07-26T17:11:35.519Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-06T06:02:21.025Z",codex-search-bundle,"Kickoff: implementing per-query --semantic-weight override on top of existing hybrid weighting, with CLI/contracts/MCP/completion parity and regression coverage."
   "2026-06-06T06:19:17.137Z",codex-search-bundle,"Implemented --semantic-weight end-to-end: CLI registration + option normalization + hybrid runtime override. Invalid override values now fall back to search.hybrid_semantic_weight with warning code search_hybrid_semantic_weight_override_invalid:using_settings_default. Contracts/completion surfaces updated and contracts snapshot regenerated. Verification: node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts; pnpm contracts:update && pnpm contracts:check."
@@ -25,9 +28,9 @@ files[8]{path,scope,note}:
   src/sdk/cli-contracts/tool-option-contracts.ts,project,search semantic-weight override + contract/completion surface
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,search semantic-weight override + contract/completion surface
   tests/fixtures/contracts/full.json,project,search semantic-weight override + contract/completion surface
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:update && pnpm contracts:check",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600
+  "pnpm contracts:update && pnpm contracts:check",project,600
 docs[3]{path,scope,note}:
   docs/CONFIGURATION.md,project,document semantic-weight behavior and search tuning guidance
   PRD.md,project,document semantic-weight behavior and search tuning guidance

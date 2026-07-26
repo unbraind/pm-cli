@@ -6,16 +6,26 @@ status: closed
 priority: 1
 tags[3]: architecture,"area:sdk","area:search"
 created_at: "2026-07-05T04:54:09.542Z"
-updated_at: "2026-07-16T07:04:06.239Z"
+updated_at: "2026-07-26T17:24:59.877Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: SDK exports typed query primitives returning the same data the CLI renders (projection/format concerns stay CLI-side); CLI query commands consume only these primitives; docstrings + linked tests + SDK reference docs; zero behavior change (query/search specs green)
 parent: pm-usfg
 risk: medium
 confidence: medium
+release: v2026.7.7
 resolution: "PmClient and SDK top-level exports now expose list, get, search, context, next, aggregate, and stats read primitives with tests and docs. CLI read handlers remain on native extension-aware runners while SDK consumers use the shared in-process action path."
 expected_result: Package authors and agents can use stable SDK read primitives for context management without subprocess coupling.
 actual_result: "SDK read primitives, structured create payloads, lifecycle wrappers, docs, installed-package dogfood, and full coverage all passed; extension-aware CLI behavior remains intact."
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-25d0,related,"2026-07-26T17:24:59.641Z",null,null
+  pm-395t,related,"2026-07-26T17:24:59.641Z",null,null
+  pm-4a7m,related,"2026-07-26T17:24:59.641Z",null,null
+  pm-98cz,related,"2026-07-26T17:24:59.641Z",null,null
+  pm-lodl,related,"2026-07-26T17:24:59.641Z",null,null
+  pm-muhw,related,"2026-07-26T17:24:59.641Z",null,null
+  pm-qfte,related,"2026-07-26T17:24:59.641Z",null,null
+  pm-usfg,implements,"2026-07-26T17:24:59.641Z",null,null
 comments[18]{created_at,author,text}:
   "2026-07-06T10:54:21.169Z",codex-agent,"Evidence: exported typed SDK read primitives on PmClient and SDK barrel for context/list/search/get/next/aggregate/stats; docs/SDK.md documents the read surface. Verification passed: pnpm typecheck; focused SDK + linked-test suites; pnpm lint; node scripts/run-tests.mjs coverage at 100/100/100/100; installed-package temp project exercised @unbrained/pm-cli/sdk PmClient read primitives successfully. Remaining acceptance: migrate CLI query command handlers to consume the public SDK primitives before closing pm-rjqr."
   "2026-07-06T11:14:35.194Z",codex-agent,"Review loop evidence: addressed Greptile P1 by exporting callable top-level read primitives from both @unbrained/pm-cli/sdk and @unbrained/pm-cli/sdk/runtime, in addition to PmClient methods. Verification after the fix passed: pnpm typecheck; focused SDK test with built package export assertion; installed-package temp dogfood invoking top-level wrappers; pnpm lint; pnpm quality:docs-skills; node scripts/run-tests.mjs coverage at 100/100/100/100."

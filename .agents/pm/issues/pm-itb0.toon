@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags[4]: agents,calendar,terminology,ux
 created_at: "2026-05-01T18:58:56.749Z"
-updated_at: "2026-05-01T19:29:07.567Z"
+updated_at: "2026-07-26T17:16:47.789Z"
 author: maintainer-agent
 parent: pm-3fti
+release: v2026.5.2
 severity: medium
 resolution: Added 'scheduled' as alias for 'events' in parseIncludeSources in calendar.ts. Updated error message to include the alias.
 expected_result: "Expected closure outcome: Fixed: parseIncludeSources in calendar.ts now accepts 'scheduled' as alias for 'events'. Verified: pm cal --include scheduled works."
 actual_result: "Actual closure outcome: Fixed: parseIncludeSources in calendar.ts now accepts 'scheduled' as alias for 'events'. Verified: pm cal --include scheduled works."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-3fti,implements,"2026-07-26T17:16:47.581Z",null,null
 close_reason: "Fixed: parseIncludeSources in calendar.ts now accepts 'scheduled' as alias for 'events'. Verified: pm cal --include scheduled works."
 body: ""

@@ -6,14 +6,30 @@ status: closed
 priority: 1
 tags[6]: 2026-06-07,audit,backlog,context-management,living-map,pm-cli
 created_at: "2026-06-07T09:53:26.457Z"
-updated_at: "2026-06-07T11:13:15.201Z"
+updated_at: "2026-07-26T17:07:54.835Z"
 author: maintainer-agent
 parent: pm-doxj
+release: v2026.6.8
 resolution: "Completed forward-backlog rebuild, PR review loop, merge, and observability verification."
 expected_result: "The pm-cli tracker has a non-duplicate living forward backlog across all capability epics, ADR gaps are recorded, PR checks and reviewer state are clean, and main is current after merge."
 actual_result: "Created and merged PR #143, added the forward backlog and ADR records, fixed the static secret-scan issue, verified green GitHub checks plus telemetry/Sentry visibility, and closed/released the plan."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-doxj,parent,"2026-06-07T09:53:26.457Z",null,null
+  pm-34gb,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-3b1t,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-5dbn,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-5k4v,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-5oj5,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-7sq6,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-7zs0,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-8jdc,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-97yv,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-b4cp,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-cc04,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-doxj,implements,"2026-07-26T17:07:54.600Z",null,null
+  pm-haak,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-irc7,related,"2026-07-26T17:07:54.600Z",null,null
+  pm-ji5c,related,"2026-07-26T17:07:54.600Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-07T10:24:45.552Z",maintainer-agent,"Audit waves 1-5 complete: 71 OPEN backlog items created + AC backfilled + dedupe sweep clean (0 dups) + validate/health ok + 2 ADRs recorded. Proceeding to consolidation, commit, PR, bot-review loop."
   "2026-06-07T10:45:40.829Z",maintainer-agent,"Continuation note: live GitHub check on 2026-06-07 found no open PRs and no PR attached to branch pm/forward-backlog-rebuild-and-adr-gaps-2026-06-07, despite the pending PR-review loop language. Local branch is clean with commit ee897da3 ahead of origin/main. Bootstrap before publish passed: npm install -g . and pnpm build."
@@ -23,11 +39,11 @@ comments[5]{created_at,author,text}:
 files[2]{path,scope,note}:
   .agents/pm/history/pm-8u2a.jsonl,project,History stream for publish-step tracker mutations
   .agents/pm/plans/pm-8u2a.toon,project,Plan publish/review step status and continuation evidence
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  pm health --check-only --summary --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pm validate --check-resolution --check-history-drift,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[4]{command,scope,timeout_seconds}:
+  pm health --check-only --summary --json,project,240
+  pm validate --check-resolution --check-history-drift,project,240
+  pnpm build,project,240
+  "pnpm changelog:pm:check",project,240
 close_reason: "Completed: rebuilt the living forward backlog and ADR coverage, published PR #143, fixed the static security-scan issue in pm-97yv, verified all GitHub checks and reviewer state, merged to main, and confirmed telemetry plus Sentry visibility."
 plan_mode: executing
 plan_scope: Rebuild the living forward backlog (features/stories/tasks/chores/issues/improvements/ideas/goals) + ADR gaps across all capability epics; no source/code/docs changes (tracking-only); all new backlog items OPEN; new ADRs closed Decisions with final changelog regen.

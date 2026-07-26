@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T09:42:43.394Z"
-updated_at: "2026-04-05T22:42:24.367Z"
+updated_at: "2026-07-26T17:16:06.031Z"
 deadline: "2026-03-08T09:42:43.394Z"
 author: cursor-maintainer
 estimated_minutes: 60
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-mwwp
 blocked_reason: "M5 hardening: unknown extension capability diagnostics has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 hardening: unknown extension capability diagnostics is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-hardening-unknown-extension-capability-diagno
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 hardening: unknown extension capability diagnostics."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-mwwp,related,"2026-03-06T09:42:43.394Z",cursor-maintainer,null
+  pm-8a2s,implements,"2026-07-26T17:16:05.804Z",null,null
 comments[11]{created_at,author,text}:
   "2026-03-06T09:42:43.394Z",cursor-maintainer,Unknown capability names should be explicit diagnostics instead of silent no-ops.
   "2026-03-06T09:42:57.987Z",cursor-maintainer,"Planned changeset: update PRD/README capability contract to specify unknown-capability diagnostics, then implement deterministic extension_capability_unknown warnings in loader discovery and add regression assertions."
@@ -67,10 +68,10 @@ files[8]{path,scope,note}:
   tests/unit/extension-command.spec.ts,project,doctor capability guidance tests
   tests/unit/extension-loader.spec.ts,project,Add unknown-capability warning regression
   tests/unit/health-command.spec.ts,project,health capability guidance tests
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Loader discovery regression
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,capability guidance warnings-only regressions
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,240,Coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,240,Loader discovery regression
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts,project,2400,capability guidance warnings-only regressions
 docs[5]{path,scope,note}:
   AGENTS.md,project,Agent workflow policy
   CHANGELOG.md,project,capability guidance release notes

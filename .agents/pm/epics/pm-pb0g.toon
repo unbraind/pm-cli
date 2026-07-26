@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:parser",external-audit,pm-cli
 created_at: "2026-04-04T08:23:25.627Z"
-updated_at: "2026-04-04T21:32:20.063Z"
+updated_at: "2026-07-26T17:22:51.143Z"
 deadline: "2026-04-11T08:23:25.627Z"
 author: codex-agent
 estimated_minutes: 300
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation-2026w14
-release: vnext
+release: v2026.5.1
 blocked_reason: "External audit Issue1 follow-up: log-seed ambiguity guard has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If External audit Issue1 follow-up: log-seed ambiguity guard is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,6 +38,13 @@ fixed_version: target-vnext
 component: cli-create-parser
 regression: true
 customer_impact: Maintainers and agents retain complete audit evidence when seeding narrative text.
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-4emi,related,"2026-07-26T17:22:50.823Z",null,null
+  pm-a228,related,"2026-07-26T17:22:50.823Z",null,null
+  pm-doek,related,"2026-07-26T17:22:50.823Z",null,null
+  pm-l5tr,related,"2026-07-26T17:22:50.823Z",null,null
+  pm-m3mf,related,"2026-07-26T17:22:50.823Z",null,null
+  pm-wn34,related,"2026-07-26T17:22:50.823Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-04T08:23:25.627Z",codex-agent,Created after dedupe sweep confirmed only Issue1 remains unresolved.
   "2026-04-04T08:40:22.568Z",codex-agent,"Epic closure evidence: feature pm-m3mf and task pm-l5tr are closed/released with code/test/docs updates, full regression+coverage pass, and health/validate audit checks. External Issues 2-5 were handled via canonical closed items (pm-wn34, pm-4emi, pm-a228, pm-doek) without duplicates."
@@ -45,8 +52,8 @@ notes[1]{created_at,author,text}:
   "2026-04-04T08:23:25.627Z",codex-agent,Implement as additive validation focused on log-seed fields to avoid breaking unrelated parser contracts.
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,primary implementation surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted create parser regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,project,240,targeted create parser regression
 docs[1]{path,scope,note}:
   README.md,project,public guidance update target
 close_reason: "External audit reconciliation complete: only Issue1 required net-new implementation; all validations passed."

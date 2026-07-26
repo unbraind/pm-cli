@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T10:06:02.590Z"
-updated_at: "2026-04-04T21:47:55.397Z"
+updated_at: "2026-07-26T17:28:15.320Z"
 deadline: "2026-03-07T23:30:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-iuzs
 blocked_reason: "M5 follow-up: surface registerFlags on dynamic command help has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: surface registerFlags on dynamic command help is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-surface-registerflags-on-dynamic-co
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: surface registerFlags on dynamic command help."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-iuzs,related,"2026-03-06T10:06:02.590Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:28:15.089Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-06T10:06:02.590Z",maintainer-agent,Why this exists move registerFlags from metadata only to visible runtime help for extension commands.
   "2026-03-06T10:06:17.841Z",maintainer-agent,Planned changeset docs first update PRD and README then wire registerFlags metadata into dynamic extension command help text and add regression tests.
@@ -59,10 +60,10 @@ files[5]{path,scope,note}:
   src/cli/main.ts,project,dynamic extension command registration wiring
   tests/integration/cli.integration.spec.ts,project,dynamic extension help integration coverage
   tests/unit/extension-loader.spec.ts,project,flag normalization and formatting coverage
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,sandboxed full coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,dynamic command integration coverage
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,extension registration unit regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,sandboxed full coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,2400,dynamic command integration coverage
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,2400,extension registration unit regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative extension runtime contract

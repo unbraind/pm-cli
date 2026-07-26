@@ -6,17 +6,19 @@ status: closed
 priority: 3
 tags[3]: "area:extensions",compat,dx
 created_at: "2026-06-07T10:04:51.632Z"
-updated_at: "2026-06-09T18:41:21.810Z"
+updated_at: "2026-07-26T17:18:01.642Z"
 author: audit-platform-agent
 acceptance_criteria: "- A per-layer setting toggles pm_max_version violation from block to warn\n- Default remains block (backward compatible)\n- Setting documented + validated; covered by tests"
 parent: pm-ugqx
 risk: low
 confidence: high
+release: v2026.6.10
 resolution: Implemented per-layer pm_max_version_exceeded_mode with block default and warn override.
 expected_result: Operators can keep default blocking behavior or opt into warn-only for managed upgrade windows.
 actual_result: "Settings, validator, policy normalization, loader behavior, docs, and tests now cover block and warn modes."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-4gw6,related,"2026-06-07T10:04:51.632Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:18:01.395Z",null,null
 comments[3]{created_at,author,text}:
   "2026-06-09T17:46:48.397Z",sdk-core-agent,"sdk-core-agent starting: extensions.policy.pm_max_version_exceeded_mode block|warn (default block) with per-layer override, validator wiring, loader relax + tests."
   "2026-06-09T18:09:32.040Z",codex-implementation-agent,"Sidecar evidence: GitHub/security/release sidecar found no open PRs/issues, no open Dependabot/code-scanning/secret-scanning/security-advisory alerts, pnpm audit --audit-level low clean, pnpm security:scan clean, pm-changelog latest 2026.6.8 active and changelog check passed. Current npm version 2026.6.9 is already published; release flow should handle next version rather than this PR hand-editing package version."
@@ -28,8 +30,8 @@ files[6]{path,scope,note}:
   src/core/store/settings.ts,project,settings persistence
   tests/unit/extension-loader.spec.ts,project,block/warn per-layer coverage
   tests/unit/settings-store.spec.ts,project,settings round-trip coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/settings-store.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,version-policy and settings coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/settings-store.spec.ts,project,240,version-policy and settings coverage
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,pm_max_version_exceeded_mode docs
 close_reason: pm_max_version exceeded policy mode completed.

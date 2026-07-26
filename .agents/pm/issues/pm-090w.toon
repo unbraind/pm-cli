@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-04-03T17:24:42.620Z"
-updated_at: "2026-04-04T21:41:30.863Z"
+updated_at: "2026-07-26T16:59:53.501Z"
 deadline: "2026-04-17T17:24:42.620Z"
 author: codex-agent
 estimated_minutes: 45
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: 2026-w14
-release: vnext
+release: v2026.5.1
 blocked_reason: Track GitHub Dependabot alert #20 for undici (GHSA-phc3-fgpg-7m6h) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Track GitHub Dependabot alert #20 for undici (GHSA-phc3-fgpg-7m6h) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: github-dependabot
@@ -39,6 +39,8 @@ fixed_version: 7.24.0
 component: "dependency:undici"
 regression: true
 customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-i7w2,implements,"2026-07-26T16:59:53.304Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T17:24:42.620Z",codex-agent,Imported open GitHub Dependabot alert GHSA-phc3-fgpg-7m6h.
   "2026-04-03T17:46:04.880Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
@@ -46,8 +48,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T17:24:42.620Z",codex-agent,Remediate or dismiss this alert with verification evidence.
 files[1]{path,scope,note}:
   pnpm-lock.yaml,project,affected dependency manifest
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,metadata-audit-baseline-regression
 docs[1]{path,scope,note}:
   SECURITY.md,project,security reporting and handling policy
 close_reason: Dependency remediation verified locally; no remaining known vulnerabilities in current dependency graph.

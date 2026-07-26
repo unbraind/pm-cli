@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:dependencies","area:visualization",external-audit,pm-cli
 created_at: "2026-04-03T14:48:19.923Z"
-updated_at: "2026-05-17T08:23:03.434Z"
+updated_at: "2026-07-26T17:29:24.915Z"
 deadline: "2026-04-13T14:48:19.923Z"
 author: codex-agent
 estimated_minutes: 240
@@ -19,6 +19,7 @@ impact: Reduces ambiguity and handoff risk for future work touching Add dependen
 outcome: This record can be used as canonical context when modifying Add dependency visualization command (pm deps).
 why_now: Historical decisions for Add dependency visualization command (pm deps) need durable context for future maintenance and audits.
 parent: pm-iswo
+release: v2026.5.1
 blocked_reason: Add dependency visualization command (pm deps) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add dependency visualization command (pm deps) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Add dependency visualization command (pm deps) (pm CLI + Node/pnpm toolchain).
@@ -27,8 +28,9 @@ expected_result: Acceptance criteria for Add dependency visualization command (p
 actual_result: Work completed and recorded with linked artifacts for Add dependency visualization command (pm deps).
 component: project-management/add-dependency-visualization-command-pm-deps
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add dependency visualization command (pm deps).
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-zdec,related,"2026-04-03T14:48:19.923Z",codex-agent,null
+  pm-iswo,implements,"2026-07-26T17:29:24.725Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-03T14:48:19.923Z",codex-agent,Feature builds on existing dependency mutation support by adding deterministic read-only visualization.
   "2026-04-03T15:05:28.830Z",codex-agent,"Implemented pm deps command with deterministic tree/graph traversal, cycle-safe recursion, and missing-node reporting; wired CLI/completion/sdk/Pi surfaces and added unit+integration regressions. Evidence: node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts passed (126/126)."
@@ -46,9 +48,9 @@ files[8]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,CLI integration coverage for deps command
   tests/unit/completion-command.spec.ts,project,deps command completion regression assertions
   tests/unit/deps-command.spec.ts,project,unit coverage for tree graph and cycle behavior
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,deps ergonomics plus parity surfaces
-  node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,deps runtime + wrapper + completion regression suite
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,project,2400,deps ergonomics plus parity surfaces
+  node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,project,3600,deps runtime + wrapper + completion regression suite
 docs[1]{path,scope,note}:
   README.md,project,pm deps user-facing command documentation
 close_reason: deps tree ergonomics controls shipped with parity across surfaces

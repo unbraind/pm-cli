@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:create","area:docs","area:parser","area:tests",external-audit,pm-cli
 created_at: "2026-04-04T08:23:48.930Z"
-updated_at: "2026-04-04T17:42:11.499Z"
+updated_at: "2026-07-26T17:19:06.277Z"
 deadline: "2026-04-09T08:23:48.930Z"
 author: codex-agent
 estimated_minutes: 300
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation-2026w14
-release: vnext
+release: v2026.5.1
 blocked_by: pm-m3mf
 blocked_reason: feature-sequencing
 unblock_note: Claim task and implement code/tests/docs
@@ -40,8 +40,9 @@ fixed_version: target-vnext
 component: cli-create-parser
 regression: true
 customer_impact: Users and agents retain complete narrative audit evidence during item creation.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-m3mf,parent,"2026-04-04T08:23:48.930Z",codex-agent,null
+  pm-m3mf,implements,"2026-07-26T17:19:05.991Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-04T08:23:48.930Z",codex-agent,Task created after reproducing the unresolved Issue1 ambiguity path.
   "2026-04-04T08:39:55.895Z",codex-agent,"Implemented create log-seed ambiguity guard in src/cli/commands/create.ts: --comment/--note/--learning now reject parsed unsupported keys to prevent silent text truncation (example text=hello,scope:project), while quoted/markdown/stdin flows remain supported. Added regressions in tests/unit/create-command.spec.ts for comment/note/learning ambiguous seeds, quoted+markdown happy paths, and plural-key branch coverage. Updated docs/contracts: README.md, PRD.md, docs/ARCHITECTURE.md, AGENTS.md, CHANGELOG.md. Verification evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts (46 passed); node scripts/run-tests.mjs test (71 files, 830 tests passed); node scripts/run-tests.mjs coverage (71 files, 830 tests passed, global branches 91.01% threshold met); pm health --json status ok; pm validate --check-files --scan-mode tracked-all --json and --include-pm-internals --json reproduced expected warning-only audit baselines; pm test pm-l5tr --run --progress --json passed both linked commands."
@@ -50,9 +51,9 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/create.ts,project,log-seed guard implementation
   tests/unit/create-command.spec.ts,project,create command ambiguity regressions
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression verification
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted ambiguity coverage
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,full regression verification
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,project,900,targeted ambiguity coverage
 docs[5]{path,scope,note}:
   AGENTS.md,project,agent workflow guidance for log-seed ambiguity
   CHANGELOG.md,project,unreleased behavior change note

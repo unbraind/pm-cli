@@ -6,21 +6,30 @@ status: closed
 priority: 1
 tags[5]: 2026-04-26,dogfood,external-audit,pm-cli,stabilization
 created_at: "2026-04-26T00:29:45.075Z"
-updated_at: "2026-05-02T11:03:22.012Z"
+updated_at: "2026-07-26T17:20:08.232Z"
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: Full sandboxed test and coverage suites pass; telemetry and extension dogfood evidence captured; findings linked to affected items with reproducible evidence.
 parent: pm-o7be
+release: v2026.5.1
 resolution: "Completed full PM CLI dogfood audit rerun across bootstrap, sandboxed CLI lifecycle, calendar, SDK/extensions, remote telemetry, security, and governance checks; applied two targeted documentation/security fixes and updated open finding items with evidence."
 expected_result: "Audit run reproduces major pm workflows in sandbox and remote environments, records findings as pm items, verifies telemetry and security behavior, and leaves validation and linked tests passing."
 actual_result: "Core harness passed 79/79 commands; calendar/extension harness passed all unexpected checks; SDK smoke compiled; remote telemetry stack verified end to end including Postgres persistence and DSAR scripts; .env ignore and strict-create guidance fixes closed; linked pm test run passed 4/4 including full test and coverage, both 78 files and 1052 tests."
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-o7be,parent,"2026-04-26T00:29:45.075Z",codex-agent,null
   pm-300m,related,"2026-04-26T00:31:39.179Z",codex-agent,null
   pm-35wb,related,"2026-04-26T00:31:39.179Z",codex-agent,null
   pm-g9yi,related,"2026-04-26T08:43:12.806Z",codex-agent,null
   pm-kglq,related,"2026-04-26T08:43:12.806Z",codex-agent,null
   pm-vhdc,related,"2026-04-26T08:43:12.806Z",codex-agent,null
+  pm-bqg4,related,"2026-07-26T17:20:07.969Z",null,null
+  pm-jqgc,related,"2026-07-26T17:20:07.969Z",null,null
+  pm-k8i0,related,"2026-07-26T17:20:07.969Z",null,null
+  pm-mpmv,related,"2026-07-26T17:20:07.969Z",null,null
+  pm-o7be,implements,"2026-07-26T17:20:07.969Z",null,null
+  pm-qgvj,related,"2026-07-26T17:20:07.969Z",null,null
+  pm-r9ei,related,"2026-07-26T17:20:07.969Z",null,null
+  pm-xk8b,related,"2026-07-26T17:20:07.969Z",null,null
 comments[13]{created_at,author,text}:
   "2026-04-26T00:29:45.075Z",codex-agent,Duplicate check evidence ran pm context limit 10 plus pm search comprehensive dogfood audit limit 10 plus pm list-open limit 20 plus pm list-in-progress limit 20 and found no active task for 2026-04-26 stabilization scope
   "2026-04-26T00:30:20.152Z",codex-agent,"Evidence sweep 2026-04-26: pnpm build succeeded; node scripts/run-tests.mjs test passed 78 files and 1048 tests in 353.97s; node scripts/run-tests.mjs coverage passed 78 files and 1048 tests with 100 percent thresholds in 779.25s after timeout stabilization and coverage-list alignment updates."
@@ -53,13 +62,13 @@ files[12]{path,scope,note}:
   tests/unit/update-command.spec.ts,project,Update regression coverage for placeholder token rejection
   AGENTS.md,project,strict create guidance corrected from audit finding
   .gitignore,project,audit security ignore rule updated
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  git check-ignore -v .env .agents/pm/search/TELEMETRY.md .agents/pm/runtime/telemetry/events.jsonl,null,project,120,null,null,null,null,null,null,null,null,null,null,null,audit ignore verification
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,Post-fix full coverage gate sweep
-  node scripts/run-tests.mjs test,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Post-fix full sandbox test sweep
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Targeted regression for placeholder validation hardening
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mofsxv86-2ok41g,test,passed,"2026-04-26T13:18:50.823Z","2026-04-26T13:26:28.182Z","2026-04-26T13:26:28.183Z",null,null,4,0,0,null,null,null
+tests[4]{command,scope,timeout_seconds,note}:
+  git check-ignore -v .env .agents/pm/search/TELEMETRY.md .agents/pm/runtime/telemetry/events.jsonl,project,120,audit ignore verification
+  node scripts/run-tests.mjs coverage,project,1800,Post-fix full coverage gate sweep
+  node scripts/run-tests.mjs test,project,1200,Post-fix full sandbox test sweep
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,project,300,Targeted regression for placeholder validation hardening
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mofsxv86-2ok41g,test,passed,"2026-04-26T13:18:50.823Z","2026-04-26T13:26:28.182Z","2026-04-26T13:26:28.183Z",4,0,0
 docs[3]{path,scope,note}:
   .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote stack composition and runbook references
   .agents/pm/search/TELEMETRY.md,project,Telemetry privacy and export contract guidance

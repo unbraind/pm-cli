@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: automation,governance,pm-cli,traceability
 created_at: "2026-04-04T21:54:42.936Z"
-updated_at: "2026-04-27T21:33:27.087Z"
+updated_at: "2026-07-26T17:05:00.698Z"
 deadline: "2026-04-25T21:54:42.936Z"
 author: codex-agent
 estimated_minutes: 360
@@ -22,7 +22,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: governance-followups
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: medium
 environment: linux
@@ -34,6 +34,21 @@ affected_version: 2026.3.12
 component: governance-automation
 regression: false
 customer_impact: "Maintainers and agents gain safer, faster, and more deterministic governance maintenance."
+dependencies[14]{id,kind,created_at,author,source_kind}:
+  pm-5dia,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-7lum,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-a228,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-a4z3,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-ac8x,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-bgd8,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-doek,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-dw5s,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-hzh6,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-ice4,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-jqgc,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-lou4,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-o5uw,related,"2026-07-26T17:05:00.482Z",null,null
+  pm-qkx0,related,"2026-07-26T17:05:00.482Z",null,null
 comments[10]{created_at,author,text}:
   "2026-04-04T21:54:42.936Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'bulk governance normalization command pm tracker' --limit 20; pm search 'validate placeholder metadata blocked_reason unblock_note repro_steps' --limit 20; pm search 'ownership-safe batch mutation mode governance override' --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing governance epics are historical execution snapshots rather than productized automation roadmap."
   "2026-04-05T22:41:27.175Z",codex-agent,"Governance hardening run started (plan execution). Baseline findings: active_items=17, overdue_active=4, active_with_closed_parent=9, active_with_closure_like_metadata=6, validate warnings include missing_estimate=1, missing_resolution_fields=8, missing_linked_paths=9, and dangling dependency edge pm-ac8x->pm-y50x. Next actions: normalize tracker lifecycle/lineage metadata, repair stale links/dependency drift, then implement validate guardrails to prevent recurrence."
@@ -50,8 +65,8 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   AGENTS.md,project,governance policy reference
   tests/integration/governance-presets.integration.spec.ts,project,governance preset lifecycle and policy enforcement integration coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  pm validate --check-metadata --check-resolution --check-history-drift --json,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,automation acceptance baseline
+tests[1]{command,scope,timeout_seconds,note}:
+  pm validate --check-metadata --check-resolution --check-history-drift --json,project,1200,automation acceptance baseline
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,future governance automation architecture
 close_reason: Governance automation milestone delivered; no active child scope remains.

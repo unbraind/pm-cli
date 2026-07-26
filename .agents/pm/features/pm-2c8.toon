@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: architecture,pm-cli,refactor,release-readiness
 created_at: "2026-02-17T23:37:26.647Z"
-updated_at: "2026-05-17T08:20:54.403Z"
+updated_at: "2026-07-26T17:01:47.655Z"
 deadline: "2026-02-21T23:37:26.647Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-ote
 blocked_reason: Repo restructure and module boundaries has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Repo restructure and module boundaries is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/repo-restructure-and-module-boundaries
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Repo restructure and module boundaries.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ote,parent,"2026-02-17T23:37:26.647Z",cursor-agent,null
   pm-pq8,related,"2026-02-17T23:37:26.647Z",cursor-agent,null
+  pm-ote,implements,"2026-07-26T17:01:47.427Z",null,null
 comments[47]{created_at,author,text}:
   "2026-02-17T23:51:03.059Z",cursor-agent,Implemented first-pass modular layout (src/cli + src/core + src/types) with stable bin wrapper and new list/test-all command wiring while preserving existing behavior through compatibility bridges.
   "2026-02-17T23:51:36.869Z",cursor-agent,"Validation evidence: pnpm build succeeded; pm --help includes version/list-in-progress/list-blocked/list-closed/list-canceled/test-all; test-all command executed successfully with dependency_failed semantics available via exit code when failures exist."
@@ -143,12 +144,12 @@ files[46]{path,scope,note}:
   tests/unit/list-sort-branches.spec.ts,project,mock compatibility for core store boundary migration
   tests/unit/runtime-registrations.spec.ts,project,wrapper parity contract coverage
   vitest.config.ts,project,coverage include paths updated to cli command implementations
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node dist/cli.js --help,null,project,60,null,null,null,null,null,null,null,null,null,null,null,Command surface smoke check
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage gate
-  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandboxed unit/integration suite
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted claim command regression
-  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,null,Compile after structure refactor
+tests[5]{command,scope,timeout_seconds,note}:
+  node dist/cli.js --help,project,60,Command surface smoke check
+  node scripts/run-tests.mjs coverage,project,900,sandboxed coverage gate
+  node scripts/run-tests.mjs test,project,600,sandboxed unit/integration suite
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,project,300,targeted claim command regression
+  pnpm build,project,180,Compile after structure refactor
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and dogfood protocol
   PRD.md,project,governing spec

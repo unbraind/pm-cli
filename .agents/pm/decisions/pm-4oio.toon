@@ -6,15 +6,19 @@ status: closed
 priority: 2
 tags[4]: adr,architecture,"area:extensions","area:sdk"
 created_at: "2026-06-22T21:36:24.059Z"
-updated_at: "2026-06-22T22:02:14.716Z"
+updated_at: "2026-07-26T17:04:05.304Z"
 author: claude-code-agent
 parent: pm-m2u1
+release: v2026.6.23
 resolution: "ADR recorded and implemented across three author-time/runtime pairs, each kept honest by a parity/inverse relationship."
 expected_result: A documented principle that runtime extension guardrails get a pure author-time counterpart.
 actual_result: Decision recorded with the three established pairs and consequences; applied by pm-tlpv and pm-9ect.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-16ue,related,"2026-06-22T21:37:10.309Z",null,null
   pm-fk84,related,"2026-06-22T21:37:11.276Z",null,null
   pm-iqq0,related,"2026-06-22T21:37:12.212Z",null,null
+  pm-9ect,related,"2026-07-26T17:04:05.097Z",null,null
+  pm-m2u1,implements,"2026-07-26T17:04:05.097Z",null,null
+  pm-tlpv,related,"2026-07-26T17:04:05.097Z",null,null
 close_reason: "Recorded: SDK author-time helpers are the static inverse of runtime extension checks, kept honest by parity tests. Implemented pairs: deriveExtensionCapabilities↔reconcileExtensionCapabilityUsage, describeExtensionBlueprint↔describeExtensionActivation (pm-tlpv), lintExtensionBlueprint↔loader extension_capability_missing + doctor extension_capability_unused (pm-9ect)."
 body: ""

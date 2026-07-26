@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: ci,tests,windows
 created_at: "2026-07-13T08:56:54.128Z"
-updated_at: "2026-07-15T07:25:51.660Z"
+updated_at: "2026-07-26T17:26:54.171Z"
 closed_at: "2026-07-15T07:25:50.837Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -14,11 +14,14 @@ acceptance_criteria: "Exemption branch matches on both / and \\ separators; nigh
 parent: pm-92if
 risk: low
 confidence: high
+release: v2026.7.15
 resolution: Compare the governance runtime suffix with path.join instead of a POSIX literal.
 expected_result: Package-manifest boundary tests recognize governance-audit runtime.ts on Windows.
 actual_result: Native-separator test and required Windows CI workflow contract pass.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b24b,related,"2026-07-13T08:56:54.128Z",null,null
+  pm-92if,implements,"2026-07-26T17:26:53.925Z",null,null
+  pm-gf6f,related,"2026-07-26T17:26:53.925Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-14T06:44:00.782Z",codex-root,"Live GitHub evidence 2026-07-14: Nightly Validation run 29310713878 on main dcd58521 includes the expected package-manifest Windows failure alongside pm-b24b's five init/path failures. Other nightly legs passed. Existing canonical item reused; no duplicate and no claim because PR #549 is history/read scoped."
   "2026-07-15T07:25:48.908Z",codex-root,"Evidence: the SDK-surface exemption now uses path.join(governance-audit, runtime.ts); package-manifest and workflow tests pass within the 5,721-test exact-coverage gate."

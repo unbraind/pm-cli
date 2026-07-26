@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-pi",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:12.269Z"
-updated_at: "2026-05-17T08:22:11.011Z"
+updated_at: "2026-07-26T17:16:31.206Z"
 deadline: "2026-03-13T23:02:12.269Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M5: Built-in Pi tool wrapper extension has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5: Built-in Pi tool wrapper extension is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/built-in-pi-tool-wrapper-extension
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Built-in Pi tool wrapper extension.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:12.269Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:12.269Z",steve,null
+  pm-b1w,implements,"2026-07-26T17:16:31.036Z",null,null
 comments[28]{created_at,author,text}:
   "2026-02-19T22:35:05.742Z",maintainer-agent,"Planned changeset: add built-in Pi wrapper extension command surface with action-dispatch mapping and deterministic tool response shape; update PRD/README before code to keep docs authoritative; add unit+integration coverage for wrapper action routing and output contract."
   "2026-02-19T22:37:43.443Z",maintainer-agent,"Doc-first alignment completed before code edits: README now lists pi wrapper in implemented command surface and planned-extensions baseline; PRD now includes pm pi pm command contract and marks Milestone 5 Pi wrapper as partial baseline; AGENTS now notes the wrapper command path."
@@ -84,11 +85,11 @@ files[6]{path,scope,note}:
   src/cli/main.ts,project,remove_cli_wrapper
   tests/integration/cli.integration.spec.ts,project,remove_obsolete_pi_cli_case
   tests/integration/release-readiness-runtime.spec.ts,project,packaging allowlist contract coverage for Pi wrapper path
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,sandboxed full coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,sandboxed integration regression
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted packaging contract regression
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,targeted Pi agent extension regression
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,sandboxed full coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1800,sandboxed integration regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1200,targeted packaging contract regression
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,project,600,targeted Pi agent extension regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow + Pi wrapper contract
   PRD.md,project,governing spec

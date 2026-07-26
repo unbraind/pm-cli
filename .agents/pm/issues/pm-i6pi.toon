@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,data-integrity,graph
 created_at: "2026-07-18T10:08:29.551Z"
-updated_at: "2026-07-18T13:14:16.500Z"
+updated_at: "2026-07-26T17:16:22.268Z"
 closed_at: "2026-07-18T12:14:07.856Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -14,14 +14,16 @@ acceptance_criteria: "Mutation that would create an ordering-kind dependency cyc
 parent: pm-96h7
 risk: medium
 confidence: high
+release: v2026.7.19
 resolution: fixed
 expected_result: Creating or updating an ordering dependency cycle warns inline with a concrete cycle path and graph-audit recovery while existing legacy cycles are not re-reported.
 actual_result: "Create, update, and update-many compare immutable graph snapshots through the public SDK primitive and emit ordering_cycle_created only for newly introduced cycles containing the changed item."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-6irg,related,"2026-07-18T10:08:29.551Z",null,null
   pm-6x7o,related,"2026-07-18T10:08:29.551Z",null,null
   pm-ju83,related,"2026-07-18T10:08:29.551Z",null,null
   pm-um4g,related,"2026-07-18T10:08:29.551Z",null,null
+  pm-96h7,implements,"2026-07-26T17:16:22.033Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-18T10:52:15.306Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:19.344Z",maintainer-agent,"Verification evidence: isolated packed-package smoke created a blocked_by cycle and received ordering_cycle_created with the concrete path; public collectNewOrderingCycleWarnings imported successfully from @unbrained/pm-cli/sdk."

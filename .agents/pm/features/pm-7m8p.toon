@@ -6,14 +6,18 @@ status: closed
 priority: 3
 tags[6]: "area:extensions","area:packages","area:sdk",dx,hooks,living-map
 created_at: "2026-05-31T19:44:25.146Z"
-updated_at: "2026-06-06T18:03:05.374Z"
+updated_at: "2026-07-26T17:06:41.785Z"
 author: maintainer-agent
 acceptance_criteria: Registers an opt-in onWrite hook logging mutated path/scope to a sidecar; manifest gains hooks capability; unit test verifies firing; SDK.md hooks section references it.
 value: The hooks capability has zero first-party exemplar; authors wanting to intercept writes/reads for audit/cache/telemetry have no reference. pm-governance-audit is the natural owner.
 parent: pm-ugqx
+release: v2026.6.7
 resolution: Implemented and verified the first-party pm-governance-audit onRead/onWrite hook exemplar with opt-in compact sidecar logging and package-author documentation.
 expected_result: "pm-governance-audit declares hooks, registers opt-in read/write audit hooks, documents the package-author pattern, and passes focused/full validation."
 actual_result: "Manifest/package metadata declare hooks; onRead/onWrite hooks append compact JSONL only when PM_GOVERNANCE_AUDIT_HOOK_LOG is set; docs and tests updated; temp install smoke, package doctor, focused tests, full 100% coverage, changelog check, audit, GitHub, Sentry, and telemetry gates passed."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T17:06:41.564Z",null,null
+  pm-z5nb,related,"2026-07-26T17:06:41.564Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-06T17:54:31.210Z",codex-implementation,"Investigation note: duplicate check complete. pm-z5nb is already completed/merged and intentionally open as a coordination plan; current implementation will reuse pm-7m8p under pm-ugqx for the remaining SDK/package hook exemplar."
   "2026-06-06T17:55:48.646Z",package-hooks-subagent,"Subagent package/runtime findings: pm-governance-audit currently exposes only commands/schema in package manifest and extension manifest, with command-only activation for comments-audit/dedupe-audit/normalize; add hooks capability before calling api.hooks.onWrite/onRead or doctor will fail with extension_capability_missing. Runtime names are api.hooks.onWrite/onRead/onIndex and policy surfaces hooks.onwrite/hooks.onread/hooks.onindex; OnWriteHookContext carries path/scope/op plus optional item_id,item_type,before,after,changed_fields, while onRead has path/scope only. Recommended exemplar: opt-in onWrite sidecar logger disabled by default via env/config flag, append compact JSONL outside .agents/pm items/history to avoid recursive tracked writes, redact/summarize before/after, include op/path/scope/item_id/changed_fields, and cover activation with @unbrained/pm-cli/sdk/testing assertRegisteredHook plus a temp PM_PATH smoke. Compatibility risks: built index.js/manifest.json must stay in sync with TS, package entry still deep-loads dist/sdk/runtime.js via PM_CLI_PACKAGE_ROOT for governance commands, and current project doctor shows zero active hook counts because only pm-changelog is installed."
@@ -26,11 +30,11 @@ files[5]{path,scope,note}:
   packages/pm-governance-audit/extensions/governance-audit/manifest.json,project,Declare hooks capability for package manifest
   packages/pm-governance-audit/package.json,project,Advertise hooks package metadata
   tests/unit/builtin-extension-entrypoints.spec.ts,project,Package-specific hook registration and sidecar regression coverage
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts,project,240
+  pnpm build,project,240
+  "pnpm changelog:pm:check",project,240
 docs[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,Document package-owned governance hook pattern
   docs/SDK.md,project,Document governance audit as onRead/onWrite hook exemplar

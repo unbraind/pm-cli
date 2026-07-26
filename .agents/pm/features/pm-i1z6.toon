@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[2]: "area:search",gh-triage-2026-06-12
 created_at: "2026-06-12T16:09:06.591Z"
-updated_at: "2026-06-14T16:24:08.130Z"
+updated_at: "2026-07-26T17:16:13.855Z"
 author: maintainer-agent
+release: v2026.6.16
 resolution: Shipped --match-mode/--count + keyword default limit + all-terms coverage ranking (GH-181)
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-cstl,related,"2026-07-26T17:16:13.525Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-14T15:44:36.982Z",maintainer-agent,"Scoping (2026-06-14): keyword-mode default limit gap confirmed at search.ts:1872 (resolvedLimit = keyword ? limit : limit ?? maxResults — keyword skips maxResults default). Remaining: --match-mode and|or|exact (AND-preference ranking), apply maxResults default in keyword mode, --count mode. Bundled into PR feat/search-relevance-filter-parity-corpus."
   "2026-06-14T15:57:18.679Z",claude-code-agent,"Starting GH-181 remaining work: --match-mode (and|or|exact) with all-terms coverage RANKING bonus as default; keyword default limit fallback to maxResults(50)+total field; --count count-only mode. Read search.ts + list.ts + register-list-query.ts + cli-contracts + tool-option-contracts + mcp/server + completion to map all wiring sites."

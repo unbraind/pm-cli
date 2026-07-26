@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: extensions,implementation,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:55.590Z"
-updated_at: "2026-04-04T21:40:30.115Z"
+updated_at: "2026-07-26T17:24:20.997Z"
 deadline: "2026-04-10T22:53:55.590Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: linked-test-hardening
-release: vnext
+release: v2026.5.1
 blocked_reason: Implement sandbox seeding for project/global extension parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement sandbox seeding for project/global extension parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,8 +38,9 @@ affected_version: 2026.3.12
 component: linked-test-sandbox
 regression: true
 customer_impact: Automation currently disagrees with manual command outcomes.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-bkvx,parent,"2026-04-03T22:53:55.590Z",codex-agent,null
+  pm-bkvx,implements,"2026-07-26T17:24:20.761Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T22:53:55.590Z",codex-agent,Task focuses on runtime sandbox seeding and caller propagation.
   "2026-04-03T23:46:43.524Z",codex-agent,"Implemented linked-test sandbox seeding for project/global settings and extensions in src/cli/commands/test.ts and propagated source roots in test-all. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts passed; pm test pm-qtvv --run --timeout 7200 --json passed (1/1)."
@@ -50,8 +51,8 @@ files[4]{path,scope,note}:
   src/cli/commands/test.ts,project,runLinkedTests and seeding helpers
   tests/unit/test-all-command.spec.ts,project,extension parity runTestAll regression
   tests/unit/test-command.spec.ts,project,extension parity runTest regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandbox parity verification
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,project,2400,sandbox parity verification
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,document linked-test sandbox parity
   PRD.md,project,runtime contract updates

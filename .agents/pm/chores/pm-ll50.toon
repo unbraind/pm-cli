@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags[5]: agent-ux,bug,code-quality,extensions,sdk
 created_at: "2026-05-25T14:21:15.991Z"
-updated_at: "2026-05-25T17:43:31.784Z"
+updated_at: "2026-07-26T17:19:25.050Z"
 author: claude-code-agent
 parent: pm-rnpb
+release: v2026.5.27
 resolution: Implemented all remaining valid PR #69 reviewer threads with regression coverage.
 expected_result: "Package remediation text, npm path resolution, managed-state safety, scaffold conflict handling, and update action schema contracts match the current CLI behavior."
 actual_result: "Package doctor remediation uses flag-form commands, existing cwd-relative npm specs resolve as local packages, invalid managed state fails before mutation, scaffold conflicts are preflighted, and allowAuditUpdate is only in update-family schemas."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,implements,"2026-07-26T17:19:24.745Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-25T17:43:09.823Z",codex,"Evidence: addressed remaining live PR #69 reviewer threads: package doctor remediation now uses flag-form commands, cwd-relative npm package specs resolve locally when present, invalid managed state hard-fails before mutation, scaffold writes are preflighted, and allowAuditUpdate moved to update schemas. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts; pm test pm-ll50 --run --progress; node scripts/run-tests.mjs coverage; pnpm changelog:pm:check; pnpm quality:static; pnpm quality:docs-skills; pnpm typecheck."
 files[7]{path,scope,note}:
@@ -22,9 +25,9 @@ files[7]{path,scope,note}:
   src/sdk/cli-contracts/tool-option-contracts.ts,project,Move allowAuditUpdate to update action contracts
   tests/unit/contracts-command.spec.ts,project,Regression coverage for allowAuditUpdate schema placement
   tests/unit/extension-command.spec.ts,project,"Regression coverage for package remediation,local npm specs,managed state failure,and scaffold preflight"
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mplhr24h-hdixqj,test,passed,"2026-05-25T17:38:39.626Z","2026-05-25T17:39:34.145Z","2026-05-25T17:39:34.145Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mplhr24h-hdixqj,test,passed,"2026-05-25T17:38:39.626Z","2026-05-25T17:39:34.145Z","2026-05-25T17:39:34.145Z",1,0,0
 close_reason: All remaining valid PR #69 reviewer threads implemented with regression coverage and full gates passing.
 body: ""

@@ -6,15 +6,17 @@ status: closed
 priority: 2
 tags[1]: "gh:unbraind/pm-cli#694"
 created_at: "2026-07-25T02:46:55.187Z"
-updated_at: "2026-07-25T02:52:31.686Z"
+updated_at: "2026-07-26T17:16:36.979Z"
 closed_at: "2026-07-25T02:52:30.679Z"
 author: claude-code-agent
 parent: pm-rnpb
+release: v2026.7.25
 resolution: Merged the pinned TruffleHog GitHub Action update through Dependabot PR #694 after a clean full-matrix rebase.
 expected_result: Security workflow uses TruffleHog 3.96.0 with all mandatory gates green and complete dependency provenance.
 actual_result: Main now pins TruffleHog 3.96.0 at merge commit 48c5656d; no open dependency PRs or Dependabot vulnerabilities remain.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-wo8,related_to,"2026-07-25T02:46:55.187Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:16:36.814Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-25T02:46:55.187Z",claude-code-agent,"Duplicate check: all-status search for TruffleHog 3.96.0 and PR #694 found no existing item dedicated to this update; reusing closed pm-rnpb as the broad delivery parent and pm-wo8 as related CI/security lineage."
   "2026-07-25T02:52:29.155Z",claude-code-agent,"Evidence: Dependabot PR #694 rebased onto fc1c0052 and merged cleanly as 48c5656d. All CI, four coverage shards, static/type/compat/smoke gates, Windows/macOS/Linux runtime checks, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, Codecov, DeepScan, and benchmarks passed. Exact bot inventory had zero unresolved threads; all bot comments were individually reacted to and answered."

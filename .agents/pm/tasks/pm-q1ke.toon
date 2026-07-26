@@ -6,17 +6,20 @@ status: closed
 priority: 1
 tags[5]: "area:lifecycle","area:release",pnpm,robustness,windows
 created_at: "2026-07-05T10:35:05.590Z"
-updated_at: "2026-07-05T14:30:07.466Z"
+updated_at: "2026-07-26T17:23:36.007Z"
 author: claude-code-agent
 acceptance_criteria: "pm update --parent <same-id> rejects before writing; create/update parent self-cycle regression coverage passes; Windows lock coverage no longer depends on POSIX-only write-failure behavior; pnpm 11 bootstrap succeeds with reviewed allowBuilds/overrides in pnpm-workspace.yaml; focused tests, full coverage, static quality, temp-dir smoke, changelog check, and release-health evidence recorded."
 parent: pm-98cz
+release: v2026.7.5
 resolution: Self-parent create/update mutations now reject before writes; explicit create ids are registered through the SDK command contract; pnpm 11 bootstrap configuration and CI examples are aligned; Windows lock coverage remains portable.
 expected_result: pm create/update cannot persist a parent self-cycle; package authors can discover and use pm create --id through generated contracts/help; pnpm 11 installs use workspace-level allowBuilds/overrides; all gates and installed-package smoke pass.
 actual_result: "Focused regressions passed, full coverage reached 100/100/100/100 across 264 files / 5423 tests, static/security/release gates passed, installed-package smoke passed, pm-changelog check remained clean, Greptile follow-up coverage was added for Windows lock and built-CLI update self-parent paths, and final bot findings were addressed with typed-value self-parent error detail, bounded dependency override ranges, and shared placeholder-token detection."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-5566,related,"2026-07-05T10:35:05.590Z",null,null
   pm-7zs0,related,"2026-07-05T10:35:05.590Z",null,null
   pm-lt6n,related,"2026-07-05T10:35:05.590Z",null,null
+  pm-98cz,implements,"2026-07-26T17:23:35.752Z",null,null
+  pm-q71q,related,"2026-07-26T17:23:35.752Z",null,null
 comments[24]{created_at,author,text}:
   "2026-07-05T10:35:20.368Z",claude-code-agent,"Evidence: bootstrap initially failed under pnpm 11 because package.json#pnpm was ignored and build scripts were left as pnpm-workspace allowBuilds placeholders. Migrated reviewed build-script decisions and overrides into pnpm-workspace.yaml; reran pnpm config list and pnpm build successfully."
   "2026-07-05T10:39:15.530Z",claude-code-agent,"Evidence: focused verification passed after self-parent and Windows lock-test patches: node scripts/run-tests.mjs test -- tests/unit/core/item/item-record.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts (3 files, 160 tests); pnpm typecheck passed."

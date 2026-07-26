@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:schema","area:settings",pm-cli
 created_at: "2026-03-31T23:47:37.031Z"
-updated_at: "2026-04-04T21:32:46.841Z"
+updated_at: "2026-07-26T17:29:15.315Z"
 deadline: "2026-04-10T23:47:37.031Z"
 author: codex-agent
 estimated_minutes: 300
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-r15d
 blocked_reason: Configurable item type registry (settings + extensions) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Configurable item type registry (settings + extensions) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,10 @@ fixed_version: archive-2026q2
 component: core/types
 regression: false
 customer_impact: Teams can add domain-specific types
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-r15d,parent,"2026-03-31T23:47:37.031Z",codex-agent,null
+  pm-p5q3,related,"2026-07-26T17:29:15.089Z",null,null
+  pm-r15d,implements,"2026-07-26T17:29:15.089Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-31T23:47:37.031Z",codex-agent,Feature tracks configurable type registry architecture.
   "2026-04-01T00:28:23.260Z",codex-agent,"Implemented configurable registry merging built-ins, settings item_types definitions, and extension registrations with alias/folder/type-option validation support."
@@ -57,10 +59,10 @@ files[4]{path,scope,note}:
   src/core/item/type-registry.ts,project,runtime type registry implementation
   src/core/store/settings.ts,project,settings-driven type definitions
   src/types.ts,project,type definitions
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/extension-loader.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,registry schema validation
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:11:05.822Z","2026-04-04T21:11:05.822Z",null,null,1,0,0,1,1,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/extension-loader.spec.ts,project,2400,registry schema validation
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:11:05.822Z","2026-04-04T21:11:05.822Z",1,0,0,1,1
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension registration docs
 close_reason: Expanded built-in type registry delivered with deterministic compatibility

@@ -6,21 +6,23 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:32.672Z"
-updated_at: "2026-07-25T16:31:56.319Z"
+updated_at: "2026-07-26T17:14:14.647Z"
 closed_at: "2026-07-25T16:31:55.391Z"
 author: unknown
 estimated_minutes: 180
 acceptance_criteria: "Closing a Plan whose steps are all complete transitions plan_mode to a terminal state in the same mutation, with no separate command required; Terminal Plan semantics are declared once and enforced identically across CLI, SDK, and MCP; The transition is recorded in the Plan history stream with the triggering action; Attempting to resume or update a terminal Plan fails with a typed error naming the terminal state"
 parent: pm-usfg
+release: v2026.7.26
 resolution: Closing a fully completed Plan now atomically records plan_mode completed.
 expected_result: Closing a fully completed Plan now atomically records plan_mode completed.
 actual_result: "Closing a fully completed Plan now atomically records plan_mode completed. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-bxdlfa,related_to,"2026-07-25T02:06:32.672Z",null,null
   pm-2tan,related,"2026-07-25T06:27:16.073Z",null,null
   pm-96tter,related,"2026-07-25T06:27:16.073Z",null,null
   pm-bxdlfa,related,"2026-07-25T06:27:16.073Z",null,null
   pm-z5vamp,related,"2026-07-25T06:27:16.073Z",null,null
+  pm-usfg,implements,"2026-07-26T17:14:14.451Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-25T02:06:32.672Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
   "2026-07-25T15:25:39.465Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."

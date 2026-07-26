@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[7]: "area:graph","area:query",bug,children,plan,projection,sdk-parity
 created_at: "2026-07-13T22:07:55.014Z"
-updated_at: "2026-07-14T03:11:21.920Z"
+updated_at: "2026-07-26T17:30:04.364Z"
 closed_at: "2026-07-14T03:11:21.057Z"
 author: codex-root
 estimated_minutes: 180
@@ -14,6 +14,7 @@ acceptance_criteria: "A focused sandbox test reproduces Plan parent children and
 parent: pm-6x7o
 risk: medium
 confidence: high
+release: v2026.7.14
 reporter: codex-root
 severity: medium
 environment: pm-cli 2026.7.13 on main 5194806d; Node v26.4.0; Linux; real repository tracker
@@ -24,11 +25,15 @@ actual_result: "Item-prefixed root projections now use the same normalized field
 component: get query projection and SDK read primitives
 regression: false
 customer_impact: Agents using get as the canonical context call cannot discover executable tasks nested below a Plan and may incorrectly infer the plan has no children.
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-a8zm,discovered_from,"2026-07-13T22:07:55.014Z",null,null
   pm-je50,related,"2026-07-13T22:07:55.014Z",null,null
   pm-ju83,related,"2026-07-13T22:07:55.014Z",null,null
   pm-rjqr,related,"2026-07-13T22:07:55.014Z",null,null
+  pm-6x7o,implements,"2026-07-26T17:30:04.179Z",null,null
+  pm-lnrk,related,"2026-07-26T17:30:04.179Z",null,null
+  pm-p9a4,related,"2026-07-26T17:30:04.179Z",null,null
+  pm-qnl2,related,"2026-07-26T17:30:04.179Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-13T22:07:55.014Z",codex-root,"Duplicate check 2026-07-13: exhaustive all-status searches for get full Plan children,list parent mismatch,and child count found historical Plan and parent-filter work but no issue tracking this projection inconsistency; live reproduction is attached."
   "2026-07-13T22:45:36.051Z",codex-root,"Implementation evidence: get children are now type-agnostic and derived from the light indexed metadata path, with status totals, active count, deterministic id-sorted sample, sample_limit, truncation, next_offset, continuation command, and explicit one-million-row safety bound. Empty leaf rollups stay omitted unless explicitly requested for token efficiency."

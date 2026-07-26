@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:status",code,pm-cli
 created_at: "2026-04-01T10:47:04.830Z"
-updated_at: "2026-04-05T22:46:04.199Z"
+updated_at: "2026-07-26T17:23:20.539Z"
 deadline: "2026-04-03T10:47:04.830Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-1r6p
 blocked_reason: Implement centralized status alias normalization has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement centralized status alias normalization is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: status-normalization
 regression: true
 customer_impact: status updates and filters work with common agent output
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-1r6p,parent,"2026-04-01T10:47:04.830Z",codex-agent,null
+  pm-1r6p,implements,"2026-07-26T17:23:20.284Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T10:47:04.830Z",codex-agent,Task targets core helper plus command integration points create/update/calendar/test-all and importers.
   "2026-04-01T10:58:28.201Z",codex-agent,"Implemented centralized status normalization helper (src/core/item/status.ts) and wired create/update/calendar/test-all/import/front-matter parsing to accept in-progress while persisting canonical in_progress. Verification: node scripts/run-tests.mjs test passed (61 files, 636 tests)."
@@ -57,8 +58,8 @@ files[6]{path,scope,note}:
   src/cli/commands/update.ts,project,update status parsing uses normalizeStatusInput
   src/core/item/item-format.ts,project,item parse normalization to canonical status
   src/core/item/status.ts,project,new shared status normalization utility
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,status normalization unit regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,project,3600,status normalization unit regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,core parsing behavior reference
 close_reason: Centralized status alias normalization implemented across command and parsing surfaces; full sandbox test suite passed.

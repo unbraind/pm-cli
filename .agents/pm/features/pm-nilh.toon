@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",gh-issue,token-efficiency
 created_at: "2026-07-06T08:03:03.701Z"
-updated_at: "2026-07-20T10:27:10.448Z"
+updated_at: "2026-07-26T17:21:13.320Z"
 closed_at: "2026-07-20T10:01:06.896Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,13 +14,15 @@ acceptance_criteria: CLI mutations default (or config-default) to id/status/chan
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.21
 resolution: Single-item mutations default to compact id/status/change-count envelopes with explicit full and id-only compatibility controls.
 expected_result: Agent mutation responses are token-efficient by default while callers can request legacy full deltas or id-only output.
 actual_result: "Compact defaults ship across CLI and MCP with 87.82% packed output reduction, full/id-only precedence, updated token budgets, contracts, docs, and tests."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-20T08:49:49.562Z",null,null
   pm-g9xk,related,"2026-07-20T08:49:49.562Z",null,null
   pm-xm7c,related,"2026-07-20T08:49:49.562Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:21:13.002Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-20T09:59:55.002Z",codex-20260720,"Evidence: mutation commands now default to id/status/changed_field_count, --no-changed-fields preserves the compact legacy item envelope, --full-changed-fields restores the full delta, and --id-only retains precedence. Isolated packed creates measured 71-byte compact vs 583-byte full output (87.82% reduction). Token-budget consumer and manifest were updated intentionally."
 files[6]{path,scope,note}:

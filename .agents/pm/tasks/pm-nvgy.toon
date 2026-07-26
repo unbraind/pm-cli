@@ -6,16 +6,18 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",authoring,dx
 created_at: "2026-06-23T20:35:34.182Z"
-updated_at: "2026-06-23T21:49:30.586Z"
+updated_at: "2026-07-26T17:21:30.549Z"
 author: claude-code-agent
 parent: pm-2p38
+release: v2026.6.24
 resolution: Added defineExtensionBlueprint typed identity helper completing the define* symmetry (module/manifest/blueprint).
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-12tj,related,"2026-06-23T20:35:34.182Z",null,null
   pm-2c28,related,"2026-06-23T20:35:34.182Z",null,null
   pm-cn0c,related,"2026-06-23T20:35:34.182Z",null,null
   pm-high,related,"2026-06-23T20:35:34.182Z",null,null
   pm-iqq0,related,"2026-06-23T20:35:34.182Z",null,null
+  pm-2p38,implements,"2026-07-26T17:21:30.290Z",null,null
 files[2]{path,scope,note}:
   src/sdk/compose.ts,project,defineExtensionBlueprint identity helper
   tests/unit/sdk/sdk-compose.spec.ts,project,defineExtensionBlueprint tests

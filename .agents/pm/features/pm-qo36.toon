@@ -6,11 +6,14 @@ status: closed
 priority: 3
 tags[4]: "area:extensions","area:sdk",dx,extensibility
 created_at: "2026-06-07T10:05:01.492Z"
-updated_at: "2026-06-08T13:51:50.961Z"
+updated_at: "2026-07-26T17:24:10.527Z"
 author: audit-platform-agent
 acceptance_criteria: "- Extension `activate(api)` exposes the extension's own name, layer, and version (e.g. api.extension)\n- Available at activation without re-reading the manifest\n- SDK types + docs updated; covered by a test"
 parent: pm-ugqx
 risk: low
 confidence: high
+release: v2026.6.9
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T17:24:10.271Z",null,null
 close_reason: ExtensionApi now exposes read-only frozen api.extension self-identity (name/layer/version/capabilities/pm_min_version/pm_max_version/source_package) built in createExtensionApi. Documented + tested.
 body: ""

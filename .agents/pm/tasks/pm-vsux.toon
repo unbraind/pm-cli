@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:store",body,json,list,pm-cli
 created_at: "2026-03-31T19:37:16.976Z"
-updated_at: "2026-04-04T21:37:17.323Z"
+updated_at: "2026-07-26T17:28:17.656Z"
 deadline: "2026-04-02T19:37:16.976Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-31
-release: v0.1
+release: v2026.5.1
 blocked_by: pm-r0m
 blocked_reason: Implement include-body retrieval in list command pipeline has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement include-body retrieval in list command pipeline is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: v0.1
 component: cli/list
 regression: true
 customer_impact: Users can request body-inclusive list output.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-r0m,related,"2026-03-31T19:37:16.976Z",codex-agent,null
   pm-ykib,parent,"2026-03-31T19:37:16.976Z",codex-agent,null
+  pm-ykib,implements,"2026-07-26T17:28:17.335Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-31T19:37:16.976Z",codex-agent,Task A scope covers main list and store changes
   "2026-03-31T19:45:15.668Z",codex-agent,"Implemented include-body pipeline: list option parsing in main, conditional body projection in runList, and store helper listAllFrontMatterWithBody while preserving default front-matter-only output."
@@ -57,8 +58,8 @@ files[3]{path,scope,note}:
   src/cli/commands/list.ts,project,list options and output shape
   src/cli/main.ts,project,add include-body flag wiring
   src/core/store/item-store.ts,project,list rows with optional body
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,list unit behavior
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts,project,1800,list unit behavior
 docs[1]{path,scope,note}:
   PRD.md,project,contract reference
 close_reason: Implemented include-body option wiring and conditional list body projection with passing linked and full regression tests.

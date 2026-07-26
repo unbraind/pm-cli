@@ -6,9 +6,15 @@ status: closed
 priority: 2
 tags[1]: agent-ux
 created_at: "2026-05-25T13:55:37.918Z"
-updated_at: "2026-05-26T22:58:28.023Z"
+updated_at: "2026-07-26T17:02:56.399Z"
 author: claude-code-agent
 parent: pm-rnpb
+release: v2026.5.27
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-ch59,related,"2026-07-26T17:02:56.193Z",null,null
+  pm-mbdu,related,"2026-07-26T17:02:56.193Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:02:56.193Z",null,null
+  pm-zwl7,related,"2026-07-26T17:02:56.193Z",null,null
 comments[9]{created_at,author,text}:
   "2026-05-25T19:47:52.441Z",codex-full-audit,"Code-quality/security audit note 2026-05-25: tracked secret scan is clean and static quality passes. Sub-agent review still found pack/build hygiene and complexity follow-ups outside this safe slice: build does not clean stale dist artifacts before packing, several modules remain large/complex, and mutation output verbosity overlaps pm-ch59. No private telemetry host/token material was found in tracked files by scripts/check-secrets.mjs. Keep this item open for larger dist-clean/complexity work."
   "2026-05-25T20:08:30.926Z",codex-code-quality-specialist,"Code-quality specialist evidence 2026-05-25: repo size/complexity scan found no static-quality violations, but maintainability risk remains. Size snapshot: 141315 LOC across src/tests/docs/packages/plugins; largest files include tests/integration/cli.integration.spec.ts 6989 LOC, tests/unit/extension-loader.spec.ts 3339 LOC, src/cli/commands/update.ts 1936 LOC, src/core/extensions/loader.ts 1929 LOC, src/cli/main.ts 1895 LOC. jscpd scan (npx -y jscpd --min-lines 24 --min-tokens 120 --reporters json --output /tmp/pm-cli-jscpd src tests docs packages plugins) took 41.806s and found 5 clone clusters / 260 duplicated lines / 0.33%. Generated duplicates: plugin MCP wrappers and package runtime loaders. Hand-maintained duplicates to consider: src/core/extensions/extension-policy.ts:156-183 duplicated at 277-303, and src/cli/commands/history-redact.ts:532-558 duplicated with src/cli/commands/history-repair.ts:171-197. Recommended fix: keep generated duplicate allowlist explicit, extract shared override normalization and shared history rewrite lock/ownership helper, and lower static-quality thresholds once these known long files are split."
@@ -22,7 +28,7 @@ comments[9]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/main.ts,project,core registration selection wiring for command-filtered bootstrapping
   src/cli/register-list-query.ts,project,maintainable selective registration helper for list-query commands
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot,null,project,900,null,null,null,null,null,null,null,null,null,null,null,selective command registration regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot,project,900,selective command registration regressions
 close_reason: Decision workstream applied and merged via PR #75.
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: extensions,macos,nightly,windows
 created_at: "2026-07-15T18:59:41.157Z"
-updated_at: "2026-07-19T14:05:52.632Z"
+updated_at: "2026-07-26T17:15:59.541Z"
 closed_at: "2026-07-19T14:05:51.758Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,13 +14,16 @@ acceptance_criteria: "copyExtensionDirectoryWithoutSelfNesting canonicalizes tem
 parent: pm-ugqx
 risk: medium
 confidence: high
+release: v2026.7.20
 resolution: Canonicalize both source and temp staging roots before containment checks so macOS and Windows never stage inside the source tree.
 expected_result: Nightly extension copy safety passes on macOS and Windows.
 actual_result: Cross-platform regression tests and PR #616 macOS/Windows jobs pass.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-0fhw,related,"2026-07-15T18:59:41.157Z",null,null
   pm-8myl,related,"2026-07-15T18:59:41.157Z",null,null
   pm-b24b,related,"2026-07-15T18:59:41.157Z",null,null
+  pm-u5zr,related,"2026-07-26T17:15:59.284Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:15:59.284Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-19T12:41:27.631Z",maintainer-agent,"Evidence: canonical temp-directory staging fix passes the linked 7-test cross-platform safety suite; repo static/docs/contracts/lint gates pass; full coverage is 100/100/100/100 (5,963 tests); manual temp-workspace acceptance passed."
   "2026-07-19T12:50:15.701Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."

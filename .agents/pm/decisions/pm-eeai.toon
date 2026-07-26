@@ -6,20 +6,26 @@ status: closed
 priority: 2
 tags[3]: adr,"area:storage",migration
 created_at: "2026-06-21T01:28:04.296Z"
-updated_at: "2026-06-25T17:45:52.601Z"
+updated_at: "2026-07-26T17:12:50.661Z"
 author: claude-code-agent
 parent: pm-m2u1
+release: v2026.6.30
 resolution: Accepted storage-format ADR; explicit pm_format_version remains implicit at baseline and gates future migrations through health/validate.
 expected_result: "Storage schema evolution has a documented, token-efficient per-item version gate without serializing baseline metadata."
 actual_result: docs/ARCHITECTURE.md documents the contract; linked health and validate commands passed in tracker context.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-ae1u,related,"2026-06-21T01:28:58.108Z",claude-code-agent,null
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node dist/cli.js health --check-only --summary --json,null,project,120,tracker,null,null,null,null,null,null,null,null,null,null,null
-  node dist/cli.js validate --check-resolution --check-history-drift --json,null,project,180,tracker,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqtsjygn-alr37o,test,failed,"2026-06-25T17:43:49.186Z","2026-06-25T17:43:50.327Z","2026-06-25T17:43:50.327Z",null,null,0,2,0,null,null,null
-  test-local-mqtsl64w-b41037,test,passed,"2026-06-25T17:44:28.557Z","2026-06-25T17:44:46.928Z","2026-06-25T17:44:46.928Z",null,null,2,0,0,null,null,null
+  pm-m2u1,implements,"2026-07-26T17:12:50.472Z",null,null
+  pm-o2kc,related,"2026-07-26T17:12:50.472Z",null,null
+  pm-w5j7,related,"2026-07-26T17:12:50.472Z",null,null
+  pm-yvwt,related,"2026-07-26T17:12:50.472Z",null,null
+  pm-z8bl,related,"2026-07-26T17:12:50.472Z",null,null
+tests[2]{command,scope,timeout_seconds,pm_context_mode}:
+  node dist/cli.js health --check-only --summary --json,project,120,tracker
+  node dist/cli.js validate --check-resolution --check-history-drift --json,project,180,tracker
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqtsjygn-alr37o,test,failed,"2026-06-25T17:43:49.186Z","2026-06-25T17:43:50.327Z","2026-06-25T17:43:50.327Z",0,2,0
+  test-local-mqtsl64w-b41037,test,passed,"2026-06-25T17:44:28.557Z","2026-06-25T17:44:46.928Z","2026-06-25T17:44:46.928Z",2,0,0
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,Documents pm_format_version storage ADR and migration contract
 close_reason: "ADR accepted and already implemented: pm_format_version storage gating is documented and validated."

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:cli",defect-class,re-entrancy,sdk-first
 created_at: "2026-07-12T12:25:25.346Z"
-updated_at: "2026-07-17T04:40:21.092Z"
+updated_at: "2026-07-26T17:23:56.301Z"
 closed_at: "2026-07-16T21:18:40.311Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,15 +14,18 @@ acceptance_criteria: "runPmCli invocations are fully re-entrant in one process: 
 parent: pm-usfg
 risk: medium
 confidence: medium
+release: v2026.7.17
 resolution: "Shipped via PR#575: runPmCli now constructs the Commander program per invocation, so dynamically registered extension commands/flags and runtime schema field flags no longer persist across in-process embedded runs; regression specs assert zero cross-invocation leakage."
 expected_result: "Embedded/in-process CLI invocations are fully isolated: no extension command, flag, or schema-field registration leaks from one runPmCli call into the next."
 actual_result: PR#575 merged 2026-07-16 with per-invocation program construction and leakage regression specs; full 100/100/100/100 coverage and all gates green.
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-8fxc,related,"2026-07-12T12:25:25.346Z",null,null
   pm-yh8r,related,"2026-07-12T12:25:25.346Z",null,null
   pm-9x6e,related,"2026-07-16T20:38:56.912Z",null,null
   pm-cbwg,related,"2026-07-16T20:38:56.912Z",null,null
   pm-w89s,related,"2026-07-16T20:38:56.912Z",null,null
+  pm-kvd0,related,"2026-07-26T17:23:56.001Z",null,null
+  pm-usfg,implements,"2026-07-26T17:23:56.001Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-16T20:25:22.624Z",codex-wide-sdk-20260716,"Implementation start 2026-07-16: replace the module-level mutable Commander graph with invocation-owned program state and prove extension commands/flags cannot leak between sequential in-process runs."
   "2026-07-16T21:18:25.844Z",codex-wide-sdk-20260716,"Evidence: runPmCli now constructs and lifecycle-hooks a fresh Commander graph on every in-process invocation. The persistent worker bridge no longer detects/disposes tainted state, and the cross-workspace regression proves an extension-injected list flag from workspace A is absent in workspace B. Linked test passed; full repository coverage passed 294 files / 5,751 tests at exact 100/100/100/100."

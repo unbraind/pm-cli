@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-08T23:48:17.954Z"
-updated_at: "2026-05-17T08:22:04.353Z"
+updated_at: "2026-07-26T17:15:22.149Z"
 deadline: "2026-03-22T23:48:17.954Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: "M5 roadmap: Pi agent extension advanced ergonomics has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 roadmap: Pi agent extension advanced ergonomics is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,14 +41,16 @@ fixed_version: archive-2026q2
 component: project-management/m5-roadmap-pi-agent-extension-advanced-ergonomic
 regression: false
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 roadmap: Pi agent extension advanced ergonomics."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-b1w,implements,"2026-07-26T17:15:21.970Z",null,null
 comments[1]{created_at,author,text}:
   "2026-03-08T23:48:17.954Z",maintainer-agent,"Why this exists: Complete the roadmap items for post-v0.1."
 notes[1]{created_at,author,text}:
   "2026-03-08T23:48:17.954Z",maintainer-agent,"Initial plan: design workflow presets for pi extension."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:37:05.836Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,metadata-audit-baseline-regression
 docs[1]{path,scope,note}:
   PRD.md,project,authoritative contract
 close_reason: Implemented start-task and pause-task workflow presets for Pi agent extension.

@@ -6,17 +6,20 @@ status: closed
 priority: 0
 tags[8]: automation,ci,compatibility,github,pm-cli,release,sentry,telemetry
 created_at: "2026-05-05T18:05:05.397Z"
-updated_at: "2026-05-05T22:13:57.760Z"
+updated_at: "2026-07-26T17:00:22.014Z"
 deadline: "2026-05-06T18:05:05.397Z"
 author: codex-release-agent
 estimated_minutes: 360
 acceptance_criteria: No previous-version tracker data breaks; GitHub issues #20 and #21 are documented and resolved or explicitly triaged; scheduled auto-release and release workflows only publish after strict green gates and actual changes; changelog and release notes are generated from pm evidence; npm/npx/bunx/GitHub publish verification succeeds.
 parent: pm-rnpb
+release: v2026.5.6
 resolution: "Released v2026.5.5 with compatibility migration fixes, GitHub issue remediation, daily auto-release hardening, strict publish verification, telemetry/Sentry review, and Windows CI stabilization."
 expected_result: "The release publishes only after strict local and GitHub gates pass, previous-version data migrates safely, npm/npx/bunx/GitHub/Sentry verification succeeds, and GitHub issues #20/#21 are closed."
 actual_result: "v2026.5.5 published and verified on npm, npx, bunx, GitHub Release, and Sentry; compatibility gate passed; final main CI run 25403938563 passed; GitHub issues #20/#21 closed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-05T18:05:05.397Z",codex-release-agent,null
+  pm-0qv7,related,"2026-07-26T17:00:21.784Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:00:21.784Z",null,null
 comments[20]{created_at,author,text}:
   "2026-05-05T18:05:05.397Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search release 2026.5.5 auto release compatibility GitHub issue 20 frontmatter issue 21 npm install --limit 20,pm list-open --limit 30,pm list-in-progress --limit 30,and inspected prior closed release item pm-0qv7. No open release item covers this post-2026.5.4 release and GitHub bug remediation scope; parent lineage reused under pm-rnpb."
   "2026-05-05T18:50:31.436Z",codex-release-agent,"Release prep evidence: GitHub issues #20/#21 documented, Sentry unresolved/recent issue checks were empty, private telemetry review recorded under ignored scripts/prod/telemetry/reports, compatibility-check passed for 2026.5.4 data, and node scripts/release/run-gates.mjs --telemetry-mode off --json passed all gates."
@@ -59,13 +62,13 @@ files[18]{path,scope,note}:
   tests/unit/test-all-command.spec.ts,project,Windows timeout regression stability
   src/core/telemetry/runtime.ts,project,Windows-safe telemetry queue flush race fix
   tests/unit/telemetry-runtime.spec.ts,project,regression coverage for in-flight flush append preservation
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/compatibility-check.mjs --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,previous-version compatibility gate
-  node scripts/release/run-gates.mjs --telemetry-mode off --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full local release gate
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,global 100 percent coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,release automation contract regressions
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,focused release workflow regression
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/test-all-command.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused release and Windows CI stabilization regression
+tests[6]{command,scope,timeout_seconds,note}:
+  node scripts/release/compatibility-check.mjs --json,project,900,previous-version compatibility gate
+  node scripts/release/run-gates.mjs --telemetry-mode off --json,project,900,full local release gate
+  node scripts/run-tests.mjs coverage,project,900,global 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,900,release automation contract regressions
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,180,focused release workflow regression
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/test-all-command.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,focused release and Windows CI stabilization regression
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,release changelog
   docs/RELEASING.md,project,release source of truth

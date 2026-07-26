@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: attribution,history,identity,multi-agent,observability,provenance
 created_at: "2026-07-26T11:06:52.473Z"
-updated_at: "2026-07-26T11:06:52.473Z"
+updated_at: "2026-07-26T17:09:33.832Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The declared signals for each supported harness are validated against what that harness actually exposes, and a signal that cannot fire is either corrected or recorded as unavailable rather than left declared; For harnesses that expose no model variable, an alternative resolution path is defined — client handshake metadata, invocation argument, or explicit configuration — so the field can be populated without the agent naming itself; A check reports the proportion of recorded entries carrying a model, per harness, so an inert signal is visible instead of silent; The check fails when a harness that declares a model signal records no model across a window of mutations, which is the condition that exists today; Model capture is exercised end to end for at least one harness in the test suite, asserting the recorded entry rather than the detector's return value; Documentation states which harnesses currently yield a model and which do not, so the analytics that consume it can distinguish absent from unattributed"
@@ -30,4 +30,6 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-u14c,related,"2026-07-26T11:06:52.473Z",null,null
   pm-w7ccmv,verifies,"2026-07-26T11:06:52.473Z",null,null
   pm-z8qd4k,related,"2026-07-26T11:06:52.473Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T17:09:33.832Z","harness:claude-code","Re-measured live on 2026-07-26 after the v2026.7.26 release that shipped pm-03pq3o. The census now covers 37,202 history entries across the whole workspace, including roughly 3,500 entries this session wrote through the current build with the current harness: agent_model is present on 0 of 37,202, and no entry carries a session field either. Harness detection itself is healthy in the same census — claude-code 2,363, codex 570, opencode 66 — which isolates the failure precisely to the model dimension rather than to detection as a whole. No key matching effort or thinking appears anywhere in the entry schema, which is the pm-itsjf0 half. So the plumbing that pm-03pq3o and pm-brxdct shipped remains correct and inert: the descriptor still names ANTHROPIC_MODEL and CLAUDE_MODEL for claude-code and this harness sets neither, so a fresh release did not move the number."
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: assertions,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:14.932Z"
-updated_at: "2026-05-17T08:21:31.745Z"
+updated_at: "2026-07-26T17:09:34.463Z"
 deadline: "2026-04-11T12:43:14.932Z"
 author: codex-agent
 estimated_minutes: 260
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
-release: vnext
+release: v2026.5.1
 blocked_reason: Implement fail-on-skipped policy and linked-test assertions has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement fail-on-skipped policy and linked-test assertions is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,6 +38,8 @@ fixed_version: target-vnext
 component: linked-test-runtime
 regression: true
 customer_impact: Prevents false-green releases where logical assertions are unmet or coverage is silently skipped.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-wtq6,implements,"2026-07-26T17:09:34.211Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-04T12:43:14.932Z",codex-agent,Task created after dedupe checks confirmed no active item implements fail-on-skipped policy plus linked-test assertion evaluation semantics.
   "2026-04-04T14:01:41.605Z",codex-agent,"Implemented fail-on-skipped policy flags plus linked-test assertions (stdout/stderr contains+regex, min-lines, JSON equals/gte) across create/test/test-all runtime and contracts. Evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts; node scripts/run-tests.mjs coverage; pm test pm-au2z --run --fail-on-skipped passed."
@@ -56,7 +58,7 @@ files[12]{path,scope,note}:
   tests/unit/test-all-command.spec.ts,project,assertion-and-skip-policy-implementation
   tests/unit/test-command.spec.ts,project,assertion-and-skip-policy-implementation
   tests/unit/validate-command.spec.ts,project,assertion-and-skip-policy-implementation
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,assertion-and-skip-policy-regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts,project,1200,assertion-and-skip-policy-regression
 close_reason: Fail-on-skipped policy and assertion semantics implemented additively with full regression and coverage gates passing.
 body: Code workstream for feature pm-wtq6.

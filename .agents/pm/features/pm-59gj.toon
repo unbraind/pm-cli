@@ -6,13 +6,30 @@ status: closed
 priority: 0
 tags[6]: extensions,install,packages,pi,pm-cli,sdk
 created_at: "2026-05-11T17:39:33.123Z"
-updated_at: "2026-05-31T09:46:43.944Z"
+updated_at: "2026-07-26T17:04:36.462Z"
 author: codex-agent
 acceptance_criteria: External package architecture research is documented in tracker; pm package/install plan is decomposed into child work; pm install supports managed package sources while preserving extension compatibility; SDK/docs/tests stay provider-neutral and pm-specific; full CLI/SDK dogfood passes in a temporary project; telemetry and Sentry verification are recorded.
 parent: pm-rnpb
+release: v2026.6.1
 resolution: "Completed the package-first audit slice by integrating child fixes for lazy activation, SDK ergonomics, parser deduplication, calendar semantics, completion runtime values, vector search correctness, and telemetry-derived error guidance."
 expected_result: "External packages and SDK workflows are manually validated in a temporary project; pm remains extensible, agent-friendly, token-efficient, and observable without leaking private operational details."
 actual_result: "Manual temp-project dogfood exercised all bundled packages, SDK smoke, custom schema, calendar/templates/todos/beads/governance/test-runs, and Ollama+LanceDB hybrid search; 100% coverage, release gates, Sentry/telemetry gate, stack health, GitHub triage, and dependency audit passed."
+dependencies[15]{id,kind,created_at,author,source_kind}:
+  pm-2b3l,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-2fgn,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-2rj1,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-5wb6,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-7xk5,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-8ehg,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-8l7d,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-9x1c,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-f3q4,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-fdla,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-hxp2,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-ixt3,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-js0r,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-jzf4,related,"2026-07-26T17:04:36.271Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:04:36.271Z",null,null
 comments[54]{created_at,author,text}:
   "2026-05-11T17:39:33.123Z",codex-agent,"Duplicate check before create: ran pm context --limit 10,pm search packages extensions SDK install --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing matches were closed extension/SDK/install work plus open parent pm-rnpb; no active item covered package-first ecosystem rename and pm install restoration,so this child feature is net-new under pm-rnpb."
   "2026-05-11T18:51:26.526Z",codex-agent,"Implementation slice completed: child pm-9x1c closed after package-first aliases, pm install, package-root/npm install support, SDK/Pi/MCP contracts, docs/skills, manual temp-project dogfood, full release gates, and observability checks. Roadmap children remain open for the broader Pi-style package ecosystem: manifest/resource model (pm-t5ud), resource loader for skills/prompts/themes/docs (pm-su6i), package gallery metadata (pm-2b3l), and full terminology migration (pm-lwun)."
@@ -113,21 +130,51 @@ files[38]{path,scope,note}:
   tests/unit/search-cache.spec.ts,project,mutation refresh policy coverage
   tests/unit/settings-store.spec.ts,project,settings serialization contract updated for mutation refresh policy
   tests/unit/shared-constants-errors.spec.ts,project,settings default contract updated for mutation refresh policy
-tests[14]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/run-gates.mjs --telemetry-mode best-effort,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Full coverage after manual ecosystem fixes
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts -t 'stages extension copies when the destination is nested inside the source|retries when an extension install copy races with an existing destination|normalizes npm file-alias package specs',null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/html-entity-decode.spec.ts tests/unit/cli-main-errors.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/package-manifest.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/nested-settings.spec.ts tests/unit/config-key-aliases-search.spec.ts tests/unit/html-entity-decode.spec.ts tests/unit/cli-main-errors.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts tests/unit/search-cache.spec.ts tests/unit/nested-settings.spec.ts tests/unit/config-key-aliases-search.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm outdated --format json && pnpm audit --prod --json && pnpm audit --json,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm release:gates",null,project,1800,null,null,null,null,null,null,null,null,null,null,null,"Release,package-first dogfood,secret,and static gates"
-  pnpm typecheck,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+tests[14]:
+  - command: node scripts/release/run-gates.mjs --telemetry-mode best-effort
+    scope: project
+    timeout_seconds: 1200
+  - command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 1200
+    note: Full coverage after manual ecosystem fixes
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 900
+  - command: node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts -t 'stages extension copies when the destination is nested inside the source|retries when an extension install copy races with an existing destination|normalizes npm file-alias package specs'
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/html-entity-decode.spec.ts tests/unit/cli-main-errors.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/package-manifest.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 600
+  - command: node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/nested-settings.spec.ts tests/unit/config-key-aliases-search.spec.ts tests/unit/html-entity-decode.spec.ts tests/unit/cli-main-errors.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts tests/unit/search-cache.spec.ts tests/unit/nested-settings.spec.ts tests/unit/config-key-aliases-search.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm changelog:pm:check"
+    scope: project
+    timeout_seconds: 600
+  - command: pnpm outdated --format json && pnpm audit --prod --json && pnpm audit --json
+    scope: project
+    timeout_seconds: 600
+  - command: "pnpm release:gates"
+    scope: project
+    timeout_seconds: 1800
+    note: "Release,package-first dogfood,secret,and static gates"
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 600
 docs[1]{path,scope,note}:
   docs/CONFIGURATION.md,project,documents mutation refresh policy and search performance tradeoff
 close_reason: "Package-first CLI/SDK ecosystem audit slice complete with manual dogfood, telemetry/Sentry verification, and green gates."

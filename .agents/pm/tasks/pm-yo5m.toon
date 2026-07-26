@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:tests",pm-cli,verification
 created_at: "2026-04-01T14:42:52.196Z"
-updated_at: "2026-04-04T21:39:16.733Z"
+updated_at: "2026-07-26T17:30:26.563Z"
 deadline: "2026-04-09T14:42:52.196Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: health-hardening
-release: vnext
+release: v2026.5.1
 blocked_by: pm-1hkq
 blocked_reason: Document and verify health drift/vectorization changes has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Document and verify health drift/vectorization changes is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: vnext
 component: docs-verification
 regression: true
 customer_impact: Users see clear guidance and stable behavior after rollout
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-1hkq,parent,"2026-04-01T14:42:52.196Z",codex-agent,null
+  pm-1hkq,implements,"2026-07-26T17:30:26.224Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T14:42:52.196Z",codex-agent,Task captures required docs updates and final verification evidence before release operations.
   "2026-04-01T15:08:42.038Z",codex-agent,"Docs updated (README.md, docs/ARCHITECTURE.md, PRD.md, CHANGELOG.md). Verification evidence: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 665 tests); targeted suites passed; PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1 pm health --json smoke passed with new checks. Coverage command still fails on existing repository-wide 100% global thresholds (statements 97.15, branches 95.18, functions 98.08, lines 97.45)."
@@ -55,11 +56,11 @@ files[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,health drift and vectorization architecture updates
   PRD.md,project,health contract and vectorization ledger requirements
   README.md,project,user-facing health behavior updates
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,final coverage verification
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression
-  PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1 pm health --json,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,health smoke with deterministic auto-default guard
-  pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,typecheck build
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,final coverage verification
+  node scripts/run-tests.mjs test,project,7200,full regression
+  PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1 pm health --json,project,2400,health smoke with deterministic auto-default guard
+  pnpm build,project,1200,typecheck build
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,unreleased entries for health enhancements
 close_reason: "Docs and verification evidence captured; build/full tests/health smoke pass, and coverage gate remains below repository-wide 100% threshold baseline."

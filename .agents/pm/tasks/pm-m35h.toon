@@ -6,15 +6,18 @@ status: closed
 priority: 0
 tags[11]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,sentry,telemetry
 created_at: "2026-05-08T23:20:45.388Z"
-updated_at: "2026-05-09T10:49:21.801Z"
+updated_at: "2026-07-26T17:19:52.765Z"
 deadline: "2026-05-09T23:20:45.388Z"
 author: codex-audit
 estimated_minutes: 360
 acceptance_criteria: Temp-project dogfood covers core workflows; semantic/vector search and calendar are exercised; SDK/extensibility/agent-output/CI/security/telemetry/Sentry are reviewed; safe fixes are linked and tested; no private host credentials or tokens are tracked or recorded; changes are committed and pushed with checks reviewed.
 parent: pm-rnpb
+release: v2026.5.10
 resolution: "Audit completed with semantic search reliability fixes, agent-friendly JSON ok fields, regression coverage, Windows CI fixture hardening, and tracked secret hygiene verification."
 expected_result: "Latest-build dogfood audit verifies core CLI, calendar, extension, search, PM tracking, CI, telemetry, Sentry, and secret-hygiene surfaces with safe remediations committed."
 actual_result: "Temp-project dogfood, semantic smoke, telemetry/Sentry review, full coverage, typecheck, build, static quality, package smoke, compatibility, validation, health, and secret scans passed; Windows CI follow-up fixed the reindex truncation regression fixture to avoid OS command-line limits while preserving coverage of the 200-character semantic truncation cap; full forced repo hybrid reindex was stopped after local Ollama remained CPU-bound, with health reporting zero stale vectors."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,implements,"2026-07-26T17:19:52.532Z",null,null
 comments[7]{created_at,author,text}:
   "2026-05-08T23:20:45.388Z",codex-audit,"Duplicate-check evidence: ran pm context --limit 10,pm search dogfood audit telemetry sentry semantic search SDK calendar extensibility CI --limit 10,pm list-in-progress --limit 20,pm list-open --limit 20,and pm search 2026-05-08 2026-05-09 latest-build temp-project dogfood audit remediate --limit 10. Found open parent feature pm-rnpb and only closed prior execution tasks,so this dated execution task is required without duplicating parent scope."
   "2026-05-08T23:21:03.597Z",codex-audit,"Started latest-build audit. Bootstrap passed: npm install -g ., pm --version 2026.5.6, node v25.9.0, pnpm 10.33.0, pnpm build passed."
@@ -34,13 +37,13 @@ files[10]{path,scope,note}:
   tests/unit/test-command.spec.ts,project,pm test ok field regression
   CHANGELOG.md,project,unreleased audit fix notes
   tests/integration/release-readiness-runtime.spec.ts,project,runtime JSON key-order contract for ok fields
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret scan
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,runtime key-order contract
-  node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused regression coverage for audit fixes
-  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,null,compiled CLI verification
-  pnpm typecheck,null,project,180,null,null,null,null,null,null,null,null,null,null,null,TypeScript API contract verification
+tests[6]{command,scope,timeout_seconds,note}:
+  node scripts/check-secrets.mjs,project,120,tracked secret scan
+  node scripts/run-tests.mjs coverage,project,600,full coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,project,240,runtime key-order contract
+  node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,project,300,focused regression coverage for audit fixes
+  pnpm build,project,180,compiled CLI verification
+  pnpm typecheck,project,180,TypeScript API contract verification
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,release-facing change record
 close_reason: Latest-build dogfood audit completed; Windows CI follow-up fixed; semantic search reliability and agent JSON outputs remediated; verification gates passed; tracked secret scan clean.

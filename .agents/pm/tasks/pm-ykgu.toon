@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:verification",external-audit,pm-cli
 created_at: "2026-04-03T18:07:53.409Z"
-updated_at: "2026-04-04T21:40:18.789Z"
+updated_at: "2026-07-26T17:30:21.510Z"
 deadline: "2026-04-08T18:07:53.409Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation-2026w14
-release: vnext
+release: v2026.5.1
 blocked_reason: External audit follow-up docs sync and verification gate has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If External audit follow-up docs sync and verification gate is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -39,8 +39,9 @@ fixed_version: target-vnext
 component: docs-verification
 regression: true
 customer_impact: Users get reliable behavior with accurate docs
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-qfg8,parent,"2026-04-03T18:07:53.409Z",codex-agent,null
+  pm-qfg8,implements,"2026-07-26T17:30:21.198Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T18:07:53.409Z",codex-agent,Task created for docs parity and final verification gate.
   "2026-04-03T18:55:49.544Z",codex-agent,"Docs synchronized across README/PRD/docs/ARCHITECTURE/CHANGELOG/AGENTS for validate, validate-close, list offset/stream, and explicit --progress behavior."
@@ -54,9 +55,9 @@ files[6]{path,scope,note}:
   PRD.md,project,command and flag contract updates
   README.md,project,primary user docs sync
   tests/unit/validate-command.spec.ts,project,coverage regression additions
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,final coverage verification
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression verification
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,final coverage verification
+  node scripts/run-tests.mjs test,project,7200,full regression verification
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,unreleased external audit follow-up notes
 close_reason: Docs parity and full verification gate completed

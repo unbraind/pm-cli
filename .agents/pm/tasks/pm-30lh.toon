@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T19:12:46.724Z"
-updated_at: "2026-04-04T21:47:10.783Z"
+updated_at: "2026-07-26T17:02:33.889Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M5 follow-up: validate extension hook registration handlers has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: validate extension hook registration handlers is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-validate-extension-hook-registratio
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: validate extension hook registration handlers."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-04T19:12:46.724Z",cursor-maintainer,null
+  pm-b1w,implements,"2026-07-26T17:02:33.691Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-04T19:12:46.724Z",cursor-maintainer,This task closes runtime hardening gaps for malformed hook registration payloads in JS extensions.
   "2026-03-04T19:12:56.109Z",cursor-maintainer,"Planned changeset: docs-first update PRD and README to require hook registration handler validation, then enforce runtime function checks for api.hooks registrations in extension loader and add extension-loader regression tests."
@@ -58,9 +59,9 @@ files[4]{path,scope,note}:
   README.md,project,docs-first public behavior update
   src/core/extensions/loader.ts,project,hook registration runtime validation
   tests/unit/extension-loader.spec.ts,project,regression coverage for invalid hook registration
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted extension loader regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,1800,targeted extension loader regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow requirements
   PRD.md,project,extension registration contract

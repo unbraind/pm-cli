@@ -6,21 +6,25 @@ status: closed
 priority: 1
 tags[4]: "area:plan",atomicity,gh-issue,multi-agent
 created_at: "2026-07-25T00:58:27.692Z"
-updated_at: "2026-07-25T15:27:17.914Z"
+updated_at: "2026-07-26T17:08:08.133Z"
 closed_at: "2026-07-25T15:27:14.045Z"
 author: codex-root
 estimated_minutes: 300
 acceptance_criteria: A cross-owner seeded plan either persists all requested steps/artifacts or leaves no Plan; CLI and SDK regression tests cover success and rollback.
 parent: pm-mpbb
+release: v2026.7.26
 resolution: Seeded cross-owner Plan creation validates first and persists one complete Plan state.
 expected_result: Seeded cross-owner Plan creation validates first and persists one complete Plan state.
 actual_result: "Seeded cross-owner Plan creation validates first and persists one complete Plan state. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-8t5x,related,"2026-07-25T00:58:27.692Z",null,null
   pm-je50,related,"2026-07-25T00:58:27.692Z",null,null
   pm-bgcu,related,"2026-07-25T06:27:23.713Z",null,null
   pm-bxdlfa,related,"2026-07-25T06:27:23.713Z",null,null
   pm-v7dj,discovered_from,"2026-07-25T07:16:02.353Z",null,null
+  pm-2tan,related,"2026-07-26T17:08:07.932Z",null,null
+  pm-bzmeaa,related,"2026-07-26T17:08:07.932Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:08:07.932Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-25T00:58:27.692Z",codex-root,"Duplicate check: searched all statuses for GH-688, seeded plan ownership conflict, partial Plan creation, atomic plan create, and cross-owner steps. Closed pm-v7dj/pm-je50 own the base workflow and pm-8t5x owns atomic claim behavior, but none owns transactional seeded Plan creation; this is the canonical residual issue."
   "2026-07-25T07:16:05.161Z","harness:claude-code","Governance repair (ecosystem review 2026-07-25): this item and pm-bxdlfa were the two rows behind validate's active_terminal_parent warning — both hung off pm-v7dj, closed since the pm plan delivery wave. Active work under a terminal parent is invisible to outcome-milestone reachability (pm-bzmeaa) and to capability-epic rollups. Re-parented to pm-mpbb, the established home for pm plan command-surface items (pm-2tan precedent), with a discovered_from edge back to pm-v7dj so the delivery lineage survives. pm-v7dj itself was not mutated."

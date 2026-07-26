@@ -6,9 +6,13 @@ status: closed
 priority: 1
 tags[2]: audit,session-2026-07-02
 created_at: "2026-07-02T21:26:41.340Z"
-updated_at: "2026-07-02T21:55:57.253Z"
+updated_at: "2026-07-26T17:03:09.800Z"
 author: unknown
 parent: pm-fpod
+release: v2026.7.3
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-fpod,implements,"2026-07-26T17:03:09.598Z",null,null
+  pm-z1pv,related,"2026-07-26T17:03:09.598Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-02T21:28:01.660Z",claude-code-agent,"Perf audit start: startup, common reads, mutations (temp ws), CPU profiles"
   "2026-07-02T21:55:56.575Z",claude-code-agent,"Perf audit results (repo tracker, 857 items, warm): pm --version 61ms; get 335ms; list-open 430ms; health --check-only 566ms; search 690ms; context/next ~700ms. Startup overhead is fine; corpus load dominates context/next. Filed pm-z1pv (target <300ms common reads). No pathological hotspots found."

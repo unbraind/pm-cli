@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",never-block
 created_at: "2026-06-07T17:04:17.473Z"
-updated_at: "2026-06-08T06:26:03.261Z"
+updated_at: "2026-07-26T17:05:38.426Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: v2026.6.8
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:05:38.193Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-07T19:58:21.266Z",codex-agent-ux-reliability-20260607,"Execution kickoff: duplicate-check confirms this remains the canonical open read-command alias issue. Implementing --tags never-block alias behavior in list/search with parser/contracts/completion parity."
   "2026-06-07T20:09:06.452Z",codex-agent-ux-reliability-20260607,"Implemented never-block alias behavior for read commands: list/search now treat --tags as a declared alias for --tag through CLI flag contracts and command registration, so bootstrap normalization resolves via flag_alias instead of flag_typo/retry refusal. Added completion parity for alias value suggestions in bash/zsh/fish and regression coverage in bootstrap/help-runtime/completion specs. Targeted verification passed (3 files, 200 tests)."
@@ -23,9 +26,9 @@ files[7]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,Integration test proving list/search --tags executes without retry errors
   tests/unit/bootstrap-args.spec.ts,project,Regression tests ensuring --tags resolves through flag_alias (not flag_typo) for list/search
   tests/unit/completion-command.spec.ts,project,Completion script assertions include --tags alias behavior
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:update && pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,project,240
+  "pnpm contracts:update && pnpm contracts:check",project,240
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Agent guide now calls out --tags alias for list/search
   docs/COMMANDS.md,project,Document never-block --tags alias support for list/search read filters

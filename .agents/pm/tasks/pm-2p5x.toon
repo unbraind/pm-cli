@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:migrations",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T07:43:45.497Z"
-updated_at: "2026-04-04T21:47:47.875Z"
+updated_at: "2026-07-26T17:02:14.426Z"
 deadline: "2026-03-08T07:43:45.497Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: "M5 follow-up: enforce mandatory extension migration write gate has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: enforce mandatory extension migration write gate is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-enforce-mandatory-extension-migrati
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: enforce mandatory extension migration write gate."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-8a2s,implements,"2026-07-26T17:02:14.245Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-06T07:43:45.497Z",cursor-maintainer,Need to close the roadmap gap by enforcing unresolved mandatory migration gating on write paths with deterministic force bypass behavior.
   "2026-03-06T07:43:50.984Z",cursor-maintainer,"Planned changeset: docs-first update PRD/README to move mandatory migration write-gate from roadmap to implemented baseline with unresolved semantics and force bypass scope; then implement pre-action runtime enforcement in CLI and add integration coverage for blocked and forced mutation paths."
@@ -57,10 +59,10 @@ files[5]{path,scope,note}:
   src/cli/main.ts,project,runtime write gate enforcement
   tests/integration/cli.integration.spec.ts,project,write gate command behavior coverage
   tests/unit/health-command.spec.ts,project,migration status baseline compatibility
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,240,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted CLI write gate integration
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,health migration diagnostics regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,240,sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,240,targeted CLI write gate integration
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,project,240,health migration diagnostics regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,workflow and dogfood constraints
   PRD.md,project,extension migration contract

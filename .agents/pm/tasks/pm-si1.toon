@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:fixtures",core,"milestone:6",pm-cli
 created_at: "2026-02-17T23:02:12.642Z"
-updated_at: "2026-04-04T21:46:53.182Z"
+updated_at: "2026-07-26T17:25:38.061Z"
 deadline: "2026-03-19T23:02:12.642Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M6: Fixture corpus for restore import and search has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M6: Fixture corpus for restore import and search is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/fixture-corpus-for-restore-import-and-search
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Fixture corpus for restore import and search.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b1w,blocks,"2026-02-17T23:02:12.642Z",steve,null
   pm-jiw,parent,"2026-02-17T23:02:12.642Z",steve,null
+  pm-jiw,implements,"2026-07-26T17:25:37.816Z",null,null
 comments[4]{created_at,author,text}:
   "2026-02-20T09:14:28.160Z",cursor-maintainer-agent,"Planned change-set: add deterministic fixture corpus under tests/fixtures for restore, beads import, and keyword search scenarios; refactor/extend unit tests to consume fixtures; then run pm test + test-all and log 100% coverage evidence."
   "2026-02-20T09:19:03.247Z",cursor-maintainer-agent,"Implemented change-set: added deterministic fixture corpus files under tests/fixtures (restore create seed, beads import/conversion JSONL, search keyword corpus) plus shared fixture loader helpers; updated restore/beads/search unit tests to consume these fixtures; updated PRD Milestone 6 checklist to mark fixture corpus complete."
@@ -63,11 +64,11 @@ files[9]{path,scope,note}:
   tests/unit/beads-command.spec.ts,project,beads fixture-driven tests
   tests/unit/restore-command.spec.ts,project,restore fixture-driven tests
   tests/unit/search-command.spec.ts,project,search fixture-driven tests
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,beads fixture regression
-  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,restore fixture regression
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,search fixture regression
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,project,900,beads fixture regression
+  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts,project,900,restore fixture regression
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,900,search fixture regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and evidence protocol
   PRD.md,project,governing spec for milestone 6 fixtures

@@ -6,16 +6,19 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli",contracts,gh-issue
 created_at: "2026-07-25T09:20:06.110Z"
-updated_at: "2026-07-25T11:58:43.244Z"
+updated_at: "2026-07-26T17:27:09.726Z"
 closed_at: "2026-07-25T11:58:42.292Z"
 author: unknown
 parent: pm-2p6q
+release: v2026.7.26
 resolution: Changed conventional create/update boolean metadata flags to accept a bare form while preserving explicit booleanish values.
 expected_result: "--regression and peer optional booleans accept bare true plus true, false, 1, and 0 with help/runtime contract parity."
 actual_result: CLI integration and packed acceptance confirm bare --regression persists true and explicit values remain compatible.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-phob,related,"2026-07-25T09:20:06.110Z",null,null
   pm-sjfs,related,"2026-07-25T09:20:06.110Z",null,null
+  pm-2p6q,implements,"2026-07-26T17:27:09.418Z",null,null
+  pm-e02lgu,related,"2026-07-26T17:27:09.418Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-25T09:20:06.110Z",unknown,"Duplicate-check evidence: all-status searches found historical strategic-metadata and boolean persistence items but no item owning optional-value Commander arity for canonical boolean flags. GH-706 is the first exact owner for the bare-form contract."
   "2026-07-25T11:31:41.361Z","harness:codex","Evidence: create/update regression accepts bare true while retaining explicit booleanish forms and contract parity. Linked CLI integration passed 76/76; isolated packed consumer mutated regression=true with PM_AUTHOR unset."

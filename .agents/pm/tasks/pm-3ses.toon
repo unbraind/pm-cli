@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T04:32:38.865Z"
-updated_at: "2026-04-04T21:47:40.541Z"
+updated_at: "2026-07-26T17:03:24.083Z"
 deadline: "2026-03-07T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M5 follow-up: isolate hook execution contexts has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: isolate hook execution contexts is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-isolate-hook-execution-contexts
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: isolate hook execution contexts."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,related,"2026-03-06T04:32:38.865Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:03:23.878Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-06T04:32:38.865Z",maintainer-agent,Why this exists close remaining hook sandbox boundary by isolating per hook context snapshots.
   "2026-03-06T04:32:54.426Z",maintainer-agent,"Planned changeset: docs-first update PRD and README to codify per-hook context snapshot isolation then harden extension loader hook execution to clone context per callback and add regression tests for mutation non-leakage."
@@ -59,9 +60,9 @@ files[4]{path,scope,note}:
   README.md,project,docs-first update
   src/core/extensions/loader.ts,project,hook execution isolation implementation
   tests/unit/extension-loader.spec.ts,project,hook context isolation regression
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,targeted extension loader regressions
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,project,3600,targeted extension loader regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent operating rules
   PRD.md,project,governing spec

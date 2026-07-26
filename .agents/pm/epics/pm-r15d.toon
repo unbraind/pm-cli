@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-03-31T23:47:27.635Z"
-updated_at: "2026-05-17T08:22:39.307Z"
+updated_at: "2026-07-26T17:24:36.022Z"
 deadline: "2026-05-09T17:05:53.410Z"
 author: codex-agent
 estimated_minutes: 480
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 unblock_note: "If Configurable item types and required-option UX is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
@@ -37,6 +37,15 @@ fixed_version: archive-2026q2
 component: core/cli
 regression: false
 customer_impact: Teams can model work domains without hacks
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-2p6q,related,"2026-07-26T17:24:35.749Z",null,null
+  pm-780f,related,"2026-07-26T17:24:35.749Z",null,null
+  pm-ap8l,related,"2026-07-26T17:24:35.749Z",null,null
+  pm-bzyr,related,"2026-07-26T17:24:35.749Z",null,null
+  pm-mpmv,related,"2026-07-26T17:24:35.749Z",null,null
+  pm-p5q3,related,"2026-07-26T17:24:35.749Z",null,null
+  pm-x2k0,related,"2026-07-26T17:24:35.749Z",null,null
+  pm-zzt1,related,"2026-07-26T17:24:35.749Z",null,null
 comments[17]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Epic created from approved implementation plan.
   "2026-04-01T00:29:14.263Z",codex-agent,Completed configurable item-type delivery across settings/extensions/CLI/storage/help output with docs updates and compatibility defaults.
@@ -112,17 +121,39 @@ files[51]{path,scope,note}:
   tests/unit/search-command.spec.ts,project,hoisted mock stability for runtime schema imports
   tests/unit/settings-store.spec.ts,project,settings schema normalization coverage
   tests/unit/shared-constants-errors.spec.ts,project,required directory constants include schema
-tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate after runtime schema TOON validation and claim parity fix
-  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted integration coverage for runtime schema and release-readiness assertions
-  node scripts/run-tests.mjs test -- tests/unit,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full unit regression after schema-aware TOON metadata validation
-  node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/item-format-validation.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,focused regressions for settings/init/TOON metadata behavior
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,issues2and5 discoverability regressions
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/comments-command.spec.ts tests/unit/dedupe-audit-command.spec.ts tests/unit/stats-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/status-normalization.spec.ts tests/unit/context-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:56.880Z","2026-04-04T21:10:56.880Z",null,null,1,0,1,1,2,null
+tests[8]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 3600
+    note: full coverage gate after runtime schema TOON validation and claim parity fix
+  - command: node scripts/run-tests.mjs test
+    scope: project
+    timeout_seconds: 2400
+    note: full regression baseline
+  - command: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts
+    scope: project
+    timeout_seconds: 1200
+    note: targeted integration coverage for runtime schema and release-readiness assertions
+  - command: node scripts/run-tests.mjs test -- tests/unit
+    scope: project
+    timeout_seconds: 2400
+    note: full unit regression after schema-aware TOON metadata validation
+  - command: node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/item-format-validation.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/shared-constants-errors.spec.ts
+    scope: project
+    timeout_seconds: 1200
+    note: focused regressions for settings/init/TOON metadata behavior
+  - command: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts
+    scope: project
+    timeout_seconds: 3600
+    note: issues2and5 discoverability regressions
+  - command: node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/comments-command.spec.ts tests/unit/dedupe-audit-command.spec.ts tests/unit/stats-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/status-normalization.spec.ts tests/unit/context-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts
+    scope: project
+    timeout_seconds: 240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:56.880Z","2026-04-04T21:10:56.880Z",1,0,1,1,2
 docs[5]{path,scope,note}:
   AGENTS.md,project,agent rule update for TOON metadata terminology
   CHANGELOG.md,project,unreleased type-option help and aggregation notes

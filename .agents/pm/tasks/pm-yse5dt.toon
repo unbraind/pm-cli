@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",performance,scale,startup
 created_at: "2026-07-25T07:09:44.499Z"
-updated_at: "2026-07-25T21:41:47.888Z"
+updated_at: "2026-07-26T17:30:33.606Z"
 closed_at: "2026-07-25T11:58:33.804Z"
 author: unknown
 estimated_minutes: 900
@@ -18,15 +18,22 @@ why_now: The absolute scale budgets were just restored (pm-hcrmye) by treating 2
 parent: pm-9rxu
 risk: medium
 confidence: high
+release: v2026.7.26
 resolution: "Added mandatory one-item CLI cold-transport budgets and per-tier CLI-minus-SDK deltas, while separating focused SDK bundles from the executable graph."
 expected_result: CI fails fixed bootstrap or CLI-vs-SDK transport regressions without weakening existing absolute scale budgets.
 actual_result: Committed transport ratchets cover six operations and scale deltas; the authoritative clean GitHub benchmark passed unchanged budgets after a documented saturated-host local miss.
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-5t33or,related,"2026-07-25T07:11:54.548Z",null,null
   pm-801d,related,"2026-07-25T07:11:54.548Z",null,null
   pm-hcrmye,related,"2026-07-25T07:11:54.548Z",null,null
   pm-irp1,related,"2026-07-25T07:11:54.548Z",null,null
   pm-o87av6,verifies,"2026-07-25T07:11:54.548Z",null,null
+  pm-7rlp,related,"2026-07-26T17:30:33.378Z",null,null
+  pm-9rxu,implements,"2026-07-26T17:30:33.378Z",null,null
+  pm-ag9nka,related,"2026-07-26T17:30:33.378Z",null,null
+  pm-e02lgu,related,"2026-07-26T17:30:33.378Z",null,null
+  pm-gt82,related,"2026-07-26T17:30:33.378Z",null,null
+  pm-mi2x,related,"2026-07-26T17:30:33.378Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-25T07:12:21.706Z","harness:claude-code","Duplicate-check evidence (all-status pm search over cold start, startup, latency, bootstrap, benchmark, transport): matched closed pm-gt82, pm-irp1, pm-7rlp, pm-mi2x, pm-hcrmye and open pm-9rxu, pm-801d, pm-5t33or. pm-irp1 is a closed Decision stating the sub-200ms strategy with no enforcement; pm-hcrmye restored the existing absolute budgets and its closing comment records the unaddressed gap verbatim (cli.create min 275ms vs SDK create 5-7ms); pm-801d is the data-scaling read index, a different axis. No open item owns the fixed floor or the CLI/SDK delta. Filed as a focused child of pm-9rxu."
   "2026-07-25T07:12:22.483Z","harness:claude-code","Measurement method for reproduction: Node 26.5.0, warm compile cache, dist/cli-bundle resolved via bin. Baselines: node -e '' 41ms; pm --version 71ms. Freshly initialised single-item sandbox workspace (PM_PATH/PM_GLOBAL_PATH isolated): pm --help 325ms, pm get 319-370ms, pm context 325ms, pm next 309ms, pm validate 352ms, pm stats 318ms — the floor is identical whether or not the command reads data. Entry import cost in isolation: dist/cli-bundle/main.js 286ms, dist/cli-bundle/sdk.js 289ms. Real 1,984-item workspace for contrast: get 995-1168ms, list-open 908-1005ms, context 1129ms, next 1265ms, stats 1365ms, validate 5981ms. CPU profile of pm get attributes roughly 250ms of the run to Node ESM machinery (loader, resolve, package_json_reader, compileSourceTextModule) plus 67ms GC, before any workspace read."

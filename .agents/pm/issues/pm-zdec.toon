@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:dependencies","area:metadata",core,pm-cli,release-readiness
 created_at: "2026-04-01T20:43:14.612Z"
-updated_at: "2026-05-17T08:23:09.959Z"
+updated_at: "2026-07-26T17:30:58.848Z"
 deadline: "2026-04-06T20:43:14.612Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: high
 confidence: medium
 sprint: 2026-w14
-release: vnext
+release: v2026.5.1
 blocked_by: design-review
 blocked_reason: need-command-shape-confirmation-for-dependency-mutations
 unblock_note: implement-command-after-contract-review-and-test-plan-signoff
@@ -40,8 +40,9 @@ fixed_version: 2026.3.13-target
 component: dependency-metadata
 regression: false
 customer_impact: "Maintainers cannot fully normalize planning graphs, reducing traceability and automation reliability."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ofh9,related,"2026-04-01T20:43:14.612Z",codex-agent,null
+  pm-ofh9,implements,"2026-07-26T17:30:58.633Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-01T20:43:14.612Z",codex-agent,Issue discovered during end-to-end metadata normalization sweep when dependency fields remained the only unfillable gap.
   "2026-04-01T20:46:32.692Z",codex-agent,"Audit evidence: after full metadata normalization, scalar metadata and linked notes/files/tests/docs/learnings are complete across 369 items. Remaining gap is dependencies on 102 legacy items because current CLI lacks a dependency mutation command for existing items."
@@ -63,9 +64,9 @@ files[10]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,runtime help contract coverage for new flags
   tests/unit/completion-command.spec.ts,project,completion coverage for new update flags
   tests/unit/update-command.spec.ts,project,unit coverage for dependency add/remove/clear validation
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,dependency-mutation-regression-surface
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,targeted regression for dependency mutation runtime and contract parity
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,project,7200,dependency-mutation-regression-surface
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,targeted regression for dependency mutation runtime and contract parity
 docs[4]{path,scope,note}:
   AGENTS.md,project,workflow-contract-for-metadata-completeness
   CHANGELOG.md,project,unreleased release note for dependency mutation support

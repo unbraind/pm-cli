@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: automation,governance,normalization,pm-cli
 created_at: "2026-04-04T21:55:02.727Z"
-updated_at: "2026-05-17T08:22:53.002Z"
+updated_at: "2026-07-26T17:28:05.729Z"
 deadline: "2026-05-09T17:10:36.281Z"
 author: codex-agent
 estimated_minutes: 300
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: governance-followups
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: medium
 environment: linux
@@ -35,6 +35,11 @@ affected_version: 2026.3.12
 component: governance-normalize
 regression: false
 customer_impact: Maintainers and agents can perform consistent tracker normalization with less manual overhead.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-5rjn,implements,"2026-07-26T17:28:05.478Z",null,null
+  pm-k8i0,related,"2026-07-26T17:28:05.478Z",null,null
+  pm-r9ei,related,"2026-07-26T17:28:05.478Z",null,null
+  pm-vhdc,related,"2026-07-26T17:28:05.478Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-04T21:55:02.727Z",codex-agent,"Duplicate-check evidence: pm search 'automated standards alignment metadata normalization command' --limit 20; pm search 'bulk governance normalization command pm tracker' --limit 20; pm list-open --limit 20. Net-new because existing items capture manual execution history,not a dedicated normalize command surface."
   "2026-04-27T20:10:34.789Z",codex-agent,"Execution scope 2026-04-27 (mixed-wave): implement first-class normalize command in two slices. Slice A (dry-run): detect low-signal metadata/closure-like drift patterns and emit deterministic mutation previews sorted by item id/field, reusing governance policy primitives from validate and update-many planning semantics. Slice B (apply): execute approved normalization updates via safe mutation flow with explicit apply flag, preserving ownership semantics/history writes and avoiding non-deterministic side effects. Acceptance mapping: (1) scan/report = normalized findings + per-item planned field changes and summary counts; (2) deterministic preview = stable dry-run output contract suitable for agent automation (--json); (3) apply mode = history-backed updates through existing PM mutation pathways with clear result reporting and warnings."
@@ -55,13 +60,13 @@ files[12]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,completion parity assertions for normalize
   tests/unit/contracts-command.spec.ts,project,contracts parity assertions for normalize action/flags
   tests/unit/normalize-command.spec.ts,project,unit coverage for normalize dry-run and apply behavior
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,normalize help and release-readiness integration parity
-  node scripts/run-tests.mjs test -- tests/unit/normalize-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,normalize command unit and parity suites
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,governance normalization behavior coverage
-  pnpm -s build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,typecheck build verification for normalize wave
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-moho3qmz-av3np9,test,passed,"2026-04-27T20:44:43.918Z","2026-04-27T20:46:36.443Z","2026-04-27T20:46:36.443Z",null,null,4,0,0,null,null,null
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,3600,normalize help and release-readiness integration parity
+  node scripts/run-tests.mjs test -- tests/unit/normalize-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts,project,3600,normalize command unit and parity suites
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,project,2400,governance normalization behavior coverage
+  pnpm -s build,project,1200,typecheck build verification for normalize wave
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-moho3qmz-av3np9,test,passed,"2026-04-27T20:44:43.918Z","2026-04-27T20:46:36.443Z","2026-04-27T20:46:36.443Z",4,0,0
 docs[4]{path,scope,note}:
   AGENTS.md,project,agent workflow guidance for normalize governance sweeps
   CHANGELOG.md,project,unreleased normalize command note

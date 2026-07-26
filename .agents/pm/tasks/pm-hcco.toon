@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-experience,"area:cli","area:comments",compatibility,pm-cli
 created_at: "2026-04-01T11:06:08.121Z"
-updated_at: "2026-04-04T21:38:34.828Z"
+updated_at: "2026-07-26T17:15:24.328Z"
 deadline: "2026-04-03T11:06:08.121Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-cvwi
 blocked_reason: "C1: Implement intuitive comments argument parsing has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If C1: Implement intuitive comments argument parsing is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: cli-comments
 regression: true
 customer_impact: Agents can reliably add progress comments during implementation loops
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-cvwi,parent,"2026-04-01T11:06:08.121Z",codex-agent,null
+  pm-cvwi,implements,"2026-07-26T17:15:24.099Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-01T11:06:08.121Z",codex-agent,Task focuses on commander argument shape and safe option fallback behavior.
   "2026-04-01T11:14:38.842Z",codex-agent,manual shorthand validation via positional text
@@ -55,8 +56,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:22:44.387Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,comments command argument/options wiring
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/comments-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,parser behavior regression tests
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/comments-command.spec.ts,project,3600,parser behavior regression tests
 docs[1]{path,scope,note}:
   README.md,project,comments usage examples
 close_reason: "Parser update shipped with positional comments shorthand, optional author fallback handling, and conflict guard; linked tests pass."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: custom-types,extensions,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:26.793Z"
-updated_at: "2026-04-04T21:34:12.967Z"
+updated_at: "2026-07-26T17:10:22.477Z"
 deadline: "2026-04-13T22:53:26.793Z"
 author: codex-agent
 estimated_minutes: 300
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: linked-test-hardening
-release: vnext
+release: v2026.5.1
 blocked_reason: Linked-test sandbox project/global extension parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Linked-test sandbox project/global extension parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,8 +38,10 @@ affected_version: 2026.3.12
 component: linked-test-sandbox
 regression: true
 customer_impact: Custom-schema teams cannot rely on linked test evidence consistency.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-mf5z,parent,"2026-04-03T22:53:26.793Z",codex-agent,null
+  pm-mf5z,implements,"2026-07-26T17:10:22.274Z",null,null
+  pm-qtvv,related,"2026-07-26T17:10:22.274Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T22:53:26.793Z",codex-agent,Feature carved from epic scope for pm-lvej and pm-6fmt parity.
   "2026-04-03T23:46:53.817Z",codex-agent,"Feature delivered: linked-test sandbox now seeds source project/global settings+extensions before command execution, restoring extension-defined type parity in linked runs. Verified by new runTest/runTestAll parity regressions and pm test pm-qtvv evidence."
@@ -47,8 +49,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T22:53:26.793Z",codex-agent,Seed sandbox with source project/global settings plus extensions before command execution.
 files[1]{path,scope,note}:
   src/cli/commands/test.ts,project,sandbox runner seeding changes
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,parity and orchestration regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,project,2400,parity and orchestration regressions
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,document extension parity behavior
 close_reason: linked-test project/global extension parity delivered with regression coverage

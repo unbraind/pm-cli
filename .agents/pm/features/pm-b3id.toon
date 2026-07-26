@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:cli","area:docs",pm-cli
 created_at: "2026-03-31T23:47:54.230Z"
-updated_at: "2026-04-04T21:32:50.061Z"
+updated_at: "2026-07-26T17:09:52.620Z"
 deadline: "2026-04-10T23:47:54.230Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-r15d
 blocked_reason: Required-option guidance and docs parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Required-option guidance and docs parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: cli/docs
 regression: false
 customer_impact: Improves usability for human and agent users
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-r15d,parent,"2026-03-31T23:47:54.230Z",codex-agent,null
+  pm-r15d,implements,"2026-07-26T17:09:52.413Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-31T23:47:54.230Z",codex-agent,Feature tracks required option UX and docs parity.
   "2026-04-01T00:28:53.993Z",codex-agent,Completed required-option UX improvements and documentation parity for dynamic/custom type workflows.
@@ -56,8 +57,8 @@ files[4]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension registerItemTypes docs
   README.md,project,custom type and usage examples
   src/cli/main.ts,project,error/help surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,help/runtime contract
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,project,2400,help/runtime contract
 docs[1]{path,scope,note}:
   README.md,project,user-facing command examples
 close_reason: required-option messaging and docs parity delivered for configurable type workflows

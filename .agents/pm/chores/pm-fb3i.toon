@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: docstrings,pm-governance-audit,quality-gate
 created_at: "2026-07-13T09:49:05.235Z"
-updated_at: "2026-07-14T00:29:21.369Z"
+updated_at: "2026-07-26T17:13:44.523Z"
 closed_at: "2026-07-14T00:29:20.688Z"
 author: maintainer-agent
 estimated_minutes: 40
@@ -14,9 +14,18 @@ acceptance_criteria: "runtime-utils.ts and sdk.ts in packages/pm-governance-audi
 parent: pm-u9d0
 risk: low
 confidence: high
+release: v2026.7.14
 resolution: "Restored source/export/member docstrings to 100%, removed the dead governance export, ratcheted package quality floors and exact suppression budgets, and retained zero duplication."
 expected_result: "Any source, exported, or member docstring regression below 100% and any unbudgeted suppression drift fails strict quality gates."
 actual_result: Static quality reports 100/100/100 docstrings; coverage is 100/100/100/100 and jscpd reports zero clones.
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-4ak1,related,"2026-07-26T17:13:44.225Z",null,null
+  pm-92if,related,"2026-07-26T17:13:44.225Z",null,null
+  pm-j8z6,related,"2026-07-26T17:13:44.225Z",null,null
+  pm-qely,related,"2026-07-26T17:13:44.225Z",null,null
+  pm-rxp1,related,"2026-07-26T17:13:44.225Z",null,null
+  pm-u5zr,related,"2026-07-26T17:13:44.225Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:13:44.225Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-14T00:09:47.767Z",codex-gpt5,"Implementation evidence: completed source/export/member docstrings, removed the dead governance export, ratcheted package thresholds and the exact ESLint suppression budget, and preserved zero source duplication. Static quality reports 100% for all docstring dimensions; full sandboxed coverage reports statements 35991/35991, branches 25854/25854, functions 7287/7287, lines 35188/35188 across 5656 tests."
   "2026-07-14T00:29:11.719Z",codex-root,"Final verification: strict quality reports 100% source/export/member docstrings, exact ESLint suppression budget, zero jscpd clones, 100/100/100/100 code coverage, clean package boundary, contracts, and secret scan."

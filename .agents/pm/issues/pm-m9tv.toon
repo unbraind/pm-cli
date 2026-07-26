@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: files,governance,pm-cli,validation
 created_at: "2026-04-04T17:53:32.045Z"
-updated_at: "2026-05-17T08:22:21.610Z"
+updated_at: "2026-07-26T17:20:06.284Z"
 deadline: "2026-04-11T17:53:32.045Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: governance-followups
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: medium
 environment: linux
@@ -36,8 +36,9 @@ affected_version: 2026.3.12
 component: validation-files
 regression: true
 customer_impact: Maintainers currently receive incorrect warnings that reduce confidence in project-management audits.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-wtsp,discovered_from,"2026-04-04T17:53:32.045Z",codex-agent,null
+  pm-gt8u,implements,"2026-07-26T17:20:05.999Z",null,null
 comments[6]{created_at,author,text}:
   "2026-04-04T17:53:32.045Z",codex-agent,Duplicate-check evidence pm context --limit 10; pm search validate check-files missing_linked_paths false positive --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no existing item tracks this active false-positive behavior.
   "2026-04-04T17:54:15.825Z",codex-agent,"Reproduction captured after governance remediation: pm validate --check-files --scan-mode tracked-all still reports 9 missing_linked_paths even after explicit linking. Independent audit (git tracked minus parsed project file links) reports candidate=202 linked=222 missing=0, confirming false-positive behavior in validate path matching layer."
@@ -56,11 +57,11 @@ files[5]{path,scope,note}:
   src/cli/main.ts,project,validate-scan-mode-wiring
   src/sdk/cli-contracts.ts,project,validate-strict-mode-contract
   tests/unit/validate-command.spec.ts,project,tracked-all-strict-regression
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,validation regression target
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,tracked-all-strict-targeted
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mnkyxs57-52h2jl,test,passed,"2026-04-04T23:32:40.426Z","2026-04-04T23:33:30.427Z","2026-04-04T23:33:30.427Z",null,null,2,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,project,240,validation regression target
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,project,1800,tracked-all-strict-targeted
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mnkyxs57-52h2jl,test,passed,"2026-04-04T23:32:40.426Z","2026-04-04T23:33:30.427Z","2026-04-04T23:33:30.427Z",2,0,0
 docs[1]{path,scope,note}:
   README.md,project,validate command behavior docs
 close_reason: "Dogfood audit follow-up complete: nested-cwd workspace root handling fixed and regression-covered."

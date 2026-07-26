@@ -6,11 +6,13 @@ status: closed
 priority: 1
 tags[4]: agent-guidance,"area:docs",living-map,reliability
 created_at: "2026-06-30T15:52:28.052Z"
-updated_at: "2026-06-30T15:53:02.696Z"
+updated_at: "2026-07-26T17:14:16.592Z"
 author: claude-code-agent
 parent: pm-u9d0
-dependencies[1]{id,kind,created_at,author,source_kind}:
+release: v2026.7.1
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-9gxi,related,"2026-06-30T15:52:37.654Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:14:16.387Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-30T15:53:02.081Z",claude-code-agent,"Added Non-Negotiable + 'Verify before you claim' Working Rule to AGENTS.md. docs-skills + docs-links gates pass. Root cause: PR#408 session reported auto-release blocked from stale memory while pm-9gxi was closed (RELEASE_PAT configured, v2026.6.30 on npm latest)."
 files[1]{path,scope,note}:

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,gh-issue,json-output
 created_at: "2026-07-13T08:58:01.446Z"
-updated_at: "2026-07-13T16:17:50.250Z"
+updated_at: "2026-07-26T17:03:42.049Z"
 closed_at: "2026-07-13T16:17:49.526Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,11 +14,20 @@ acceptance_criteria: "No-op update reports empty changed_fields in BOTH json and
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.14
 resolution: Resolved by filtering attempted mutations through the persisted before/after document and suppressing no-op writes.
 expected_result: No-op updates report no changed fields or history mutation in every output projection.
 actual_result: Same-value title updates report changed_field_count=0; real mutations retain precise changed fields and full tests passed.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-13T08:58:01.446Z",null,null
+  pm-7je0,related,"2026-07-26T17:03:41.806Z",null,null
+  pm-96vo,related,"2026-07-26T17:03:41.806Z",null,null
+  pm-chyh,related,"2026-07-26T17:03:41.806Z",null,null
+  pm-hno5,related,"2026-07-26T17:03:41.806Z",null,null
+  pm-jh9t,related,"2026-07-26T17:03:41.806Z",null,null
+  pm-kj4k,related,"2026-07-26T17:03:41.806Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:03:41.806Z",null,null
+  pm-p9sc,related,"2026-07-26T17:03:41.806Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-13T14:32:09.854Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:35.414Z",codex-sdk-contracts-20260713,"Evidence: update changed_fields is filtered against the persisted before/after metadata and body, and skipNoop prevents phantom history/write timestamps. JSON reports changed_field_count=0 for a same-title update. update-many and close envelope ownership were evaluated and documented. Focused and full coverage gates passed."

@@ -6,18 +6,20 @@ status: closed
 priority: 1
 tags[3]: "area:extensions","area:packages","area:sdk"
 created_at: "2026-06-22T20:29:00.182Z"
-updated_at: "2026-06-22T21:09:08.622Z"
+updated_at: "2026-07-26T17:16:42.220Z"
 author: claude-code-agent
 parent: pm-ugqx
+release: v2026.6.23
 resolution: "Delivered composeExtension + deriveExtensionCapabilities + defineExtensionManifest as the declarative-authoring capstone of the SDK author->register->test loop; 100% coverage/docstrings, all gates green, smoke-verified through the built bundle and the real pm CLI."
 expected_result: "Package authors (and agents) can author an extension declaratively: composeExtension(blueprint) generates the activate that wires every api.register* surface, deriveExtensionCapabilities(blueprint) yields the exact least-privilege manifest capability set, and defineExtensionManifest types the manifest mirror. Public SDK API unchanged; 100% coverage + docstrings; all gates green."
 actual_result: "Delivered exactly that. composeExtension + deriveExtensionCapabilities (src/sdk/compose.ts) + defineExtensionManifest (src/sdk/define.ts), ExtensionModule/defineExtension relocated and re-exported from the barrel. 4872 tests at 100% coverage, typecheck/static/docs/contracts gates green, and verified end-to-end through both the built bundle and a real pm CLI subprocess (extension loaded, described, dispatched; package doctor clean)."
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-12tj,related,"2026-06-22T20:29:51.926Z",null,null
   pm-16ue,related,"2026-06-22T20:29:51.926Z",null,null
   pm-3mph,related,"2026-06-22T20:29:51.926Z",null,null
   pm-fk84,related,"2026-06-22T20:29:51.926Z",null,null
   pm-jcyn,related,"2026-06-22T20:29:51.926Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:16:41.995Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-22T21:09:08.622Z",claude-code-agent,"PR #346 review round 1 — addressed and pushed. Gemini (4 findings, all the same REAL null-robustness theme): composeExtension and deriveExtensionCapabilities now treat an explicit null (optional field or hooks) like undefined instead of throwing (Object.keys(null) / null-hooks deref) — hasEntries uses !value, hooks use `?? {}` (Gemini's literal `hooks !== null` suggestion would not compile since null is not in the type). Added an explicit-null robustness unit test. CodeRabbit (2 findings): (1) REAL docstring over-claim — defineExtensionManifest does NOT preserve a `capabilities` tuple literal (ExtensionManifest.capabilities is string[]; only `as const` would), reworded define.ts + SDK.md to the accurate contract-checking value; (2) trivial SDK.md `exactly` repetition reworded. Sourcery rate-limited (weekly cap); Codex not connected. Re-verified: 4872 tests 100% coverage, typecheck/static/docs gates green. Re-triggering bots for round 2."
 learnings[1]{created_at,author,text}:
@@ -26,9 +28,9 @@ files[3]{path,scope,note}:
   src/sdk/compose.ts,project,null
   src/sdk/define.ts,project,null
   src/sdk/index.ts,project,null
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  tests/unit/sdk/sdk-compose.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
-  tests/unit/sdk/sdk-define.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+tests[2]{command,scope}:
+  tests/unit/sdk/sdk-compose.spec.ts,project
+  tests/unit/sdk/sdk-define.spec.ts,project
 docs[1]{path,scope,note}:
   docs/SDK.md,project,null
 close_reason: "Shipped declarative extension authoring on branch feat/sdk-declarative-compose-extension. New src/sdk/compose.ts exports composeExtension(blueprint)->ExtensionModule (generates an activate that wires every populated surface via api.register* in deterministic order, then awaits an optional imperative activate escape hatch), deriveExtensionCapabilities(blueprint)->least-privilege capability set, and the relocated ExtensionModule + defineExtension (re-exported from the barrel; public API unchanged). define.ts gains defineExtensionManifest, completing the define* identity family. docs/SDK.md adds a Declarative Authoring section. Verified: full suite 4872 tests 100% coverage (stmts/branch/funcs/lines), typecheck (both tsconfigs) clean, static + docs-skills + contracts gates green. Manual temp-dir smoke: built-bundle E2E (deriveExtensionCapabilities->[commands,schema], activation 0 failures with exactly the derived caps, command dispatched) AND real pm CLI subprocess (extension loaded from <pmRoot>/extensions, pm extension describe reflects it, pm <cmd> dispatched, pm package doctor clean activation with 0 capability/consistency warnings). Not dogfooded into bundled packages (they stay import-free for extension-only installs)."

@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-18T09:15:16.692Z"
-updated_at: "2026-06-18T09:31:19.704Z"
+updated_at: "2026-07-26T17:02:11.339Z"
 author: claude-code-agent
 parent: pm-6bz1
+release: v2026.6.19
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-6bz1,implements,"2026-07-26T17:02:11.176Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-18T09:22:00.130Z",claude-code-agent,"Added 8 GH-275 unit tests to tests/unit/core/governance/issue-codes.spec.ts covering findDuplicateIssueCodes parent/child suppression: single child whose parent shares the code (collapses, no flag), parent with 3 children (no flag), genuine collision survives when neither item is parent of the other (parent null + parent pointing outside group), child whose parent points to an id not in the group (still counted), empty/whitespace parent treated as no-parent (still collides), padded parent trimmed before group comparison, and a mixed group (closed-dup excluded + child collapsed -> 2 genuine dups survive). All 19 tests in the file pass; scoped vitest coverage of src/core/governance/issue-codes.ts = 100% stmts/branch/funcs/lines (42/42, 26/26, 10/10, 37/37)."
 close_reason: "GH-275 fixed: findDuplicateIssueCodes drops children whose parent is another item in the same code group; 10 new issue-codes tests; full 100% coverage."

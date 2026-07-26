@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:contracts",bug,gh-issue
 created_at: "2026-07-06T08:03:09.036Z"
-updated_at: "2026-07-23T20:21:55.649Z"
+updated_at: "2026-07-26T17:18:29.758Z"
 closed_at: "2026-07-23T19:10:49.814Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,11 +14,13 @@ acceptance_criteria: "Advertised policy/trust mode tokens are accepted verbatim 
 parent: pm-5k4v
 risk: low
 confidence: high
+release: v2026.7.24
 resolution: Separated extension policy modes from governance workflow enforcement modes and proved every advertised workflow token through the validator.
 expected_result: Governance contract enum values are accepted verbatim by pm config set.
 actual_result: Contract drift regression and regenerated snapshot pass.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-xwah,related,"2026-07-14T17:05:17.472Z",null,null
+  pm-5k4v,implements,"2026-07-26T17:18:29.560Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-23T17:15:37.118Z",claude-code-agent,"Implementation start 2026-07-23: actively fixing the canonical GH-449 contract-drift item inside the schema/config customization acceptance surface; no standalone duplicate created."
   "2026-07-23T19:00:16.265Z",claude-code-agent,"Implementation evidence: governance contracts now expose workflow_enforcement_modes separately from extension policy_modes, every advertised workflow token is executed through the real config validator, and the generated contract snapshot is current."

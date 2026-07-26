@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:update",close-reason,implementation,pm-cli
 created_at: "2026-04-03T09:34:23.361Z"
-updated_at: "2026-05-17T08:22:00.668Z"
+updated_at: "2026-07-26T17:14:21.529Z"
 deadline: "2026-04-08T09:34:23.361Z"
 author: codex-agent
 estimated_minutes: 140
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: ux-hardening
-release: vnext
+release: v2026.5.1
 blocked_reason: "Task: implement update close_reason flag and reopen auto-clear has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Task: implement update close_reason flag and reopen auto-clear is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,8 +38,9 @@ affected_version: 2026.3.12
 component: cli/update
 regression: true
 customer_impact: Reopened work reflects accurate lifecycle state
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-m4vu,parent,"2026-04-03T09:34:23.361Z",codex-agent,null
+  pm-m4vu,implements,"2026-07-26T17:14:21.268Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T09:34:23.361Z",codex-agent,Task created to implement runtime and surface parity for close_reason update semantics.
   "2026-04-03T09:57:57.683Z",codex-agent,"Implemented update close_reason lifecycle: added --close-reason/--close_reason wiring across CLI/contracts/type-policy/Pi/completion, plus closed->non-terminal auto-clear logic and new unit/integration regression coverage."
@@ -53,8 +54,8 @@ files[7]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,update-close-reason implementation
   tests/integration/cli.integration.spec.ts,project,update-close-reason implementation
   tests/unit/update-command.spec.ts,project,update-close-reason implementation
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,update lifecycle regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,project,7200,update lifecycle regressions
 docs[1]{path,scope,note}:
   PRD.md,project,update close_reason contract
 close_reason: Implemented update close_reason controls plus reopen auto-clear with full surface parity and tests.

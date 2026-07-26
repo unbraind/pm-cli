@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:stdin","area:terminal",compatibility,pm-cli
 created_at: "2026-04-01T11:57:46.797Z"
-updated_at: "2026-04-05T22:45:52.286Z"
+updated_at: "2026-07-26T17:22:08.086Z"
 deadline: "2026-04-11T11:57:46.797Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-mudv
 blocked_reason: Stdin and PTY fail-safe behavior has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Stdin and PTY fail-safe behavior is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: cli/stdin
 regression: true
 customer_impact: Prevents confusing hangs in IDE and emulated terminals.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-mudv,parent,"2026-04-01T11:57:46.797Z",cursor-agent,null
   pm-nhgt,related,"2026-04-01T11:57:46.797Z",cursor-agent,null
+  pm-mudv,implements,"2026-07-26T17:22:07.859Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-01T11:57:46.797Z",cursor-agent,Feature created as part of universal terminal hardening epic.
 notes[1]{created_at,author,text}:
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:35:10.921Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/item/parse.ts,project,shared stdin token behavior
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,stdin behavior regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts,project,2400,stdin behavior regressions
 docs[1]{path,scope,note}:
   README.md,project,stdin usage guidance
 close_reason: stdin and PTY fail-safe feature delivered with tests and docs updates

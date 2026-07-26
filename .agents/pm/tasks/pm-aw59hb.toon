@@ -6,18 +6,20 @@ status: closed
 priority: 2
 tags[3]: "area:quality",codefactor,"source:github"
 created_at: "2026-07-21T16:52:53.882Z"
-updated_at: "2026-07-21T20:06:38.478Z"
+updated_at: "2026-07-26T17:09:35.526Z"
 closed_at: "2026-07-21T20:06:14.762Z"
 author: codex-derived-context-20260721
 acceptance_criteria: "All three current analyzer findings are reproduced and fixed without suppression; focused tests cover behavioral risk; pnpm lint and full 100/100/100/100 coverage pass; GH-628, GH-629, and GH-630 are closed by the merged fix."
 parent: pm-92if
+release: v2026.7.22
 resolution: "Removed the unnecessary graph-result spread, centralized the duplicated project-context field set, added the committed-result guard, and tightened the ESLint suppression baseline after hosted CI."
 expected_result: "GitHub analyzer findings GH-628, GH-629, and GH-630 are eliminated without suppressions; focused and repository-wide gates remain green."
 actual_result: "PR #636 exact head passes all hosted checks and 100% coverage; all CodeRabbit findings are resolved; the PR closes GH-628, GH-629, and GH-630 on merge."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-fmjy,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
   pm-m8yl,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
   pm-zt1c,related,"2026-07-21T16:52:53.882Z",codex-derived-context-20260721,null
+  pm-92if,implements,"2026-07-26T17:09:35.324Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-21T16:52:53.882Z",codex-derived-context-20260721,"Duplicate check (all statuses, 2026-07-21): exact searches for GH-628, GH-629, and GH-630 returned no items. Reuses parent pm-92if and relates historical class owners pm-zt1c (spread), pm-fmjy (duplication), and pm-m8yl (unsafe optional chaining) instead of reopening completed work."
   "2026-07-21T18:22:50.939Z",codex-root,"Implementation start 2026-07-21: reproduce and remediate the three grouped GitHub analyzer reports in the same broad SDK/quality PR; direct tracker-link comments were added to GH-628, GH-629, and GH-630."

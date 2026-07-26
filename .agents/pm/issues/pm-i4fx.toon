@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-19T11:21:29.939Z"
-updated_at: "2026-07-19T17:16:05.915Z"
+updated_at: "2026-07-26T17:16:20.174Z"
 closed_at: "2026-07-19T17:16:05.080Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -14,14 +14,17 @@ acceptance_criteria: "buildMergeAttributePatterns covers relationship event stor
 parent: pm-g5sx
 risk: medium
 confidence: high
+release: v2026.7.20
 resolution: "Implemented complete JSONL merge fencing, relationship-event three-way union/renumbering, schema-triggered fence refresh, and drift auditing anchored to the tracker repository."
 expected_result: Every current or custom tracker relationship stream receives field-aware merge protection and schema changes cannot silently leave the committed fence stale.
 actual_result: "All tracker JSONL selects pm-relationship with history-specific override; divergent streams preserve both sides, stable append ordering, and consecutive sequences; pmRoot-based refresh and drift tests pass."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-dijg,related,"2026-07-19T11:21:29.939Z",null,null
   pm-iwsj,related,"2026-07-19T11:21:29.939Z",null,null
   pm-wc1r,related,"2026-07-19T11:21:29.939Z",null,null
   pm-xdn6,related,"2026-07-19T11:21:29.939Z",null,null
+  pm-9q2t,related,"2026-07-26T17:16:19.952Z",null,null
+  pm-g5sx,implements,"2026-07-26T17:16:19.952Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-19T15:37:44.474Z",maintainer-agent,"Evidence: fence coverage contract now includes relationships/**/*.jsonl under new pm-relationship driver (eventId union + consecutive sequence renumbering so the strict store loader accepts merged streams); pm schema add-type/remove-type auto-refresh the installed fence (merge_fence_refreshed) or emit merge_fence_not_installed hint; validate storage_integrity audits committed fence vs active schema folders and warns validate_merge_fence_drift with exact missing/stale lines (warn-only when data is intact). Manual sandbox: driver renumbered 1,2 + 1,2 -> 1,2,3; schema add-type Spike refreshed fence; drift detected after out-of-band edit and cleared by pm merge install. Specs: merge-safety (16), schema-command (67), validate-command (91) green."
   "2026-07-19T16:09:06.411Z",codex-wide-sdk-20260719,"Final merge-fence implementation: the installed fence assigns pm-relationship to every tracker JSONL path via .agents/pm/**/*.jsonl, then applies the more-specific history/*.jsonl pm-history override. This protects custom RelationshipEventStore relative paths and future schema folders without weakening hash-chain history handling. Focused tests cover install/repair/audit, arbitrary custom paths, relationship union/renumbering, timestamp ties, missing optional timestamps, malformed streams, and the real driver artifact. Full coverage is 100/100/100/100."

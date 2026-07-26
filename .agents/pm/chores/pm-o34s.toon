@@ -6,16 +6,18 @@ status: closed
 priority: 2
 tags[4]: "area:codefactor","area:extensions",living-map,pm-cli
 created_at: "2026-06-30T20:28:51.469Z"
-updated_at: "2026-07-01T00:55:20.785Z"
+updated_at: "2026-07-26T17:21:35.998Z"
 author: claude-code-agent
 parent: pm-92if
+release: v2026.7.1
 resolution: "Merged PR #411 reduced the tracked CodeFactor complexity suppression baseline from 146 to 113, removed 9 suppressed file entries, split the largest MCP/extension/SDK dispatch and normalization hot spots, and preserved/fixed MCP reorder behavior after review."
 expected_result: "Main contains the complexity refactor with all current PR checks green, no actionable current-head bot findings, full 100/100/100/100 coverage, and pm-o34s linked to the changed files/tests/evidence."
 actual_result: "PR #411 merged into main as a9584e24156a8a223036b6e3c26e759f906e760f after green CI, CodeFactor, CodeRabbit, Greptile Review, CodeQL, Docs, Hound, Codecov patch, Windows regression, and local manual/temp-dir/coverage/lint/typecheck verification."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-arzz,related,"2026-06-30T20:29:00.972Z",null,null
   pm-lzzp,related,"2026-06-30T20:29:00.972Z",null,null
   pm-zro7,related,"2026-06-30T20:29:00.972Z",null,null
+  pm-92if,implements,"2026-07-26T17:21:35.659Z",null,null
 comments[11]{created_at,author,text}:
   "2026-06-30T22:01:43.992Z",claude-code-agent,"Progress evidence: broadened CodeFactor complexity cleanup now removes 24 tracked ESLint complexity suppressions (137 -> 113) across extension dispatch/policy/tool-schema, MCP server dispatch, bootstrap/list/registration helpers, core item-format, linked-test parser/assertions, search filters/scorer, and calendar range/filter helpers. Focused regression passed: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/cli/main-loose-options.spec.ts tests/unit/core/extensions/extension-policy.spec.ts tests/unit/extensions/runtime-registrations.spec.ts tests/unit/sdk/action-schema-parity.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/core/item-format.spec.ts tests/unit/commands/search.spec.ts tests/unit/commands/calendar.spec.ts tests/unit/commands/test-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts (8 files, 357 tests passed)."
   "2026-06-30T22:05:08.996Z",claude-code-agent,"Manual test evidence: strict temp-dir smoke passed with sandboxed PM_PATH/PM_GLOBAL_PATH. Covered init, create with deadline, files link, linked test add/run with JSON assertion, list/search, install calendar + calendar JSON output, package init/install, generated package command, and package doctor deep. Smoke item: pm-l2gw in temporary tracker; temp directory removed."

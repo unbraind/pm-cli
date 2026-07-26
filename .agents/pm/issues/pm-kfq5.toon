@@ -6,16 +6,21 @@ status: closed
 priority: 2
 tags[4]: agent-ux,extensions,gh-issue,sdk
 created_at: "2026-07-10T12:15:30.786Z"
-updated_at: "2026-07-10T15:56:42.931Z"
+updated_at: "2026-07-26T17:18:21.366Z"
 closed_at: "2026-07-10T15:56:42.255Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Repeated occurrences of an extension flag declared list:true accumulate into an array (parity with core comma-list flags, comma form still works); regression test covers repeated+comma+mixed forms; contract docs state the repeatable behavior; GH-496 closed"
 risk: medium
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
+release: v2026.7.11
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-cf1u,related,"2026-07-10T12:15:30.786Z",null,null
   pm-ltbr,related,"2026-07-10T12:15:30.786Z",null,null
+  pm-b84u,related,"2026-07-26T17:18:21.100Z",null,null
+  pm-ghf1,related,"2026-07-26T17:18:21.100Z",null,null
+  pm-l6rz,related,"2026-07-26T17:18:21.100Z",null,null
+  pm-zazb,related,"2026-07-26T17:18:21.100Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-10T12:21:45.023Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
   "2026-07-10T13:18:53.622Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."

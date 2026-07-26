@@ -6,8 +6,11 @@ status: closed
 priority: 2
 tags[3]: "area:cli",gh-228,governance
 created_at: "2026-06-13T21:54:33.627Z"
-updated_at: "2026-06-13T22:31:49.153Z"
+updated_at: "2026-07-26T17:14:04.807Z"
 author: claude-code-agent
 parent: pm-yq7m
+release: v2026.6.16
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-yq7m,implements,"2026-07-26T17:14:04.539Z",null,null
 close_reason: pm list --filter-ac-missing/--filter-estimates-missing/--filter-resolution-missing/--filter-metadata-missing shipped + MCP pm_list params + filters echo. Verified end-to-end. Closes GH-228.
 body: ""

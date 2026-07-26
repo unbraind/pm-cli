@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:health","area:state","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:38.574Z"
-updated_at: "2026-04-04T21:33:57.951Z"
+updated_at: "2026-07-26T17:14:47.055Z"
 deadline: "2026-04-13T16:16:38.574Z"
 author: codex-agent
 estimated_minutes: 300
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: extension-manager-rollout
-release: vnext
+release: v2026.5.1
 blocked_reason: Implement managed extension state and lifecycle health surfaces has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement managed extension state and lifecycle health surfaces is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -39,6 +39,9 @@ fixed_version: target-vnext
 component: extension-state
 regression: false
 customer_impact: Users gain predictable extension state and diagnostics
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-doek,related,"2026-07-26T17:14:46.876Z",null,null
+  pm-m9jc,implements,"2026-07-26T17:14:46.876Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-03T16:16:38.574Z",codex-agent,Created after de-dup scan for extension state and lifecycle diagnostics scope.
   "2026-04-03T17:09:35.633Z",codex-agent,"Implemented managed extension state persistence, activate/deactivate lifecycle toggles, explore/manage views, and health diagnostics integration for project/global managed states."
@@ -48,8 +51,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T16:16:38.574Z",codex-agent,"Will include settings state updates,metadata persistence,and manage/explore/health output details."
 files[1]{path,scope,note}:
   src/cli/commands/health.ts,project,extension diagnostics surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,state and diagnostics regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts,project,3600,state and diagnostics regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,state and lifecycle architecture documentation
 close_reason: Follow-up child task pm-doek closed with validated extension triage diagnostics enhancements.

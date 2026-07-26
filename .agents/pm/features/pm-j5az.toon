@@ -6,12 +6,19 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:packages","area:sdk",github-deps
 created_at: "2026-06-22T07:37:43.033Z"
-updated_at: "2026-06-22T08:22:46.245Z"
+updated_at: "2026-07-26T17:17:15.671Z"
 author: codex-sdk-cli-continuation
 parent: pm-ugqx
+release: v2026.6.22
 resolution: Implemented and verified a first-class importers scaffold plus dependency maintenance bundle.
 expected_result: "Package authors can run pm package init --capability importers to get a runnable import/export starter with SDK tests, docs, completions, and dependency-maintenance updates remain green."
 actual_result: "The importers scaffold generates command-safe import/export commands, declares importers plus schema for flag metadata, passes generated npm test and installed CLI temp smoke, updates docs/completions/tests, applies compatible Dependabot updates, and passes release gates with literal 100/100/100/100 coverage."
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-13bn,related,"2026-07-26T17:17:15.315Z",null,null
+  pm-7qjk,related,"2026-07-26T17:17:15.315Z",null,null
+  pm-nhby,related,"2026-07-26T17:17:15.315Z",null,null
+  pm-pwai,related,"2026-07-26T17:17:15.315Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:17:15.315Z",null,null
 comments[6]{created_at,author,text}:
   "2026-06-22T07:43:42.762Z",codex-sdk-cli-continuation,"Investigation note: GitHub triage found open Dependabot PRs #334 checkout v7.0.0, #335 pnpm/action-setup v6.0.9, #336 softprops/action-gh-release v3.0.1, and #337 @types/node 26.0.0; no open GitHub issues and no open Dependabot security alerts. pnpm audit --audit-level moderate reported no known vulnerabilities. Duplicate check searched all statuses for importers package scaffolding; related pm-nhby, pm-pwai, pm-13bn, and pm-7qjk are closed and do not cover an importers scaffold."
   "2026-06-22T07:48:30.502Z",codex-sdk-cli-continuation,"Evidence: focused tests passed after scaffold fixes: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/integration/ci-workflow-contract.spec.ts (3 files, 206 tests). Manual temp smoke passed in /tmp/tmp.JZpoMLa3r6 with isolated PM_GLOBAL_PATH: pm init demo --force, pm package init ./starter-importers --capability importers, npm install --no-save local checkout, npm test, pm install ./starter-importers --project, pm starter importers items import --source tickets --json, and pm starter importers items export --destination archive --json. Install activation diagnostics reported failed_count 0 and command discovery exposed starter importers items import/export/ping."
@@ -36,14 +43,14 @@ files[16]{path,scope,note}:
   tests/integration/ci-workflow-contract.spec.ts,project,Keep release workflow pinned action contract current
   tests/unit/commands/completion-command.spec.ts,project,Cover importers completion value
   tests/unit/extensions/extension-command.spec.ts,project,Cover importers package and extension scaffolds
-tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pm validate --check-resolution --check-history-drift,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:docs-skills",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm release:gates",null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+tests[7]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
+  pm validate --check-resolution --check-history-drift,project,300
+  pnpm build,project,240
+  "pnpm quality:docs-skills",project,300
+  "pnpm quality:static",project,300
+  "pnpm release:gates",project,900
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,Release changelog updated by pm-changelog after closure
   docs/EXTENSIONS.md,project,Document importers scaffold in package authoring flow

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: audit-followup,extensions,sdk
 created_at: "2026-07-02T21:55:19.923Z"
-updated_at: "2026-07-10T08:05:04.998Z"
+updated_at: "2026-07-26T17:03:27.203Z"
 closed_at: "2026-07-10T08:05:03.734Z"
 author: claude-code-agent
 estimated_minutes: 120
@@ -14,11 +14,16 @@ acceptance_criteria: Declarative extension install reports activation failure ac
 parent: pm-ugqx
 risk: medium
 confidence: high
+release: v2026.7.10
 resolution: "Made install load/activation failures authoritative, non-zero, and actionable with SDK recovery guidance."
 expected_result: Failed activation is never reported as activated or successful.
 actual_result: "Install returns ok=false, activated=false, degraded verification, diagnostics, recovery, and non-zero CLI exit."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:52.911Z",null,null
+  pm-6vy7,related,"2026-07-26T17:03:27.014Z",null,null
+  pm-l98s,related,"2026-07-26T17:03:27.014Z",null,null
+  pm-r0m4,related,"2026-07-26T17:03:27.014Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:03:27.014Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-10T05:53:25.174Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
   "2026-07-10T07:08:14.821Z",codex-root-20260709,"PR #491 review follow-up: verified Gemini findings against live runtime contracts. FailedExtensionLoad.error and FailedExtensionActivation.error are required strings, and loader formatUnknownError normalizes every unknown thrown value before constructing either record; optional chaining or re-stringification at the consumer would duplicate an already enforced invariant. The valid multi-target diagnostic-loss finding was fixed in the registration aggregator. Full coverage remains exact 100/100/100/100 and linked tests pass."

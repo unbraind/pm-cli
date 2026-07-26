@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,contracts,gh-issue,mcp
 created_at: "2026-07-13T09:17:31.743Z"
-updated_at: "2026-07-13T16:42:49.748Z"
+updated_at: "2026-07-26T17:15:42.006Z"
 closed_at: "2026-07-13T16:42:48.874Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,11 +14,22 @@ acceptance_criteria: "pm_copy inputSchema declares title/message (and idOnly if 
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.14
 resolution: Resolved by deriving pm_copy flat schema keys from COPY_FLAG_CONTRACTS and aligning MCP lifecycle test inputs.
 expected_result: Supported flat copy arguments are declared and warning-free while nested options remain backward compatible.
 actual_result: "title, message, and idOnly are declared; bridge behavior and nested precedence passed; pm_close uses declared reason with no unexpected-argument warning."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-13T15:28:05.446Z",null,null
+  pm-45mb,related,"2026-07-26T17:15:41.764Z",null,null
+  pm-7je0,related,"2026-07-26T17:15:41.764Z",null,null
+  pm-96vo,related,"2026-07-26T17:15:41.764Z",null,null
+  pm-at83,related,"2026-07-26T17:15:41.764Z",null,null
+  pm-chyh,related,"2026-07-26T17:15:41.764Z",null,null
+  pm-jh9t,related,"2026-07-26T17:15:41.764Z",null,null
+  pm-kj4k,related,"2026-07-26T17:15:41.764Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:15:41.764Z",null,null
+  pm-p9sc,related,"2026-07-26T17:15:41.764Z",null,null
+  pm-qxwu,related,"2026-07-26T17:15:41.764Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-13T14:32:19.802Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:38.010Z",codex-sdk-contracts-20260713,"Evidence: pm_copy top-level title/message schema is derived from COPY_FLAG_CONTRACTS, idOnly is declared, nested options stay compatible, and the native bridge forwards flat overrides. The MCP lifecycle suite now uses declared pm_close reason, asserts no unexpected-top-level warnings, and verifies the stored close_reason. Contract snapshot, MCP suites, and package dogfood passed warning-clean for this path."

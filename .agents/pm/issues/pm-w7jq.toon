@@ -6,13 +6,18 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-06-10T11:16:46.777Z"
-updated_at: "2026-07-10T20:32:55.793Z"
+updated_at: "2026-07-26T17:28:29.478Z"
 closed_at: "2026-07-10T20:32:54.665Z"
 author: codex-impl
 parent: pm-mpbb
+release: v2026.7.11
 resolution: Extended the expected-handled Sentry classifier for exact starter search/context wrapper prefixes around tracker-not-initialized failures.
 expected_result: Live release gates ignore handled starter wrapper usage errors without hiding unhandled failures.
 actual_result: "Live Sentry gate reports zero blocking critical/high issues, classifies PM-CLI-1Y/1Z as expected handled, and telemetry remains healthy at 0.34% with zero missing error codes."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-flbo,related,"2026-07-26T17:28:29.179Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:28:29.179Z",null,null
+  pm-yohx,related,"2026-07-26T17:28:29.179Z",null,null
 comments[4]{created_at,author,text}:
   "2026-06-10T11:16:46.777Z",codex-impl,"Duplicate check: searched sentry tracker_not_initialized release gate expected CLI error. Related closed lineage includes pm-yohx and pm-flbo for earlier expected CLI classifier refreshes, but no open item covers tracker_not_initialized; creating focused follow-up."
   "2026-06-10T11:17:44.477Z",codex-impl,"Evidence: added tracker_not_initialized to the Sentry expected handled CLI classifier and covered it in release automation contract tests. Verification passed: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts (13 tests); pnpm exec tsc --noEmit --pretty false; node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort (ok true, Sentry relevant critical=0 high=0, PM-CLI-1J in ignored expected CLI list, telemetry error rate 1.62%, missing error-code rows 0)."

@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[5]: "area:search","area:semantic",embedding,migration,ux
 created_at: "2026-06-07T10:04:13.999Z"
-updated_at: "2026-06-09T23:05:41.940Z"
+updated_at: "2026-07-26T17:28:59.444Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm health` surfaces a specific warning when `embedding_identity_changed` is detected (not just advisory)\n- `pm reindex` detects the identity mismatch and prompts/warns: 'Provider or model has changed since last index. Run pm reindex --mode semantic to rebuild.'\n- OR add `pm reindex --auto-migrate` that detects the mismatch and runs automatically\n- Document the provider-switch workflow in COMMANDS.md / AGENT_GUIDE"
 parent: pm-ydp6
 risk: low
 confidence: high
+release: v2026.6.10
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ydp6,implements,"2026-07-26T17:28:59.178Z",null,null
 comments[3]{created_at,author,text}:
   "2026-06-09T22:05:15.423Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:13.867Z",codex-active-pm-cycle-20260610,Added embedding identity drift detection in reindex/health paths with explicit migration hinting to run semantic reindex when provider/model changes.
@@ -19,8 +22,8 @@ comments[3]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/health.ts,project,health check surfaces embedding identity drift warnings
   src/cli/commands/reindex.ts,project,embedding identity mismatch guidance for keyword/semantic flows
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/health-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/health-command.spec.ts,project,900
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,agent guidance for reindex behavior after provider/model changes
   docs/COMMANDS.md,project,operator guidance for embedding migration and reindex modes

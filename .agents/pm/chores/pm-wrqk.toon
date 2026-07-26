@@ -6,8 +6,11 @@ status: closed
 priority: 3
 tags[2]: "area:cleanup",refactor
 created_at: "2026-06-07T17:03:26.340Z"
-updated_at: "2026-06-07T17:03:45.606Z"
+updated_at: "2026-07-26T17:28:55.940Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: v2026.6.8
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:28:55.702Z",null,null
 close_reason: "Shipped: removed dead IIFE + 2 unused exports; added resolvePmCliVersion dedup across 4 readers; dropped unused fs/path imports in main.ts."
 body: ""

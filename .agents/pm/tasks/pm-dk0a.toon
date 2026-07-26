@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: docs,linked-tests,pm-cli,tests,verification
 created_at: "2026-04-03T22:54:20.449Z"
-updated_at: "2026-04-04T21:40:33.560Z"
+updated_at: "2026-07-26T17:12:08.412Z"
 deadline: "2026-04-10T22:54:20.449Z"
 author: codex-agent
 estimated_minutes: 240
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: linked-test-hardening
-release: vnext
+release: v2026.5.1
 blocked_by: pm-qtvv
 blocked_reason: Requires runtime parity implementation before final docs and evidence sweeps.
 unblock_note: "If Update linked-test regressions docs and verification evidence is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -39,9 +39,10 @@ affected_version: 2026.3.12
 component: docs-and-verification
 regression: true
 customer_impact: Clear docs and evidence reduce upgrade ambiguity for current users.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-qtvv,related,"2026-04-03T22:54:20.449Z",codex-agent,null
   pm-wn34,related,"2026-04-03T22:54:20.449Z",codex-agent,null
+  pm-elsh,implements,"2026-07-26T17:12:08.249Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T22:54:20.449Z",codex-agent,Task coordinates regression updates docs and final verification runs.
   "2026-04-03T23:46:44.845Z",codex-agent,"Docs synced for linked-test parity and command-required policy across README, PRD, AGENTS, docs/EXTENSIONS, and CHANGELOG. Verification evidence: targeted suites passed (117 tests), full coverage run passed (71 files, 828 tests), pnpm build passed, and pm test-all --status in_progress --timeout 7200 --json reported failed=0."
@@ -55,11 +56,29 @@ files[6]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension sandbox parity documentation
   PRD.md,project,formal command contract and safety updates
   README.md,project,linked-test policy documentation
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full coverage and regression verification
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mnkrqafp-oa7g0x,test,passed,"2026-04-04T20:08:24.162Z","2026-04-04T20:11:43.573Z","2026-04-04T20:11:43.573Z",null,null,1,0,0,null,null,null
-  test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:15:17.668Z","2026-04-04T20:15:17.668Z",null,null,1,0,0,1,1,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,full coverage and regression verification
+test_runs[2]:
+  - run_id: test-local-mnkrqafp-oa7g0x
+    kind: test
+    status: passed
+    started_at: "2026-04-04T20:08:24.162Z"
+    finished_at: "2026-04-04T20:11:43.573Z"
+    recorded_at: "2026-04-04T20:11:43.573Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+  - run_id: test-all-local-mnkrqfdt-hjxetp
+    kind: test-all
+    status: passed
+    started_at: "2026-04-04T20:11:49.984Z"
+    finished_at: "2026-04-04T20:15:17.668Z"
+    recorded_at: "2026-04-04T20:15:17.668Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
 docs[5]{path,scope,note}:
   AGENTS.md,project,maintainer workflow safety policy
   CHANGELOG.md,project,unreleased behavior updates

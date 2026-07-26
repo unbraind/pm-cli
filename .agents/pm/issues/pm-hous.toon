@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: dx,gh-issue,init,onboarding
 created_at: "2026-07-11T18:01:34.472Z"
-updated_at: "2026-07-24T13:49:01.541Z"
+updated_at: "2026-07-26T17:15:47.150Z"
 closed_at: "2026-07-24T13:35:00.288Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,11 +14,15 @@ acceptance_criteria: Fenced ignore block and tracked-cache warning also cover .a
 parent: pm-mpbb
 risk: low
 confidence: medium
+release: v2026.7.25
 resolution: Canonical ignore ownership now pairs with health/validate Git-index detection and an exact index-only remediation for all clone-local tracker artifact classes.
 expected_result: Init ignores runtime artifacts and already-tracked cache files are diagnosed without deleting local data.
 actual_result: "Packed proof detected the indexed cache, emitted a safe command, preserved the local file, and cleared validation after index removal."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-69nl,related,"2026-07-11T18:02:06.291Z",null,null
+  pm-4det,related,"2026-07-26T17:15:46.874Z",null,null
+  pm-4uqm,related,"2026-07-26T17:15:46.874Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:15:46.874Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-11T23:05:12.110Z",codex-root,"Implementation start: selected after live all-status duplicate checks, full metadata/comments/notes/learnings review, GitHub issue/PR/security/dependency inspection, and SDK-first frontier reconciliation. This item is actively edited in the broad schema/config/profile/init SDK promotion bundle; unrelated open items remain unclaimed."
   "2026-07-11T23:15:35.696Z",codex-root,"Progress evidence: implemented and SDK-exported an idempotent fenced .gitignore primitive; pm init applies it in workspace-discovery, explicit workspace, and .agents/pm tracker-path layouts; repair/idempotence/unit/integration and packed-consumer proof pass. Remaining acceptance work: add health/validate detection for already-tracked cache files before closing."

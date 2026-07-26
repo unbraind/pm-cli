@@ -6,13 +6,16 @@ status: closed
 priority: 2
 tags[5]: docs,marketplace,npm,packages,pm-cli
 created_at: "2026-05-11T17:59:04.701Z"
-updated_at: "2026-05-13T18:09:58.694Z"
+updated_at: "2026-07-26T17:01:43.295Z"
 author: codex-agent
 acceptance_criteria: Package metadata fields are documented; package list/catalog command or generated artifact exists; npm keywords and public docs support package discovery.
 parent: pm-59gj
+release: v2026.5.14
 resolution: "Implemented pm package catalog/package list with pm.catalog metadata, SDK/MCP contract mirroring, docs, tests, and dogfood coverage."
 expected_result: Users and agents can discover bundled first-party pm packages and metadata before installing them.
 actual_result: "pm package catalog --project returns Beads and Todos package metadata, install commands, resources, links, and installed state; release gates and linked tests passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-59gj,implements,"2026-07-26T17:01:42.781Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-11T17:59:04.701Z",codex-agent,"Plan item created from pi.dev/packages research: package discovery depends on npm keywords plus catalog metadata such as package type,media preview,repo,and report links."
   "2026-05-13T17:47:16.332Z",codex-agent,"Implementation update: added pm package catalog/package list action with first-party package metadata from package.json pm.catalog, mirrored the surface through SDK contracts and MCP, documented catalog usage, and verified pnpm typecheck, pnpm build, focused package/SDK/runtime suite, direct package catalog JSON, and package contract flags."
@@ -34,11 +37,11 @@ files[16]{path,scope,note}:
   tests/unit/contracts-command.spec.ts,project,package catalog contract coverage
   tests/unit/extension-command.spec.ts,project,package catalog runtime coverage
   tests/unit/package-manifest.spec.ts,project,catalog metadata parser coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/upgrade-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,"focused package catalog,SDK contract,and runtime coverage"
-  "pnpm dogfood:package-first",null,project,240,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project package catalog and install-all dogfood
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mp4dej30-l5ntrr,test,passed,"2026-05-13T18:03:51.864Z","2026-05-13T18:05:46.140Z","2026-05-13T18:05:46.140Z",null,null,2,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/upgrade-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,900,"focused package catalog,SDK contract,and runtime coverage"
+  "pnpm dogfood:package-first",project,240,isolated temp-project package catalog and install-all dogfood
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mp4dej30-l5ntrr,test,passed,"2026-05-13T18:03:51.864Z","2026-05-13T18:05:46.140Z","2026-05-13T18:05:46.140Z",2,0,0
 docs[3]{path,scope,note}:
   docs/COMMANDS.md,project,package catalog command reference
   docs/EXTENSIONS.md,project,package catalog manifest and command docs

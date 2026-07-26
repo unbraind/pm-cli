@@ -6,20 +6,22 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:33.533Z"
-updated_at: "2026-07-25T15:27:07.406Z"
+updated_at: "2026-07-26T17:17:11.660Z"
 closed_at: "2026-07-25T15:27:06.250Z"
 author: unknown
 estimated_minutes: 180
 acceptance_criteria: "Linked-test execution drains child stdout/stderr continuously so verbose tools cannot exhaust the capture buffer or receive EAGAIN; Captured evidence remains deterministic and bounded, with any truncation disclosed in the recorded test result rather than silently dropped; A regression test runs a deliberately high-volume child command and asserts completion plus bounded evidence"
 parent: pm-usfg
+release: v2026.7.26
 resolution: "Linked-test output capture is bounded and non-fatal for verbose children, with explicit truncation and progress diagnostics."
 expected_result: "Linked-test output capture is bounded and non-fatal for verbose children, with explicit truncation and progress diagnostics."
 actual_result: "Linked-test output capture is bounded and non-fatal for verbose children, with explicit truncation and progress diagnostics. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-954h0o,related_to,"2026-07-25T02:06:33.533Z",null,null
   pm-jvken3,related,"2026-07-25T06:27:18.028Z",null,null
   pm-lp4j,related,"2026-07-25T06:27:18.028Z",null,null
   pm-x2vx,related,"2026-07-25T06:27:18.028Z",null,null
+  pm-usfg,implements,"2026-07-26T17:17:11.453Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-25T02:06:33.533Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
   "2026-07-25T15:25:38.197Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."

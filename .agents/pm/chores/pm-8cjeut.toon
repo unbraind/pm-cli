@@ -6,7 +6,7 @@ status: canceled
 priority: 3
 tags[3]: dependencies,release,security
 created_at: "2026-07-26T06:25:21.969Z"
-updated_at: "2026-07-26T08:29:26.779Z"
+updated_at: "2026-07-26T17:07:22.026Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "@sentry/node is updated to the latest compatible release; TOON 4, TypeScript 7, and npm-package-arg 14 are either upgraded with full compatibility proof or explicitly deferred to canonical migration lineage with engine evidence; pnpm audit reports zero vulnerabilities; lockfile, docs if needed, and release gates remain green"
@@ -16,11 +16,12 @@ confidence: high
 resolution: "No 2026-07-26 dependency candidate was safely adoptable: Sentry 10.68.0 breaks packed strict-TypeScript consumers; TOON 4 requires canonical codec/storage proof in pm-5cgm2z; TypeScript 7 remains upstream/tooling-gated in pm-do5b; npm-package-arg 14 exceeds the supported Node 22 floor and is owned by pm-ksr40d."
 expected_result: Refresh compatible dependencies without breaking source or installed consumers.
 actual_result: "pnpm audit is clean and the proven dependency set remains unchanged. Sentry 10.68.0 was rejected by the packed strict consumer; TOON 4.0.0 (no declared engine floor) was deferred for lossless storage compatibility; TypeScript 7.1 dev was deferred for typescript-eslint and compiler-API migration; npm-package-arg 14.0.0 was deferred because it requires Node ^22.22.2, ^24.15.0, or >=26 while pm supports >=22.18.0."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-do5b,related,"2026-07-26T06:25:21.969Z",null,null
   pm-tll8,related,"2026-07-26T06:25:21.969Z",null,null
   pm-5cgm2z,related,"2026-07-26T08:29:25.265Z",null,null
   pm-ksr40d,related,"2026-07-26T08:29:25.265Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:07:21.692Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-26T06:25:21.969Z","harness:codex","text=Duplicate check evidence: all-status search found closed pm-tll8 for the previous dependency refresh and open pm-do5b for TypeScript 7 migration, but no current 2026-07-26 refresh item. Live pnpm outdated: @sentry/node 10.67.0->10.68.0 compatible with Node >=18; @toon-format/toon 4 requires Node ^22.22.2 or ^24.15.0 or >=26; npm-package-arg 14 and TypeScript 7 require separate compatibility/migration proof. Dependabot alerts and npm audit are empty."
   "2026-07-26T07:24:36.333Z","harness:codex","Dependency assessment: npm audit is clean, but @sentry/node 10.68.0 makes a freshly packed strict TypeScript consumer fail because published @apm-js-collab/code-transformer-bundler-plugins declarations reference missing instrumentation-serde modules. Retained proven 10.67.0; packed npx smoke passes."

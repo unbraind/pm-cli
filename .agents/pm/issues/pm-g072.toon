@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: argument-injection,command-injection,extensions,security,windows
 created_at: "2026-07-14T19:07:23.786Z"
-updated_at: "2026-07-23T16:00:01.588Z"
+updated_at: "2026-07-26T17:14:10.883Z"
 closed_at: "2026-07-23T16:00:01.018Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,10 +14,13 @@ acceptance_criteria: "runtimeDependencyInstallSpecs (src/sdk/extension/install-s
 parent: pm-qwoy
 risk: high
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+release: v2026.7.24
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-6ixn,related,"2026-07-14T19:07:23.786Z",null,null
   pm-ngjd,related,"2026-07-14T19:07:23.786Z",null,null
   pm-4v4c,related,"2026-07-23T14:58:59.369Z",null,null
+  pm-albl,related,"2026-07-26T17:14:10.635Z",null,null
+  pm-qwoy,implements,"2026-07-26T17:14:10.635Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-23T14:21:38.052Z",claude-code-agent,"Implementation start 2026-07-23: selected after live 1,922-item all-status inventory, full canonical metadata/history review, and GitHub/release/security reconciliation. This item is actively edited in one coherent SDK/package authoring wave spanning scaffold contracts, flag arity, install validation, activation freshness, schema storage, renderer ownership, and public documentation; no duplicate item was created."
   "2026-07-23T14:59:19.368Z",claude-code-agent,"Implementation evidence: registry dependency names and versions now pass npm-package-arg validation, reject option-leading and shell-control input, and are installed behind npm's explicit -- option fence. The subprocess seam is injected for deterministic POSIX/Windows shell tests; focused security tests passed."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:observability",external-integration,sentry
 created_at: "2026-07-14T07:55:43.315Z"
-updated_at: "2026-07-15T13:31:52.468Z"
+updated_at: "2026-07-26T17:06:42.690Z"
 closed_at: "2026-07-15T13:31:21.562Z"
 author: codex-gpt5-root
 estimated_minutes: 120
@@ -14,11 +14,14 @@ acceptance_criteria: Identify the emitting package and release; attribute the Se
 parent: pm-5oj5
 risk: medium
 confidence: 70
+release: v2026.7.15
 resolution: Released the owner-side expected-error classification in pm-graph@2026.7.15 and resolved the stale pre-fix Sentry group after clean publish/install proof.
 expected_result: Missing optional Neo4j configuration is a deterministic usage error and does not block pm-cli releases as a high core failure.
 actual_result: pm-graph@2026.7.15 returns the shared PmCliError usage classification; PM-CLI-29 has no post-fix events and the live Sentry gate reports zero highs.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-ju83,related,"2026-07-14T07:55:43.315Z",null,null
+  pm-5oj5,implements,"2026-07-26T17:06:42.508Z",null,null
+  pm-d4ns,related,"2026-07-26T17:06:42.508Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-14T07:55:43.315Z",codex-gpt5-root,"Duplicate check 2026-07-14: pm search 'Neo4j not configured NEO4J_URI PM-CLI-29' --status all and pm search neo4j --status all found no canonical Neo4j/Sentry item; gh issue search found no matching GitHub issue. Live release gate reports PM-CLI-29 high, while repository rg finds no Neo4j implementation, so this is filed as external-integration observability ownership under pm-5oj5."
   "2026-07-14T10:15:56.325Z",codex-gpt5,"Live verification 2026-07-14: pnpm release:gates passed build, typecheck, docs, static quality, 100/100/100/100 coverage (5,678 tests), version, secrets, packed npx smoke, and 88-command package-first dogfood, then failed only sentry-telemetry-gate because current PM-CLI-29 remains one high. Sentry event is handled=yes from pm-cli@2026.7.13 on an external Object.run command requiring Neo4j configuration; current SDK relationship changes contain no Neo4j surface. Telemetry was healthy: 0.29% finish error rate, zero failures missing error_code."

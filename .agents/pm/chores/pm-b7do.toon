@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags[3]: code-quality,dead-code,refactor
 created_at: "2026-05-21T21:56:52.288Z"
-updated_at: "2026-05-23T09:22:28.565Z"
+updated_at: "2026-07-26T17:09:58.757Z"
 author: claude-code-agent
 acceptance_criteria: All dead symbols removed with zero remaining references; build/typecheck/static-gate green; 100% coverage maintained.
 parent: pm-rnpb
+release: v2026.5.23
 resolution: Resolution metadata backfilled during active tracker hygiene; existing closure comments and history remain the detailed source of truth.
 expected_result: "Closed item has explicit resolution, expected_result, and actual_result metadata so pm validate can confirm closure hygiene."
 actual_result: Metadata fields backfilled without changing the closed status or implementation history.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,implements,"2026-07-26T17:09:56.336Z",null,null
 close_reason: "Removed src/core/output/command-aware.ts (389 LOC) + 5 orphaned exports + unused undici dep; updated coverage-include and static-gate allowlists. Build/typecheck/static-gate green, 100% coverage maintained."
 body: ""

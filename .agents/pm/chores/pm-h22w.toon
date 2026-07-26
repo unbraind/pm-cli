@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs",contract,pm-cli,prompts
 created_at: "2026-03-06T14:08:27.897Z"
-updated_at: "2026-04-04T21:51:00.203Z"
+updated_at: "2026-07-26T17:15:06.561Z"
 deadline: "2026-03-07T14:08:27.897Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Sync legacy prompt docs with create contract has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Sync legacy prompt docs with create contract is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/sync-legacy-prompt-docs-with-create-contract
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Sync legacy prompt docs with create contract.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-02gd,implements,"2026-07-26T17:15:06.400Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-06T14:08:27.897Z",maintainer-agent,Why this exists prevent stale prompt guidance from creating unsupported pm usage
   "2026-03-06T14:08:47.804Z",maintainer-agent,Planned changeset update legacy prompt docs to current create contract guardrails and add release-readiness regression assertion.
@@ -51,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:34.822Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,guard prompt docs contract drift
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,docs contract regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,2400,docs contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,authoritative create contract

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:dependencies","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:47:48.291Z"
-updated_at: "2026-04-04T21:32:01.792Z"
+updated_at: "2026-07-26T17:16:46.860Z"
 deadline: "2026-04-17T14:47:48.291Z"
 author: codex-agent
 estimated_minutes: 360
@@ -18,6 +18,7 @@ value: "Improves future change velocity by making External audit follow-up: unre
 impact: "Reduces ambiguity and handoff risk for future work touching External audit follow-up: unresolved UX and dependency visualization gaps."
 outcome: "This record can be used as canonical context when modifying External audit follow-up: unresolved UX and dependency visualization gaps."
 why_now: "Historical decisions for External audit follow-up: unresolved UX and dependency visualization gaps need durable context for future maintenance and audits."
+release: v2026.5.1
 blocked_reason: "External audit follow-up: unresolved UX and dependency visualization gaps has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If External audit follow-up: unresolved UX and dependency visualization gaps is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: "Project workspace execution context for External audit follow-up: unresolved UX and dependency visualization gaps (pm CLI + Node/pnpm toolchain)."
@@ -26,6 +27,11 @@ expected_result: "Acceptance criteria for External audit follow-up: unresolved U
 actual_result: "Work completed and recorded with linked artifacts for External audit follow-up: unresolved UX and dependency visualization gaps."
 component: project-management/external-audit-follow-up-unresolved-ux-and-depen
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External audit follow-up: unresolved UX and dependency visualization gaps."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-3eu2,related,"2026-07-26T17:16:46.632Z",null,null
+  pm-8sgf,related,"2026-07-26T17:16:46.632Z",null,null
+  pm-tcx8,related,"2026-07-26T17:16:46.632Z",null,null
+  pm-x85o,related,"2026-07-26T17:16:46.632Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T14:47:48.291Z",codex-agent,Created after de-dup mapping confirmed closed items already cover the remaining report scope.
   "2026-04-03T14:48:57.089Z",codex-agent,"Created and claimed child hierarchy for unresolved scope: pm-8sgf (ownership guidance), pm-3eu2 (files/docs add-glob), pm-x85o (deps visualization), pm-tcx8 (docs/contracts parity)."

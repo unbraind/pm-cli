@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:docs","area:tests","milestone:6",pm-cli,"priority:0"
 created_at: "2026-03-09T01:45:50.040Z"
-updated_at: "2026-04-04T21:50:34.153Z"
+updated_at: "2026-07-26T17:18:00.634Z"
 deadline: "2026-03-10T01:45:50.040Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: maintainer-loop-2026-03-09-3
-release: v0.1
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Maintain release readiness 2026-03-09 (Run 3) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Maintain release readiness 2026-03-09 (Run 3) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,9 @@ fixed_version: v0.1
 component: project-management/maintain-release-readiness-2026-03-09-run-3
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Maintain release readiness 2026-03-09 (Run 3).
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7vr0,related,"2026-07-26T17:18:00.409Z",null,null
+  pm-t6f7,implements,"2026-07-26T17:18:00.409Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-09T01:45:50.040Z",maintainer-agent,This run is to ensure project remains at 100 percent coverage and release-ready.
   "2026-03-09T02:01:39.931Z",maintainer-agent,"Evidence: pm test pm-k4u5 --run passed. pm test-all --status in_progress passed with 1 test. pm test-all --status closed passed all non-skipped tests. Coverage remains 100% lines/branches/functions/statements."
@@ -51,8 +54,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:32:30.176Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   README.md,project,metadata-audit-linked-context
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate verification
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate verification
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: "Superseded by canonical item pm-7vr0 during governance duplicate-consolidation for cluster 'maintain-release-loop::2026-03-09'; historical evidence retained in this record."

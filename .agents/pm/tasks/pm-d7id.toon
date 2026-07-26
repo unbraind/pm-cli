@@ -6,14 +6,17 @@ status: closed
 priority: 0
 tags[5]: breaking-change,governance,implementation,none-token,pm-cli
 created_at: "2026-04-05T23:51:54.215Z"
-updated_at: "2026-04-25T11:04:13.113Z"
+updated_at: "2026-07-26T17:11:46.951Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: Legacy none/null command inputs fail with usage errors; explicit clear/unassigned flags work across supported commands; strict create required fields/repeatables reject clear directives; full tests and coverage pass with docs/contracts parity.
 parent: pm-rl4e
+release: v2026.5.1
 resolution: Removed none/null sentinel semantics and enforced explicit clear/unassigned APIs across create/update/filter/query surfaces.
 expected_result: Legacy none/null inputs are rejected with usage errors while explicit --unset/--clear-* and --assignee-filter workflows succeed with docs/contracts parity.
 actual_result: "Implemented and verified: legacy none/null inputs now fail deterministically; explicit clear/unassigned semantics work; docs/contracts/wrapper/tests aligned."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rl4e,implements,"2026-07-26T17:11:46.731Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-05T23:51:54.215Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search \"none token semantics commands\" --limit 10; pm search \"unassigned filter assignee none\" --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new as the execution task for feature pm-rl4e; no open/in_progress task currently tracks implementation/verification rollout end-to-end."
   "2026-04-05T23:52:15.556Z",codex-agent,"Kickoff: implementing immediate-breaking none/null semantic removal across create/update/filter/query/contracts/docs/tests. Execution order follows plan todos: clear APIs, strict required-create gates, unassigned filters, contracts/wrapper parity, docs/completion/help migration, and full verification."
@@ -33,8 +36,8 @@ files[8]{path,scope,note}:
   src/cli/error-guidance.ts,project,required-option examples migrated away from none sentinels
   src/cli/help-content.ts,project,removed stale none-token examples and added explicit progressive/clear guidance
   src/core/output/command-aware.ts,project,next-step examples use progressive mode instead of none tokens
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,help/error/next-step and docs-facing regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts,project,3600,help/error/next-step and docs-facing regressions
 docs[4]{path,scope,note}:
   AGENTS.md,project,none-token migration guidance updates
   CHANGELOG.md,project,unreleased entries aligned to explicit clear flags

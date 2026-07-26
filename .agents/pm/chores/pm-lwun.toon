@@ -6,13 +6,16 @@ status: closed
 priority: 1
 tags[5]: docs,migration,packages,pm-cli,ux
 created_at: "2026-05-11T17:59:04.655Z"
-updated_at: "2026-05-12T19:55:50.658Z"
+updated_at: "2026-07-26T17:19:42.750Z"
 author: codex-agent
 acceptance_criteria: Top-level help and docs consistently prefer packages; legacy extension command is documented as compatibility; docs-skills and static quality gates pass.
 parent: pm-59gj
+release: v2026.5.14
 resolution: "Package-first UX/docs slice completed; package lifecycle help and diagnostics now prefer pm package/pm install, with extension wording retained for compatibility/runtime internals."
 expected_result: "Users following top-level docs/help and package lifecycle diagnostics see package-first commands first, while legacy pm extension workflows remain available for existing automation."
 actual_result: README/PRD/help/docs and lifecycle next steps/remediation were updated; focused and linked package/docs tests passed; compatibility/manual E2E passed; broader gate is blocked only by pre-existing live Sentry threshold issues.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-59gj,implements,"2026-07-26T17:19:42.553Z",null,null
 comments[9]{created_at,author,text}:
   "2026-05-11T17:59:04.655Z",codex-agent,Plan item created because this implementation intentionally keeps internals/backward compatibility on extension terminology while exposing package-first user commands.
   "2026-05-11T21:16:54.669Z",codex-agent,"Package-first docs slice completed for first-party Beads/Todos packages: docs/EXTENSIONS.md now describes pm install package roots and compatibility aliases; broader help/UX terminology migration remains open for follow-up."
@@ -36,11 +39,11 @@ files[10]{path,scope,note}:
   PRD.md,project,update package-first planning reference and remove core Pi wrapper target
   src/cli/commands/extension.ts,project,package vocabulary in lifecycle scaffold and diagnostics
   src/cli/register-setup.ts,project,pass package vocabulary into shared lifecycle runner
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/guide-command.spec.ts tests/unit/docs-skills-gate.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused package-first help/docs lifecycle regression
-  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,package-first contracts and release-readiness suite
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mp31viey-nflmyk,test,passed,"2026-05-12T19:54:11.013Z","2026-05-12T19:55:16.858Z","2026-05-12T19:55:16.858Z",null,null,2,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/guide-command.spec.ts tests/unit/docs-skills-gate.spec.ts,project,600,focused package-first help/docs lifecycle regression
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,project,900,package-first contracts and release-readiness suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mp31viey-nflmyk,test,passed,"2026-05-12T19:54:11.013Z","2026-05-12T19:55:16.858Z","2026-05-12T19:55:16.858Z",2,0,0
 docs[8]{path,scope,note}:
   CHANGELOG.md,project,Unreleased upgrade and package externalization notes
   docs/COMMANDS.md,project,upgrade command family reference

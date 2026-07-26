@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:release","area:tests",pm-cli
 created_at: "2026-04-01T02:16:16.834Z"
-updated_at: "2026-04-04T21:32:59.039Z"
+updated_at: "2026-07-26T17:24:24.223Z"
 deadline: "2026-04-11T02:16:16.834Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-x395
 blocked_reason: Regression and release hardening has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: Coverage gate alignment complete; verification rerun passing.
@@ -41,8 +41,10 @@ fixed_version: archive-2026q2
 component: testing
 regression: true
 customer_impact: existing users keep stable behavior after override expansion
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-x395,parent,"2026-04-01T02:16:16.834Z",codex-agent,null
+  pm-rl7j,related,"2026-07-26T17:24:24.002Z",null,null
+  pm-x395,implements,"2026-07-26T17:24:24.002Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-01T02:16:16.834Z",codex-agent,Feature E from full-override plan.
   "2026-04-01T03:05:12.720Z",codex-agent,Feature remains blocked solely by the unresolved global coverage-threshold gate tracked in pm-rl7j after push of b21a27b.
@@ -53,8 +55,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:20:43.170Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,core integration coverage surface
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate for release
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,coverage gate for release
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,release evidence and migration notes
 close_reason: Verification hardening complete

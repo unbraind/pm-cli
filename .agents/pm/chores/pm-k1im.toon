@@ -6,9 +6,13 @@ status: closed
 priority: 3
 tags[3]: audit-2026-06-13,governance,refactor
 created_at: "2026-06-12T22:48:07.980Z"
-updated_at: "2026-06-16T12:30:29.360Z"
+updated_at: "2026-07-26T17:17:55.638Z"
 author: audit-quality-agent
 parent: pm-y7sc
+release: v2026.6.16
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-mbdu,related,"2026-07-26T17:17:55.408Z",null,null
+  pm-y7sc,implements,"2026-07-26T17:17:55.408Z",null,null
 comments[2]{created_at,author,text}:
   "2026-06-16T11:10:29.716Z",codex-sdk-cli-consolidation-20260616,"Evidence: helper extraction trimmed repeated orchestration/filter code in touched command modules without broad rewrites; focused command/history tests and static quality gate pass after refactor."
   "2026-06-16T12:30:28.654Z",codex-sdk-cli-consolidation-20260616,"Merged via PR #246 (Consolidate SDK/CLI core primitives, UX diagnostics, and release reliability). Post-review follow-up commits addressed bot feedback; CI gates are green including strict coverage 100/100/100/100 and CodeQL/compat/smoke checks."
@@ -19,8 +23,8 @@ files[6]{path,scope,note}:
   src/cli/commands/history-redact.ts,project,Reduced orchestration LOC via executeHistoryRewrite extraction
   src/cli/commands/history-repair.ts,project,Reduced orchestration LOC via executeHistoryRewrite extraction
   src/cli/commands/update-many.ts,project,Reduced inline filter helper footprint via extracted shared list-filter helper
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/commands/update-many-command.spec.ts tests/unit/commands/close-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts,null,project,1500,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
+tests[2]{command,scope,timeout_seconds}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts tests/unit/commands/update-many-command.spec.ts tests/unit/commands/close-command.spec.ts tests/unit/core/history/history-rewrite.spec.ts,project,1500
+  "pnpm quality:static",project,1200
 close_reason: Merged in PR #246 with linked implementation + verification evidence; no remaining blockers in this scope.
 body: ""

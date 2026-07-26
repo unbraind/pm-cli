@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[4]: adr,"area:tests",coverage,pr-240
 created_at: "2026-06-16T08:40:13.786Z"
-updated_at: "2026-06-16T09:33:19.392Z"
+updated_at: "2026-07-26T17:19:20.880Z"
 author: maintainer-agent
 parent: pm-0xix
+release: v2026.6.16
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0xix,implements,"2026-07-26T17:19:20.624Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-16T08:50:33.220Z",maintainer-agent,"CORRECTION after sandbox verification: config.ts:1022 and reindex.ts:247 are NOW DECLINED as false positives (not applied). config.ts has an early 'if (valueValue === undefined) return options' guard (line 1002) so line 1022 is only reached with a defined valueValue — the original 'value: valueValue' never drops a --value, and Gemini's '?? options.value' is a dead branch. reindex.ts: resolveRegisteredSearchProvider only matches a registration whose normalized definition name EQUALS the provider key, so 'name' is provably non-empty; Gemini's '?? providerName' fallback is unreachable. Both reverted; original c8-ignored guard retained for reindex. init.ts: rather than Gemini's (also-dead) '?? minimal', applied a genuine UX improvement — the wizard now CATCHES an invalid preset typo and defaults to minimal with a notice instead of throwing and aborting mid-setup (fully coverable). register-mutation.ts 'as string' applied (harmless cleanup). NET valid source fixes from this review: 2 (init UX, register-mutation cast). All other 7 findings are false positives/declined."
 close_reason: "Accepted & applied: 2 valid Gemini findings fixed (init tolerant-preset UX, register-mutation as-string); 7 false positives declined with documented rationale (config early-return, reindex matched-registration invariant, help-json/comments type-guards, Atomics.wait Node-main-thread, item-format theoretical-throw + lazy-sort coverage-bloat)."

@@ -6,11 +6,14 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-05-23T17:07:40.015Z"
-updated_at: "2026-05-23T18:42:35.910Z"
+updated_at: "2026-07-26T17:14:08.031Z"
 author: claude-code-agent
+release: v2026.5.24
 resolution: "Completed combined CLI ergonomics plan: concise init, hidden pure snake help aliases, named priorities, package install hints, starter templates, delete dry-run/default-safety, templates dedup integration, shared contracts/completions/docs, manual dogfood, and full release gate."
 expected_result: All plan steps completed with tests/docs/contracts updated and no feature regressions.
 actual_result: All six steps completed; manual dogfood and full release gate passed with 100% coverage and required Sentry/telemetry.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5k2w,related,"2026-07-26T17:14:07.781Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-23T17:50:14.107Z",default-safety-subagent,"L10 evidence from default-safety sub-agent: implemented delete dry-run and gc help clarification in scoped files. Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts (46 tests); pnpm exec tsc -p tsconfig.json --noEmit. Handoff: shared contracts/completion remain coordinator-owned if pm contracts/completions should surface delete --dry-run in the integration PR."
   "2026-05-23T17:56:09.772Z",codex-active-work,"Integration evidence: coordinator added shared docs/changelog plus delete --dry-run contracts/completions after sub-agent lanes. Focused suite passed: 10 files / 203 tests, then post-contract subset passed: 4 files / 143 tests; tsc --noEmit passed. Manual isolated dogfood at /tmp/pm-manual-ergonomics-xTi6M0/project verified init 60 lines vs 193 verbose, hidden --why_now parse, priority high=>1, guide install hint, templates builtin count=4, user template override, delete --dry-run non-mutating target tasks/pm-jwl1.toon, gc --dry-run preview count=5, and delete contracts include --dry-run."
@@ -31,12 +34,26 @@ files[13]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,completion regression for delete dry-run
   tests/unit/contracts-command.spec.ts,project,contract regression for delete dry-run
   tests/unit/delete-command.spec.ts,project,L10 delete dry-run regression
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "manual temp dogfood via dist/cli.js in isolated PM_PATH/PM_GLOBAL_PATH for init,aliases,priorities,package hints,templates,delete dry-run,gc dry-run",null,project,180,null,null,null,null,null,null,null,null,null,null,null,manual dogfood passed at /tmp/pm-manual-ergonomics-xTi6M0/project
-  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,"full release gate passed with 100 percent coverage,package dogfood,compatibility,secret scan,and required sentry/telemetry"
-  node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/templates-command.spec.ts tests/unit/priority.spec.ts tests/unit/option-alias-visibility.spec.ts tests/unit/error-guidance.spec.ts tests/unit/init-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused integration regression suite for combined CLI ergonomics PR
-  pnpm exec tsc -p tsconfig.json --noEmit,null,project,240,null,null,null,null,null,null,null,null,null,null,null,typecheck after contract/completion integration
+tests[5]:
+  - command: "manual temp dogfood via dist/cli.js in isolated PM_PATH/PM_GLOBAL_PATH for init,aliases,priorities,package hints,templates,delete dry-run,gc dry-run"
+    scope: project
+    timeout_seconds: 180
+    note: manual dogfood passed at /tmp/pm-manual-ergonomics-xTi6M0/project
+  - command: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json
+    scope: project
+    timeout_seconds: 2400
+    note: "full release gate passed with 100 percent coverage,package dogfood,compatibility,secret scan,and required sentry/telemetry"
+  - command: node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/templates-command.spec.ts tests/unit/priority.spec.ts tests/unit/option-alias-visibility.spec.ts tests/unit/error-guidance.spec.ts tests/unit/init-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot
+    scope: project
+    timeout_seconds: 300
+    note: focused integration regression suite for combined CLI ergonomics PR
+  - command: pnpm exec tsc -p tsconfig.json --noEmit
+    scope: project
+    timeout_seconds: 240
+    note: typecheck after contract/completion integration
 close_reason: "Completed combined CLI ergonomics plan: concise init, hidden pure snake help aliases, named priorities, package install hints, starter templates, delete dry-run/default-safety, shared contracts/completions/docs, manual dogfood, and full release gate all passed."
 plan_mode: approved
 plan_steps[6]:

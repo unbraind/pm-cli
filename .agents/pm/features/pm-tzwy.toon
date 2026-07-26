@@ -6,13 +6,20 @@ status: closed
 priority: 0
 tags[6]: ci,cost,free-tier,github-actions,performance,pm-cli
 created_at: "2026-05-16T22:07:27.879Z"
-updated_at: "2026-05-17T11:43:53.881Z"
+updated_at: "2026-07-26T17:26:47.664Z"
 author: maintainer-agent
 acceptance_criteria: "Average CI duration per push/PR cut by >=40%; total runner minutes per PR cut by >=50% on common docs-only or single-file PRs; full matrix still runs on main push; coverage gate, static quality gate, plugin smoke tests still gating; pnpm audit/security:scan still gating; no paid GitHub features used; CI is green on the change."
 parent: pm-rnpb
+release: v2026.5.18
 resolution: "CI optimization lineage now includes docs-only push skip, deterministic TS/Vitest caches, parallelized gates with dist artifact handoff, and observability cache restores."
 expected_result: Runner minutes and critical-path duration drop while preserving full quality/security/smoke gating and free-tier compatibility.
 actual_result: Main CI run 25989643786 passed all jobs after these optimizations; local required release gates and dogfood checks are green with healthy Sentry/telemetry thresholds.
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-1pah,related,"2026-07-26T17:26:47.422Z",null,null
+  pm-27yz,related,"2026-07-26T17:26:47.422Z",null,null
+  pm-iv1u,related,"2026-07-26T17:26:47.422Z",null,null
+  pm-n28v,related,"2026-07-26T17:26:47.422Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:26:47.422Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-17T10:33:05.353Z",codex-agent,"Execution start 2026-05-17: bootstrap complete (npm install -g ., pm --version, node -v, pnpm -v, pnpm build) and duplicate-check/orient commands rerun (pm context, pm search ci free-tier cache matrix gates artifact, pm list-open, pm list-in-progress). Active implementation slice is pm-27yz under this parent; releasing unrelated stale claims to keep in_progress/claim hygiene strict."
   "2026-05-17T10:41:27.702Z",codex-agent,"Progress update 2026-05-17: completed pm-27yz implementation locally with parallelized CI gates architecture and full local verification stack green (focused contracts, typecheck, release gates with required telemetry/Sentry, dogfood, secret scan). Next step is commit/push and remote GitHub checks evidence."
@@ -26,10 +33,10 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   .github/workflows/ci.yml,project,parallel CI architecture via build foundation and gates jobs
   tests/integration/ci-workflow-contract.spec.ts,project,CI workflow contract updated for split jobs and artifact flow
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/check-secrets.mjs,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/dogfood-package-first.mjs,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/check-secrets.mjs,project,180
+  node scripts/dogfood-package-first.mjs,project,600
+  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,project,1800
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,600
 close_reason: "Delivered the free-tier CI optimization lineage end-to-end with green remote CI evidence, complete local gate/dogfood coverage, and documented tracker hygiene across all child issues."
 body: ""

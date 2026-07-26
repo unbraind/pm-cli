@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:extensions","area:ux","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:17.605Z"
-updated_at: "2026-04-04T21:33:55.120Z"
+updated_at: "2026-07-26T17:06:27.585Z"
 deadline: "2026-04-13T16:16:17.605Z"
 author: codex-agent
 estimated_minutes: 360
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: extension-manager-rollout
-release: vnext
+release: v2026.5.1
 blocked_reason: Implement pm extension lifecycle command surface has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement pm extension lifecycle command surface is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -39,6 +39,8 @@ fixed_version: target-vnext
 component: cli-extensions
 regression: false
 customer_impact: Users get predictable extension lifecycle UX
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-m9jc,implements,"2026-07-26T17:06:27.386Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T16:16:17.605Z",codex-agent,Created after de-dup scan for extension lifecycle command coverage.
   "2026-04-03T17:09:31.169Z",codex-agent,"Implemented pm extension lifecycle command surface in CLI wiring, help narratives, and completion with deterministic action/scope/source flag validation."
@@ -46,8 +48,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T16:16:17.605Z",codex-agent,Will wire main/help/completion and tests first.
 files[1]{path,scope,note}:
   src/cli/main.ts,project,extension command registration
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,command integration regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,3600,command integration regression
 docs[1]{path,scope,note}:
   README.md,project,user-facing extension command usage
 close_reason: pm extension command surface implemented with integration/unit coverage passing.

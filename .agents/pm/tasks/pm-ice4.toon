@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:list","area:tests",external-audit,pm-cli
 created_at: "2026-04-03T18:07:21.138Z"
-updated_at: "2026-05-17T08:22:09.334Z"
+updated_at: "2026-07-26T17:16:28.219Z"
 deadline: "2026-04-08T18:07:21.138Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation-2026w14
-release: vnext
+release: v2026.5.1
 blocked_by: pm-a4z3
 blocked_reason: Implement list offset pagination and JSON stream mode has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement list offset pagination and JSON stream mode is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: target-vnext
 component: cli-list
 regression: true
 customer_impact: Large projects can automate list processing safely
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-a4z3,parent,"2026-04-03T18:07:21.138Z",codex-agent,null
+  pm-a4z3,implements,"2026-07-26T17:16:27.969Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-03T18:07:21.138Z",codex-agent,Task created for list offset and stream implementation.
   "2026-04-03T18:19:35.713Z",codex-agent,"Implemented list offset pagination and opt-in JSON stream mode with --stream guard requiring --json. Added completion and contract parity plus unit/integration coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts passed (123/123)."
@@ -57,9 +58,9 @@ files[7]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,list stream integration and json guard
   tests/unit/completion-command.spec.ts,project,list completion offset/stream assertions
   tests/unit/list-command.spec.ts,project,offset behavior and validation tests
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,list output behavior regression suite
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,4200,null,null,null,null,null,null,null,null,null,null,null,list offset-stream targeted regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,5400,list output behavior regression suite
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,project,4200,list offset-stream targeted regression
 docs[1]{path,scope,note}:
   README.md,project,user-facing list output options
 close_reason: List offset/stream task is complete and already evidenced; item should be closed.

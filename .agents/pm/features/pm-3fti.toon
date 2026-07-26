@@ -6,15 +6,32 @@ status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-04-30T19:37:24.068Z"
-updated_at: "2026-05-01T19:29:07.501Z"
+updated_at: "2026-07-26T17:03:03.550Z"
 deadline: "2026-05-02T19:37:24.068Z"
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit work is decomposed into tracked tasks/issues/decisions; evidence links changed files and runnable verification; no telemetry secrets are committed or published.
 parent: pm-23me
+release: v2026.5.2
 resolution: "Resolution normalized from close_reason: Dogfood audit completed (2026-05-01). Fixed 5 issues: telemetry queue bloat regression (pm-on3q), priority error message UX (pm-1h7w), files --add error guidance (pm-8r2r), calendar --include scheduled alias (pm-itb0), templates bare command (pm-dc2y). Created tracking items for 5 remaining medium/low priority improvements. All 1087 tests at 100% coverage."
 expected_result: "Expected closure outcome: Dogfood audit completed (2026-05-01). Fixed 5 issues: telemetry queue bloat regression (pm-on3q), priority error message UX (pm-1h7w), files --add error guidance (pm-8r2r), calendar --include scheduled alias (pm-itb0), templates bare command (pm-dc2y). Created tracking items for 5 remaining medium/low priority improvements. All 1087 tests at 100% coverage."
 actual_result: "Actual closure outcome: Dogfood audit completed (2026-05-01). Fixed 5 issues: telemetry queue bloat regression (pm-on3q), priority error message UX (pm-1h7w), files --add error guidance (pm-8r2r), calendar --include scheduled alias (pm-itb0), templates bare command (pm-dc2y). Created tracking items for 5 remaining medium/low priority improvements. All 1087 tests at 100% coverage."
+dependencies[15]{id,kind,created_at,author,source_kind}:
+  pm-0xhj,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-1h7w,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-23me,implements,"2026-07-26T17:03:03.317Z",null,null
+  pm-8r2r,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-b1pd,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-dc2y,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-e0b5,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-g8gj,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-gmnh,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-itb0,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-j16d,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-mwiz,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-ne67,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-on3q,related,"2026-07-26T17:03:03.317Z",null,null
+  pm-vg5h,related,"2026-07-26T17:03:03.317Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-30T19:37:24.068Z",codex-audit,"Duplicate check before create reused evidence from current audit bootstrap: no open/in-progress items and only closed prior audits matched the requested scope. Parent lineage selected as pm-23me -> this feature because the user requested a new latest-build full audit."
   "2026-04-30T20:05:42.076Z",codex-audit,Audit execution task pm-j16d is closed with evidence. Fixed/closed pm-mwiz (SDK starter migration health warning) and pm-0xhj (date-sensitive context test). Remaining historical tracker hygiene warning set is tracked as open follow-up pm-e0b5; keeping this feature/epic open to preserve that parent lineage.

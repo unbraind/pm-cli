@@ -6,17 +6,19 @@ status: closed
 priority: 4
 tags[2]: "area:observability","area:sentry"
 created_at: "2026-06-07T10:05:12.734Z"
-updated_at: "2026-06-19T15:33:07.262Z"
+updated_at: "2026-07-26T17:14:30.282Z"
 author: audit-observability-agent
 acceptance_criteria: "- Either: (A) tracesSampleRate reads from SENTRY_TRACES_SAMPLE_RATE env var with 0.2 as the default; the env var is listed in the telemetry env-var docs (pm-r7md); OR (B) a code comment at instrument.ts:227 explains the rationale and documents that the value is intentionally static for this use case.\n- Whichever option, no behavior change for existing installs."
 parent: pm-5oj5
 risk: low
 confidence: high
+release: v2026.6.20
 resolution: "Wired tracesSampleRate to SENTRY_TRACES_SAMPLE_RATE via resolveTracesSampleRate() (default 0.2, honours [0,1], falls back on invalid/out-of-range). Documented Sentry env vars in docs/CONFIGURATION.md."
 expected_result: Operators can tune or disable Sentry performance tracing without code changes; default behaviour unchanged.
 actual_result: "SENTRY_TRACES_SAMPLE_RATE now controls the rate (0=off, 1=full); unset/invalid keeps 0.2. Coverage 100/100/100/100, docs updated."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-r7md,related,"2026-06-07T10:05:12.734Z",null,null
+  pm-5oj5,implements,"2026-07-26T17:14:30.056Z",null,null
 files[3]{path,scope,note}:
   docs/CONFIGURATION.md,project,Document Sentry env vars incl SENTRY_TRACES_SAMPLE_RATE
   src/core/sentry/instrument.ts,project,"Add resolveTracesSampleRate() reading SENTRY_TRACES_SAMPLE_RATE (default 0.2, clamped to [0,1])"

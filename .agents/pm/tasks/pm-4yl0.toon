@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:commands",code,docs,"milestone:1",pm-cli,"priority:1",tests
 created_at: "2026-03-04T00:26:07.113Z"
-updated_at: "2026-05-17T08:21:07.907Z"
+updated_at: "2026-07-26T17:04:21.535Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-u9r
 blocked_reason: Implement pm delete command has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Implement pm delete command is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/implement-pm-delete-command
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement pm delete command.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-u9r,parent,"2026-03-04T00:26:07.113Z",cursor-maintainer,null
+  pm-u9r,implements,"2026-07-26T17:04:21.289Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-04T00:26:07.113Z",cursor-maintainer,Delete is roadmap only and this item implements it with deterministic behavior.
   "2026-03-04T00:26:24.527Z",cursor-maintainer,"Planned changeset: update PRD and README first to move pm delete from roadmap to implemented command surface, then implement delete command/store flow and add unit plus integration plus docs contract coverage before running pm test and test-all."
@@ -67,10 +68,10 @@ files[13]{path,scope,note}:
   tests/unit/delete-command.spec.ts,project,delete command unit coverage
   tests/unit/structure-exports.spec.ts,project,assert delete export
   vitest.config.ts,project,coverage include for new modules
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,targeted delete and contract regression
-  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,typescript build
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,project,5400,targeted delete and contract regression
+  pnpm build,project,300,typescript build
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow rules
   PRD.md,project,governing spec

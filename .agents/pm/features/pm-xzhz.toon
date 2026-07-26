@@ -6,13 +6,19 @@ status: closed
 priority: 1
 tags[4]: agent-ux,architecture,"area:sdk",token-efficiency
 created_at: "2026-07-05T18:26:14.911Z"
-updated_at: "2026-07-06T05:12:58.532Z"
+updated_at: "2026-07-26T17:29:59.610Z"
 author: codex-agent
 acceptance_criteria: SDK runtime exports typed runAction and PmClient surfaces; MCP pm_run and narrow tools dispatch through the same SDK path; docs and tests cover create/list/get/update/close style execution in-process; temp-project proof shows a consumer can use @unbrained/pm-cli/sdk/runtime without spawning pm.
 parent: pm-usfg
+release: v2026.7.6
 resolution: "Promoted the MCP action dispatcher into src/sdk/runtime.ts as the public runAction/PmClient execution surface, updated MCP to reuse it, documented SDK usage, and covered the in-process installed-package path."
 expected_result: "SDK consumers can import @unbrained/pm-cli/sdk/runtime and execute common pm actions without spawning pm, while MCP behavior stays aligned and quality gates remain green."
 actual_result: PmClient/runAction completed create/list/search/get/update/context/close in unit coverage and in a fresh installed-package temp consumer; MCP focused tests and full 100% coverage passed.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-98cz,related,"2026-07-26T17:29:59.345Z",null,null
+  pm-rjqr,related,"2026-07-26T17:29:59.345Z",null,null
+  pm-usfg,implements,"2026-07-26T17:29:59.345Z",null,null
+  pm-zwpp,related,"2026-07-26T17:29:59.345Z",null,null
 comments[34]{created_at,author,text}:
   "2026-07-05T18:26:30.890Z",codex-agent,"Implementation start: all-status duplicate search found no exact pm item for GH #439; this child is linked to pm-usfg and will reuse the existing MCP action dispatcher as the SDK runtime path so MCP and SDK do not fork behavior."
   "2026-07-05T19:34:38.213Z",codex-agent,"Evidence: full coverage passed after SDK runtime promotion: node scripts/run-tests.mjs coverage -> 264 test files, 5424 tests, Statements 100%, Branches 100%, Functions 100%, Lines 100%."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:calendar","area:docs",pm-cli
 created_at: "2026-03-31T21:27:49.453Z"
-updated_at: "2026-05-17T08:20:50.928Z"
+updated_at: "2026-07-26T17:00:42.819Z"
 deadline: "2026-04-10T21:27:49.453Z"
 author: codex-agent
 estimated_minutes: 200
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 blocked_by: pm-0lbm
 blocked_reason: Agent integration and docs hardening for calendar/reminders has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Agent integration and docs hardening for calendar/reminders is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,10 +40,14 @@ fixed_version: vnext
 component: docs/runtime-contract
 regression: true
 customer_impact: Makes the new capability discoverable and automatable for agents and users.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-0lbm,related,"2026-03-31T21:27:49.453Z",codex-agent,null
   pm-igv,related,"2026-03-31T21:27:49.453Z",codex-agent,null
   pm-qh3p,parent,"2026-03-31T21:27:49.453Z",codex-agent,null
+  pm-2v01,related,"2026-07-26T17:00:42.533Z",null,null
+  pm-qh3p,implements,"2026-07-26T17:00:42.533Z",null,null
+  pm-qze9,related,"2026-07-26T17:00:42.533Z",null,null
+  pm-tyq3,related,"2026-07-26T17:00:42.533Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-31T21:27:49.453Z",codex-agent,Feature created to track integrations and docs hardening scope.
   "2026-03-31T22:09:21.219Z",codex-agent,"Feature complete via closed tasks pm-qze9 pm-tyq3 pm-2v01; integrations, docs, and release-readiness tests all pass at 100% coverage."
@@ -55,10 +59,10 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:00.171Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,calendar flag and runtime parity assertions
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,integration and docs contract regression
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:10.969Z","2026-04-04T21:10:10.969Z",null,null,1,0,0,1,1,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,1800,integration and docs contract regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:10.969Z","2026-04-04T21:10:10.969Z",1,0,0,1,1
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,release notes for integrations
   docs/ARCHITECTURE.md,project,calendar architecture updates

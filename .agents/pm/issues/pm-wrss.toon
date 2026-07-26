@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,json-envelope,token-efficiency
 created_at: "2026-07-19T03:41:53.393Z"
-updated_at: "2026-07-21T09:50:07.011Z"
+updated_at: "2026-07-26T17:28:57.180Z"
 closed_at: "2026-07-21T09:26:28.273Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,16 +14,18 @@ acceptance_criteria: Pagination keys (total/has_more/truncated/next_cursor) are 
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.22
 resolution: Made list pagination keys stable and omitted unset filter echoes from the serialized result envelope.
 expected_result: "Every list JSON result carries total, has_more, truncated, and next_cursor without null-heavy filter bloat."
 actual_result: Stable keys pass runtime ordering coverage and the measured list-json budget dropped from 1307 to 828 bytes.
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-19T03:41:53.393Z",null,null
   pm-fgih,related,"2026-07-19T03:41:53.393Z",null,null
   pm-gdi7,related,"2026-07-19T03:41:53.393Z",null,null
   pm-nilh,related,"2026-07-19T03:41:53.393Z",null,null
   pm-topu,related,"2026-07-21T07:32:57.375Z",codex-root-20260721,null
   pm-zwya,related,"2026-07-21T07:32:57.375Z",codex-root-20260721,null
+  pm-mpbb,implements,"2026-07-26T17:28:56.797Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-21T07:33:02.759Z",codex-root-20260721,"Evidence: every list envelope now carries total/has_more/truncated/next_cursor; unset filter echoes are omitted. Updated measured list-json budget fell from 1307 to 828 bytes (36.6% reduction) while the stable non-truncated keys remained present."
   "2026-07-21T07:45:24.338Z",codex-root-20260721,"Post-close verification correction: updated the lifecycle integration contract to assert that unset include_body is absent rather than serialized as null; the full 76-test CLI integration suite passes."

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: audit,context-management,ecosystem,planning,roadmap
 created_at: "2026-07-24T12:06:36.504Z"
-updated_at: "2026-07-24T12:17:14.451Z"
+updated_at: "2026-07-26T17:29:31.069Z"
 closed_at: "2026-07-24T12:10:45.243Z"
 author: claude-code-agent
 estimated_minutes: 480
@@ -18,10 +18,11 @@ why_now: "The command surface, SDK, tracker corpus, and official package fleet h
 parent: pm-doxj
 risk: medium
 confidence: high
+release: v2026.7.25
 resolution: Whole-system planning review completed and published as a tracker-only roadmap; future implementation remains in the linked open canonical items.
 expected_result: "A live-state, deduplicated CLI, SDK, architecture, security, performance, multi-agent, and external-package roadmap with no implementation changes."
 actual_result: "Completed plan pm-xe0c38 links all canonical workstreams, records full evidence and sequencing, adds only pm-hcrmye and pm-feecbs, and published the substantive tracker commit directly to main."
-dependencies[10]{id,kind,created_at,author,source_kind}:
+dependencies[22]{id,kind,created_at,author,source_kind}:
   pm-92if,related,"2026-07-24T12:06:36.504Z",null,null
   pm-9rxu,related,"2026-07-24T12:06:36.504Z",null,null
   pm-doxj,parent,"2026-07-24T12:06:36.504Z",null,null
@@ -32,6 +33,18 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-quzx,related,"2026-07-24T12:06:36.504Z",null,null
   pm-ugqx,related,"2026-07-24T12:06:36.504Z",null,null
   pm-usfg,related,"2026-07-24T12:06:36.504Z",null,null
+  pm-801d,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-doxj,implements,"2026-07-26T17:29:30.829Z",null,null
+  pm-dtn1,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-f4yn,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-hous,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-j8vq,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-kb5h,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-khdq,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-oz8u,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-y49x,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-yh8r,related,"2026-07-26T17:29:30.829Z",null,null
+  pm-zwib,related,"2026-07-26T17:29:30.829Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-24T12:10:41.724Z",claude-code-agent,"Publication evidence: substantive tracker-only roadmap and findings shipped directly to main in b7bb0db6ab8c5cb637425e1ce52b020b02cfe7ae. origin/main matched after fetch; the commit changed only .agents/pm artifacts and GitHub scheduled no workflow run for the exact head."
   "2026-07-24T12:14:54.015Z",claude-code-agent,"Closeout correction: the published pm-changelog generator intentionally includes closed Plan items and does not consume a changelog-exclude tag. Removed the misleading tag, updated the plan wording, and regenerated CHANGELOG.md only through pnpm changelog:pm; no product implementation changed."

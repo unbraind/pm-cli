@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:docs","area:integration",pm-cli,release
 created_at: "2026-03-31T22:29:34.570Z"
-updated_at: "2026-05-17T08:20:38.720Z"
+updated_at: "2026-07-26T16:59:47.529Z"
 deadline: "2026-04-10T22:29:34.570Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-122q
 blocked_reason: Calendar parity integrations and release hardening has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Calendar parity integrations and release hardening is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/calendar-parity-integrations-and-release-hardeni
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Calendar parity integrations and release hardening.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-122q,related,"2026-03-31T22:29:34.570Z",codex-agent,null
+  pm-vdrn,implements,"2026-07-26T16:59:47.327Z",null,null
 comments[2]{created_at,author,text}:
   "2026-03-31T22:29:34.570Z",codex-agent,Feature created for integration/docs hardening of recurrence rollout.
   "2026-03-31T23:27:12.670Z",codex-agent,"Completion, Pi wrapper, docs, and final regression/coverage gates are aligned with recurrence rollout (57 files, 588 tests, 100 percent coverage)."
@@ -50,8 +51,8 @@ notes[1]{created_at,author,text}:
   "2026-03-31T22:29:34.570Z",codex-agent,Maintain TOON global default while calendar keeps command-specific markdown default.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:24:32.493Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full release coverage gate
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,full release coverage gate
 docs[1]{path,scope,note}:
   README.md,project,user-facing event recurrence docs
 close_reason: "Integration, docs, and release hardening for recurrence rollout are complete."

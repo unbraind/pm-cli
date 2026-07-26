@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",data-integrity,gh-issue,validation
 created_at: "2026-07-18T15:09:39.819Z"
-updated_at: "2026-07-19T14:05:56.551Z"
+updated_at: "2026-07-26T17:11:49.892Z"
 closed_at: "2026-07-19T14:05:55.497Z"
 author: codex-root
 estimated_minutes: 75
@@ -14,13 +14,15 @@ acceptance_criteria: append rejects empty and whitespace-only text with structur
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.20
 resolution: Reject blank append input before item/history mutation.
 expected_result: "Blank append fails without changing body, history, or updated_at."
 actual_result: Structured usage failure preserves all stored state in regression and manual acceptance tests.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-45mb,related,"2026-07-18T15:09:39.819Z",null,null
   pm-7je0,related,"2026-07-18T15:09:39.819Z",null,null
   pm-zwpp,related,"2026-07-18T15:09:39.819Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:11:49.694Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-19T12:41:29.311Z",maintainer-agent,"Evidence: blank/whitespace append now fails before mutation with append_empty_body; linked 20-test gate proves body, history, and updated_at remain unchanged; manual built-CLI acceptance exited 2 with stable updated_at; full coverage is 100/100/100/100."
   "2026-07-19T12:50:17.075Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."

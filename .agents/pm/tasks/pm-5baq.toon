@@ -6,12 +6,15 @@ status: closed
 priority: 0
 tags[5]: changelog,ci,packages,release,sdk
 created_at: "2026-05-24T13:53:07.492Z"
-updated_at: "2026-05-24T14:50:51.796Z"
+updated_at: "2026-07-26T17:04:38.415Z"
 author: codex-changelog-verify
 parent: pm-59gj
+release: v2026.5.27
 resolution: completed
 expected_result: "pm-cli uses latest pm-changelog to generate CHANGELOG.md for the actual released version range, with SDK package contracts and CI/release checks proving the flow."
 actual_result: "Installed pm-changelog 2026.5.24-11, generated CHANGELOG.md for v2026.5.24 with 39 closed items, fixed release-note evidence bounds, verified package doctor/contracts, full release gate, live Sentry/telemetry, and linked pm tests."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-59gj,implements,"2026-07-26T17:04:38.193Z",null,null
 comments[9]{created_at,author,text}:
   "2026-05-24T13:55:31.728Z",codex-changelog-verify,"Issue found: pm-changelog@2026.5.24-9 can pass --check while grouping most closed tracker history under ## Unreleased because pm-cli's package-owned check script uses --group-by release without a release version/range. Filed upstream unbraind/pm-changelog#8 for a package-owned release mode instead of adding a custom generator in pm-cli."
   "2026-05-24T14:07:21.578Z",codex-changelog-verify,"Verification note: focused release-readiness test initially failed because it still required ## Unreleased in CHANGELOG.md. Updated the marker to the package-generated 2026.5.24 release heading."
@@ -32,16 +35,33 @@ files[9]{path,scope,note}:
   scripts/release/run-release-pipeline.mjs,project,Release pipeline uses pm-changelog previous-tag range for target release
   tests/integration/release-automation-contract.spec.ts,project,Contract coverage for release-context changelog scripts
   tests/integration/release-readiness-runtime.spec.ts,project,Release readiness marker now expects package-generated released changelog section
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/run-gates.mjs --skip-dogfood --skip-telemetry-sentry --telemetry-mode best-effort --json,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Release gate driver without private telemetry/Sentry dependency
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  PM_AUTHOR=codex-changelog-verify pm contracts --command 'changelog generate' --flags-only --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,Validate pm SDK/contract exposure for pm-changelog command flags
-  PM_AUTHOR=codex-changelog-verify pm package doctor --project --detail deep --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,Validate managed pm-changelog activation and SDK extension command registration
-  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,300,tracker,null,null,null,null,null,null,null,null,null,null,Latest npm pm-changelog verifies main CHANGELOG.md release tag range freshness
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mpjvi2h6-xkejoh,test,passed,"2026-05-24T14:24:46.343Z","2026-05-24T14:28:56.970Z","2026-05-24T14:28:56.970Z",null,null,6,0,0,null,null,null
-  test-local-mpjvwvaw-o5irtj,test,passed,"2026-05-24T14:36:26.944Z","2026-05-24T14:40:27.512Z","2026-05-24T14:40:27.512Z",null,null,6,0,0,null,null,null
+tests[6]:
+  - command: node scripts/release/run-gates.mjs --skip-dogfood --skip-telemetry-sentry --telemetry-mode best-effort --json
+    scope: project
+    timeout_seconds: 600
+    note: Release gate driver without private telemetry/Sentry dependency
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: PM_AUTHOR=codex-changelog-verify pm contracts --command 'changelog generate' --flags-only --json
+    scope: project
+    timeout_seconds: 120
+    note: Validate pm SDK/contract exposure for pm-changelog command flags
+  - command: PM_AUTHOR=codex-changelog-verify pm package doctor --project --detail deep --json
+    scope: project
+    timeout_seconds: 120
+    note: Validate managed pm-changelog activation and SDK extension command registration
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 180
+  - command: "pnpm changelog:pm:check"
+    scope: project
+    timeout_seconds: 300
+    pm_context_mode: tracker
+    note: Latest npm pm-changelog verifies main CHANGELOG.md release tag range freshness
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mpjvi2h6-xkejoh,test,passed,"2026-05-24T14:24:46.343Z","2026-05-24T14:28:56.970Z","2026-05-24T14:28:56.970Z",6,0,0
+  test-local-mpjvwvaw-o5irtj,test,passed,"2026-05-24T14:36:26.944Z","2026-05-24T14:40:27.512Z","2026-05-24T14:40:27.512Z",6,0,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Documents package-owned release tag range changelog generation
 close_reason: "Completed: latest pm-changelog 2026.5.24-11 is installed and active, main CHANGELOG.md is generated by pm-changelog for the actual v2026.5.24 release tag range, release notes are bounded to closed/tagged release evidence, SDK command contracts expose the package release-context flags, upstream pm-changelog issue #8 was filed/fixed/closed, and full local plus live telemetry/Sentry gates passed."

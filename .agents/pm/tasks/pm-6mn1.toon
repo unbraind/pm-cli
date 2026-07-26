@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-08T11:09:48.873Z"
-updated_at: "2026-04-04T21:48:10.150Z"
+updated_at: "2026-07-26T17:05:42.445Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-f45
 blocked_reason: "M4 follow-up: semantic/hybrid search limit=0 deterministic empty result has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4 follow-up: semantic/hybrid search limit=0 deterministic empty result is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: search
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-f45,parent,"2026-03-08T11:09:48.873Z",maintainer-agent,null
+  pm-f45,implements,"2026-07-26T17:05:42.221Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-08T11:09:48.873Z",maintainer-agent,"Why this exists: semantic/hybrid --limit 0 should be deterministic empty output instead of runtime vector limit errors."
   "2026-03-08T11:09:58.857Z",maintainer-agent,"Planned change-set: docs-first note for search limit=0 semantics, then implement semantic/hybrid early return in runSearch and add regression tests asserting no embedding/vector calls when limit is zero."
@@ -57,9 +58,9 @@ files[4]{path,scope,note}:
   README.md,project,public limit-zero search behavior note
   src/cli/commands/search.ts,project,semantic/hybrid limit-0 short-circuit
   tests/unit/search-command.spec.ts,project,regression coverage for limit-zero mode
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted search regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,240,targeted search regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,search limit behavior contract

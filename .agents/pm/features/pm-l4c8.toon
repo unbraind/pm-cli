@@ -6,12 +6,14 @@ status: closed
 priority: 2
 tags[6]: agent-ergonomics,"area:extensions","area:mcp","area:sdk",context-management,pm-cli
 created_at: "2026-06-22T16:21:28.709Z"
-updated_at: "2026-06-22T17:00:43.963Z"
+updated_at: "2026-07-26T17:19:04.020Z"
 author: claude-code-agent
 parent: pm-ugqx
+release: v2026.6.23
 resolution: "Added a read-only describe action to the extension/package lifecycle command. pm extension describe [name] / pm package describe [name] (and MCP pm_run action extension/package with describe=true) activate the workspace extensions and return each loaded extension's per-surface registration map under details.extensions[].surfaces plus a deduplicated details.union. New pure helper src/cli/commands/extension/describe.ts (buildExtensionDescribeResult) wraps the core describeExtensionActivation verb; runExtension orchestrates load+activate like explore/doctor. Wired flag + explicit subcommand (register-setup), flag/signature/PM_TOOL_ACTIONS contracts (cli-contracts + enum-contracts + full.json), bash/zsh completion, and help. Completes the describe verb SDK->CLI->MCP. 100/100/100/100 coverage, 4864 tests; contracts/docs-skills/static-quality gates green."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-16ue,related,"2026-06-22T16:21:43.253Z",null,null
   pm-mpbb,related,"2026-06-22T16:21:43.551Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:19:03.759Z",null,null
 close_reason: "Shipped pm extension/package describe; SDK describeExtensionActivation now reachable from CLI+MCP. 100% coverage, all gates green."
 body: ""

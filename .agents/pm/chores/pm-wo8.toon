@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,github-actions,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:41.134Z"
-updated_at: "2026-04-05T22:46:11.150Z"
+updated_at: "2026-07-26T17:28:52.714Z"
 deadline: "2026-02-22T23:37:41.134Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-912
 blocked_reason: CI workflows and quality gates has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If CI workflows and quality gates is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,10 +41,11 @@ fixed_version: archive-2026q2
 component: project-management/ci-workflows-and-quality-gates
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for CI workflows and quality gates.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-912,related,"2026-02-17T23:37:41.134Z",cursor-agent,null
   pm-ote,parent,"2026-02-17T23:37:41.134Z",cursor-agent,null
   pm-pq8,related,"2026-02-17T23:37:41.134Z",cursor-agent,null
+  pm-ote,implements,"2026-07-26T17:28:52.359Z",null,null
 comments[170]{created_at,author,text}:
   "2026-02-18T00:03:22.876Z",cursor-agent,"Added GitHub Actions workflows: ci.yml runs on push/PR across ubuntu+macos+windows with setup-node pnpm cache and strict coverage gate; nightly.yml runs scheduled/workflow_dispatch validation only (no publish)."
   "2026-02-18T00:16:41.583Z",cursor-agent,"Validation rerun: pnpm test:coverage and pnpm typecheck both pass in current tree and are wired into CI workflows."
@@ -278,36 +279,122 @@ files[57]{path,scope,note}:
   tests/unit/todos-extension.spec.ts,project,branch coverage for todos import-export internals
   tests/unit/update-command.spec.ts,project,unit coverage for runUpdate branch matrix
   vitest.config.ts,project,coverage thresholds and scope
-tests[29]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Coverage and test gate in sandbox
-  node scripts/run-tests.mjs test,null,project,300,null,null,null,null,null,null,null,null,null,null,null,sandboxed regression run
-  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,workflow contract regression test
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,todos extension-only integration regression
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,release baseline contract regression
-  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted beads command regression
-  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted built-in entrypoint unit tests
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,claim-release unit regression
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted comments command regression
-  node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,targeted lock/item-format coverage regression
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted create command regression
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted shared-time branch regression
-  node scripts/run-tests.mjs test -- tests/unit/extensions-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted extension runtime wrapper regression
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted files/docs unit regression
-  node scripts/run-tests.mjs test -- tests/unit/fs-utils.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted fs-utils regression
-  node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted get/append regression
-  node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted item-store regression
-  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted output module regression
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted settings branch coverage
-  node scripts/run-tests.mjs test -- tests/unit/shared-constants-errors.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,targeted shared module unit test
-  node scripts/run-tests.mjs test -- tests/unit/store-paths.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted store paths unit regression
-  node scripts/run-tests.mjs test -- tests/unit/structure-exports.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted structure exports regression
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted test command regression
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Sandbox-safe guard regression
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted todos internals regression
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted update command regression
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Compile gate for CI parity
-  pnpm typecheck,null,project,180,null,null,null,null,null,null,null,null,null,null,null,Static type validation
-  null,tests/unit/init-command.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,targeted init branch coverage
+tests[29]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 300
+    note: Coverage and test gate in sandbox
+  - command: node scripts/run-tests.mjs test
+    scope: project
+    timeout_seconds: 300
+    note: sandboxed regression run
+  - command: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 1200
+    note: workflow contract regression test
+  - command: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 1200
+    note: todos extension-only integration regression
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: release baseline contract regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted beads command regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted built-in entrypoint unit tests
+  - command: node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: claim-release unit regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted comments command regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: targeted lock/item-format coverage regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted create command regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted shared-time branch regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions-runtime.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted extension runtime wrapper regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted files/docs unit regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/fs-utils.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: targeted fs-utils regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted get/append regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted item-store regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/output.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted output module regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts
+    scope: project
+    timeout_seconds: 900
+    note: targeted settings branch coverage
+  - command: node scripts/run-tests.mjs test -- tests/unit/shared-constants-errors.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: targeted shared module unit test
+  - command: node scripts/run-tests.mjs test -- tests/unit/store-paths.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted store paths unit regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/structure-exports.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted structure exports regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted test command regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/integration/release-readiness-contract.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: Sandbox-safe guard regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted todos internals regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: targeted update command regression
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 240
+    note: Compile gate for CI parity
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 180
+    note: Static type validation
+  - path: tests/unit/init-command.spec.ts
+    scope: project
+    note: targeted init branch coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: history,merge,multi-agent
 created_at: "2026-07-19T03:40:49.668Z"
-updated_at: "2026-07-19T11:18:43.969Z"
+updated_at: "2026-07-26T17:28:38.549Z"
 closed_at: "2026-07-19T08:52:30.042Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,12 +14,16 @@ acceptance_criteria: Union-style git merge driver (or documented gitattributes s
 parent: pm-g5sx
 risk: medium
 confidence: high
+release: v2026.7.20
 resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
 expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
 actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-19T03:40:49.668Z",null,null
   pm-klo8,related,"2026-07-19T03:40:49.668Z",null,null
+  pm-g5sx,implements,"2026-07-26T17:28:38.229Z",null,null
+  pm-gpo7,related,"2026-07-26T17:28:38.229Z",null,null
+  pm-ol3p,related,"2026-07-26T17:28:38.229Z",null,null
 comments[10]{created_at,author,text}:
   "2026-07-19T04:44:33.808Z",maintainer-agent,"Progress evidence: public SDK history/item/JSON merge primitives, file driver, installer, regression tests, and operator workflow are implemented; focused suite is green."
   "2026-07-19T05:38:26.056Z",maintainer-agent,"Evidence: shipped public SDK three-way item/history/JSON primitives, file-level Git driver protocol, repository-local installer, core CLI/contract registration, and detailed merge-safety docs. Packed-package acceptance at /tmp/pm-merge-acceptance.Ys29Cm/project performed a real two-branch Git merge: both branch comments survived; strict history verification detected expected union drift; history-repair reconciled it; strict verify and storage-integrity validation then passed."

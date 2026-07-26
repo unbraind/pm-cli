@@ -6,13 +6,16 @@ status: closed
 priority: 2
 tags[3]: "area:extensions","area:sdk",refactor
 created_at: "2026-06-23T14:45:48.821Z"
-updated_at: "2026-06-23T15:05:56.086Z"
+updated_at: "2026-07-26T17:25:41.863Z"
 author: claude-code-agent
 parent: pm-1w0d
+release: v2026.6.24
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1w0d,implements,"2026-07-26T17:25:41.629Z",null,null
 files[2]{path,scope,note}:
   src/core/extensions/version-compat.ts,project,New shared version-compat core (parse/compare + pure pm_min/pm_max bound evaluators)
   src/core/extensions/loader.ts,project,Loader delegates compat to shared core; async wrappers format identical warning strings
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions/version-compat.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/version-compat.spec.ts,project,240
 close_reason: Extracted core/extensions/version-compat.ts (parseComparableVersion/compareComparableVersions + pure evaluatePmMin/MaxVersionBound). Loader now delegates; async wrappers format the same extension_pm_*_version_* warnings verbatim. Verified byte-identical via exact-match loader tests + 100% coverage.
 body: ""

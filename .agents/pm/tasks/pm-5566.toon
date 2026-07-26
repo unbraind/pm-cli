@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: coverage,docs,docstrings,quality
 created_at: "2026-07-04T20:18:50.672Z"
-updated_at: "2026-07-11T00:26:35.544Z"
+updated_at: "2026-07-26T17:04:30.547Z"
 closed_at: "2026-07-11T00:02:30.224Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -14,9 +14,12 @@ acceptance_criteria: Gate exposes new pure checkers with 100% spec coverage; run
 parent: pm-4ak1
 risk: low
 confidence: high
+release: v2026.7.11
 resolution: Repo-wide documentation contract completed and enforced by mandatory static quality gates.
 expected_result: Every in-scope public API and data-contract symbol is documented and regression-gated.
 actual_result: Static gate reports 100% module/export/member docstring coverage with zero trivial or boilerplate violations; release gates and exact 100% code coverage pass.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-4ak1,implements,"2026-07-26T17:04:30.356Z",null,null
 comments[33]{created_at,author,text}:
   "2026-07-04T20:40:45.207Z",maintainer-agent,"Evidence — extended static-quality-gate with documentedSourceFiles (src+packages scope), exported-const coverage, checkExportedMemberDocstringCoverage, and checkTrivialDocstrings. Gate spec now 49 tests, verified 100% lines/branches/functions/statements on the gate script. Trivial-stub check calibrated to ZERO false positives across the ~2783 existing docstrings. Gate reports 3957 missing across 188 files (19 package module docs, 366 exported incl consts, 3572 members) for the sibling fill tasks."
   "2026-07-04T21:37:22.370Z",claude-code-agent,"Evidence: static gate remains 100% by default while package lint ratchets to current docstring baseline during the fill-work lane. pnpm lint passed; standalone full coverage passed 5371 tests at 100/100/100/100."

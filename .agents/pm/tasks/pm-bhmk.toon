@@ -6,12 +6,16 @@ status: closed
 priority: 2
 tags[5]: "area:contracts","area:mcp",customization,profiles,schema
 created_at: "2026-06-25T04:57:09.188Z"
-updated_at: "2026-06-25T08:19:16.586Z"
+updated_at: "2026-07-26T17:10:16.731Z"
 author: codex-pm-ecosystem-audit-20260625
 estimated_minutes: 180
 acceptance_criteria: "Profile application is exposed via pm_schema or a narrow profile MCP tool; tool schemas and command contracts include the new surface; contract snapshots, handshake tests, and negative tests are updated; pm contracts --command schema --schema-only --json remains green."
 parent: pm-5k4v
+release: v2026.6.30
 resolution: Narrow pm_profile MCP tool (28 tools) + profile action with PM_TOOL_ACTION_SCHEMA_CONTRACTS entry; PROFILE_FLAG_CONTRACTS + resolver + contracts snapshot drift gate green.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-5k4v,implements,"2026-07-26T17:10:16.533Z",null,null
+  pm-v37g,related,"2026-07-26T17:10:16.533Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-25T04:57:09.188Z",codex-pm-ecosystem-audit-20260625,"Duplicate check: status-all MCP profile searches found closed schema/config MCP tooling but no profile application surface because profile commands do not exist yet."
 notes[1]{created_at,author,text}:

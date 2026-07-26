@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:lifecycle",phase2,pm-cli
 created_at: "2026-04-01T19:28:03.281Z"
-updated_at: "2026-04-04T21:39:36.830Z"
+updated_at: "2026-07-26T17:25:33.993Z"
 deadline: "2026-04-08T19:28:03.281Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: medium
 sprint: phase2-override
-release: vnext
+release: v2026.5.1
 blocked_by: pm-977j
 blocked_reason: "Phase 2: implement extension preflight override pipeline has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Phase 2: implement extension preflight override pipeline is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: vnext
 component: extensions-runtime
 regression: true
 customer_impact: Advanced teams can enforce custom command policy gates.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-977j,parent,"2026-04-01T19:28:03.281Z",codex-agent,null
+  pm-977j,implements,"2026-07-26T17:25:33.756Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T19:28:03.281Z",codex-agent,Task focuses on executing preflight override decisions prior to core gate enforcement.
   "2026-04-01T19:57:31.580Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
@@ -53,8 +54,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/main.ts,project,preAction gate orchestration
   src/core/extensions/loader.ts,project,preflight contract registration
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,preflight behavior tests
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,3600,preflight behavior tests
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,preflight interception flow
 close_reason: Phase 2 implementation and verification complete

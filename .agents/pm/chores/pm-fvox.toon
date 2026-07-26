@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: contract-sync,maintenance,pm-cli,release-readiness
 created_at: "2026-03-06T19:44:34.375Z"
-updated_at: "2026-04-04T21:50:02.471Z"
+updated_at: "2026-07-26T17:14:08.960Z"
 deadline: "2026-03-07T19:44:34.375Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Close-workflow contract guard across docs and runtime has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Close-workflow contract guard across docs and runtime is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/close-workflow-contract-guard-across-docs-and-ru
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Close-workflow contract guard across docs and runtime.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-8a2s,implements,"2026-07-26T17:14:08.737Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-06T19:44:34.375Z",maintainer-agent,Queue next non-duplicate release-hardening guard around close workflow semantics.
   "2026-03-06T19:44:50.643Z",maintainer-agent,"Planned changeset: add release-readiness integration assertions that docs retain pm close workflow guidance and avoid update --status closed instructions; include a runtime check that update --status closed remains usage-invalid."
@@ -52,9 +54,9 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:16.960Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,close-workflow contract assertions
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe coverage gate
-  node scripts/run-tests.mjs test,null,project,240,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,600,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test,project,240,sandbox-safe regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer close workflow guidance
   PRD.md,project,close and update status contract

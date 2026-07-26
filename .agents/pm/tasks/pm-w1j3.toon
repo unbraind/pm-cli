@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:comments",external-audit,implementation,pm-cli
 created_at: "2026-04-04T22:38:14.047Z"
-updated_at: "2026-05-17T08:22:56.336Z"
+updated_at: "2026-07-26T17:28:25.785Z"
 deadline: "2026-04-10T22:38:14.047Z"
 author: codex-agent
 estimated_minutes: 240
@@ -18,9 +18,13 @@ impact: Cuts runtime and complexity for governance sweeps
 outcome: Operators can audit comments in one command
 why_now: Current serial per-item approach is too expensive for medium/large trackers
 parent: pm-o7be
+release: v2026.5.1
 resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
 expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
 actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-ayyt,related,"2026-07-26T17:28:25.501Z",null,null
+  pm-o7be,implements,"2026-07-26T17:28:25.501Z",null,null
 comments[13]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Task created for direct implementation of comments-audit command and integration parity updates.
   "2026-04-04T22:48:16.609Z",codex-agent,"Implemented additive comments-audit surface with status/type/assignee filters, --limit-items, and --latest snapshots. Wired main/completion/contracts/Pi and added runCommentsAudit unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."
@@ -46,12 +50,12 @@ files[8]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,comments-audit-help-flag-parity-regression
   tests/unit/comments-command.spec.ts,project,comments-audit-regression
   tests/unit/completion-command.spec.ts,project,completion-flag-coverage-for-full-history
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,comments-audit-targeted
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full-history-contract-and-help-regression
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,comments-audit-row-count-and-exclusivity-regression
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,comments-audit-limit-alias-regression-suite
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mnkywjwz-pmp61j,test,passed,"2026-04-04T23:32:18.348Z","2026-04-04T23:32:33.108Z","2026-04-04T23:32:33.108Z",null,null,1,0,0,null,null,null
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,project,1800,comments-audit-targeted
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,2400,full-history-contract-and-help-regression
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,comments-audit-row-count-and-exclusivity-regression
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,5400,comments-audit-limit-alias-regression-suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mnkywjwz-pmp61j,test,passed,"2026-04-04T23:32:18.348Z","2026-04-04T23:32:33.108Z","2026-04-04T23:32:33.108Z",1,0,0
 close_reason: comments-audit --limit alias shipped with compatibility coverage
 body: "Execution task for feature pm-ayyt covering command implementation, output schema, and docs/tests parity."

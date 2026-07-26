@@ -6,13 +6,18 @@ status: closed
 priority: 1
 tags[5]: agent-ux,packages,pm-cli,scope,token-efficiency
 created_at: "2026-05-16T23:06:37.341Z"
-updated_at: "2026-05-16T23:26:33.527Z"
+updated_at: "2026-07-26T17:21:28.565Z"
 author: codex-agent
 acceptance_criteria: files/docs/test linked-resource commands accept entries without scope=project and persist project scope by default; help/contracts/examples stop requiring scope=project for project-local commands; package install/manage flows still allow explicit project/global scope where meaningful; backwards compatibility preserves existing scope=project inputs; focused tests and temp-project dogfood cover the simplified UX.
 parent: pm-rnpb
+release: v2026.5.18
 resolution: Implemented default project-scope guidance for linked files/docs/tests while preserving explicit global scope.
 expected_result: Agents can omit redundant scope=project for project-local linked resources and still persist project scope.
 actual_result: "Examples, dogfood, create/update seeds, and focused regressions all verify omitted linked-resource scope persists as project."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-59gj,related,"2026-07-26T17:21:28.240Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:21:28.240Z",null,null
+  pm-xk39,related,"2026-07-26T17:21:28.240Z",null,null
 comments[4]{created_at,author,text}:
   "2026-05-16T23:06:37.341Z",codex-agent,"author=codex-agent,created_at=now,text=Duplicate check before create: pm search scope=project default global package files docs tests UX --limit 10; pm search remove scope project option files docs test package global --limit 10; pm list-open --limit 30 --tag agent-ux. Results found broad parent pm-rnpb and package-first parent pm-59gj, but no existing open item specifically for removing mandatory scope=project from linked-resource command UX. Creating this child under pm-rnpb."
   "2026-05-16T23:06:48.203Z",codex-agent,"Clean duplicate-check evidence: searched scope=project defaults, remove scope project options, and open agent-ux items. No existing open item covered defaulting linked-resource project scope while preserving explicit global scope for pm package operations; pm-ntnf is the canonical child under pm-rnpb."
@@ -26,10 +31,10 @@ files[7]{path,scope,note}:
   tests/unit/create-command.spec.ts,project,create-seed-default-scope-regression
   tests/unit/test-command.spec.ts,project,linked-test-default-scope-regression
   tests/unit/update-command.spec.ts,project,update-seed-default-scope-regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused default project scope regressions
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mp8yzkfn-1srxud,test,passed,"2026-05-16T23:20:22.406Z","2026-05-16T23:21:04.307Z","2026-05-16T23:21:04.307Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts,project,600,focused default project scope regressions
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mp8yzkfn-1srxud,test,passed,"2026-05-16T23:20:22.406Z","2026-05-16T23:21:04.307Z","2026-05-16T23:21:04.307Z",1,0,0
 docs[6]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,agent-guide-short-linked-resource-examples
   docs/COMMANDS.md,project,command-docs-short-linked-resource-examples

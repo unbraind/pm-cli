@@ -6,10 +6,13 @@ status: closed
 priority: 2
 tags[3]: "area:cli",ergonomics,gh-214
 created_at: "2026-06-13T20:54:33.250Z"
-updated_at: "2026-06-13T21:20:48.555Z"
+updated_at: "2026-07-26T17:06:19.360Z"
 author: claude-code-agent
 parent: pm-mpbb
+release: v2026.6.16
 resolution: "Added --body-file <path> to pm create and pm update via new src/core/io/body-file.ts resolveBodyFileContent helper (CLI-only input alias, mutually exclusive with --body, actionable errors for conflict/empty-path/unreadable). Wired into create+update actions before normalize, CREATE/UPDATE_FLAG_CONTRACTS + zsh/fish completion + contracts golden + docs. 100% unit-covered + in-process integration tests."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:06:19.154Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-13T20:59:26.222Z",claude-code-agent,"Plan: new core helper src/core/io/body-file.ts resolveBodyFileContent(bodyFile, body, readFileImpl?) — reads file (utf8), errors if --body also set (mutually exclusive) or path missing/unreadable. Register --body-file <path> commander option on create+update (direct .option) + add to CREATE_FLAG_CONTRACTS/UPDATE_FLAG_CONTRACTS for completion. Resolve+delete in create/update actions before normalize. CLI-only (no MCP — file paths meaningless over MCP, like history --diff). Mutual-exclusion error mirrors existing guided-error shape."
 close_reason: "Added --body-file <path> to pm create and pm update via new src/core/io/body-file.ts resolveBodyFileContent helper (CLI-only input alias, mutually exclusive with --body, actionable errors for conflict/empty-path/unreadable). Wired into create+update actions before normalize, CREATE/UPDATE_FLAG_CONTRACTS + zsh/fish completion + contracts golden + docs. 100% unit-covered + in-process integration tests."

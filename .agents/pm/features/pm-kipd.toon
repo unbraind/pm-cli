@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-06T08:03:04.192Z"
-updated_at: "2026-07-20T10:27:07.952Z"
+updated_at: "2026-07-26T17:18:25.628Z"
 closed_at: "2026-07-20T10:26:28.799Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,16 +14,18 @@ acceptance_criteria: create/update accept --stdin-json full-item documents incl.
 parent: pm-mpbb
 risk: medium
 confidence: high
+release: v2026.7.21
 resolution: Create and update accept full item JSON documents on stdin with deterministic precedence and safe round trips.
 expected_result: "Agents can pipe complete item documents into create/update, preserve facets, reject likely typos, and override document values with explicit flags."
 actual_result: "Direct and get-envelope documents normalize into typed mutation options; explicit flags win, persisted annotations are deduplicated, custom fields remain extensible, and packed round trips are no-ops unless changed."
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-srns,related,"2026-07-14T17:05:05.070Z",null,null
   pm-xwah,related,"2026-07-14T17:05:05.766Z",null,null
   pm-cfed,related,"2026-07-20T08:49:46.009Z",null,null
   pm-ds3b,related,"2026-07-20T08:49:46.009Z",null,null
   pm-g9xk,related,"2026-07-20T08:49:46.009Z",null,null
   pm-xm7c,related,"2026-07-20T08:49:46.009Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:18:25.401Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-20T09:59:53.386Z",codex-20260720,"Evidence: create/update now accept complete get --full JSON envelopes through --stdin-json, explicit flags win, persisted annotations are not duplicated, and empty persisted facet arrays do not clear data. Temp packed get-to-update round trip returned changed_field_count=0; linked focused suites passed in the pm sandbox."
   "2026-07-20T10:26:24.646Z",codex-20260720,"Greptile finding disposition: flat update documents now filter persisted comments/notes/learnings exactly like get envelopes while retaining new annotations. Arbitrary non-near-match keys remain intentional custom fields for universal schemas; near-match typos still fail with hints. Full coverage is 100/100/100/100."

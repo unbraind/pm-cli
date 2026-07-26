@@ -6,16 +6,18 @@ status: closed
 priority: 1
 tags[6]: external-audit,grafana,observability,pm-cli,prometheus,telemetry
 created_at: "2026-04-26T09:56:16.564Z"
-updated_at: "2026-05-03T13:54:23.216Z"
+updated_at: "2026-07-26T17:24:47.551Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: Grafana queue panels render live queue depth and unacked values in production by aligning panel queries with actual metric labels (or by exposing the queue label in exporter config).
 parent: pm-lnq3
+release: v2026.5.1
 resolution: Grafana queue panel PromQL now uses job-scoped aggregates that match the RabbitMQ exporter label model on this stack.
 expected_result: Queue depth and unacked panels evaluate successfully without relying on absent queue labels.
 actual_result: "Dashboard expressions now use sum(rabbitmq_queue_messages{job=\"rabbitmq\"}) and sum(rabbitmq_queue_messages_unacked{job=\"rabbitmq\"}); Prometheus returns non-empty vectors and Grafana remains healthy."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T09:56:16.564Z",codex-agent,null
+  pm-lnq3,implements,"2026-07-26T17:24:47.247Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-03T13:33:58.503Z",codex-audit,"Sanitized current comments: Grafana/RabbitMQ selector evidence is preserved in resolution/notes/learnings and prior comments were cleared from the current item because one contained a private remote operations path. History-stream redaction requires a dedicated audited pm command to preserve replay integrity."
 notes[2]{created_at,author,text}:
@@ -25,11 +27,11 @@ learnings[1]{created_at,author,text}:
   "2026-04-27T19:39:04.640Z",codex-agent,"For host-level diagnostics on this stack, use Prometheus published port 19090 (not container-internal 9090) to avoid false-negative query conclusions during dashboard triage."
 files[1]{path,scope,note}:
   scripts/prod/telemetry/2026-04-27-pm-cli-telemetry-overview.json,project,local snapshot of patched Grafana dashboard JSON
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "ssh -o BatchMode=yes [redacted_user]@[redacted_host] 'curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages\" && curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages_unacked\"'",null,project,180,null,null,null,null,null,null,null,null,null,null,null,promql queue metric availability smoke
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mohlp2dy-ew2asp,test,failed,"2026-04-27T19:39:11.580Z","2026-04-27T19:39:12.598Z","2026-04-27T19:39:12.598Z",null,null,0,1,0,null,null,null
-  test-local-mohlpwx1-kyik2u,test,passed,"2026-04-27T19:39:51.148Z","2026-04-27T19:39:52.165Z","2026-04-27T19:39:52.165Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  "ssh -o BatchMode=yes [redacted_user]@[redacted_host] 'curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages\" && curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages_unacked\"'",project,180,promql queue metric availability smoke
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mohlp2dy-ew2asp,test,failed,"2026-04-27T19:39:11.580Z","2026-04-27T19:39:12.598Z","2026-04-27T19:39:12.598Z",0,1,0
+  test-local-mohlpwx1-kyik2u,test,passed,"2026-04-27T19:39:51.148Z","2026-04-27T19:39:52.165Z","2026-04-27T19:39:52.165Z",1,0,0
 docs[3]{path,scope,note}:
   .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote telemetry stack runbook used for panel diagnostics
   scripts/prod/telemetry/2026-04-27-backlog-wave-baseline.md,project,telemetry wave kickoff baseline

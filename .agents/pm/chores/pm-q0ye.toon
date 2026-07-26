@@ -6,10 +6,14 @@ status: closed
 priority: 2
 tags[4]: code-quality,codefactor,eslint,maintainability
 created_at: "2026-06-26T13:32:43.674Z"
-updated_at: "2026-06-26T15:04:33.067Z"
+updated_at: "2026-07-26T17:23:35.029Z"
 author: claude-code-agent
 acceptance_criteria: "CodeFactor reports 0 findings for no-thenable, no-useless-spread, and no-useless-length-check; the cli-contracts.ts `then` rename (if applied) does NOT break the contracts snapshot (pnpm contracts:check) or any SDK consumer; full coverage suite + typecheck green."
 parent: pm-92if
+release: v2026.6.30
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2kkl,related,"2026-07-26T17:23:34.760Z",null,null
+  pm-92if,implements,"2026-07-26T17:23:34.760Z",null,null
 comments[15]{created_at,author,text}:
   "2026-06-26T13:40:19.080Z",codex-gpt5,"Investigation note: selected existing open CodeFactor child pm-q0ye after status-agnostic search. GitHub state: no open PRs, no Dependabot/code-scanning alerts, issue #374 remains blocked on missing RELEASE_PAT external secret, and pm-2kkl remains gated on the next scheduled Windows Nightly after PR #377 merged."
   "2026-06-26T13:45:34.481Z",codex-gpt5,"Investigation evidence: reproduced the three targeted Unicorn rules locally through the cached ESLint 9.39.4 + eslint-plugin-unicorn 61.0.2 API with @typescript-eslint/parser. Current checkout reports 6 findings, not the 7-count CodeFactor snapshot: validate.ts no-useless-spread x1, main.ts no-useless-length-check x1, cli-contracts.ts no-thenable x2, contracts-command.spec.ts no-thenable x2."
@@ -32,20 +36,20 @@ files[5]{path,scope,note}:
   src/core/test/background-runs.ts,project,Stabilize strict coverage for Linux /proc resource snapshot race fallback
   src/sdk/cli-contracts.ts,project,Avoid thenable-like JSON Schema source objects while preserving emitted SDK schema contracts
   tests/unit/commands/contracts-command.spec.ts,project,Keep contract expectations aligned with analyzer-safe JSON Schema then members
-tests[14]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/commands/test-runs-command.spec.ts tests/unit/core/search/background-refresh.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pm health --check-only --summary --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pm validate --check-resolution --check-history-drift --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level low,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm release:gates",null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+tests[14]{command,scope,timeout_seconds}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,120
+  node scripts/run-tests.mjs coverage,project,360
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/commands/validate-command.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/commands/test-runs-command.spec.ts tests/unit/core/search/background-refresh.spec.ts,project,120
+  pm health --check-only --summary --json,project,120
+  pm validate --check-resolution --check-history-drift --json,project,120
+  pnpm audit --audit-level low,project,120
+  pnpm build,project,120
+  "pnpm changelog:pm:check",project,120
+  "pnpm contracts:check",project,120
+  "pnpm quality:static",project,120
+  "pnpm release:gates",project,900
+  "pnpm security:scan",project,120
+  pnpm typecheck,project,120
 close_reason: "Closed after PR #378 merged to main at 80fa02f4a80d896198639cd992ecee45c7fb364e. The work cleared the targeted SDK/CLI maintainability findings, preserved contract output, documented review resolutions, passed local and hosted gates including literal 100/100/100/100 coverage, completed isolated temp-dir SDK/package dogfood, and passed post-merge pm health plus pnpm typecheck on main."
 body: ""

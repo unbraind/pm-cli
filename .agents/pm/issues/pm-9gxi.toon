@@ -6,16 +6,20 @@ status: closed
 priority: 1
 tags[5]: "area:ci",auto-release,branch-protection,release,reliability
 created_at: "2026-06-25T11:02:40.952Z"
-updated_at: "2026-06-30T09:44:13.605Z"
+updated_at: "2026-07-26T17:08:20.831Z"
 author: claude-code-agent
 parent: pm-u9d0
+release: v2026.7.1
 resolution: "Configured RELEASE_PAT, verified protected-main release push, fixed duplicate Auto Release dispatch race, and documented/preserved release evidence in pm."
 expected_result: "Auto Release production runs use a configured maintainer RELEASE_PAT to push the checked version commit and tag to protected main after gates pass, and missing release credentials fail fast with clear recovery guidance."
 actual_result: "RELEASE_PAT is configured in the GitHub Actions release environment. Auto Release can push release commits/tags to protected main with push-only credentials, v2026.6.30 was published to npm and GitHub Releases, and Auto Release now waits for the tag-push Release workflow instead of dispatching a duplicate publishing run."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-06-25T11:02:54.128Z",null,null
   pm-nb08,related,"2026-06-25T11:02:54.430Z",null,null
   pm-y1o4,related,"2026-06-25T11:23:26.383Z",null,null
+  pm-e9zh,related,"2026-07-26T17:08:20.540Z",null,null
+  pm-qawd,related,"2026-07-26T17:08:20.540Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:08:20.540Z",null,null
 comments[17]{created_at,author,text}:
   "2026-06-25T11:53:04.258Z",codex-20260625,"Evidence: implemented RELEASE_PAT checkout token fallback, production push preflight, and blocked-release alert guidance; documented release environment setup. Verification passed: focused workflow tests (21 tests), full run-gates with telemetry-mode off (build/typecheck/docs/static/coverage/version/secret-scan/npx/package dogfood/npm pack/compat/Sentry all ok), live Sentry/telemetry gate best-effort (Sentry critical=0 high=0, telemetry finish_error_rate_pct=0.78, missing error-code rows=0), pnpm audit low clean, pnpm security:scan clean, no open GitHub PRs/issues/Dependabot/secret alerts. Manual temp smoke passed in /tmp/pm-cli-manual-smoke-NS6WJB with create/claim/update/files/docs/tests/comment/list/validate/health/close/release under sandboxed PM_PATH and PM_GLOBAL_PATH. Remaining external setup: release environment currently has NPM_TOKEN, SENTRY_AUTH_TOKEN, and SENTRY_PERSONAL_ADMIN_TOKEN, but no RELEASE_PAT; scheduled Auto Release will now fail fast until that maintainer token is configured."
   "2026-06-25T12:24:45.475Z",codex-20260625,"Review response: addressed CodeRabbit security finding by setting checkout persist-credentials=false, passing RELEASE_PUSH_TOKEN only to run-release-pipeline, deleting it from process.env before child gates run, and injecting a Git extraheader only for git push. Addressed Gemini maintainability feedback by removing the duplicate auto-release workflow assertion block from release-automation-contract.spec.ts and keeping the comprehensive CI workflow contract as the single workflow surface check. Verification: focused review-response tests passed 90 tests; run-release-pipeline unit test passed 33 tests; full coverage passed 100/100/100/100 (5097 tests)."
@@ -43,19 +47,19 @@ files[8]{path,scope,note}:
   tests/integration/release-automation-contract.spec.ts,project,assert auto-release RELEASE_PAT contract
   tests/unit/scripts/release/run-release-pipeline.spec.ts,project,cover release push token scoping
   tests/unit/cli/cli-main-errors.spec.ts,project,Allow CLI --version tests to accept same-day release ordinals
-tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/run-gates.mjs --json --telemetry-mode off,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/commands/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level low,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqtf2n44-55ns6h,test,passed,"2026-06-25T11:26:22.261Z","2026-06-25T11:26:27.461Z","2026-06-25T11:26:27.461Z",null,null,1,0,0,null,null,null
-  test-local-mqum1wes-x0dzw0,test,passed,"2026-06-26T07:29:33.941Z","2026-06-26T07:29:36.340Z","2026-06-26T07:29:36.340Z",null,null,1,0,0,null,null,null
+tests[9]{command,scope,timeout_seconds}:
+  node scripts/release/run-gates.mjs --json --telemetry-mode off,project,900
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,180
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/run-release-pipeline.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/commands/contracts-command.spec.ts,project,240
+  pnpm audit --audit-level low,project,120
+  "pnpm changelog:pm:check",project,240
+  "pnpm security:scan",project,120
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqtf2n44-55ns6h,test,passed,"2026-06-25T11:26:22.261Z","2026-06-25T11:26:27.461Z","2026-06-25T11:26:27.461Z",1,0,0
+  test-local-mqum1wes-x0dzw0,test,passed,"2026-06-26T07:29:33.941Z","2026-06-26T07:29:36.340Z","2026-06-26T07:29:36.340Z",1,0,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,document release push token setup and fail-fast policy
 close_reason: "RELEASE_PAT is configured, v2026.6.30 published, duplicate Auto Release dispatch race fixed on main, and focused workflow/changelog checks passed. Final same-day Auto Release verification will use this closeout as changelog evidence."

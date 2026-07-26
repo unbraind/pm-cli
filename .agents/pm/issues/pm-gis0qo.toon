@@ -6,10 +6,11 @@ status: closed
 priority: 1
 tags[4]: "area:ci","area:release",npm,regression
 created_at: "2026-07-24T08:16:03.790Z"
-updated_at: "2026-07-24T09:04:55.411Z"
+updated_at: "2026-07-26T17:14:35.363Z"
 closed_at: "2026-07-24T09:04:40.278Z"
 author: claude-code-agent
 parent: pm-u9d0
+release: v2026.7.24-3
 severity: high
 repro_steps: Push supported tag v2026.7.24-2 and inspect Release run 30077790348 Publish to npm.
 resolution: Fixed by explicit stable npm dist-tag publication and an every-publish workflow contract.
@@ -17,10 +18,11 @@ expected_result: Tag-triggered Release publishes supported same-day ordinal vers
 actual_result: "npm publish exits 1: You must specify a tag using --tag when publishing a prerelease version."
 affected_version: 2026.7.24-2
 fixed_version: 2026.7.24-3
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-24T08:16:03.790Z",null,null
   pm-cedo0g,related,"2026-07-24T08:16:03.790Z",null,null
   pm-ee1k,related,"2026-07-24T08:16:03.790Z",null,null
+  pm-u9d0,implements,"2026-07-26T17:14:34.989Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-24T08:16:03.790Z",claude-code-agent,"Duplicate check: searched all statuses for npm prerelease explicit tag, release publish tag latest, and same-day release. No item records this exact npm dist-tag contract failure; pm-cedo0g tracks the parent Bun recovery incident and is linked rather than duplicated."
   "2026-07-24T08:17:24.701Z",claude-code-agent,"TDD evidence: the workflow contract first failed against the untagged npm publish command, reproducing the hosted run 30077790348 failure. After adding the explicit latest dist-tag, all 10 workflow contract tests pass; docs links and build also pass."

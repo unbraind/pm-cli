@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",context,extensions,gh-issue,relevance
 created_at: "2026-07-14T12:42:02.602Z"
-updated_at: "2026-07-14T14:02:05.041Z"
+updated_at: "2026-07-26T17:24:27.387Z"
 closed_at: "2026-07-14T14:02:04.156Z"
 author: codex-root
 estimated_minutes: 120
@@ -20,12 +20,14 @@ why_now: GitHub #558 demonstrates published extensions cannot reproduce built-in
 parent: pm-3hps
 risk: low
 confidence: high
+release: v2026.7.15
 resolution: Public buildItemContextRelevanceCandidates is exported and shared by pm context and pm next with documented deterministic metadata signals.
 expected_result: Extensions can reproduce built-in context candidate derivation from @unbrained/pm-cli/sdk without subprocesses or deep imports.
 actual_result: "SDK, CLI parity, exact coverage, linked-test, and packed-consumer proofs all pass."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-14T12:42:02.602Z",null,null
   pm-h3no,related,"2026-07-14T12:42:02.602Z",null,null
+  pm-3hps,implements,"2026-07-26T17:24:27.159Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-14T12:42:02.602Z",codex-root,"Duplicate check 2026-07-14: all-status searches for ContextRelevanceCandidate, signal builder, and GH-558 found the broad pm-3hps feature store and shipped scorer pm-h3no, but no item owns promotion of the existing CLI builder; this child records GitHub #558 without duplicating the larger index-backed store."
   "2026-07-14T12:42:11.944Z",codex-root,"GitHub provenance: https://github.com/unbraind/pm-cli/issues/558 documents the missing public signal builder and the pm-brief subprocess workaround. Canonical implementation lineage is pm-3hps -> pm-4k6b with shipped scorer contract pm-h3no."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:schema",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:07.402Z"
-updated_at: "2026-04-04T21:35:28.827Z"
+updated_at: "2026-07-26T17:03:04.872Z"
 deadline: "2026-04-15T11:57:43.129Z"
 author: steve
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-2xl
 blocked_reason: "M1: Item schema model and validation has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M1: Item schema model and validation is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,9 +40,10 @@ fixed_version: archive-2026q2
 component: project-management/item-schema-model-and-validation
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Item schema model and validation.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2xl,blocks,"2026-02-17T23:02:07.402Z",steve,null
   pm-u9r,parent,"2026-02-17T23:02:07.402Z",steve,null
+  pm-u9r,implements,"2026-07-26T17:03:04.640Z",null,null
 comments[8]{created_at,author,text}:
   "2026-02-22T22:16:13.123Z",maintainer-agent,"Plan: harden runtime item front-matter validation in parser paths, add targeted unit tests for required fields/enums/priority/timestamps, then run item tests and regression test-all before closure decision."
   "2026-02-22T22:20:57.528Z",maintainer-agent,"Implemented parser-level front-matter validation for required PRD fields (id/title/description/type/status/priority/tags/timestamps), with deterministic PmCliError messages for missing/malformed JSON and invalid enum/range/timestamp values. Added unit coverage in tests/unit/item-format-validation.spec.ts."
@@ -71,9 +72,9 @@ files[13]{path,scope,note}:
   tests/unit/item-format-validation.spec.ts,project,schema validation coverage
   tests/unit/settings-store.spec.ts,project,settings key-order regression for parent_reference
   tests/unit/update-command.spec.ts,project,parent validation tests
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full sandbox coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,issue13 parent validation regressions
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,full sandbox coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,project,3600,issue13 parent validation regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent operating rules
   PRD.md,project,governing spec

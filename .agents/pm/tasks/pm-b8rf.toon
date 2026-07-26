@@ -6,16 +6,18 @@ status: closed
 priority: 1
 tags[7]: agent-ux,contracts,help,init,pm-cli,sdk,settings
 created_at: "2026-05-17T08:59:44.986Z"
-updated_at: "2026-05-17T10:23:14.592Z"
+updated_at: "2026-07-26T17:10:03.370Z"
 author: codex-agent
 acceptance_criteria: settings schema accepts and persists agent_guidance deterministically; pm init help and JSON help include the guidance option; pm contracts --command init --flags-only and action schema expose the option; MCP schema can pass the option; config/docs give a clear operator path to inspect or reset declined state if implemented.
 parent: pm-7t04
+release: v2026.5.18
 resolution: "Exposed agent guidance controls through settings, contracts, help, and completion surfaces."
 expected_result: Users and machine clients can discover and invoke init guidance modes consistently.
 actual_result: The --agent-guidance option is documented in help/contracts/SDK/completion and persists project settings state.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T08:59:44.986Z",codex-agent,null
   pm-8rjn,blocks,"2026-05-17T08:59:44.986Z",codex-agent,null
+  pm-7t04,implements,"2026-07-26T17:10:03.081Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-17T08:59:44.986Z",codex-agent,Child task created from pm-7t04. This slice makes the UX contract visible to humans and agents after prompt behavior exists.
   "2026-05-17T10:10:15.712Z",codex-agent,"Added agent_guidance state to settings defaults/schema/serialization and wired init option visibility through runtime contracts, help text, and shell completion outputs for agent-safe discoverability."
@@ -34,8 +36,8 @@ files[10]{path,scope,note}:
   src/types.ts,project,public setting type
   tests/unit/config-command.spec.ts,project,config regression if key is added
   tests/unit/contracts-command.spec.ts,project,contract regression
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,planned settings contracts help regression
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/completion-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,Settings/contracts/completion regression suite
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600,planned settings contracts help regression
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/completion-command.spec.ts,project,900,Settings/contracts/completion regression suite
 close_reason: Settings and machine/user-facing contract surfaces now expose and persist init agent guidance behavior with focused regression coverage.
 body: "Implementation direction:\n- Extend PmSettings with agent_guidance state and defaults in src/types.ts and src/core/shared/constants.ts.\n- Extend settings schema, merge, and serialize ordering in src/core/store/settings.ts; keep output deterministic.\n- Add init option wiring in src/cli/register-setup.ts and action schema optional keys in src/sdk/cli-contracts.ts.\n- Update help text in src/cli/help-content.ts and JSON/help payload expectations so agents discover the later-add path.\n- Consider a read/reset config key only if implementation needs an operator escape hatch beyond pm init --agent-guidance add/skip/status. If added, keep scope project-only and document clear behavior.\n- Keep MCP pm_run init schema in sync through SDK contracts so connected agents can request guidance add/status without shell-specific assumptions."

@@ -6,17 +6,19 @@ status: closed
 priority: 2
 tags[3]: "area:packages","area:testing","quality:flake"
 created_at: "2026-07-24T07:01:04.342Z"
-updated_at: "2026-07-24T07:19:53.281Z"
+updated_at: "2026-07-26T17:07:10.676Z"
 closed_at: "2026-07-24T07:19:26.623Z"
 author: claude-code-agent
 parent: pm-wo8
+release: v2026.7.24-2
 resolution: Assigned the real all-package acceptance a test-local 45-second budget while retaining its full install assertions and the suite-wide 30-second default.
 expected_result: The real 15-package wildcard/all acceptance remains deterministic during parallel full coverage without weakening global timeout policy.
 actual_result: "Owner suite and complete 6,212-test exact coverage pass; the acceptance completed under load without cleanup cascades."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-59gj,related,"2026-07-24T07:01:04.342Z",null,null
   pm-7rlp,related,"2026-07-24T07:01:04.342Z",null,null
   pm-cedo0g,related,"2026-07-24T07:01:04.342Z",null,null
+  pm-wo8,implements,"2026-07-26T17:07:10.473Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-24T07:01:04.342Z",claude-code-agent,"Duplicate check: searched all statuses for the exact bundled all-package install timeout and extension-command signature. No canonical item exists; related package ecosystem,CI performance,and current release recovery work are linked."
   "2026-07-24T07:02:23.362Z",claude-code-agent,"Evidence: the unchanged real acceptance still installs all 15 bundled packages through wildcard and all aliases. It passes alone in 8.9-10.1 seconds; two full coverage runs measured 27.9-30.1 seconds under concurrent I/O. A test-local 45-second budget preserves global 30-second hang detection and every functional assertion."

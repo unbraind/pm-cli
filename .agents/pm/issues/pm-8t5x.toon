@@ -6,16 +6,20 @@ status: closed
 priority: 1
 tags[3]: agent-ux,concurrency,governance
 created_at: "2026-07-03T13:25:09.541Z"
-updated_at: "2026-07-05T05:04:35.709Z"
+updated_at: "2026-07-26T17:07:53.870Z"
 author: claude-code-agent
 estimated_minutes: 120
 acceptance_criteria: "pm claim of an item assigned to another agent fails with exit-code CONFLICT and code already_claimed_by unless --force; --if-available still skips as no-op; empty-string assignee treated as unassigned; claim-command spec covers takeover, if-available, and force paths."
 parent: pm-dj98
 risk: medium
 confidence: high
+release: v2026.7.5
 resolution: fixed
 expected_result: pm claim on an item assigned to another agent fails atomically with CONFLICT already_claimed_by (naming the holder) unless --force; --if-available stays a no-op skip; empty-string assignee treated as unassigned; claiming your own item stays idempotent.
 actual_result: "Shipped in commit 010bb349 (PR #430): claim is an atomic test-and-set under the item lock. Sandbox matrix on rebuilt dist: foreign claim exit 4 already_claimed_by; --if-available exit 0 skip; --force takeover; 6-way parallel race yields exactly 1 winner + 5 structured conflicts (was 3/6 false successes). claim-command unit + cli integration specs cover takeover/if-available/force paths."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2muu,related,"2026-07-26T17:07:53.597Z",null,null
+  pm-dj98,implements,"2026-07-26T17:07:53.597Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-04T19:08:31.815Z",maintainer-agent,"Session handoff (2026-07-04, maintainer-agent): fix implemented in local working tree alongside pm-2muu (shared uncommitted diff), NOT committed yet. Body documents the full claim semantics matrix. Ships in the same PR as pm-2muu; verify the already_claimed_by conflict path in a two-agent sandbox before closing."
   "2026-07-04T21:37:20.744Z",claude-code-agent,"Evidence: claim takeover now rejects by default with already_claimed_by, --if-available skips held items, and --force records forced takeover. Verified by focused claim/integration tests, full coverage, and installed-package temp smoke."

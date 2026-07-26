@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags[3]: code-quality,dedup,pm-cli
 created_at: "2026-05-01T22:37:57.400Z"
-updated_at: "2026-05-02T11:52:07.430Z"
+updated_at: "2026-07-26T17:04:29.484Z"
 author: audit-agent
 parent: pm-rrjv
+release: v2026.5.2
 resolution: "Resolution normalized from close_reason: Deduplicated toErrorMessage (from lock.ts, cache.ts) and nowIso (from runtime.ts) to use canonical imports from primitives.ts and time.ts respectively"
 expected_result: "Expected closure outcome: Deduplicated toErrorMessage (from lock.ts, cache.ts) and nowIso (from runtime.ts) to use canonical imports from primitives.ts and time.ts respectively"
 actual_result: "Actual closure outcome: Deduplicated toErrorMessage (from lock.ts, cache.ts) and nowIso (from runtime.ts) to use canonical imports from primitives.ts and time.ts respectively"
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rrjv,implements,"2026-07-26T17:04:26.808Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-01T22:59:34.986Z",audit-agent,"Follow-up dedup completed: removed local toNonEmptyString copies from validate.ts, health.ts, main.ts, normalize.ts - all now use canonical toNonEmptyStringOrUndefined from core/shared/primitives.ts. Build passes clean."
   "2026-05-02T11:51:49.755Z",audit-agent,"Follow-up: 2026-05-02 audit discovered 3 more local toOptionalNonEmptyString copies in search.ts, reindex.ts, semantic-defaults.ts. Consolidated to use toNonEmptyStringOrUndefined and toNonEmptyString from core/shared/primitives.ts. All 1090 tests pass."

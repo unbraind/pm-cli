@@ -6,12 +6,19 @@ status: closed
 priority: 2
 tags[3]: "area:packages","area:sdk",context-management
 created_at: "2026-06-27T16:27:57.458Z"
-updated_at: "2026-06-27T17:18:04.701Z"
+updated_at: "2026-07-26T17:02:18.425Z"
 author: codex-20260627
 parent: pm-ugqx
+release: v2026.6.30
 resolution: SDK harness activationSummary/renderMarkdown shipped for package-author context surfaces.
 expected_result: "Package authors can use createExtensionTestHarness to activate an extension, inspect its activation summary, and render markdown documentation without wiring standalone helpers manually."
 actual_result: "createExtensionTestHarness now exposes activationSummary() and renderMarkdown(), exports RenderExtensionHarnessMarkdownOptions, documents the flow in docs/SDK.md, and verifies it with unit, repo-wide, temp-project, security, changelog, telemetry, and coverage gates."
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-16ue,related,"2026-07-26T17:02:18.213Z",null,null
+  pm-dmum,related,"2026-07-26T17:02:18.213Z",null,null
+  pm-jcyn,related,"2026-07-26T17:02:18.213Z",null,null
+  pm-u2tm,related,"2026-07-26T17:02:18.213Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:02:18.213Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-27T16:27:57.458Z",codex-20260627,"Duplicate check: searched all statuses for createExtensionTestHarness describe/render markdown surface and harness describeExtensionActivation renderExtensionSurfaceMarkdown. Existing closed items pm-jcyn, pm-16ue, pm-dmum, and pm-u2tm shipped the harness and standalone describe/render helpers; none binds describe/render into the fluent harness. Reusing parent epic pm-ugqx for this narrow package-author primitive."
   "2026-06-27T16:39:24.367Z",codex-20260627,"Evidence: implemented SDK harness describe/renderMarkdown convenience methods and exported RenderExtensionHarnessMarkdownOptions so package authors can inspect and publish extension surfaces from the same createExtensionTestHarness primitive. Verification passed: focused linked test via pm test (tests/unit/sdk/sdk-index.spec.ts, 109 tests), pnpm typecheck, pnpm lint, pnpm contracts:check, pnpm security:scan, pnpm changelog:pm:check with pm-changelog 2026.6.27 and unchanged CHANGELOG.md before closure, repo coverage 100/100/100/100 across 5,137 tests, temp-dir smoke with isolated PM_PATH/PM_GLOBAL_PATH importing dist/sdk/testing.js and rendering harness markdown, pm health clean after telemetry flush, and Sentry telemetry gate clean for critical/high blockers. GitHub checks before implementation: no open PRs, no Dependabot/secret/code-scanning/security-advisory alerts, open issue #374 remains an external RELEASE_PAT configuration blocker for scheduled auto-release rather than a code defect."
@@ -22,13 +29,13 @@ files[3]{path,scope,note}:
   src/sdk/index.ts,project,re-export harness render option type from main SDK barrel
   src/sdk/testing.ts,project,add fluent describe/renderMarkdown harness helpers and testing subpath render export
   tests/unit/sdk/sdk-index.spec.ts,project,cover harness describe/renderMarkdown methods and testing subpath renderer binding
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqwl37ye-zteh91,test,passed,"2026-06-27T16:38:01.700Z","2026-06-27T16:38:10.694Z","2026-06-27T16:38:10.694Z",null,null,1,0,0,null,null,null
-  test-local-mqwl8ae6-716eod,test,passed,"2026-06-27T16:41:58.115Z","2026-06-27T16:42:07.134Z","2026-06-27T16:42:07.134Z",null,null,1,0,0,null,null,null
-  test-local-mqwls9sc-mx8b2h,test,passed,"2026-06-27T16:57:30.061Z","2026-06-27T16:57:39.468Z","2026-06-27T16:57:39.468Z",null,null,1,0,0,null,null,null
-  test-local-mqwmij5h-h09arm,test,passed,"2026-06-27T17:17:50.180Z","2026-06-27T17:18:04.661Z","2026-06-27T17:18:04.661Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts,project,240
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqwl37ye-zteh91,test,passed,"2026-06-27T16:38:01.700Z","2026-06-27T16:38:10.694Z","2026-06-27T16:38:10.694Z",1,0,0
+  test-local-mqwl8ae6-716eod,test,passed,"2026-06-27T16:41:58.115Z","2026-06-27T16:42:07.134Z","2026-06-27T16:42:07.134Z",1,0,0
+  test-local-mqwls9sc-mx8b2h,test,passed,"2026-06-27T16:57:30.061Z","2026-06-27T16:57:39.468Z","2026-06-27T16:57:39.468Z",1,0,0
+  test-local-mqwmij5h-h09arm,test,passed,"2026-06-27T17:17:50.180Z","2026-06-27T17:18:04.661Z","2026-06-27T17:18:04.661Z",1,0,0
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,generated release changelog entry via pm-changelog 2026.6.27
   docs/SDK.md,project,document harness describe/renderMarkdown package-author workflow

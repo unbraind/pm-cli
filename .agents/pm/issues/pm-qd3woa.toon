@@ -6,11 +6,12 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",contracts,github-report,plan
 created_at: "2026-07-21T20:58:16.027Z"
-updated_at: "2026-07-22T18:05:30.792Z"
+updated_at: "2026-07-26T17:23:51.635Z"
 closed_at: "2026-07-22T18:05:30.036Z"
 author: codex-relationship-backfill-20260721
 acceptance_criteria: Plan creation forwards every applicable type-required create field through the public SDK; recovery suggests only flags accepted by the active command path; strict and progressive profiles have CLI/SDK/MCP parity; regression and contract tests pass
 parent: pm-mpbb
+release: v2026.7.23
 severity: high
 environment: strict repository-local trackers
 repro_steps: Run pm plan create with Plan-specific fields while strict Plan policy requires generic metadata; retry the emitted --status or related suggestion and observe unknown-option failure.
@@ -21,11 +22,12 @@ affected_version: 2026.7.21
 component: plan-sdk-cli-contract
 regression: false
 customer_impact: Agents cannot use the governed plan workflow in strict projects without dropping to a multi-command workaround.
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-3rjo,related,"2026-07-21T20:58:16.027Z",null,null
   pm-4bzq,related,"2026-07-21T20:58:16.027Z",null,null
   pm-je50,related,"2026-07-21T20:58:16.027Z",null,null
   pm-qmjx,related,"2026-07-21T20:58:16.027Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:23:51.346Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-21T20:58:16.027Z",codex-relationship-backfill-20260721,"Duplicate check 2026-07-21: searched every pm status for GH-635,plan create strict required fields,and recovery-required Plan metadata. No exact owner exists; closed pm-je50 is the shipped plan-SDK lineage,while pm-qmjx/pm-4bzq/pm-3rjo cover adjacent help and recovery behavior."
   "2026-07-22T16:31:07.109Z",codex-root,"Implementation start 2026-07-22: canonical all-status lineage and full metadata reviewed. This item is active in one broad SDK-backed contract correctness PR spanning strict Plan creation, registry-aware Plan relationship promotion, non-interactive linked-test execution, and unambiguous deletion outcomes. GitHub intake, public SDK/CLI/MCP parity, focused regression coverage, isolated installed-package dogfood, and exact 100/100/100/100 verification are in scope."

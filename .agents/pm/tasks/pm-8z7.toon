@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:ci",core,"milestone:6",pm-cli
 created_at: "2026-02-17T23:02:12.452Z"
-updated_at: "2026-04-04T21:46:51.773Z"
+updated_at: "2026-07-26T17:08:00.802Z"
 deadline: "2026-03-19T23:02:12.452Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M6: CI matrix finalized has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M6: CI matrix finalized is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/ci-matrix-finalized
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for CI matrix finalized.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-b1w,blocks,"2026-02-17T23:02:12.452Z",steve,null
   pm-jiw,parent,"2026-02-17T23:02:12.452Z",steve,null
+  pm-jiw,implements,"2026-07-26T17:08:00.547Z",null,null
 comments[4]{created_at,author,text}:
   "2026-02-20T02:05:32.821Z",cursor-maintainer,"Planned change-set: finalize GitHub Actions matrix with deterministic platform/node coverage, concurrency cancellation, and least-privilege permissions while preserving sandboxed regression gates."
   "2026-02-20T02:07:17.254Z",cursor-maintainer,"Implemented CI matrix finalization: added workflow-level read-only permissions and concurrency cancellation; expanded CI to include Node 22 on ubuntu while keeping cross-platform Node 20 lanes; constrained coverage/sandbox/packaging gates to canonical ubuntu-node20 lane; expanded nightly to Node 20+22 with conditional coverage/full-test split; updated ci-workflow-contract integration test expectations accordingly."
@@ -58,9 +59,9 @@ files[4]{path,scope,note}:
   .github/workflows/nightly.yml,project,nightly matrix coverage
   PRD.md,project,mark Milestone 6 CI matrix checklist as complete
   tests/integration/ci-workflow-contract.spec.ts,project,workflow contract expectations for finalized matrix
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,coverage gate in sandbox
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,CLI integration regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,900,coverage gate in sandbox
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,600,CLI integration regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and test safety rules
   PRD.md,project,milestone 6 CI requirements

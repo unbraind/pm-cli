@@ -6,19 +6,23 @@ status: closed
 priority: 1
 tags[6]: "area:config","area:extensions","area:schema",living-map,pm-cli,sdk
 created_at: "2026-06-29T09:01:56.236Z"
-updated_at: "2026-06-29T13:39:51.899Z"
+updated_at: "2026-07-26T16:59:51.595Z"
 author: claude-code-agent
 parent: pm-ugqx
+release: v2026.6.30
 resolution: "Completed the extension-contributed profile feature across core registerProfile, profile resolution, SDK parity, docs/contracts, and pm-kanban dogfood."
 expected_result: The pm SDK and CLI expose project profiles as a universal customization primitive so packages can model domain archetypes and agents can apply them with pm profile list/show/apply.
 actual_result: "PR #401 ships registerProfile end to end; the closeout branch verifies focused tests, isolated installed-package smoke, full 100/100/100/100 coverage, static/contract/security gates, package doctor, health, and Sentry/telemetry."
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-16ue,related,"2026-06-29T09:02:44.845Z",null,null
   pm-8jdc,related,"2026-06-29T09:02:44.845Z",null,null
   pm-a7o4,related,"2026-06-29T09:02:44.845Z",null,null
   pm-bhmk,related,"2026-06-29T09:02:44.845Z",null,null
   pm-iqq0,related,"2026-06-29T09:02:44.845Z",null,null
   pm-v37g,related,"2026-06-29T09:02:44.845Z",null,null
+  pm-7zs0,related,"2026-07-26T16:59:51.388Z",null,null
+  pm-9gxi,related,"2026-07-26T16:59:51.388Z",null,null
+  pm-ugqx,implements,"2026-07-26T16:59:51.388Z",null,null
 comments[3]{created_at,author,text}:
   "2026-06-29T09:53:21.203Z",claude-code-agent,"Implemented on branch feat-extension-registered-project-profiles. Core: api.registerProfile + RegisteredExtensionProjectProfile + registry/counts + loader gate (schema cap + schema.profiles policy surface) + validation/normalization. Resolution: resolveProfileCatalog/resolveProfileEntry merge builtins + extension profiles with source labels; builtin names reserved (collision warns+ignored). SDK: assertRegisteredProfile + harness assertProfile; composeExtension blueprint.profiles autowire; deriveExtensionCapabilities profiles->schema; describeExtension(Activation|Blueprint)+markdown include profiles. Dogfood: pm-kanban activate() registers kanbanProfile. Docs: SDK.md/EXTENSIONS.md/COMMANDS.md/pm-kanban README. Manual e2e (temp tracker): installed kanban -> `pm profile list` shows kanban [builtin-kanban-profile]; show/apply(dry-run/real/idempotent) all work; --json carries source/package/warnings; --no-extensions falls back to builtins; a crafted rogue 'agile' profile is ignored with a warning (builtin wins). Gates: typecheck/eslint/jscpd/static-docstring all green; contracts full.json regenerated (schema.profiles surface)."
   "2026-06-29T13:38:56.530Z",claude-code-agent,"Closeout evidence: profile SDK/CLI/package implementation is on main as PR #401 (92fe8bae). Current verification in this branch: pnpm build; focused profile tests 6 files / 228 tests; temp E2E /tmp/tmp.kDiR5fMIN8 with pm init profile-smoke --force, pm install kanban --project, profile list/show/apply, second dry-run changed=false; full coverage 259 files / 5171 tests at 100/100/100/100; pnpm lint; pnpm quality:static; pnpm contracts:check; pnpm security:scan; package doctor deep ok; pm health summary ok; Sentry/telemetry gate critical=0 high=0 finish_error_rate_pct=0.73. GitHub sweep: no open PRs, no open Dependabot/CodeQL/secret-scanning alerts; issue #374 remains external RELEASE_PAT configuration blocker tracked by pm-9gxi/pm-7zs0."
@@ -31,10 +35,10 @@ files[7]{path,scope,note}:
   src/core/profile/profile-presets.ts,project,merged builtin and extension profile catalog
   src/sdk/compose.ts,project,declarative profile blueprint support
   src/sdk/testing.ts,project,public assertRegisteredProfile helper
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,420,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/extensions/extension-register-profile.spec.ts tests/unit/core/profile/profile-presets.spec.ts tests/unit/packages/kanban-extension.spec.ts tests/integration/profile-command.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm lint && pnpm quality:static && pnpm contracts:check && pnpm security:scan",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,420
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-index.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/extensions/extension-register-profile.spec.ts tests/unit/core/profile/profile-presets.spec.ts tests/unit/packages/kanban-extension.spec.ts tests/integration/profile-command.integration.spec.ts,project,240
+  "pnpm lint && pnpm quality:static && pnpm contracts:check && pnpm security:scan",project,300
 docs[4]{path,scope,note}:
   docs/COMMANDS.md,project,profile command extension behavior
   docs/EXTENSIONS.md,project,extension profile docs

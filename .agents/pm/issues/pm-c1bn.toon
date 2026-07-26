@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: exit-codes,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T18:16:15.038Z"
-updated_at: "2026-05-17T08:21:38.829Z"
+updated_at: "2026-07-26T17:10:47.751Z"
 deadline: "2026-04-14T18:16:15.038Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: external-audit-followup
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: high
 environment: linux
@@ -37,8 +37,9 @@ fixed_version: target-vnext
 component: linked-test-runtime
 regression: true
 customer_impact: CI and scripts may proceed despite known linked-test failures.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-siz,related,"2026-04-04T18:16:15.038Z",codex-agent,null
+  pm-5z9r,implements,"2026-07-26T17:10:47.471Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-04T18:16:15.038Z",codex-agent,Duplicate-check evidence node dist/cli.js context --limit 10 --json; node dist/cli.js search pm test run exit code linked test failure --limit 10 --json; node dist/cli.js list-open --limit 20 --json; node dist/cli.js list-in-progress --limit 20 --json. Net-new because no active item specifically tracks pm test run non-zero exit behavior when run_results contain failed entries.
   "2026-04-04T18:31:14.715Z",codex-agent,"Implemented pm test --run dependency-failed exit propagation when any run_results entry fails and added integration/runtime coverage. Evidence: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts plus explicit exit-code repro (expected 5 observed)."
@@ -58,9 +59,9 @@ files[10]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,fail-on-empty-test-run completion tests
   tests/unit/test-all-command.spec.ts,project,test-all fail-on-empty-test-run unit coverage
   tests/unit/test-command.spec.ts,project,fail-on-empty-test-run unit coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,exit-code regression coverage
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,fail-on-empty-test-run unit regressions
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,1200,exit-code regression coverage
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts,project,3600,fail-on-empty-test-run unit regressions
 docs[5]{path,scope,note}:
   CHANGELOG.md,project,fail-on-empty-test-run release notes
   CONTRIBUTING.md,project,linked-test guardrail contributor guidance

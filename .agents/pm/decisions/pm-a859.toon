@@ -6,11 +6,19 @@ status: closed
 priority: 2
 tags[4]: adr,architecture,"area:config","area:schema"
 created_at: "2026-05-31T19:47:01.768Z"
-updated_at: "2026-05-31T20:26:03.344Z"
+updated_at: "2026-07-26T17:08:58.486Z"
 author: maintainer-agent
 parent: pm-m2u1
+release: v2026.6.1
 resolution: Accepted ADR recorded in living map
 expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
 actual_result: "The closed Decision 'ADR: Config-driven runtime schema (4-file model) over hard-coded type/status/field registries' is recorded under the ADR living log and preserved as durable project context."
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-e1va,related,"2026-07-26T17:08:58.259Z",null,null
+  pm-fy8o,related,"2026-07-26T17:08:58.259Z",null,null
+  pm-k8ik,related,"2026-07-26T17:08:58.259Z",null,null
+  pm-m2u1,implements,"2026-07-26T17:08:58.259Z",null,null
+  pm-qq69,related,"2026-07-26T17:08:58.259Z",null,null
+  pm-x2k0,related,"2026-07-26T17:08:58.259Z",null,null
 close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
 body: "CONTEXT: types/statuses/fields were hard-coded in TS, so projects could not extend pm without code. DECISION: load schema/types.json, statuses.json, fields.json, workflows.json at runtime and merge with defaults; register types via pm schema add-type; custom types cannot redefine built-ins. CONSEQUENCES: any project archetype can model its domain without code; small per-command file reads; git-tracked per-repo customization; discovery/removal CLI surface still thin (see pm-qq69/pm-k8ik). EVIDENCE: src/core/schema/runtime-schema.ts, item-types-file.ts; items pm-e1va/pm-fy8o/pm-x2k0."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:update",pm-cli
 created_at: "2026-04-02T11:45:37.141Z"
-updated_at: "2026-04-04T21:39:53.348Z"
+updated_at: "2026-07-26T17:16:38.869Z"
 deadline: "2026-04-06T11:45:37.141Z"
 author: codex-agent
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: body-backfill-2026w14
-release: vnext
+release: v2026.5.1
 blocked_reason: Document update body support and ship verification evidence has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Document update body support and ship verification evidence is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,15 +38,16 @@ affected_version: 2026.3.12
 component: docs-release
 regression: false
 customer_impact: Users need clear guidance and proof of safety.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ghha,parent,"2026-04-02T11:45:37.141Z",codex-agent,null
+  pm-ghha,implements,"2026-07-26T17:16:38.670Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-02T11:45:37.141Z",codex-agent,Docs/release task created under feature pm-ghha.
   "2026-04-02T11:59:14.691Z",codex-agent,"Updated README PRD AGENTS CHANGELOG for update body support and ran full verification. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (64 files, 710 tests); pm test pm-ipm8 --run passed (coverage command)."
 notes[1]{created_at,author,text}:
   "2026-04-02T11:45:37.141Z",codex-agent,Update README PRD AGENTS CHANGELOG and capture test evidence.
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,10800,null,null,null,null,null,null,null,null,null,null,null,release verification coverage run
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,10800,release verification coverage run
 docs[4]{path,scope,note}:
   AGENTS.md,project,agent workflow update body guidance
   CHANGELOG.md,project,unreleased entry for update body

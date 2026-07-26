@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[1]: "area:performance"
 created_at: "2026-06-07T17:04:16.436Z"
-updated_at: "2026-06-09T23:05:41.668Z"
+updated_at: "2026-07-26T17:01:44.633Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: v2026.6.10
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,implements,"2026-07-26T17:01:44.358Z",null,null
 comments[3]{created_at,author,text}:
   "2026-06-09T22:05:14.899Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:08.865Z",codex-active-pm-cycle-20260610,"Implemented settings read-cache layer with mtime/size signature invalidation across settings + schema tracked paths, including safe cloning and cache clear on writes."
@@ -16,7 +19,7 @@ comments[3]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/core/store/settings-read-cache.ts,project,new cache helper for tracked path signatures and root-scoped entries
   src/core/store/settings.ts,project,integrated memoized read cache with signature invalidation and write-path cache clears
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,project,600
 close_reason: Added deterministic settings read caching with tracked-path invalidation and regression coverage.
 body: ""

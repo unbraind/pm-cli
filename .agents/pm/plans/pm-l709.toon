@@ -6,11 +6,19 @@ status: closed
 priority: 2
 tags[5]: "area:cli","area:history","area:storage",living-map,observability
 created_at: "2026-06-05T20:36:47.034Z"
-updated_at: "2026-06-05T21:19:44.761Z"
+updated_at: "2026-07-26T17:19:08.429Z"
 author: claude-code-agent
 parent: pm-mpbb
-dependencies[1]{id,kind,created_at,author,source_kind}:
+release: v2026.6.6
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-mpbb,parent,"2026-06-05T20:36:47.034Z",null,null
+  pm-d70h,related,"2026-07-26T17:19:08.187Z",null,null
+  pm-g94b,related,"2026-07-26T17:19:08.187Z",null,null
+  pm-gbbn,related,"2026-07-26T17:19:08.187Z",null,null
+  pm-mnee,related,"2026-07-26T17:19:08.187Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:19:08.187Z",null,null
+  pm-o2kc,related,"2026-07-26T17:19:08.187Z",null,null
+  pm-puvn,related,"2026-07-26T17:19:08.187Z",null,null
 close_reason: "Plan complete: all 3 history/storage observability features shipped (gc locks scope, history --diff before/after + --field, stats --storage) via 3 isolated 100%-covered core modules + orchestrator wiring. Full gate green (142 files / 2423 tests, 100% coverage); manual e2e verified all paths."
 plan_mode: draft
 plan_scope: pm gc locks scope + pm history --diff values + pm stats --storage

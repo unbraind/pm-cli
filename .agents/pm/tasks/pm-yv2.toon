@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-semantic",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.253Z"
-updated_at: "2026-04-04T21:46:34.441Z"
+updated_at: "2026-07-26T17:30:36.672Z"
 deadline: "2026-03-07T23:02:10.253Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-54d
 blocked_reason: "M4: Embedding provider abstraction has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4: Embedding provider abstraction is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/embedding-provider-abstraction
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Embedding provider abstraction.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-54d,blocks,"2026-02-17T23:02:10.253Z",steve,null
   pm-f45,parent,"2026-02-17T23:02:10.253Z",steve,null
+  pm-f45,implements,"2026-07-26T17:30:36.453Z",null,null
 comments[31]{created_at,author,text}:
   "2026-02-20T22:40:16.459Z",maintainer-agent,"Planned changeset: docs-first milestone update plus core embedding provider abstraction (deterministic provider resolution from settings/env), then wire semantic-mode gating in search/reindex and add unit regressions while preserving keyword-mode behavior."
   "2026-02-20T22:42:48.928Z",maintainer-agent,"Docs-first update completed: PRD.md now marks embedding provider abstraction as partial ([~]) with deterministic provider-resolution baseline, and README.md reflects semantic/hybrid provider-validation baseline while semantic/vector execution remains roadmap."
@@ -93,11 +94,11 @@ files[12]{path,scope,note}:
   tests/unit/reindex-command.spec.ts,project,reindex provider gating tests
   tests/unit/search-command.spec.ts,project,semantic provider gating tests
   vitest.config.ts,project,include provider abstraction module in enforced coverage set
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate remains 100 percent
-  node scripts/run-tests.mjs test -- tests/unit/embedding-provider.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,provider abstraction unit tests
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,reindex mode provider gating
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,search mode provider gating
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate remains 100 percent
+  node scripts/run-tests.mjs test -- tests/unit/embedding-provider.spec.ts,project,900,provider abstraction unit tests
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,project,900,reindex mode provider gating
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,900,search mode provider gating
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec

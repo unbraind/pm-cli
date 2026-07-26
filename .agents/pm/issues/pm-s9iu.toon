@@ -6,13 +6,14 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,extensions,gh-issue
 created_at: "2026-07-11T02:49:25.052Z"
-updated_at: "2026-07-11T08:33:32.552Z"
+updated_at: "2026-07-26T16:52:25.457Z"
 closed_at: "2026-07-11T08:33:28.422Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Flattened <group>-<sub> aliases inherit the canonical command's full option contract; --help on the flattened form renders the same option lines as the canonical form; unknown options on the flattened form fail fast identically to the canonical form; regression test covers both defects with a fixture extension; GH-503 closed with a comment linking the fix
 risk: medium
 confidence: high
+release: v2026.7.12
 resolution: Flattened aliases inherit authoritative same-extension canonical command contracts.
 expected_result: Flattened alias help and validation match the canonical nested command.
 actual_result: "Alias descriptions, arguments, options, unknown-option validation, and single-token formatting now match canonical contracts."

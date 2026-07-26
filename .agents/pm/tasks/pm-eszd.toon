@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",pm-cli,runtime
 created_at: "2026-04-02T11:45:10.089Z"
-updated_at: "2026-04-04T21:39:50.461Z"
+updated_at: "2026-07-26T17:13:11.604Z"
 deadline: "2026-04-06T11:45:10.089Z"
 author: codex-agent
 estimated_minutes: 120
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: body-backfill-2026w14
-release: vnext
+release: v2026.5.1
 blocked_reason: Wire update body runtime mutation path has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Wire update body runtime mutation path is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,8 +38,9 @@ affected_version: 2026.3.12
 component: cli-update
 regression: true
 customer_impact: Body backfill is impossible via update.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ghha,parent,"2026-04-02T11:45:10.089Z",codex-agent,null
+  pm-ghha,implements,"2026-07-26T17:13:11.320Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-02T11:45:10.089Z",codex-agent,Runtime task created under feature pm-ghha.
   "2026-04-02T11:59:12.280Z",codex-agent,"Implemented update runtime wiring for --body/-b in main normalization and runUpdate mutation path with changed_fields body support. Evidence: pm test pm-eszd --run passed (1 command, 20 tests)."
@@ -48,7 +49,7 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/update.ts,project,body mutation and changed_fields handling
   src/cli/main.ts,project,update command wiring for body flag
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,runtime body update regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,project,3600,runtime body update regression
 close_reason: Runtime update-body wiring implemented and verified with linked regression.
 body: Implement runtime support for pm update body writes while preserving lock and history semantics.

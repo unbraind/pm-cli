@@ -6,11 +6,14 @@ status: closed
 priority: 3
 tags[3]: agent-ux,bug,mcp
 created_at: "2026-05-28T10:54:27.721Z"
-updated_at: "2026-05-28T11:07:50.391Z"
+updated_at: "2026-07-26T17:08:32.990Z"
 author: maintainer-agent
 parent: pm-th6y
+release: v2026.5.29
 resolution: "Widened resolvePriority(raw: string | number) in src/core/item/priority.ts: native numbers in [0..4] integer range pass through; non-integer or out-of-range numbers throw the existing USAGE error. ensurePriority in create.ts and update.ts widened to match."
 expected_result: "MCP tool calls with {priority: 3} (JSON number) succeed and create/update items normally."
 actual_result: "Verified: stdio MCP test reproduced 'raw.trim is not a function' against old build, then succeeded after rebuild (different error: 'Tracker not initialized' for the unrelated temp path). New priority.spec.ts tests cover happy-path native numbers, rejection of non-integer / out-of-range numbers, and defense against null/undefined/object/array/boolean inputs. tsc --noEmit clean; existing 7 priority tests still green."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-th6y,implements,"2026-07-26T17:08:30.176Z",null,null
 close_reason: "Shipped: resolvePriority now accepts string|number with strict integer-range check on the number branch."
 body: ""

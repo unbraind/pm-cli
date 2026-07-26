@@ -6,17 +6,19 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:schema","area:sdk","area:telemetry","sentry:pm-cli-2k"
 created_at: "2026-07-24T06:30:12.221Z"
-updated_at: "2026-07-24T07:19:52.307Z"
+updated_at: "2026-07-26T17:25:13.923Z"
 closed_at: "2026-07-24T07:19:23.997Z"
 author: claude-code-agent
 parent: pm-usfg
+release: v2026.7.24-2
 resolution: "Added CLI preflight validation for schema migration source, target, and stable migration id; preserved strict SDK validation and resolved PM-CLI-2K after live verification."
 expected_result: Incomplete schema migration CLI input returns a typed usage error and does not create a high-severity Sentry issue.
 actual_result: CLI returns schema_migration_input_required with exit 2 and compact recovery; SDK remains strict; live Sentry gate reports zero critical/high issues.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-dijg,related,"2026-07-24T06:30:12.221Z",null,null
   pm-nb08,related,"2026-07-24T06:30:12.221Z",null,null
   pm-w7jq,related,"2026-07-24T06:30:12.221Z",null,null
+  pm-usfg,implements,"2026-07-26T17:25:13.665Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-24T06:30:12.221Z",claude-code-agent,"Duplicate check: searched all statuses for PM-CLI-2K and the exact Schema migration migrationId must be non-empty signature. No canonical item exists; related schema-evolution and Sentry-classification lineages are linked."
   "2026-07-24T06:36:36.300Z",claude-code-agent,"Implementation evidence: schema rename/remap commands now fail at CLI preflight with code schema_migration_input_required, exit 2, compact missing-field recovery, and no raw TypeError. The SDK remains strict. A real temporary tracker confirmed a missing --migration-id returns the typed JSON envelope."

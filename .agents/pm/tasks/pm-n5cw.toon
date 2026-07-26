@@ -6,14 +6,17 @@ status: closed
 priority: 1
 tags[5]: history,patch,pm-cli,restore,wave9
 created_at: "2026-04-07T08:09:47.937Z"
-updated_at: "2026-04-25T11:04:29.209Z"
+updated_at: "2026-07-26T17:20:52.877Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-o7be
+release: v2026.5.1
 resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
 expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
 actual_result: Resolution metadata fields were backfilled without altering closure intent.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o7be,implements,"2026-07-26T17:20:52.583Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-07T08:09:47.937Z",codex-agent,"Duplicate-check evidence commands: pm context --limit 10; pm list-open --limit 50; pm search restore patch replay add replace pm_context_mode --limit 10. Net-new because no active item directly tracks this restore replay compatibility plus failing patch diagnostics delta."
   "2026-04-07T08:17:55.051Z",codex-agent,"Implementation in progress: normalize RFC6902 patch ops for absent paths and improve restore replay failure diagnostics with explicit entry/op/path context plus regression tests."
@@ -23,7 +26,7 @@ files[4]{path,scope,note}:
   src/core/history/history.ts,project,normalize replace-to-add patch ops when target path is absent
   tests/unit/determinism.spec.ts,project,history patch normalization regression
   tests/unit/restore-command.spec.ts,project,restore failure context regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/restore-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,restore-patch-hardening-targeted-suite
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/restore-command.spec.ts,project,2400,restore-patch-hardening-targeted-suite
 close_reason: restore replay compatibility hardening shipped
 body: ""

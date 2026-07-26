@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: cli,multi-agent,sdk-first
 created_at: "2026-07-19T14:43:37.560Z"
-updated_at: "2026-07-20T12:47:20.551Z"
+updated_at: "2026-07-26T17:29:41.013Z"
 closed_at: "2026-07-20T12:47:19.609Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,10 +14,11 @@ acceptance_criteria: "CLI command consumes a JSON array of {op:create|update|clo
 parent: pm-usfg
 risk: medium
 confidence: 75
+release: v2026.7.21
 resolution: SDK-backed atomic batch mutations are available through pm item mutate and pm_mutate with strict validation and recovery controls.
 expected_result: CLI and MCP accept typed atomic create/update/close batches through the public SDK without private-core coupling or partial writes.
 actual_result: "CLI and MCP share strict structured parsing, public SDK commitItemMutations dispatch, dry-run, idempotent resume, compensation, finite lock validation, contracts, docs, and 100% coverage."
-dependencies[10]{id,kind,created_at,author,source_kind}:
+dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-g5sx,related,"2026-07-19T14:43:37.560Z",null,null
   pm-khdq,related,"2026-07-19T14:43:37.560Z",null,null
   pm-kipd,related,"2026-07-19T14:43:37.560Z",null,null
@@ -28,6 +29,10 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-g9xk,related,"2026-07-20T08:49:45.087Z",null,null
   pm-nilh,related,"2026-07-20T08:49:45.087Z",null,null
   pm-pbyu,related,"2026-07-20T08:49:45.087Z",null,null
+  pm-gnzh,related,"2026-07-26T17:29:40.809Z",null,null
+  pm-mfkv92,related,"2026-07-26T17:29:40.809Z",null,null
+  pm-qwoy,related,"2026-07-26T17:29:40.809Z",null,null
+  pm-usfg,implements,"2026-07-26T17:29:40.809Z",null,null
 comments[10]{created_at,author,text}:
   "2026-07-20T07:55:26.190Z",codex-20260720,"Implementation start 2026-07-20: coherent broad bundle pm-xm7c + pm-kipd + pm-nilh + pm-cfed + pm-g9xk + pm-ds3b. All-status duplicate checks confirmed pm-y9hq is the closed SDK prerequisite rather than duplicate work; GH-435/437/438/443 and GH-595 map to the existing canonical items. GitHub intake: open Dependabot PRs #618-#621; #619 and #620 currently have one failed coverage shard each; open Dependabot alerts=0, secret-scanning alerts=0; Scorecard code-scanning alerts #17-#23 remain represented by pm-gnzh/pm-qwoy and are outside this implementation bundle."
   "2026-07-20T09:12:28.393Z",codex-20260720,"GitHub intake refresh 2026-07-20: Dependabot and secret-scanning open alerts remain zero; Scorecard code-scanning alerts #17-#23 remain represented by the existing security lineage. Dependency PRs #618 and #621 are green; #619 and #620 each have one failed coverage shard. New GitHub issue #623 had no all-status duplicate and is now documented as open pm-mfkv92, related to the closed merge/history lineage but outside this active structured-I/O bundle."

@@ -6,15 +6,20 @@ status: closed
 priority: 1
 tags[3]: packages,runtime,sdk
 created_at: "2026-07-12T23:24:58.894Z"
-updated_at: "2026-07-13T00:40:13.361Z"
+updated_at: "2026-07-26T17:30:35.743Z"
 closed_at: "2026-07-13T00:37:25.809Z"
 author: codex-pm-audit-extraction
 estimated_minutes: 45
 acceptance_criteria: "@unbrained/pm-cli/sdk/runtime exports isTerminalStatus, runUpdate, and runClose with existing types; package-owned governance runtimes compile and behavior tests pass; no audit-specific SDK export is introduced"
 parent: pm-usfg
+release: v2026.7.13
 resolution: completed
 expected_result: Generic SDK runtime primitives are public without audit-specific APIs.
 actual_result: "isTerminalStatus, runUpdate, and runClose are exported; package typecheck and release gates pass."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-79fr,related,"2026-07-26T17:30:35.472Z",null,null
+  pm-usfg,implements,"2026-07-26T17:30:35.472Z",null,null
+  pm-vjk3,related,"2026-07-26T17:30:35.472Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-12T23:24:58.894Z",codex-pm-audit-extraction,"Duplicate check: pm-vjk3/pm-79fr explicitly require filing any SDK primitive gap under pm-usfg before widening; no separate existing item covers these three missing exports. Discovered while moving the four audit runtimes."
   "2026-07-13T00:37:00.535Z",codex-pm-audit-extraction,"Evidence: promoted only generic isTerminalStatus, runUpdate, and runClose runtime primitives; pnpm typecheck and all package/runtime SDK suites pass without any audit-specific SDK API."

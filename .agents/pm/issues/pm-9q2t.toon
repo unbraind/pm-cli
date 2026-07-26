@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: merge,multi-agent,toon
 created_at: "2026-07-19T03:40:51.042Z"
-updated_at: "2026-07-19T11:18:44.919Z"
+updated_at: "2026-07-26T17:08:28.144Z"
 closed_at: "2026-07-19T05:39:00.900Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,11 +14,14 @@ acceptance_criteria: "Commutative appends (notes/tags/tests) to the same item on
 parent: pm-g5sx
 risk: high
 confidence: high
+release: v2026.7.19
 resolution: Fixed by the broad SDK/CLI merge-safety delivery with automated regression and packed Git acceptance proof.
 expected_result: Concurrent branches preserve project context in parseable tracker artifacts and expose deterministic validation/recovery gates.
 actual_result: Field-aware drivers preserve item/history/config changes; validation detects corruption or drift; documented repair restores strict verification; all repository gates pass.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-wc1r,related,"2026-07-19T03:40:59.824Z",null,null
+  pm-cxyv,related,"2026-07-26T17:08:27.925Z",null,null
+  pm-g5sx,implements,"2026-07-26T17:08:27.925Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-19T04:44:37.415Z",maintainer-agent,"Progress evidence: concurrent collection appends merge through typed set-union semantics and canonical serialization recomputes count headers; regression coverage passes."
   "2026-07-19T05:38:26.923Z",maintainer-agent,"Evidence: canonical item serialization recomputes TOON collection counts after union merges; add/add and concurrent collection fixtures cover required empty tags, notes, deletions, and disjoint appends."

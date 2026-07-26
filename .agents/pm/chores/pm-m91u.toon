@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:bootstrap","area:docs",doc,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-06T21:09:54.214Z"
-updated_at: "2026-04-04T21:50:06.209Z"
+updated_at: "2026-07-26T17:20:04.198Z"
 deadline: "2026-03-07T21:09:54.214Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-uh4d
 blocked_reason: Contributing maintainer bootstrap global-install parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Contributing maintainer bootstrap global-install parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/contributing-maintainer-bootstrap-global-install
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Contributing maintainer bootstrap global-install parity.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-uh4d,related,"2026-03-06T21:09:54.214Z",maintainer-agent,null
+  pm-8a2s,implements,"2026-07-26T17:20:03.917Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-06T21:09:54.214Z",maintainer-agent,"Why this exists: AGENTS already requires global install refresh but CONTRIBUTING bootstrap omits the explicit command."
   "2026-03-06T21:10:17.174Z",maintainer-agent,"Planned changeset: update CONTRIBUTING maintainer bootstrap to include npm install -g . refresh requirement and add release-readiness contract assertions to keep CONTRIBUTING aligned with AGENTS bootstrap policy."
@@ -55,9 +56,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   CONTRIBUTING.md,project,maintainer bootstrap guidance
   tests/integration/release-readiness-runtime.spec.ts,project,contract guard for contributing bootstrap
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,release-readiness contract regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1800,release-readiness contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,authoritative maintainer bootstrap requirement
   PRD.md,project,release-ready docs contract

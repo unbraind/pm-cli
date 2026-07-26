@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: calendar,dependabot,github,operations,recurring
 created_at: "2026-04-03T17:33:17.602Z"
-updated_at: "2026-04-26T14:32:59.845Z"
+updated_at: "2026-07-26T17:19:30.058Z"
 events[1]:
   - start_at: "2026-04-10T09:00:00.000Z"
     end_at: "2026-04-10T09:30:00.000Z"
@@ -30,7 +30,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: 2026-w14
-release: vnext
+release: v2026.5.1
 unblock_note: "If Run weekly GitHub findings review becomes blocked, record blocking PM ID, owner, and mitigation path before changing status to blocked."
 reporter: codex-agent
 severity: medium
@@ -44,6 +44,8 @@ fixed_version: vnext
 component: calendar-recurring-review
 regression: false
 customer_impact: Maintainers can catch and remediate findings quickly
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-i7w2,related,"2026-07-26T17:19:29.825Z",null,null
 comments[6]{created_at,author,text}:
   "2026-04-03T17:33:17.602Z",codex-agent,Created recurring operational task for weekly GitHub findings review.
   "2026-04-03T17:45:39.395Z",codex-agent,"Verified recurring event persistence and expansion: pm calendar agenda/week show weekly Friday occurrences starting 2026-04-10 at 09:00Z."
@@ -60,8 +62,8 @@ files[6]{path,scope,note}:
   .github/workflows/nightly.yml,project,pnpm/action-setup v5->v6
   tests/integration/ci-workflow-contract.spec.ts,project,updated action version assertion
   CHANGELOG.md,project,dependency bump changelog entry
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,calendar recurrence regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,project,240,calendar recurrence regression
 docs[1]{path,scope,note}:
   AGENTS.md,project,required pm workflow and dedupe protocol
 close_reason: "Weekly review 2026-04-26 completed: triaged all 8 Dependabot PRs, closed 4 stale, applied 4 dependency and action bumps, all tests pass"

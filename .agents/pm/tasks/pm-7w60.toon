@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:cli","area:docs",code,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T01:20:46.592Z"
-updated_at: "2026-04-04T21:45:43.143Z"
+updated_at: "2026-07-26T17:07:09.713Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Add med alias for risk flag values has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Add med alias for risk flag values is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/add-med-alias-for-risk-flag-values
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add med alias for risk flag values.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2p6q,implements,"2026-07-26T17:07:09.440Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-08T01:20:46.592Z",maintainer-agent,Need med alias parity with maintainer workflow templates
   "2026-03-08T01:20:51.816Z",maintainer-agent,"Planned change-set docs first: update PRD and README risk option contract to accept med alias and persist medium then implement create and update normalization plus targeted and full regression coverage."
@@ -62,9 +64,9 @@ files[9]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,risk alias docs help contract coverage
   tests/unit/create-command.spec.ts,project,create risk alias unit coverage
   tests/unit/update-command.spec.ts,project,update risk alias unit coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,risk alias targeted regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,project,3600,risk alias targeted regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative contract

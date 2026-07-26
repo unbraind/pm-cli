@@ -1,0 +1,35 @@
+id: pm-2vs1za
+title: "Work economics: the tracker decides what is worth doing by comparing measured cost against forecast value, instead of ranking on urgency alone"
+description: "Every input to an economic decision is either shipped or filed, and nothing consumes them. Token accounting reports what an invocation cost (pm-t5dt4z). Fleet analytics derive per-harness and per-model throughput, rework and defect-escape rates (pm-gw6uyq). Probabilistic forecasting estimates delivery distributions over the dependency graph (pm-uey8od). Fleet allocation assigns capability-matched work along the critical path (pm-3oqjnc). What no item owns is the objective function these feed: a comparison of the expected cost of doing a piece of work against the expected value of having done it, so that a fleet with more capacity than backlog can decline low-value work rather than execute the whole queue because the queue exists. The absence shows up as a specific failure mode at scale — an autonomous fleet maximises throughput because throughput is the only thing it can measure, and a tracker holding decades of outcomes can measure whether the work mattered. The value side is derivable from data the tracker already holds: which items were later reopened, superseded, cancelled, or closed as duplicate; which produced learnings that were subsequently retrieved; which unblocked how much downstream work; which released capacity on the critical path. This item owns that objective function and nothing else — it does not schedule, does not measure cost, and does not forecast."
+type: Feature
+status: open
+priority: 3
+tags[7]: analytics,economics,fleet,forecasting,long-horizon,multi-agent,prioritization
+created_at: "2026-07-26T17:11:11.031Z"
+updated_at: "2026-07-26T17:11:11.031Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "Expected value derives only from recorded outcomes already in the tracker — reopen, supersede, cancel, duplicate, downstream unblocking, learning retrieval — never from a hand-assigned score; Expected cost derives from measured invocation and throughput data rather than from estimates, with estimates used only where no measurement exists and labelled as such; Every ranking decision reports its cost term, its value term, and the evidence behind each, so a human can disagree with a specific number rather than with an opaque order; The model is calibrated against history: a backtest shows whether items it would have declined were in fact later reopened, superseded or cancelled; Declining work is a recorded decision with a rationale and a revisit condition, never a silent omission from a queue; A workspace with no outcome history degenerates exactly to today's priority and critical-path ordering with no new configuration; The value model is replaceable through the SDK so a domain can supply its own without forking the scheduler"
+goal: project management = context management
+objective: "Give a fleet an economic reason to not do work, derived from its own recorded outcomes"
+value: "Capacity goes to work that measurably mattered, and low-value work is declined with a recorded rationale instead of executed by default"
+impact: "Changes the fleet objective from throughput to realised value, which is the difference between an autonomous tracker that compounds and one that churns"
+outcome: "A declared, inspectable value model with calibration against recorded outcomes, consumed by allocation and reported per decision"
+why_now: "Cost measurement, outcome analytics, forecasting and allocation are each filed or shipped, so the objective function is now the only missing link in the chain"
+parent: pm-dj98
+risk: high
+confidence: low
+dependencies[12]{id,kind,created_at,author,source_kind}:
+  pm-3oqjnc,blocks,"2026-07-26T17:11:11.031Z",null,null
+  pm-4k6b,related,"2026-07-26T17:11:11.031Z",null,null
+  pm-dj98,implements,"2026-07-26T17:11:11.031Z",null,null
+  pm-gw6uyq,blocked_by,"2026-07-26T17:11:11.031Z",null,null
+  pm-m08hza,related,"2026-07-26T17:11:11.031Z",null,null
+  pm-o87av6,verifies,"2026-07-26T17:11:11.031Z",null,null
+  pm-pee5,related,"2026-07-26T17:11:11.031Z",null,null
+  pm-szv11n,related,"2026-07-26T17:11:11.031Z",null,null
+  pm-t4d7nz,verifies,"2026-07-26T17:11:11.031Z",null,null
+  pm-t5dt4z,blocked_by,"2026-07-26T17:11:11.031Z",null,null
+  pm-uey8od,blocked_by,"2026-07-26T17:11:11.031Z",null,null
+  pm-uwfs,related,"2026-07-26T17:11:11.031Z",null,null
+body: ""

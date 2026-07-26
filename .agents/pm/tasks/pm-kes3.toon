@@ -6,9 +6,13 @@ status: closed
 priority: 1
 tags[2]: audit,session-2026-07-02
 created_at: "2026-07-02T21:26:39.897Z"
-updated_at: "2026-07-02T21:56:11.936Z"
+updated_at: "2026-07-26T17:18:17.173Z"
 author: unknown
 parent: pm-fpod
+release: v2026.7.3
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-fpod,implements,"2026-07-26T17:18:16.940Z",null,null
+  pm-gdi7,related,"2026-07-26T17:18:16.940Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-02T21:27:29.143Z",claude-code-agent,"Lane A E2E audit started: npm pack -> fresh install -> core loop -> packages -> agent-UX probes"
   "2026-07-02T21:33:14.652Z",claude-code-agent,"Milestone: fresh install + core loop OK (create/deps/next/claim/focus/context/comments/notes/learnings/docs/files/update/append/close/search/lists/validate/health/schema/config/profile apply). Interrupt: /tmp ENOSPC from external fill, recovered. Findings so far: unknown-option errors don't list valid flags; list-closed defaults to full projection (verbose); schema add-field help buried in shared option list. Now: plan + packages."

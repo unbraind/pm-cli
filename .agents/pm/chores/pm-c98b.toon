@@ -6,13 +6,18 @@ status: closed
 priority: 3
 tags[4]: cli,code-quality,dedup,startup
 created_at: "2026-05-22T19:16:54.832Z"
-updated_at: "2026-05-24T01:53:18.367Z"
+updated_at: "2026-07-26T17:10:59.265Z"
 author: codex-duplicate-audit
 acceptance_criteria: A small shared lazy-module/once-import helper owns the nullable promise cache pattern; registration module import boundaries and startup behavior stay unchanged; focused CLI registration/startup tests and pnpm build pass.
 parent: pm-rnpb
+release: v2026.5.24
 resolution: Closed by extracting the lazy module import cache helper.
 expected_result: CLI registration modules share one lazy import helper while preserving startup/import behavior.
 actual_result: createLazyModule was extracted to src/core/shared/lazy-module.ts and adopted across CLI registration files via PR #54.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-js0r,related,"2026-07-26T17:10:59.009Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:10:59.009Z",null,null
+  pm-y5u0,related,"2026-07-26T17:10:59.009Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-22T19:16:54.832Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'lazy dynamic import cache onceImport registration modules register-mutation register-setup' found no active exact item; pm-js0r and pm-y5u0 cover plugin/package helper duplication, not core CLI registration lazy imports."
 files[5]{path,scope,note}:

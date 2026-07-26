@@ -6,18 +6,20 @@ status: closed
 priority: 1
 tags[2]: performance,telemetry
 created_at: "2026-07-12T13:20:06.786Z"
-updated_at: "2026-07-12T15:42:31.235Z"
+updated_at: "2026-07-26T17:01:28.974Z"
 closed_at: "2026-07-12T15:42:10.861Z"
 author: maintainer-agent
 acceptance_criteria: "Static import of @sentry/node in src/core/sentry/instrument.ts replaced by a dynamic import that runs only after the isSentryDisabled() gate; PM_SENTRY_DISABLED=1 / PM_TELEMETRY_DISABLED=1 / vitest runs never load the Sentry module graph; Telemetry-enabled runs preserve current behavior: init fires at command start (non-blocking), error-capture and flush paths await the same init promise, spans/breadcrumbs still emitted; pm list wall time at the current workspace drops from ~1.4s to <=0.85s (stub-experiment ceiling 562-801ms); measured before/after recorded on pm-mi2x; Full test suite + contract tests green; zero flag/output changes"
 risk: medium
 confidence: high
+release: v2026.7.13
 resolution: Deferred the Sentry runtime module graph until after telemetry opt-out guards while preserving enabled capture and flush semantics.
 expected_result: "Disabled commands avoid loading @sentry/node; enabled telemetry initializes, captures, spans, breadcrumbs, and flushes as before with lower command startup latency."
 actual_result: "48 focused tests passed, the live Sentry/telemetry gate passed, and scale dogfood demonstrated the reduced read-path cost with zero flag/output contract change."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-9rxu,related,"2026-07-12T13:20:06.786Z",null,null
   pm-mi2x,related,"2026-07-12T13:35:08.059Z",null,null
+  pm-irp1,related,"2026-07-26T17:01:28.745Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-12T13:35:11.977Z",maintainer-agent,"External sweep before implementation: no open PRs; zero open Dependabot, code-scanning, or secret-scanning alerts; pnpm audit reports no known vulnerabilities. @sentry/node 10.65.0 is available vs current 10.63.0, but dependency upgrades remain outside this measured hot-path change unless required by package API compatibility. Sentry still returns unresolved PM-CLI issues, so enabled capture/flush behavior must be preserved and reverified after the lazy-load change."
   "2026-07-12T15:42:07.246Z",maintainer-agent,"Completion evidence: @sentry/node is now loaded lazily through top-level createRequire only after telemetry disable guards; enabled init/capture/flush semantics remain covered. PM-linked Sentry tests passed 48/48. Live Sentry CLI access succeeded after the change; the local combined gate passed with critical=0 high=0, telemetry finish_error_rate_pct=0.25, and zero missing error-code rows. The observed workspace command baseline fell from roughly 1.2-2.0s reads before this tranche to 100k SDK list/get at 923/440ms and CLI operations 0.7-3.5s depending on query."

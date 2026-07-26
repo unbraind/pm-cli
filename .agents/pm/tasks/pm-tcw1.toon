@@ -6,15 +6,17 @@ status: closed
 priority: 2
 tags[3]: "area:extensions","area:sdk",author-ergonomics
 created_at: "2026-06-23T18:47:15.071Z"
-updated_at: "2026-06-23T19:04:04.403Z"
+updated_at: "2026-07-26T17:26:14.729Z"
 author: claude-code-agent
 parent: pm-ozaf
+release: v2026.6.24
 resolution: "Added pure synchronous preflightExtension(blueprint, options) returning ExtensionPreflightReport { ok, capabilities, blueprint, manifest, compatibility, findings }. Runs lintExtensionBlueprint always; synthesizes manifest when identity given; runs checkExtensionManifestCompatibility against synthesized/blueprint bounds when target given. Findings are flattened + source-tagged (blueprint|compatibility); the now-moot manifest_capabilities_absent advisory is curated out of the consolidated view once a manifest is synthesized (raw lint kept on report.blueprint). Reuses blueprintResult.used (no second derive)."
 expected_result: One-call author-time analyzer unifying the three separate checks.
 actual_result: Delivered; 100% covered; barrel re-export via export * from compose.js.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-9ect,related,"2026-06-23T18:47:32.814Z",null,null
   pm-knma,related,"2026-06-23T18:47:32.814Z",null,null
   pm-u5le,related,"2026-06-23T18:47:32.814Z",null,null
+  pm-ozaf,implements,"2026-07-26T17:26:14.279Z",null,null
 close_reason: Implemented preflightExtension in src/sdk/compose.ts
 body: ""

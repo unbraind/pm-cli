@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:release","area:tests",compatibility,pm-cli,verification
 created_at: "2026-04-01T12:00:41.055Z"
-updated_at: "2026-04-04T21:48:45.106Z"
+updated_at: "2026-07-26T17:24:40.372Z"
 deadline: "2026-04-08T12:00:41.055Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-t6f7
 blocked_reason: "T6: Run full verification, close items, and ship has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If T6: Run full verification, close items, and ship is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,14 @@ fixed_version: archive-2026q2
 component: release-readiness
 regression: true
 customer_impact: Protects existing users through full validation before ship.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-t6f7,parent,"2026-04-01T12:00:41.055Z",cursor-agent,null
+  pm-1119,related,"2026-07-26T17:24:40.104Z",null,null
+  pm-dzrj,related,"2026-07-26T17:24:40.104Z",null,null
+  pm-fas4,related,"2026-07-26T17:24:40.104Z",null,null
+  pm-gh7d,related,"2026-07-26T17:24:40.104Z",null,null
+  pm-qkva,related,"2026-07-26T17:24:40.104Z",null,null
+  pm-t6f7,implements,"2026-07-26T17:24:40.104Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T12:00:41.055Z",cursor-agent,Task corresponds to plan final verification and delivery stream.
   "2026-04-01T12:22:21.016Z",cursor-agent,"Verification matrix executed: pnpm build passed; node scripts/run-tests.mjs test passed (640/640); node scripts/run-tests.mjs coverage ran and reported existing repository-wide global threshold shortfall (97.98/96.28/98.38/97.8 vs required 100). Linked pm test runs passed for pm-fas4, pm-1119, pm-dzrj, pm-gh7d, and pm-qkva; pm-r4t0 linked run reproduced same known coverage gate shortfall while full test suite still passed."
@@ -52,9 +58,9 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:35:09.584Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,release runtime contract
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full test suite
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,coverage gate
+  node scripts/run-tests.mjs test,project,3600,full test suite
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,release notes evidence
 close_reason: full validation matrix executed; full test suite passed and coverage gate reproduced known repository-wide threshold shortfall

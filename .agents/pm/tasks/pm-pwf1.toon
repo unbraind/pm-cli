@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[1]: "area:docs"
 created_at: "2026-06-24T13:13:12.451Z"
-updated_at: "2026-06-24T13:32:11.970Z"
+updated_at: "2026-07-26T17:23:28.582Z"
 author: claude-code-agent
 parent: pm-d1ig
+release: v2026.6.30
 resolution: "Documented --capability schema in docs/EXTENSIONS.md (in-place, line budget preserved at 449) and docs/SDK.md (scaffold capability paragraph + conservative-activation note), added schema examples/tips to package init and extension init in src/cli/help-content.ts, and drift-proofed shell completion by interpolating SCAFFOLD_CAPABILITIES into the zsh/fish --capability lists (completion-command.spec assertion updated). Static-quality and docs-skills gates green."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-d1ig,implements,"2026-07-26T17:23:28.281Z",null,null
 close_reason: "Documented --capability schema in docs/EXTENSIONS.md (in-place, line budget preserved at 449) and docs/SDK.md (scaffold capability paragraph + conservative-activation note), added schema examples/tips to package init and extension init in src/cli/help-content.ts, and drift-proofed shell completion by interpolating SCAFFOLD_CAPABILITIES into the zsh/fish --capability lists (completion-command.spec assertion updated). Static-quality and docs-skills gates green."
 body: ""

@@ -6,21 +6,23 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:history","area:merge",gh-issue,multi-agent
 created_at: "2026-07-20T09:12:15.195Z"
-updated_at: "2026-07-22T19:18:04.671Z"
+updated_at: "2026-07-26T17:20:16.631Z"
 closed_at: "2026-07-21T09:15:21.026Z"
 author: codex-20260720
 acceptance_criteria: "An opt-in post-merge hook or one-command reconcile path detects merged history drift, previews the affected streams, performs audited field-aware repair, and leaves pm history --verify plus pm validate green; default git hooks remain non-surprising; docs and sandboxed merge acceptance tests cover enable, skip, failure, and recovery paths."
 parent: pm-o2kc
+release: v2026.7.22
 resolution: Added public runMergeReconcile SDK orchestration and pm merge reconcile preview/apply workflow with post-repair validation.
 expected_result: Operators can preview or repair merged history drift in one audited command without installing surprising automatic hooks.
 actual_result: "Preview, apply, clean no-op, usage failure, stale-lock failure, merge safety, and installed-package reconciliation all pass."
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-4a7m,related,"2026-07-20T09:12:15.195Z",null,null
   pm-85hm,related,"2026-07-20T09:12:15.195Z",null,null
   pm-g5sx,discovered_from,"2026-07-20T09:12:15.195Z",null,null
   pm-iwsj,related,"2026-07-20T09:12:15.195Z",null,null
   pm-wc1r,related,"2026-07-20T09:12:15.195Z",null,null
   pm-p5u6,related,"2026-07-21T07:32:59.045Z",codex-root-20260721,null
+  pm-o2kc,implements,"2026-07-26T17:20:16.407Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-20T09:12:15.195Z",codex-20260720,"Duplicate check 2026-07-20: pm search across all statuses for GH-623 and merge history verify red/manual history-repair found no live item; closed pm-g5sx and pm-wc1r provide the shipped merge-driver lineage, while this item captures the newly reported opt-in post-merge orchestration gap. Source: https://github.com/unbraind/pm-cli/issues/623"
   "2026-07-21T07:33:04.020Z",codex-root-20260721,"Evidence: pm merge reconcile now previews or applies bulk audited repair followed by history-drift and storage-integrity validation. Acceptance covers drift preview, successful repair, clean no-op, invalid positional input, stale-lock repair failure, and an installed-package reconciliation."

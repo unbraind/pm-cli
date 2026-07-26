@@ -6,12 +6,15 @@ status: closed
 priority: 3
 tags[3]: "area:mcp",follow-up,robustness
 created_at: "2026-06-08T23:40:06.610Z"
-updated_at: "2026-06-09T18:57:42.164Z"
+updated_at: "2026-07-26T17:10:23.464Z"
 author: maintainer-agent
 parent: pm-5k4v
+release: v2026.6.10
 resolution: Serialized MCP dynamic extension action activation/run/clear paths to avoid process-global registry races.
 expected_result: Concurrent MCP native-action requests do not race through shared extension registry state.
 actual_result: src/mcp/server.ts uses a serial queue for dynamic extension action mutation and regression tests passed.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5k4v,implements,"2026-07-26T17:10:23.202Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-09T17:46:54.736Z",mcp-agent,"Starting work: making MCP native-action registry handling concurrency-safe (set/clear of process-global extension registries in runDynamicExtensionAction). Evaluating async-mutex serialization vs request-scoped registries."
   "2026-06-09T17:50:33.156Z",mcp-agent,"DESIGN DECISION: chose serialization (option 1) over request-scoped registries. runDynamicExtensionAction's critical section (set process-global registries -> run handler -> clear in finally) is now wrapped in a dedicated SerialQueue (reusing src/core/shared/serial-queue.ts, the same audited FIFO mutex the stdio transport already uses for line ordering). Trade-off: request-scoping would require plumbing per-request registries through every runActive* consumer (runActiveCommandHandler, on-write/on-read/on-index hooks, parser/preflight/renderer overrides) across main.ts, create.ts and deep item-store call sites that read the module-global lazily mid-handler — a large refactor for zero behavioral win today, since the stdio transport handles requests sequentially anyway. The lock covers the FULL activation cycle (load -> activate -> set -> run -> clear -> deactivate), exactly preserving today's sequential semantics for direct handleRequest callers (tests, future concurrent transports). Full per-request registry plumbing remains possible later if true intra-server concurrency is ever wanted."
@@ -21,7 +24,7 @@ comments[5]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/mcp/server.ts,project,dynamic extension action serialization
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,concurrent native-action regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,MCP concurrent dynamic action regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts,project,300,MCP concurrent dynamic action regression
 close_reason: MCP dynamic extension action serialization completed.
 body: ""

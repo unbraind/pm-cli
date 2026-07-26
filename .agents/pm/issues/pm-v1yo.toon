@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,extensions,github
 created_at: "2026-07-18T07:14:14.667Z"
-updated_at: "2026-07-18T12:14:42.460Z"
+updated_at: "2026-07-26T17:27:31.416Z"
 closed_at: "2026-07-18T12:14:06.245Z"
 author: codex-sdk-vcs-20260718
 estimated_minutes: 240
@@ -14,12 +14,14 @@ acceptance_criteria: "Extension activation detects command-group and flattened-a
 parent: pm-usfg
 risk: medium
 confidence: high
+release: v2026.7.19
 resolution: fixed
 expected_result: Extension aliases and nested command grafts that collide with core-owned paths are rejected with actionable owner diagnostics while canonical core actions remain intact.
 actual_result: "Collision paths are filtered before registration, ownership-rich warnings identify both owners, direct canonical metadata augmentation remains intentional, and non-colliding extension commands continue to dispatch."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-iqq0,related,"2026-07-18T07:14:14.667Z",null,null
   pm-ju83,related,"2026-07-18T07:14:14.667Z",null,null
+  pm-usfg,implements,"2026-07-26T17:27:31.167Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-18T07:14:14.667Z",codex-sdk-vcs-20260718,"Duplicate check 2026-07-18: exact all-status title search returned zero; AND search across extension command collision/alias/exporter terms found only unrelated closed lineage. Created from https://github.com/unbraind/pm-cli/issues/585 under universal SDK epic pm-usfg with graph and declarative-extension relations; left open and unclaimed because this PR does not implement it."
   "2026-07-18T10:52:12.291Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."

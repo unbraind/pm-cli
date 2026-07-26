@@ -6,10 +6,13 @@ status: closed
 priority: 2
 tags[4]: "area:config","area:schema",data-durability,living-map
 created_at: "2026-06-03T23:24:08.579Z"
-updated_at: "2026-06-06T03:21:34.009Z"
+updated_at: "2026-07-26T17:15:18.303Z"
 author: claude-code-agent
 value: "Pre-existing data-integrity bug surfaced during PR #106 (Codex review). Affects all file-backed schema sections; extended to type_workflows by the per-type workflow feature. Without it, file-driven schema customization (the documented workflow) becomes unreliable after any settings write."
 parent: pm-8jdc
+release: v2026.6.6
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-8jdc,implements,"2026-07-26T17:15:18.102Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-06T03:03:24.893Z",codex-schema-integrity,"Execution kickoff: implementing schema-integrity fix so writeSettings no longer persists file-backed schema sections merged at read time; adding regression coverage in settings/config command specs plus manual temp-dir reproduction/verification."
   "2026-06-06T03:06:53.201Z",codex-schema-integrity,"Implemented read/write persist-source tracking in settings store: readSettingsWithMetadata now attaches source-vs-runtime schema snapshots, and serializeSettings/writeSettings persist source-authored file-backed sections (item_types.definitions, schema.statuses/fields/type_workflows) unless explicitly modified by the caller. Added regression coverage in settings-store and config-command specs; focused verification passed: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/sdk-index.spec.ts (176 tests)."
@@ -20,16 +23,16 @@ files[3]{path,scope,note}:
   src/core/store/settings.ts,project,Persist only source-authored file-backed schema sections unless explicitly changed.
   tests/unit/config-command.spec.ts,project,Add config set regression coverage for schema section leakage.
   tests/unit/settings-store.spec.ts,project,Add regression proving file-backed schema edits stay authoritative after unrelated writes.
-tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level low,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+tests[10]{command,scope,timeout_seconds}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,240
+  node scripts/run-tests.mjs coverage,project,900
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/sdk-index.spec.ts,project,240
+  pnpm audit --audit-level low,project,240
+  pnpm build,project,300
+  "pnpm changelog:pm:check",project,300
+  "pnpm contracts:check",project,240
+  "pnpm quality:static",project,300
+  "pnpm security:scan",project,240
+  pnpm typecheck,project,300
 close_reason: "Implemented and verified schema-integrity persistence fix with regression tests, full gates, and manual temp-dir reproduction."
 body: ""

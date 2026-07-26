@@ -6,13 +6,14 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,extensions,gh-issue,sdk
 created_at: "2026-07-11T02:49:38.183Z"
-updated_at: "2026-07-11T08:33:33.262Z"
+updated_at: "2026-07-26T16:52:25.355Z"
 closed_at: "2026-07-11T08:33:29.836Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Bare importer/exporter registrations produce a usable CLI command (positional file arg + generic flag pass-through) OR registration/doctor surfaces an actionable warning and the runtime error names the missing-options cause and the working SDK action path; regression test covers a handler-only registerImporter fixture; GH-504 closed with a comment linking the fix
 risk: medium
 confidence: high
+release: v2026.7.12
 resolution: Bare and empty-options importer/exporter registrations receive safe default command metadata.
 expected_result: Handler-only registrations accept an optional positional file and expose useful help.
 actual_result: Default descriptions and optional file arguments are merged while preserving author-provided metadata.

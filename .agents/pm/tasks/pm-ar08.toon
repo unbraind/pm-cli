@@ -6,13 +6,16 @@ status: closed
 priority: 1
 tags[5]: "area:history","area:storage",audit,living-map,pm-cli
 created_at: "2026-05-31T19:22:08.153Z"
-updated_at: "2026-05-31T20:26:04.032Z"
+updated_at: "2026-07-26T17:09:25.545Z"
 author: maintainer-agent
 acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
 parent: pm-w7f2
+release: v2026.6.1
 resolution: Verification task completed during living-map closeout
 expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
 actual_result: "The closed Task 'Audit domain: Storage, item-store, history, TOON, restore' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-w7f2,implements,"2026-07-26T17:09:25.277Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-31T19:24:05.172Z",audit-storage-agent,"Starting storage domain audit. Phase 1: reading source files in core/store, core/item, core/history, core/fs, core/lock, core/output. Then dedup-search against existing closed items. Finally propose forward work."
   "2026-05-31T19:26:16.523Z",audit-storage-agent,"Phase 1 code reading complete. Phase 2: dedup searches complete. Key observations: (1) gc command only covers index/embeddings/runtime — NOT stale lock files. (2) appendLineAtomic uses open('a') which is not atomic on NFS/shared FS; no multi-writer protection at the JSONL line level. (3) history stream growth is unbounded — no compaction/prune primitive exists. (4) front-matter cache has CACHE_VERSION=6 but no migration path docs for cache-format upgrades. (5) drift-scan cache uses mtime+ctime+size keying — mtime-preserving copy (e.g. rsync) would give false cache hits. (6) No export/archive/portable-snapshot primitive exists. (7) TOON bracket-bug workaround is production code but upstream patch is not tracked. Proceeding to final proposal."

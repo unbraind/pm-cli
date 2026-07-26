@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: concurrency,data-loss,robustness
 created_at: "2026-07-03T13:25:30.308Z"
-updated_at: "2026-07-24T13:49:00.969Z"
+updated_at: "2026-07-26T17:18:24.457Z"
 closed_at: "2026-07-24T13:34:55.976Z"
 author: claude-code-agent
 estimated_minutes: 150
@@ -14,11 +14,14 @@ acceptance_criteria: ID allocation is collision-safe under parallel create/copy 
 parent: pm-dj98
 risk: high
 confidence: high
+release: v2026.7.25
 resolution: Locked create/copy writes now reject an occupied generated id and allocation probes every runtime type folder.
 expected_result: Concurrent create/copy never overwrites another item and extension-folder collisions are detected.
 actual_result: Forced collisions fail with item_id_collision while preserving the original file; packed 50-process stress produced 50 unique durable items.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-bgcu,related,"2026-07-04T19:48:22.583Z",maintainer-agent,null
+  pm-dj98,implements,"2026-07-26T17:18:24.275Z",null,null
+  pm-pibw,related,"2026-07-26T17:18:24.275Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-24T12:40:38.702Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."
   "2026-07-24T13:34:55.270Z",codex-root-agent,"Completion evidence: create/copy now perform the authoritative collision recheck under the per-id lock, fail with typed item_id_collision instead of overwriting, and generated-id probing covers extension-defined type folders. Deterministic forced-collision regressions preserve the sentinel document. Final packed tarball stress created 50 items with 10 concurrent processes: 50 unique returned ids and 50 durable new item documents. Full repository coverage gate passed 355 files / 6220 tests at literal 100/100/100/100."

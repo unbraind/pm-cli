@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: contract-sync,maintenance,pm-cli,release-readiness
 created_at: "2026-03-06T16:52:18.127Z"
-updated_at: "2026-04-04T21:49:52.965Z"
+updated_at: "2026-07-26T17:24:04.960Z"
 deadline: "2026-03-07T16:52:18.127Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Release-readiness contract audit and next fix (2026-03-06 run) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release-readiness contract audit and next fix (2026-03-06 run) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,11 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-contract-audit-and-next-fix-20
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness contract audit and next fix (2026-03-06 run).
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-2c8,implements,"2026-07-26T17:24:04.681Z",null,null
+  pm-2joy,related,"2026-07-26T17:24:04.681Z",null,null
+  pm-eamp,related,"2026-07-26T17:24:04.681Z",null,null
+  pm-x89f,related,"2026-07-26T17:24:04.681Z",null,null
 comments[7]{created_at,author,text}:
   "2026-03-06T16:52:18.127Z",maintainer-agent,Starting maintainer loop to keep repo release ready and contract aligned
   "2026-03-06T16:52:28.058Z",maintainer-agent,"Bootstrap complete: read PRD README AGENTS fully and confirmed PM_CMD=node dist/cli.js with PM_AUTHOR=maintainer-agent."
@@ -56,9 +61,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   README.md,project,repository structure contract sync
   tests/integration/release-readiness-runtime.spec.ts,project,legacy prompt-doc contract check tolerates absent docs directory
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe coverage gate
-  node scripts/run-tests.mjs test,null,project,240,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,600,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test,project,240,sandbox-safe regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,authoritative contract

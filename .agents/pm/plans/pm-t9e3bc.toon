@@ -6,16 +6,31 @@ status: closed
 priority: 1
 tags[6]: agent-ux,architecture,audit,ecosystem,performance,sdk
 created_at: "2026-07-26T10:28:07.743Z"
-updated_at: "2026-07-26T10:34:26.838Z"
+updated_at: "2026-07-26T17:26:12.386Z"
 closed_at: "2026-07-26T10:34:14.764Z"
 author: "harness:opencode"
 estimated_minutes: 300
 acceptance_criteria: "All review surfaces are inspected through live CLI inventory and repository gates on current main; every finding is checked against all pm statuses; canonical items receive dated evidence comments; only non-duplicate gaps receive focused items with complete metadata; tracker health, history drift, and duplicate state are verified after the pass; tracker-only changes are committed and pushed directly to main; no product implementation is performed"
 parent: pm-doxj
 resolution: completed
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[17]{id,kind,created_at,author,source_kind}:
   pm-45lr,related,"2026-07-26T10:32:13.107Z",null,null
   pm-cg1sjb,related,"2026-07-26T10:32:13.107Z",null,null
+  pm-4k6b,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-5t33or,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-76dnfg,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-801d,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-92if,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-96h7,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-9rxu,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-ag9nka,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-dj98,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-doxj,implements,"2026-07-26T17:26:12.112Z",null,null
+  pm-f4yn,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-k6t4yb,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-kb5h,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-ld0z,related,"2026-07-26T17:26:12.112Z",null,null
+  pm-n7rr,related,"2026-07-26T17:26:12.112Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-26T10:33:55.964Z","harness:opencode","Run evidence: linked test 'pm health --check-only --summary --json' green under --pm-context tracker (exit 0, no context mismatch; the default schema-mode run correctly refused the 2,068-item source/sandbox mismatch — the sandbox context-mismatch guard works as designed). Full pass verification bundle: pnpm build green; pnpm lint green end-to-end after warm re-run (cold-run import-cost false failure filed as pm-cg1sjb); jscpd 0 clones; docs-skills gate green; contracts snapshot green; SDK surface snapshot 0 classified changes; focused suite 129/129; pm validate history drift 0 across 2,068 items; health 0 warnings. Findings ledger: 1 new item (pm-cg1sjb); evidence comments on pm-doxj (pass summary), pm-ag9nka (latency), pm-n7rr (command census + precision correction), pm-usfg (SDK census), pm-te6elw (completeness direction), pm-z71aoy (fixture-corpus gap). No product code, docs, or test changes made — tracker-only pass per charter."
 tests[1]{command,scope,timeout_seconds}:

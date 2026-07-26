@@ -6,12 +6,16 @@ status: closed
 priority: 3
 tags[4]: audit-2026-06-12,docs,drift,sdk
 created_at: "2026-06-12T16:11:36.263Z"
-updated_at: "2026-06-18T15:31:57.559Z"
+updated_at: "2026-07-26T17:26:59.818Z"
 author: maintainer-agent
 parent: pm-gpea
+release: v2026.6.19
 resolution: Aligned SDK resource-kind documentation with package manifest support for assets and prompts.
 expected_result: SDK.md documents all manifest package resource kinds consistently with the runtime manifest contract.
 actual_result: "SDK.md lists extensions, docs, examples, assets, and prompts in the resource-kind export, metadata-first install text, and assertPackageManifest example."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-gpea,implements,"2026-07-26T17:26:59.514Z",null,null
+  pm-z9ho,related,"2026-07-26T17:26:59.514Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-18T15:31:03.092Z",codex-gpt5,"Implementation evidence: docs/SDK.md now lists PM_PACKAGE_RESOURCE_KINDS as extensions, docs, examples, assets, prompts; metadata-first package install text and assertPackageManifest example now include assets/prompts. Verified through pnpm build, pnpm quality:static, pnpm changelog:pm:check, and full coverage 100/100/100/100 in the combined branch."
 docs[1]{path,scope,note}:

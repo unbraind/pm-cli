@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:cli","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T00:44:03.331Z"
-updated_at: "2026-04-04T21:45:41.378Z"
+updated_at: "2026-07-26T17:23:00.732Z"
 deadline: "2026-03-10T00:44:03.331Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Promote strategic metadata flags into canonical create/update contract has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Promote strategic metadata flags into canonical create/update contract is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,6 +41,8 @@ fixed_version: archive-2026q2
 component: project-management/promote-strategic-metadata-flags-into-canonical-
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Promote strategic metadata flags into canonical create/update contract.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2p6q,implements,"2026-07-26T17:23:00.447Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-08T00:44:03.331Z",maintainer-agent,Needed to support richer all-fields maintainer workflows and business-context planning metadata.
   "2026-03-08T00:44:19.299Z",maintainer-agent,"Planned change-set: docs-first promotion of selected planned flags (order/rank, definition-of-ready, goal/objective, value/impact/outcome/why-now), then schema+CLI create/update wiring with none-unset semantics and updated release-contract/unit/integration tests."
@@ -63,9 +65,9 @@ files[11]{path,scope,note}:
   tests/unit/create-command.spec.ts,project,unit create coverage
   tests/unit/shared-constants-errors.spec.ts,project,key-order contract coverage
   tests/unit/update-command.spec.ts,project,unit update coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full coverage safety
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe full regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,full coverage safety
+  node scripts/run-tests.mjs test,project,7200,sandbox-safe full regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,authoritative contract

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:graph",governance,instrument,relationships,terminal-items
 created_at: "2026-07-26T11:27:23.695Z"
-updated_at: "2026-07-26T11:32:27.559Z"
+updated_at: "2026-07-26T17:19:35.295Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Coverage metrics are reported per lifecycle bucket (active, closed, canceled, all) rather than filtered to active, with the active-only figures retained as a named slice so existing baselines remain comparable; The audit reports semantic-edge coverage for terminal items, so the pm-lnrk backfill has a meter inside the governance surface and each batch can demonstrate movement; Cycle findings over order-bearing kinds carry a severity above info, and the audit's acyclicity verdict agrees with pm graph analyze on the same graph; Dangling references are reported regardless of the lifecycle state of the referencing item; A test asserts that adding an isolated terminal item changes at least one reported coverage figure, so the instrument cannot silently stop measuring a population again"
@@ -26,4 +26,6 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-a8zm,implements,"2026-07-26T11:32:27.282Z",null,null
   pm-mfy1ux,related,"2026-07-26T11:32:27.282Z",null,null
   pm-w7ccmv,implements,"2026-07-26T11:32:27.282Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T17:19:35.295Z","harness:claude-code","Direct confirmation of this item's thesis, captured 2026-07-26 at the moment it mattered most.\n\nImmediately before the terminal relationship backfill, graph audit --summary reported isolated_active_nodes 0 and degree_leq_one_active_nodes 0, with every per-type coverage bucket clean, over active_nodes 293 of nodes 2091. At that same instant, direct measurement over the .toon corpus showed 1,024 of 1,795 terminal items with no outbound edge and 822 with no edge in either direction. The audit was not wrong about what it measured; it certified a graph that was 86 percent unmeasured and reported no signal that it had done so.\n\nThat is the conformance gap against pm-6x7o's acceptance criterion that coverage profiles vary by lifecycle state. The fix direction this suggests: report coverage per lifecycle state as separate profiles with their own denominators, and make the absence of a terminal profile a finding rather than a silence. A single all-clear over an active-only denominator is actively misleading, because it is indistinguishable from an all-clear over everything.\n"
 body: ""

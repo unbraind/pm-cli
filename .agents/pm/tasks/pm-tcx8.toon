@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:contracts","area:docs",external-audit,pm-cli
 created_at: "2026-04-03T14:48:29.306Z"
-updated_at: "2026-04-04T21:39:59.006Z"
+updated_at: "2026-07-26T17:26:15.753Z"
 deadline: "2026-04-13T14:48:29.306Z"
 author: codex-agent
 estimated_minutes: 120
@@ -19,6 +19,7 @@ impact: Reduces ambiguity and handoff risk for future work touching Sync docs/co
 outcome: This record can be used as canonical context when modifying Sync docs/contracts/wrapper parity for unresolved external audit additions.
 why_now: Historical decisions for Sync docs/contracts/wrapper parity for unresolved external audit additions need durable context for future maintenance and audits.
 parent: pm-iswo
+release: v2026.5.1
 blocked_reason: Sync docs/contracts/wrapper parity for unresolved external audit additions has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Sync docs/contracts/wrapper parity for unresolved external audit additions is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Sync docs/contracts/wrapper parity for unresolved external audit additions (pm CLI + Node/pnpm toolchain).
@@ -27,10 +28,11 @@ expected_result: Acceptance criteria for Sync docs/contracts/wrapper parity for 
 actual_result: Work completed and recorded with linked artifacts for Sync docs/contracts/wrapper parity for unresolved external audit additions.
 component: project-management/sync-docs-contracts-wrapper-parity-for-unresolve
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Sync docs/contracts/wrapper parity for unresolved external audit additions.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-3eu2,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
   pm-8sgf,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
   pm-x85o,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
+  pm-iswo,implements,"2026-07-26T17:26:15.501Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T14:48:29.306Z",codex-agent,Task will be completed after implementation features land to keep docs/contracts in lockstep.
   "2026-04-03T15:10:54.314Z",codex-agent,"Updated README/PRD/ARCHITECTURE/CHANGELOG/AGENTS for ownership-force guidance detail, files/docs add-glob usage, and pm deps contract surfaces; synced release-readiness assertions and vitest coverage include list for deps.ts. Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed (93/93)."
@@ -40,8 +42,8 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness help and output contract parity checks
   vitest.config.ts,project,coverage include sync for deps command module
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,docs and contract parity regression suite
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,project,3600,docs and contract parity regression suite
 docs[5]{path,scope,note}:
   AGENTS.md,project,agent workflow examples include add-glob and deps
   CHANGELOG.md,project,unreleased notes for ownership guidance add-glob and deps

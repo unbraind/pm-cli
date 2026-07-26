@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-07-07T15:13:53.449Z"
-updated_at: "2026-07-23T22:03:06.213Z"
+updated_at: "2026-07-26T17:08:59.702Z"
 closed_at: "2026-07-23T21:19:13.904Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,13 +14,20 @@ acceptance_criteria: "pm validate --json supports a counts-only mode (flag or de
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.24
 resolution: Implemented and verified
 expected_result: "Validation offers a token-efficient counts projection across CLI, MCP, and public SDK without weakening full-result types."
 actual_result: "Recursive row-array omission preserves scalar totals/count maps, contracts expose --counts, and typed ValidateCountsResult overloads pass packed SDK acceptance."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-07T15:15:27.561Z",null,null
   pm-nilh,related,"2026-07-16T05:45:16.343Z",null,null
   pm-gygna8,related,"2026-07-23T21:01:39.666Z",claude-code-agent,null
+  pm-646c,related,"2026-07-26T17:08:59.434Z",null,null
+  pm-bl8x,related,"2026-07-26T17:08:59.434Z",null,null
+  pm-edge,related,"2026-07-26T17:08:59.434Z",null,null
+  pm-ishm,related,"2026-07-26T17:08:59.434Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:08:59.434Z",null,null
+  pm-vxxm,related,"2026-07-26T17:08:59.434Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-23T20:33:27.392Z",claude-code-agent,"Implementation start 2026-07-23: actively deliver the shared bounded/streamable read projection surface across pm-gygna8, pm-a9mc, pm-ishm, and pm-646c. Scope includes public SDK contracts, thin CLI/MCP wiring, deterministic bounds, token-efficient projections, pipeline behavior, docs, contracts, focused regressions, exact coverage, and packed/manual consumer proof. All-status duplicate review reused these canonical items and their closed prerequisites; no parallel implementation item was created."
   "2026-07-23T21:01:51.057Z",claude-code-agent,"Implementation evidence: validate --counts and projectValidateCounts preserve the gate envelope, warnings, scalar totals, and nested count maps while recursively omitting diagnostic/fix row arrays; focused tests pass."

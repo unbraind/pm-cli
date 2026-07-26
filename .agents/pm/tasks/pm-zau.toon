@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:operations",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.876Z"
-updated_at: "2026-04-04T21:46:32.771Z"
+updated_at: "2026-07-26T17:30:54.852Z"
 deadline: "2026-03-03T23:02:09.876Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-54d
 blocked_reason: "M3: stats health and gc commands has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M3: stats health and gc commands is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/stats-health-and-gc-commands
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for stats health and gc commands.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-54d,parent,"2026-02-17T23:02:09.876Z",steve,null
   pm-c0r,blocks,"2026-02-17T23:02:09.876Z",steve,null
+  pm-54d,implements,"2026-07-26T17:30:54.664Z",null,null
 comments[10]{created_at,author,text}:
   "2026-02-18T03:53:00.847Z",maintainer-agent,"author=maintainer-agent,created_at=now,text=Planned changeset: update PRD/README command matrix first, then add deterministic pm stats command with unit/integration coverage and preserve 100% thresholds."
   "2026-02-18T03:58:25.902Z",maintainer-agent,"Implemented pm stats command with deterministic totals/by_type/by_status output; updated README/PRD command matrix first per contract, then wired CLI + tests. Evidence: pm test pm-zau --run --timeout 600 passed (linked commands node scripts/run-tests.mjs coverage/test + pnpm build), pm test-all --status in_progress --timeout 600 passed (11/11 linked tests), coverage remains 100% lines/branches/functions/statements including src/commands/stats.ts."
@@ -72,13 +73,28 @@ files[12]{path,scope,note}:
   tests/unit/health-command.spec.ts,project,unit coverage for health command
   tests/unit/stats-command.spec.ts,project,unit coverage for stats logic
   vitest.config.ts,project,coverage include for new command file
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage gate
-  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandboxed regression
-  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,null,build verification
-  null,tests/integration/cli.integration.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,integration health command coverage
-  null,tests/unit/gc-command.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,unit gc command assertions
-  null,tests/unit/health-command.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,health command unit assertions
+tests[6]:
+  - command: node scripts/run-tests.mjs coverage
+    scope: project
+    timeout_seconds: 600
+    note: sandboxed coverage gate
+  - command: node scripts/run-tests.mjs test
+    scope: project
+    timeout_seconds: 600
+    note: sandboxed regression
+  - command: pnpm build
+    scope: project
+    timeout_seconds: 180
+    note: build verification
+  - path: tests/integration/cli.integration.spec.ts
+    scope: project
+    note: integration health command coverage
+  - path: tests/unit/gc-command.spec.ts
+    scope: project
+    note: unit gc command assertions
+  - path: tests/unit/health-command.spec.ts
+    scope: project
+    note: health command unit assertions
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,governing spec

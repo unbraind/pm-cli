@@ -6,13 +6,29 @@ status: closed
 priority: 1
 tags[4]: audit,living-map,pm-cli,verification
 created_at: "2026-05-31T20:03:58.295Z"
-updated_at: "2026-05-31T20:26:07.980Z"
+updated_at: "2026-07-26T17:15:10.365Z"
 author: maintainer-agent
 acceptance_criteria: Sub-agents complete independent read-only re-review tracked in pm (comments/learnings/files on per-agent subtasks); duplicates and coverage gaps reported; genuine gaps filled as well-defined dedup-checked open items; NO existing closed item modified; pm health/validate stay ok; CHANGELOG regenerated last.
 parent: pm-w7f2
+release: v2026.6.1
 resolution: Verification task completed during living-map closeout
 expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
 actual_result: "The closed Task 'Living-map verification & gap-closure pass (continuation, 2026-05-31)' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+dependencies[14]{id,kind,created_at,author,source_kind}:
+  pm-12j1,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-22x2,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-doxj,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-exrw,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-f6rm,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-fhsg,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-g3xl,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-i7i4,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-irp1,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-m2u1,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-nf2q,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-uid0,related,"2026-07-26T17:15:10.158Z",null,null
+  pm-w7f2,implements,"2026-07-26T17:15:10.158Z",null,null
+  pm-xmhn,related,"2026-07-26T17:15:10.158Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-31T20:16:15.737Z",maintainer-agent,"Verification pass complete. 3 specialized sub-agents ran independent read-only re-review, each tracking work in pm: pm-f6rm (dedup & definition quality), pm-xmhn (ecosystem coverage), pm-uid0 (hierarchy/deps/ADR coverage). Result: backlog confirmed dedup-clean (no true duplicates among the 78 open items or vs the 902 closed history; the 14 Story<->Feature pairs are correct need+deliverable PM, not dups). Caught and rejected one FALSE POSITIVE: pm-uid0 reported the 24 ADRs as unparented; direct file + pm get + pm list --parent verification proved they ARE parented to pm-m2u1 (no action taken). Definition quality assessed unusually strong (100% of non-epic items carry acceptance_criteria; all epics carry goal/objective/value; zero orphans)."
   "2026-05-31T20:16:15.981Z",maintainer-agent,"Actions applied centrally (create-only / open-item edits only; no pre-existing closed item modified): (1) re-parented ADR-log epic pm-m2u1 -> milestone pm-doxj; (2) refined Story pm-fhsg acceptance_criteria to be outcome-focused, removing verbatim overlap with implementing task pm-22x2; (3) added 9 dependency edges: pm-exrw depends_on pm-nf2q (hard prerequisite), plus related edges 4gw6->nf2q, 1h99->i17g, 0hnu->6m3y, mnee->3pbq, kfd8->{bqpg,7m8p,13bn}, puvn->mnee; (4) created 3 missing ADRs under pm-m2u1: pm-i7i4 (git-native filesystem as the database), pm-12j1 (collision-checked random short-ID scheme), pm-irp1 (startup-latency strategy); (5) created chore pm-g3xl (drift-lock the third marketplace manifest .agents/plugins/marketplace.json)."

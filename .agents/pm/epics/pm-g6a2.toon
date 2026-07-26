@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli","area:compatibility","area:status","milestone:status-alias",pm-cli
 created_at: "2026-04-01T10:46:33.811Z"
-updated_at: "2026-04-04T21:31:40.718Z"
+updated_at: "2026-07-26T17:14:17.654Z"
 deadline: "2026-04-08T10:46:33.811Z"
 assignee: codex-agent
 author: codex-agent
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-mfza
 blocked_reason: Status alias compatibility hardening has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Status alias compatibility hardening is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,8 +40,9 @@ fixed_version: archive-2026q2
 component: status-parsing
 regression: true
 customer_impact: avoids agent failures from status format mismatch
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-mfza,discovered_from,"2026-04-01T10:46:33.811Z",codex-agent,null
+  pm-1r6p,related,"2026-07-26T17:14:17.398Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T10:46:33.811Z",codex-agent,Epic opened after deep search confirmed no active duplicate item for in-progress status alias compatibility.
   "2026-04-01T10:58:47.505Z",codex-agent,"Epic completion evidence: feature pm-1r6p closed after implementation + regression + docs tasks completed; status alias errors for in-progress input are resolved with canonical persistence."
@@ -51,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:25.956Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,status input normalization entry point
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full regression baseline for compatibility hardening
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,3600,full regression baseline for compatibility hardening
 docs[1]{path,scope,note}:
   PRD.md,project,status contract documentation update
 close_reason: "Epic completed: in-progress alias compatibility delivered end-to-end with tracked implementation, tests, and documentation updates."

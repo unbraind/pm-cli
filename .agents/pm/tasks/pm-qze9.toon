@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:calendar","area:integration",code,pm-cli
 created_at: "2026-03-31T21:28:44.478Z"
-updated_at: "2026-05-17T08:22:37.261Z"
+updated_at: "2026-07-26T17:24:30.862Z"
 deadline: "2026-04-07T21:28:44.478Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 blocked_by: pm-122q
 blocked_reason: Update completion and Pi wrapper for calendar/reminder support has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Update completion and Pi wrapper for calendar/reminder support is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,10 +41,11 @@ fixed_version: vnext
 component: integration/pi-completion
 regression: true
 customer_impact: Calendar functionality becomes automatable via Pi and easier to discover via completion.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-122q,parent,"2026-03-31T21:28:44.478Z",codex-agent,null
   pm-ezri,related,"2026-03-31T21:28:44.478Z",codex-agent,null
   pm-kglq,blocks,"2026-03-31T21:28:44.478Z",codex-agent,null
+  pm-122q,implements,"2026-07-26T17:24:30.567Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-31T21:28:44.478Z",codex-agent,Task created for completion and Pi wrapper updates.
   "2026-03-31T21:45:39.035Z",codex-agent,Updated shell completion scripts and Pi wrapper schema/action mappings to include calendar command and reminder flags.
@@ -56,8 +57,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/completion.ts,project,calendar command and reminder flag completion surface
   tests/unit/completion-command.spec.ts,project,completion regressions for calendar and reminder flags
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,integration surface tests
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,project,1800,integration surface tests
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,pi wrapper/command surface reference
 close_reason: Completion and Pi wrapper calendar/reminder integration shipped with passing tests.

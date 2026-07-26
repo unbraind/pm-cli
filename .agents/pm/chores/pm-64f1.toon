@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: docs,external-audit,pm-cli,verification
 created_at: "2026-04-04T12:43:42.029Z"
-updated_at: "2026-05-17T08:21:18.232Z"
+updated_at: "2026-07-26T17:05:13.116Z"
 deadline: "2026-04-12T12:43:42.029Z"
 author: codex-agent
 estimated_minutes: 220
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
-release: vnext
+release: v2026.5.1
 blocked_reason: "Docs, contracts, and verification sweep for external audit follow-up has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Docs, contracts, and verification sweep for external audit follow-up is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,6 +38,11 @@ fixed_version: target-vnext
 component: docs-and-verification
 regression: true
 customer_impact: Users get accurate docs and reliable upgrade guidance for new audit-hardening behavior.
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-5z9r,implements,"2026-07-26T17:05:12.837Z",null,null
+  pm-au2z,related,"2026-07-26T17:05:12.837Z",null,null
+  pm-hjrr,related,"2026-07-26T17:05:12.837Z",null,null
+  pm-vrsn,related,"2026-07-26T17:05:12.837Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-04T12:43:42.029Z",codex-agent,Created as net-new cross-cutting closure sweep item; existing closed docs items do not cover this unresolved audit delta implementation batch.
   "2026-04-04T14:01:47.958Z",codex-agent,"Updated README/PRD/docs/ARCHITECTURE/docs/EXTENSIONS/AGENTS/CHANGELOG to reflect PM-context controls, fail-on-skipped/assertions, and extension doctor guidance. Verification evidence: pnpm build; expanded regression suite (create/test/test-all/validate/extension/pi-agent/integration); node scripts/run-tests.mjs coverage (thresholds met); pm test sweeps for pm-vrsn/pm-au2z/pm-hjrr/pm-64f1 all passed."
@@ -56,9 +61,9 @@ files[12]{path,scope,note}:
   tests/unit/test-all-command.spec.ts,project,docs-and-verification-sweep
   tests/unit/test-command.spec.ts,project,docs-and-verification-sweep
   tests/unit/validate-command.spec.ts,project,docs-and-verification-sweep
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full-coverage-gate
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,expanded-regression-sweep
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,full-coverage-gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,1800,expanded-regression-sweep
 docs[6]{path,scope,note}:
   AGENTS.md,project,audit-followup-doc-update
   CHANGELOG.md,project,audit-followup-doc-update

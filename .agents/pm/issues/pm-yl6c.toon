@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",concurrency
 created_at: "2026-07-07T15:25:15.388Z"
-updated_at: "2026-07-10T20:32:43.168Z"
+updated_at: "2026-07-26T17:30:23.453Z"
 closed_at: "2026-07-10T20:32:42.000Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,11 +14,22 @@ acceptance_criteria: pm next with resolvable caller identity never emits a resum
 parent: pm-dj98
 risk: medium
 confidence: high
+release: v2026.7.11
 resolution: Added caller-aware next-work partitioning that excludes foreign-assigned items and reports them as held_by_others.
 expected_result: Agents only receive unassigned or caller-owned recommendations.
 actual_result: Foreign work is excluded deterministically while attribution remains visible; PM_AUTHOR and fallback branches are fully covered.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-114v,related,"2026-07-07T15:25:27.319Z",null,null
+  pm-8t5x,related,"2026-07-26T17:30:23.224Z",null,null
+  pm-9rxu,related,"2026-07-26T17:30:23.224Z",null,null
+  pm-9x6k,related,"2026-07-26T17:30:23.224Z",null,null
+  pm-cbwg,related,"2026-07-26T17:30:23.224Z",null,null
+  pm-cpja,related,"2026-07-26T17:30:23.224Z",null,null
+  pm-dj98,implements,"2026-07-26T17:30:23.224Z",null,null
+  pm-usfg,related,"2026-07-26T17:30:23.224Z",null,null
+  pm-w89s,related,"2026-07-26T17:30:23.224Z",null,null
+  pm-w8q4,related,"2026-07-26T17:30:23.224Z",null,null
+  pm-x6jf,related,"2026-07-26T17:30:23.224Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-10T17:51:52.538Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."
   "2026-07-10T20:32:31.060Z",codex-wide-pm-sdk,"Verification: pnpm release:gates passed build/typecheck/static/docstring ratchets/docs/context/security, 100/100/100/100 coverage with 5,524 tests, packed npx smoke, and 88-command package dogfood; isolated installed-tarball acceptance created two items, atomically claimed one, accepted comments --body, detected one dangling dependency, and imported PmClient. Live Sentry/telemetry: 0 blocking critical/high, 0.34% finish error rate, zero missing error-code rows. pm health: all 7 checks ok; history drift: 0 across 1,709 items."

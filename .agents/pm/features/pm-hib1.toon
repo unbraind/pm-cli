@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,history,immutable-record
 created_at: "2026-07-06T23:18:28.374Z"
-updated_at: "2026-07-14T06:46:35.673Z"
+updated_at: "2026-07-26T17:15:31.460Z"
 closed_at: "2026-07-14T06:44:42.952Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,13 +14,17 @@ acceptance_criteria: "pm get <id> --at <version> and --at <timestamp> return the
 parent: pm-o2kc
 risk: low
 confidence: high
+release: v2026.7.15
 resolution: Added immutable getItemAt/readHistory SDK APIs and pm get --at on a shared verified replay kernel with explicit strict-read and at-or-before restore policies.
 expected_result: "Historical item states are inspectable by version or timestamp without locks, writes, or history mutations, including after compaction."
 actual_result: "CLI and SDK return immutable marked historical projections; historical reads preserve item history and the context-usage ledger byte-for-byte, get rejects future timestamps, and restore retains at-or-before semantics with command-specific diagnostics."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-9yfo,related,"2026-07-06T23:18:28.374Z",null,null
   pm-hu11,related,"2026-07-06T23:18:28.374Z",null,null
   pm-tqel,related,"2026-07-06T23:18:28.374Z",null,null
+  pm-801d,related,"2026-07-26T17:15:31.271Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:15:31.271Z",null,null
+  pm-pee5,related,"2026-07-26T17:15:31.271Z",null,null
 comments[10]{created_at,author,text}:
   "2026-07-13T22:45:35.485Z",codex-root,"Implementation evidence: added getItemAt plus pm get --at version/timestamp projections with reconstructed/as_of markers, structured valid_range errors, no lock/write path, historical claim cutoff, restore kernel reuse, future-target rejection, and checkpoint replay after history-compact."
   "2026-07-14T00:09:46.145Z",codex-gpt5,"Implementation evidence: added mutation-free getItemAt/readHistory APIs and pm get --at version-or-timestamp projection with restore-shared verified replay, structured valid-range errors, flag conflict rules, and immutable-history proof. Exact-tree strict gates pass; full sandboxed coverage passes 5656 tests at 100/100/100/100."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T00:01:19.931Z"
-updated_at: "2026-04-04T21:47:22.811Z"
+updated_at: "2026-07-26T17:07:25.695Z"
 deadline: "2026-03-06T00:01:19.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-k3zx
 blocked_reason: Harden recursive test-all detection for npx package specs has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Harden recursive test-all detection for npx package specs is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/harden-recursive-test-all-detection-for-npx-pack
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden recursive test-all detection for npx package specs.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-k3zx,related,"2026-03-05T00:01:19.931Z",cursor-maintainer,null
+  pm-2p6q,implements,"2026-07-26T17:07:25.503Z",null,null
 comments[7]{created_at,author,text}:
   "2026-03-05T00:01:19.931Z",cursor-maintainer,Docs require recursive pm test-all entries to be rejected and package-spec launchers currently bypass validation.
   "2026-03-05T00:01:31.917Z",cursor-maintainer,"Planned changeset: update PRD/README wording to explicitly include npx package-spec recursive forms, then harden src/cli/commands/test.ts detection and add unit regression coverage."
@@ -61,9 +62,9 @@ files[5]{path,scope,note}:
   README.md,project,docs-first recursive launcher contract update
   src/cli/commands/test.ts,project,recursive invocation detection logic
   tests/unit/test-command.spec.ts,project,coverage for npx package-spec recursion variants
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted recursion guard regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1800,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,project,1200,targeted recursion guard regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,authoritative agent workflow contract
   PRD.md,project,authoritative recursive command safety contract

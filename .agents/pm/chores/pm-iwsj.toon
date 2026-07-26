@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-19T11:17:29.313Z"
-updated_at: "2026-07-19T17:16:08.575Z"
+updated_at: "2026-07-26T17:16:50.696Z"
 closed_at: "2026-07-19T17:16:07.732Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,14 +14,18 @@ acceptance_criteria: pm merge install run and the fenced .gitattributes committe
 parent: pm-g5sx
 risk: medium
 confidence: high
+release: v2026.7.20
 resolution: "Adopted the merge-safety contract repository-wide through committed attributes, CI storage/history gates, clone bootstrap guidance, schema refresh diagnostics, documentation, and linked validation."
 expected_result: "Every clone can install field-aware drivers, CI detects fence/storage/history breakage, and maintainers have a documented multi-branch recovery workflow."
 actual_result: "Repository fence audits clean, linked tracker-context validation passes over 1,892 items, isolated packed-package merge behavior passes, GitHub/security/dependency findings are mapped, and all quality gates pass."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-cxyv,related,"2026-07-19T11:17:29.313Z",null,null
   pm-ol3p,related,"2026-07-19T11:17:29.313Z",null,null
   pm-pibw,related,"2026-07-19T11:17:29.313Z",null,null
   pm-wc1r,related,"2026-07-19T11:17:29.313Z",null,null
+  pm-doxj,related,"2026-07-26T17:16:50.504Z",null,null
+  pm-g5sx,implements,"2026-07-26T17:16:50.504Z",null,null
+  pm-gnzh,related,"2026-07-26T17:16:50.504Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-19T15:37:48.554Z",maintainer-agent,"Evidence: pm merge install run in pm-cli itself; fenced .gitattributes committed (incl. relationships coverage); CI Gates static leg now runs node dist/cli.js validate --check-storage-integrity --json + pm history pm-doxj --verify --strict-exit as merge-safety gates (both verified green locally on the tracked workspace); AGENTS.md documents the once-per-clone pm merge install bootstrap; transactions GC retention already documented in MERGE_SAFETY.md (checkpoints.retention_days; pm gc --scope transactions manual cadence — no scheduled CI mutation by design, workspace mutations stay out of CI)."
   "2026-07-19T16:09:08.865Z",codex-wide-sdk-20260719,"Repository adoption evidence: committed .gitattributes fence, clone-local merge-driver bootstrap guidance in AGENTS.md, CI fence audit, schema-triggered refresh diagnostics, merge docs, and SDK/CLI tests are implemented together. Fresh packed-package acceptance proved custom JSONL paths select pm-relationship, history paths select pm-history, and a divergent relationship stream merges into consecutive sequences 1,2,3. Full suite: 317 files, 5,975 tests, 100/100/100/100 coverage."

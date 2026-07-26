@@ -6,13 +6,16 @@ status: closed
 priority: 0
 tags[5]: manifest,packages,planning,pm-cli,sdk
 created_at: "2026-05-11T17:58:43.930Z"
-updated_at: "2026-05-17T08:22:44.272Z"
+updated_at: "2026-07-26T17:26:06.065Z"
 author: codex-agent
 acceptance_criteria: Package manifest schema is documented and represented in SDK/contracts; resource precedence is explicit for runtime extensions; direct Pi agent code and package metadata are removed from the main codebase; focused package/SDK/install tests pass.
 parent: pm-59gj
+release: v2026.5.14
 resolution: Metadata-first package resource contract was delivered with extension-only activation semantics and no direct agent-specific resource model in core.
 expected_result: "Package manifest schema is documented, SDK-visible, and keeps direct Pi resource semantics out of pm core."
 actual_result: "Package manifest, SDK, extension, dogfood, coverage, release gate, and plugin smoke verification passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-59gj,implements,"2026-07-26T17:26:05.797Z",null,null
 comments[4]{created_at,author,text}:
   "2026-05-11T17:58:43.930Z",codex-agent,"Plan item created from Pi research: Pi packages bundle extensions,skills,prompts,and themes through package.json resource arrays and conventional directories. pm first slice supports extension resources; broader resource kinds need an explicit manifest design."
   "2026-05-11T20:05:29.769Z",codex-agent,"Implementation update: package manifest contract now exposes only pm.extensions for general project-management extension packages. Removed direct Pi runtime/package assets from the main codebase, renamed provider-safe SDK schema exports to provider-neutral names, removed Pi package metadata and optional peer dependency from package.json, and changed the todos extension default folder from .pi/todos to .pm/todos."
@@ -41,11 +44,11 @@ files[22]{path,scope,note}:
   tests/unit/package-manifest.spec.ts,project,package manifest contract tests
   tests/unit/sdk-index.spec.ts,project,SDK resource kind export coverage
   vitest.config.ts,project,coverage includes package manifest module
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,metadata-first package resource contract suite
-  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts tests/unit/todos-extension.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/main-loose-options.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused package and Pi-decoupling regression suite
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mp1mv29j-sxon4r,test,passed,"2026-05-11T20:06:28.475Z","2026-05-11T20:07:15.511Z","2026-05-11T20:07:15.511Z",null,null,1,0,0,null,null,null
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts,project,600,metadata-first package resource contract suite
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts tests/unit/todos-extension.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/main-loose-options.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,600,focused package and Pi-decoupling regression suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mp1mv29j-sxon4r,test,passed,"2026-05-11T20:06:28.475Z","2026-05-11T20:07:15.511Z","2026-05-11T20:07:15.511Z",1,0,0
 docs[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,package manifest contract docs
   docs/README.md,project,removed Pi package public docs route

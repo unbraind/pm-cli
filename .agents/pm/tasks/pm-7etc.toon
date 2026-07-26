@@ -6,12 +6,19 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:packages","area:telemetry","github-issue:137","github-issue:138"
 created_at: "2026-06-07T05:46:58.723Z"
-updated_at: "2026-06-07T06:43:35.802Z"
+updated_at: "2026-07-26T17:06:26.354Z"
 author: codex-sdk-cli-20260607
 parent: pm-mpbb
+release: v2026.6.7
 resolution: Implemented bundled agent command compatibility and package command discovery for GitHub issues #137 and #138.
 expected_result: Agents can use legacy telemetry local-analytics scripts and can discover exact package command paths after install or from unknown-command recovery without duplicate retries.
 actual_result: pm telemetry local-analytics maps to canonical telemetry subcommands; install output exposes command_paths/action_paths/command_discovery; unknown package-alias guesses suggest installed exported commands; command-scoped extensions remain lazy for unrelated core commands.
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-59gj,related,"2026-07-26T17:06:26.057Z",null,null
+  pm-5oj5,related,"2026-07-26T17:06:26.057Z",null,null
+  pm-e48i,related,"2026-07-26T17:06:26.057Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:06:26.057Z",null,null
+  pm-rnpb,related,"2026-07-26T17:06:26.057Z",null,null
 comments[7]{created_at,author,text}:
   "2026-06-07T05:47:15.078Z",codex-sdk-cli-20260607,"GitHub intake: open PRs=0; open issues #137 package command discoverability and #138 telemetry local-analytics compatibility; Dependabot open alerts=0; pnpm audit --audit-level moderate passed; pnpm outdated shows commander 14.0.3 -> 15.0.0 major available but deferred unless needed because this task touches CLI parser compatibility."
   "2026-06-07T05:48:26.309Z",package-discovery-subagent,"Package-discovery sub-agent starting focused issue #137 lane. Scope: inspect install output, extension command registry discovery, unknown-command guidance, focused tests/docs; avoid telemetry files and coordinate through this shared item rather than creating a duplicate."
@@ -30,18 +37,18 @@ files[9]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,Cover wrong package-alias recovery to installed package command path
   tests/integration/package-command-discovery.integration.spec.ts,project,Focused fresh package command_discovery integration coverage
   tests/unit/extension-command.spec.ts,project,"Cover install command discovery payloads for local,bundled,and install-all packages"
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/config-positional-cli.integration.spec.ts tests/unit/commands/telemetry-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/package-command-discovery.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mq3d5fue-xozlup,test,failed,"2026-06-07T05:50:25.700Z","2026-06-07T05:50:38.198Z","2026-06-07T05:50:38.198Z",null,null,2,1,0,null,null,null
-  test-local-mq3di3pz-1jw5pt,test,failed,"2026-06-07T05:58:38.920Z","2026-06-07T06:00:29.015Z","2026-06-07T06:00:29.015Z",null,null,5,2,0,null,null,null
-  test-local-mq3dmqjn-zxol9q,test,passed,"2026-06-07T06:01:20.292Z","2026-06-07T06:04:05.220Z","2026-06-07T06:04:05.220Z",null,null,5,0,0,null,null,null
-  test-local-mq3dxxmy-guibnr,test,passed,"2026-06-07T06:10:45.334Z","2026-06-07T06:12:47.626Z","2026-06-07T06:12:47.626Z",null,null,6,0,0,null,null,null
+tests[6]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/config-positional-cli.integration.spec.ts tests/unit/commands/telemetry-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/integration/package-command-discovery.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts,project,240
+  pnpm build,project,240
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mq3d5fue-xozlup,test,failed,"2026-06-07T05:50:25.700Z","2026-06-07T05:50:38.198Z","2026-06-07T05:50:38.198Z",2,1,0
+  test-local-mq3di3pz-1jw5pt,test,failed,"2026-06-07T05:58:38.920Z","2026-06-07T06:00:29.015Z","2026-06-07T06:00:29.015Z",5,2,0
+  test-local-mq3dmqjn-zxol9q,test,passed,"2026-06-07T06:01:20.292Z","2026-06-07T06:04:05.220Z","2026-06-07T06:04:05.220Z",5,0,0
+  test-local-mq3dxxmy-guibnr,test,passed,"2026-06-07T06:10:45.334Z","2026-06-07T06:12:47.626Z","2026-06-07T06:12:47.626Z",6,0,0
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,Document legacy telemetry local-analytics namespace alias and preferred command shape
   docs/EXTENSIONS.md,project,document install-time package command discovery output

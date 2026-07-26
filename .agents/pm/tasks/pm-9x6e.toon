@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-07-22T20:19:33.932Z"
+updated_at: "2026-07-26T17:08:40.361Z"
 closed_at: "2026-07-22T19:18:34.259Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -14,10 +14,11 @@ acceptance_criteria: sdk-import-boundary-baseline.json reaches zero entries and 
 parent: pm-usfg
 risk: medium
 confidence: high
+release: v2026.7.23
 resolution: "Established the public SDK runtime-primitives presentation seam, migrated all CLI and MCP host imports to it, deleted the 407-edge allowance snapshot, and replaced the ratchet with an unconditional hard boundary."
 expected_result: CLI and MCP presentation code has zero direct private-core imports; no baseline or exception file exists; every future private edge fails static quality; installed SDK and CLI behavior remains compatible.
 actual_result: "Static analysis reports zero private edges across all 48 former boundary sources, the allowance file is deleted, 6084 tests pass at exact 100/100/100/100 coverage, packed SDK/CLI consumer proof passes, and 13-package plus 88-command dogfood passes."
-dependencies[8]{id,kind,created_at,author,source_kind}:
+dependencies[15]{id,kind,created_at,author,source_kind}:
   pm-3mna,related,"2026-07-06T13:13:21.203Z",null,null
   pm-4a7m,related,"2026-07-06T13:13:21.203Z",null,null
   pm-98cz,related,"2026-07-06T13:13:21.203Z",null,null
@@ -26,6 +27,13 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-oxrw,related,"2026-07-06T13:13:21.203Z",null,null
   pm-rjqr,related,"2026-07-06T13:13:21.203Z",null,null
   pm-zwpp,related,"2026-07-06T13:13:21.203Z",null,null
+  pm-5mua,related,"2026-07-26T17:08:40.111Z",null,null
+  pm-8778,related,"2026-07-26T17:08:40.111Z",null,null
+  pm-cvwi,related,"2026-07-26T17:08:40.111Z",null,null
+  pm-j2ig,related,"2026-07-26T17:08:40.111Z",null,null
+  pm-rnpb,related,"2026-07-26T17:08:40.111Z",null,null
+  pm-usfg,implements,"2026-07-26T17:08:40.111Z",null,null
+  pm-z9e9,related,"2026-07-26T17:08:40.111Z",null,null
 comments[48]{created_at,author,text}:
   "2026-07-14T19:24:59.262Z",codex-gpt5,"Implementation start 2026-07-14: actively shrinking the enforced CLI/MCP private-core baseline through the pm-3mna schema ownership extraction. This run will not claim the capstone complete unless the baseline truly reaches zero."
   "2026-07-14T19:41:00.327Z",codex-gpt5,"Progress evidence: removed all 17 schema-domain private-core edges previously attributed to src/cli/commands/schema.ts. The boundary ratchet passes with zero new imports; the broader baseline remains intentionally open and is not claimed complete."

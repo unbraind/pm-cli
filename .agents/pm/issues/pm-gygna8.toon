@@ -6,18 +6,25 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-23T11:25:44.855Z"
-updated_at: "2026-07-23T21:19:31.348Z"
+updated_at: "2026-07-26T17:15:00.152Z"
 closed_at: "2026-07-23T21:19:15.548Z"
 author: codex-root
 acceptance_criteria: "Cyclic and multiply-linked graphs terminate without repeated unbounded expansion; Tree output honors explicit node, depth, and token bounds with deterministic truncation metadata; A regression fixture reproduces the deep richly-linked topology without touching the real tracker; CLI and SDK dependency projections retain parity for bounded results"
 parent: pm-x85o
+release: v2026.7.24
 resolution: Fixed and verified
 expected_result: "Dependency tree and graph projections terminate deterministically on cyclic or deep graphs under explicit, explainable budgets."
 actual_result: Iterative bounded traversal reports depth/node/edge/token truncation with full and omitted totals; cyclic packed acceptance and regression tests passed.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-23T11:26:19.352Z",codex-root,null
   pm-9rxu,related,"2026-07-23T11:26:19.352Z",codex-root,null
   pm-ju83,related,"2026-07-23T11:26:19.352Z",codex-root,null
+  pm-646c,related,"2026-07-26T17:14:59.893Z",null,null
+  pm-8kch,related,"2026-07-26T17:14:59.893Z",null,null
+  pm-a9mc,related,"2026-07-26T17:14:59.893Z",null,null
+  pm-ishm,related,"2026-07-26T17:14:59.893Z",null,null
+  pm-kr3t,related,"2026-07-26T17:14:59.893Z",null,null
+  pm-x85o,implements,"2026-07-26T17:14:59.893Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-23T11:26:20.051Z",codex-root,"Duplicate-check evidence: searched all-status tracker data for 'deps tree OOM memory', 'dependency graph cycle memory exhaustion', and 'deps format tree'. Existing pm-8kch covers missing-reference parity, pm-x85o the original visualization, pm-ju83 graph primitives, pm-9rxu scale, and pm-4k6b bounded context, but none tracks tree-format memory exhaustion. Reproduction observed during pm-kr3t orientation; the process grew to roughly 4 GB before termination. This item remains open and unclaimed because it was documented, not implemented, in the current SDK/digital-twin tranche."
   "2026-07-23T20:33:24.846Z",claude-code-agent,"Implementation start 2026-07-23: actively deliver the shared bounded/streamable read projection surface across pm-gygna8, pm-a9mc, pm-ishm, and pm-646c. Scope includes public SDK contracts, thin CLI/MCP wiring, deterministic bounds, token-efficient projections, pipeline behavior, docs, contracts, focused regressions, exact coverage, and packed/manual consumer proof. All-status duplicate review reused these canonical items and their closed prerequisites; no parallel implementation item was created."

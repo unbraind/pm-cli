@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:schema","area:sdk",gh-issue,migration
 created_at: "2026-07-24T12:38:52.752Z"
-updated_at: "2026-07-24T13:49:00.367Z"
+updated_at: "2026-07-26T17:25:22.467Z"
 closed_at: "2026-07-24T13:35:05.058Z"
 author: codex-root-agent
 estimated_minutes: 180
@@ -14,6 +14,7 @@ acceptance_criteria: "Public SDK accepts an optional migration id and derives a 
 parent: pm-dijg
 risk: medium
 confidence: high
+release: v2026.7.25
 reporter: codex-root-agent
 severity: medium
 repro_steps: "In a fresh workspace, run schema rename-type, rename-field, or remap-status without --migration-id, including --dry-run; the command emits a raw internal assertion and refuses to plan."
@@ -23,11 +24,12 @@ actual_result: "The nominally optional migration id is de facto required and omi
 component: schema evolution SDK and CLI adapter
 regression: true
 customer_impact: Agents cannot discover or self-correct the headline schema-evolution workflow from runtime contracts and structured errors.
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-8jdc,related,"2026-07-24T12:38:52.752Z",null,null
   pm-klo8,related,"2026-07-24T12:38:52.752Z",null,null
   pm-rxqcp9,related,"2026-07-24T12:38:52.752Z",null,null
   pm-usfg,related,"2026-07-24T12:38:52.752Z",null,null
+  pm-dijg,implements,"2026-07-26T17:25:22.187Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-24T12:38:52.752Z",codex-root-agent,"Duplicate-check evidence: searched all statuses for GH-665, migrationId omission, dry-run planning, raw schema assertion, and structured recovery. Existing items shipped the migration engine and boundary classification; none owns this new first-use ergonomics regression."
   "2026-07-24T12:40:41.482Z",codex-root-agent,"Implementation start: claimed as an actively worked part of the broad SDK workspace mutation integrity PR. TDD scope covers deterministic id allocation, atomic stale-lock takeover, init cache and merge-fence ownership, schema migration idempotency/recovery, cross-runtime machine channels, and the fixed 10k performance gate."

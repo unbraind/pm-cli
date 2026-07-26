@@ -6,12 +6,17 @@ status: closed
 priority: 2
 tags[4]: correctness,perf,search,vector-store
 created_at: "2026-05-30T21:44:12.362Z"
-updated_at: "2026-05-31T09:46:39.118Z"
+updated_at: "2026-07-26T17:29:52.637Z"
 author: maintainer-agent
 acceptance_criteria: Model/dimension change forces full re-embed; reindex prunes orphan vectors+ledger entries; no wrong-dimension records linger
+release: v2026.6.1
 resolution: "Added vectorization embedding metadata, reset/re-embed on provider/model/dimension changes, and reindex orphan pruning."
 expected_result: Semantic search remains correct after embedding model changes and vector stores do not retain deleted item records.
 actual_result: "Ollama qwen3 plus LanceDB hybrid manual dogfood passed; vector/reindex/search-cache specs, 100% coverage, and release gates passed."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-hq28,related,"2026-07-26T17:29:52.434Z",null,null
+  pm-i25f,related,"2026-07-26T17:29:52.434Z",null,null
+  pm-p4mw,related,"2026-07-26T17:29:52.434Z",null,null
 comments[4]{created_at,author,text}:
   "2026-05-31T05:41:59.882Z",claude-code-agent,"Audit 2026-05-31: the prune-orphans-on-mutation half is ALREADY implemented — refreshSemanticEmbeddingsForMutatedItems (core/search/cache.ts) calls pruneMissingSemanticVectors(vectorStore, workload.missingIds) and deletes their ledger entries, so vectors for deleted items are pruned during the (now background) mutation refresh. Remaining work for this chore: reset/rebuild the local vector store when the embedding model or vector dimension changes. Today vector-stores.ts only SKIPS dimension-mismatched records at query time (dimensionMismatchCount warning) rather than detecting a model/dimension change and triggering a full reindex. Suggested: record the active model+dimension in the vectorization ledger/snapshot header; on reindex/mutation-refresh, if it differs, reset the store before writing. Keeping open for that part."
   "2026-05-31T07:52:33.247Z",codex-gpt5-20260531,"Start: verified duplicate search and existing lineage; investigating vector ledger/store model+dimension reset and orphan pruning coverage now."
@@ -26,7 +31,7 @@ files[8]{path,scope,note}:
   tests/unit/reindex-command.spec.ts,project,regression coverage for model/dimension reset and reindex orphan pruning
   tests/unit/search-cache.spec.ts,project,PR 87 inline refresh env override branch hardening
   tests/unit/vector-store-adapter.spec.ts,project,Qdrant collection reset regression coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/vector-store-adapter.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/vector-store-adapter.spec.ts,project,240
 close_reason: "Completed vectorization ledger metadata reset/re-embed fix, reindex orphan pruning coverage, and PR #87 search-cache env branch hardening. Evidence: node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/vector-store-adapter.spec.ts passed with build + 3 files/77 tests."
 body: ""

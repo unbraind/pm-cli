@@ -6,17 +6,25 @@ status: closed
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:11.397Z"
-updated_at: "2026-05-03T13:55:54.650Z"
+updated_at: "2026-07-26T17:20:25.972Z"
 deadline: "2026-05-04T13:20:11.397Z"
 author: codex-audit
 estimated_minutes: 240
 acceptance_criteria: Core dogfood commands work in a temporary project; source review findings are captured; changed files are linked; sandbox-safe tests and coverage are linked and run; sensitive data scan passes for tracked files and pm items.
 parent: pm-rnpb
+release: v2026.5.3
 resolution: "Latest-state dogfood audit completed with targeted privacy hardening and regression coverage. Telemetry and Sentry scrubbing now redact paths, private-address literals, emails, bearer tokens, and inline credentials; default telemetry capture level is redacted. Core dogfood, SDK/extension docs, calendar, semantic search, CI/CD, health, and tracker hygiene were reviewed and documented."
 expected_result: "pm CLI is audited against current tree, verified in an isolated temporary project, privacy leaks are not introduced in tracked files/current item docs, search/calendar/extension/SDK/CI surfaces remain functional, and residual larger hygiene work is tracked without duplicate items."
 actual_result: "Implemented telemetry/Sentry redaction hardening, updated docs/changelog/tests, validated temp dogfood lifecycle, hybrid semantic search, calendar markdown output, health/vectorization, security scan, targeted tests, full test suite, and 100% coverage. Created follow-ups pm-xk39 and pm-xz1p for history-stream redaction and legacy linked-file hygiene."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-03T13:20:11.397Z",codex-audit,null
+  pm-cakn,related,"2026-07-26T17:20:25.734Z",null,null
+  pm-ny6y,related,"2026-07-26T17:20:25.734Z",null,null
+  pm-r9ei,related,"2026-07-26T17:20:25.734Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:20:25.734Z",null,null
+  pm-vhdc,related,"2026-07-26T17:20:25.734Z",null,null
+  pm-xk39,related,"2026-07-26T17:20:25.734Z",null,null
+  pm-xz1p,related,"2026-07-26T17:20:25.734Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-03T13:20:11.397Z",codex-audit,"Duplicate check evidence inherited from parent lineage: current open/in-progress lists were empty and related search results were closed prior audits,so this task tracks the new latest-state execution."
   "2026-05-03T13:25:10.236Z",codex-audit,"Dogfood evidence: temporary project at /tmp/pm-cli-dogfood-6L7tIo used sandboxed PM_PATH/PM_GLOBAL_PATH and exercised init/create hierarchy/claim/update/append/comments/notes/learnings/files/docs/test add/test run/search/calendar/context/health/validate/close/release. All commands passed; close emitted expected warn-mode readiness warning for intentionally omitted resolution metadata."
@@ -30,12 +38,12 @@ files[6]{path,scope,note}:
   tests/unit/telemetry-runtime.spec.ts,project,telemetry-redaction-regressions
   tests/unit/sentry-helpers.spec.ts,project,sentry-redaction-regression
   tests/unit/health-command.spec.ts,project,telemetry-default-health-expectation
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,coverage-gate
-  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,full-test-suite
-  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/sentry-helpers.spec.ts tests/unit/health-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted-redaction-regression
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-moptrdw1-qapltr,test,passed,"2026-05-03T13:39:23.418Z","2026-05-03T13:47:07.153Z","2026-05-03T13:47:07.153Z",null,null,3,0,0,null,null,null
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,900,coverage-gate
+  node scripts/run-tests.mjs test,project,600,full-test-suite
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/sentry-helpers.spec.ts tests/unit/health-command.spec.ts,project,240,targeted-redaction-regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-moptrdw1-qapltr,test,passed,"2026-05-03T13:39:23.418Z","2026-05-03T13:47:07.153Z","2026-05-03T13:47:07.153Z",3,0,0
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,release-note-for-redaction-hardening
   docs/CONFIGURATION.md,project,telemetry-opt-out-and-redacted-default

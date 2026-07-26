@@ -6,12 +6,15 @@ status: closed
 priority: 3
 tags[3]: audit-2026-06-12,ci,workflows
 created_at: "2026-06-12T16:11:59.237Z"
-updated_at: "2026-06-12T16:56:19.433Z"
+updated_at: "2026-07-26T17:04:35.609Z"
 author: maintainer-agent
 parent: pm-gpea
+release: v2026.6.13
 resolution: Changed workflow path filters so plugin markdown changes on main run functional CI while docs markdown still routes through docs workflow.
 expected_result: Plugin markdown edits are not skipped by all functional validation on push.
 actual_result: "CI workflow now uses paths with plugins/** re-inclusion; workflow contract, docs gates, and coverage passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-gpea,implements,"2026-07-26T17:04:35.432Z",null,null
 comments[2]{created_at,author,text}:
   "2026-06-12T16:44:28.305Z",codex-sdk-cli-agent,"Evidence: focused workflow contract run passed: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (5 tests)."
   "2026-06-12T16:54:04.834Z",codex-sdk-cli-agent,"Evidence: workflow/docs gates passed after path-filter update: pnpm quality:docs-skills, pnpm quality:docs-links, node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts, and full coverage."
@@ -19,7 +22,7 @@ files[3]{path,scope,note}:
   .github/workflows/ci.yml,project,re-include plugin markdown in functional CI push path
   .github/workflows/docs.yml,project,cover markdown docs paths consistently in docs workflow
   tests/integration/ci-workflow-contract.spec.ts,project,lock CI path-filter contract for plugin markdown re-inclusion
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240
 close_reason: "Updated workflow path filters so plugin markdown re-enters functional CI and locked the contract test; docs gates, workflow test, and coverage passed."
 body: ""

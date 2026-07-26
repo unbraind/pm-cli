@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T10:12:40.909Z"
-updated_at: "2026-04-04T21:45:34.115Z"
+updated_at: "2026-07-26T17:08:55.154Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-wjdr
 blocked_reason: Release-readiness maintenance loop 2026-03-07 run 8 has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release-readiness maintenance loop 2026-03-07 run 8 is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-07-ru
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-07 run 8.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-wjdr,related,"2026-03-07T10:12:40.909Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:08:54.953Z",null,null
+  pm-phpq,related,"2026-07-26T17:08:54.953Z",null,null
 comments[5]{created_at,author,text}:
   "2026-03-07T10:12:40.909Z",maintainer-agent,This run exists to extend help-contract hardening to pm delete.
   "2026-03-07T10:12:50.847Z",maintainer-agent,"Intended change-set: extend release-readiness contract tests with pm delete --help assertions for required metadata flags and usage/description semantics."
@@ -55,10 +57,10 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:39.024Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,delete help contract assertion
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test,null,project,240,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe regression
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted contract regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate
+  node scripts/run-tests.mjs test,project,240,sandbox-safe regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1200,targeted contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative delete command contract

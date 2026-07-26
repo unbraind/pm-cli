@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:extensions","area:sdk"
 created_at: "2026-07-06T21:58:30.613Z"
-updated_at: "2026-07-14T18:22:33.141Z"
+updated_at: "2026-07-26T17:29:21.181Z"
 closed_at: "2026-07-14T18:08:27.801Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -14,16 +14,32 @@ acceptance_criteria: "SDK exports typed primitives for package install/upgrade a
 parent: pm-usfg
 risk: medium
 confidence: medium
+release: v2026.7.15
 resolution: "Completed the public package lifecycle family and its remaining dynamic host contracts across SDK, CLI, tests, and author documentation."
 expected_result: Custom PM tools and packages manage lifecycle and own dynamic command input/output through typed public SDK primitives.
 actual_result: "Lifecycle primitives were previously promoted incrementally while the remaining list parsing, output ownership, renderer parity, and passthrough contracts lacked a complete verified boundary."
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[21]{id,kind,created_at,author,source_kind}:
   pm-tnud,related,"2026-07-06T21:58:39.001Z",null,null
   pm-6abs,related,"2026-07-07T08:57:29.205Z",null,null
   pm-cbwg,related,"2026-07-07T16:42:50.582Z",null,null
   pm-usfg,related,"2026-07-07T16:42:50.582Z",null,null
   pm-w89s,related,"2026-07-07T16:42:50.582Z",null,null
   pm-w13j,related,"2026-07-14T18:00:07.782Z",null,null
+  pm-395t,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-3mna,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-4a7m,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-7n5a,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-98cz,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-albl,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-as4a,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-d4ns,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-evav,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-f38n,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-je50,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-kffw,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-oslr,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-oxrw,related,"2026-07-26T17:29:20.958Z",null,null
+  pm-usfg,implements,"2026-07-26T17:29:20.958Z",null,null
 comments[17]{created_at,author,text}:
   "2026-07-07T08:58:08.753Z",codex-agent,"Progress evidence: active PR bundle includes package/extension doctor isolation as a package-lifecycle primitive slice. Runtime loader options, CLI flags, SDK flag/tool contracts, shell completions, docs, and regression tests are being verified through pm-6abs; this item remains broader than the PR and should not be closed by the isolation slice alone."
   "2026-07-07T09:44:05.584Z",codex-agent,"Package lifecycle primitive update: pm-6abs promotes doctor isolation as a first-class lifecycle primitive across CLI flags, shell completion, help, SDK contract metadata, and action/tool schemas."

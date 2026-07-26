@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[2]: "area:extensions","area:tests"
 created_at: "2026-06-24T13:13:12.097Z"
-updated_at: "2026-06-24T13:32:11.487Z"
+updated_at: "2026-07-26T17:29:18.328Z"
 author: claude-code-agent
 parent: pm-d1ig
+release: v2026.6.30
 resolution: "Added package-variant and extension-variant schema scaffold tests in tests/unit/extensions/extension-command.spec.ts (manifest omits activation, item type/field/migration registrations, sample-test assertions, README sections, define* guidance) and schema cases in extension-scaffold-define-guidance.spec.ts. Materialized smoke verified: generated index.test.ts passes 3/3 under node --test against the symlinked SDK, tsc --noEmit exits 0, and pm create <type> + alias + bundled ping + package doctor all succeed in a temp workspace. Full suite 5006 tests, 100/100/100/100 coverage."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-d1ig,implements,"2026-07-26T17:29:18.138Z",null,null
 close_reason: "Added package-variant and extension-variant schema scaffold tests in tests/unit/extensions/extension-command.spec.ts (manifest omits activation, item type/field/migration registrations, sample-test assertions, README sections, define* guidance) and schema cases in extension-scaffold-define-guidance.spec.ts. Materialized smoke verified: generated index.test.ts passes 3/3 under node --test against the symlinked SDK, tsc --noEmit exits 0, and pm create <type> + alias + bundled ping + package doctor all succeed in a temp workspace. Full suite 5006 tests, 100/100/100/100 coverage."
 body: ""

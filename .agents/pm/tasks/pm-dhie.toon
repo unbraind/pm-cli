@@ -6,16 +6,20 @@ status: closed
 priority: 0
 tags[6]: agent-ux,ci,docs,extensions,pm-cli,sdk
 created_at: "2026-05-10T09:48:16.405Z"
-updated_at: "2026-05-17T08:21:45.398Z"
+updated_at: "2026-07-26T17:12:04.377Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: Granular extension controls and diagnostics are implemented; SDK/contracts expose deterministic machine-friendly surfaces; docs/examples are comprehensive and runnable; automated and manual temp-project E2E verification pass; final checks are green on GitHub.
 parent: pm-rnpb
+release: v2026.5.11
 resolution: Full-scope SDK and extension platform upgrade delivered.
 expected_result: "Granular extension controls, deterministic SDK/contracts, runnable docs/examples, and verified extension platform behavior are available."
 actual_result: "Implementation and docs were delivered, automated/manual verification passed, and CI was reported green at closure."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-10T09:48:16.405Z",codex-agent,null
+  pm-0c9q,related,"2026-07-26T17:12:04.206Z",null,null
+  pm-4z9m,related,"2026-07-26T17:12:04.206Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:12:04.206Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-10T09:48:16.405Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10 --depth standard,pm search full scope sdk extension capabilities docs examples ci --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing active items either cover plugin-specific work (pm-0c9q),docs-skills modernization (pm-4z9m),or unrelated issues,so this is net-new child scope under pm-rnpb."
   "2026-05-10T12:07:48.192Z",codex-agent,"Evidence: implemented extension governance policy enforcement in loader/runtime and surfaced policy diagnostics in extension doctor/manage + contracts output; added SDK policy/action helpers and Pi/native schema alignment. Verified with node scripts/run-tests.mjs test -- --maxWorkers=2, node scripts/run-tests.mjs coverage -- --maxWorkers=2, targeted extension/contracts suites, and integration suite. Manual temp-project E2E passed using docs/examples/policy-restricted-extension (install + activate + enforce services.override block + doctor strict-exit) and docs/examples/sdk-contract-consumer (local package install + inspect-contracts.mjs create)."
@@ -34,11 +38,11 @@ files[14]{path,scope,note}:
   tests/unit/extension-command.spec.ts,project,doctor policy diagnostics tests
   tests/unit/extension-loader.spec.ts,project,policy discovery and activation tests
   tests/unit/settings-store.spec.ts,project,settings policy serialization tests
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage -- --maxWorkers=2,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage suite
-  node scripts/run-tests.mjs test -- --maxWorkers=2,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed suite stable worker profile
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,integration lifecycle verification
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted extension and contracts verification
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage -- --maxWorkers=2,project,2400,full sandboxed coverage suite
+  node scripts/run-tests.mjs test -- --maxWorkers=2,project,2400,full sandboxed suite stable worker profile
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1200,integration lifecycle verification
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts,project,900,targeted extension and contracts verification
 docs[7]{path,scope,note}:
   docs/CLAUDE_CODE_PLUGIN.md,project,claude plugin contract and policy guidance
   docs/examples/ci/github-actions-pm-extension-gate.yml,project,ci workflow gate reference

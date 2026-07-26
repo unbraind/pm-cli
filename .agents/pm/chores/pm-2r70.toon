@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: documentation,governance,pm-cli,reporting
 created_at: "2026-04-04T17:55:04.028Z"
-updated_at: "2026-04-04T17:56:16.793Z"
+updated_at: "2026-07-26T17:02:19.493Z"
 deadline: "2026-04-05T17:55:04.028Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: governance-followups
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: low
 environment: linux
@@ -38,8 +38,11 @@ fixed_version: 2026.3.12
 component: governance-reporting
 regression: false
 customer_impact: Contributors can quickly understand tracker state and remaining work.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-wtsp,discovered_from,"2026-04-04T17:55:04.028Z",codex-agent,null
+  pm-7lum,related,"2026-07-26T17:02:19.263Z",null,null
+  pm-m9tv,related,"2026-07-26T17:02:19.263Z",null,null
+  pm-wtsp,implements,"2026-07-26T17:02:19.263Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-04T17:55:04.028Z",codex-agent,Duplicate-check evidence pm search governance summary report --limit 20; pm search governance refactor summary --limit 20; pm list-open --limit 20; pm context --limit 10. Net-new because no existing item serves as final consolidated governance report for this pass.
 notes[1]{created_at,author,text}:
@@ -48,8 +51,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-04T17:55:04.028Z",codex-agent,Large governance passes require explicit before-after metrics and residual-risk mapping.
 files[1]{path,scope,note}:
   .agents/pm/settings.json,project,workflow and DoD governance baseline
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  pm validate --check-metadata --check-resolution --check-history-drift --check-command-references --json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,final validation snapshot
+tests[1]{command,scope,timeout_seconds,note}:
+  pm validate --check-metadata --check-resolution --check-history-drift --check-command-references --json,project,300,final validation snapshot
 docs[1]{path,scope,note}:
   AGENTS.md,project,governance operating protocol
 close_reason: "Published consolidated governance refactor report with before-after metrics, validation outcomes, and residual follow-up issue links."

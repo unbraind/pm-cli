@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: cognitive-memory,context,relevance,sdk-first
 created_at: "2026-07-07T06:50:19.358Z"
-updated_at: "2026-07-13T21:10:07.408Z"
+updated_at: "2026-07-26T17:27:22.347Z"
 closed_at: "2026-07-13T19:56:02.425Z"
 author: maintainer-agent
 estimated_minutes: 600
@@ -14,14 +14,23 @@ acceptance_criteria: "A derived, append-only usage ledger records (serving, auth
 parent: pm-4k6b
 risk: medium
 confidence: low
+release: v2026.7.14
 resolution: Delivered privacy-minimal served-then-touched feedback primitives and usage-affinity ranking across SDK and CLI.
 expected_result: Useful served items strengthen future agent context while ignored and unseen work remains explorable without item-history mutation.
 actual_result: "Inline serving/read/mutation capture, bounded ledger, decay/exploration, opt-out, scorer attribution, five-scenario golden proof, temp acceptance, and exact 100% coverage pass."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[12]{id,kind,created_at,author,source_kind}:
   pm-3hps,related,"2026-07-07T06:50:19.358Z",null,null
   pm-atfm,related,"2026-07-07T06:50:19.358Z",null,null
   pm-vvib,related,"2026-07-07T06:50:19.358Z",null,null
   pm-55ra,related,"2026-07-13T19:27:48.396Z",null,null
+  pm-4k6b,implements,"2026-07-26T17:27:22.047Z",null,null
+  pm-5qmm,related,"2026-07-26T17:27:22.047Z",null,null
+  pm-7zs0,related,"2026-07-26T17:27:22.047Z",null,null
+  pm-h3no,related,"2026-07-26T17:27:22.047Z",null,null
+  pm-i7i4,related,"2026-07-26T17:27:22.047Z",null,null
+  pm-ksv2,related,"2026-07-26T17:27:22.047Z",null,null
+  pm-qwoy,related,"2026-07-26T17:27:22.047Z",null,null
+  pm-wfvq,related,"2026-07-26T17:27:22.047Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-13T18:17:05.362Z",codex-root,"Progress evidence: privacy-minimal derived usage ledger, propensity logging, central mutation-touch capture, decayed affinity scorer signal, retention/opt-out controls, and focused 79-test suite green."
   "2026-07-13T19:55:49.495Z",codex-root,"Completion evidence: delivered a privacy-minimal workspace-local derived JSONL ledger with bounded retention/compaction, zero-I/O opt-out, propensity rows (profile/rank/inclusion), inline context/next serving, get/claim/mutation/close touches, per-author decay and exploration floor, usage_affinity scorer explanations, and core-only post-command capture. The committed pm-atfm corpus now includes served-then-used versus served-and-ignored and proves the used item ranks first while unseen exploration candidates remain; all five scenarios score 1.0 on NDCG, reciprocal rank, required recall, continuity, and token adherence. Focused 82-test linked suite passes; shared full suite passes 5,623 tests at exact 100/100/100/100; package-first dogfood passed 88 commands; fresh manual and packed-SDK temp acceptance passed. GitHub security/dependency and live Sentry/release findings were appended to canonical pm-qwoy, pm-7zs0, pm-wfvq, and pm-ksv2 without duplicate items or claims."

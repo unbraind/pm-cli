@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:sdk",author,identity,multi-agent,provenance
 created_at: "2026-07-26T06:25:19.908Z"
-updated_at: "2026-07-26T08:29:30.361Z"
+updated_at: "2026-07-26T17:25:39.460Z"
 closed_at: "2026-07-26T07:24:55.763Z"
 author: "harness:codex"
 estimated_minutes: 240
@@ -17,10 +17,11 @@ confidence: high
 resolution: Initialized workspaces no longer persist auto-detected harness identity as a static default author.
 expected_result: Each harness invocation is attributed to the current harness unless the operator explicitly overrides author.
 actual_result: "One fresh installed workspace records harness:codex and harness:claude-code on successive invocations without PM_AUTHOR."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-42p9nk,related,"2026-07-26T06:25:19.908Z",null,null
   pm-6uxhe0,related,"2026-07-26T06:25:19.908Z",null,null
   pm-qwuber,related,"2026-07-26T06:25:19.908Z",null,null
+  pm-33cw,implements,"2026-07-26T17:25:39.142Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-26T06:25:19.908Z","harness:codex","text=Duplicate check evidence: searched all 2055 tracker items across every status for author_default,init identity freeze,multi-agent authorship,and GH-728. Closed pm-6uxhe0 owns independent observed provenance and pm-qwuber owns the accepted identity ADR, but neither prevents pm init from freezing a detected harness as the effective configured author. GitHub source: https://github.com/unbraind/pm-cli/issues/728"
   "2026-07-26T07:24:34.835Z","harness:codex","Evidence: init persists only explicit --author/PM_AUTHOR overrides; detected harness identity remains transient. Fresh installed-package proof created work under Codex and Claude Code in one initialized workspace and recorded harness:codex then harness:claude-code without PM_AUTHOR."

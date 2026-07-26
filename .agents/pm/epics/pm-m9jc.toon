@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:docs","area:extensions","area:sdk","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:15:57.991Z"
-updated_at: "2026-04-04T21:32:04.661Z"
+updated_at: "2026-07-26T17:20:05.229Z"
 deadline: "2026-04-17T16:15:57.991Z"
 author: codex-agent
 estimated_minutes: 900
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: high
 confidence: medium
 sprint: extension-manager-rollout
-release: vnext
+release: v2026.5.1
 blocked_reason: Extension lifecycle manager and SDK parity rollout has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Extension lifecycle manager and SDK parity rollout is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,11 +38,13 @@ fixed_version: target-vnext
 component: extensions-runtime
 regression: false
 customer_impact: Users can safely adopt extension lifecycle workflows
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-8a2s,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
   pm-cxn3,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
   pm-igv,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
   pm-x395,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
+  pm-2poj,related,"2026-07-26T17:20:04.943Z",null,null
+  pm-cdsf,related,"2026-07-26T17:20:04.943Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-03T16:15:57.991Z",codex-agent,Created after context and search dedupe checks showed no active extension-manager lifecycle epic.
   "2026-04-03T17:10:57.450Z",codex-agent,All extension-manager child features/tasks are now closed with implementation + docs + verification evidence; rollout commit 0c49b5d is pushed to origin/main.
@@ -52,8 +54,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T16:15:57.991Z",codex-agent,Implementation will remain additive-first for compatibility and link all changed files/tests/docs.
 files[1]{path,scope,note}:
   src/cli/main.ts,project,extension lifecycle command wiring
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,7200,full regression baseline
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,primary extension manager user and developer contract
 close_reason: "Bundled managed extension migration completed with verified command-surface, runtime, test, coverage, and docs parity."

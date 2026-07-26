@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:ci","area:quality",codefactor,deepscan,release-gate,static-analysis
 created_at: "2026-07-24T22:46:08.676Z"
-updated_at: "2026-07-26T01:25:57.539Z"
+updated_at: "2026-07-26T17:02:49.723Z"
 closed_at: "2026-07-26T00:56:51.324Z"
 author: claude-code-agent
 estimated_minutes: 180
@@ -14,14 +14,17 @@ acceptance_criteria: "A local command fails for analyzer findings, absent or pen
 parent: pm-92if
 risk: medium
 confidence: high
+release: v2026.7.26
 resolution: fixed
 expected_result: "Release readiness fails closed unless the release tree has immutable reviewed evidence proving DeepScan zero new issues, CodeFactor no issues, and strict protected-main requirements for both contexts."
 actual_result: The release gate remains exact-commit-first and now accepts reviewed merge-parent or squash-PR evidence only after immutable tree equality. Squash fallback additionally requires one GitHub-associated closed PR merged into main with the release commit as merge_commit_sha. Ten fail-closed provenance cases and live main acceptance pass; full repository coverage remains literal 100/100/100/100.
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-3a68,related,"2026-07-24T22:46:08.676Z",null,null
   pm-6sqo,related,"2026-07-24T22:46:08.676Z",null,null
   pm-bkcv,related,"2026-07-24T22:46:08.676Z",null,null
   pm-e200,related,"2026-07-24T22:46:08.676Z",null,null
+  pm-92if,implements,"2026-07-26T17:02:49.524Z",null,null
+  pm-e3g0h6,related,"2026-07-26T17:02:49.524Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-24T22:46:08.676Z",claude-code-agent,"Duplicate check: searched all statuses for DeepScan, CodeFactor, hosted analysis, zero-new-issues, and quality-gate terms. Reusing pm-92if as parent and pm-bkcv/pm-6sqo/pm-3a68 as terminal lineage; none implements an exact-current-HEAD hosted-result verifier or requires DeepScan in branch protection. Trigger evidence: PR #684 head a61cdc0c has CodeFactor success titled 'No issues found.' but DeepScan failure '2 new and 0 fixed issues'; existing main protection requires CodeFactor but omits DeepScan."
   "2026-07-24T22:53:31.199Z",claude-code-agent,"Policy evidence: main branch protection was updated through the GitHub API without weakening any existing requirement. strict=true now requires both app-backed CodeFactor and DeepScan status contexts; CodeFactor remained app-bound (app_id 25603), and DeepScan was added as its legacy commit-status context. Focused TDD passes 32/32 tests; the first validator was correctly rejected by local complexity 20>16, then decomposed into analyzer-specific validators and pnpm quality:static passed without suppressions or threshold changes."

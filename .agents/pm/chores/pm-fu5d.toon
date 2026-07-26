@@ -6,13 +6,20 @@ status: closed
 priority: 3
 tags[3]: agent-ux,dogfood,polish
 created_at: "2026-05-21T21:57:44.257Z"
-updated_at: "2026-05-23T17:56:34.791Z"
+updated_at: "2026-07-26T17:14:06.977Z"
 author: claude-code-agent
 acceptance_criteria: Each listed finding is fixed or explicitly deferred with rationale; no agent-blocking introduced.
 parent: pm-rnpb
+release: v2026.5.24
 resolution: "Implemented and merged all dogfood follow-ups: linked-test add key validation, semantic fallback labeling, active-child close warning, stale blocker clearing, option typo normalization, package list alias, and calendar duration ergonomics."
 expected_result: Each listed dogfood finding is fixed or explicitly documented with no outstanding agent-blocking behavior.
 actual_result: All sub-items were verified in main and the item was closed with dogfood evidence on 2026-05-23.
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-5k2w,related,"2026-07-26T17:14:06.778Z",null,null
+  pm-kyd6,related,"2026-07-26T17:14:06.778Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:14:06.778Z",null,null
+  pm-uz25,related,"2026-07-26T17:14:06.778Z",null,null
+  pm-uzmf,related,"2026-07-26T17:14:06.778Z",null,null
 comments[6]{created_at,author,text}:
   "2026-05-23T03:50:38.508Z",claude-code-agent,"C3 + C4 FIXED (pm-uz25 step 2) in src/cli/commands/close.ts. C3: active-children are now scanned even under minimal governance; off-mode close emits an informational closed_with_active_children:<id>:<children> warning (never blocks), distinct from the warn/strict close_validation_active_children. C4: terminal close now clears the stale active blocker — scalar blocked_by + blocked_reason and any blocked_by dependency edges (preserving the pm-kyd6 scalar/graph invariant) — and annotates with closed_cleared_blocked_by:<id>:<previousBlocker>. 2 regression tests added; close-command.spec 11/11 green. Remaining fu5d items: U2/U3 (me, next), S1/B2 (query-ux sub-agent), CAL1 (calendar-ux sub-agent)."
   "2026-05-23T03:55:05.807Z",claude-code-agent,"U2 + U3 FIXED (pm-uz25 step 3). U2 (did-you-mean for --statuss): the unknown-option suggestion + never-block typo-normalization infra already existed, but LIST_FILTER_FLAG_CONTRACTS was missing --status (the only list flag absent vs `pm list --help`). Added { flag: '--status' } so `pm list --statuss open` now auto-corrects to --status (flag_typo, high confidence) exactly like every other list flag. U3: added `--list` as an alias for `--explore` on package/extension (register-setup.ts: option + readBoolean('explore','list'); cli-contracts EXTENSION_FLAG_CONTRACTS += --list). Verified: `pm package --list` / `pm extension --list` => action:explore. Tests: bootstrap-args.spec U2 case + cli.integration.spec U3 case, both green."

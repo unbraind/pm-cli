@@ -6,11 +6,14 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-07T08:15:48.718Z"
-updated_at: "2026-06-07T08:58:36.477Z"
+updated_at: "2026-07-26T17:29:42.197Z"
 author: codex-broad-ecosystem-audit-20260607
+release: v2026.6.8
 resolution: Completed and closed all audit plan lanes with evidence recorded on pm-yo3f.
 expected_result: All delegated audit lanes complete with tracker evidence and no open plan steps.
 actual_result: All four plan steps completed and pm-xm98 was closed/released after integration.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-yo3f,related,"2026-07-26T17:29:41.876Z",null,null
 close_reason: "Audit lane plan completed: all four sub-agent lanes completed with evidence on pm-yo3f; implementation and verification integrated by main agent."
 plan_mode: approved
 plan_scope: "pm-yo3f: CLI/SDK/package/GitHub/observability audit with sub-agent lanes"

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:migrations","area:store",code,pm-cli
 created_at: "2026-03-31T23:48:22.551Z"
-updated_at: "2026-04-04T21:37:57.393Z"
+updated_at: "2026-07-26T17:25:10.659Z"
 deadline: "2026-04-07T23:48:22.551Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-277p
 blocked_reason: Support type-aware storage routing and safe type moves has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Support type-aware storage routing and safe type moves is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: core/store
 regression: true
 customer_impact: Prevents data placement inconsistencies
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-277p,parent,"2026-03-31T23:48:22.551Z",codex-agent,null
+  pm-277p,implements,"2026-07-26T17:25:10.395Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-31T23:48:22.551Z",codex-agent,Task tracks storage routing and update type relocation behavior.
   "2026-04-01T00:27:31.779Z",codex-agent,Implemented dynamic storage routing and safe type-change relocation for configured item type folders.
@@ -57,8 +58,8 @@ files[5]{path,scope,note}:
   src/core/store/item-format-migration.ts,project,migration respects dynamic type folders
   src/core/store/item-store.ts,project,mutateItem relocation logic
   src/core/store/paths.ts,project,dynamic type folder resolution
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts tests/unit/config-command.spec.ts tests/unit/store-paths.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,storage path regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts tests/unit/config-command.spec.ts tests/unit/store-paths.spec.ts,project,2400,storage path regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,storage model updates
 close_reason: dynamic type-folder storage routing and safe moves implemented with passing regressions

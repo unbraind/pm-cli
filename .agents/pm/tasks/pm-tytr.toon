@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:docs","area:recurrence",pm-cli,release
 created_at: "2026-03-31T22:30:11.669Z"
-updated_at: "2026-04-04T21:37:53.001Z"
+updated_at: "2026-07-26T17:26:45.392Z"
 deadline: "2026-04-07T22:30:11.669Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-2v01
 blocked_reason: Document recurrence features and finalize release evidence has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Document recurrence features and finalize release evidence is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/document-recurrence-features-and-finalize-releas
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Document recurrence features and finalize release evidence.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2v01,related,"2026-03-31T22:30:11.669Z",codex-agent,null
+  pm-02gd,implements,"2026-07-26T17:26:45.108Z",null,null
 comments[2]{created_at,author,text}:
   "2026-03-31T22:30:11.669Z",codex-agent,Task created for recurrence documentation and release finalization.
   "2026-03-31T23:26:44.209Z",codex-agent,"Updated README, docs/ARCHITECTURE.md, and CHANGELOG.md for event + recurrence support, include controls, and markdown-default calendar behavior. Verification: pm test pm-tytr --run passed both node scripts/run-tests.mjs coverage and node scripts/run-tests.mjs test (57 files, 588 tests, 100 percent coverage)."
@@ -54,9 +55,9 @@ files[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased recurrence additions
   docs/ARCHITECTURE.md,project,calendar recurrence pipeline documentation
   README.md,project,event recurrence usage docs
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,final release-quality verification
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,final regression run
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,final release-quality verification
+  node scripts/run-tests.mjs test,project,3600,final regression run
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased recurrence entries
   docs/ARCHITECTURE.md,project,internal calendar pipeline docs

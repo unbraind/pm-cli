@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:determinism",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:02:06.839Z"
-updated_at: "2026-04-04T21:46:11.934Z"
+updated_at: "2026-07-26T17:27:56.582Z"
 deadline: "2026-02-20T23:02:06.839Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-2xl
 blocked_reason: "M0: Deterministic serializer utilities has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M0: Deterministic serializer utilities is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/deterministic-serializer-utilities
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Deterministic serializer utilities.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2xl,parent,"2026-02-17T23:02:06.839Z",steve,null
+  pm-2xl,implements,"2026-07-26T17:27:56.348Z",null,null
 comments[8]{created_at,author,text}:
   "2026-02-19T00:16:29.256Z",maintainer-agent,"Planned changeset: harden deterministic serialization utilities for JSON-like and edge-case inputs, add explicit unit coverage for sorting/undefined-skipping/fallback coercion behavior, and include the core serializer utility in enforced coverage scope."
   "2026-02-19T00:17:34.181Z",maintainer-agent,"Implemented serializer hardening: stableStringify now canonicalizes Date values and respects object toJSON outputs when they differ from the original object, while preserving deterministic sorted-key behavior for plain objects and undefined-field omission."
@@ -61,10 +62,10 @@ files[4]{path,scope,note}:
   tests/unit/determinism.spec.ts,project,existing determinism regression coverage
   tests/unit/serialization-utils.spec.ts,project,new edge-case serializer tests
   vitest.config.ts,project,coverage include for deterministic serializer utility
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,coverage gate in sandbox
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/serialization-utils.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,targeted serializer determinism tests
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,compile validation
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1200,coverage gate in sandbox
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/serialization-utils.spec.ts,project,600,targeted serializer determinism tests
+  pnpm build,project,240,compile validation
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow
   PRD.md,project,governing spec

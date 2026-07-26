@@ -6,11 +6,12 @@ status: closed
 priority: 1
 tags[3]: extensions,pm-cli,verification
 created_at: "2026-04-26T20:18:02.878Z"
-updated_at: "2026-05-01T19:29:07.508Z"
+updated_at: "2026-07-26T16:49:19.203Z"
 deadline: "2026-04-27T20:18:02.878Z"
 author: audit-agent
 estimated_minutes: 15
 acceptance_criteria: Extension lifecycle fully working
+release: v2026.5.1
 resolution: "Resolution normalized from close_reason: Extension lifecycle fully working with 9 capabilities and bundled extensions"
 expected_result: "Expected closure outcome: Extension lifecycle fully working with 9 capabilities and bundled extensions"
 actual_result: "Actual closure outcome: Extension lifecycle fully working with 9 capabilities and bundled extensions"

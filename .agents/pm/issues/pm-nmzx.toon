@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,github-issue,init
 created_at: "2026-07-14T19:04:33.488Z"
-updated_at: "2026-07-14T21:03:32.870Z"
+updated_at: "2026-07-26T17:21:18.619Z"
 closed_at: "2026-07-14T21:03:31.606Z"
 author: maintainer-agent
 estimated_minutes: 60
@@ -14,12 +14,14 @@ acceptance_criteria: "pm init accepts --id-prefix <value> as an alias for the po
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.15
 resolution: completed
 expected_result: Dependabot release PR is verified and init exposes a stable canonical project-id prefix contract that rejects path-shaped values across supported platforms.
 actual_result: "Verified the release dependency update and delivered canonical --id-prefix with --prefix compatibility, structured conflicts/errors, docs/contracts/completions, external packed proof, and cross-platform path rejection at exact 100/100/100/100 coverage."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-3mna,related,"2026-07-14T19:04:33.488Z",null,null
   pm-kl19,related,"2026-07-14T19:04:33.488Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:21:18.353Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-14T19:25:01.765Z",codex-gpt5,"Implementation start 2026-07-14: bundled with pm-3mna because init prefix input is part of the same public workspace-customization contract. Scope includes conflict validation, help/contracts/completions/docs, CLI regression tests, and installed temp-workspace proof."
   "2026-07-14T19:41:01.717Z",codex-gpt5,"Progress evidence: init now accepts --id-prefix with --prefix alias, preserves positional compatibility, accepts normalized equivalent dual inputs, and rejects empty/conflicting values deterministically. Help/contracts/completions/docs and focused regression coverage are green."

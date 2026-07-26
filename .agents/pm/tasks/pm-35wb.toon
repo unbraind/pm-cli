@@ -6,14 +6,17 @@ status: closed
 priority: 1
 tags[4]: docs,hygiene,pm-cli,telemetry
 created_at: "2026-04-25T23:09:23.460Z"
-updated_at: "2026-04-26T08:49:38.188Z"
+updated_at: "2026-07-26T17:02:42.480Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: Both missing telemetry docs exist in-repo and validate --check-files no longer reports those paths as missing.
 parent: pm-lnq3
+release: v2026.5.1
 resolution: Backfilled missing telemetry documentation files referenced by rollout-linked docs metadata.
 expected_result: validate --check-files reports no missing linked paths for telemetry rollout lineage.
 actual_result: docs/TELEMETRY.md and docs/operations/REMOTE_TELEMETRY_STACK.md are present and tracker validate warnings were cleared.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-lnq3,implements,"2026-07-26T17:02:42.255Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-25T23:09:23.460Z",audit-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'telemetry docs path backfill' --mode keyword --limit 10; pm list-open --tag telemetry --fields id,title,type,parent,status,priority --limit 20; pm list-in-progress --fields id,title,type,parent,status,priority --limit 50. Net-new because no active telemetry child directly tracks missing linked doc path backfill for validate hygiene."
   "2026-04-25T23:11:54.484Z",audit-agent,"Added missing telemetry docs referenced by rollout lineage: docs/TELEMETRY.md and docs/operations/REMOTE_TELEMETRY_STACK.md. This backfill is strictly for linked-path parity and operational baseline guidance."

@@ -6,12 +6,15 @@ status: closed
 priority: 3
 tags[3]: audit-2026-06-12,docs,drift
 created_at: "2026-06-12T16:11:21.762Z"
-updated_at: "2026-06-19T13:38:27.808Z"
+updated_at: "2026-07-26T17:06:57.744Z"
 author: maintainer-agent
 parent: pm-gpea
+release: v2026.6.20
 resolution: Built-in type list (incl Plan) and storage layout reconciled across ARCHITECTURE.md/README.md/QUICKSTART.md; type resolution documents schema/types.json.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-mcgf,related,"2026-06-19T13:38:27.768Z",null,null
+  pm-gpea,implements,"2026-07-26T17:06:57.530Z",null,null
+  pm-yf31,related,"2026-07-26T17:06:57.530Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-19T13:36:37.005Z",claude-code-agent,"Resolved all 5 drift points: (1) ARCHITECTURE.md built-in types now lists Plan (11 total); (2) README.md built-in types adds Plan; (3) QUICKSTART.md type table adds Plan; (4) ARCHITECTURE storage layout index/ removed + real dirs added (see pm-mcgf); (5) type-resolution note now cites .agents/pm/schema/types.json. Implemented in PR (docs accuracy & contributor-reference hardening). Verified: docs-skills-gate passed (relative links incl .toon validated), docs-skills-gate.spec + guide-command.spec + files-docs-command.spec = 66 passed, quality:static passed, manual temp-dir init confirms 11 builtins incl Plan and real dirs plans/schema/runtime (no index/)."
 files[3]{path,scope,note}:

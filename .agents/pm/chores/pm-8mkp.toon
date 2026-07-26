@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:bootstrap","area:docs",doc,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-06T21:55:52.775Z"
-updated_at: "2026-04-04T21:50:08.301Z"
+updated_at: "2026-07-26T17:07:39.257Z"
 deadline: "2026-03-08T22:00:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-m91u
 blocked_reason: README maintainer bootstrap parity with AGENTS has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If README maintainer bootstrap parity with AGENTS is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/readme-maintainer-bootstrap-parity-with-agents
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for README maintainer bootstrap parity with AGENTS.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-m91u,related,"2026-03-06T21:55:52.775Z",maintainer-agent,null
+  pm-8a2s,implements,"2026-07-26T17:07:39.042Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-06T21:55:52.775Z",maintainer-agent,"Why this exists: README should include maintainer bootstrap parity so release workflows are discoverable in the primary docs."
   "2026-03-06T21:56:07.832Z",maintainer-agent,"Planned changeset: add a Maintainer Bootstrap section to README with PM_AUTHOR/global-install/PM_CMD selection and sandbox test guidance, then extend release-readiness contract tests to enforce these README tokens."
@@ -55,9 +56,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   README.md,project,add maintainer bootstrap section
   tests/integration/release-readiness-runtime.spec.ts,project,assert README bootstrap section tokens
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,contract regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1800,contract regression
 docs[4]{path,scope,note}:
   AGENTS.md,project,authoritative maintainer bootstrap policy
   CONTRIBUTING.md,project,existing bootstrap reference

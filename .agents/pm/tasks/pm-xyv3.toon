@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions-hooks",code,"milestone:5",pm-cli,"priority:1"
 created_at: "2026-03-04T20:23:40.638Z"
-updated_at: "2026-04-04T21:47:15.671Z"
+updated_at: "2026-07-26T17:29:57.539Z"
 deadline: "2026-03-06T20:23:22.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: "M5 follow-up: activity history directory read hook dispatch has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M5 follow-up: activity history directory read hook dispatch is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m5-follow-up-activity-history-directory-read-hoo
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: activity history directory read hook dispatch."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-04T20:23:40.638Z",maintainer-agent,null
+  pm-b1w,implements,"2026-07-26T17:29:57.276Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-04T20:23:40.638Z",maintainer-agent,Activity should dispatch onRead for history directory scans before stream reads.
   "2026-03-04T20:23:55.497Z",maintainer-agent,"Planned change-set: docs-first wording update in PRD/README, then activity command onRead dispatch for history directory enumeration plus integration assertion update for read:history event; finish with mandatory pm test and pm test-all sweeps."
@@ -56,10 +57,10 @@ files[3]{path,scope,note}:
   src/cli/commands/activity.ts,project,add history-directory onRead hook dispatch
   tests/integration/cli.integration.spec.ts,project,assert read hook event for history directory scan
   tests/unit/history-activity-command.spec.ts,project,assert activity onRead hook for history directory scans
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate remains 100 percent
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted integration regression for activity onRead directory dispatch
-  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted unit regression for activity directory hook dispatch
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,3600,coverage gate remains 100 percent
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,1800,targeted integration regression for activity onRead directory dispatch
+  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts,project,900,targeted unit regression for activity directory hook dispatch
 docs[3]{path,scope,note}:
   AGENTS.md,project,governing workflow and closure protocol
   PRD.md,project,update hook lifecycle wording for activity directory scan

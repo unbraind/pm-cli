@@ -6,12 +6,22 @@ status: closed
 priority: 1
 tags[5]: agent-ux,gh-293,gh-294,gh-295,gh-296
 created_at: "2026-06-19T06:13:24.173Z"
-updated_at: "2026-06-19T06:39:23.001Z"
+updated_at: "2026-07-26T17:30:39.741Z"
 author: codex-agent
 parent: pm-mpbb
+release: v2026.6.20
 resolution: "Merged PR #298 with parser/search fixes and regression tests for GH-293, GH-294, GH-295, and GH-296."
 expected_result: "CLI parser and search primitives handle schema unknown subcommands, multi-value create tags, exact dashed-ID searches, and comma-separated linked docs/files without data loss or unintended mutation."
 actual_result: "Local gates, manual temp smoke, remote CI/CodeQL/coverage/static/typecheck/compat/smoke/runtime checks passed; PR #298 merged to main and GitHub issues #293-#296 closed."
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-ablm,related,"2026-07-26T17:30:39.512Z",null,null
+  pm-cf1u,related,"2026-07-26T17:30:39.512Z",null,null
+  pm-jzf4,related,"2026-07-26T17:30:39.512Z",null,null
+  pm-klqo,related,"2026-07-26T17:30:39.512Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:30:39.512Z",null,null
+  pm-oqgf,related,"2026-07-26T17:30:39.512Z",null,null
+  pm-r2kd,related,"2026-07-26T17:30:39.512Z",null,null
+  pm-rkie,related,"2026-07-26T17:30:39.512Z",null,null
 comments[7]{created_at,author,text}:
   "2026-06-19T06:13:38.354Z",codex-agent,"Investigation note: GitHub sweep found open issues #293, #294, #295, #296 and no open PRs. pnpm audit --audit-level moderate reported no known vulnerabilities; pnpm outdated reports commander latest 15.0.0 but wanted/current 14.0.3, retained pending Node compatibility review."
   "2026-06-19T06:18:00.464Z",codex-agent,"Evidence: Focused regression suite passed: node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/register-commands.spec.ts (271 tests). Manual temp smoke passed against dist/cli.js with isolated PM_PATH/PM_GLOBAL_PATH for GH-293 schema unknown subcommand no-mutation, GH-294 create --tags alpha beta gamma, GH-296 docs comma paths, and GH-295 exact-ID search ranking."
@@ -28,9 +38,9 @@ files[7]{path,scope,note}:
   tests/unit/commands/files-docs-command.spec.ts,project,GH-296 regression coverage
   tests/unit/commands/register-commands.spec.ts,project,GH-293 regression coverage
   tests/unit/commands/search-command.spec.ts,project,GH-295 regression coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/register-commands.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqkjfg94-ya47qr,test,passed,"2026-06-19T06:18:00.505Z","2026-06-19T06:18:27.976Z","2026-06-19T06:18:27.976Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/search-command.spec.ts tests/unit/commands/files-docs-command.spec.ts tests/unit/commands/register-commands.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqkjfg94-ya47qr,test,passed,"2026-06-19T06:18:00.505Z","2026-06-19T06:18:27.976Z","2026-06-19T06:18:27.976Z",1,0,0
 close_reason: "Merged PR #298 fixing GH-293..296 parser/search regressions; local and remote gates passed, manual temp smoke passed, and linked GitHub issues closed."
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: dx,sdk,type-safety
 created_at: "2026-07-19T03:42:08.975Z"
-updated_at: "2026-07-20T02:31:48.514Z"
+updated_at: "2026-07-26T17:29:13.340Z"
 closed_at: "2026-07-19T17:39:22.509Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,15 +14,17 @@ acceptance_criteria: "Public SDK mutation inputs are typed per-action (derived f
 parent: pm-usfg
 risk: medium
 confidence: high
+release: v2026.7.20
 resolution: Replaced broad primary SDK mutation bags with strict types derived from executable command interfaces and added typed list projection cores and compile-time contract tests.
 expected_result: SDK create/update/close consumers get accurate keys and scalar kinds with typo rejection while dynamic/custom workflows retain intentional escape hatches.
 actual_result: "PmClient and top-level create/update/close inputs are strict and executable-contract-derived; projected list cores are typed; explicit create id now appears in the canonical tool action schema and executes through the native tool bridge; compile-time, focused, and full 100/100/100/100 gates pass."
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-9x6e,related,"2026-07-19T03:42:08.975Z",null,null
   pm-ju83,related,"2026-07-19T03:42:08.975Z",null,null
   pm-muhw,related,"2026-07-19T03:42:08.975Z",null,null
   pm-xm7c,related,"2026-07-19T15:38:25.812Z",null,null
   pm-wrss,related,"2026-07-19T15:38:29.111Z",null,null
+  pm-usfg,implements,"2026-07-26T17:29:13.109Z",null,null
 comments[8]{created_at,author,text}:
   "2026-07-19T15:37:46.603Z",maintainer-agent,"Evidence: PmClient.create/update/close now take contract-derived typed option bags (PmCreateActionOptions/PmUpdateActionOptions/PmClientCloseActionOptions) built by OptionsFromContracts over const-asserted *_SOURCE tuples in tool-option-contracts.ts — same objects that build the runtime tables, pinned by a parity spec; CLOSE_ACTION_OPTION_KEYS single-sources the close schema + close type. Typo/wrong-shape rejection enforced by tests/types/typed-action-inputs.test-d.ts via tsconfig.typetests.json wired into pnpm typecheck (CI gate). ListProjectedItem gains typed ListProjectedItemCore (row.id string|undefined, never unknown). No runtime behavior change; PmClient.run stays the wide escape hatch; custom schema fields keep the repeatable field option. Remainder honestly out of scope here: claim/release/copy/delete/restore convenience bags are still Record-based."
   "2026-07-19T16:09:04.938Z",codex-wide-sdk-20260719,"Final implementation correction: PmCreateActionOptions, PmUpdateActionOptions, and PmCloseActionOptions now derive from the executable CLI command option interfaces after stripping index signatures and internal runtime/policy keys, rather than deriving client options from MCP tool aliases. PmClient methods and the top-level create/update/close SDK helpers all consume these strict types. Compile-time tests reject typos, wrong scalar kinds such as priority=true, MCP-only aliases such as estimate, object/array values, and unsupported keys while accepting real client keys such as estimatedMinutes and file. pnpm typecheck and the full coverage suite pass."

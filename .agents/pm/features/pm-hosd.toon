@@ -6,13 +6,16 @@ status: closed
 priority: 2
 tags[4]: agent-ux,dogfood,init,packages
 created_at: "2026-05-16T16:12:45.824Z"
-updated_at: "2026-05-16T16:50:52.105Z"
+updated_at: "2026-07-26T17:15:45.852Z"
 author: maintainer-agent
 acceptance_criteria: pm init --with-packages installs all bundled first-party packages automatically; help text mentions the flag; init result includes installed_packages summary; existing pm init behaviour unchanged when flag omitted
 parent: pm-rnpb
+release: v2026.5.18
 resolution: Implemented one-step bundled package installation for pm init.
 expected_result: Agents can initialize pm and activate bundled first-party package commands in one non-interactive command.
 actual_result: "pm init --with-packages installs all bundled packages, returns installed_packages, exposes flags in contracts/help/SDK/completion, and passed linked tests plus release gates."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,implements,"2026-07-26T17:15:45.620Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-16T16:47:58.096Z",codex-agent,"Evidence: implemented pm init --with-packages using the bundled package install-all path; init JSON now includes installed_packages summary; command-scoped contracts expose --preset/--defaults/--author/--with-packages; docs, completion, SDK schema, and dogfood were updated. Verification passed: pnpm build; focused regression 93 tests; dogfood package-first 44 workflows; release gate with required telemetry/Sentry passed with 1308 tests at 100% coverage, static/docs/typecheck/build/pack/npx/compatibility ok, Sentry critical=0/high=2, telemetry finish_error_rate_pct=2.29."
 files[10]{path,scope,note}:
@@ -26,10 +29,10 @@ files[10]{path,scope,note}:
   tests/unit/contracts-command.spec.ts,project,init flags contract regression
   tests/unit/init-command.spec.ts,project,init package install unit coverage
   tests/unit/sdk-index.spec.ts,project,SDK init tool schema regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mp8l19tq-aga2lq,test,passed,"2026-05-16T16:48:35.810Z","2026-05-16T16:50:29.246Z","2026-05-16T16:50:29.246Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/integration/cli.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mp8l19tq-aga2lq,test,passed,"2026-05-16T16:48:35.810Z","2026-05-16T16:50:29.246Z","2026-05-16T16:50:29.246Z",1,0,0
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,bootstrap command reference update
   docs/QUICKSTART.md,project,one-step package init guidance

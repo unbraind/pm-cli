@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: agent-ux,"area:calendar","area:recurrence",core,pm-cli
 created_at: "2026-03-31T22:29:17.588Z"
-updated_at: "2026-04-04T21:31:32.768Z"
+updated_at: "2026-07-26T16:49:10.268Z"
 deadline: "2026-04-14T22:29:17.588Z"
 assignee: codex-agent
 author: codex-agent
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-qh3p
 blocked_reason: "Calendar parity phase 2: events and recurrence has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Calendar parity phase 2: events and recurrence is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -52,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:42.106Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/calendar.ts,project,event recurrence expansion target
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,phase2 regression gate
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,2400,phase2 regression gate
 docs[1]{path,scope,note}:
   PRD.md,project,calendar parity phase 2 requirements
 close_reason: "Calendar parity phase 2 delivered: events, recurrence, controls, docs, and full verification complete."

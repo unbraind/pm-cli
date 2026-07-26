@@ -6,12 +6,16 @@ status: closed
 priority: 4
 tags[3]: agent-ux,cli,context
 created_at: "2026-06-14T11:52:21.590Z"
-updated_at: "2026-06-19T05:29:03.203Z"
+updated_at: "2026-07-26T17:15:41.076Z"
 author: maintainer-agent
 parent: pm-mpbb
+release: v2026.6.19
 resolution: Implemented in feat/cli-output-formats-projection
 expected_result: pm context supports per-row field projection like pm list --fields
 actual_result: Added --fields projecting all focus-row sections across markdown/TOON/JSON + pm_context MCP
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-j0vc,related,"2026-07-26T17:15:40.844Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:15:40.844Z",null,null
 comments[1]{created_at,author,text}:
   "2026-06-19T05:22:23.364Z",claude-code-agent,"Implemented pm context --fields (GH-156 follow-up to --depth full). Projects focus rows (high_level/low_level/blocked_fallback/recently_created/unparented) to a chosen field subset for low-token reads. New exported helpers parseContextFocusFields (validate+dedup) + projectContextFocusRows in context.ts; ContextResult.focus_fields echoes the projection; renderContextMarkdown renders projected key:value lines (drops recently-created date prefix). Works across markdown/TOON/JSON + pm_context MCP options.fields. Selectable: id,title,type,status,priority,order,deadline,assignee,tags,updated_at,parent,children_total,children_closed,completion_pct,created_at. Tests in context-command.spec.ts. Docs: COMMANDS.md 'Calendar and Context'."
 close_reason: "Shipped pm context --fields focus-row projection across markdown/TOON/JSON + pm_context MCP. 100% coverage, docs + contracts updated."

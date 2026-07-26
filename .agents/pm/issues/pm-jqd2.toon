@@ -6,16 +6,19 @@ status: closed
 priority: 2
 tags[4]: agent-ux,audit-followup,extensions,never-block
 created_at: "2026-07-04T10:54:17.266Z"
-updated_at: "2026-07-06T19:36:47.467Z"
+updated_at: "2026-07-26T17:17:36.695Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm extension --install pm-<alias> and @unbrained/pm-<alias> resolve to the bundled catalog or fail with a suggestion listing catalog aliases; never-block recovery bundle included.
 parent: pm-ugqx
 risk: low
 confidence: high
+release: v2026.7.7
 resolution: "Bundled-source resolution accepts alias/pm-<alias>/@unbrained/pm-<alias>; unmatched bare names emit npm:-prefixed next_best_command plus bundled alias catalog in a never-block recovery bundle."
 expected_result: All three spellings of every bundled package install or emit the exact catalog command; unknown names still reach the local-path error with targeted recovery.
 actual_result: "Verified end-to-end on fresh temp workspace: pm install pm-kanban + @unbrained/pm-todos install; pm install pm-changelog (npm-only) errors with npm:pm-changelog hint; 116/116 spec tests pass; tsc clean."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T17:17:36.487Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-06T16:56:23.805Z",codex-cli-agent,"Review response: accepted Greptile P2 on bare-name recovery wording. The bundled-alias hint no longer renders misleading 'Known aliases: .' punctuation when no aliases are discovered; focused extension/register/annotation tests pass."
   "2026-07-06T18:33:23.467Z",codex-cli-agent,"Review response: accepted Sourcery feedback on bundled alias discovery cost. Bare local-source miss recovery now caches bundled package aliases after the first lookup, avoiding repeated filesystem/catalog work across multi-target install failures while preserving best-effort fallback behavior. Verification: focused register/extension tests passed (197 tests); pnpm typecheck passed."

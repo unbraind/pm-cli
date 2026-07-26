@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions-todos",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-08T13:57:37.636Z"
-updated_at: "2026-04-05T22:45:35.589Z"
+updated_at: "2026-07-26T17:12:47.847Z"
 deadline: "2026-03-09T13:56:50.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-08
-release: v0.1
+release: v2026.3.9
 blocked_by: pm-3s0
 blocked_reason: Restore full todos import metadata parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Restore full todos import metadata parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: v0.1
 component: extensions/todos
 regression: true
 customer_impact: Users importing todos markdown can currently lose planning and issue metadata without warning.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-3s0,related,"2026-03-08T13:57:37.636Z",maintainer-agent,null
+  pm-b1w,implements,"2026-07-26T17:12:47.617Z",null,null
 comments[9]{created_at,author,text}:
   "2026-03-08T13:57:37.636Z",maintainer-agent,Why this exists todos import currently drops many canonical front matter fields even though export writes them.
   "2026-03-08T13:57:45.631Z",maintainer-agent,"Planned changeset: update PRD and README to state todos import preserves canonical optional ItemFrontMatter fields during round-trip import-export, then hydrate missing import mappings in src/extensions/builtins/todos/import-export.ts and add regression coverage in tests/unit/todos-extension.spec.ts before running pm test and pm test-all sweeps."
@@ -61,9 +62,9 @@ files[3]{path,scope,note}:
   PRD.md,project,todos extension parity contract wording
   README.md,project,public todos extension wording
   tests/unit/todos-extension.spec.ts,project,round trip parity regression coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted todos regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,project,1200,targeted todos regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,authoritative extension parity contract

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-vector",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.455Z"
-updated_at: "2026-04-04T21:46:37.348Z"
+updated_at: "2026-07-26T17:18:26.761Z"
 deadline: "2026-03-07T23:02:10.455Z"
 assignee: steve
 author: steve
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-54d
 blocked_reason: "M4: Vector store adapters for Qdrant and LanceDB has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4: Vector store adapters for Qdrant and LanceDB is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,9 +41,10 @@ fixed_version: archive-2026q2
 component: project-management/vector-store-adapters-for-qdrant-and-lancedb
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Vector store adapters for Qdrant and LanceDB.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-54d,blocks,"2026-02-17T23:02:10.455Z",steve,null
   pm-f45,parent,"2026-02-17T23:02:10.455Z",steve,null
+  pm-f45,implements,"2026-07-26T17:18:26.493Z",null,null
 comments[21]{created_at,author,text}:
   "2026-02-21T01:51:29.039Z",cursor-maintainer-agent,"Planned docs-first change-set: update PRD.md and README.md to mark vector-store adapter resolution/planning baseline as partial, then implement deterministic Qdrant/LanceDB adapter helpers and wire semantic/hybrid search/reindex validation to require both embedding provider and vector store before returning roadmap-not-implemented diagnostics."
   "2026-02-21T02:07:06.006Z",cursor-maintainer-agent,"Implemented docs-first vector-store adapter baseline increment. Docs: updated PRD.md Milestone 4 checklist + provider/vector baseline text and README.md planned-search section to mark Qdrant/LanceDB config-resolution/request-target-planning baseline as partial while semantic/vector execution remains roadmap. Code: added src/core/search/vector-stores.ts with deterministic Qdrant/LanceDB resolver + request/query/upsert plan helpers; wired src/cli/commands/search.ts and src/cli/commands/reindex.ts semantic/hybrid gating to require both embedding provider and vector store and emit explicit provider/vector diagnostics; added tests/unit/vector-store-adapter.spec.ts and updated tests/unit/search-command.spec.ts + tests/unit/reindex-command.spec.ts; added vitest coverage include for src/core/search/vector-stores.ts. Evidence: node dist/cli.js test pm-kj4 --run --timeout 3000 --json passed all linked tests (4/4). Regression: node dist/cli.js test-all --status in_progress --timeout 3000 --json => items=11 linked_tests=59 passed=35 failed=0 skipped=24; node dist/cli.js test-all --status closed --timeout 3000 --json => items=21 linked_tests=57 passed=20 failed=0 skipped=37. Coverage proof: node scripts/run-tests.mjs coverage reports 100% lines/branches/functions/statements."
@@ -83,11 +84,11 @@ files[12]{path,scope,note}:
   tests/unit/search-command.spec.ts,project,vector validation diagnostics coverage
   tests/unit/vector-store-adapter.spec.ts,project,unit coverage for vector adapter helpers
   vitest.config.ts,project,enforce coverage on vector adapter module
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate regression
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,reindex semantic-hybrid diagnostics
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,search semantic-hybrid diagnostics
-  node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,vector adapter unit coverage
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate regression
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,project,900,reindex semantic-hybrid diagnostics
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,900,search semantic-hybrid diagnostics
+  node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts,project,900,vector adapter unit coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,governing spec

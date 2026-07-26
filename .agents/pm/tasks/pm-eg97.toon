@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: "area:search",code,"milestone:4",pm-cli,"priority:2",roadmap
 created_at: "2026-03-04T21:46:22.475Z"
-updated_at: "2026-04-04T21:49:15.409Z"
+updated_at: "2026-07-26T17:12:53.725Z"
 deadline: "2026-03-18T21:46:22.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-f45
 blocked_reason: "M4 roadmap: mutation-triggered semantic embedding refresh has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4 roadmap: mutation-triggered semantic embedding refresh is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m4-roadmap-mutation-triggered-semantic-embedding
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 roadmap: mutation-triggered semantic embedding refresh."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-f45,related,"2026-03-04T21:46:22.475Z",maintainer-agent,null
+  pm-f45,implements,"2026-07-26T17:12:53.483Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-04T21:46:22.475Z",maintainer-agent,Roadmap gap from PRD Milestone 4 requires tracked implementation work.
   "2026-03-04T21:51:09.470Z",cursor-maintainer-agent,Implement best-effort mutation-triggered semantic embedding refresh for changed item IDs while retaining deterministic keyword cache invalidation. Wire refresh dispatch in CLI mutation paths and add unit coverage for configured/unconfigured/failure scenarios.
@@ -60,11 +61,11 @@ files[8]{path,scope,note}:
   src/core/search/providers.ts,project,embedding provider execution path
   src/core/search/vector-stores.ts,project,vector store upsert query path
   tests/unit/search-cache.spec.ts,project,unit coverage for refresh behavior
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,reindex baseline regression
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted mutation refresh tests
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted search regression
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1800,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,project,1800,reindex baseline regression
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,project,1800,targeted mutation refresh tests
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,project,1800,targeted search regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,governing maintainer workflow
   PRD.md,project,authoritative roadmap contract

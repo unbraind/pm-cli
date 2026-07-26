@@ -6,13 +6,14 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,error-recovery,extensions,gh-issue
 created_at: "2026-07-11T02:49:52.213Z"
-updated_at: "2026-07-11T08:33:33.906Z"
+updated_at: "2026-07-26T16:52:25.253Z"
 closed_at: "2026-07-11T08:33:30.806Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Wrapped extension failures preserve the nested typed error code and recovery verbatim; missing/suggested_retry only ever reference options in the user-invoked command's contract; repro (todos import against uninitialized --pm-path) yields tracker_not_initialized recovery, not --limit; regression test covers nested-failure wrapping; GH-505 closed with a comment linking the fix"
 risk: medium
 confidence: high
+release: v2026.7.12
 resolution: Outer extension recovery suppresses inferred retries when a nested structured failure owns recovery.
 expected_result: Nested tracker recovery remains actionable and unrelated flags are never suggested.
 actual_result: Nested failures retain their recovery path without bogus outer missing flags or suggested retries.

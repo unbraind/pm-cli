@@ -6,9 +6,13 @@ status: closed
 priority: 1
 tags[2]: audit,session-2026-07-02
 created_at: "2026-07-02T21:26:40.863Z"
-updated_at: "2026-07-02T22:16:46.682Z"
+updated_at: "2026-07-26T17:15:27.759Z"
 author: unknown
 parent: pm-fpod
+release: v2026.7.3
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-0n6p,related,"2026-07-26T17:15:27.495Z",null,null
+  pm-fpod,implements,"2026-07-26T17:15:27.495Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-02T21:27:51.655Z",claude-code-agent,"Lane C quality audit start: complexity (eslint suppressions), jscpd, dead code, long files, type safety, deps, lint/test health."
   "2026-07-02T21:30:59.342Z",claude-code-agent,"Milestone: suppressions=0 (complexity debt fully cleared, pm-0n6p closed); eslint . green; jscpd 0 clones (547 files); 253 fns CC12-17 (top: 17x18 fns at ceiling); 22 non-spec files >1500 LOC (max search.ts 3119); non-null ! in src=39 (sdk=2, register-setup 8); no as-any/ts-ignore; pnpm audit clean; outdated: @types/node 22 (policy ^20-line? currently ^22), unicorn 69->70, typebox 1.1->1.3. Tests running."

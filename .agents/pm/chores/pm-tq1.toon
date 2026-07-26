@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: install,pm-cli,release-readiness,windows
 created_at: "2026-02-17T23:37:53.836Z"
-updated_at: "2026-04-04T21:50:58.353Z"
+updated_at: "2026-07-26T17:26:34.978Z"
 deadline: "2026-02-22T23:37:53.836Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-cyj
 blocked_reason: Installer scripts and update path has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Installer scripts and update path is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,10 +41,11 @@ fixed_version: archive-2026q2
 component: project-management/installer-scripts-and-update-path
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Installer scripts and update path.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cyj,related,"2026-02-17T23:37:53.836Z",cursor-agent,null
   pm-ote,parent,"2026-02-17T23:37:53.836Z",cursor-agent,null
   pm-pq8,related,"2026-02-17T23:37:53.836Z",cursor-agent,null
+  pm-ote,implements,"2026-07-26T17:26:34.648Z",null,null
 comments[11]{created_at,author,text}:
   "2026-02-18T00:06:54.171Z",cursor-agent,"Installer evidence: scripts/install.sh successfully installs from local file package spec with custom --prefix and verifies pm --version. PowerShell runtime (pwsh) is unavailable in this Linux environment, so install.ps1 execution is documented but not executable here."
   "2026-02-18T00:16:09.711Z",cursor-agent,README now documents npm update path and idempotent installer rerun behavior to complete install/update documentation scope.
@@ -66,10 +67,10 @@ files[4]{path,scope,note}:
   scripts/install.ps1,project,PowerShell installer with prefix and version options
   scripts/install.sh,project,POSIX installer with prefix and version options
   tests/integration/help-runtime.spec.ts,project,assert installer URL contract in README
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,Coverage gate regression proof
-  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,README installer contract regression
-  "PM_CLI_PACKAGE=file:[redacted_path] bash scripts/install.sh --prefix /tmp/pm-cli-install-test --version latest",null,project,180,null,null,null,null,null,null,null,null,null,null,null,Local package install smoke test
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,900,Coverage gate regression proof
+  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,project,300,README installer contract regression
+  "PM_CLI_PACKAGE=file:[redacted_path] bash scripts/install.sh --prefix /tmp/pm-cli-install-test --version latest",project,180,Local package install smoke test
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,governing spec for release-ready docs

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-19T11:15:28.776Z"
-updated_at: "2026-07-19T11:16:20.828Z"
+updated_at: "2026-07-26T17:02:41.282Z"
 closed_at: "2026-07-19T11:16:20.827Z"
 author: maintainer-agent
 estimated_minutes: 15
@@ -14,12 +14,17 @@ acceptance_criteria: "vcs-extension.spec.ts:402 asserts via path.join so windows
 parent: pm-92if
 risk: low
 confidence: high
+release: v2026.7.20
 resolution: "Fixed vcs-extension.spec.ts:402 to assert path.join('relationships','events.jsonl') instead of a POSIX literal."
 expected_result: windows/Node24 nightly leg failure surface reduces to the pm-hvt3 extension-copy-safety spec only.
 actual_result: Spec passes locally (5/5); linux suite unaffected; windows verification via next nightly run.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-hvt3,related,"2026-07-19T11:15:28.776Z",null,null
   pm-u5zr,related,"2026-07-19T11:15:28.776Z",null,null
+  pm-92if,implements,"2026-07-26T17:02:41.074Z",null,null
+  pm-i84i,related,"2026-07-26T17:02:41.074Z",null,null
+  pm-lt6n,related,"2026-07-26T17:02:41.074Z",null,null
+  pm-s5pe,related,"2026-07-26T17:02:41.074Z",null,null
 files[1]{path,scope,note}:
   tests/unit/packages/vcs-extension.spec.ts,project,line 402 POSIX assertion fixed to path.join
 close_reason: "Spec-side portability fix shipped on main: assertion now uses path.join, matching native separators on Windows."

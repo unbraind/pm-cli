@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:graph",context-management,relationships,story,token-efficiency
 created_at: "2026-07-13T21:57:48.869Z"
-updated_at: "2026-07-17T09:23:51.581Z"
+updated_at: "2026-07-26T17:07:59.741Z"
 closed_at: "2026-07-17T06:12:59.865Z"
 author: codex-root
 estimated_minutes: 90
@@ -20,13 +20,18 @@ why_now: "Current context comes from several list, get, deps, comments, history,
 parent: pm-96h7
 risk: low
 confidence: high
+release: v2026.7.18
 resolution: fixed
 expected_result: "One bounded graph read answers origin, prerequisites, dependents, impact, and evidence with per-node selection reasons, caller-controlled direction/kinds/depth/limits/token budget/cursor, counts-first default output, and explicit completeness - one contract across SDK, CLI, MCP, and shell pipelines"
 actual_result: "Delivered exactly that via relationship-context summary/role/via/reasons/completeness, RelationshipGraph.neighborEdges, deps --direction/--kind with fail-fast registry validation, root evidence promotion, and contract/schema/completion parity; history-window control deliberately deferred to the durable event-store scope on pm-ju83"
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-13T21:57:48.869Z",null,null
   pm-96h7,related,"2026-07-13T21:57:48.869Z",null,null
   pm-bwyw,related,"2026-07-13T21:57:48.869Z",null,null
+  pm-8kch,related,"2026-07-26T17:07:59.533Z",null,null
+  pm-96h7,implements,"2026-07-26T17:07:59.533Z",null,null
+  pm-gknu,related,"2026-07-26T17:07:59.533Z",null,null
+  pm-ju83,related,"2026-07-26T17:07:59.533Z",null,null
 comments[19]{created_at,author,text}:
   "2026-07-13T21:57:48.869Z",codex-root,"Duplicate check 2026-07-13: all-status review found context packing and deps visualization items but no single agent story joining bounded lineage,impact,blockers,and evidence traversal; it belongs under pm-96h7."
   "2026-07-14T09:43:37.414Z",codex-gpt5,"Implementation start 2026-07-14: build one bounded graph-context SDK response joining lineage, prerequisites, dependents, impact, evidence reasons, cost/truncation metadata, and continuation on the shared graph kernel."

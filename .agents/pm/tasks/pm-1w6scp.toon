@@ -1,0 +1,33 @@
+id: pm-1w6scp
+title: "Historical program spine: the v1 delivery epoch is stored twice as disconnected roots, so no graph walk reaches the project's own origin"
+description: "The tracker's first epoch is present but unreachable. Thirteen Epic items encode the original delivery programme twice — Milestone 0 through 6 (pm-2xl, pm-u9r, pm-c0r, pm-54d, pm-f45, pm-jiw) and PRD Milestone 0 through 6 (pm-6hhn, pm-zetb, pm-murz, pm-met4, pm-xtfo, pm-gyfn, pm-defw) — alongside pm-lty, the archived v1 build epic. All of them are parentless top-level roots with no edge to each other, no edge to the successor programme, and no ordering, so a traversal from today's roadmap terminates long before it reaches the work that produced v1. 184 terminal items carry no parent at all. The consequence is that every question of the form what preceded this, what did this epoch deliver, or how did the project get from its first milestone to its current outcome ladder is unanswerable by graph algorithm and answerable only by reading titles. The successor structure already exists and is well formed: pm-doxj indexes the post-v0.1 roadmap and six outcome milestones sit beneath it. What is missing is the join between the two eras and the internal ordering within the first one."
+type: Task
+status: open
+priority: 2
+tags[6]: "area:graph",backfill,context-management,history,relationships,timeline
+created_at: "2026-07-26T17:06:25.188Z"
+updated_at: "2026-07-26T17:06:25.188Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "The duplicated milestone encoding is dispositioned explicitly as either two views of one programme or two distinct programmes, and the disposition is recorded on the items rather than inferred; The original milestones carry their delivery order as typed edges so a traversal can reconstruct the sequence without parsing titles; The v1 programme is joined to the post-v0.1 roadmap by a typed edge whose direction states which era succeeded which; Every parentless terminal item either gains a programme lineage or appears on a recorded residual list with the reason it has none; No item is retyped, renamed, or merged to achieve the join, and every edge added cites the durable evidence it came from; A graph query from the newest outcome milestone reaches the oldest v1 milestone, and the path is reported as evidence"
+goal: project management = context management
+objective: "Make the project's whole timeline a connected, ordered, typed graph from the first milestone to the current outcome ladder"
+value: "Release archaeology, precedent retrieval, and long-horizon planning can all run as graph queries instead of manual reading"
+impact: "Every historical item gains a path to the programme that contained it, and the two eras become one traversable spine"
+outcome: "One ordered v1 programme spine joined to the post-v0.1 roadmap, with the duplicate milestone encoding explicitly dispositioned rather than silently left as two roots"
+why_now: "The terminal relationship backfill has just made every other closed item traversable, so the programme roots are now the only remaining discontinuity"
+parent: pm-96h7
+risk: medium
+confidence: medium
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-3j6it6,discovered_from,"2026-07-26T17:06:25.188Z",null,null
+  pm-4ri6,related,"2026-07-26T17:06:25.188Z",null,null
+  pm-5qmm,related,"2026-07-26T17:06:25.188Z",null,null
+  pm-6x7o,related,"2026-07-26T17:06:25.188Z",null,null
+  pm-96h7,implements,"2026-07-26T17:06:25.188Z",null,null
+  pm-bzmeaa,related,"2026-07-26T17:06:25.188Z",null,null
+  pm-doxj,related,"2026-07-26T17:06:25.188Z",null,null
+  pm-hnc9w7,related,"2026-07-26T17:06:25.188Z",null,null
+  pm-lnrk,related,"2026-07-26T17:06:25.188Z",null,null
+  pm-s5e04g,related,"2026-07-26T17:06:25.188Z",null,null
+body: ""

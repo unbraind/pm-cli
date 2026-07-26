@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: cli,gh-issue,validation
 created_at: "2026-07-13T08:57:37.424Z"
-updated_at: "2026-07-13T16:17:51.947Z"
+updated_at: "2026-07-26T17:17:27.370Z"
 closed_at: "2026-07-13T16:17:51.137Z"
 author: maintainer-agent
 estimated_minutes: 45
@@ -14,11 +14,19 @@ acceptance_criteria: Negative and non-integer --estimated-minutes rejected on cr
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.14
 resolution: "Resolved with a shared non-negative integer parser wired into create, update, and update-many planning."
 expected_result: "Negative, fractional, and nonnumeric estimates fail before writes across all mutation paths."
 actual_result: All invalid estimate forms return usage errors; zero and positive integers remain valid; focused and full tests passed.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-96vo,related,"2026-07-13T08:57:37.424Z",null,null
+  pm-45mb,related,"2026-07-26T17:17:27.150Z",null,null
+  pm-7je0,related,"2026-07-26T17:17:27.150Z",null,null
+  pm-chyh,related,"2026-07-26T17:17:27.150Z",null,null
+  pm-hno5,related,"2026-07-26T17:17:27.150Z",null,null
+  pm-kj4k,related,"2026-07-26T17:17:27.150Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:17:27.150Z",null,null
+  pm-p9sc,related,"2026-07-26T17:17:27.150Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-13T14:32:14.393Z",codex-sdk-contracts-20260713,"Implementation start: active in the broad SDK/CLI/MCP contract-integrity PR. Live all-status duplicate checks, full item metadata, related closed lineage, GitHub issues/PRs/checks/releases, dependency updates, and security alert surfaces were reviewed before claim. This item shares validation primitives, public SDK semantics, CLI/MCP contracts, and one end-to-end verification surface with pm-chyh, pm-p9sc, pm-45mb, pm-7je0, pm-jh9t, pm-kj4k, pm-hno5, and pm-96vo."
   "2026-07-13T15:32:36.668Z",codex-sdk-contracts-20260713,"Evidence: the shared non-negative integer parser is applied to create, update, and update-many planning, rejecting negative, fractional, and nonnumeric estimates before writes. Direct parser, command, bulk, and acceptance coverage passed."

@@ -6,13 +6,18 @@ status: closed
 priority: 3
 tags[4]: code-quality,dedup,settings,tests
 created_at: "2026-05-22T19:08:43.774Z"
-updated_at: "2026-05-24T22:52:37.238Z"
+updated_at: "2026-07-26T17:16:27.109Z"
 author: codex-dup-audit
 acceptance_criteria: settings-store specs use a shared legacy settings fixture builder with explicit per-test overrides; behavior under test remains visible for omitted workflow and item_format metadata cases; settings-store tests and pnpm build pass.
 parent: pm-rnpb
+release: v2026.5.27
 resolution: "Added legacySettingsFixture(overrides) + writeLegacySettings(pmRoot, overrides) helpers in settings-store.spec.ts; migrated the workflow-omit and item_format-explicitness tests so each expresses only its scenario field via overrides. 11 tests pass; build green."
 expected_result: Legacy settings test fixtures are centralized without changing settings behavior.
 actual_result: Shared settings-store fixtures are in place and full release gate passed after the combined dedup refactor.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-axd1,related,"2026-07-26T17:16:26.897Z",null,null
+  pm-rnpb,implements,"2026-07-26T17:16:26.897Z",null,null
+  pm-v798,related,"2026-07-26T17:16:26.897Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-22T19:09:25.444Z",codex-dup-audit,"Duplicate-check evidence: before creating, searched existing items for settings-store legacy settings fixtures and readSettingsWithMetadata duplication. Relevant open items pm-v798 and pm-axd1 cover production normalization/defaults, not repeated settings-store test JSON. jscpd and manual inspection confirmed settings-store.spec.ts:82-104 duplicates settings-store.spec.ts:251-273."
   "2026-05-24T22:16:30.930Z",claude-code-agent,"Added local helpers legacySettingsFixture(overrides) + writeLegacySettings(pmRoot, overrides) to settings-store.spec.ts. Base fixture omits later-added keys (workflow/item_format) so each test expresses only its scenario: 'merges defaults when legacy settings omit workflow' uses the bare base (no overrides); 'reports whether item_format was explicitly selected' adds { workflow: { definition_of_done: [] } } as an override. Both fixtures previously duplicated ~28 lines of output/search/providers/vector_store defaults; now collapsed to one builder. Key order in the written JSON for the second test changes (workflow now last) but both tests only JSON.parse via readSettings/readSettingsWithMetadata (order-independent); no raw-order assertion exists. 11 tests pass; build green. No assertion changes."

@@ -6,15 +6,17 @@ status: closed
 priority: 3
 tags[2]: codefactor,gh-555
 created_at: "2026-07-14T10:14:47.488Z"
-updated_at: "2026-07-14T10:16:44.136Z"
+updated_at: "2026-07-26T17:21:52.367Z"
 closed_at: "2026-07-14T10:15:54.957Z"
 author: codex-gpt5
 parent: pm-92if
+release: v2026.7.15
 resolution: fixed
 expected_result: The deterministic relationship-kind ordering assertion should not allocate a redundant spread copy.
 actual_result: The mapped array is sorted directly; the focused 21-test suite and repo-wide ESLint pass.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-m2il,related,"2026-07-14T10:14:47.488Z",codex-gpt5,null
+  pm-92if,implements,"2026-07-26T17:21:52.100Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-14T10:14:47.488Z",codex-gpt5,"Duplicate check 2026-07-14: pm search 'GH-555 CodeFactor relationships.spec.ts spread' --status all and pm search 'issue 555 relationships.spec.ts' --status all found the existing CodeFactor epic pm-92if but no item for GitHub issue #555. Source: https://github.com/unbraind/pm-cli/issues/555"
   "2026-07-14T10:15:54.155Z",codex-gpt5,"Evidence: removed the redundant array spread flagged by GitHub issue #555 while preserving the deterministic ordering assertion. The focused 21-test relationship SDK suite and repo-wide ESLint both pass."

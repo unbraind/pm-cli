@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[2]: agent-ux,consistency
 created_at: "2026-07-17T10:06:57.292Z"
-updated_at: "2026-07-17T16:40:42.150Z"
+updated_at: "2026-07-26T17:27:24.624Z"
 closed_at: "2026-07-17T13:49:17.721Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,16 +14,18 @@ acceptance_criteria: pm context summary.blocked counts dependency-blocked items 
 parent: pm-mpbb
 risk: medium
 confidence: high
+release: v2026.7.18
 resolution: Implemented one edge-aware SDK actionability definition and migrated all three CLI consumers.
 expected_result: "context, next, and list-blocked report the same blocked set for status-blocked and dependency-blocked work."
 actual_result: "All three surfaces agree; linked 76-test parity suite, full exact coverage, and packed CLI acceptance pass."
 fixed_version: next-release
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-kcs4,related,"2026-07-17T10:06:57.292Z",null,null
   pm-l0bu,related,"2026-07-17T10:06:57.292Z",null,null
   pm-pfqi,related,"2026-07-17T10:06:57.292Z",null,null
   pm-6x7o,related,"2026-07-17T13:10:29.809Z",null,null
   pm-ju83,related,"2026-07-17T13:10:29.809Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:27:24.380Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-17T13:10:36.612Z",codex-root,"Implementation progress: context summary/progress/blocker rows and list-blocked now share the same dependency-edge-aware blocked definition as next. The public sdk/actionability surface is the single consumer boundary; close and next CLI adapters were migrated off their private actionability import as part of the SDK ratchet."
   "2026-07-17T13:31:47.168Z",codex-root,"GitHub reconciliation: GH-578 remains the canonical external issue for this item and there are no open PRs or dependency/secret alerts. The implementation bundle directly resolves its shared-semantics requirement; final closure will follow parity tests, package acceptance, and PR review evidence."

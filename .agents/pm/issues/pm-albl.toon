@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-14T16:46:59.756Z"
-updated_at: "2026-07-14T18:22:17.634Z"
+updated_at: "2026-07-26T17:09:19.474Z"
 closed_at: "2026-07-14T18:08:23.561Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,14 +14,16 @@ acceptance_criteria: A variadic positional can be declared passthrough (or '--' 
 parent: pm-ugqx
 risk: medium
 confidence: 75
+release: v2026.7.15
 resolution: Pinned and documented the supported end-of-options separator for flag-like variadic content at the real extension CLI boundary.
 expected_result: "Tokens after -- reach variadic extension handlers unchanged, including -h and --json."
 actual_result: The behavior lacked a real-boundary contract and users reported help interception in released tooling.
 regression: true
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-evav,related,"2026-07-14T16:46:59.756Z",null,null
   pm-fgih,related,"2026-07-14T16:46:59.756Z",null,null
   pm-as4a,related,"2026-07-14T17:32:17.423Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:09:19.203Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-14T18:08:04.830Z",codex-root,"Final evidence: real CLI regression test and packed installed package prove pm --json proof query -- RETURN -h --json delivers [RETURN,-h,--json] verbatim. Global help behavior is unchanged, and SDK/extension docs now state the end-of-options contract. Linked pm test passes within the schema sandbox."
 files[1]{path,scope,note}:

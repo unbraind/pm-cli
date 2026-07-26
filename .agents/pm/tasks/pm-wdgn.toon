@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:test-command",code,doc,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T12:46:34.203Z"
-updated_at: "2026-04-04T21:47:30.811Z"
+updated_at: "2026-07-26T17:28:40.739Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-mlc3
 blocked_reason: Harden chained sandbox env detection per segment has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Harden chained sandbox env detection per segment is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/harden-chained-sandbox-env-detection-per-segment
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden chained sandbox env detection per segment.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-mlc3,related,"2026-03-05T12:46:34.203Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:28:40.438Z",null,null
 comments[4]{created_at,author,text}:
   "2026-03-05T12:46:34.203Z",maintainer-agent,Need per-segment sandbox checks to close a chained-command bypass in pm test add validation
   "2026-03-05T12:46:50.440Z",maintainer-agent,"Implementing now: update docs language for chained direct-runner safety semantics, then enforce per-segment sandbox-env validation in src/cli/commands/test.ts and add regression tests for cross-segment bypass attempts."
@@ -55,9 +56,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/test.ts,project,sandbox direct-runner validation
   tests/unit/test-command.spec.ts,project,regression coverage
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate verification
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted test-command regressions
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate verification
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,project,1200,targeted test-command regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and test safety protocol
   PRD.md,project,authoritative behavior contract

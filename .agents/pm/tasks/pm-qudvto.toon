@@ -1,0 +1,38 @@
+id: pm-qudvto
+title: "Terminal relationship backfill, evidence-derived tranche: make every closed and canceled item reachable by typed graph traversal"
+description: "Terminal items were the tracker's largest blind spot: of 1,795 closed and canceled items, 1,024 had no outbound relationship edge at all, 822 had none in either direction, and 1,682 had no edge of any kind that semantic traversal accepts. Since predecessors, ancestors and successors reject related-kind edges, and the scalar parent field is not itself a traversable semantic kind, the entire completed history of the project was invisible to graph algorithms even where hierarchy existed. This tranche closes that gap for every terminal item reachable from durable evidence, in one changelog-safe pass made possible by the release attribution stamp landed in the same lane.\n\nFour evidence classes, applied in order of strength, none of them inferential:\n\n1. Typed hierarchy mirror. Every terminal item carrying a parent gains a typed implements edge to that parent, so the lineage that already existed as a scalar becomes traversable. This is the same mechanism that made active items reach their outcome milestones.\n\n2. Explicit identifier references. Every pm identifier recorded in an item's own durable text — description, body, comments, notes, resolution, close reason, acceptance criteria — becomes a related edge to that item, provided the target exists and the edge is not already present. These are references the authoring agent or human wrote deliberately.\n\n3. Shared linked artifact. Items still edgeless after the first two classes link to the items with which they share the most linked files or docs, since two items acting on the same artifact are related by subject.\n\n4. Shared issue reference. Items still edgeless after the first three link to items citing the same GitHub issue or pull request number.\n\nItems that remain unlinked after all four classes are recorded as a residual rather than given fabricated edges, per the parent item's requirement that unresolved cases retain uncertainty."
+type: Task
+status: closed
+priority: 1
+tags[7]: "area:graph",backfill,changelog-safe,context-management,history,relationships,terminal-items
+created_at: "2026-07-26T17:15:45.262Z"
+updated_at: "2026-07-26T17:36:13.180Z"
+closed_at: "2026-07-26T17:35:58.429Z"
+claim_principal: "harness:claude-code#ad0de54baae9cc12afd5a5a6"
+author: "harness:claude-code"
+estimated_minutes: 360
+acceptance_criteria: "Every edge added cites one of the four declared evidence classes, and no edge is created from title similarity, release cohort, or any other inferential signal; Edges are deduplicated against what already exists in either direction so the pass is idempotent and safe to re-run; Each write is an ordinary history-recorded mutation carrying the evidence class in its message, so the enrichment is itself auditable; Items with no evidence in any class are recorded as a residual with counts, not given fabricated links; Changelog regeneration after the pass shows no bucket movement, proving the release stamp made the write attribution-neutral; Graph audit reports no new cycles and no new findings after the pass"
+goal: project management = context management
+objective: "Turn the completed history of the project into a graph that algorithms can walk, without inventing a single edge"
+value: "Closed work becomes first-class institutional context for precedent retrieval, release archaeology and long-horizon planning"
+impact: "Removes the tracker's largest structural blind spot: the majority of its own items were previously unreachable by typed traversal"
+outcome: "Every terminal item with durable evidence carries typed relationship edges, with a recorded residual for those that have none"
+why_now: "Release attribution is now stamped, so metadata writes on closed items are changelog-neutral and the pass can finally run"
+parent: pm-lnrk
+risk: medium
+confidence: high
+resolution: "Applied 3,744 evidence-derived relationship edges across 1,713 terminal items using four declared evidence classes, making the completed history of the project traversable by typed graph algorithms without inventing a single link."
+expected_result: "Every terminal item with durable evidence carries typed relationship edges, the pass introduces no cycles or validation findings, and changelog attribution is unaffected because release identifiers are stamped."
+actual_result: "1,713 items updated with zero failures; edges 5,147 to 8,891 (implements 317 to 1,932, related 2,260 to 4,360); graph audit reports the identical 11 pre-existing info findings with identical affected-subject counts; validate ok with only the legacy resolution warning at 289; health ok with zero warnings; changelog shows 0 release-section moves, 0 category moves and identical byte count across the pass."
+dependencies[9]{id,kind,created_at,author,source_kind}:
+  pm-1w6scp,blocks,"2026-07-26T17:15:45.262Z",null,null
+  pm-3dyec2,related,"2026-07-26T17:15:45.262Z",null,null
+  pm-6olc95,related,"2026-07-26T17:15:45.262Z",null,null
+  pm-96h7,related,"2026-07-26T17:15:45.262Z",null,null
+  pm-a8zm,related,"2026-07-26T17:15:45.262Z",null,null
+  pm-bzmeaa,related,"2026-07-26T17:15:45.262Z",null,null
+  pm-hnc9w7,related,"2026-07-26T17:15:45.262Z",null,null
+  pm-lnrk,implements,"2026-07-26T17:15:45.262Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T17:15:45.262Z",null,null
+close_reason: "Delivered and verified. Evidence-derived relationship edges applied across 1,713 terminal items using four declared classes and no inferential signal: typed hierarchy mirror to an existing parent, explicit pm identifiers recorded in the item's own durable text, shared linked file or doc, and shared GitHub issue or pull request reference. Every write is an ordinary history-recorded mutation carrying its evidence class in the message, deduplicated against existing edges in both directions so the pass is idempotent. Items with no evidence in any class were recorded as a residual rather than given fabricated links. Reachability is demonstrated rather than asserted: a previously edgeless closed item now reaches 1,444 nodes through semantic traversal.\n\nChangelog neutrality proved at scale, which was the acceptance criterion this tranche existed to satisfy: 3,744 edge writes across 1,713 closed items produced 0 release-section moves, 0 category moves, 0 items added or removed, and an identical 296,429-byte output. Rows did reorder inside the sections they never left, which is a separate residual now owned by pm-nwuzaq. Graph audit after the pass reports the same 11 findings, the same four codes and the same affected-subject counts as before, so no cycle and no new finding was introduced; validate stays ok with only the pre-existing legacy resolution warning at 289, and health reports ok with zero warnings. Edge totals moved from 5,147 to 8,891, with implements 317 to 1,932 and related 2,260 to 4,360."
+body: ""

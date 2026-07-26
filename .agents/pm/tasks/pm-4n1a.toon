@@ -6,14 +6,17 @@ status: closed
 priority: 1
 tags[4]: dedupe,external-audit,pm-cli,query-surfaces
 created_at: "2026-04-06T12:40:35.234Z"
-updated_at: "2026-05-17T08:21:06.283Z"
+updated_at: "2026-07-26T17:04:04.317Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "pm dedupe-audit returns deterministic duplicate candidates in all three modes, includes merge suggestions in JSON output, and is covered by unit/integration/help/completion/contracts tests."
 parent: pm-7lum
+release: v2026.5.1
 resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
 expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
 actual_result: Resolution metadata fields were backfilled without altering closure intent.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-7lum,implements,"2026-07-26T17:04:04.107Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-06T12:40:35.234Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'duplicate dedupe audit' --limit 20; pm search 'automate duplicate-cluster detection and canonical mapping report' --limit 10; pm list-open --limit 50; pm list-in-progress --limit 50. Reusing open parent pm-7lum and creating only this implementation task because no active child task currently tracks command-level dedupe-audit delivery."
   "2026-04-06T13:28:30.651Z",codex-agent,"Implemented pm dedupe-audit with title_exact/title_fuzzy/parent_scope clustering, deterministic merge suggestions, contracts/Pi wrapper parity, and documentation updates. Verification: node scripts/run-tests.mjs test -- tests/unit/dedupe-audit-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts; pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
@@ -25,9 +28,9 @@ files[5]{path,scope,note}:
   src/core/shared/text-normalization.ts,project,shared title tokenization and similarity
   src/sdk/cli-contracts.ts,project,contracts and schema parity updates
   tests/unit/dedupe-audit-command.spec.ts,project,unit coverage for dedupe-audit command
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/dedupe-audit-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,dedupe command targeted suites
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,contracts wrapper parity suites
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/dedupe-audit-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts,project,1200,dedupe command targeted suites
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts,project,1200,contracts wrapper parity suites
 docs[5]{path,scope,note}:
   AGENTS.md,project,agent command-reference updates
   CHANGELOG.md,project,release notes entry

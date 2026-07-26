@@ -6,12 +6,17 @@ status: closed
 priority: 2
 tags[4]: "area:cli",code-quality,codefactor,tech-debt
 created_at: "2026-07-02T06:39:46.062Z"
-updated_at: "2026-07-02T08:14:22.595Z"
+updated_at: "2026-07-26T17:11:10.100Z"
 author: claude-code-agent
 parent: pm-92if
+release: v2026.7.3
 resolution: fixed
 expected_result: "pnpm lint:duplicates reports 0 jscpd clones repo-wide with behavior preserved: contracts full.json byte-identical, public SDK surface unchanged, per-file test counts identical, 100% coverage."
 actual_result: "PR #415 merged (squash 17798d15): extracted readSelectionFilterOptionFields (registration-helpers) and two module-private flag-contract constants (flag-contracts), new tests/helpers/packageRuntime.ts + pmWorkspace.ts, extended extensions.ts, file-local helpers across 11 specs. jscpd 0 clones; 5277 tests 100/100/100/100; contracts:check byte-identical; manual temp-dir smoke on built CLI passed; greptile 5/5 no comments; all 20 PR checks green over 3 bot-review rounds."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-6sqo,related,"2026-07-26T17:11:09.918Z",null,null
+  pm-92if,implements,"2026-07-26T17:11:09.918Z",null,null
+  pm-fmjy,related,"2026-07-26T17:11:09.918Z",null,null
 files[23]{path,scope,note}:
   src/cli/registration-helpers.ts,project,Extract shared governance/content selection-filter option normalization slice
   src/sdk/cli-contracts/flag-contracts.ts,project,Shared module-private governance/content filter flag-contract constants

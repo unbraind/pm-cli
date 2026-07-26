@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: audit,hardening,pm-cli,quality,release-readiness
 created_at: "2026-04-01T21:49:02.011Z"
-updated_at: "2026-04-12T16:00:55.765Z"
+updated_at: "2026-07-26T17:04:19.611Z"
 deadline: "2026-04-03T21:49:02.011Z"
 author: codex-agent
 estimated_minutes: 360
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: 2026-w14
-release: vnext
+release: v2026.5.1
 blocked_reason: Full-repo audit hardening pass (warnings + metadata alignment) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Full-repo audit hardening pass (warnings + metadata alignment) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -39,6 +39,8 @@ fixed_version: target-vnext
 component: core-runtime-and-release-docs
 regression: true
 customer_impact: improves reliability and contributor clarity
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-431e,implements,"2026-07-26T17:04:19.429Z",null,null
 comments[9]{created_at,author,text}:
   "2026-04-01T21:49:02.011Z",codex-agent,Created to track full-repo audit findings and warning-first hardening implementation.
   "2026-04-01T21:49:16.626Z",codex-agent,"Audit baseline (full repo): prioritized findings are silent settings fallback on invalid JSON, lock read/parse failures collapsing to stale behavior without diagnostics, unreadable item skips without visibility, and docs/package metadata drift (calendar versioning wording + repository links + packaged community docs). Chosen implementation policy is warn-continue to preserve compatibility while improving diagnosability."
@@ -72,12 +74,12 @@ files[17]{path,scope,note}:
   tests/unit/item-store.spec.ts,project,cover unreadable-item warning token emission
   tests/unit/settings-store.spec.ts,project,assert settings warning tokens for invalid fallback paths
   tests/unit/vector-store-adapter.spec.ts,project,replace-hoisted-unmock-with-doUnmock-cleanup
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full coverage verification
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/core-item-lock-coverage.spec.ts tests/unit/item-store.spec.ts tests/unit/config-command.spec.ts tests/unit/health-command.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,focused warning-hardening regression suite
-  node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts tests/unit/item-format-toon-decode-error.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted-warning-regression
-  pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,typecheck compile gate
+tests[5]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,full coverage verification
+  node scripts/run-tests.mjs test,project,7200,full regression baseline
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/core-item-lock-coverage.spec.ts tests/unit/item-store.spec.ts tests/unit/config-command.spec.ts tests/unit/health-command.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts,project,7200,focused warning-hardening regression suite
+  node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts tests/unit/item-format-toon-decode-error.spec.ts,project,240,targeted-warning-regression
+  pnpm build,project,1200,typecheck compile gate
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,versioning policy wording alignment
 close_reason: Full repo sweep completed; warnings fixed and all CI-aligned gates pass.

@@ -6,8 +6,24 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-06-05T14:37:43.450Z"
-updated_at: "2026-06-05T16:50:11.727Z"
+updated_at: "2026-07-26T17:09:32.323Z"
 author: maintainer-agent
+release: v2026.6.6
+dependencies[14]{id,kind,created_at,author,source_kind}:
+  pm-3puw,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-5k4v,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-77t3,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-7j8t,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-d6kq,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-fd8n,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-hywv,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-k5r6,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-kl11,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-qxwu,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-r9sz,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-te9x,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-ugqx,related,"2026-07-26T17:09:32.107Z",null,null
+  pm-z5nb,related,"2026-07-26T17:09:32.107Z",null,null
 comments[21]{created_at,author,text}:
   "2026-06-05T14:58:16.580Z",maintainer-agent,"BUNDLE COMPLETE (working tree only; NOT committed/pushed per run constraint). Delivered via 2 specialized sub-agents (mcp-platform-subagent, sdk-docs-subagent) on disjoint file sets + orchestrator. Closed 8 children: pm-hywv+pm-77t3 (narrow MCP tools pm_notes/pm_learnings/pm_deps, 18→21 tools), pm-qxwu (typo-swallow hardening: TOOL_DECLARED_KEYS + structuredContent.warnings + stderr + did-you-mean, pm_run exempt), pm-fd8n (pm_run action list derived from PM_TOOL_ACTIONS), pm-r9sz (PM_TOOL_PARAMETERS_SCHEMA_VERSION/_MAJOR constants + bound assertion sites), pm-kl11 (tests/integration/mcp-handshake.spec.ts), pm-te9x + pm-k5r6 (docs/EXTENSIONS.md: capture_level semantics + dual write-path contract). VERIFICATION: clean build, 139 files / 2309 tests pass, 100% coverage (stmts/branch/func/lines), manual sandbox MCP test (tools/list=21, narrow tools functional, typo warning fires, unknown-tool error, pm contracts schema_version=4.0.2). FOLLOW-UP filed: pm-3puw (MCP stdio server handles JSON-RPC lines concurrently → pipelined same-item mutations lock-conflict; pre-existing, low severity, out of scope). Plan left open as the durable session record (per pm-z5nb precedent for coordination plans)."
   "2026-06-05T15:22:17.934Z",codex-coverage-contracts,"Coverage/contracts verification sub-agent evidence: inspected dirty diff for pm-d6kq/MCP/SDK contracts. Verified package scripts include contracts:update/contracts:check, CI static gate calls pnpm contracts:check, scripts/contracts-snapshot.mjs runs dist/cli.js contracts --full --json against tests/fixtures/contracts/full.json, and docs/TESTING.md documents the update/check flow. Focused verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/shared-helpers.spec.ts (3 files, 41 tests); pnpm contracts:check. GitHub read-only checks: no open PRs, no open issues, no open Dependabot alerts via gh api GET, pnpm audit clean; pnpm outdated reports only commander 14.0.3 -> 15.0.0, already tracked by pm-7j8t. Gap: pm-d6kq is not ready to close until untracked scripts/contracts-snapshot.mjs and tests/fixtures/contracts/full.json are included in the PR; otherwise a fresh checkout would miss the gate and/or fixture even though this dirty worktree passes."
@@ -41,18 +57,18 @@ files[10]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,Regression assertion for full-depth compatibility fixture read
   tests/unit/contracts-command.spec.ts,project,Contracts command/schema snapshot regression coverage
   tests/unit/shared-helpers.spec.ts,project,Serial queue shared helper coverage
-tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/compatibility-check.mjs --json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/shared-helpers.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pm validate --check-resolution --check-history-drift,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level low,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+tests[11]{command,scope,timeout_seconds}:
+  node scripts/release/compatibility-check.mjs --json,project,300
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/shared-helpers.spec.ts,project,240
+  pm validate --check-resolution --check-history-drift,project,240
+  pnpm audit --audit-level low,project,240
+  pnpm build,project,240
+  "pnpm contracts:check",project,240
+  "pnpm quality:static",project,240
+  "pnpm security:scan",project,240
+  pnpm typecheck,project,240
 docs[3]{path,scope,note}:
   docs/EXTENSION_AUTHOR_CONTRACTS.md,project,Detailed extension-author telemetry and write-path runtime contracts split from docs/EXTENSIONS.md for docs gate compliance
   docs/EXTENSIONS.md,project,SDK/package author capture-level and write-path guidance

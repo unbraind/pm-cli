@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release",code,pm-cli
 created_at: "2026-03-31T21:29:03.438Z"
-updated_at: "2026-04-04T21:37:41.607Z"
+updated_at: "2026-07-26T17:02:23.662Z"
 deadline: "2026-04-07T21:29:03.438Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
-release: vnext
+release: v2026.5.1
 blocked_by: pm-122q
 blocked_reason: Update docs and finalize calendar/reminder release changes has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Update docs and finalize calendar/reminder release changes is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,10 +41,11 @@ fixed_version: vnext
 component: docs/release
 regression: true
 customer_impact: Users and agents get accurate usage docs and stable rollout.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-122q,parent,"2026-03-31T21:29:03.438Z",codex-agent,null
   pm-qze9,related,"2026-03-31T21:29:03.438Z",codex-agent,null
   pm-tyq3,blocks,"2026-03-31T21:29:03.438Z",codex-agent,null
+  pm-122q,implements,"2026-07-26T17:02:23.464Z",null,null
 comments[3]{created_at,author,text}:
   "2026-03-31T21:29:03.438Z",codex-agent,Task created for docs and release finalization workstream.
   "2026-03-31T22:06:14.282Z",codex-agent,Updated README PRD ARCHITECTURE AGENTS CHANGELOG and extension docs for calendar/reminder behavior including markdown-default scope and integration parity.
@@ -60,9 +61,9 @@ files[6]{path,scope,note}:
   docs/EXTENSIONS.md,project,Pi wrapper calendar/reminder parity docs
   PRD.md,project,calendar and reminder product/runtime contract updates
   README.md,project,calendar reminder docs
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,final 100 percent coverage verification
-  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,final regression run
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,final 100 percent coverage verification
+  node scripts/run-tests.mjs test,project,2400,final regression run
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,unreleased entries for calendar reminders
 close_reason: Documentation and release-final verification completed with full regression and coverage passing.

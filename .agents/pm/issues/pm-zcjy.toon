@@ -6,13 +6,14 @@ status: closed
 priority: 1
 tags[4]: ci,contracts,determinism,extensions
 created_at: "2026-07-10T11:59:03.050Z"
-updated_at: "2026-07-10T11:59:16.849Z"
+updated_at: "2026-07-26T16:52:20.623Z"
 closed_at: "2026-07-10T11:59:03.050Z"
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "Snapshot generation runs pm --no-extensions contracts --full so the fixture captures only baseline CLI/SDK contracts; check passes identically with the extension present, absent, or at any upstream version; fixture regenerated (extension-contributed entries removed); main CI green"
 risk: low
 confidence: high
+release: v2026.7.11
 severity: high
 environment: "CI Gates (static) on main, commits bac1c4c7 + 21a7d884"
 repro_steps: "pnpm changelog:pm:install upgrading the vendored pm-changelog (or removing it) then node scripts/contracts-snapshot.mjs --check -> stale at line 1324 (upgrade) or line 34 (absent)"

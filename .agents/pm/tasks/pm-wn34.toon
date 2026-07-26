@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: implementation,linked-tests,pm-cli,validation
 created_at: "2026-04-03T22:54:06.408Z"
-updated_at: "2026-04-04T21:40:31.696Z"
+updated_at: "2026-07-26T17:28:49.211Z"
 deadline: "2026-04-10T22:54:06.408Z"
 author: codex-agent
 estimated_minutes: 180
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: linked-test-hardening
-release: vnext
+release: v2026.5.1
 blocked_reason: Enforce command-required linked test mutations has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Enforce command-required linked test mutations is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,8 +38,9 @@ affected_version: 2026.3.12
 component: linked-test-validation
 regression: true
 customer_impact: Users may think tests are linked and validated when they are not runnable.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-44iu,parent,"2026-04-03T22:54:06.408Z",codex-agent,null
+  pm-44iu,implements,"2026-07-26T17:28:48.945Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T22:54:06.408Z",codex-agent,Task targets parser mutation guards and compatibility-preserving runtime behavior.
   "2026-04-03T23:46:44.159Z",codex-agent,"Implemented command-required mutation enforcement for linked tests: pm test --add and create --test now reject entries without command metadata while runtime still skips legacy malformed stored entries. Evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts passed; pm test pm-wn34 --run --timeout 7200 --json passed (1/1)."
@@ -52,8 +53,8 @@ files[5]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,integration add path metadata with command
   tests/unit/create-command.spec.ts,project,path-only create seed rejection coverage
   tests/unit/test-command.spec.ts,project,path-only add rejection and legacy skip coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,parser behavior regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts,project,2400,parser behavior regressions
 docs[1]{path,scope,note}:
   README.md,project,linked-test command-required policy update
 close_reason: linked-test mutation parser now requires command metadata while preserving legacy runtime skip safety

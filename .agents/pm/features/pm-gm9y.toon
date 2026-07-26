@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: diagnostics,extensions,external-audit,pm-cli
 created_at: "2026-04-04T12:42:52.452Z"
-updated_at: "2026-04-04T21:34:23.944Z"
+updated_at: "2026-07-26T17:14:37.480Z"
 deadline: "2026-04-14T12:42:52.452Z"
 author: codex-agent
 estimated_minutes: 220
@@ -23,7 +23,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
-release: vnext
+release: v2026.5.1
 blocked_reason: Dedicated extension doctor diagnostics surface has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Dedicated extension doctor diagnostics surface is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
@@ -38,6 +38,10 @@ fixed_version: target-vnext
 component: extension-diagnostics
 regression: true
 customer_impact: Maintainers and agents can triage extension incidents faster with less output traversal.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-5z9r,implements,"2026-07-26T17:14:37.276Z",null,null
+  pm-doek,related,"2026-07-26T17:14:37.276Z",null,null
+  pm-hjrr,related,"2026-07-26T17:14:37.276Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-04T12:42:52.452Z",codex-agent,"Duplicate-check evidence: pm-doek improved manage/health triage but intentionally did not add a new command surface; dedicated doctor command remains net-new scope."
   "2026-04-04T14:02:32.847Z",codex-agent,Child task pm-hjrr delivered extension doctor summary/deep diagnostics with contract/help parity and regression coverage.

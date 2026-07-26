@@ -6,12 +6,16 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:extensions","area:packages","area:sdk"
 created_at: "2026-06-25T20:24:56.707Z"
-updated_at: "2026-06-25T21:12:33.085Z"
+updated_at: "2026-07-26T17:26:48.813Z"
 author: codex-gpt5
 parent: pm-ugqx
+release: v2026.6.30
 resolution: "Implemented --output for package/extension describe Markdown generation with contract, completion, docs, fixture, and regression coverage."
 expected_result: pm package/extension describe --markdown can write deterministic reference Markdown directly to a requested file path without stdout duplication and remains discoverable through SDK contracts/completions.
 actual_result: "CLI writes Markdown to the requested file, creates parent directories, supports quiet output, rejects invalid --output usage before dispatch, and SDK contracts/completions/docs advertise the flag."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-dmum,related,"2026-07-26T17:26:48.532Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:26:48.532Z",null,null
 comments[8]{created_at,author,text}:
   "2026-06-25T20:43:45.044Z",codex-gpt5,"Evidence: pnpm build passed; focused register-command test passed; contract/completion/sdk tests passed; pnpm contracts:check passed after regenerating tests/fixtures/contracts/full.json; pnpm quality:docs-skills passed; pnpm quality:static passed; node scripts/run-tests.mjs coverage passed with Statements 100% (31801/31801), Branches 100% (24765/24765), Functions 100% (5401/5401), Lines 100% (30523/30523)."
   "2026-06-25T20:44:39.414Z",codex-gpt5,"Manual smoke evidence: in an isolated temp project with PM_PATH and PM_GLOBAL_PATH, initialized a tracker, scaffolded ./context-kit with package init --capability commands, installed it project-scope, ran package describe --project --markdown --output docs/context-kit-reference.md, verified the file was non-empty and contained Package surface reference, context-kit, and Commands, and verified --output emitted no stdout. A second isolated smoke also verified --quiet --output writes nested parent directories."
@@ -29,19 +33,19 @@ files[7]{path,scope,note}:
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,tool parameter schema metadata
   tests/fixtures/contracts/full.json,project,generated contract snapshot for output flag and schema version
   tests/unit/commands/register-commands.spec.ts,project,CLI regression coverage
-tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "env -u PM_PATH -u PM_GLOBAL_PATH pnpm changelog:pm:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "env -u PM_PATH -u PM_GLOBAL_PATH pnpm contracts:check",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm audit --audit-level moderate,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mqtz6uvd-6wld5o,test,failed,"2026-06-25T20:45:34.709Z","2026-06-25T20:49:36.457Z","2026-06-25T20:49:36.457Z",null,null,5,4,0,null,null,null
-  test-local-mqtzcehe-ihudzh,test,failed,"2026-06-25T20:49:52.416Z","2026-06-25T20:53:55.154Z","2026-06-25T20:53:55.154Z",null,null,6,3,0,null,null,null
-  test-local-mqtzi60y-g93il3,test,failed,"2026-06-25T20:54:21.319Z","2026-06-25T20:58:24.130Z","2026-06-25T20:58:24.131Z",null,null,6,3,0,null,null,null
-  test-local-mqtzj52e-y2swsy,test,passed,"2026-06-25T20:58:43.051Z","2026-06-25T20:59:09.543Z","2026-06-25T20:59:09.543Z",null,null,7,0,0,null,null,null
+tests[7]{command,scope,timeout_seconds}:
+  "env -u PM_PATH -u PM_GLOBAL_PATH pnpm changelog:pm:check",project,120
+  "env -u PM_PATH -u PM_GLOBAL_PATH pnpm contracts:check",project,120
+  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/unit/commands/contracts-command.spec.ts tests/unit/commands/completion-command.spec.ts tests/unit/sdk/sdk-index.spec.ts,project,300
+  pnpm audit --audit-level moderate,project,120
+  pnpm build,project,300
+  "pnpm quality:static",project,120
+  "pnpm security:scan",project,120
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mqtz6uvd-6wld5o,test,failed,"2026-06-25T20:45:34.709Z","2026-06-25T20:49:36.457Z","2026-06-25T20:49:36.457Z",5,4,0
+  test-local-mqtzcehe-ihudzh,test,failed,"2026-06-25T20:49:52.416Z","2026-06-25T20:53:55.154Z","2026-06-25T20:53:55.154Z",6,3,0
+  test-local-mqtzi60y-g93il3,test,failed,"2026-06-25T20:54:21.319Z","2026-06-25T20:58:24.130Z","2026-06-25T20:58:24.131Z",6,3,0
+  test-local-mqtzj52e-y2swsy,test,passed,"2026-06-25T20:58:43.051Z","2026-06-25T20:59:09.543Z","2026-06-25T20:59:09.543Z",7,0,0
 docs[3]{path,scope,note}:
   docs/COMMANDS.md,project,command reference package describe output example
   docs/EXTENSIONS.md,project,package lifecycle docs for markdown output files

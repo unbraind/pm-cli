@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:test-safety",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T08:50:46.032Z"
-updated_at: "2026-04-04T21:47:51.163Z"
+updated_at: "2026-07-26T17:23:42.368Z"
 deadline: "2026-03-07T23:59:59.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-b1w
 blocked_reason: Harden sandbox guard for run-script test commands has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Harden sandbox guard for run-script test commands is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/harden-sandbox-guard-for-run-script-test-command
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden sandbox guard for run-script test commands.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,related,"2026-03-06T08:50:46.032Z",maintainer-agent,null
+  pm-2p6q,implements,"2026-07-26T17:23:42.100Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-06T08:50:46.032Z",maintainer-agent,Need to close run-script loophole so sandbox safety policy cannot be bypassed via npm or pnpm or yarn or bun run test wrappers.
   "2026-03-06T08:50:57.779Z",maintainer-agent,"Docs-first change: tighten sandbox policy text to explicitly include npm/pnpm/yarn/bun run-script test variants; then harden test command parsing and extend unit coverage for rejected and allowed run-script cases."
@@ -60,9 +61,9 @@ files[5]{path,scope,note}:
   README.md,project,public test safety examples
   src/cli/commands/test.ts,project,run-script direct runner detection
   tests/unit/test-command.spec.ts,project,coverage for run-script detection
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted unit regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,project,2400,targeted unit regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent operating rules
   PRD.md,project,authoritative sandbox policy

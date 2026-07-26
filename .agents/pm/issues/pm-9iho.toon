@@ -6,13 +6,16 @@ status: closed
 priority: 2
 tags[4]: audit,bug,sentry,telemetry
 created_at: "2026-05-02T16:09:35.975Z"
-updated_at: "2026-05-02T17:16:08.561Z"
+updated_at: "2026-07-26T17:08:22.863Z"
 author: audit-agent
 acceptance_criteria: No PmCliError events appear in Sentry after fix
 parent: pm-5zkg
+release: v2026.5.3
 resolution: Enhanced Sentry filtering to drop PmCliError-derived console events and breadcrumbs
 expected_result: PmCliError events no longer leak to Sentry via captureConsoleIntegration
 actual_result: "beforeSend, beforeSendTransaction, and beforeBreadcrumb now filter console-originated PmCliError events; regression tests added"
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5zkg,implements,"2026-07-26T17:08:22.640Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-02T16:25:40.124Z",cursor-agent,"Fix applied: broadened isExpectedCliErrorEvent to check exception.value text and console logger messages; added isPmCliErrorBreadcrumb helper; beforeBreadcrumb returns null for PmCliError console breadcrumbs; beforeSendTransaction strips PmCliError breadcrumbs. 12/12 sentry-helpers tests pass."
   "2026-05-02T17:16:08.561Z",cursor-agent,"Final verification: pnpm build clean, pnpm typecheck clean, 82/82 test files pass (1117 tests), pm validate ok, pm health ok. Resolution metadata backfilled."

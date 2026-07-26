@@ -6,21 +6,23 @@ status: closed
 priority: 1
 tags[6]: context-management,errors,gh-691,github,sdk,structured-contract
 created_at: "2026-07-25T01:29:45.187Z"
-updated_at: "2026-07-25T16:32:00.639Z"
+updated_at: "2026-07-26T17:24:50.969Z"
 closed_at: "2026-07-25T16:31:59.692Z"
 author: codex-root
 estimated_minutes: 180
 acceptance_criteria: Every parseItemDocument failure category exposes a stable machine-readable error code and useful bounded context through the public SDK; CLI compatibility and 100 percent coverage remain intact.
 parent: pm-usfg
 risk: medium
+release: v2026.7.26
 resolution: Item parse failures expose stable structured SDK error classification instead of prose-only matching.
 expected_result: Item parse failures expose stable structured SDK error classification instead of prose-only matching.
 actual_result: "Item parse failures expose stable structured SDK error classification instead of prose-only matching. Verification: linked tests, full coverage, static/security gates, and packed consumer passed."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-rnpb,related,"2026-07-25T01:29:45.187Z",null,null
   pm-psy1,related,"2026-07-25T06:27:22.451Z",null,null
   pm-srns,related,"2026-07-25T06:27:22.451Z",null,null
   pm-ulqu,related,"2026-07-25T06:27:22.451Z",null,null
+  pm-usfg,implements,"2026-07-26T17:24:50.699Z",null,null
 comments[5]{created_at,author,text}:
   "2026-07-25T01:29:45.187Z",codex-root,"Duplicate check: all-status searches for parseItemDocument empty context error_code and PmCliError structured parse failures found broad completed SDK/error work but no canonical item for GitHub issue 691; created this focused child under the SDK-first epic."
   "2026-07-25T15:25:43.759Z","harness:codex","Verification evidence: tracker-owned test-all completed 13 items / 13 links with 10 unique commands passed, 3 duplicate commands safely skipped, and zero failures, timeouts, empty runs, or sandbox collisions. Final broad suite passed 6,367 tests with 100% statements/branches/functions/lines (43,881/31,106/8,950/42,627). ESLint, zero-clone jscpd, 100% module/export/member docstrings, package boundary, token budgets, SDK surface snapshot, typecheck, contracts, secret scan, pnpm audit (zero vulnerabilities), SDK import costs, and the unchanged CLI transport floor passed. Exact packed tarball consumer proof installed all 15 first-party packages, strict extension doctor returned zero warnings/failures, SDK import succeeded, and Plan create/close/delete/tombstone lifecycle was verified in an isolated temporary project. Tracker health and history drift are clean; graph coverage reports zero active isolates and zero degree<=1 active nodes."

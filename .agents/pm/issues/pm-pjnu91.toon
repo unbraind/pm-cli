@@ -1,0 +1,33 @@
+id: pm-pjnu91
+title: "The list family exposes three incompatible --json projections under one flag, so an agent filtering on an unprojected field silently reads absent instead of unset"
+description: "pm list --json returns four fields per row (id, status, title, type). pm list-all --json returns twenty-three. pm list-closed --json returns forty-eight. The same --json flag therefore means three different contracts depending on which sibling of the same command family is invoked, and nothing in the response distinguishes a field that is absent because the item does not set it from a field that is absent because this command does not project it. The failure is silent and directional: jq over pm list-all --json for a release value returns zero matches for the whole workspace, and the true count is 469. That exact mistake was made and recorded during a prior review, and the correction had to be derived from the .toon files instead. parent, release, closed_at, resolution, close_reason, files, docs, sprint and reviewer are all absent from list-all while present in list-closed. The projection is also not discoverable: --fields exists but there is no way to ask what the default projection contains, so an agent has to probe an item it already knows to learn what it is not being told."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:contracts",output,projection,token-efficiency
+created_at: "2026-07-26T17:05:50.828Z"
+updated_at: "2026-07-26T17:05:50.828Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Every read command declares its default projection in the contracts surface, and the declaration is machine-checkable against what the command actually emits; The response envelope names the active projection so a caller can tell that a field was not requested rather than not set; A caller can request the complete field set from any list-family command with one documented flag, and the flag behaves identically across the family; Divergences that remain are deliberate token-budget decisions recorded in the contract, not accidents of which code path built the row; A regression test asserts that a field present in one family member and absent in another is either justified in the contract or a build failure; Documentation states the rule that an absent key never implies an unset value"
+goal: project management = context management
+objective: "Make the field set of any read response a declared, discoverable contract rather than a per-command accident"
+value: Agents can trust a negative result from a filter instead of having to re-derive it from the on-disk files
+impact: "Removes an entire class of silently wrong measurements from every agent, script, and package that reads pm through --json"
+outcome: "One declared projection contract per read command, echoed in the response, with a documented way to request the full field set"
+why_now: "The list family is a consolidation target under the CLI grammar epic, so the projection contract must be settled before the spellings collapse into flags"
+parent: pm-mpbb
+risk: medium
+confidence: high
+dependencies[10]{id,kind,created_at,author,source_kind}:
+  pm-5t33or,related,"2026-07-26T17:05:50.828Z",null,null
+  pm-cxr0jb,related,"2026-07-26T17:05:50.828Z",null,null
+  pm-fs8q9x,related,"2026-07-26T17:05:50.828Z",null,null
+  pm-m9xv,related,"2026-07-26T17:05:50.828Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:05:50.828Z",null,null
+  pm-n7rr,related,"2026-07-26T17:05:50.828Z",null,null
+  pm-srns,related,"2026-07-26T17:05:50.828Z",null,null
+  pm-wrss,discovered_from,"2026-07-26T17:05:50.828Z",null,null
+  pm-wt43zj,blocks,"2026-07-26T17:05:50.828Z",null,null
+  pm-x4nn3z,related,"2026-07-26T17:05:50.828Z",null,null
+body: ""

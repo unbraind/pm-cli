@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:meta",pm-cli,release,release-readiness
 created_at: "2026-02-17T23:36:55.193Z"
-updated_at: "2026-04-04T21:44:05.063Z"
+updated_at: "2026-07-26T17:22:20.780Z"
 deadline: "2026-03-03T23:36:55.193Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: Release readiness refactor has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Release readiness refactor is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,6 +40,8 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-refactor
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release readiness refactor.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-zgkk,related,"2026-07-26T17:22:20.490Z",null,null
 comments[80]{created_at,author,text}:
   "2026-02-17T23:36:55.193Z",cursor-agent,Epic created to coordinate release-hardening with strict dogfood logging.
   "2026-02-18T00:15:45.830Z",cursor-agent,"Aggregate validation evidence: node dist/cli.js test-all --status in_progress --json completed successfully with totals items=7 linked_tests=8 passed=8 failed=0 skipped=0 after removing recursive linked test entries."
@@ -138,13 +140,13 @@ files[12]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,global flag parity contract
   tests/unit/claim-command.spec.ts,project,claim release author message coverage
   tests/unit/test-command.spec.ts,project,runtime linked-test safety coverage
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node dist/cli.js test-all --status in_progress --json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Aggregate in-progress validation
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate regression
-  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted help-contract regression
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted global-flag contract regression
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,claim release metadata coverage
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,unit coverage for test command
+tests[6]{command,scope,timeout_seconds,note}:
+  node dist/cli.js test-all --status in_progress --json,project,300,Aggregate in-progress validation
+  node scripts/run-tests.mjs coverage,project,3600,coverage gate regression
+  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,project,1200,targeted help-contract regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1200,targeted global-flag contract regression
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,project,1200,claim release metadata coverage
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,project,1200,unit coverage for test command
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec

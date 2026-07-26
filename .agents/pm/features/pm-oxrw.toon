@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:governance","area:sdk"
 created_at: "2026-07-05T04:54:11.132Z"
-updated_at: "2026-07-15T17:11:45.800Z"
+updated_at: "2026-07-26T17:22:28.364Z"
 closed_at: "2026-07-15T17:11:40.002Z"
 author: maintainer-agent
 estimated_minutes: 360
@@ -14,10 +14,11 @@ acceptance_criteria: SDK exports typed validate/health/gc primitives returning t
 parent: pm-usfg
 risk: low
 confidence: medium
+release: v2026.7.15
 resolution: "Moved validation, health, and garbage-collection implementations into public SDK governance modules with CLI compatibility adapters."
 expected_result: Packages and embedded applications can invoke the same typed governance primitives as the CLI without importing presentation code.
 actual_result: "Public SDK exports runValidate, runHealth, and runGc from SDK-owned modules; CLI and runtime consume those modules and all gates pass."
-dependencies[8]{id,kind,created_at,author,source_kind}:
+dependencies[12]{id,kind,created_at,author,source_kind}:
   pm-tu71,related,"2026-07-10T17:46:36.343Z",null,null
   pm-0fhw,related,"2026-07-15T09:27:30.799Z",codex-root,null
   pm-7n5a,related,"2026-07-15T09:27:30.799Z",codex-root,null
@@ -26,6 +27,10 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-d4ns,related,"2026-07-15T09:27:30.799Z",codex-root,null
   pm-demq,related,"2026-07-15T09:27:30.799Z",codex-root,null
   pm-u5zr,related,"2026-07-15T09:27:30.799Z",codex-root,null
+  pm-6apl,related,"2026-07-26T17:22:28.053Z",null,null
+  pm-lodl,related,"2026-07-26T17:22:28.053Z",null,null
+  pm-muhw,related,"2026-07-26T17:22:28.053Z",null,null
+  pm-usfg,implements,"2026-07-26T17:22:28.053Z",null,null
 comments[25]{created_at,author,text}:
   "2026-07-06T21:58:32.680Z",maintainer-agent,"Audit #15 scope note: decide telemetry-queue/runtime primitives here — either promote them with validate/health/gc (they share the ops noun per pm-6apl) or explicitly document them as CLI-only in the SDK reference. The SDK domain matrix should leave no command family unmapped."
   "2026-07-07T20:44:48.118Z",codex-agent,"Implementation start: bundled governance/health/maintenance SDK primitives with adjacent SDK-context work. Live duplicate/context check found this domain still open; telemetry queue/runtime decision will be documented in SDK docs rather than hidden."

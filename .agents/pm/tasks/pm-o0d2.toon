@@ -6,8 +6,11 @@ status: closed
 priority: 3
 tags[3]: "area:cli",gh-224,governance
 created_at: "2026-06-13T21:54:46.930Z"
-updated_at: "2026-06-13T22:32:00.957Z"
+updated_at: "2026-07-26T17:21:33.837Z"
 author: claude-code-agent
 parent: pm-yq7m
+release: v2026.6.16
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-yq7m,implements,"2026-07-26T17:21:33.593Z",null,null
 close_reason: "pm validate --all-affected-ids shipped + JSON mode never truncates *_item_ids (fullDiagnostics = verbose||allAffectedIds||json). Verified human=5/truncated, --all-affected-ids/--json=full. Closes GH-224."
 body: ""

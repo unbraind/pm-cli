@@ -6,10 +6,11 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-21T21:51:22.939Z"
-updated_at: "2026-07-21T22:11:32.531Z"
+updated_at: "2026-07-26T17:10:26.618Z"
 closed_at: "2026-07-21T22:11:15.084Z"
 author: codex-root
 parent: pm-92if
+release: v2026.7.22
 severity: high
 environment: production CI and permission-constrained Git workspaces
 repro_steps: Run pm merge install in a valid Git worktree where repository-local Git configuration cannot be written.
@@ -18,11 +19,12 @@ actual_result: "The underlying git config command fails with 'could not lock con
 affected_version: 2026.7.21
 component: merge-install
 customer_impact: Agents in read-only CI or sandboxed worktrees receive a raw infrastructure error and observability records an expected environmental constraint as a high-severity product failure.
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-g5sx,related,"2026-07-21T21:51:22.939Z",null,null
   pm-i4fx,related,"2026-07-21T21:51:22.939Z",null,null
   pm-iwsj,related,"2026-07-21T21:51:22.939Z",null,null
   pm-wc1r,related,"2026-07-21T21:51:22.939Z",null,null
+  pm-92if,implements,"2026-07-26T17:10:26.397Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-21T21:51:22.939Z",codex-root,"Duplicate check: searched all statuses for PM-CLI-2G, merge.pm-item-toon, git config, merge install, and permission denied; no item tracked this exact failure. Live Sentry evidence: PM-CLI-2G is new, unresolved, handled, count 2, first seen 2026-07-21T21:37:22.513Z and last seen 2026-07-21T21:37:23.120Z in @unbrained/pm-cli 2026.7.21. Permalink: https://unbrained.sentry.io/issues/135741631/."
   "2026-07-21T22:11:14.317Z",codex-root,"Evidence: implemented stable PmCliError code merge_git_config_unwritable with runtime telemetry classification and recovery context; reordered fence publication behind successful clone-local Git configuration; documented read-only behavior. Focused merge-safety and telemetry-classification tests pass. Full coverage reports 41028/41028 statements, 28854/28854 branches, 8327/8327 functions, and 39908/39908 lines (100/100/100/100). pnpm lint, typecheck, build, audit, and security scan pass. Packed-package temp consumer proved a real .git/config.lock failure exits 5, emits the stable code and dry-run guidance, leaves .gitattributes absent, succeeds after unlock, validates cleanly, and exports runMergeInstall from the public SDK."

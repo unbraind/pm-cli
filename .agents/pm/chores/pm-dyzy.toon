@@ -6,12 +6,16 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:mcp",pm-cli,review-followup
 created_at: "2026-06-30T08:03:03.421Z"
-updated_at: "2026-06-30T08:40:54.137Z"
+updated_at: "2026-07-26T17:12:24.650Z"
 author: claude-code-agent
 parent: pm-zumn
+release: v2026.6.30
 resolution: "Added resetActiveExtensionRegistries() and invoked it in the activation catch path before run(active=null), with final teardown using the same reset helper; consumed pm-changelog 2026.6.30 via project install."
 expected_result: "If any active-extension registry publish step throws, fallback built-in MCP actions run with empty active registries and no partially published extension state; changelog generation remains current with the latest pm-changelog package."
 actual_result: Fallback execution now observes empty hook/command/parser/preflight/service/renderer/registration registries before run(active=null); targeted regression and full gates passed; temp-dir smoke with pm-changelog 2026.6.30 passed.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,related,"2026-07-26T17:12:24.440Z",null,null
+  pm-zumn,implements,"2026-07-26T17:12:24.440Z",null,null
 comments[6]{created_at,author,text}:
   "2026-06-30T08:03:03.421Z",claude-code-agent,"Duplicate check: searched all statuses for 'partial published registry fallback MCP setActive catch' and 'extension activation failed continuing without active extensions registry clear'. Existing canonical lineage is closed pm-zumn; no open/in-progress duplicate for this PR #406 reviewer follow-up."
   "2026-06-30T08:14:13.517Z",claude-code-agent,"Evidence: implemented PR #406 reviewer follow-up by adding resetActiveExtensionRegistries() in src/mcp/server.ts and invoking it immediately in the activation catch path before fallback run(active=null), with final teardown using the same reset helper. Added regression coverage in tests/unit/mcp/mcp-server-branch-residual.spec.ts that simulates a setActiveExtensionCommands publish failure and asserts fallback stats execution only happens after hooks/commands/parsers/preflight/services/renderers/registrations have all been reset to empty registries. Focused linked test passed. Broader gates passed: pnpm build; pnpm lint including static quality gate; pnpm typecheck; pnpm contracts:check; node scripts/run-tests.mjs coverage = 262 files / 5258 tests / 100% statements, branches, functions, lines; pnpm changelog:pm:check using pm-changelog 2026.6.30 with CHANGELOG.md unchanged; pnpm security:scan no credential-like secrets; pnpm audit --audit-level moderate no known vulnerabilities; manual temp-dir smoke passed after correcting init syntax (init/create/list/install pm-changelog/package doctor/changelog generate); Sentry CLI returned recent PM-CLI issue data; sentry-telemetry gate passed with zero critical/high blocking Sentry issues and telemetry finish_error_rate_pct 0.78."
@@ -26,17 +30,17 @@ files[6]{path,scope,note}:
   .agents/pm/extensions/pm-changelog/package.json,project,managed pm-changelog package version 2026.6.30
   src/mcp/server.ts,project,reset partial active extension registries before fallback execution
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,regression coverage for setter-failure fallback cleanup
-tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-  node scripts/run-tests.mjs test -- tests/unit/mcp/mcp-server-branch-residual.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm lint,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mr0d2wt3-wl1n7h,test,passed,"2026-06-30T08:04:40.571Z","2026-06-30T08:05:04.023Z","2026-06-30T08:05:04.023Z",null,null,1,0,0,null,null,null
+tests[9]{command,scope,timeout_seconds}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,project,240
+  node scripts/run-tests.mjs coverage,project,600
+  node scripts/run-tests.mjs test -- tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,240
+  pnpm build,project,240
+  "pnpm changelog:pm:check",project,240
+  "pnpm contracts:check",project,240
+  pnpm lint,project,240
+  "pnpm security:scan",project,240
+  pnpm typecheck,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mr0d2wt3-wl1n7h,test,passed,"2026-06-30T08:04:40.571Z","2026-06-30T08:05:04.023Z","2026-06-30T08:05:04.023Z",1,0,0
 close_reason: "PR #406 reviewer follow-up complete: partial MCP active extension registries are cleared before activation-failure fallback execution, regression coverage added, latest pm-changelog consumed, and verification evidence recorded."
 body: ""

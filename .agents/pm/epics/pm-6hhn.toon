@@ -6,9 +6,8 @@ status: canceled
 priority: 0
 tags[7]: "area:milestone",code,docs,"milestone:0",pm-cli,"priority:0",tests
 created_at: "2026-03-06T22:55:53.278Z"
-updated_at: "2026-04-04T21:44:07.966Z"
+updated_at: "2026-07-26T16:48:59.430Z"
 deadline: "2026-03-20T22:55:53.278Z"
-assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Milestone 0 deliverables in PRD section 21 are fully represented by linked features and validated evidence.
@@ -24,7 +23,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: no-active-blocker
 blocked_reason: PRD Milestone 0 - Foundations is intentionally canceled; no active blocker applies while historical context is preserved for future reference.
 unblock_note: "If PRD Milestone 0 - Foundations is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -49,8 +48,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:23.688Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   PRD.md,project,milestone source
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,project,600,sandbox-safe regression
 docs[1]{path,scope,note}:
   PRD.md,project,milestone definition
 close_reason: PRD Milestone 0 - Foundations is canceled because scope is intentionally superseded/deferred while historical context remains preserved.

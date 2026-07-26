@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:output","area:terminal","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T11:57:58.237Z"
-updated_at: "2026-04-04T21:33:11.081Z"
+updated_at: "2026-07-26T17:09:42.348Z"
 deadline: "2026-04-11T11:57:58.237Z"
 author: cursor-agent
 estimated_minutes: 220
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-mudv
 blocked_reason: Exit/output and subprocess runtime hardening has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Exit/output and subprocess runtime hardening is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,9 +40,11 @@ fixed_version: archive-2026q2
 component: cli/runtime
 regression: true
 customer_impact: Improves trust in command completion and result interpretation.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-mudv,parent,"2026-04-01T11:57:58.237Z",cursor-agent,null
   pm-wo8,related,"2026-04-01T11:57:58.237Z",cursor-agent,null
+  pm-4emi,related,"2026-07-26T17:09:42.137Z",null,null
+  pm-mudv,implements,"2026-07-26T17:09:42.137Z",null,null
 comments[5]{created_at,author,text}:
   "2026-04-01T11:57:58.237Z",cursor-agent,Feature created for exit and subprocess reliability in terminal-emulated environments.
   "2026-04-01T18:53:11.471Z",cursor-agent,"Runtime follow-up scope for reopened feature: replace buffered exec-linked-test path with robust spawn orchestration while preserving output and exit-code contracts. Includes default progress heartbeat on stderr for long runs and cross-platform timeout termination hardening."
@@ -56,9 +58,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/test.ts,project,linked-test subprocess behavior
   src/cli/main.ts,project,graceful exit semantics
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,runtime contract regressions
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,spawn-heartbeat-runtime-validation
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,2400,runtime contract regressions
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,5400,spawn-heartbeat-runtime-validation
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime behavior notes
 close_reason: Follow-up child task pm-4emi closed with validated broken-pipe runtime hardening.

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,init,recovery-hints
 created_at: "2026-07-18T10:08:48.018Z"
-updated_at: "2026-07-18T12:15:02.285Z"
+updated_at: "2026-07-26T17:26:29.443Z"
 closed_at: "2026-07-18T12:14:11.361Z"
 author: maintainer-agent
 estimated_minutes: 150
@@ -14,13 +14,15 @@ acceptance_criteria: tracker_not_initialized recovery names --pm-path/PM_PATH an
 parent: pm-mpbb
 risk: medium
 confidence: high
+release: v2026.7.19
 resolution: fixed
 expected_result: "When a nearby custom tracker exists, unconfigured commands suggest its exact --pm-path and PM_PATH selection instead of recommending a second tracker initialization."
 actual_result: "Recovery formatting discovers valid directly nested custom roots, excludes common dependency/build/VCS directories, and emits exact selection commands; otherwise it accurately explains supported discovery."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-kvev,related,"2026-07-18T10:08:48.018Z",null,null
   pm-qljv,related,"2026-07-18T10:08:48.018Z",null,null
   pm-surv,related,"2026-07-18T10:08:48.018Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:26:29.166Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-18T10:52:21.856Z",maintainer-agent,"Implementation evidence: reproduced the reported behavior on the current build; implemented the shared SDK/CLI contract wave; focused build and regression suite pass. Repo-wide gates and isolated package proof are next."
   "2026-07-18T11:33:22.322Z",maintainer-agent,"Verification evidence: packed-package public tracker discovery entrypoint imported through @unbrained/pm-cli/sdk; focused CLI tests cover exact custom-root recovery suggestions."

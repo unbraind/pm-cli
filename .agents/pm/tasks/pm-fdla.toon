@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-05T13:05:50.978Z"
-updated_at: "2026-04-04T21:47:32.418Z"
+updated_at: "2026-07-26T17:13:49.268Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-f45
 blocked_reason: "M4 follow-up: remove deleted items from semantic vector indexes has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If M4 follow-up: remove deleted items from semantic vector indexes is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/m4-follow-up-remove-deleted-items-from-semantic-
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 follow-up: remove deleted items from semantic vector indexes."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-f45,parent,"2026-03-05T13:05:50.978Z",maintainer-agent,null
+  pm-f45,implements,"2026-07-26T17:13:49.027Z",null,null
 comments[7]{created_at,author,text}:
   "2026-03-05T13:05:50.978Z",maintainer-agent,Why this exists semantic mutation refresh skips missing IDs and delete flows can leave stale vector records
   "2026-03-05T13:06:04.251Z",maintainer-agent,"Planned change-set docs first: clarify semantic mutation refresh delete behavior in PRD and README, then implement vector-store delete execution and missing-ID refresh pruning with deterministic warnings plus targeted/unit regression tests."
@@ -62,10 +63,10 @@ files[6]{path,scope,note}:
   src/core/search/vector-stores.ts,project,vector store execution primitives
   tests/unit/search-cache.spec.ts,project,mutation semantic refresh behavior coverage
   tests/unit/vector-store-adapter.spec.ts,project,vector store operation coverage
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted mutation refresh regression
-  node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,vector store delete operation regression
+tests[3]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,project,1200,targeted mutation refresh regression
+  node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts,project,1200,vector store delete operation regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and test safety
   PRD.md,project,authoritative semantic refresh contract

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,multi-agent,mutations
 created_at: "2026-07-19T03:42:11.195Z"
-updated_at: "2026-07-19T14:05:54.475Z"
+updated_at: "2026-07-26T17:29:34.865Z"
 closed_at: "2026-07-19T14:05:53.627Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,13 +14,15 @@ acceptance_criteria: "pm update gains --add-ac and --remove-ac operating on indi
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.20
 resolution: "Add repeatable additive/removal acceptance-criteria mutations across CLI, bulk planning, contracts, MCP, completions, SDK docs, warnings, and no-op integrity."
 expected_result: Agents can edit individual criteria without clobbering concurrent changes.
 actual_result: "Direct and bulk mutations merge disjoint edits, report misses, reject delimiter corruption, and preserve freshness on no-ops."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-b84u,related,"2026-07-19T03:42:11.195Z",null,null
   pm-g5sx,related,"2026-07-19T03:42:11.195Z",null,null
   pm-m3nl,related,"2026-07-19T03:42:11.195Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:29:34.679Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-19T12:41:28.445Z",maintainer-agent,"Evidence: --add-ac/--remove-ac are wired through update/update-many, contracts, MCP, completions, docs, previews, conflict guards, and exact-match warnings. Linked 204-test gate passes; full coverage is 100/100/100/100; manual built-CLI acceptance produced base criterion; cli criterion."
   "2026-07-19T12:50:16.361Z",maintainer-agent,"Release-gate evidence: pnpm release:gates completed build, typecheck, docs/skills, static quality, package boundary, token budget, 5,963 tests with exact 100/100/100/100 coverage, version/sync, secret scan, packed-package smoke, and package-first dogfood successfully. The aggregate command stopped only at its intentional Greptile stage because Greptile requires a committed diff against main; the local commit will be reviewed before push."

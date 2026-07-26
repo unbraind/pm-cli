@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: bare-core,cli,governance,packages,refactor
 created_at: "2026-07-12T19:54:46.588Z"
-updated_at: "2026-07-13T00:40:15.322Z"
+updated_at: "2026-07-26T17:06:23.739Z"
 closed_at: "2026-07-13T00:37:30.102Z"
 author: maintainer-agent
 estimated_minutes: 150
@@ -14,9 +14,18 @@ acceptance_criteria: "no --allow-audit-* string registered by bare core (grep sr
 parent: pm-vjk3
 risk: medium
 confidence: medium
+release: v2026.7.13
 resolution: completed
 expected_result: All allow-audit flags are package-owned while enforcement remains generic in core.
 actual_result: Bare help omits every allow-audit flag; installed package parsing and ownership bypass tests pass.
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-fg0b,related,"2026-07-26T17:06:23.510Z",null,null
+  pm-kvd0,related,"2026-07-26T17:06:23.510Z",null,null
+  pm-mpbb,related,"2026-07-26T17:06:23.510Z",null,null
+  pm-qfdd,related,"2026-07-26T17:06:23.510Z",null,null
+  pm-qljv,related,"2026-07-26T17:06:23.510Z",null,null
+  pm-ulqu,related,"2026-07-26T17:06:23.510Z",null,null
+  pm-vjk3,implements,"2026-07-26T17:06:23.510Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-13T00:37:24.709Z",codex-pm-audit-extraction,"Evidence: @unbrained/pm-governance-audit now owns four command handlers, the audit alias, package help/README, install-safe SDK adapter, and restored package-only flags. Isolated install plus package doctor and runtime tests pass."
 files[5]{path,scope,note}:

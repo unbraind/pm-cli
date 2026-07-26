@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: item-store,item-tracking,linked-tests,pm-cli
 created_at: "2026-04-04T19:06:59.641Z"
-updated_at: "2026-04-04T21:56:15.021Z"
+updated_at: "2026-07-26T17:16:15.967Z"
 deadline: "2026-04-13T19:06:59.641Z"
 author: codex-agent
 estimated_minutes: 240
@@ -16,7 +16,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: background-service-rollout
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: medium
 environment: linux
@@ -29,8 +29,9 @@ fixed_version: target-vnext
 component: item-format-store
 regression: true
 customer_impact: Provides durable test evidence directly on tracked items.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-16f4,parent,"2026-04-04T19:06:59.641Z",codex-agent,null
+  pm-16f4,implements,"2026-07-26T17:16:15.744Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-04T19:06:59.641Z",codex-agent,"Duplicate-check evidence: prior linked-test tasks classify run_results but do not persist bounded run histories into item front matter."
   "2026-04-04T20:22:22.104Z",codex-agent,Implemented bounded item test_runs persistence and tracking warnings in test/test-all; linked persistence regression suite passed (55 tests).
@@ -42,10 +43,28 @@ files[5]{path,scope,note}:
   src/core/item/item-format.ts,project,test_runs normalization and deterministic ordering
   src/core/test/item-test-run-tracking.ts,project,bounded tracked run summary persistence
   src/types.ts,project,item test run summary and settings typing
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,item summary persistence regressions
-test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:16:28.090Z","2026-04-04T20:16:28.090Z",null,null,0,0,0,1,0,null
-  test-local-mnkrzvnh-15x5zl,test,passed,"2026-04-04T20:18:41.773Z","2026-04-04T20:19:10.973Z","2026-04-04T20:19:10.973Z",null,null,1,0,0,null,null,null
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,project,2400,item summary persistence regressions
+test_runs[2]:
+  - run_id: test-all-local-mnkrqfdt-hjxetp
+    kind: test-all
+    status: passed
+    started_at: "2026-04-04T20:11:49.984Z"
+    finished_at: "2026-04-04T20:16:28.090Z"
+    recorded_at: "2026-04-04T20:16:28.090Z"
+    passed: 0
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 0
+  - run_id: test-local-mnkrzvnh-15x5zl
+    kind: test
+    status: passed
+    started_at: "2026-04-04T20:18:41.773Z"
+    finished_at: "2026-04-04T20:19:10.973Z"
+    recorded_at: "2026-04-04T20:19:10.973Z"
+    passed: 1
+    failed: 0
+    skipped: 0
 close_reason: item test-run summary persistence delivered; linked tests passed
 body: Implements item model/storage normalization and write paths for test run summary persistence from test/test-all/background completions.

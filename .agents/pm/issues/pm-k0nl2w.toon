@@ -6,13 +6,14 @@ status: closed
 priority: 1
 tags[5]: "area:config","area:storage",observability,resilience,sentry
 created_at: "2026-07-21T12:25:47.265Z"
-updated_at: "2026-07-21T15:21:22.684Z"
+updated_at: "2026-07-26T17:17:53.477Z"
 closed_at: "2026-07-21T13:31:20.685Z"
 author: codex-root
 acceptance_criteria: "Directory-shaped or otherwise unreadable settings.json never crashes readSettingsWithMetadata; callers receive a deterministic warning and fallback settings; normal, missing, invalid-JSON, and invalid-schema behavior remains stable; CLI acceptance, full exact coverage, release gates, and the live Sentry gate pass."
 parent: pm-o2kc
 risk: high
 confidence: high
+release: v2026.7.22
 severity: high
 environment: production
 repro_steps: "Create .agents/pm/settings.json as a directory and run any pm command that bootstraps settings, such as pm health --check-only."
@@ -23,10 +24,11 @@ affected_version: 2026.7.21
 fixed_version: next
 component: core/store/settings
 regression: true
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-f5hy2n,discovered_from,"2026-07-21T12:25:47.265Z",null,null
   pm-o1c53b,discovered_from,"2026-07-21T12:25:47.265Z",null,null
   pm-xdn6,related,"2026-07-21T12:25:47.265Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:17:53.213Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-21T12:25:47.265Z",codex-root,"text=Duplicate check: searched all pm statuses for PM-CLI-2E, readFileIfExists EISDIR settings, and settings.json directory. No canonical item covers this bootstrap failure. Fresh Sentry event 31835fc7f0cb4db789e12191560cf5b9 occurred once at 2026-07-21T11:37:08Z in readFileIfExists/readSettingsWithMetadata during malformed-settings acceptance."
   "2026-07-21T12:54:33.832Z",codex-root,"Evidence: TDD reproduced EISDIR and now proves cached fallback plus recovery; linked search/background tests pass 72/72 and settings tests pass 31/31. Manual acceptance in /tmp/pm-cli-settings-acceptance.oDxVsG completed without a stack trace, emitted settings_read_invalid_json remediation, finished health, and recorded a successful telemetry flush at 2026-07-21T12:29:01.173Z. Full repository verification passes 332 files/6,059 tests at exact 100/100/100/100, plus static quality, 100% docstrings, zero duplication, package boundary, token budget, and secret scanning. Sentry PM-CLI-2E remains intentionally unresolved until merged-commit proof."

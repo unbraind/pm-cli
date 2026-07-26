@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:context",implementation,pm-cli
 created_at: "2026-04-01T14:10:51.504Z"
-updated_at: "2026-05-17T08:21:58.995Z"
+updated_at: "2026-07-26T17:13:36.284Z"
 deadline: "2026-05-09T17:09:59.572Z"
 author: codex-agent
 estimated_minutes: 360
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: context-rollout
-release: vnext
+release: v2026.5.1
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement and verify pm context command (pm CLI + Node/pnpm toolchain).
@@ -37,8 +37,9 @@ fixed_version: target-vnext
 component: cli-context
 regression: true
 customer_impact: Users and agents get faster context snapshots
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-iyqf,parent,"2026-04-01T14:10:51.504Z",codex-agent,null
+  pm-iyqf,implements,"2026-07-26T17:13:36.044Z",null,null
 comments[6]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Implementation task created and ready for claim.
   "2026-04-01T14:26:43.067Z",codex-agent,"Implemented pm context/ctx end-to-end: new command module, CLI wiring/help, completion parity, Pi wrapper action mapping, unit/integration/release-readiness tests, and docs (README/PRD/ARCHITECTURE/AGENTS/CHANGELOG). Verification: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 661 tests); targeted changed-suite regression passed (5 files / 131 tests). Coverage command still fails on existing global 100% thresholds across broader repo (lines 97.64, branches 95.34, functions 98.24, statements 97.32), but context command behavior and all related suites are passing."
@@ -63,13 +64,13 @@ files[10]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,completion context assertions
   tests/unit/context-command.spec.ts,project,context unit coverage
   vitest.config.ts,project,coverage include update
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage gate (known global baseline shortfall)
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression
-  node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,targeted regression suite
-  pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,typescript build verification
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
-  test-local-mohg4mj1-cnbymj,test,passed,"2026-04-27T16:53:27.334Z","2026-04-27T17:03:20.846Z","2026-04-27T17:03:20.846Z",null,null,4,0,0,null,null,null
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,7200,coverage gate (known global baseline shortfall)
+  node scripts/run-tests.mjs test,project,7200,full regression
+  node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,7200,targeted regression suite
+  pnpm build,project,1200,typescript build verification
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-mohg4mj1-cnbymj,test,passed,"2026-04-27T16:53:27.334Z","2026-04-27T17:03:20.846Z","2026-04-27T17:03:20.846Z",4,0,0
 docs[5]{path,scope,note}:
   AGENTS.md,project,workflow recommendation update
   CHANGELOG.md,project,unreleased feature note

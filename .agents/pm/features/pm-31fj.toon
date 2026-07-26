@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:extensions","area:security",pm-cli
 created_at: "2026-04-01T02:16:05.793Z"
-updated_at: "2026-04-04T21:32:57.621Z"
+updated_at: "2026-07-26T17:02:36.526Z"
 deadline: "2026-04-11T02:16:05.793Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-x395
 blocked_reason: "Documentation, migration, and safety posture has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If Documentation, migration, and safety posture is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: documentation
 regression: false
 customer_impact: users can adopt override features safely with clear guidance
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-x395,parent,"2026-04-01T02:16:05.793Z",codex-agent,null
+  pm-x395,implements,"2026-07-26T17:02:36.355Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-01T02:16:05.793Z",codex-agent,Feature D from full-override plan.
 notes[1]{created_at,author,text}:
@@ -51,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:24.048Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,primary extension author contract
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,release docs contract checks
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,project,1800,release docs contract checks
 docs[1]{path,scope,note}:
   SECURITY.md,project,extension trust and disclosure posture
 close_reason: All feature D documentation/security tasks are complete and linked docs/tests pass.

@@ -6,19 +6,21 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",gh-issue
 created_at: "2026-07-06T08:03:12.744Z"
-updated_at: "2026-07-07T03:41:47.787Z"
+updated_at: "2026-07-26T17:23:58.620Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "--assignee on claim/release/start-task/pause-task either aliases --author or yields a recovery hint naming --author and pm update --assignee; spec + contracts + docs updated"
 parent: pm-mpbb
 risk: low
 confidence: high
+release: v2026.7.7
 resolution: "claim, release, start-task, pause-task, and close-task now accept hidden --assignee as an alias for lifecycle --author, and SDK action contracts expose the alias metadata."
 expected_result: Agents that naturally pass --assignee to lifecycle commands get correct ownership behavior or discover the alias through contracts.
 actual_result: "Alias parsing, contracts, and lifecycle integration coverage pass, while create/update item assignee semantics remain unchanged."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-06T08:03:12.744Z",null,null
   pm-cpja,related,"2026-07-06T08:03:45.040Z",null,null
+  pm-mpbb,implements,"2026-07-26T17:23:58.333Z",null,null
 comments[10]{created_at,author,text}:
   "2026-07-07T00:22:10.759Z",claude-code-agent,"Implementation note: claim/release/start-task/pause-task/close-task now accept hidden --assignee <agent> as an alias for lifecycle ownership --author; command flag contracts and SDK action parameter contracts expose the alias metadata. Focused parser and SDK contract tests cover the behavior."
   "2026-07-07T00:56:16.636Z",codex-sdk-primitives-agent,"Evidence: claim/release/start-task/pause-task/close-task accept hidden --assignee alias mapped to lifecycle author while keeping item metadata --assignee semantics on create/update. Covered by command registration tests, integration lifecycle alias tests, and full coverage 100/100/100/100."

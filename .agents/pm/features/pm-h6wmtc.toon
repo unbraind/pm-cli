@@ -1,0 +1,35 @@
+id: pm-h6wmtc
+title: "Retention and lawful erasure over an immutable history: a decades-long record needs a policy that deletes without breaking proof"
+description: "The project's durability promise is that every mutation is permanently recorded and any item is restorable to any version. Over a multi-decade horizon that promise collides with three obligations no current item owns: statutory erasure requests against personal data that entered an item body or a history patch, contractual retention limits that require records to be destroyed on a schedule, and storage economics for streams that only ever grow. The mechanisms partly exist and are unreconciled. history-redact rewrites literals and recomputes hashes, history-compact replaces a prefix with a synthetic baseline, and history-repair re-anchors a drifted chain — but there is no policy layer deciding when any of them must run, no statement of what a redaction is permitted to destroy versus obliged to preserve, and no proof that a stream which has been redacted and then compacted is still independently verifiable a decade later by a reader who has none of the intervening tooling. The open format specification will make the bytes readable in twenty years; nothing yet makes them lawfully retainable for twenty years."
+type: Feature
+status: open
+priority: 3
+tags[7]: compliance,durability,governance,history,long-horizon,privacy,retention
+created_at: "2026-07-26T17:06:59.506Z"
+updated_at: "2026-07-26T17:06:59.506Z"
+author: "harness:claude-code"
+estimated_minutes: 900
+acceptance_criteria: "The workspace can declare retention classes and schedules as configuration, and the classification of an item or field is data rather than convention; An erasure request resolves to a deterministic set of streams, entries and fields, and the operation reports exactly what it destroyed and what it preserved; A stream that has been redacted and then compacted still verifies end to end for a reader holding only the format specification and the published verification rule; The policy distinguishes what may be destroyed from what must survive — the fact that a mutation occurred, its ordering, its author class, and the chain linkage — so proof of process survives destruction of content; Destructive policy operations are themselves recorded as audited events that cannot be removed by a later run of the same policy; A tombstone is left wherever content was removed so a later reader sees a deliberate absence and not silent corruption; Small workspaces with no declared policy behave exactly as today with no new required configuration"
+goal: project management = context management
+objective: "Reconcile immutable proof with the obligation to delete, so neither promise is quietly abandoned"
+value: The tracker remains adoptable by organisations with statutory retention and erasure duties instead of being disqualified by its own durability guarantee
+impact: Determines whether pm can hold decades of institutional context in regulated settings or only in ones with no deletion obligations
+outcome: "A declared retention and erasure policy model, enforced by the existing history maintenance primitives, with verifiability preserved across every permitted destructive operation"
+why_now: "Redaction, compaction and repair have all shipped independently; the policy that should govern them is the missing layer, and retrofitting it after adoption is far harder"
+parent: pm-o2kc
+risk: high
+confidence: low
+dependencies[12]{id,kind,created_at,author,source_kind}:
+  pm-34w8za,related,"2026-07-26T17:06:59.506Z",null,null
+  pm-3z0k,related,"2026-07-26T17:06:59.506Z",null,null
+  pm-4jk8kx,related,"2026-07-26T17:06:59.506Z",null,null
+  pm-e5yupa,related,"2026-07-26T17:06:59.506Z",null,null
+  pm-klo8,related,"2026-07-26T17:06:59.506Z",null,null
+  pm-mj42og,related,"2026-07-26T17:06:59.506Z",null,null
+  pm-nb4zwz,related,"2026-07-26T17:06:59.506Z",null,null
+  pm-o2kc,implements,"2026-07-26T17:06:59.506Z",null,null
+  pm-t4d7nz,verifies,"2026-07-26T17:06:59.506Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T17:06:59.506Z",null,null
+  pm-wlqxg3,related,"2026-07-26T17:06:59.506Z",null,null
+  pm-xc68,related,"2026-07-26T17:06:59.506Z",null,null
+body: ""

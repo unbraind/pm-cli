@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:extensions",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:01:12.207Z"
-updated_at: "2026-04-04T21:44:01.857Z"
+updated_at: "2026-07-26T17:09:48.707Z"
 deadline: "2026-03-13T23:01:12.207Z"
 assignee: steve
 author: steve
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-f45
 blocked_reason: Milestone 5 - Extension System + Built-ins has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Milestone 5 - Extension System + Built-ins is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -40,9 +40,17 @@ fixed_version: archive-2026q2
 component: project-management/milestone-5-extension-system-built-ins
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 5 - Extension System + Built-ins.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-f45,blocks,"2026-02-17T23:01:12.207Z",steve,null
   pm-j7a,child,"2026-02-17T23:01:12.207Z",steve,null
+  pm-0e8w,related,"2026-07-26T17:09:48.446Z",null,null
+  pm-30lh,related,"2026-07-26T17:09:48.446Z",null,null
+  pm-3aeu,related,"2026-07-26T17:09:48.446Z",null,null
+  pm-433d,related,"2026-07-26T17:09:48.446Z",null,null
+  pm-8d71,related,"2026-07-26T17:09:48.446Z",null,null
+  pm-jvfw,related,"2026-07-26T17:09:48.446Z",null,null
+  pm-qkx0,related,"2026-07-26T17:09:48.446Z",null,null
+  pm-xyv3,related,"2026-07-26T17:09:48.446Z",null,null
 comments[11]{created_at,author,text}:
   "2026-02-17T23:01:12.207Z",steve,Milestone 5 enables custom behavior while preserving core safety.
   "2026-03-04T15:44:57.708Z",cursor-maintainer,"Progress update: closed follow-up task pm-3aeu to align hook lifecycle docs and implementation for gc onIndex dispatch (mode=gc, deterministic cache-target totals) with full pm test and pm test-all evidence recorded."
@@ -64,8 +72,8 @@ files[4]{path,scope,note}:
   src/core/extensions/loader.ts,project,extension activation and hook runtime
   tests/unit/extension-loader.spec.ts,project,extension loader deterministic behavior
   tests/unit/extensions-runtime.spec.ts,project,extension runtime and override isolation
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full coverage gate for milestone closure
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,2400,full coverage gate for milestone closure
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood tracking and release workflow
   PRD.md,project,authoritative milestone-5 checklist

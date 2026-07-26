@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bare-core,coverage,packages,tests
 created_at: "2026-07-12T19:55:15.063Z"
-updated_at: "2026-07-13T08:56:31.096Z"
+updated_at: "2026-07-26T17:25:12.820Z"
 closed_at: "2026-07-13T04:48:52.552Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -14,9 +14,14 @@ acceptance_criteria: coverage gate green with the four files relocated; package 
 parent: pm-vjk3
 risk: medium
 confidence: high
+release: v2026.7.13
 resolution: completed
 expected_result: "Hosted verification proves bare core rejects audit surface and installed package restores it, with coverage/e2e gates green"
 actual_result: "PR#536 added audit-package-boundary gate + bare-vs-installed verification; release:gates, 278-file coverage run, lint all green at merge"
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-kvd0,related,"2026-07-26T17:25:12.558Z",null,null
+  pm-qfdd,related,"2026-07-26T17:25:12.558Z",null,null
+  pm-vjk3,implements,"2026-07-26T17:25:12.558Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-12T23:37:43.406Z",codex-pm-audit-extraction,"E2E evidence: isolated temp project bare core rejected dedupe-audit and exposed no audit flags; pm install audit activated cleanly; package doctor OK; dedupe-audit, comments-audit, normalize, update help, and files help restored expected package surface."
   "2026-07-13T00:37:01.319Z",codex-pm-audit-extraction,"Verification evidence: pnpm release:gates reached 278 test files / 5592 tests with literal 100% statement, branch, function, and line coverage; typecheck, docs/skills, static quality, token budget, and isolated package installation all pass. Existing scripts/reviews/pr-review-loop.mjs and docs/PR_REVIEW_LOOP.md are linked for the hosted bot acknowledgement loop."

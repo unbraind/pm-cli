@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:search",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:01:11.736Z"
-updated_at: "2026-04-04T21:44:00.445Z"
+updated_at: "2026-07-26T16:48:53.296Z"
 deadline: "2026-03-07T23:01:11.736Z"
 assignee: steve
 author: steve
@@ -24,7 +24,7 @@ reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.3.9
 blocked_by: pm-54d
 blocked_reason: Milestone 4 - Search has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: "If Milestone 4 - Search is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -61,9 +61,9 @@ files[8]{path,scope,note}:
   tests/unit/reindex-command.spec.ts,project,reindex tests
   tests/unit/search-command.spec.ts,project,search command tests
   tests/unit/vector-store-adapter.spec.ts,project,vector adapter tests
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/embedding-provider.spec.ts tests/unit/vector-store-adapter.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted milestone4 regression
+tests[2]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,project,1800,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/embedding-provider.spec.ts tests/unit/vector-store-adapter.spec.ts,project,900,targeted milestone4 regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and dogfood rules
   PRD.md,project,authoritative requirements

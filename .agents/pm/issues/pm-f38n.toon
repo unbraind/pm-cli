@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:extensions","area:output","area:sdk",gh-issue,package-authoring
 created_at: "2026-07-13T22:19:34.239Z"
-updated_at: "2026-07-14T18:22:15.910Z"
+updated_at: "2026-07-26T17:13:31.224Z"
 closed_at: "2026-07-14T18:08:21.844Z"
 author: codex-root
 estimated_minutes: 180
@@ -14,6 +14,7 @@ acceptance_criteria: "A typed, documented suppression contract is shared by expo
 parent: pm-ugqx
 risk: medium
 confidence: high
+release: v2026.7.15
 reporter: codex-root
 severity: medium
 repro_steps: "Implement a package exporter or renderer that streams or writes its own output, return a normal handled result, and observe the host render the result again because no public suppression sentinel exists."
@@ -22,12 +23,13 @@ expected_result: "Package commands that own streaming, binary, or pre-rendered s
 actual_result: "Every normal handler result was rendered again by the host, corrupting package-owned stdout."
 component: "SDK exporter, renderer, and output service contracts"
 customer_impact: "Package authors cannot safely implement streaming, binary, or already-rendered export workflows through public SDK primitives."
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-ixoa,related,"2026-07-13T22:19:34.239Z",null,null
   pm-srns,related,"2026-07-13T22:19:34.239Z",null,null
   pm-usfg,related,"2026-07-13T22:19:34.239Z",null,null
   pm-as4a,related,"2026-07-14T17:32:15.321Z",null,null
   pm-evav,related,"2026-07-14T17:32:15.321Z",null,null
+  pm-ugqx,implements,"2026-07-26T17:13:30.940Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-13T22:19:34.239Z",codex-root,"Duplicate check 2026-07-14: all-status searches for GH-547, suppress host rendering, exporter renderer suppression, and stdout corruption found no existing item. GitHub issue #547 is canonical external evidence; this item is deliberately left open and unclaimed."
   "2026-07-14T18:08:04.049Z",codex-root,"Final evidence: public suppressHostOutput()/isHostOutputSuppressed contracts are exported from @unbrained/pm-cli/sdk; CLI output ownership unwraps the optional structured result for hooks/telemetry and emits no second payload. Linked pm tests pass; packed package imported the helper and direct stream output was exactly one line. Full coverage is 100/100/100/100."

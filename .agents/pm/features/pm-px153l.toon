@@ -6,19 +6,21 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-23T08:23:36.953Z"
-updated_at: "2026-07-23T08:29:04.040Z"
+updated_at: "2026-07-26T17:23:29.547Z"
 closed_at: "2026-07-23T08:23:49.091Z"
 author: claude-code-agent
 acceptance_criteria: "SQLite projection is atomic, cursor-bound, rebuildable, maintained by supported mutations, and falls back to authoritative scans on absence/staleness/corruption; bounded default list results preserve output parity; standard get omits embedded child samples but reports counts/by-status/continuation; explicit/full get retains bounded child samples; 10k CLI/SDK scale budgets and exact 100/100/100/100 coverage pass"
 parent: pm-801d
+release: v2026.7.24
 resolution: Implemented and validated the accepted 10k indexed-read and compact-get subset under the still-open 1M feature.
 expected_result: "Safe bounded list reads use a rebuildable projection without changing output semantics, and standard get avoids embedding child samples while retaining drill-down metadata."
 actual_result: "SQLite cursor-bound projection, transactional mutation maintenance, authoritative fallback, indexed default-list pages, compact child counts/statuses/continuations, explicit/full child samples, SDK exports, tests, docs, and scale proof shipped in PR #655."
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-5qmm,related,"2026-07-23T08:23:39.319Z",null,null
   pm-dfg0,related,"2026-07-23T08:23:39.319Z",null,null
   pm-ds3b,related,"2026-07-23T08:23:39.319Z",null,null
   pm-rjqr,related,"2026-07-23T08:23:39.319Z",null,null
+  pm-801d,implements,"2026-07-26T17:23:29.318Z",null,null
 comments[4]{created_at,author,text}:
   "2026-07-23T08:23:37.493Z",claude-code-agent,"Duplicate check evidence 2026-07-23: all-status searches for SQLite metadata query index, bounded indexed list, compact get child projection, and child continuation found the canonical broader pm-801d feature plus older generic query/compact-output work, but no completed item representing this specific shipped release boundary. This child records the accepted subset without closing the 1M roadmap feature."
   "2026-07-23T08:23:48.250Z",claude-code-agent,"Completion evidence 2026-07-23: exact coverage passed 100/100/100/100 across 6,120 tests; 10k CLI/SDK scale budgets passed; packed smoke and 88-command dogfood passed; an isolated tarball consumer typechecked public SDK imports and exercised installed init/create/list/context/search with zero audit vulnerabilities. PR #655 hosted coverage, static, platform smoke, security, and benchmark checks are green at c1c3ef03."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:migrations",pm-cli,runtime
 created_at: "2026-04-01T02:17:22.189Z"
-updated_at: "2026-04-04T21:38:14.455Z"
+updated_at: "2026-07-26T17:26:40.494Z"
 deadline: "2026-04-10T02:17:22.189Z"
 assignee: codex-agent
 author: codex-agent
@@ -25,7 +25,7 @@ reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
-release: archive-2026q2
+release: v2026.5.1
 blocked_by: pm-zd6y
 blocked_reason: "B3: Executable extension migration lifecycle has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If B3: Executable extension migration lifecycle is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
@@ -41,8 +41,9 @@ fixed_version: archive-2026q2
 component: project-management/b3-executable-extension-migration-lifecycle
 regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for B3: Executable extension migration lifecycle."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-zd6y,parent,"2026-04-01T02:17:22.189Z",codex-agent,null
+  pm-zd6y,implements,"2026-07-26T17:26:40.273Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T02:17:22.189Z",codex-agent,B3 task created from full-override feature B.
   "2026-04-01T03:01:10.207Z",codex-agent,Integrated executable extension migration lifecycle in preAction flow (executeRegisteredRuntimeMigrations + mandatory gate checks) in src/cli/main.ts.
@@ -52,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:46.818Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,migration execution and gating flow
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/health-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,migration lifecycle regression
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/health-command.spec.ts,project,2400,migration lifecycle regression
 docs[1]{path,scope,note}:
   PRD.md,project,migration lifecycle contract
 close_reason: Extension migration execution lifecycle and mandatory gate enforcement are integrated in pre-action flow.

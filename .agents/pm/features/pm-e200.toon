@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-ux,"area:sdk",composability,long-term,multi-agent
 created_at: "2026-07-06T22:56:13.669Z"
-updated_at: "2026-07-24T23:34:03.396Z"
+updated_at: "2026-07-26T17:12:30.814Z"
 closed_at: "2026-07-24T23:34:02.382Z"
 author: maintainer-agent
 estimated_minutes: 600
@@ -14,12 +14,20 @@ acceptance_criteria: pm events emits one JSON object per line with a stable resu
 parent: pm-dj98
 risk: medium
 confidence: medium
+release: v2026.7.25
 resolution: completed
 expected_result: CLI and SDK consumers can page and follow ordered cross-process mutation facts with stable resumable cursors and bounded indexed catch-up.
 actual_result: "Installed CLI emitted ordered NDJSON create, claim, and update facts and the installed SDK returned the same cursor-resumable event page; health, drift, contracts, and exact coverage passed."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-646c,related,"2026-07-06T22:56:57.915Z",null,null
   pm-801d,related,"2026-07-06T22:56:57.915Z",null,null
+  pm-9rxu,related,"2026-07-26T17:12:30.655Z",null,null
+  pm-dj98,implements,"2026-07-26T17:12:30.655Z",null,null
+  pm-e3g0h6,related,"2026-07-26T17:12:30.655Z",null,null
+  pm-i7i4,related,"2026-07-26T17:12:30.655Z",null,null
+  pm-m9xv,related,"2026-07-26T17:12:30.655Z",null,null
+  pm-psy1,related,"2026-07-26T17:12:30.655Z",null,null
+  pm-usfg,related,"2026-07-26T17:12:30.655Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-24T19:31:07.827Z",claude-code-agent,"Implementation evidence: added a persistent derived cross-stream history index, stable query-bound cursors, bounded filterable SDK pages, AbortSignal-aware async subscriptions, and the SDK-backed `pm events` NDJSON CLI. Focused build and 52-test contract/event/history suite passed. A real temporary tracker smoke emitted exactly one filtered create event with its durable cursor. The projection remains derived from authoritative JSONL history and is lazily rebuildable; no daemon or new mutation path was introduced."
   "2026-07-24T22:21:51.241Z",claude-code-agent,"Acceptance evidence: clean packed-package proof produced three ordered create/claim/update events for one item, returned a stable next_cursor, and read the same stream through the installed SDK. Full release coverage is exact 100/100/100/100; history health and drift validation passed. The documented pm-slack migration path remains consumer work, while the required producer primitive is complete."
