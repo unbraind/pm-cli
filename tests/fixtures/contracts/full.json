@@ -11003,6 +11003,13 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "markdown": {
+            "description": "Render the package or extension description as Markdown instead of structured output.",
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
             "type": "boolean"
@@ -11629,6 +11636,30 @@
             "const": "extension",
             "description": "Tool action to execute."
           },
+          "activate": {
+            "description": "Activate.",
+            "type": "boolean"
+          },
+          "adopt": {
+            "description": "Adopt.",
+            "type": "boolean"
+          },
+          "adoptAll": {
+            "description": "Adopt All.",
+            "type": "boolean"
+          },
+          "catalog": {
+            "description": "Catalog.",
+            "type": "boolean"
+          },
+          "deactivate": {
+            "description": "Deactivate.",
+            "type": "boolean"
+          },
+          "describe": {
+            "description": "Describe.",
+            "type": "boolean"
+          },
           "detail": {
             "description": "Detail mode for commands that support concise and deep diagnostics.",
             "enum": [
@@ -11640,6 +11671,14 @@
               "deep"
             ],
             "type": "string"
+          },
+          "doctor": {
+            "description": "Doctor.",
+            "type": "boolean"
+          },
+          "explore": {
+            "description": "Explore.",
+            "type": "boolean"
           },
           "failOnWarn": {
             "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
@@ -11660,6 +11699,14 @@
             "description": "Alias for isolated on extension-doctor/package-doctor action payloads.",
             "type": "boolean"
           },
+          "init": {
+            "description": "Init.",
+            "type": "boolean"
+          },
+          "install": {
+            "description": "Install.",
+            "type": "boolean"
+          },
           "isolated": {
             "description": "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
             "type": "boolean"
@@ -11667,6 +11714,17 @@
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "manage": {
+            "description": "Manage.",
+            "type": "boolean"
+          },
+          "markdown": {
+            "description": "Render the package or extension description as Markdown instead of structured output.",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "noExtensions": {
@@ -11754,6 +11812,10 @@
           },
           "trace": {
             "description": "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
+            "type": "boolean"
+          },
+          "uninstall": {
+            "description": "Uninstall.",
             "type": "boolean"
           },
           "watch": {
@@ -12166,6 +12228,13 @@
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "markdown": {
+            "description": "Render the package or extension description as Markdown instead of structured output.",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "noExtensions": {
@@ -12794,6 +12863,30 @@
             "const": "package",
             "description": "Tool action to execute."
           },
+          "activate": {
+            "description": "Activate.",
+            "type": "boolean"
+          },
+          "adopt": {
+            "description": "Adopt.",
+            "type": "boolean"
+          },
+          "adoptAll": {
+            "description": "Adopt All.",
+            "type": "boolean"
+          },
+          "catalog": {
+            "description": "Catalog.",
+            "type": "boolean"
+          },
+          "deactivate": {
+            "description": "Deactivate.",
+            "type": "boolean"
+          },
+          "describe": {
+            "description": "Describe.",
+            "type": "boolean"
+          },
           "detail": {
             "description": "Detail mode for commands that support concise and deep diagnostics.",
             "enum": [
@@ -12805,6 +12898,14 @@
               "deep"
             ],
             "type": "string"
+          },
+          "doctor": {
+            "description": "Doctor.",
+            "type": "boolean"
+          },
+          "explore": {
+            "description": "Explore.",
+            "type": "boolean"
           },
           "failOnWarn": {
             "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
@@ -12825,6 +12926,14 @@
             "description": "Alias for isolated on extension-doctor/package-doctor action payloads.",
             "type": "boolean"
           },
+          "init": {
+            "description": "Init.",
+            "type": "boolean"
+          },
+          "install": {
+            "description": "Install.",
+            "type": "boolean"
+          },
           "isolated": {
             "description": "When true for extension-doctor/package-doctor, ignore global registrations for hermetic project diagnostics.",
             "type": "boolean"
@@ -12832,6 +12941,17 @@
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "manage": {
+            "description": "Manage.",
+            "type": "boolean"
+          },
+          "markdown": {
+            "description": "Render the package or extension description as Markdown instead of structured output.",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "noExtensions": {
@@ -12919,6 +13039,10 @@
           },
           "trace": {
             "description": "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
+            "type": "boolean"
+          },
+          "uninstall": {
+            "description": "Uninstall.",
             "type": "boolean"
           },
           "watch": {
@@ -14668,8 +14792,16 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
             "type": "boolean"
           },
           "filterMetadataMissing": {
@@ -15143,8 +15275,16 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
             "type": "boolean"
           },
           "filterMetadataMissing": {
@@ -15618,8 +15758,16 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
             "type": "boolean"
           },
           "filterMetadataMissing": {
@@ -16093,8 +16241,16 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
             "type": "boolean"
           },
           "filterMetadataMissing": {
@@ -16568,8 +16724,16 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
             "type": "boolean"
           },
           "filterMetadataMissing": {
@@ -17043,8 +17207,16 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
             "type": "boolean"
           },
           "filterMetadataMissing": {
@@ -17518,8 +17690,16 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
             "type": "boolean"
           },
           "filterMetadataMissing": {
@@ -17993,8 +18173,16 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
           "filterEstimatesMissing": {
             "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
             "type": "boolean"
           },
           "filterMetadataMissing": {
@@ -19183,6 +19371,14 @@
             "description": "Filter Confidence Missing.",
             "type": "boolean"
           },
+          "filterDocsMissing": {
+            "description": "Filter Docs Missing.",
+            "type": "boolean"
+          },
+          "filterFilesMissing": {
+            "description": "Filter Files Missing.",
+            "type": "boolean"
+          },
           "filterReleaseMissing": {
             "description": "Filter Release Missing.",
             "type": "boolean"
@@ -19270,6 +19466,27 @@
               }
             ],
             "description": "Limit."
+          },
+          "matchMode": {
+            "description": "Match Mode.",
+            "enum": [
+              "all",
+              "any",
+              "phrase"
+            ],
+            "type": "string"
+          },
+          "minScore": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^\\d+(\\.\\d+)?$",
+                "type": "string"
+              }
+            ],
+            "description": "Min Score."
           },
           "mode": {
             "description": "Mode selector for search and reindex (keyword|semantic|hybrid).",
@@ -23391,6 +23608,18 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^-?\\d+$",
+                "type": "string"
+              }
+            ],
+            "description": "Rank."
+          },
           "regression": {
             "anyOf": [
               {
@@ -24421,6 +24650,27 @@
               ]
             ]
           },
+          "exemptIsolateType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Item types whose active isolates the graph audit treats as policy-valid (string, comma-separated, or array).",
+            "examples": [
+              "Reminder",
+              [
+                "Reminder",
+                "Event"
+              ]
+            ]
+          },
           "id": {
             "description": "Root item id for traversal, paths, impact, and dominators graph queries.",
             "examples": [
@@ -24527,6 +24777,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "rebuild": {
+            "description": "When true, rebuild and warm the durable graph index (graph index only).",
+            "type": "boolean"
+          },
           "sample": {
             "anyOf": [
               {
@@ -24542,6 +24796,10 @@
               10,
               "25"
             ]
+          },
+          "saveBaseline": {
+            "description": "When true, persist the graph audit census as the change-since-baseline comparison point (audit only).",
+            "type": "boolean"
           },
           "subcommand": {
             "description": "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators|slack|centrality|articulation|plan|index. Traversals, paths, impact, and dominators require id; paths also requires target; slack reports critical-path float, centrality ranks betweenness/closeness/degree, articulation reports cut points and bridges; plan derives dry-run remediation proposals from the governance audit; index reports, rebuilds, or clears the durable cross-process graph index.",
