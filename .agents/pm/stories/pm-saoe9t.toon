@@ -1,0 +1,28 @@
+id: pm-saoe9t
+title: "As an organization, I can run my complete business as a digital twin on pm primitives — org structure, objectives, approvals, and assets as one domain pack"
+description: "Far-horizon exemplar story for the universal domain platform: a full organizational twin (org chart as item hierarchy, OKRs as goal-linked milestones, approval workflows as pm-mj42og declarative policies, assets/facilities in the twin-assets/twin-facilities storage already present in the on-disk layout) built as one domain pack with the pm-g608fc authoring kit and zero changes to pm core. Sibling exemplars prove slices: VCS (pm-iiv1gl), temporal twin graph (pm-kr3t, closed), minimal PM CLI (pm-cbwg, closed). This story proves composition at organizational scale and produces the gap ledger that Theme A of the post-ladder horizon (recorded 2026-07-26 on pm-doxj) needs to become a milestone proposal. Parked at P4: no implementation before the ladder rungs it verifies (pm-t4d7nz) and the policy/federation primitives (pm-mj42og, pm-odohgb, pm-xc68) land."
+type: Story
+status: open
+priority: 4
+tags[6]: digital-twin,domain-pack,exemplar,horizon-far,story,universal-platform
+created_at: "2026-07-26T10:01:39.743Z"
+updated_at: "2026-07-26T10:01:57.992Z"
+author: "harness:opencode"
+acceptance_criteria: "A domain pack models org structure, objectives, approvals, and assets with zero pm-core changes; an independent reviewer can operate the twin for a simulated quarter using only SDK primitives; every pm-core gap encountered is filed as a tracked item"
+goal: project management = context management
+objective: Prove pm SDK primitives compose into a complete non-PM organizational system
+value: The universal-platform claim is tested against the hardest domain — a whole company — producing the gap ledger for the post-2028 horizon
+why_now: "Filed as the compositional counterpart to slice exemplars during the 2026-07-26 long-horizon brainstorm; parked, not actionable"
+parent: pm-8jdc
+risk: low
+confidence: medium
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-e9yevx,discovered_from,"2026-07-26T10:01:54.380Z",null,null
+  pm-g608fc,related,"2026-07-26T10:01:54.380Z",null,null
+  pm-iiv1gl,related,"2026-07-26T10:01:54.380Z",null,null
+  pm-kr3t,related,"2026-07-26T10:01:54.380Z",null,null
+  pm-mj42og,related,"2026-07-26T10:01:54.380Z",null,null
+  pm-odohgb,related,"2026-07-26T10:01:54.380Z",null,null
+  pm-t4d7nz,verifies,"2026-07-26T10:01:54.380Z",null,null
+  pm-xc68,implements,"2026-07-26T10:01:54.380Z",null,null
+body: ""

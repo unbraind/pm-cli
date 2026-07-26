@@ -1,0 +1,28 @@
+id: pm-qapjw5
+title: "Changeset-to-item traceability gate: every merged changeset references a tracked pm item or an explicit waiver, enforced in CI"
+description: "AGENTS.md makes 'every code, docs, or test change must be linked to a pm item' a non-negotiable, but nothing machine-enforces it: compliance depends on agent discipline and is invisible when it degrades. Add a CI gate that extracts pm-id references from PR title/body and commit messages of a changeset, requires at least one resolvable active-or-terminal item id (or an explicit tracked waiver label), and fails otherwise. The reverse direction (which work produced a file) is pm-f86lth; this is the forward direction (no changeset lands untracked). Registers in the gate registry (pm-k6t4yb) with a negative-control fixture (a pm-id-free changeset must fail) and rides the same ratchet style as pm-kpftft. Completes the provenance half of the provable-history invariant: history proves what the tracker recorded; this proves the tracker recorded what the code did."
+type: Feature
+status: open
+priority: 2
+tags[6]: ci,context-management,governance,provenance,quality-gate,traceability
+created_at: "2026-07-26T10:00:23.657Z"
+updated_at: "2026-07-26T10:00:42.071Z"
+author: "harness:opencode"
+acceptance_criteria: "CI fails a changeset with no resolvable pm-id and no waiver; negative-control fixture proves the failure; waiver usage is itself a tracked, queryable event; gate registered in pm-k6t4yb with owner and failure taxonomy"
+goal: project management = context management
+objective: Make the code-to-tracker provenance loop closed and machine-enforced
+value: Every changeset is traversable to the work that authorized it; the graph gains evidence edges from real events instead of retrospective reconstruction
+why_now: 2026-07-26 ecosystem review found the forward direction of traceability unenforced while the reverse direction (pm-f86lth) and the gate infrastructure (pm-k6t4yb) are already tracked
+parent: pm-u9d0
+risk: low
+confidence: high
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-33cw,related,"2026-07-26T10:00:38.248Z",null,null
+  pm-9yfo,related,"2026-07-26T10:00:38.248Z",null,null
+  pm-e9yevx,discovered_from,"2026-07-26T10:00:38.248Z",null,null
+  pm-f86lth,related,"2026-07-26T10:00:38.248Z",null,null
+  pm-k6t4yb,related,"2026-07-26T10:00:38.248Z",null,null
+  pm-kpftft,related,"2026-07-26T10:00:38.248Z",null,null
+  pm-rtn5h6,related,"2026-07-26T10:00:38.248Z",null,null
+  pm-w7ccmv,verifies,"2026-07-26T10:00:38.248Z",null,null
+body: ""

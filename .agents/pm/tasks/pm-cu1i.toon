@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-ux,ci,token-efficiency
 created_at: "2026-07-06T23:26:12.453Z"
-updated_at: "2026-07-09T18:28:23.553Z"
+updated_at: "2026-07-26T10:04:52.351Z"
 closed_at: "2026-07-09T17:03:25.687Z"
 author: maintainer-agent
 estimated_minutes: 240
