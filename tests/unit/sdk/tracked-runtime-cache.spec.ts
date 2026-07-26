@@ -9,6 +9,7 @@ import {
   resolveCanonicalTrackerRoot,
   scanTrackedRuntimeCache,
 } from "../../../src/sdk/governance/tracked-runtime-cache.js";
+import { writeMergeReceipt } from "../../../src/sdk/merge/receipts.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 function runGit(cwd: string, args: string[]): string {
@@ -56,6 +57,22 @@ describe("tracked runtime cache governance", () => {
         ...relativePaths,
         authoritativeSearchCorpus,
       ]);
+      await writeMergeReceipt({
+        cwd: context.tempRoot,
+        itemPath: ".agents/pm/tasks/pm-zeta.toon",
+        preferred: "ours",
+        fieldsFromTheirs: [],
+        unionFields: [],
+        decisions: [],
+      });
+      await writeMergeReceipt({
+        cwd: context.tempRoot,
+        itemPath: ".agents/pm/tasks/pm-alpha.toon",
+        preferred: "ours",
+        fieldsFromTheirs: [],
+        unionFields: [],
+        decisions: [],
+      });
 
       const scan = await scanTrackedRuntimeCache(context.pmPath);
       expect(scan).toMatchObject({
@@ -82,6 +99,7 @@ describe("tracked runtime cache governance", () => {
         status: "warn",
         details: {
           counts: { tracked_runtime_cache_files: 5 },
+          pending_merge_decision_items: ["pm-alpha", "pm-zeta"],
           tracked_runtime_cache: {
             tracked_path_count: 5,
             tracked_paths: expect.arrayContaining(relativePaths),

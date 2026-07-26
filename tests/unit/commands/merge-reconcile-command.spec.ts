@@ -1,7 +1,9 @@
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { MergeReconcileResult } from "../../../src/sdk/merge/reconcile.js";
+import { writeMergeReceipt } from "../../../src/sdk/merge/receipts.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 async function tamperHistoryChain(historyPath: string): Promise<string> {
@@ -211,6 +213,107 @@ describe("merge reconcile command", () => {
         dry_run: false,
         repair: { totals: { failed: 1 } },
       });
+    });
+  });
+
+  it("records privacy-safe receipt context on a clean merge stream", async () => {
+    await withTempPmPath(async (context) => {
+      execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
+      expect(
+        context.runCli(["merge", "install", "--json"], {
+          cwd: context.tempRoot,
+        }).code,
+      ).toBe(0);
+      const created = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Clean receipt merge",
+          "--description",
+          "Record branch provenance without history drift",
+          "--type",
+          "Task",
+          "--id",
+          "merge-clean-receipt",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdPayload = created.json as {
+        id?: string;
+        item?: { id?: string };
+      };
+      const id = createdPayload.id ?? createdPayload.item?.id;
+      expect(id).toBeTypeOf("string");
+      const receipt = await writeMergeReceipt({
+        cwd: context.tempRoot,
+        itemPath: `.agents/pm/tasks/${id!}.toon`,
+        preferred: "ours",
+        fieldsFromTheirs: ["priority"],
+        unionFields: ["comments"],
+        decisions: [
+          {
+            field: "title",
+            base: "base",
+            ours: "retained",
+            theirs: "discarded",
+            retained: "retained",
+            discarded: "discarded",
+          },
+        ],
+      });
+      expect(receipt).not.toBeNull();
+
+      const reconciled = context.runCli(
+        ["merge", "reconcile", "--json"],
+        { expectJson: true, cwd: context.tempRoot },
+      );
+      expect(
+        reconciled.code,
+        `${reconciled.stdout}\n${reconciled.stderr}`,
+      ).toBe(0);
+      expect(reconciled.json as MergeReconcileResult).toMatchObject({
+        ok: true,
+        receipts: { pending_before: 1, reconciled: 1 },
+      });
+      const entries = (
+        await readFile(
+          path.join(
+            context.pmPath,
+            "history",
+            `${id!}.jsonl`,
+          ),
+          "utf8",
+        )
+      )
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+      expect(entries.at(-1)).toMatchObject({
+        op: "merge_reconcile",
+        context: {
+          merge: {
+            receipts: [
+              {
+                receipt_id: receipt!.id,
+                decisions: [
+                  {
+                    retained_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+                    discarded_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      });
+      expect(JSON.stringify(entries.at(-1))).not.toContain(
+        '"theirs":"discarded"',
+      );
+      expect(JSON.stringify(entries.at(-1))).not.toContain(
+        '"ours":"retained"',
+      );
     });
   });
 });

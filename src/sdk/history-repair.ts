@@ -54,6 +54,14 @@ export interface HistoryRepairCommandOptions {
   message?: string;
   /** Value that configures or reports force for this contract. */
   force?: boolean;
+  /** Audit operation label used by specialized SDK workflows such as merge reconciliation. */
+  auditOperation?: string;
+  /** Structured audit context attached to the synthetic reconciliation event. */
+  auditContext?: Record<string, unknown>;
+  /** Per-item audit contexts used by bulk specialized reconciliation workflows. */
+  auditContextById?: Record<string, Record<string, unknown>>;
+  /** Add an audit event even when replay and the current item already match. */
+  forceAuditEntry?: boolean;
 }
 
 /** Documents the history repair result payload exchanged by command, SDK, and package integrations. */
@@ -351,6 +359,8 @@ function buildHistoryRepairEntries(params: {
   finalReplay: ReplayDocument;
   author: string;
   message: string;
+  auditOperation: string;
+  auditContext?: Record<string, unknown>;
 }): { rewrittenEntries: HistoryEntry[]; auditEntryAdded: boolean } {
   const rewrittenEntries: HistoryEntry[] = [...params.reanchorEntries];
   if (!params.changed) {
@@ -363,7 +373,7 @@ function buildHistoryRepairEntries(params: {
   rewrittenEntries.push({
     ts: nowIso(),
     author: params.author,
-    op: "history_repair",
+    op: params.auditOperation,
     patch:
       params.reconcileNeeded && params.currentItemReplay
         ? (jsonPatch.compare(
@@ -374,6 +384,9 @@ function buildHistoryRepairEntries(params: {
     before_hash: replayHash(params.finalReplay),
     after_hash: replayHash(afterReplay),
     message: params.message,
+    ...(params.auditContext === undefined
+      ? {}
+      : { context: params.auditContext }),
   });
   return { rewrittenEntries, auditEntryAdded: true };
 }
@@ -500,10 +513,12 @@ export async function runHistoryRepair(
         )
       : undefined;
 
-  const changed =
-    reanchor.entriesRehashed > 0 ||
-    reanchor.entriesPatchRepaired > 0 ||
-    reconcileNeeded;
+  const changed = [
+    reanchor.entriesRehashed > 0,
+    reanchor.entriesPatchRepaired > 0,
+    reconcileNeeded,
+    options.forceAuditEntry === true,
+  ].some(Boolean);
   const author = resolveAuthor(options.author, settings.author_default);
   const dryRun = Boolean(options.dryRun);
 
@@ -521,6 +536,8 @@ export async function runHistoryRepair(
     finalReplay,
     author,
     message: repairMessage,
+    auditOperation: options.auditOperation ?? "history_repair",
+    auditContext: options.auditContext,
   });
 
   const historyVerify = verifyHistoryChain(rewrittenEntries);
@@ -684,7 +701,15 @@ export async function runHistoryRepairAll(
   const totals = { repaired: 0, skipped_clean: 0, failed: 0 };
   for (const driftedId of drift.driftedItems) {
     try {
-      const result = await runHistoryRepair(driftedId, options, global);
+      const result = await runHistoryRepair(
+        driftedId,
+        {
+          ...options,
+          auditContext: options.auditContextById?.[driftedId],
+          auditContextById: undefined,
+        },
+        global,
+      );
       /* c8 ignore next -- mixed repaired/clean outcomes depend on live drift composition. */
       const outcome = result.changed ? "repaired" : "skipped_clean";
       totals[outcome] += 1;

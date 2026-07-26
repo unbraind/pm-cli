@@ -78,7 +78,11 @@ import type {
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 import { collectDanglingDependencyReferences } from "../graph/assembly.js";
-import { auditMergeAttributeFence } from "../merge/install.js";
+import {
+  auditMergeAttributeFence,
+  auditMergeDriverConfiguration,
+} from "../merge/install.js";
+import { listMergeReceipts } from "../merge/receipts.js";
 import { scanStorageIntegrity } from "./storage-integrity.js";
 import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 import { scanHistoryAuthorAttribution } from "../author-attribution.js";
@@ -3282,6 +3286,24 @@ async function buildStorageIntegrityCheck(
       `validate_merge_fence_drift:${fenceAudit.missing_patterns.length + fenceAudit.stale_patterns.length}`,
     );
   }
+  const mergeDriverAudit =
+    fenceAudit.path === undefined
+      ? null
+      : await auditMergeDriverConfiguration(path.dirname(fenceAudit.path));
+  if (mergeDriverAudit !== null && mergeDriverAudit.status !== "ok") {
+    warnings.push(
+      `validate_merge_driver_configuration:${mergeDriverAudit.missing_keys.length + mergeDriverAudit.drifted_keys.length}`,
+    );
+  }
+  const pendingMergeReceipts =
+    fenceAudit.path === undefined
+      ? []
+      : await listMergeReceipts(path.dirname(fenceAudit.path));
+  if (pendingMergeReceipts.length > 0) {
+    warnings.push(
+      `validate_merge_decisions_unreviewed:${pendingMergeReceipts.length}`,
+    );
+  }
   return {
     check: {
       name: "storage_integrity",
@@ -3292,6 +3314,11 @@ async function buildStorageIntegrityCheck(
       details: {
         ...scan,
         merge_fence: fenceAudit,
+        merge_driver_configuration: mergeDriverAudit,
+        pending_merge_decision_count: pendingMergeReceipts.length,
+        pending_merge_decision_items: [
+          ...new Set(pendingMergeReceipts.map((receipt) => receipt.item_id)),
+        ].sort((left, right) => left.localeCompare(right)),
         tracked_runtime_cache: {
           tracker_relative_root: trackedRuntimeCache.tracker_relative_root,
           tracked_paths: trackedRuntimeCache.tracked_paths,

@@ -27,6 +27,11 @@ import {
   mergeRelationshipEventStreams,
   type MergePreferredSide,
 } from "./three-way.js";
+import {
+  summarizeMergeReceipt,
+  writeMergeReceipt,
+  type MergeDecisionReceiptSummary,
+} from "./receipts.js";
 
 /** Supported values accepted by the merge driver artifact contract across CLI, SDK, and MCP surfaces. */
 export const MERGE_DRIVER_ARTIFACT_VALUES = [
@@ -95,6 +100,8 @@ export interface MergeDriverResult {
   json?: {
     paths_from_theirs: string[];
   };
+  /** Clone-local receipt summary for item merge provenance. */
+  receipt?: MergeDecisionReceiptSummary;
   /** Guidance for resolving remaining conflicts or verifying the merged workspace. */
   guidance: string[];
   /** ISO 8601 timestamp recording when generated occurred. */
@@ -233,6 +240,19 @@ export async function runMergeDriver(
       fields_from_theirs: itemMerge.fields_from_theirs,
       union_fields: itemMerge.union_fields,
     };
+    if (options.itemPath !== undefined) {
+      const receipt = await writeMergeReceipt({
+        cwd: process.cwd(),
+        itemPath: options.itemPath,
+        preferred,
+        fieldsFromTheirs: itemMerge.fields_from_theirs,
+        unionFields: itemMerge.union_fields,
+        decisions: itemMerge.conflict_decisions,
+      });
+      if (receipt !== null) {
+        result.receipt = summarizeMergeReceipt(receipt);
+      }
+    }
   } else {
     const jsonMerge = mergeJsonDocuments(baseRaw, oursRaw, theirsRaw, {
       preferred,

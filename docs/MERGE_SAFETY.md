@@ -1,6 +1,6 @@
 # Multi-Branch Tracker Merge Safety
 
-Tracked by [pm-wc1r](../.agents/pm/features/pm-wc1r.toon), with the integrity and concurrency fixes [pm-9q2t](../.agents/pm/issues/pm-9q2t.toon), [pm-cxyv](../.agents/pm/issues/pm-cxyv.toon), [pm-gpo7](../.agents/pm/issues/pm-gpo7.toon), [pm-m3nl](../.agents/pm/issues/pm-m3nl.toon), [pm-wwfd](../.agents/pm/issues/pm-wwfd.toon), and [pm-xdn6](../.agents/pm/issues/pm-xdn6.toon). Fresh-init fence ownership is tracked by [pm-1w3ljt](../.agents/pm/issues/pm-1w3ljt.toon); runtime-cache index governance by [pm-hous](../.agents/pm/issues/pm-hous.toon); local allocation safety by [pm-khdq](../.agents/pm/issues/pm-khdq.toon); fence-coverage completeness and drift detection by [pm-i4fx](../.agents/pm/issues/pm-i4fx.toon); cross-branch id collision safety by [pm-pibw](../.agents/pm/issues/pm-pibw.toon); post-merge reconciliation by [pm-mfkv92](../.agents/pm/issues/pm-mfkv92.toon); this repository's own adoption by [pm-iwsj](../.agents/pm/chores/pm-iwsj.toon).
+Tracked by [pm-wc1r](../.agents/pm/features/pm-wc1r.toon), with the integrity and concurrency fixes [pm-9q2t](../.agents/pm/issues/pm-9q2t.toon), [pm-cxyv](../.agents/pm/issues/pm-cxyv.toon), [pm-gpo7](../.agents/pm/issues/pm-gpo7.toon), [pm-m3nl](../.agents/pm/issues/pm-m3nl.toon), [pm-wwfd](../.agents/pm/issues/pm-wwfd.toon), and [pm-xdn6](../.agents/pm/issues/pm-xdn6.toon). Fresh-init fence ownership is tracked by [pm-1w3ljt](../.agents/pm/issues/pm-1w3ljt.toon); runtime-cache index governance by [pm-hous](../.agents/pm/issues/pm-hous.toon); local allocation safety by [pm-khdq](../.agents/pm/issues/pm-khdq.toon); fence-coverage completeness and drift detection by [pm-i4fx](../.agents/pm/issues/pm-i4fx.toon); cross-branch id collision safety by [pm-pibw](../.agents/pm/issues/pm-pibw.toon); auditable merge history by [pm-9j2r3b](../.agents/pm/tasks/pm-9j2r3b.toon); durable conflict decisions by [pm-rh98vo](../.agents/pm/issues/pm-rh98vo.toon); continuous conformance by [pm-76dnfg](../.agents/pm/tasks/pm-76dnfg.toon); workspace-wide CI enforcement by [pm-pdr8t1](../.agents/pm/tasks/pm-pdr8t1.toon); post-merge reconciliation by [pm-mfkv92](../.agents/pm/issues/pm-mfkv92.toon); this repository's own adoption by [pm-iwsj](../.agents/pm/chores/pm-iwsj.toon).
 
 pm stores project context as reviewable repository files. Concurrent agents can therefore use ordinary branches and worktrees, but tracker artifacts need semantic merge behavior: raw line merging cannot preserve TOON collection counts, JSON object structure, or append-only history hash chains.
 
@@ -24,6 +24,9 @@ git commit -m "chore(pm): install tracker merge drivers"
 The clone-local driver values record the absolute Node executable and bundled
 `dist/cli.js` path resolved by the installing SDK. Git therefore does not depend
 on a bare `pm` command or the caller's later `PATH` when it merges tracker data.
+`pm validate --check-storage-integrity` and `pm health` also compare every
+clone-local driver definition with the installed SDK. A missing or stale
+definition is reported even when the committed attribute fence is correct.
 
 The installer publishes the shared `.gitattributes` fence only after the clone-local driver commands are configured. If the repository Git config is read-only or another Git process holds its lock, the command returns the stable `merge_git_config_unwritable` error with recovery guidance and leaves an absent fence absent. Use `pm merge install --dry-run --json` to inspect the contract in intentionally read-only workspaces.
 
@@ -51,7 +54,18 @@ pm merge install --dry-run --json
 
 When both sides change the same scalar or JSON leaf differently, the driver writes a parseable preferred-side result but exits nonzero. Git keeps the path conflicted so a human or coordinating agent must review the losing value and explicitly `git add` the resolution. Use `--prefer theirs` only when that is the intended resolution policy.
 
-The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `installMergeFence`, `findGitWorkspaceRoot`, `runMergeReconcile`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. `installMergeFence` accepts explicit tracker and workspace roots, so custom init hosts do not depend on process cwd or CLI globals.
+For item conflicts, the driver also writes a clone-local receipt below the Git
+directory. It contains retained and discarded values so recovery does not
+depend on a reflog. Raw values never enter public tracker history:
+reconciliation records field names and value hashes, while the explicit local
+report is the only command that shows recoverable values:
+
+```bash
+pm merge report
+pm merge report --include-reconciled
+```
+
+The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `installMergeFence`, `findGitWorkspaceRoot`, `runMergeReconcile`, `runMergeReceiptReport`, `listMergeReceipts`, `auditMergeDriverConfiguration`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. `installMergeFence` accepts explicit tracker and workspace roots, so custom init hosts do not depend on process cwd or CLI globals.
 
 ## Cross-branch id collision safety
 
@@ -74,12 +88,15 @@ pm merge reconcile --dry-run --json
 pm merge reconcile --message "Reconcile merged tracker histories" --json
 ```
 
-The preview reports every drifted stream without mutation. The apply pass uses
-the audited bulk history-repair engine and immediately validates history drift
-plus storage integrity; it exits nonzero when a stream cannot be repaired or an
-invariant remains red. Clean workspaces are a successful no-op. Default Git
-hooks remain unchanged: repositories that want automatic enforcement must opt
-in by invoking this command from their own post-merge hook.
+The preview reports every drifted stream and pending receipt without mutation.
+The apply pass uses the audited history rewrite boundary to append a
+`merge_reconcile` event whose patch reproduces the merged item exactly. The
+event includes privacy-safe receipt provenance; a clean receipt-bearing stream
+gets a no-op merge event so the merge remains addressable even when replay
+already matches. The command immediately validates history drift plus storage
+integrity and exits nonzero when an invariant remains red. Default Git hooks
+remain unchanged: repositories that want automatic enforcement must opt in by
+invoking this command from their own post-merge hook.
 
 The default validation surface includes `storage_integrity`. It fails on unreadable item documents, history conflict markers, malformed history tails, live items whose latest history operation is `delete` (a delete/modify resurrection candidate), and unparseable settings/schema files. This prevents the ordinary tolerant read path from turning corruption into a green gate.
 

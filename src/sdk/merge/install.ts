@@ -62,13 +62,13 @@ const MERGE_DRIVER_DEFINITIONS = [
     key: "pm-item-toon",
     name: "pm field-aware TOON item document merge",
     artifact: "item",
-    itemPath: "item.toon",
+    itemPath: "%P",
   },
   {
     key: "pm-item-markdown",
     name: "pm field-aware JSON-markdown item document merge",
     artifact: "item",
-    itemPath: "item.md",
+    itemPath: "%P",
   },
   {
     key: "pm-history",
@@ -116,6 +116,16 @@ export interface MergeInstallResult {
   guidance: string[];
   /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
+}
+
+/** Result of auditing clone-local driver definitions behind a committed fence. */
+export interface MergeDriverConfigurationAuditResult {
+  /** Whether every required driver definition exactly matches this installation. */
+  status: "ok" | "missing" | "drift";
+  /** Required Git configuration keys that are absent. */
+  missing_keys: string[];
+  /** Driver keys whose configured commands do not match the installed CLI. */
+  drifted_keys: string[];
 }
 
 /** Resolve the enclosing Git worktree root or return null outside Git. */
@@ -317,6 +327,46 @@ export async function auditMergeAttributeFence(
   };
 }
 
+/** Audit the clone-local Git driver commands without executing a merge. */
+export async function auditMergeDriverConfiguration(
+  workspaceRoot: string,
+): Promise<MergeDriverConfigurationAuditResult> {
+  const cliCommand = resolveMergeDriverCliCommand();
+  const missingKeys: string[] = [];
+  const driftedKeys: string[] = [];
+  for (const definition of MERGE_DRIVER_DEFINITIONS) {
+    const key = `merge.${definition.key}.driver`;
+    const expected = `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path "${definition.itemPath}"`}`;
+    try {
+      const { stdout } = await execFileAsync(
+        "git",
+        ["config", "--local", "--get", key],
+        {
+          cwd: workspaceRoot,
+          encoding: "utf8",
+          windowsHide: true,
+          timeout: 10_000,
+        },
+      );
+      if (stdout.trim() !== expected) {
+        driftedKeys.push(key);
+      }
+    } catch {
+      missingKeys.push(key);
+    }
+  }
+  return {
+    status:
+      missingKeys.length > 0
+        ? "missing"
+        : driftedKeys.length > 0
+          ? "drift"
+          : "ok",
+    missing_keys: missingKeys,
+    drifted_keys: driftedKeys,
+  };
+}
+
 /** Outcome of an automatic merge-fence refresh attempted after a schema type mutation. */
 export interface MergeFenceRefreshOutcome {
   /** What happened: the fence was rewritten, already matched, was never installed (actionable hint), or there is no git repository to configure. */
@@ -496,7 +546,7 @@ export async function installMergeFence(options: {
     });
     gitConfigEntries.push({
       key: `merge.${definition.key}.driver`,
-      value: `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`,
+      value: `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path "${definition.itemPath}"`}`,
     });
   }
   if (!dryRun) {

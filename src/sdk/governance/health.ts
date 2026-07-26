@@ -91,6 +91,11 @@ import {
   type StaleInProgressScan,
 } from "./stale-work.js";
 import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
+import {
+  auditMergeDriverConfiguration,
+  findGitWorkspaceRoot,
+} from "../merge/install.js";
+import { listMergeReceipts } from "../merge/receipts.js";
 
 const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
@@ -598,6 +603,15 @@ async function buildIntegrityCheck(
   const historyScan = await scanHistoryIntegrity(pmRoot);
   const formatVersionScan = scanItemFormatVersions(itemScan.formatVersions);
   const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);
+  const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
+  const mergeDriverAudit =
+    gitWorkspaceRoot === null
+      ? null
+      : await auditMergeDriverConfiguration(gitWorkspaceRoot);
+  const pendingMergeReceipts =
+    gitWorkspaceRoot === null
+      ? []
+      : await listMergeReceipts(gitWorkspaceRoot);
 
   const warnings = [
     ...itemScan.unreadable.map((entry) => `integrity_item_unreadable:${entry}`),
@@ -629,6 +643,14 @@ async function buildIntegrityCheck(
           `tracked_runtime_cache_files:${trackedRuntimeCache.tracked_path_count}`,
         ]
       : []),
+    ...(mergeDriverAudit !== null && mergeDriverAudit.status !== "ok"
+      ? [
+          `merge_driver_configuration:${mergeDriverAudit.missing_keys.length + mergeDriverAudit.drifted_keys.length}`,
+        ]
+      : []),
+    ...(pendingMergeReceipts.length > 0
+      ? [`merge_decisions_unreviewed:${pendingMergeReceipts.length}`]
+      : []),
   ];
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) =>
     left.localeCompare(right),
@@ -651,6 +673,12 @@ async function buildIntegrityCheck(
           item_outdated_format_version: formatVersionScan.outdated.length,
           item_ahead_format_version: formatVersionScan.ahead.length,
           tracked_runtime_cache_files: trackedRuntimeCache.tracked_path_count,
+          merge_driver_configuration:
+            mergeDriverAudit === null || mergeDriverAudit.status === "ok"
+              ? 0
+              : mergeDriverAudit.missing_keys.length +
+                mergeDriverAudit.drifted_keys.length,
+          pending_merge_decisions: pendingMergeReceipts.length,
         },
         item_unreadable: itemScan.unreadable,
         item_conflict_markers: itemScan.conflictMarkers,
@@ -666,6 +694,10 @@ async function buildIntegrityCheck(
           tracked_path_count: trackedRuntimeCache.tracked_path_count,
           remediation_command: trackedRuntimeCache.remediation_command,
         },
+        merge_driver_configuration: mergeDriverAudit,
+        pending_merge_decision_items: [
+          ...new Set(pendingMergeReceipts.map((receipt) => receipt.item_id)),
+        ].sort((left, right) => left.localeCompare(right)),
       },
     },
     warnings: normalizedWarnings,
