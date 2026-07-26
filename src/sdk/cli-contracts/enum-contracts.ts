@@ -87,6 +87,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "get",
   "graph",
   "search",
+  "duplicates",
   "eval",
   "next",
   "history",

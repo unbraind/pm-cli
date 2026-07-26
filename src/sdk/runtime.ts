@@ -3743,7 +3743,10 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   get: (ctx) => runGet(requireMcpItemId(ctx), ctx.global, ctx.options),
   search: runMcpSearchAction,
   duplicates: (ctx) => {
-    const status = readStringArray(ctx.options.status);
+    const status =
+      typeof ctx.options.status === "string"
+        ? [ctx.options.status]
+        : readStringArray(ctx.options.status);
     return runDuplicates(ctx.global, {
       ...(status.length === 0 ? {} : { status }),
       since: readString(ctx.options, "since"),
@@ -3752,7 +3755,9 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
           ? ctx.options.threshold
           : undefined,
       limit:
-        typeof ctx.options.limit === "number" ? ctx.options.limit : undefined,
+        ctx.options.limit === "default"
+          ? undefined
+          : parseMcpInteger(ctx.options.limit, "limit"),
     });
   },
   create: runMcpCreateAction,

@@ -91,6 +91,14 @@
       ],
       "package_version": "2026.7.26",
       "reason": "Additive aggregate, duplicate discovery, isolated runtime, host SDK context, and explicit service decision contracts; legacy handlers remain supported"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_CORE_COMMAND_NAMES",
+        "signature ./sdk/contracts:PM_CORE_COMMAND_NAMES"
+      ],
+      "package_version": "2026.7.26",
+      "reason": "Add the already-exposed duplicates CLI to the canonical core-command tuple so action availability and extension reservations are truthful."
     }
   ],
   "entrypoints": {
@@ -5957,7 +5965,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
-          "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
+          "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
         },
         {
           "classification": "contract_data",
@@ -12425,7 +12433,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
-          "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
+          "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
         },
         {
           "classification": "contract_data",

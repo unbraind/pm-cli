@@ -646,6 +646,7 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTIONS).toContain("create");
     expect(PM_TOOL_ACTIONS).toContain("install");
     expect(PM_TOOL_ACTIONS).toContain("upgrade");
+    expect(PM_CORE_COMMAND_NAMES).toContain("duplicates");
     expect(PM_TOOL_ACTIONS).not.toContain("beads-import");
     expect(PM_TOOL_ACTIONS).not.toContain("todos-export");
     expect(PM_TOOL_ACTIONS).not.toContain("calendar");
@@ -1274,6 +1275,37 @@ console.log(JSON.stringify(payload));`,
           },
         }),
       ).resolves.toMatchObject({ count: 1, threshold: 0.8 });
+      await client.create({
+        title: "SDK second duplicate cluster",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+        allowDuplicate: true,
+      });
+      await client.create({
+        title: "SDK second duplicate cluster",
+        type: "Task",
+        status: "open",
+        createMode: "progressive",
+        allowDuplicate: true,
+      });
+      await expect(
+        client.run("duplicates", {
+          options: {
+            status: "open",
+            threshold: 1,
+            limit: "5",
+          },
+        }),
+      ).resolves.toMatchObject({ count: 1 });
+      await expect(
+        client.run("duplicates", {
+          options: {
+            threshold: 1,
+            limit: "1",
+          },
+        }),
+      ).resolves.toMatchObject({ count: 1 });
       const wrapperDefaults = {
         pmRoot: pmPath,
         cwd: path.dirname(pmPath),

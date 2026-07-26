@@ -173,8 +173,8 @@
     {
       "action": "duplicates",
       "available": true,
-      "cli_exposed": false,
-      "command_path": null,
+      "cli_exposed": true,
+      "command_path": "duplicates",
       "disabled_reason": null,
       "invocable": true,
       "provider": "core",
