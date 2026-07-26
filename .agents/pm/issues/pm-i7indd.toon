@@ -1,0 +1,29 @@
+id: pm-i7indd
+title: "SDK: inject host-bound runtime into ImportExportContext"
+description: "ImportExportContext lacks the host-bound ExtensionCommandSdk already available to CommandHandlerContext, forcing importer/exporter packages such as pm-todos to spawn the pm binary for core actions. Duplicate check 2026-07-26: searched all statuses for ImportExportContext, host-bound SDK, importer/exporter execution, and pm-todos spawning; pm-7qjk and pm-1p2u cover registration/test invocation, pm-xzhz covers the runtime, and pm-13bn covers migration, but none inject the runtime into importer/exporter handlers."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,"area:extensions","area:packages","area:sdk",github-report
+created_at: "2026-07-26T16:19:51.157Z"
+updated_at: "2026-07-26T16:21:37.429Z"
+author: "harness:codex"
+acceptance_criteria: ImportExportContext exposes the same host-bound SDK contract needed for in-process core actions; importer/exporter test helpers can inject and exercise it; parity tests prevent CommandHandlerContext and ImportExportContext runtime capability drift; pm-todos can migrate away from spawning pm without private imports; SDK and extension docs describe the lifecycle and compatibility contract
+goal: project management = context management
+objective: Every extension execution surface receives composable in-process PM primitives from the public SDK
+value: Package authors can build portable import/export integrations without subprocess coupling
+why_now: GitHub issue #749 reports a real downstream pm-todos blocker after the SDK-first baseline landed
+parent: pm-usfg
+severity: medium
+expected_result: Importer/exporter handlers receive a typed host-bound SDK and can execute supported PM actions in process.
+actual_result: "Command handlers receive sdk, but ImportExportContext does not, so importer/exporter handlers must spawn pm or cannot reuse the public runtime."
+component: sdk
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-13bn,incident_from,"2026-07-26T16:19:51.157Z",null,null
+  pm-1p2u,related,"2026-07-26T16:19:51.157Z",null,null
+  pm-7qjk,related,"2026-07-26T16:19:51.157Z",null,null
+  pm-te6elw,related,"2026-07-26T16:19:51.157Z",null,null
+  pm-xzhz,discovered_from,"2026-07-26T16:19:51.157Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T16:19:51.157Z","harness:codex","GitHub report linkage: GH-749 https://github.com/unbraind/pm-cli/issues/749. Created only after an all-status duplicate search and full metadata review of the closest SDK/importer/exporter lineage."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/749\n\nScope is the missing execution-context injection and its public testing/documentation contract. Registration metadata and name-based test invocation are already shipped; do not duplicate those surfaces."
