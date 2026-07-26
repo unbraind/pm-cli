@@ -41,6 +41,14 @@
       ],
       "package_version": "2026.7.25",
       "reason": "Add optional structured agent provenance and workspace harness registry contracts tracked by pm-qwuber and pm-03pq3o"
+    },
+    {
+      "changes": [
+        "signature ./sdk:SecretGuardFinding",
+        "signature ./sdk/governance:SecretGuardFinding"
+      ],
+      "package_version": "2026.7.25",
+      "reason": "Expose npm_token and slack_token detector rules in the documented SecretGuardFinding union"
     }
   ],
   "entrypoints": {
@@ -8793,7 +8801,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
-          "signature": "export interface SecretGuardFinding { rule: \"github_token\" | \"private_key\" | \"aws_access_key\" | \"high_entropy_assignment\"; path: string; }"
+          "signature": "export interface SecretGuardFinding { rule: \"github_token\" | \"npm_token\" | \"slack_token\" | \"private_key\" | \"aws_access_key\" | \"high_entropy_assignment\"; path: string; }"
         },
         {
           "classification": "supported",
@@ -13377,7 +13385,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
-          "signature": "export interface SecretGuardFinding { rule: \"github_token\" | \"private_key\" | \"aws_access_key\" | \"high_entropy_assignment\"; path: string; }"
+          "signature": "export interface SecretGuardFinding { rule: \"github_token\" | \"npm_token\" | \"slack_token\" | \"private_key\" | \"aws_access_key\" | \"high_entropy_assignment\"; path: string; }"
         },
         {
           "classification": "supported",

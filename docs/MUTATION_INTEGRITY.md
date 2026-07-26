@@ -70,6 +70,11 @@ whether a blocking policy was explicitly overridden. `scanMutationSecrets` is
 available separately for package-specific preflight UIs. Cyclic inputs are
 safe; scanner failures fail open with `secret_guard_scan_failed_open`.
 
+The fixed detector inventory covers GitHub, npm, Slack, AWS access-key, private
+key, and high-entropy assignment shapes. Findings expose only the stable rule
+name and object path. Matched credential text is never returned, logged, or
+included in a recovery bundle.
+
 ### Executable mutation inventory
 
 `PM_MUTATION_ACTION_CONTRACTS` is the public, typed inventory of core mutation

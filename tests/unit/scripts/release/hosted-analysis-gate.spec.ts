@@ -5,6 +5,37 @@ import { createScriptHarness } from "../../../helpers/scriptModule";
 const harness = createScriptHarness();
 const SHA = "a61cdc0c58252072456661a4c08f4b431625f274";
 const PARENT_SHA = "b61cdc0c58252072456661a4c08f4b431625f275";
+const STRICT_PROTECTION = {
+  required_status_checks: {
+    strict: true,
+    contexts: ["DeepScan"],
+    checks: [{ context: "CodeFactor" }],
+  },
+};
+const SUCCESSFUL_DEEPSCAN = {
+  statuses: [{ context: "DeepScan", state: "success", description: "0 new issues" }],
+};
+const SUCCESSFUL_CODEFACTOR = {
+  check_runs: [
+    {
+      name: "CodeFactor",
+      status: "completed",
+      conclusion: "success",
+      output: { title: "No issues found." },
+    },
+  ],
+};
+
+/** Return successful hosted analyzer evidence for one exact commit API target. */
+function successfulAnalyzerResponse(target: string, sha: string, status = 0) {
+  if (target.includes(`/commits/${sha}/status`)) {
+    return { status, stdout: JSON.stringify(SUCCESSFUL_DEEPSCAN), stderr: "" };
+  }
+  if (target.includes(`/commits/${sha}/check-runs`)) {
+    return { status: 0, stdout: JSON.stringify(SUCCESSFUL_CODEFACTOR), stderr: "" };
+  }
+  return null;
+}
 
 interface GatePayload {
   ok: boolean;
@@ -152,40 +183,13 @@ describe("scripts/release/hosted-analysis-gate", () => {
       if (target.endsWith("/protection")) {
         return {
           status: 0,
-          stdout: JSON.stringify({
-            required_status_checks: {
-              strict: true,
-              contexts: ["DeepScan"],
-              checks: [{ context: "CodeFactor" }],
-            },
-          }),
+          stdout: JSON.stringify(STRICT_PROTECTION),
           stderr: "",
         };
       }
-      if (target.includes(`/commits/${parentSha}/status`)) {
-        return {
-          status: 0,
-          stdout: JSON.stringify({
-            statuses: [{ context: "DeepScan", state: "success", description: "0 new issues" }],
-          }),
-          stderr: "",
-        };
-      }
-      if (target.includes(`/commits/${parentSha}/check-runs`)) {
-        return {
-          status: 0,
-          stdout: JSON.stringify({
-            check_runs: [
-              {
-                name: "CodeFactor",
-                status: "completed",
-                conclusion: "success",
-                output: { title: "No issues found." },
-              },
-            ],
-          }),
-          stderr: "",
-        };
+      const parentResponse = successfulAnalyzerResponse(target, parentSha);
+      if (parentResponse !== null) {
+        return parentResponse;
       }
       if (target.endsWith("/status")) {
         return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
@@ -206,6 +210,174 @@ describe("scripts/release/hosted-analysis-gate", () => {
     });
     expect(process.exitCode).toBe(0);
   });
+
+  it("reuses reviewed analyzer evidence from the merged PR head of an identical-tree squash commit", async () => {
+    const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
+    const spawnSync = vi.fn((_command: string, args: string[]) => {
+      const target = String(args[1] ?? "");
+      if (args[0] === "rev-parse") {
+        if (target.endsWith("^2")) return { status: 1, stdout: "", stderr: "not a merge commit" };
+        return { status: 0, stdout: target.endsWith("^{tree}") ? `${treeSha}\n` : `${SHA}\n`, stderr: "" };
+      }
+      if (target.endsWith("/protection")) {
+        return {
+          status: 0,
+          stdout: JSON.stringify(STRICT_PROTECTION),
+          stderr: "",
+        };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+        return {
+          status: 0,
+          stdout: JSON.stringify([
+            {
+              state: "closed",
+              merged_at: "2026-07-26T00:02:53Z",
+              merge_commit_sha: SHA,
+              base: { ref: "main" },
+              head: { sha: PARENT_SHA },
+            },
+          ]),
+          stderr: "",
+        };
+      }
+      if (target === `repos/unbraind/pm-cli/commits/${SHA}` || target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`) {
+        return {
+          status: 0,
+          stdout: JSON.stringify({ commit: { tree: { sha: treeSha } } }),
+          stderr: "",
+        };
+      }
+      const parentResponse = successfulAnalyzerResponse(target, PARENT_SHA);
+      if (parentResponse !== null) {
+        return parentResponse;
+      }
+      if (target.endsWith("/status")) {
+        return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
+      }
+      if (target.includes("/check-runs")) {
+        return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+      }
+      return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+    });
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+
+    const payload = await runJson([], "hostedAnalysisSquashTreeFallback");
+    expect(payload).toMatchObject({
+      ok: true,
+      sha: SHA,
+      analyzed_sha: PARENT_SHA,
+      analysis_source: "identical_tree_squash_pr_head",
+    });
+    expect(process.exitCode).toBe(0);
+  });
+
+  it.each([
+    { label: "unavailable pull-request association", pullsStatus: 1 },
+    { label: "malformed pull-request association", pulls: "{" },
+    { label: "non-array pull-request association", pulls: {} },
+    {
+      label: "ambiguous pull-request association",
+      pulls: [
+        {
+          state: "closed",
+          merged_at: "2026-07-26T00:02:53Z",
+          merge_commit_sha: SHA,
+          base: { ref: "main" },
+          head: { sha: PARENT_SHA },
+        },
+        {
+          state: "closed",
+          merged_at: "2026-07-26T00:02:54Z",
+          merge_commit_sha: SHA,
+          base: { ref: "main" },
+          head: { sha: "d61cdc0c58252072456661a4c08f4b431625f277" },
+        },
+      ],
+    },
+    { label: "unavailable squash commit", exactCommitStatus: 1 },
+    { label: "malformed squash commit", exactCommit: "{" },
+    { label: "missing squash commit tree", exactCommit: {} },
+    { label: "unavailable pull-request head", headCommitStatus: 1 },
+    {
+      label: "different pull-request head tree",
+      headTree: "d61cdc0c58252072456661a4c08f4b431625f277",
+    },
+    { label: "unreadable pull-request head analyzer evidence", headEvidenceStatus: 1 },
+  ])(
+    "fails closed for $label",
+    async ({
+      label,
+      pullsStatus = 0,
+      pulls = [
+        {
+          state: "closed",
+          merged_at: "2026-07-26T00:02:53Z",
+          merge_commit_sha: SHA,
+          base: { ref: "main" },
+          head: { sha: PARENT_SHA },
+        },
+      ],
+      exactCommitStatus = 0,
+      exactCommit,
+      headCommitStatus = 0,
+      headTree = "c61cdc0c58252072456661a4c08f4b431625f276",
+      headEvidenceStatus = 0,
+    }) => {
+      const treeSha = "c61cdc0c58252072456661a4c08f4b431625f276";
+      const pullsOutput = typeof pulls === "string" ? pulls : JSON.stringify(pulls);
+      const exactCommitOutput =
+        typeof exactCommit === "string"
+          ? exactCommit
+          : JSON.stringify(exactCommit ?? { commit: { tree: { sha: treeSha } } });
+      const spawnSync = vi.fn((_command: string, args: string[]) => {
+        const target = String(args[1] ?? "");
+        if (args[0] === "rev-parse") {
+          if (target.endsWith("^2")) return { status: 1, stdout: "", stderr: "not a merge commit" };
+          return { status: 0, stdout: target.endsWith("^{tree}") ? `${treeSha}\n` : `${SHA}\n`, stderr: "" };
+        }
+        if (target.endsWith("/protection")) {
+          return {
+            status: 0,
+            stdout: JSON.stringify(STRICT_PROTECTION),
+            stderr: "",
+          };
+        }
+        if (target === `repos/unbraind/pm-cli/commits/${SHA}/pulls?per_page=100`) {
+          return { status: pullsStatus, stdout: pullsOutput, stderr: "" };
+        }
+        if (target === `repos/unbraind/pm-cli/commits/${SHA}`) {
+          return { status: exactCommitStatus, stdout: exactCommitOutput, stderr: "" };
+        }
+        if (target === `repos/unbraind/pm-cli/commits/${PARENT_SHA}`) {
+          return {
+            status: headCommitStatus,
+            stdout: JSON.stringify({ commit: { tree: { sha: headTree } } }),
+            stderr: "",
+          };
+        }
+        const parentResponse = successfulAnalyzerResponse(target, PARENT_SHA, headEvidenceStatus);
+        if (parentResponse !== null) {
+          return parentResponse;
+        }
+        if (target.endsWith("/status")) {
+          return { status: 0, stdout: JSON.stringify({ statuses: [] }), stderr: "" };
+        }
+        if (target.includes("/check-runs")) {
+          return { status: 0, stdout: JSON.stringify({ check_runs: [] }), stderr: "" };
+        }
+        return { status: 0, stdout: "unbraind/pm-cli\n", stderr: "" };
+      });
+      vi.doMock("node:child_process", () => ({ spawnSync }));
+
+      const payload = await runJson([], `hostedAnalysisRejectedSquashFallback-${label}`);
+      expect(payload).toMatchObject({
+        ok: false,
+        reason: "DeepScan status is missing for the exact commit",
+      });
+      expect(process.exitCode).toBe(1);
+    },
+  );
 
   it.each([
     { label: "missing merge parent", parentStatus: 1, parentValue: PARENT_SHA, exactTreeStatus: 0, parentTreeStatus: 0, parentTree: SHA },
@@ -241,13 +413,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
         if (target.endsWith("/protection")) {
           return {
             status: 0,
-            stdout: JSON.stringify({
-              required_status_checks: {
-                strict: true,
-                contexts: ["DeepScan"],
-                checks: [{ context: "CodeFactor" }],
-              },
-            }),
+            stdout: JSON.stringify(STRICT_PROTECTION),
             stderr: "",
           };
         }
@@ -283,13 +449,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
       if (target.endsWith("/protection")) {
         return {
           status: 0,
-          stdout: JSON.stringify({
-            required_status_checks: {
-              strict: true,
-              contexts: ["DeepScan"],
-              checks: [{ context: "CodeFactor" }],
-            },
-          }),
+          stdout: JSON.stringify(STRICT_PROTECTION),
           stderr: "",
         };
       }

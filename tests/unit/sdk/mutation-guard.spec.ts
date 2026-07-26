@@ -19,6 +19,13 @@ const GITHUB_TOKEN_SAMPLE = ["gh", "p_", "123456789012345678901234567890"].join(
 );
 const AWS_ACCESS_KEY_SAMPLE = ["AK", "IA1234567890ABCDEF"].join("");
 const PRIVATE_KEY_SAMPLE = ["-----BEGIN ", "PRIVATE KEY-----"].join("");
+const NPM_TOKEN_SAMPLE = ["npm_", "A".repeat(36)].join("");
+const SLACK_TOKEN_SAMPLE = [
+  "xoxb-",
+  "1234567890-",
+  "1234567890-",
+  "A".repeat(24),
+].join("");
 
 describe("SDK mutation guard", () => {
   it("publishes a stable mutation inventory without read actions", () => {
@@ -50,12 +57,23 @@ describe("SDK mutation guard", () => {
     expect(
       scanMutationSecrets({
         github: GITHUB_TOKEN_SAMPLE,
+        npm: NPM_TOKEN_SAMPLE,
+        npmrc: [
+          "//registry.npmjs.org/:_",
+          "auth",
+          "Token=",
+          NPM_TOKEN_SAMPLE,
+        ].join(""),
+        slack: SLACK_TOKEN_SAMPLE,
         aws: AWS_ACCESS_KEY_SAMPLE,
         key: PRIVATE_KEY_SAMPLE,
         nested: { value: "api_key=AbCdEfGhIjKlMnOpQrStUvWxYz012345" },
       }),
     ).toEqual([
       { rule: "github_token", path: "$.github" },
+      { rule: "npm_token", path: "$.npm" },
+      { rule: "npm_token", path: "$.npmrc" },
+      { rule: "slack_token", path: "$.slack" },
       { rule: "aws_access_key", path: "$.aws" },
       { rule: "private_key", path: "$.key" },
       { rule: "high_entropy_assignment", path: "$.nested.value" },
@@ -63,6 +81,8 @@ describe("SDK mutation guard", () => {
     expect(
       scanMutationSecrets({
         repeated: "token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        npmPackage: "npm_package_name=@unbrained/pm-cli",
+        slackPlaceholder: ["xo", "xb-placeholder-token"].join(""),
       }),
     ).toEqual([]);
   });
@@ -103,6 +123,25 @@ describe("SDK mutation guard", () => {
         settings: { ...settings, secret_guard: "off" },
       }),
     ).toMatchObject({ findings: [], warnings: [] });
+  });
+
+  it.each([
+    { rule: "npm_token", value: NPM_TOKEN_SAMPLE },
+    { rule: "slack_token", value: SLACK_TOKEN_SAMPLE },
+  ])("blocks $rule findings without disclosing matched values", ({ rule, value }) => {
+    let error: unknown;
+    try {
+      evaluateMutationGuard({
+        author: "agent",
+        payload: { description: value },
+        settings: { ...settings, secret_guard: "block" },
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(PmCliError);
+    expect(String(error)).toContain(rule);
+    expect(String(error)).not.toContain(value);
   });
 
   it("enforces attributed authors and fails open on hostile payload getters", () => {

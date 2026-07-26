@@ -10,11 +10,19 @@ import {
   readSettings,
   writeSettings,
 } from "../../../src/sdk/runtime-primitives.js";
+import { runInProcessDistCli } from "../../helpers/cliRunner.js";
 
 const tempRoots: string[] = [];
 const GITHUB_TOKEN_SAMPLE = ["gh", "p_", "123456789012345678901234567890"].join(
   "",
 );
+const NPM_TOKEN_SAMPLE = ["npm_", "A".repeat(36)].join("");
+const SLACK_TOKEN_SAMPLE = [
+  "xoxb-",
+  "1234567890-",
+  "1234567890-",
+  "A".repeat(24),
+].join("");
 
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -79,13 +87,16 @@ describe("CLI and MCP mutation guard adapters", () => {
       [],
       {
         title: "Credential",
-        description: "token=AbCdEfGhIjKlMnOpQrStUvWxYz012345",
+        description: NPM_TOKEN_SAMPLE,
       },
       { author: "agent" },
       pmRoot,
     );
     expect(stderr).toHaveBeenCalledWith(
-      "warning:secret_guard_detected:1:rules=high_entropy_assignment\n",
+      "warning:secret_guard_detected:1:rules=npm_token\n",
+    );
+    expect(stderr).not.toHaveBeenCalledWith(
+      expect.stringContaining(NPM_TOKEN_SAMPLE),
     );
     await expect(
       enforceMutationGuardPreflight(
@@ -110,9 +121,9 @@ describe("CLI and MCP mutation guard adapters", () => {
         path: pmRoot,
         author: "agent",
         title: "Credential",
-        description: GITHUB_TOKEN_SAMPLE,
+        description: SLACK_TOKEN_SAMPLE,
       }),
-    ).resolves.toEqual(["secret_guard_detected:1:rules=github_token"]);
+    ).resolves.toEqual(["secret_guard_detected:1:rules=slack_token"]);
     await expect(
       mcpTestOnly.collectMutationGuardWarnings("pm_search", "search", {
         path: pmRoot,
@@ -174,10 +185,8 @@ describe("CLI and MCP mutation guard adapters", () => {
       PM_PATH: pmRoot,
       PM_AUTHOR: "agent",
     };
-    const created = spawnSync(
-      process.execPath,
+    const created = await runInProcessDistCli(
       [
-        path.resolve("dist/cli.js"),
         "--json",
         "create",
         "--title",
@@ -187,10 +196,10 @@ describe("CLI and MCP mutation guard adapters", () => {
         "--status",
         "open",
       ],
-      { encoding: "utf8", env: environment },
+      { env: environment, expectJson: true },
     );
     expect(created.status).toBe(0);
-    const id = (JSON.parse(created.stdout) as { id: string }).id;
+    const id = (created.json as { id: string }).id;
     const stderr = vi
       .spyOn(process.stderr, "write")
       .mockImplementation(() => true);
@@ -225,26 +234,17 @@ describe("CLI and MCP mutation guard adapters", () => {
     );
     stderr.mockRestore();
 
-    const unclaimed = spawnSync(
-      process.execPath,
-      [
-        path.resolve("dist/cli.js"),
-        "update",
-        id,
-        "--status",
-        "in_progress",
-      ],
-      { encoding: "utf8", env: environment },
+    const unclaimed = await runInProcessDistCli(
+      ["update", id, "--status", "in_progress"],
+      { env: environment },
     );
     expect(unclaimed.status).toBe(0);
     expect(unclaimed.stderr).toContain(
       `warning:in_progress_item_unclaimed:${id}:claim_with=pm claim ${id}`,
     );
 
-    const assigned = spawnSync(
-      process.execPath,
+    const assigned = await runInProcessDistCli(
       [
-        path.resolve("dist/cli.js"),
         "update",
         id,
         "--status",
@@ -252,7 +252,7 @@ describe("CLI and MCP mutation guard adapters", () => {
         "--assignee",
         "agent",
       ],
-      { encoding: "utf8", env: environment },
+      { env: environment },
     );
     expect(assigned.status).toBe(0);
     expect(assigned.stderr).not.toContain("in_progress_item_unclaimed");
@@ -269,24 +269,15 @@ describe("CLI and MCP mutation guard adapters", () => {
     expect(assignedStderr).not.toHaveBeenCalled();
     assignedStderr.mockRestore();
 
-    const stillAssigned = spawnSync(
-      process.execPath,
-      [
-        path.resolve("dist/cli.js"),
-        "update",
-        id,
-        "--status",
-        "in_progress",
-      ],
-      { encoding: "utf8", env: environment },
+    const stillAssigned = await runInProcessDistCli(
+      ["update", id, "--status", "in_progress"],
+      { env: environment },
     );
     expect(stillAssigned.status).toBe(0);
     expect(stillAssigned.stderr).not.toContain("in_progress_item_unclaimed");
 
-    const released = spawnSync(
-      process.execPath,
+    const released = await runInProcessDistCli(
       [
-        path.resolve("dist/cli.js"),
         "update",
         id,
         "--status",
@@ -294,28 +285,26 @@ describe("CLI and MCP mutation guard adapters", () => {
         "--assignee",
         "none",
       ],
-      { encoding: "utf8", env: environment },
+      { env: environment },
     );
     expect(released.status).toBe(0);
     expect(released.stderr).toContain(
       `warning:in_progress_item_unclaimed:${id}:claim_with=pm claim ${id}`,
     );
 
-    const jsonUpdate = spawnSync(
-      process.execPath,
+    const jsonUpdate = await runInProcessDistCli(
       [
-        path.resolve("dist/cli.js"),
         "--json",
         "update",
         id,
         "--status",
         "in_progress",
       ],
-      { encoding: "utf8", env: environment },
+      { env: environment, expectJson: true },
     );
     expect(jsonUpdate.status).toBe(0);
     expect(jsonUpdate.stderr).not.toContain("in_progress_item_unclaimed");
-    expect(() => JSON.parse(jsonUpdate.stdout)).not.toThrow();
+    expect(jsonUpdate.json).toBeTypeOf("object");
     await expect(
       enforceMutationGuardPreflight(
         "update",

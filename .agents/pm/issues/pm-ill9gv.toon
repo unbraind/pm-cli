@@ -1,0 +1,21 @@
+id: pm-ill9gv
+title: "GH-719: reject or diagnose extension command flags shadowed by pm globals"
+description: "Extension command definitions can register flags such as --json whose help text appears extension-owned even though Commander routes the value only to pm global options. Add registration-time validation or an explicit bounded diagnostic, make help truthful, document reserved global names and context.global access, and cover real activation plus invocation instead of API doubles."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-26T00:58:26.286Z"
+updated_at: "2026-07-26T00:58:40.355Z"
+author: "harness:codex"
+acceptance_criteria: "Registration rejects or explicitly warns for every extension flag colliding with a canonical or aliased pm global flag; Help and runtime routing cannot imply the value reaches context.options when it is global-only; SDK authoring docs and scaffold guidance expose reserved flags and context.global access; Real installed-extension tests cover activation, help, and invocation at full repository quality gates"
+parent: pm-w7mqzt
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-df9k,related,"2026-07-26T00:58:26.286Z",null,null
+  pm-e9ut,related,"2026-07-26T00:58:26.286Z",null,null
+  pm-fs8q9x,related,"2026-07-26T00:58:26.286Z",null,null
+  pm-iqq0,related,"2026-07-26T00:58:26.286Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-07-26T00:58:26.286Z","harness:codex","Duplicate check: searched all statuses for GH-719,global flag collision,shadowed extension flags,Commander hoisting,and schema flag registration. Related closed pm-df9k covers lifecycle subcommand hoisting and open pm-fs8q9x covers lexicon conformance,but neither owns extension-vs-global registration truthfulness; this distinct issue is linked beneath canonical extension SDK feature pm-w7mqzt."
+  "2026-07-26T00:58:40.355Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/719"
+body: ""
