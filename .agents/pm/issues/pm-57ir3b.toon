@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[5]: context,github,integrity,sdk,storage
 created_at: "2026-07-26T19:39:00.227Z"
-updated_at: "2026-07-26T19:39:00.227Z"
+updated_at: "2026-07-26T22:05:49.769Z"
 author: "harness:codex"
+estimated_minutes: 150
 acceptance_criteria: "List-family CLI, SDK, and MCP result contracts expose structured completeness and unreadable counts; strict behavior is available without token-heavy parsing; decoder version/range diagnostics distinguish dependency drift; regression tests cover pagination and all-status reads; docs and contracts are updated."
 parent: pm-doxj
 risk: high

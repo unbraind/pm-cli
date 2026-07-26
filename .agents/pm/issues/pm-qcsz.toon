@@ -6,14 +6,15 @@ status: closed
 priority: 3
 tags[3]: calendar,correctness,recurrence
 created_at: "2026-05-31T05:41:43.075Z"
-updated_at: "2026-07-26T17:23:49.365Z"
+updated_at: "2026-07-26T22:19:53.730Z"
 author: claude-code-agent
 release: v2026.6.1
 resolution: Normalized recurrence exdate matching by parsed instant and documented count anchoring semantics.
 expected_result: Equivalent ISO instants are excluded reliably and agents understand recur_count starts at series start.
 actual_result: "Core and package calendar runtime/docs updated; focused calendar tests, full coverage, and release gates passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-0l88,related,"2026-07-26T17:23:49.036Z",null,null
+  pm-w7f2,discovered_from,"2026-07-26T22:19:53.481Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-31T07:52:03.407Z",codex-gpt5-20260531,"Start: duplicate check reused assigned canonical item pm-qcsz after pm search \"calendar recurrence exdate count\" returned pm-qcsz as the active match; scope limited to calendar recurrence implementation/tests/docs."
   "2026-05-31T07:59:45.342Z",codex-gpt5-20260531,"Evidence: pm test pm-qcsz --run --progress executed linked tests; node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts failed during temp PM_PATH setup with missing dist/cli-bundle module before recurrence assertions, while linked pnpm build passed. Follow-up direct focused run pnpm exec vitest run tests/unit/calendar-command.spec.ts passed: Test Files 1 passed, Tests 21 passed, Duration 15.09s. A later node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts attempt is currently blocked before tests by unrelated untracked src/core/search/vectorization-metadata.ts TypeScript errors TS2345/TS18046/TS2322 outside calendar scope."

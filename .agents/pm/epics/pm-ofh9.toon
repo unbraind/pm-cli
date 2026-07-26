@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:history","area:restore",core,pm-cli
 created_at: "2026-04-01T15:26:39.295Z"
-updated_at: "2026-07-26T17:21:53.632Z"
+updated_at: "2026-07-26T22:17:40.125Z"
 deadline: "2026-04-08T15:26:39.295Z"
 author: cursor-agent
 estimated_minutes: 300
@@ -39,7 +39,7 @@ fixed_version: target-vnext
 component: history-core
 regression: false
 customer_impact: Improves reliability for all users when history streams/items are missing
-dependencies[10]{id,kind,created_at,author,source_kind}:
+dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-1hkq,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
   pm-4yl0,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
   pm-9lc,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
@@ -50,6 +50,7 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-8wnm,related,"2026-07-26T17:21:53.347Z",null,null
   pm-g6qd,related,"2026-07-26T17:21:53.347Z",null,null
   pm-kb21,related,"2026-07-26T17:21:53.347Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:39.837Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-01T15:26:39.295Z",cursor-agent,Created after de-dup checks found no active item for strict missing-history policy plus restore missing-item recovery scope.
   "2026-04-01T15:59:05.275Z",cursor-agent,"Epic delivery evidence: implemented missing-stream policy configuration and enforcement across history-touching paths, added restore recovery for missing/deleted item files from history-only state, updated docs/changelog, and verified with full build/test sweeps. Known residual: global coverage gate remains below strict 100% thresholds (97.32/95.02/98.10/97.02)."

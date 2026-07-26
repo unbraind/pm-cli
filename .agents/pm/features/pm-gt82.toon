@@ -6,13 +6,14 @@ status: closed
 priority: 0
 tags[2]: performance,startup
 created_at: "2026-05-16T15:07:08.622Z"
-updated_at: "2026-07-26T17:14:49.943Z"
+updated_at: "2026-07-26T22:18:24.617Z"
 author: claude-code-agent
 release: v2026.5.27
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-p7av,related,"2026-07-26T17:14:49.727Z",null,null
   pm-rnpb,related,"2026-07-26T17:14:49.727Z",null,null
   pm-xk39,related,"2026-07-26T17:14:49.727Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:18:24.314Z",null,null
 comments[32]{created_at,author,text}:
   "2026-05-16T16:48:23.232Z",codex-agent,"Audit update 2026-05-16: latest isolated dogfood after init --with-packages passed 44 workflows; slowest normal commands were create 753ms, comments 683ms, package wildcard 634ms, notes/docs/learnings/get brief around 560-600ms. Release gate is green, but sub-200ms startup remains the largest remaining perceived-speed opportunity."
   "2026-05-16T16:59:45.913Z",codex-audit,"Implementation update: adding a build-time bundled dist/cli.js path for the pm binary while keeping SDK/module exports emitted by tsc. Package-root resolution is being made independent of unbundled dist/cli/** module paths so package discovery, guide docs, upgrade version reads, telemetry flush, and Sentry release tagging continue to work from the bundled entrypoint."

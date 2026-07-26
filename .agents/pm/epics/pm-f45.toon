@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:search",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:01:11.736Z"
-updated_at: "2026-07-26T16:48:53.296Z"
+updated_at: "2026-07-26T22:16:32.993Z"
 deadline: "2026-03-07T23:01:11.736Z"
 assignee: steve
 author: steve
@@ -40,9 +40,12 @@ fixed_version: archive-2026q2
 component: project-management/milestone-4-search
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 4 - Search.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-54d,blocks,"2026-02-17T23:01:11.736Z",steve,null
   pm-j7a,child,"2026-02-17T23:01:11.736Z",steve,null
+  pm-doxj,blocks,"2026-07-26T22:16:32.727Z",null,null
+  pm-j7a,implements,"2026-07-26T22:16:32.727Z",null,null
+  pm-xtfo,implements,"2026-07-26T22:16:32.727Z",null,null
 comments[4]{created_at,author,text}:
   "2026-02-17T23:01:11.736Z",steve,Milestone 4 provides discoverability across item and linked content.
   "2026-03-04T15:17:54.037Z",cursor-agent,"Planned closure validation: verify search/reindex command parity and run sandbox-safe targeted + full coverage regressions before closing."

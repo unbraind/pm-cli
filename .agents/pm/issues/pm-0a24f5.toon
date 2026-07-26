@@ -1,0 +1,29 @@
+id: pm-0a24f5
+title: "GH-755: dependency edges are written with a null author, so the relationship graph is the only recorded collection with no provenance"
+description: "Dependency carries an author field, the update command accepts author as an explicit key on the dep value, and every other appended collection resolves the author automatically. The dep write path simply never applies the default. The proof is a same-item comparison: two blocked_by edges written seconds apart, one through update with a dep value and one through the blocked-by flag, land with author null and with the detected harness identity respectively, while a note written immediately after also carries the detected identity. Because the dep form is the only way to write any kind other than blocked_by, the practical effect is that the entire typed relationship graph is unattributed. That matters more here than it would in most trackers, because the graph is being used as a reasoning substrate: with tens of thousands of edges and a mandate that closed history be traversable, the questions of who asserted an edge, whether it came from a human, a harness, a backfill script or an importer, and whether an automated sweep may safely revise it, are all unanswerable. The source_kind column is likewise null on the same rows, so neither the principal nor the mechanism is recorded. Edge attribution is a precondition for changelog-safe automated graph maintenance, for the fleet analytics that attribute work to a harness and model, and for any policy that treats machine-asserted edges differently from human-asserted ones."
+type: Issue
+status: open
+priority: 2
+tags[6]: "area:graph",attribution,gh-issue,graph,identity,relationships
+created_at: "2026-07-26T22:04:22.700Z"
+updated_at: "2026-07-26T22:04:22.700Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Dependency edges written through every surface, including the dep form on create and update, the blocked-by flag, update-many, copy, import and the SDK, resolve and record the same author identity that notes and comments record; source_kind is populated with the mechanism that created the edge so a backfill, an importer and an interactive write are distinguishable; an explicit author key on the dep value still overrides, and that override is marked asserted rather than detected; a check reports edges lacking attribution and the existing unattributed corpus is classified as legacy rather than silently backfilled, following the precedent for legacy history authors; regression coverage compares a dep-written edge and a flag-written edge on the same item and asserts identical attribution"
+parent: pm-33cw
+risk: medium
+confidence: high
+reporter: github-issue-755
+severity: medium
+environment: "pm 2026.7.26, fresh pm init"
+expected_result: "Every dependency edge records who asserted it and by what mechanism, exactly as notes, comments and learnings do."
+actual_result: "Edges written through the dep form carry author null and source_kind null, while the same edge kind written through the blocked-by flag is correctly attributed."
+component: dependencies
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-4020c5,related,"2026-07-26T22:04:22.700Z",null,null
+  pm-96h7,implements,"2026-07-26T22:04:22.700Z",null,null
+  pm-gw6uyq,related,"2026-07-26T22:04:22.700Z",null,null
+  pm-hnc9w7,blocks,"2026-07-26T22:04:22.700Z",null,null
+  pm-s5e04g,blocks,"2026-07-26T22:04:22.700Z",null,null
+  pm-u14c,implements,"2026-07-26T22:04:22.700Z",null,null
+body: ""

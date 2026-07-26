@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,cli,gh-issue,templates
 created_at: "2026-07-10T12:15:43.286Z"
-updated_at: "2026-07-26T17:19:07.293Z"
+updated_at: "2026-07-26T22:19:46.514Z"
 closed_at: "2026-07-10T15:02:44.913Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,11 +14,12 @@ acceptance_criteria: pm create --template applies template-declared tags and cus
 risk: medium
 confidence: high
 release: v2026.7.11
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-b84u,related,"2026-07-26T17:19:07.048Z",null,null
   pm-ghf1,related,"2026-07-26T17:19:07.048Z",null,null
   pm-kfq5,related,"2026-07-26T17:19:07.048Z",null,null
   pm-zazb,related,"2026-07-26T17:19:07.048Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:19:46.183Z",null,null
 comments[6]{created_at,author,text}:
   "2026-07-10T12:21:46.290Z",codex-root,"Implementation start: selected after live all-status duplicate/lineage review and full metadata inspection. This item is actively implemented in the broad schema-driven input fidelity bundle with pm-kfq5, pm-l6rz, pm-zazb, pm-b84u, and pm-ghf1; shared verification will include focused tests, 100/100/100/100 coverage, strict quality gates, and installed-package temporary-project proof."
   "2026-07-10T13:18:55.417Z",codex-root,"Implementation evidence: broad schema-driven input fidelity bundle completed. Focused suite passed 445 tests; final repository coverage passed 270 files / 5514 tests at Statements 100%, Branches 100%, Functions 100%, Lines 100%; pnpm typecheck, lint (ESLint + zero jscpd clones + strict static/docstring/import-boundary/token gates), docs/skills, contracts snapshot, audit, secret scan, health, and history-drift checks passed. Installed-package proof from packed tarball in /tmp/pm-proof.rzTX77 verified repeated --ac stores 'first; second', malformed related:pm-abcd fails before graph mutation, and public SDK RESERVED_ITEM_FIELD_NAMES/lintExtensionBlueprint rejects severity collisions. Sentry telemetry is healthy (0.28% finish error rate); two external pm-starter package handled errors PM-CLI-1Y/1Z remain visible and are not caused by this change set."

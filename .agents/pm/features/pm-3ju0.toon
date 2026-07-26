@@ -6,9 +6,11 @@ status: closed
 priority: 1
 tags[4]: never-block,perf,search,startup
 created_at: "2026-05-30T21:44:10.825Z"
-updated_at: "2026-07-26T16:50:52.450Z"
+updated_at: "2026-07-26T22:18:21.011Z"
 author: maintainer-agent
 acceptance_criteria: pm create/update/close return without blocking on embedding; index refreshes in background; no store corruption under concurrent mutations
 release: v2026.5.31
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-doxj,blocks,"2026-07-26T22:18:20.756Z",null,null
 close_reason: "Shipped non-blocking background semantic refresh. Mutations now invalidate the keyword cache synchronously (search stays correct) and dispatch the slow Ollama embed + vector-store rewrite to a detached worker (src/core/search/background-refresh.ts + dist/cli/search-refresh.js, mirroring the telemetry-flush detached-spawn pattern). The worker drains a pending-refresh queue under the existing reindex lock (corruption-safe; reindex now imports the shared REINDEX_LOCK_ID). shouldRunSearchRefreshInForeground() keeps all tests/CI inline (deterministic). ALSO fixed a second dominant cost discovered via CPU profile: the pre-mutation item-format sync (migrateItemFilesToFormat, run on every mutation by default) re-parsed/re-serialized the ENTIRE corpus; now skips items already in the target format with no legacy alternate. Combined result in the 893-item dev repo: create 2581ms->239ms, update 1693ms->265ms, close->374ms. Background worker confirmed catching the index up (new item semantically searchable within ~2-3s). Telemetry validated this as the #1 real-world latency (update p95 was 15.3s, create p95 5.4s)."
 body: ""

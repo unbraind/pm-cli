@@ -6,14 +6,15 @@ status: closed
 priority: 3
 tags[3]: audit-2026-06-12,dead-code,hygiene
 created_at: "2026-06-12T16:11:22.616Z"
-updated_at: "2026-07-26T16:51:41.753Z"
+updated_at: "2026-07-26T22:20:20.106Z"
 author: maintainer-agent
 release: v2026.6.20
 resolution: Export hygiene shipped by removing the test-only KNOWN_EXTENSION_MANIFEST_FIELDS value from the exported extension runtime surface and keeping manifest schema governance local to the test.
 expected_result: "The extension runtime no longer exports the manifest-field test list, and the schema governance test still protects docs/schemas/extension-manifest.schema.json."
 actual_result: "KNOWN_EXTENSION_MANIFEST_FIELDS is absent from source/tests; extension-loader focused tests, build, static quality, contracts, full 100% coverage, Sentry/telemetry gate, version/security, and changelog checks passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ul02,related,"2026-06-19T23:34:53.693Z",codex-implementation,null
+  pm-doxj,blocks,"2026-07-26T22:20:19.896Z",null,null
 comments[3]{created_at,author,text}:
   "2026-06-19T23:32:53.123Z",codex-implementation,"Evidence: extension-loader focused test passed (106 tests); pnpm build passed; pnpm quality:static passed; pnpm contracts:check passed; full coverage passed with Statements/Branches/Functions/Lines = 100/100/100/100 across 4697 tests."
   "2026-06-19T23:33:07.713Z",codex-implementation,"Closeout check: pnpm changelog:pm:check passed using project pm-changelog 2026.6.14; CHANGELOG.md unchanged. GitHub refresh found no open PRs/issues and pnpm audit reported no known vulnerabilities."

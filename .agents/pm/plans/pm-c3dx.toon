@@ -6,15 +6,16 @@ status: closed
 priority: 0
 tags: []
 created_at: "2026-05-22T20:27:40.121Z"
-updated_at: "2026-07-26T17:10:48.647Z"
+updated_at: "2026-07-26T22:20:03.688Z"
 author: claude-code-agent
 release: v2026.5.24
 resolution: "Completed: history-repair command, replay helper deduplication, and legacy history drift cleanup shipped through PR #44."
 expected_result: Agents can repair audited history drift safely and validation reports no history drift after repair.
 actual_result: "PR #44 shipped history-repair and replay deduplication; plan evidence records temp dogfood, real drift cleanup, green CI, and pm health/validate drift clean at close."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-85hm,related,"2026-07-26T17:10:48.431Z",null,null
   pm-pjs5,related,"2026-07-26T17:10:48.431Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:20:03.380Z",null,null
 close_reason: "Completed plan — all 7 steps done and shipped. history-repair command, replay dedup (src/core/history/replay.ts, pm-pjs5), and legacy 31-stream drift cleanup landed via PR #44 (squash-merge 13048461). pm health ok=true and validate drifted=0 confirmed at completion and again 2026-05-23 (health integrity/history_drift checks all ok). The implementing item pm-85hm tracks the shipped work; this Plan is fully materialized. Closing."
 plan_mode: draft
 plan_scope: "Add pm history-repair, dedup replay helpers, clear legacy history drift"

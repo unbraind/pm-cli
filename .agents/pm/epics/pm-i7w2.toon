@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: calendar,dependabot,github,pm-cli,recurrence,security
 created_at: "2026-04-03T17:22:39.406Z"
-updated_at: "2026-07-26T17:16:24.129Z"
+updated_at: "2026-07-26T22:17:22.307Z"
 deadline: "2026-04-13T17:22:39.406Z"
 author: codex-agent
 estimated_minutes: 360
@@ -38,10 +38,11 @@ fixed_version: target-vnext
 component: github-findings
 regression: true
 customer_impact: users and maintainers benefit from safer dependency and CI health
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-7zs0,related,"2026-07-26T17:16:23.889Z",null,null
   pm-rnpb,related,"2026-07-26T17:16:23.889Z",null,null
   pm-wo8,related,"2026-07-26T17:16:23.889Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:21.998Z",null,null
 comments[1]{created_at,author,text}:
   "2026-04-03T17:45:22.794Z",codex-agent,"Implemented dependency/workflow remediations, cross-platform CI fixes, and weekly recurring findings-review event. Verification evidence: pnpm audit --prod and pnpm audit report 0 vulnerabilities; node scripts/run-tests.mjs test passed (70 files/789 tests); node scripts/run-tests.mjs coverage passed with global branch coverage 91.00%."
 files[11]{path,scope,note}:

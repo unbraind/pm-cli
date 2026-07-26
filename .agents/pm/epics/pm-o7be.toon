@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: 2026-04-06,agent-ux,extensions,external-audit,pm-cli,search
 created_at: "2026-04-06T09:48:14.630Z"
-updated_at: "2026-07-26T17:21:42.345Z"
+updated_at: "2026-07-26T22:17:38.835Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
@@ -15,7 +15,7 @@ resolution: fixed
 expected_result: All external-audit child remediations under pm-o7be close with linked code/test/doc evidence and no remaining open/in_progress/blocked child scope.
 actual_result: "All currently tracked pm-o7be child scope is closed (including final pm-wsui scaffold implementation); strict lifecycle validation is clean, and remaining metadata/resolution warnings are pre-existing repository-wide legacy items outside this epic lineage."
 fixed_version: target-vnext
-dependencies[14]{id,kind,created_at,author,source_kind}:
+dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-0g7a,related,"2026-07-26T17:21:42.071Z",null,null
   pm-0nxf,related,"2026-07-26T17:21:42.071Z",null,null
   pm-1etl,related,"2026-07-26T17:21:42.071Z",null,null
@@ -30,6 +30,8 @@ dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-6y6i,related,"2026-07-26T17:21:42.071Z",null,null
   pm-71sj,related,"2026-07-26T17:21:42.071Z",null,null
   pm-8qpc,related,"2026-07-26T17:21:42.071Z",null,null
+  pm-5z9r,discovered_from,"2026-07-26T22:17:38.491Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:38.491Z",null,null
 comments[21]{created_at,author,text}:
   "2026-04-06T09:48:14.630Z",codex-agent,"Duplicate-check evidence commands run: pm context --limit 10; pm search for each finding keyword; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20. Net-new because no active item directly tracks this six-finding remediation scope."
   "2026-04-06T16:45:36.156Z",codex-agent,"13-issue remediation lineage bootstrap: reused and reopened as canonical external-audit parent after duplicate-check sweep (pm context --limit 10; pm search '2026-04-06 audit findings remediation' --limit 10; pm search 'comments-audit full-history latest row_count latest 0' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20). Planned child scopes under this epic: lifecycle CLI aliases/discoverability, runtime-aware unknown-command guidance, completion contract-driven parity/lazy tags, contracts command narrowing+projection modes, calendar full-period contract wording, and activity filtering/streaming enhancements."

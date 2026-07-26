@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:extensions","area:sdk",core,"milestone:override",pm-cli
 created_at: "2026-04-01T02:15:22.733Z"
-updated_at: "2026-07-26T17:29:16.385Z"
+updated_at: "2026-07-26T22:17:53.523Z"
 deadline: "2026-04-15T02:15:22.733Z"
 assignee: codex-agent
 author: codex-agent
@@ -40,12 +40,13 @@ fixed_version: archive-2026q2
 component: extensions-runtime
 regression: false
 customer_impact: enables project-specific full customization without forking pm
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-00yy,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
   pm-b1w,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
   pm-r15d,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
   pm-qwp7,related,"2026-07-26T17:29:16.119Z",null,null
   pm-rl7j,related,"2026-07-26T17:29:16.119Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:53.259Z",null,null
 comments[4]{created_at,author,text}:
   "2026-04-01T02:15:22.733Z",codex-agent,This epic extends and unifies prior extension and type-policy milestones without duplication.
   "2026-04-01T03:05:13.741Z",codex-agent,Epic implementation shipped in b21a27b (pushed to main); closure is blocked only by the coverage gate in feature pm-qwp7 / task pm-rl7j.

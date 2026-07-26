@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli","area:docs","area:input","area:ux",pm-cli
 created_at: "2026-04-01T10:11:50.649Z"
-updated_at: "2026-07-26T17:21:09.770Z"
+updated_at: "2026-07-26T22:17:36.411Z"
 deadline: "2026-04-11T10:11:50.649Z"
 assignee: codex-agent
 author: codex-agent
@@ -40,10 +40,11 @@ fixed_version: archive-2026q2
 component: cli-input
 regression: true
 customer_impact: Existing users get clearer failures and safer compatibility while agents gain resilient add flows
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-0pvk,related,"2026-07-26T17:21:09.554Z",null,null
   pm-luay,related,"2026-07-26T17:21:09.554Z",null,null
   pm-s9hl,related,"2026-07-26T17:21:09.554Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:36.121Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T10:11:50.649Z",codex-agent,Why this epic exists repeated agent markdown pipelines currently fail in entry add commands.
   "2026-04-01T10:37:23.465Z",codex-agent,"Epic complete: resilient CSV/markdown/stdin entry ingestion shipped across parser + mutation commands with docs and regression coverage updates."

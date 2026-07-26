@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-03-31T23:47:27.635Z"
-updated_at: "2026-07-26T17:24:36.022Z"
+updated_at: "2026-07-26T22:17:46.555Z"
 deadline: "2026-05-09T17:05:53.410Z"
 author: codex-agent
 estimated_minutes: 480
@@ -37,7 +37,7 @@ fixed_version: archive-2026q2
 component: core/cli
 regression: false
 customer_impact: Teams can model work domains without hacks
-dependencies[8]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-2p6q,related,"2026-07-26T17:24:35.749Z",null,null
   pm-780f,related,"2026-07-26T17:24:35.749Z",null,null
   pm-ap8l,related,"2026-07-26T17:24:35.749Z",null,null
@@ -46,6 +46,7 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-p5q3,related,"2026-07-26T17:24:35.749Z",null,null
   pm-x2k0,related,"2026-07-26T17:24:35.749Z",null,null
   pm-zzt1,related,"2026-07-26T17:24:35.749Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:46.262Z",null,null
 comments[17]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Epic created from approved implementation plan.
   "2026-04-01T00:29:14.263Z",codex-agent,Completed configurable item-type delivery across settings/extensions/CLI/storage/help output with docs updates and compatibility defaults.

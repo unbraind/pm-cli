@@ -6,14 +6,15 @@ status: closed
 priority: 1
 tags[3]: performance,sentry,vector-search
 created_at: "2026-05-16T15:07:34.653Z"
-updated_at: "2026-07-26T17:16:26.128Z"
+updated_at: "2026-07-26T22:19:40.826Z"
 author: claude-code-agent
 release: v2026.5.18
 resolution: Implemented search.embedding_timeout_ms and actionable embedding timeout diagnostics.
 expected_result: Agents can tune semantic embedding timeout from project config and understand Ollama timeout remediation from the error text.
 actual_result: "Timeout failures now include provider, model, batch_size, timeout_ms, and guidance to check provider availability, lower search.embedding_batch_size, raise search.embedding_timeout_ms, or use keyword search while indexing catches up."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-hosd,related,"2026-07-26T17:16:25.865Z",null,null
+  pm-jrjt,discovered_from,"2026-07-26T22:19:40.630Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-16T16:48:23.160Z",codex-agent,"Audit update 2026-05-16: Sentry unresolved list is down to PM-CLI-A and PM-CLI-9, both embedding/Ollama timeout groups. Release gate passes within thresholds (critical=0, high=2), so this remains the canonical vector timeout UX/performance follow-up rather than a blocker for pm-hosd."
   "2026-05-16T17:27:39.714Z",codex-audit,"Evidence 2026-05-16: implemented configurable semantic embedding timeout via search.embedding_timeout_ms, propagated it into embedding batch requests, and made timeout failures include provider/model/batch_size/timeout_ms plus actionable guidance for local Ollama or slow providers. Verification passed: focused embedding/settings tests (24 tests), pm linked test run, isolated dogfood harness (44 workflows), health --refresh-vectors with vectorization ok and zero stale items, hybrid search probe, secret scan, and full release gate with 1309 tests at 100 percent coverage plus required Sentry/telemetry gate (Sentry critical=0 high=2; telemetry finish_error_rate_pct=2.32)."

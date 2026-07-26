@@ -1,0 +1,29 @@
+id: pm-rh98vo
+title: "GH-754: the merge driver's field-level conflict report is transient stdout, so the value it discarded leaves no durable record anywhere"
+description: "The field-aware merge driver does the hard part correctly. It detects an unresolvable scalar conflict, keeps the ours side deterministically, and prints a precise report naming the field and both values. That report exists only on the driver's stdout for the duration of the git merge. Afterwards nothing in the repository records that a value was discarded: the merged item file carries no conflict markers, git records a clean merge, pm validate reports ok true, and no pm command can answer which field conflicted or what the losing branch had written. The universal resolution idiom that every agent and most humans use, namely grep for conflict markers, find none, and stage the file, therefore commits the loss silently and confidently. This is the reporting-durability hole left by an otherwise complete merge story: the union behaviour for append-like collections is correct and proven. It is not pm-c0wthb, which is the fence failing open when the driver cannot be resolved at all, and it is not pm-9j2r3b, which is that the merged field set is never written as a history entry. Those two are about the driver not running and about the merge not being recorded as a mutation; this one is about the merge running correctly, recording the outcome, and discarding the only description of what it chose not to keep. The fix has an obvious home given pm-9j2r3b: if a merge becomes a recorded mutation, the conflict report is the natural payload of that record, which makes these two items a sequence rather than alternatives."
+type: Issue
+status: open
+priority: 2
+tags[6]: "area:storage",data-durability,gh-issue,history,merge,multi-agent
+created_at: "2026-07-26T22:04:13.514Z"
+updated_at: "2026-07-26T22:04:13.514Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Every field-level conflict decision the merge driver makes is persisted where a later reader can find it, surviving the end of the git merge process; a pm command reports the conflicts resolved by the most recent merge, naming the item, the field, the retained value and the discarded value; pm validate or pm health surfaces an unreviewed merge decision so the clean-merge-plus-green-validate path cannot silently mean data was dropped; the discarded value is recoverable without reading the reflog of the other branch; a regression test performs a real two-branch scalar conflict and asserts the record exists after the merge process exits; the interaction with pm-9j2r3b is settled so the conflict report and the merge history entry are one mechanism, not two"
+parent: pm-o2kc
+risk: high
+confidence: high
+reporter: github-issue-754
+severity: high
+environment: "pm 2026.7.26, fresh pm init plus pm merge install, git merge of two branches"
+expected_result: "A merge that discards a field value leaves a durable, queryable record of what was discarded."
+actual_result: "The report is printed to the driver's stdout during git merge and then lost; the file has no markers, validate reports ok true, and no command can recover the discarded value."
+component: merge-driver
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-2sbj8p,implements,"2026-07-26T22:04:13.514Z",null,null
+  pm-76dnfg,verifies,"2026-07-26T22:04:13.514Z",null,null
+  pm-9j2r3b,blocked_by,"2026-07-26T22:04:13.514Z",null,null
+  pm-c0wthb,related,"2026-07-26T22:04:13.514Z",null,null
+  pm-pdr8t1,related,"2026-07-26T22:04:13.514Z",null,null
+  pm-szv11n,implements,"2026-07-26T22:04:13.514Z",null,null
+body: ""

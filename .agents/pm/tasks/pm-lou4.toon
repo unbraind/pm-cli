@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: calendar,dependabot,github,operations,recurring
 created_at: "2026-04-03T17:33:17.602Z"
-updated_at: "2026-07-26T17:19:30.058Z"
+updated_at: "2026-07-26T22:20:35.769Z"
 events[1]:
   - start_at: "2026-04-10T09:00:00.000Z"
     end_at: "2026-04-10T09:30:00.000Z"
@@ -44,8 +44,9 @@ fixed_version: vnext
 component: calendar-recurring-review
 regression: false
 customer_impact: Maintainers can catch and remediate findings quickly
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-i7w2,related,"2026-07-26T17:19:29.825Z",null,null
+  pm-i7w2,discovered_from,"2026-07-26T22:20:35.520Z",null,null
 comments[6]{created_at,author,text}:
   "2026-04-03T17:33:17.602Z",codex-agent,Created recurring operational task for weekly GitHub findings review.
   "2026-04-03T17:45:39.395Z",codex-agent,"Verified recurring event persistence and expansion: pm calendar agenda/week show weekly Friday occurrences starting 2026-04-10 at 09:00Z."

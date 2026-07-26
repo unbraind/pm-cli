@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:extensions",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:01:12.207Z"
-updated_at: "2026-07-26T17:09:48.707Z"
+updated_at: "2026-07-26T22:17:16.218Z"
 deadline: "2026-03-13T23:01:12.207Z"
 assignee: steve
 author: steve
@@ -40,7 +40,7 @@ fixed_version: archive-2026q2
 component: project-management/milestone-5-extension-system-built-ins
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 5 - Extension System + Built-ins.
-dependencies[10]{id,kind,created_at,author,source_kind}:
+dependencies[13]{id,kind,created_at,author,source_kind}:
   pm-f45,blocks,"2026-02-17T23:01:12.207Z",steve,null
   pm-j7a,child,"2026-02-17T23:01:12.207Z",steve,null
   pm-0e8w,related,"2026-07-26T17:09:48.446Z",null,null
@@ -51,6 +51,9 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-jvfw,related,"2026-07-26T17:09:48.446Z",null,null
   pm-qkx0,related,"2026-07-26T17:09:48.446Z",null,null
   pm-xyv3,related,"2026-07-26T17:09:48.446Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:15.954Z",null,null
+  pm-gyfn,implements,"2026-07-26T22:17:15.954Z",null,null
+  pm-j7a,implements,"2026-07-26T22:17:15.954Z",null,null
 comments[11]{created_at,author,text}:
   "2026-02-17T23:01:12.207Z",steve,Milestone 5 enables custom behavior while preserving core safety.
   "2026-03-04T15:44:57.708Z",cursor-maintainer,"Progress update: closed follow-up task pm-3aeu to align hook lifecycle docs and implementation for gc onIndex dispatch (mode=gc, deterministic cache-target totals) with full pm test and pm test-all evidence recorded."

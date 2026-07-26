@@ -6,16 +6,17 @@ status: closed
 priority: 3
 tags[4]: agents,calendar,output,ux
 created_at: "2026-05-01T18:59:55.461Z"
-updated_at: "2026-07-26T17:09:47.738Z"
+updated_at: "2026-07-26T22:19:37.504Z"
 author: maintainer-agent
 release: v2026.5.2
 resolution: Suppressed redundant event title in formatEventLine when event_title matches item_title
 expected_result: "Calendar event lines show item title once, not duplicated as both item_title and event_title"
 actual_result: formatEventLine now skips title/title= details when event_title matches item_title; only differing titles show both
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-5xih,related,"2026-07-26T17:09:47.534Z",null,null
   pm-9x6e,related,"2026-07-26T17:09:47.534Z",null,null
   pm-vdrn,related,"2026-07-26T17:09:47.534Z",null,null
+  pm-23me,discovered_from,"2026-07-26T22:19:37.314Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-01T19:12:56.890Z",cursor-agent,"Fix applied: in formatEventLine, when event.event_title matches event.item_title (or is null), the title and title= key-value are now suppressed from the details section. The item_title in the core prefix already shows it. Only when event_title differs from item_title do we include both. Tests: 14/14 calendar-command.spec.ts passed. Build: clean."
 files[1]{path,scope,note}:

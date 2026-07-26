@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[6]: "gh:743",linked-tests,merge-driver,packages,release-gates,sandbox
 created_at: "2026-07-26T13:15:17.183Z"
-updated_at: "2026-07-26T13:15:17.183Z"
+updated_at: "2026-07-26T22:05:51.733Z"
 author: "harness:codex"
+estimated_minutes: 90
 acceptance_criteria: linked execution provides a documented safe contract for package lifecycle hooks that require source Git identity; pm merge install succeeds in the supported acceptance context without exposing the real tracker to test mutation; collision failures classify deterministically with actionable guidance; direct and linked npm pack prepare paths have parity tests; docs explain schema/tracker/auto context selection
 parent: pm-u9d0
 severity: high
@@ -24,6 +25,7 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-c0wthb,discovered_from,"2026-07-26T13:15:17.183Z",null,null
   pm-ed28wi,related,"2026-07-26T13:15:17.183Z",null,null
   pm-oslr,verifies,"2026-07-26T13:15:17.183Z",null,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-26T13:15:17.183Z","harness:codex","Duplicate evidence 2026-07-26: all-status searches for linked test PM_PATH merge install schema outside repository, package prepare hooks, source Git identity, and infra collision found no direct item. GH-682 lineage and closed pm-oslr cover adjacent workspace/execution contracts but not prepare-time merge installation. Canonical GitHub issue: GH-743."
+  "2026-07-26T22:05:51.733Z","harness:claude-code","GH mapping: this item is the tracker record for GitHub issue 743 (pm test: schema sandbox breaks package prepare hooks that run pm merge install). The title predates the GH-<n> prefix convention; the mapping is recorded here rather than by retitling so search on either spelling resolves."
 body: ""

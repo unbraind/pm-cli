@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli","area:docs","area:terminal",compatibility,pm-cli
 created_at: "2026-04-01T11:57:17.043Z"
-updated_at: "2026-07-26T16:49:07.621Z"
+updated_at: "2026-07-26T22:16:52.467Z"
 deadline: "2026-04-15T11:57:17.043Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -40,9 +40,10 @@ fixed_version: archive-2026q2
 component: cli/runtime
 regression: true
 customer_impact: Improves reliability for all users running pm in IDE or emulated terminals.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-nhgt,related,"2026-04-01T11:57:17.043Z",cursor-agent,null
   pm-wo8,related,"2026-04-01T11:57:17.043Z",cursor-agent,null
+  pm-doxj,blocks,"2026-07-26T22:16:52.148Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-01T11:57:17.043Z",cursor-agent,Created after list-open/list-in-progress/list-blocked plus terminal-focused search showed no duplicate item for this scope.
   "2026-04-01T18:53:10.935Z",cursor-agent,"Follow-up continuation of this existing terminal epic (no duplicate item created). Reproduced residual behavior on 2026-04-01: pm test-all --status in_progress --timeout 60 --json remained silent for about 170s before final output/exit while linked tests were active. Acceptance delta for reopen: spawn-based linked-test orchestration, default stderr heartbeat/progress, and deterministic timeout tree termination across PTY environments."

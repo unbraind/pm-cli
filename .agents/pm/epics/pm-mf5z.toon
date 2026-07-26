@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: custom-types,extensions,governance,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:12.919Z"
-updated_at: "2026-07-26T17:20:15.554Z"
+updated_at: "2026-07-26T22:17:34.213Z"
 deadline: "2026-04-17T22:53:12.919Z"
 author: codex-agent
 estimated_minutes: 480
@@ -37,13 +37,14 @@ affected_version: 2026.3.12
 component: linked-test-runtime
 regression: true
 customer_impact: Teams may trust incomplete linked-test evidence and get false negatives for valid custom-type filters.
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-6pij,related,"2026-07-26T17:20:15.315Z",null,null
   pm-8izv,related,"2026-07-26T17:20:15.315Z",null,null
   pm-dk0a,related,"2026-07-26T17:20:15.315Z",null,null
   pm-qtvv,related,"2026-07-26T17:20:15.315Z",null,null
   pm-vrsn,related,"2026-07-26T17:20:15.315Z",null,null
   pm-wn34,related,"2026-07-26T17:20:15.315Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:33.944Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-03T22:53:12.919Z",codex-agent,Created after dedupe checks confirmed no active item for pm-lvej pm-6fmt pm-8ys5 scope.
   "2026-04-03T23:46:55.056Z",codex-agent,"Epic scope pm-lvej/pm-6fmt/pm-8ys5 implemented via child features: sandbox extension parity and command-required linked test mutations, with docs/changelog sync and verification evidence captured in pm-qtvv/pm-wn34/pm-dk0a."

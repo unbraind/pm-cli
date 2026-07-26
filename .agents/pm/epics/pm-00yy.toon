@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-04-01T01:39:03.952Z"
-updated_at: "2026-07-26T16:59:44.442Z"
+updated_at: "2026-07-26T22:17:05.923Z"
 deadline: "2026-04-15T01:39:03.952Z"
 assignee: codex-agent
 author: codex-agent
@@ -40,9 +40,10 @@ fixed_version: archive-2026q2
 component: cli/options
 regression: false
 customer_impact: "Improves agent and user command success rates with clearer, policy-aware UX."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-r15d,discovered_from,"2026-04-01T01:39:03.952Z",codex-agent,null
   pm-5bwo,related,"2026-07-26T16:59:44.217Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:05.655Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T01:39:03.952Z",codex-agent,Follow-up scope extends pm-r15d with option visibility and enablement controls.
   "2026-04-01T01:58:21.515Z",codex-agent,"Follow-up epic delivered via pm-5bwo: command_option_policies model, policy-aware help/error surfaces, and extension metadata markers shipped with docs/tests updates."

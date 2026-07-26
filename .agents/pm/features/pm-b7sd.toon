@@ -6,13 +6,15 @@ status: closed
 priority: 2
 tags[5]: agent-ux,context-efficiency,list,pm-cli,token-budget
 created_at: "2026-05-17T05:50:01.041Z"
-updated_at: "2026-07-26T16:50:14.355Z"
+updated_at: "2026-07-26T22:18:18.811Z"
 deadline: "2026-05-24T05:50:01.041Z"
 author: claude-code-agent
 release: v2026.5.18
 resolution: Implemented list default brief projection and explicit --full escape hatch.
 expected_result: Bare pm list returns low-token brief rows while pm list --full preserves the prior verbose shape.
 actual_result: "Focused list/contracts/help integration tests and dogfood confirm default brief, --full, and contract exposure work."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-jrjt,discovered_from,"2026-07-26T22:18:18.595Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-17T08:33:01.995Z",codex-agent,"Implemented list token-efficiency update: bare 'pm list' now defaults to brief projection (id/status/type/title), while '--full' preserves verbose rows. Added projection conflict handling for --full, synced contracts/schema/help surfaces, and covered behavior in unit + integration regressions."
   "2026-05-17T14:25:44.935Z",codex-agent,"Verification evidence 2026-05-17: reran list default/--full closeout checks after claiming item. Passing commands: node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/contracts-command.spec.ts (28 tests); node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'filters list' (1 passed); node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t 'documents list/search projection exclusivity guidance' (1 passed). Current dogfood harness also passed with list contract coverage included."

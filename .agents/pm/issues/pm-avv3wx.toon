@@ -1,0 +1,30 @@
+id: pm-avv3wx
+title: "GH-747: the bundled TOON encoder emits documents its own decoder rejects, so a valid item becomes permanently unreadable"
+description: "Round-tripping is the storage layer's central promise and it is not proven anywhere. A string containing the literal text of an array header, for example the four characters that spell notes followed by an empty bracket pair, is written by the encoder as an ordinary quoted scalar. The same bundled decoder then reads the bracket segment as an array header, finds unexpected content between the segment and the colon, and refuses the whole document. The item file on disk is byte-for-byte what pm wrote and pm can no longer read it: pm get reports item_document_invalid, pm validate reports storage_integrity error with an unreadable_item finding, and the item silently disappears from context, search and list results. Reported against pm 2026.7.26 with @toon-format/toon 2.3.1. This is distinct from pm-iqgj, which recovered sixteen files damaged by the same upstream bracket handling and is closed, and from pm-idnz, which tracks removing the workaround when upstream fixes it; both were remediation of an existing corpus. It is also distinct from pm-5cgm2z, which evaluates migrating to TOON 4. What has never existed is the property that makes recurrence impossible: no test asserts that decode of encode is the identity over adversarial content, so any future encoder or upstream change can reintroduce a write path that produces unreadable state. Any content an agent can type into a description, note, comment or body is adversarial content, and pm text routinely contains bracket pairs because pm's own output format uses them."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:storage",data-durability,gh-issue,round-trip,storage,toon
+created_at: "2026-07-26T22:04:03.166Z"
+updated_at: "2026-07-26T22:04:03.166Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A property or fuzz suite asserts that decoding the encoding of a document returns the original document, over generated content that includes bracket segments, colons, quotes, newlines, unicode and the literal spellings of pm's own array headers, and it runs in CI; the specific reported input round-trips correctly; the write path refuses to persist a document it cannot itself read back, so an unreadable item can never be created even if a future encoder regresses; pm validate names the offending field and offers a recovery path rather than reporting only that the document is invalid; the corpus of existing items is swept once for content that would fail the new property and the result is recorded; the upstream TOON version constraint is pinned or the workaround is documented against pm-idnz"
+parent: pm-o2kc
+risk: critical
+confidence: high
+reporter: github-issue-747
+severity: critical
+environment: "pm 2026.7.26, @toon-format/toon 2.3.1, Node 22+"
+expected_result: "Every document pm writes can be read back by pm, for all content an agent can legally store."
+actual_result: "A quoted scalar containing an array-header-shaped substring is written successfully and then rejected by the decoder, making the item unreadable and failing storage integrity."
+component: "storage:toon"
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-4jk8kx,implements,"2026-07-26T22:04:03.166Z",null,null
+  pm-5cgm2z,related,"2026-07-26T22:04:03.166Z",null,null
+  pm-9c7h9x,verifies,"2026-07-26T22:04:03.166Z",null,null
+  pm-e5yupa,implements,"2026-07-26T22:04:03.166Z",null,null
+  pm-idnz,related,"2026-07-26T22:04:03.166Z",null,null
+  pm-iqgj,discovered_from,"2026-07-26T22:04:03.166Z",null,null
+  pm-w7ccmv,implements,"2026-07-26T22:04:03.166Z",null,null
+body: ""

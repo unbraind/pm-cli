@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:create","area:files","area:ownership","area:validation",audit,governance,pm-cli
 created_at: "2026-04-03T20:57:13.509Z"
-updated_at: "2026-07-26T16:49:08.793Z"
+updated_at: "2026-07-26T22:16:53.520Z"
 deadline: "2026-04-13T20:57:13.509Z"
 author: codex-agent
 estimated_minutes: 480
@@ -27,8 +27,9 @@ expected_result: Acceptance criteria for Governance sweep 2026-04-03 net-new rem
 actual_result: Work completed and recorded with linked artifacts for Governance sweep 2026-04-03 net-new remediation.
 component: project-management/governance-sweep-2026-04-03-net-new-remediation
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Governance sweep 2026-04-03 net-new remediation.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-qfg8,discovered_from,"2026-04-03T20:57:13.509Z",codex-agent,null
+  pm-doxj,blocks,"2026-07-26T22:16:53.296Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-03T20:57:13.509Z",codex-agent,Created after dedupe checks confirmed only unresolved net-new scope remains.
   "2026-04-03T21:25:25.947Z",codex-agent,"Completed docs/contracts parity across README, PRD, ARCHITECTURE, CHANGELOG, and AGENTS for --scan-mode, --append-stable, --create-mode, and --allow-audit-comment. Verification passed: pnpm build, node scripts/run-tests.mjs test (71 files / 821 tests), node scripts/run-tests.mjs coverage (71 files / 821 tests), plus sandbox smoke using built dist CLI exercising all four new flags."

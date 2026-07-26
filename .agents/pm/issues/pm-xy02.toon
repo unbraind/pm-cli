@@ -6,12 +6,14 @@ status: closed
 priority: 0
 tags[6]: agent-ux,bug,context,mcp,pm-cli,regression
 created_at: "2026-05-17T05:46:37.065Z"
-updated_at: "2026-07-26T16:50:08.981Z"
+updated_at: "2026-07-26T22:18:28.287Z"
 deadline: "2026-05-18T05:46:37.065Z"
 author: claude-code-agent
 release: v2026.5.18
 resolution: "Fixed in 46a225b: stripListProjectionFlags() removes compact/brief/fields/includeBody/include_body before runList/runCalendar; toContextFocusItem hardened to default tags to []; regression test covers all known projection-flag permutations. All 1319 tests pass."
 expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
 actual_result: "Actual result: Fixed in 46a225b: stripListProjectionFlags() removes compact/brief/fields/includeBody/include_body before runList/runCalendar; toContextFocusItem hardened to default tags to []; regression test covers all known projection-flag permutations. All 1319 tests pass."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-jrjt,discovered_from,"2026-07-26T22:18:28.014Z",null,null
 close_reason: "Fixed in 46a225b: stripListProjectionFlags() removes compact/brief/fields/includeBody/include_body before runList/runCalendar; toContextFocusItem hardened to default tags to []; regression test covers all known projection-flag permutations. All 1319 tests pass."
 body: ""

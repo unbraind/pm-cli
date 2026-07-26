@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,gh-issue,never-block,onboarding
 created_at: "2026-07-10T16:39:14.691Z"
-updated_at: "2026-07-26T16:52:21.277Z"
+updated_at: "2026-07-26T22:19:19.375Z"
 closed_at: "2026-07-10T17:52:51.082Z"
 author: maintainer-agent
 estimated_minutes: 120
@@ -14,8 +14,9 @@ acceptance_criteria: "After pm init . in an empty dir, the next pm command (e.g.
 risk: medium
 confidence: high
 release: v2026.7.11
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-x26a,related,"2026-07-10T16:39:14.691Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:19:19.096Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-10T17:51:58.069Z",codex-root,"Implementation start: active in the broad atomic work-selection and agent recovery PR. Live all-status duplicate check, full item metadata, closed prerequisite lineage, GitHub issues, security alerts, dependency audit, release state, and Sentry issue surface were reviewed before claiming. This item shares CLI/SDK contracts, recovery envelopes, and end-to-end verification with the seven sibling items in the bundle."
   "2026-07-10T17:52:50.422Z",codex-root,"Live verification correction: current main 0f43e921 already resolves cwd-rooted tracker layouts. Fresh temp proof: pm init . --defaults --author probe created tracker-path mode at cwd; the immediately following bare pm list --json exited 0 and returned an empty item list. Root cause was already removed by the root-layout discovery work linked through pm-x26a/GH-495; no code change belongs in this PR."

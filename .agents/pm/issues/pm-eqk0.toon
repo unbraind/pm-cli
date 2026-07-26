@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: decisions,multi-agent,next,workflow
 created_at: "2026-07-11T03:00:06.909Z"
-updated_at: "2026-07-26T17:13:07.562Z"
+updated_at: "2026-07-26T22:19:38.493Z"
 closed_at: "2026-07-11T20:35:20.074Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -17,12 +17,13 @@ release: v2026.7.12
 resolution: "Decisions appear in exactly one queue: decision_needed by default or claimable when opted in."
 expected_result: Decision opt-in changes eligibility without duplicating output rows.
 actual_result: includeDecisions empties decision_needed and ranks Decisions in the actionable queue.
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-114v,related,"2026-07-11T03:00:06.909Z",null,null
   pm-9x6k,related,"2026-07-11T03:00:06.909Z",null,null
   pm-bl8x,related,"2026-07-26T17:13:07.341Z",null,null
   pm-fjxm,related,"2026-07-26T17:13:07.341Z",null,null
   pm-pbyu,related,"2026-07-26T17:13:07.341Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:19:38.256Z",null,null
 comments[7]{created_at,author,text}:
   "2026-07-11T03:06:49.578Z",maintainer-agent,"External confirmation (2026-07-11): GH-509 (pm-fjxm) independently requests the fleet worker loop this item protects — bounded candidate-walk on claim race loss. A walk WITHOUT the Decision-skip this item specifies makes the hazard strictly worse: every race loser advances down the ready queue and lands on the Decision item, so the funnel-into-one-ADR failure becomes the common path, not the unlucky one. pm-fjxm's AC references this item; sequencing preference: land eqk0's Decision-skip before or with fjxm's walk."
   "2026-07-11T18:21:07.424Z",codex-root,"Implementation start: active in one broad PR because GH-509 candidate filters/race walking, GH-513 ready ranking, and decision-needed separation share the public SDK actionability engine, claim transaction, CLI/MCP contracts, and fleet-worker verification. Live all-status search and full item/dependency/comment history confirmed no duplicate lineage; only these three items are active."

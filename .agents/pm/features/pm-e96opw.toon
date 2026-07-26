@@ -1,0 +1,23 @@
+id: pm-e96opw
+title: "Executable acceptance criteria: every criterion carries a machine-checkable predicate and a recorded verdict, so done is computed rather than asserted"
+description: "Acceptance criteria are the field the whole lifecycle turns on and they are free prose joined by semicolons. Nothing can evaluate them, so closing an item is an assertion by whoever closed it, and the close-time completeness work can only check that certain fields are non-empty, never that the criteria hold. Linked tests are the closest existing mechanism, but they attach to the item rather than to a criterion, so a green test run does not say which criterion it satisfied and a partially met set of criteria is indistinguishable from a fully met one. The proposal is to let each criterion optionally declare how it is checked, with the check being any of a linked test command, a query over workspace state, a file or documentation predicate, or an explicit human sign-off, and to record the outcome of each check as a verdict with a timestamp, an author and the evidence that produced it. Prose-only criteria remain valid and unevaluated, so nothing existing breaks and adoption is incremental. Two consequences make this worth more than its size: strict close validation becomes able to require that every criterion has a passing verdict rather than that the field is non-empty, and any external grader, including a training environment, can read the verdict set as its score without knowing anything about the item's domain."
+type: Feature
+status: open
+priority: 2
+tags[6]: acceptance-criteria,"area:governance",governance,lifecycle,rl,verification
+created_at: "2026-07-26T22:04:40.610Z"
+updated_at: "2026-07-26T22:04:40.610Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "A criterion may declare a check of at least the linked-test, workspace-query, artifact-predicate and human-signoff kinds, and criteria without a check remain valid; running the checks for an item produces a per-criterion verdict recording pass, fail or not-evaluated, with timestamp, author and the evidence, and the verdicts are stored on the item and appended to history; close validation can be configured to require passing verdicts for every criterion, and the default is unchanged so existing workspaces are unaffected; the verdict set is readable as a bounded projection cheap enough for an agent loop and reachable through the SDK; a criterion's check is re-runnable at any later point and re-running is idempotent; the existing prose criteria corpus is untouched and no migration is required"
+parent: pm-33cw
+risk: medium
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-33cw,implements,"2026-07-26T22:04:40.610Z",null,null
+  pm-htbetn,related,"2026-07-26T22:04:40.610Z",null,null
+  pm-mj42og,related,"2026-07-26T22:04:40.610Z",null,null
+  pm-pww8ax,related,"2026-07-26T22:04:40.610Z",null,null
+  pm-wenq,blocks,"2026-07-26T22:04:40.610Z",null,null
+  pm-xgcp18,related,"2026-07-26T22:04:40.610Z",null,null
+body: ""

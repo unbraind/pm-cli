@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:program",core,"milestone:root",pm-cli
 created_at: "2026-02-17T22:59:06.628Z"
-updated_at: "2026-07-26T17:17:16.735Z"
+updated_at: "2026-07-26T22:17:27.278Z"
 deadline: "2026-03-19T22:59:06.628Z"
 assignee: steve
 author: steve
@@ -40,7 +40,7 @@ fixed_version: archive-2026q2
 component: project-management/build-pm-cli-v1
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Build pm-cli v1.
-dependencies[10]{id,kind,created_at,author,source_kind}:
+dependencies[12]{id,kind,created_at,author,source_kind}:
   pm-0e8w,related,"2026-07-26T17:17:16.507Z",null,null
   pm-30lh,related,"2026-07-26T17:17:16.507Z",null,null
   pm-8d71,related,"2026-07-26T17:17:16.507Z",null,null
@@ -51,6 +51,8 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-q35x,related,"2026-07-26T17:17:16.507Z",null,null
   pm-qkx0,related,"2026-07-26T17:17:16.507Z",null,null
   pm-xyv3,related,"2026-07-26T17:17:16.507Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:27.041Z",null,null
+  pm-lty,supersedes,"2026-07-26T22:17:27.041Z",null,null
 comments[15]{created_at,author,text}:
   "2026-02-17T22:59:06.628Z",steve,Root epic exists to coordinate milestone delivery.
   "2026-03-04T16:22:45.978Z",cursor-maintainer,"Progress update: closed milestone epic pm-jiw (Milestone 6) after sandboxed coverage gate and full pm test-all regression sweeps passed with zero failures; remaining open milestone is pm-b1w."

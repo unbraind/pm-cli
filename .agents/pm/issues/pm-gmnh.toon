@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags[4]: agents,health,telemetry,ux
 created_at: "2026-05-01T18:59:34.597Z"
-updated_at: "2026-07-26T17:14:38.547Z"
+updated_at: "2026-07-26T22:19:39.822Z"
 author: maintainer-agent
 release: v2026.5.2
 resolution: "Smart threshold for telemetry queue warning: active failure, never-flushed, or high-water mark (500+)"
 expected_result: Health ok=true during normal transient queue draining; ok=false only on genuine flush failures
 actual_result: "Warning suppressed during normal draining; queue_draining:true detail field added; warning fires on active failure/never-flushed/500+ entries"
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-5k2w,related,"2026-07-26T17:14:38.331Z",null,null
   pm-7v9s,related,"2026-07-26T17:14:38.331Z",null,null
   pm-kd9n,related,"2026-07-26T17:14:38.331Z",null,null
+  pm-23me,discovered_from,"2026-07-26T22:19:39.554Z",null,null
 comments[1]{created_at,author,text}:
   "2026-05-01T19:17:54.388Z",cursor-agent,"Fix applied: telemetry_queue_pending warning now only fires when (1) last_failed_flush_at > last_successful_flush_at (active failure), (2) no last_successful_flush_at exists (never-flushed), or (3) queue entries >= 500 (high-water mark). Normal transient draining now shows queue_draining:true in details without flipping ok to false. Added new test for active-failure case (26/26 health tests pass). Build: clean."
 files[2]{path,scope,note}:

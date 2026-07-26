@@ -6,7 +6,7 @@ status: canceled
 priority: 0
 tags[7]: "area:milestone",code,docs,"milestone:1",pm-cli,"priority:0",tests
 created_at: "2026-03-06T22:55:53.463Z"
-updated_at: "2026-07-26T16:48:59.361Z"
+updated_at: "2026-07-26T22:16:48.817Z"
 deadline: "2026-03-20T22:55:53.463Z"
 author: maintainer-agent
 estimated_minutes: 240
@@ -39,8 +39,9 @@ fixed_version: archive-2026q2
 component: project-management/prd-milestone-1-core-item-crud-and-locking
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for PRD Milestone 1 - Core Item CRUD and Locking.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-6hhn,blocks,"2026-03-06T22:55:53.463Z",maintainer-agent,null
+  pm-doxj,blocks,"2026-07-26T22:16:48.504Z",null,null
 comments[2]{created_at,author,text}:
   "2026-03-06T22:55:53.463Z",maintainer-agent,Milestone 1 seeded from PRD to establish complete dogfood planning coverage.
   "2026-03-06T23:18:35.754Z",maintainer-agent,Duplicate milestone epic identified during tracker normalization. Canonical milestone item is pm-u9r for Milestone 1; this seeded duplicate is being canceled to keep backlog deterministic and non-overlapping.

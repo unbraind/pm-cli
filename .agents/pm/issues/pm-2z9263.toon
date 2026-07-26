@@ -1,0 +1,29 @@
+id: pm-2z9263
+title: "GH-746: the release publish step guards on a package scope that does not exist, so publish idempotence and access recovery are permanently dead code"
+description: "The npm publish step in .github/workflows/release.yml names @unbraind/pm-cli. The published package is @unbrained/pm-cli. The two spellings differ by one transposed letter and the wrong one is the GitHub organisation name, so the mistake reads as correct. Three consequences follow, all verified on 2026-07-27. First, the idempotence guard at release.yml:191 runs npm view against a scope that has never existed, always receives E404, and can therefore never take the 'is publicly available; skipping npm publish' branch: a re-run of an already published tag falls through to npm publish and fails on the registry's immutability rule instead of skipping cleanly. Second, the access-recovery branch at release.yml:195 calls npm access set status=public on the nonexistent package; the remediation the workflow advertises for a private-package outage cannot ever act on the real package. Third, the 404 is grepped for and treated as proof that the package 'does not exist for this credential', which is the branch that publishes; the pipeline only publishes today because the wrong-scope lookup fails in exactly the way the fallback expects. The adjacent verification step is correct: scripts/release/verify-published-release.mjs:88,158,167,176 uses @unbrained/pm-cli for npm view, npx direct, npx package and bunx. So one workflow file asserts two different package identities in consecutive steps. Two contract specs pin the wrong spelling as expected text (tests/integration/ci-workflow-contract.spec.ts:391,411 and tests/integration/release-automation-contract.spec.ts:463,475), so the gate that exists to protect the release contract currently protects the defect. GH-746 was filed after an agent read these references and concluded the published package was missing; npm view @unbrained/pm-cli version returns 2026.7.26 and both npx and bunx run the real artifact, so the reported outage is not real and the issue should close against this root cause. The residual risk is supply chain: @unbraind is an unclaimed npm scope named by our own release workflow and by shipped source (src/cli/commander-usage.ts:267 lists it as a known package prefix), which is a standing dependency-confusion target for anyone who registers it."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:release",ci,gh-issue,npm,release,supply-chain
+created_at: "2026-07-26T22:03:53.460Z"
+updated_at: "2026-07-26T22:03:53.460Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "Every npm identity in .github/workflows/release.yml is @unbrained/pm-cli and a single shared constant or workflow variable holds it so the publish, access-recovery and verification steps cannot drift apart again; re-running the release workflow on an already published tag takes the skip branch and exits success instead of attempting an immutable republish, proven by a dry-run or recorded run; the ci-workflow and release-automation contract specs assert the corrected scope and would fail against the old text; a gate rejects any occurrence of the @unbraind scope in workflows, scripts and src outside an explicit allowlist; the standing exposure of the unclaimed @unbraind npm scope is dispositioned in writing, either by defensively reserving it or by recording an accepted-risk decision with the reasoning; GH-746 is closed with this root cause and the evidence that the real package resolves from a clean unauthenticated environment"
+parent: pm-u9d0
+risk: high
+confidence: high
+reporter: github-issue-746
+severity: high
+environment: GitHub Actions release.yml publish step; npm registry
+expected_result: "The publish guard, the access-recovery call and the post-publish verifier all address the same published package, and a repeat run of a published tag skips instead of failing."
+actual_result: "The guard and recovery address @unbraind/pm-cli, which returns 404 from the registry; only the verifier addresses the real @unbrained/pm-cli. The skip branch is unreachable and the access recovery is inert."
+component: release-pipeline
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,related,"2026-07-26T22:03:53.460Z",null,null
+  pm-ei6x66,implements,"2026-07-26T22:03:53.460Z",null,null
+  pm-k6t4yb,implements,"2026-07-26T22:03:53.460Z",null,null
+  pm-lpqln4,related,"2026-07-26T22:03:53.460Z",null,null
+  pm-qwoy,related,"2026-07-26T22:03:53.460Z",null,null
+  pm-ygli86,related,"2026-07-26T22:03:53.460Z",null,null
+body: ""

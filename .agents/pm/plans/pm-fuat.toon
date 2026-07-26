@@ -6,14 +6,15 @@ status: closed
 priority: 2
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-05-23T17:07:40.015Z"
-updated_at: "2026-07-26T17:14:08.031Z"
+updated_at: "2026-07-26T22:20:05.085Z"
 author: claude-code-agent
 release: v2026.5.24
 resolution: "Completed combined CLI ergonomics plan: concise init, hidden pure snake help aliases, named priorities, package install hints, starter templates, delete dry-run/default-safety, templates dedup integration, shared contracts/completions/docs, manual dogfood, and full release gate."
 expected_result: All plan steps completed with tests/docs/contracts updated and no feature regressions.
 actual_result: All six steps completed; manual dogfood and full release gate passed with 100% coverage and required Sentry/telemetry.
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-5k2w,related,"2026-07-26T17:14:07.781Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:20:04.861Z",null,null
 comments[5]{created_at,author,text}:
   "2026-05-23T17:50:14.107Z",default-safety-subagent,"L10 evidence from default-safety sub-agent: implemented delete dry-run and gc help clarification in scoped files. Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts (46 tests); pnpm exec tsc -p tsconfig.json --noEmit. Handoff: shared contracts/completion remain coordinator-owned if pm contracts/completions should surface delete --dry-run in the integration PR."
   "2026-05-23T17:56:09.772Z",codex-active-work,"Integration evidence: coordinator added shared docs/changelog plus delete --dry-run contracts/completions after sub-agent lanes. Focused suite passed: 10 files / 203 tests, then post-contract subset passed: 4 files / 143 tests; tsc --noEmit passed. Manual isolated dogfood at /tmp/pm-manual-ergonomics-xTi6M0/project verified init 60 lines vs 193 verbose, hidden --why_now parse, priority high=>1, guide install hint, templates builtin count=4, user template override, delete --dry-run non-mutating target tasks/pm-jwl1.toon, gc --dry-run preview count=5, and delete contracts include --dry-run."

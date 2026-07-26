@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,contracts,determinism,extensions
 created_at: "2026-07-10T11:59:03.050Z"
-updated_at: "2026-07-26T16:52:20.623Z"
+updated_at: "2026-07-26T22:19:15.049Z"
 closed_at: "2026-07-10T11:59:03.050Z"
 author: maintainer-agent
 estimated_minutes: 30
@@ -20,8 +20,9 @@ repro_steps: "pnpm changelog:pm:install upgrading the vendored pm-changelog (or 
 resolution: Snapshot generation switched to pm --no-extensions contracts --full; fixture regenerated baseline-only
 expected_result: Static gate deterministic regardless of installed extension state or upstream version
 actual_result: check passes byte-identically with pm-changelog present and absent; 32 files / 511 script+integration tests green
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-sod3,related,"2026-07-10T11:59:03.050Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:19:14.835Z",null,null
 files[2]{path,scope,note}:
   "scripts/contracts-snapshot.mjs:baseline-only snapshot generation",project,null
   "tests/fixtures/contracts/full.json:regenerated without extension-contributed entries",project,null

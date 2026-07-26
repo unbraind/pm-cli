@@ -1,0 +1,35 @@
+id: pm-v4iypw
+title: "2026-07-26 ecosystem review: all-status walk, graph depth enrichment, agent-ergonomics and release-pipeline verification"
+description: "Full-ecosystem planning and organization pass: walk all 2113 items (open/closed/canceled), verify the milestone ladder and capability-epic coverage against stated product principles, verify the daily auto-release pipeline (npm/bun/npx/bunx, same-day idempotence), verify harness-auto-detected attribution, file dedupe-checked gaps, and enrich typed relationship edges so the all-status graph supports deep traversal."
+type: Task
+status: closed
+priority: 1
+tags[8]: agent-ux,all-status,ecosystem,graph,planning,relationships,release,review
+created_at: "2026-07-26T22:29:52.903Z"
+updated_at: "2026-07-26T22:41:56.442Z"
+closed_at: "2026-07-26T22:41:40.600Z"
+author: "harness:opencode"
+parent: pm-doxj
+resolution: "Ecosystem review pass executed and closed with evidence: full open-item walk, two live verifications, three gap items filed with typed edges, one reminder defect fixed, gates green"
+expected_result: Every product principle maps to living tracked work; gaps filed as dedupe-checked items; no duplicate items created; graph stays fully connected
+actual_result: "All principles already tracked; 3 genuine gaps found and filed (pm-a5w7vv, pm-0d7ord, pm-hipfu9); release pipeline verified healthy with same-day idempotence; harness auto-attribution verified in practice; 0 isolated active nodes maintained"
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,verifies,"2026-07-26T22:39:36.212Z",null,null
+  pm-z9x1r2,verifies,"2026-07-26T22:39:37.299Z",null,null
+  pm-zeifd2,related,"2026-07-26T22:39:38.606Z",null,null
+  pm-96h7,related,"2026-07-26T22:39:39.843Z",null,null
+  pm-bzmeaa,related,"2026-07-26T22:39:41.083Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-26T22:30:09.179Z","harness:opencode","Duplicate-check evidence: searched 'ecosystem review', 'all-status review', 'release pipeline verification' before create; nearest living anchors are pm-doxj (roadmap), pm-96h7 (graph maturity), pm-7zs0 (release-health reminder). This pass is a dated session item under pm-doxj per convention (decision pm-zeifd2: date+theme, never numbered); it coordinates but does not duplicate the standing epics."
+  "2026-07-26T22:35:20.743Z","harness:opencode","Harness auto-attribution verified live: this item was claimed and mutated with no PM_AUTHOR and no --author flag; history records author=harness:opencode with detected provenance (pm-z9x1r2 shipped). Open remainder: pm-itsjf0 (reasoning-level/session-role provenance schema), pm-0zcwz6 (model capture inert: declared env signal unset by primary harness)."
+  "2026-07-26T22:41:26.228Z","harness:opencode","Pass complete. Coverage: walked all 13 capability epics + 4 initiatives + 6-milestone ladder (308 open items) against the product principles; every principle maps to living tracked work (CLI simplification pm-n7rr, token budgets pm-5t33or/pm-cu1i, context engine pm-4k6b/pm-atfm, SDK-first pm-usfg, provable history pm-w7ccmv/pm-9yfo, multi-agent merge pm-dj98/pm-76dnfg, CI detection pm-zclzll/pm-rtn5h6/pm-a8lnoh, harness attribution pm-z9x1r2, RL substrate pm-nfrhf0, composability pm-m9xv/pm-psy1, scale spectrum pm-z436/pm-g2zz). Verified live: release pipeline (evidence on pm-7zs0), harness auto-attribution (this session ran authorless). Filed 3 dedupe-checked gaps: pm-a5w7vv (NL intent, far), pm-0d7ord (render-ready export/dashboard, far), pm-hipfu9 (recurring reminders, near-mid) — 18 typed edges added, all three resolve to outcome milestones. Fixed one organizational defect: pm-7zs0 carried zero reminders despite describing a daily check; first fire scheduled 2026-07-27T06:00Z. Gates: pm validate history_drift ok 0/2117; health 0 warnings (pre-existing resolution-evidence warning stays mapped to pm-e9zh); graph audit 0 isolated/0 degree<=1 active nodes across 2120 nodes/9260 edges. Roadmap body updated with dated section per pm-zeifd2."
+files[2]{path,scope,note}:
+  scripts/release/run-release-pipeline.mjs,project,maybeSkipForSameDayRelease + no-changes/tracker-only skip verified
+  scripts/release/verify-published-release.mjs,project,npm/npx/bunx executor verification verified
+tests[2]{command,scope,timeout_seconds}:
+  pm graph audit,project,240
+  pm validate --check-resolution --check-history-drift,project,240
+docs[1]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,Same-day release idempotence guards verified against this file
+close_reason: "All-status ecosystem review complete: 308 open items walked across all epics/initiatives/milestones; release pipeline and harness attribution verified live with evidence; 3 dedupe-checked gap items filed with 18 typed edges (pm-a5w7vv, pm-0d7ord, pm-hipfu9); pm-7zs0 reminder defect fixed; validate/health/graph-audit gates green; roadmap body updated with dated pass section"
+body: ""

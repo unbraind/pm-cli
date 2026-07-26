@@ -1,0 +1,28 @@
+id: pm-nfrhf0
+title: "As an environment author training or evaluating agents, I can run pm as the task substrate and the verifier for episodes, so reward comes from recorded state instead of bespoke scaffolding"
+description: "Agent training and evaluation loops need four things that pm nearly has and does not expose as a coherent whole: a task specification an agent can read, an isolated environment instance per episode, a machine-checkable verdict on whether the agent did the work, and a byte-reproducible replay of what happened. pm already stores task specifications with acceptance criteria, dependencies and linked tests; already records every mutation as an immutable, replayable history stream; already restores any item to any version; and already runs linked test commands and reports their results. What is missing is the composition. Acceptance criteria are prose, so the verdict cannot be computed. Workspaces are not reproducible from a seed, so two runs of the same episode differ in identifiers and timestamps and cannot be compared byte for byte. There is no notion of an episode boundary, so the state an agent may observe and the state used for scoring are not separable. And there is no bounded projection of workspace state into a score, so every consumer would write its own. Stated as an entitlement rather than a feature list, this is the composite that the individual pieces serve, in the same way that the token entitlement and the multi-agent entitlement bind their clusters. The wider point is the philosophy: project management is context management, and an RL environment is exactly a context problem, namely give the agent the smallest sufficient description of the task and grade it on recorded evidence rather than on self-report. Fences: this is not pm-a8lnoh, which is a deterministic harness for testing pm's own concurrency; it is not pm-9c7h9x, which fuzzes pm's invariants; it is not pm-atfm or pm-kw4b, which evaluate retrieval quality. Those test pm. This is pm as the environment other systems are tested in."
+type: Story
+status: open
+priority: 2
+tags[7]: context-management,evaluation,rl,sdk,story,universal-platform,verifier
+created_at: "2026-07-26T22:04:31.606Z"
+updated_at: "2026-07-26T22:04:31.606Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "An environment author can create an episode workspace from a declared seed and obtain byte-identical state across repeated runs, with identifiers, timestamps and ordering reproducible; the task an agent is given is a bounded pm projection of a real item, and the fields the grader uses are separable from the fields the agent may read; a verdict for an episode is computed from recorded workspace state by pm itself, with no environment-specific code in the grader, and is stable under replay; a worked exemplar runs end to end and is executable from the repository, covering a passing episode, a failing episode and an episode that fails for the wrong reason; the whole loop is reachable through the public SDK alone, with the CLI used only as a convenience, so an environment can embed pm without shelling out; the loop degrades to a single item and a single episode with no special path, and scales to concurrent episodes without shared mutable state"
+goal: "pm is a general substrate for grading agent work, not only for tracking it"
+objective: "Expose the episode, verdict and reproducibility primitives that turn recorded project state into a training and evaluation environment"
+value: Opens an entirely new class of consumer while forcing the SDK to be genuinely complete and the history genuinely reproducible
+outcome: An external training or evaluation loop can use pm as its environment and verifier with no bespoke scaffolding
+why_now: "The immutable history, point-in-time reads, linked-test execution and SDK surface all exist; only their composition is missing, so the marginal cost is low and the pieces are proven"
+parent: pm-8jdc
+risk: medium
+confidence: medium
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-g608fc,related,"2026-07-26T22:04:31.606Z",null,null
+  pm-iiv1gl,related,"2026-07-26T22:04:31.606Z",null,null
+  pm-saoe9t,related,"2026-07-26T22:04:31.606Z",null,null
+  pm-t4d7nz,implements,"2026-07-26T22:04:31.606Z",null,null
+  pm-usfg,blocked_by,"2026-07-26T22:04:31.606Z",null,null
+  pm-wlqxg3,blocked_by,"2026-07-26T22:04:31.606Z",null,null
+body: ""

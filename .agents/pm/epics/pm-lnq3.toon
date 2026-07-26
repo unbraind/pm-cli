@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: gdpr,observability,ops,pm-cli,telemetry
 created_at: "2026-04-25T21:32:54.868Z"
-updated_at: "2026-07-26T17:19:27.153Z"
+updated_at: "2026-07-26T22:17:30.784Z"
 deadline: "2026-05-09T21:32:54.868Z"
 author: codex-agent
 estimated_minutes: 720
@@ -15,12 +15,13 @@ release: v2026.5.1
 resolution: "Telemetry rollout child scope is fully delivered and terminal in this backlog wave, with no remaining active descendants under the epic."
 expected_result: Epic closes once rollout children are terminal and closure evidence records no active descendant work.
 actual_result: "Parent-filtered scans show 0 open + 0 in_progress + 12 closed children for pm-lnq3, and closure synthesis narrative is appended."
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-300m,related,"2026-07-26T17:19:26.905Z",null,null
   pm-35wb,related,"2026-07-26T17:19:26.905Z",null,null
   pm-pxx0,related,"2026-07-26T17:19:26.905Z",null,null
   pm-r9ei,related,"2026-07-26T17:19:26.905Z",null,null
   pm-vhdc,related,"2026-07-26T17:19:26.905Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:30.539Z",null,null
 comments[8]{created_at,author,text}:
   "2026-04-25T21:32:54.868Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'telemetry observability gdpr' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm search 'telemetry' --mode keyword --limit 20; pm list-open --tag telemetry --limit 20. Net-new scope because no active telemetry rollout lineage existed."
   "2026-04-25T23:13:44.662Z",audit-agent,"Tracker hygiene follow-up completed: created and closed pm-35wb to backfill missing docs/TELEMETRY.md and docs/operations/REMOTE_TELEMETRY_STACK.md references from telemetry rollout lineage. Post-fix validate and health checks are clean."

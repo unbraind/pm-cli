@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:cli","area:compat",external-audit,pm-cli
 created_at: "2026-04-01T16:22:06.208Z"
-updated_at: "2026-07-26T17:20:45.151Z"
+updated_at: "2026-07-26T22:17:35.275Z"
 deadline: "2026-04-08T16:22:06.208Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -40,7 +40,7 @@ fixed_version: vnext
 component: cli-core
 regression: true
 customer_impact: Fixes missing command parity and reduces workflow confusion
-dependencies[14]{id,kind,created_at,author,source_kind}:
+dependencies[15]{id,kind,created_at,author,source_kind}:
   pm-0lbm,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
   pm-6e0p,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
   pm-gudp,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
@@ -55,6 +55,7 @@ dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-c8dz,related,"2026-07-26T17:20:44.908Z",null,null
   pm-e0ab,related,"2026-07-26T17:20:44.908Z",null,null
   pm-v1s1,related,"2026-07-26T17:20:44.908Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:35.039Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-01T16:22:06.208Z",cursor-agent,Created after de-dup mapping showed no active external-audit remediation hierarchy.
   "2026-04-01T16:23:32.588Z",cursor-agent,"De-dup mapping complete: Issue2 references pm-mlc3/pm-q813/pm-wdgn (already closed), Issue3 references pm-0lbm/pm-ykib/pm-vsux/pm-6e0p/pm-gudp (already closed), new implementation tracked in pm-v1s1 + pm-ap8l with child tasks pm-c465/pm-e0ab/pm-c8dz/pm-ac8x."

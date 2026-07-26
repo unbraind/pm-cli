@@ -6,16 +6,18 @@ status: closed
 priority: 1
 tags[3]: audit,code-quality,pm-cli
 created_at: "2026-05-01T23:46:35.809Z"
-updated_at: "2026-07-26T17:21:21.785Z"
+updated_at: "2026-07-26T22:17:37.516Z"
 author: audit-agent
 release: v2026.5.2
 resolution: Full audit complete. Build fixed. Zero type errors. Zero any usage. 1088 tests passing. Security scanner enhanced. Telemetry stack documented. Sentry analyzed. Performance baselined.
 expected_result: "All pm CLI systems audited, working, and documented"
 actual_result: All systems verified. 3 improvement items created for future work.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-6c3h,related,"2026-07-26T17:21:21.510Z",null,null
   pm-f6wr,related,"2026-07-26T17:21:21.510Z",null,null
   pm-p0p1,related,"2026-07-26T17:21:21.510Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:37.252Z",null,null
+  pm-rrjv,discovered_from,"2026-07-26T22:17:37.252Z",null,null
 learnings[3]{created_at,author,text}:
   "2026-05-01T23:47:30.179Z",audit-agent,"Build fix: Root-level barrel re-exports (src/constants.ts etc) were deleted but tests still imported from them. Restored 15 barrel files as single-line re-exports to core/ modules. This preserves backward compatibility for existing test imports while keeping the core/ module decomposition clean."
   "2026-05-01T23:47:44.257Z",audit-agent,"Sentry data is clean: 8 issues total, all PmCliError (validation), zero unhandled exceptions. Error scrubbing verified working -- no PII in events. The error guidance system provides structured remediation that is highly agent-friendly."

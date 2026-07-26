@@ -6,12 +6,14 @@ status: closed
 priority: 1
 tags[4]: agent-ux,defaults,pm-cli,validate
 created_at: "2026-05-17T05:49:56.100Z"
-updated_at: "2026-07-26T16:50:11.680Z"
+updated_at: "2026-07-26T22:18:33.518Z"
 deadline: "2026-05-24T05:49:56.100Z"
 author: claude-code-agent
 release: v2026.5.18
 resolution: "Implemented pm-tylj partial: pm validate metadata-check now zero-suppresses count fields and omits per-field item_ids/truncated when no items missing. Lifecycle/resolution checks still emit zero-count placeholders (follow-up). Removes ~10-30 lines per fresh-init run."
 expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
 actual_result: "Actual result: Implemented pm-tylj partial: pm validate metadata-check now zero-suppresses count fields and omits per-field item_ids/truncated when no items missing. Lifecycle/resolution checks still emit zero-count placeholders (follow-up). Removes ~10-30 lines per fresh-init run."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-jrjt,discovered_from,"2026-07-26T22:18:33.140Z",null,null
 close_reason: "Implemented pm-tylj partial: pm validate metadata-check now zero-suppresses count fields and omits per-field item_ids/truncated when no items missing. Lifecycle/resolution checks still emit zero-count placeholders (follow-up). Removes ~10-30 lines per fresh-init run."
 body: ""

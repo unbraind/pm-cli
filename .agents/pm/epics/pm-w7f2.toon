@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: adr,agent-ux,audit,context-management,governance,living-map,pm-cli,roadmap
 created_at: "2026-05-31T19:21:38.591Z"
-updated_at: "2026-07-26T16:50:56.762Z"
+updated_at: "2026-07-26T22:17:04.659Z"
 author: maintainer-agent
 acceptance_criteria: "(1) Forward backlog of open, well-defined items covers genuine future work + coverage gaps surfaced by per-domain audits; (2) Architectural ADRs recorded for real undocumented decisions; (3) Roadmap milestone + capability epics anchor the backlog; (4) Agent/user stories captured; (5) No duplicate items (every create dedup-checked via pm search); (6) Existing closed items are NOT modified (would mis-attribute them to this release in the changelog); (7) pm health/validate stay ok; (8) CI green + AI-bot review clean; (9) Sentry + telemetry verified post-change."
 definition_of_ready: Per-domain read-only audits completed by specialized sub-agents; their work-logs and decisions recorded in pm under per-domain tracking tasks.
@@ -23,8 +23,10 @@ release: v2026.6.1
 resolution: Living-map audit synthesis completed
 expected_result: "The ecosystem audit organizes findings into capability areas, decisions, stories, and forward backlog without duplicating existing pm lineage."
 actual_result: "The closed Epic 'Ecosystem-wide PM living-context map: audit, ADRs, roadmap, and forward backlog (2026-05-31)' captures the completed living-map audit synthesis and links the resulting tracker structure."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-doxj,related,"2026-05-31T19:52:14.611Z",null,null
   pm-m2u1,related,"2026-05-31T19:52:14.611Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:04.387Z",null,null
+  pm-jrjt,discovered_from,"2026-07-26T22:17:04.387Z",null,null
 close_reason: "Ecosystem PM living-map audit complete: forward backlog, ADRs, roadmap milestone, capability epics, and agent/user stories created (create-only, dedup-checked). Meta-work recorded today."
 body: ""

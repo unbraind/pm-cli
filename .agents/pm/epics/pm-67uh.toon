@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:06:03.573Z"
-updated_at: "2026-07-26T17:05:16.881Z"
+updated_at: "2026-07-26T22:17:14.150Z"
 deadline: "2026-04-15T13:06:03.573Z"
 assignee: codex-agent
 author: codex-agent
@@ -40,10 +40,11 @@ fixed_version: archive-2026q2
 component: search/runtime
 regression: true
 customer_impact: Improves default semantic search experience while preserving compatibility for existing users.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-b4pb,discovered_from,"2026-04-01T13:06:03.573Z",codex-agent,null
   pm-f45,discovered_from,"2026-04-01T13:06:03.573Z",codex-agent,null
   pm-zvn2,related,"2026-07-26T17:05:16.653Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:13.880Z",null,null
 comments[2]{created_at,author,text}:
   "2026-04-01T13:06:03.573Z",codex-agent,Created after exhaustive duplicate scan showed no active item covering default semantic enablement from local Ollama availability.
   "2026-04-01T13:25:09.931Z",codex-agent,"Epic scope completed through feature pm-zvn2 with runtime auto-default implementation, compatibility fallbacks, regression coverage, and documentation updates. Verification evidence includes full test pass (648 tests), targeted semantic suites, and successful host sandbox semantic default validation with local Ollama."

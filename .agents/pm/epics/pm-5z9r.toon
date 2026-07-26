@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: extensions,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:06.028Z"
-updated_at: "2026-07-26T17:05:09.262Z"
+updated_at: "2026-07-26T22:17:12.979Z"
 deadline: "2026-04-18T12:42:06.028Z"
 author: codex-agent
 estimated_minutes: 420
@@ -37,7 +37,7 @@ fixed_version: target-vnext
 component: linked-test-runtime
 regression: true
 customer_impact: Prevents false-green governance evidence and shortens extension triage time.
-dependencies[9]{id,kind,created_at,author,source_kind}:
+dependencies[11]{id,kind,created_at,author,source_kind}:
   pm-44iu,related,"2026-07-26T17:05:09.006Z",null,null
   pm-64f1,related,"2026-07-26T17:05:09.006Z",null,null
   pm-au2z,related,"2026-07-26T17:05:09.006Z",null,null
@@ -47,6 +47,8 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-mf5z,related,"2026-07-26T17:05:09.006Z",null,null
   pm-vrsn,related,"2026-07-26T17:05:09.006Z",null,null
   pm-wn34,related,"2026-07-26T17:05:09.006Z",null,null
+  pm-doxj,blocks,"2026-07-26T22:17:12.751Z",null,null
+  pm-pb0g,discovered_from,"2026-07-26T22:17:12.751Z",null,null
 comments[3]{created_at,author,text}:
   "2026-04-04T12:42:06.028Z",codex-agent,"Duplicate-check evidence before create: pm context --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm search path-only linked test --limit 10; pm search extension doctor diagnostics --limit 10; pm search fail-on-skipped linked tests --limit 10; no active unresolved item covers combined remaining scope."
   "2026-04-04T14:02:39.793Z",codex-agent,"Audit follow-up scope completed: pm-vrsn, pm-au2z, pm-hjrr, and pm-64f1 are closed with linked regression+coverage evidence and docs updates."
