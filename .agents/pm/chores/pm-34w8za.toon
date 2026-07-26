@@ -6,16 +6,17 @@ status: open
 priority: 3
 tags[5]: "area:quality","area:sdk",history,refactor,simplification
 created_at: "2026-07-25T21:38:53.550Z"
-updated_at: "2026-07-25T21:38:53.550Z"
+updated_at: "2026-07-26T05:56:15.226Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "One SDK primitive owns the load, verify, transform, re-anchor, reconcile and report pipeline for item history streams, and redact, repair and compact are expressed as transforms handed to it. cli/commands/copy.ts and cli/commands/restore.ts consume that primitive rather than re-implementing stream handling. The externally observable behaviour of every history command — flags, dry-run plans, applied reports, exit codes — is unchanged, asserted by the existing suites passing without modification. A jscpd run at 12 lines and 60 tokens reports no remaining clone pair inside the history family."
 parent: pm-o2kc
 risk: medium
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-9yfo,related,"2026-07-25T21:38:53.550Z",null,null
   pm-usfg,related,"2026-07-25T21:38:53.550Z",null,null
   pm-xspd,related,"2026-07-25T21:38:53.550Z",null,null
   pm-yh8r,related,"2026-07-25T21:38:53.550Z",null,null
+  pm-o2kc,implements,"2026-07-26T05:56:14.981Z",null,null
 body: ""

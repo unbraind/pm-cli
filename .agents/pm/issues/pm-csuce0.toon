@@ -6,18 +6,19 @@ status: open
 priority: 1
 tags[6]: gh-issue,npm,packages,release,sdk,semver
 created_at: "2026-07-25T00:15:27.200Z"
-updated_at: "2026-07-25T06:27:21.651Z"
+updated_at: "2026-07-26T05:57:29.689Z"
 author: codex-root
 estimated_minutes: 240
 acceptance_criteria: npm latest for @unbrained/pm-cli always resolves to a version that satisfies ordinary stable peer ranges used by first-party packages; Release tooling fails the publish when the calendar ordinal about to be tagged latest would violate the documented peer contract; Package scaffolds and SDK authoring docs state the supported peer range shape for date-based versions; A regression check installs the published latest against a first-party package peer range and fails on incompatibility
 parent: pm-u9d0
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-4s24d2,related,"2026-07-25T00:15:27.200Z",null,null
   pm-gis0qo,related,"2026-07-25T00:15:27.200Z",null,null
   pm-o8um,related,"2026-07-25T06:27:21.431Z",null,null
   pm-pae3wo,related,"2026-07-25T06:27:21.431Z",null,null
   pm-quzx,related,"2026-07-25T06:27:21.431Z",null,null
   pm-tll8,related,"2026-07-25T06:27:21.431Z",null,null
+  pm-u9d0,implements,"2026-07-26T05:57:29.440Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T00:15:27.200Z",codex-root,"Duplicate check: searched all statuses for GH-681, npm latest prerelease stable dist-tag peer resolution, and calendar ordinal compatibility. The closed pm-gis0qo owns the intentional production latest-tag policy and pm-4s24d2 owns the one-auto-release-per-day invariant, but neither owns ecosystem peer-range compatibility. This residual cross-package contract is distinct and remains open/unclaimed unless safely included in the active SDK bundle."
 body: ""

@@ -6,13 +6,16 @@ status: open
 priority: 3
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-07-10T10:48:01.400Z"
-updated_at: "2026-07-13T21:38:11.478Z"
+updated_at: "2026-07-26T06:05:39.472Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: compact --json emits exactly one activity key (no empty decoy array); MCP activity envelope matches; contracts/docs state the compact JSON shape; regression test asserts the empty key is absent
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-cfed,related,"2026-07-10T10:48:01.400Z",null,null
+  pm-mpbb,implements,"2026-07-26T05:56:32.410Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-07-26T06:05:39.471Z","harness:claude-code","Class generalization 2026-07-26: the same shape was found on a second, unrelated command. pm history <id> --json reports count:7 with history:[] while compact_history carries the seven rows; --full inverts it, emptying compact_history. Two independent commands sharing the defect means the envelope contract is missing a rule for mode-inactive collection keys rather than two commands each making a local mistake. Filed pm-cyrfjq for the cross-command rule (omit the inactive collection instead of zero-filling it, contract-driven test over every command declaring mutually exclusive modes). This item stays open as the pm activity instance and its reproduction is nominated as the negative-control fixture for that rule, so it should close against the rule rather than be patched in isolation."
 body: "Observed live 2026-07-10: `pm activity --from <ts> --compact --json` returns an envelope containing BOTH `\"activity\": []` (always empty in compact mode) and `\"compact_activity\": [...]` (the real rows). Two defects: (1) token waste — a constant dead key ships on every compact query, contrary to the lean-output direction (GH-435 pm-cfed, GH-437 pm-nilh); (2) agent-shape trap — an agent probing `.activity` (or `.entries`) sees a plausible empty array and concludes \"no activity\" instead of erroring, a silent-wrong-answer class worse than a missing key. Fix direction: compact mode should emit ONE canonical key (either reuse `activity` for the compact rows, or omit the empty array entirely); apply the same single-key rule to the MCP pm_run activity envelope and document the shape in contracts. Related: pm-cfed (lean JSON), pm-nilh (lean default), closed pm-ne67 (introduced --compact)."

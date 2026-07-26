@@ -6,16 +6,17 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli","area:history",simplification
 created_at: "2026-07-05T04:53:05.215Z"
-updated_at: "2026-07-25T06:29:07.678Z"
+updated_at: "2026-07-26T05:55:18.431Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm history gains redact/repair/compact/activity/restore subcommands with flag parity; old top-level spellings alias-shimmed with identical output; default pm history <id> view unchanged; contracts/MCP/completions/docs regenerated; existing history-* specs pass via aliases
 parent: pm-n7rr
 risk: medium
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-0z7n,blocked_by,"2026-07-05T04:55:00.104Z",null,null
   pm-3z0k,related,"2026-07-25T06:29:07.463Z",null,null
   pm-9yfo,related,"2026-07-25T06:29:07.463Z",null,null
   pm-o79o,related,"2026-07-25T06:29:07.463Z",null,null
+  pm-n7rr,implements,"2026-07-26T05:55:18.193Z",null,null
 body: ""

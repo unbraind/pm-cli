@@ -6,15 +6,16 @@ status: open
 priority: 1
 tags[2]: "area:quality",refactor
 created_at: "2026-07-12T19:14:42.057Z"
-updated_at: "2026-07-25T21:40:49.354Z"
+updated_at: "2026-07-26T05:56:17.324Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: Every tracked source directory holds ≤~20 direct files or carries a documented exemption in this body; all moves land as import-specifier-only refactors with full gates green per tranche and byte-identical CLI/MCP/contract surface; pm files links updated for moved paths on open items in the same tranche; vitest/eslint-suppressions/coverage/package.json/workflow/docs references updated within the moving tranche
 parent: pm-92if
 risk: medium
 confidence: 75
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-yh8r,related,"2026-07-12T19:14:50.801Z",null,null
+  pm-92if,implements,"2026-07-26T05:56:17.024Z",null,null
 comments[3]{created_at,author,text}:
   "2026-07-15T19:27:49.847Z",maintainer-agent,"Third maintainer recurrence 2026-07-15 (review pass #89): the too-many-files directive re-issued with src/sdk flatness called out EXPLICITLY (\"no sub-folder in the sdk folder and its getting very confusing\"). Combined with sdk/runtime.ts hitting the 3400 gate at zero headroom (pm-yh8r note same day), the sdk tranche moves to the FRONT of the tranche order as T0 (8-cluster grouping mapped in this item's 2026-07-15 note). Rider for T0: once domain folders exist, evaluate mirroring them as package.json subpath exports (./sdk/relationships, ./sdk/governance already precedented by ./sdk/runtime + ./sdk/testing) so package authors deep-import by domain instead of the 935-line index.ts barrel — decide within T0, not as a separate item. Priority bumped 2->1 on the recurrence + the yh8r sequencing coupling."
   "2026-07-15T20:06:30.225Z",codex-audit-20260715,"Review pass 91 architecture evidence: src/sdk currently contains 70 TypeScript source files and roughly 52k raw lines, with 46 files still flat at src/sdk root and 24 nested. Largest SDK units include runtime.ts at about 4.0k and extension.ts at about 3.8k lines. Existing T0 cluster migration remains canonical; new pm-ld0z is deliberately separate and covers oversized test-suite decomposition rather than SDK topology."

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,backfill,evidence,graph,history,provenance,relationships
 created_at: "2026-07-24T23:48:08.571Z"
-updated_at: "2026-07-24T23:48:08.571Z"
+updated_at: "2026-07-26T05:55:03.164Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: "A reproducible extractor derives candidate edges from history messages, evidence comments, linked files, and linked test runs, emitting source and confidence for each; Only candidates whose source and confidence can be stated are materialised; unexplainable candidates are logged to an uncertainty ledger, never written; Derived edges carry the derivation source so a later correction can supersede rather than silently overwrite; Terminal items are touched only inside a dedicated changelog-safe batch, with the changelog effect measured and regenerated last; Re-running the extractor is idempotent: no duplicate edges, no timestamp churn on unchanged items"
@@ -19,7 +19,7 @@ why_now: "The reconstruction wave is declared in the plan strategy but has no ta
 parent: pm-a8zm
 risk: medium
 confidence: medium
-dependencies[8]{id,kind,created_at,author,source_kind}:
+dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-6x7o,related,"2026-07-24T23:48:08.571Z",null,null
   pm-bzmeaa,related,"2026-07-24T23:48:08.571Z",null,null
   pm-j8z6,related,"2026-07-24T23:48:08.571Z",null,null
@@ -28,4 +28,5 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-qnl2,related,"2026-07-24T23:48:08.571Z",null,null
   pm-rml5,related,"2026-07-24T23:48:08.571Z",null,null
   pm-w7ccmv,related,"2026-07-24T23:48:08.571Z",null,null
+  pm-a8zm,implements,"2026-07-26T05:55:02.922Z",null,null
 body: "## Latent relationships available today\nPull-request lanes record which change closed which items, in history messages and in evidence comments. Nightly failures record which leg produced which issue. Linked files record which items share a source region. Linked test runs record which item a run verified. Scanner imports record which finding produced which triage batch. All of it is already immutable and none of it is a graph edge.\n\n## Derivation, not inference\nEvery edge this wave writes must trace to a specific immutable record. Similarity, co-occurrence, and title heuristics are out of scope — those produce plausible edges, and a plausible edge is worse than a missing one because it survives review by looking reasonable.\n\n## Ordering\nRuns after the baseline and the legacy hygiene batch so it is not writing edges into a structure that is about to be cleaned. Feeds the reachability profile, which can then measure real depth rather than depth inflated by noise.\n\n## Boundary\nNo generic density target. No automatic edge whose source and confidence cannot be explained."

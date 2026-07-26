@@ -6,15 +6,16 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli","area:contracts",simplification
 created_at: "2026-07-05T04:53:35.309Z"
-updated_at: "2026-07-25T06:28:03.396Z"
+updated_at: "2026-07-26T05:49:54.520Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: pm --help renders one screen listing canonical nouns only; pm help --all lists everything incl. aliases marked deprecated; help/completions/docs command tables generated from the contract table with a drift gate; after-measurement (pm-a22j script) shows reduced default help + contracts token cost
 parent: pm-n7rr
 risk: medium
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-pbyu,blocked_by,"2026-07-05T04:55:02.379Z",null,null
   pm-a22j,blocked_by,"2026-07-05T04:55:02.856Z",null,null
   pm-1kxs,implements,"2026-07-25T06:28:03.187Z",null,null
+  pm-z436,implements,"2026-07-26T05:49:54.251Z",null,null
 body: ""

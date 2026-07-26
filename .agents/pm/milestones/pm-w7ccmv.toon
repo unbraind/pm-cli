@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: audit,history,"horizon:mid",immutability,integrity,milestone,outcome
 created_at: "2026-07-24T23:43:21.135Z"
-updated_at: "2026-07-25T12:36:19.574Z"
+updated_at: "2026-07-26T05:57:41.329Z"
 deadline: "2027-03-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 5400
@@ -20,7 +20,7 @@ why_now: "Workspace-scoped mutations (schema, config, profile, init) still leave
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[16]{id,kind,created_at,author,source_kind}:
+dependencies[17]{id,kind,created_at,author,source_kind}:
   pm-33cw,related,"2026-07-24T23:43:21.135Z",null,null
   pm-3z0k,related,"2026-07-24T23:43:21.135Z",null,null
   pm-9yfo,related,"2026-07-24T23:43:21.135Z",null,null
@@ -37,4 +37,5 @@ dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-gw6uyq,related,"2026-07-25T12:36:19.267Z",null,null
   pm-qwuber,related,"2026-07-25T12:36:19.267Z",null,null
   pm-wlqxg3,related,"2026-07-25T12:36:19.267Z",null,null
+  pm-doxj,implements,"2026-07-26T05:57:41.060Z",null,null
 body: "## Outcome\nEvery mutating pm action leaves a permanent, tamper-evident record. Any item is restorable to any recorded version. A third party holding only an exported proof bundle can confirm the recorded history was never altered.\n\n## Standing invariant this closes\nThe product invariant states that all mutating actions record permanently and immutably. Today item mutations satisfy it; workspace-scoped mutations (pm-klo8) do not, the completeness gate proving it (pm-9yfo) is not built, portable proof (pm-3z0k) is not exported, and authorship (pm-u14c) is self-asserted.\n\n## Delivery chain\npm-9yfo completeness gate (phase 1 item scope first) -> pm-klo8 workspace audit stream -> pm-3z0k portable attestation -> pm-u14c per-entry signatures. Compaction, redaction, and repair paths must each be proven not to break replay.\n\n## Explicit non-goals\nNo history rewriting to fix legacy gaps. No hand-attribution of legacy unknown-author events."

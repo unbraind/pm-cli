@@ -6,18 +6,19 @@ status: open
 priority: 1
 tags[4]: agent-ux,gh-711,governance,relationships
 created_at: "2026-07-25T15:23:57.781Z"
-updated_at: "2026-07-25T17:52:36.495Z"
+updated_at: "2026-07-26T05:57:30.803Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "pm update accepts the same allow-missing-parent escape hatch as pm create, with one shared flag spelling and one shared contract entry rather than a second per-command implementation; using it under strict parent_reference governance records a validation warning instead of failing, matching create-side behaviour exactly; omitting it preserves today's strict fail-fast on an unresolved parent; forward-declared hierarchy construction (child created or re-parented before its parent exists) round-trips through create and update without disabling parent validation globally; a parity spec asserts create/update agreement for the flag, its warning payload, and its history record"
 parent: pm-usfg
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-p9hw,related,"2026-07-25T15:23:57.781Z",null,null
   pm-fs8q9x,related,"2026-07-25T17:52:36.305Z",null,null
   pm-wt43zj,related,"2026-07-25T17:52:36.305Z",null,null
   pm-x2aplf,related,"2026-07-25T17:52:36.305Z",null,null
+  pm-usfg,implements,"2026-07-26T05:57:30.548Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T15:23:57.781Z","harness:codex","Duplicate check: searched every tracker status for GH-711, allow missing parent, strict parent_reference, and update parent parity; no canonical item exists. Related lineage: pm-p9hw established create parent semantics and pm-usfg owns SDK-first mutation parity."
 body: ""

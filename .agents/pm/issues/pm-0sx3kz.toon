@@ -6,15 +6,16 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-26T00:58:27.183Z"
-updated_at: "2026-07-26T00:58:41.081Z"
+updated_at: "2026-07-26T05:57:35.602Z"
 author: "harness:codex"
 acceptance_criteria: "A GitHub source with a missing manifest entry reports the copy-without-build cause without executing untrusted package scripts; When package metadata identifies a published package, remediation includes the exact npm source command; otherwise it recommends a locally built path; Extension author and install documentation distinguish GitHub source trees from built npm artifacts; Temporary-repository acceptance covers missing dist, committed dist, npm fallback, and bounded error output"
 parent: pm-usfg
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-2p7a,related,"2026-07-26T00:58:27.183Z",null,null
   pm-59gj,related,"2026-07-26T00:58:27.183Z",null,null
   pm-ejy7,related,"2026-07-26T00:58:27.183Z",null,null
   pm-w7mqzt,related,"2026-07-26T00:58:27.183Z",null,null
+  pm-usfg,implements,"2026-07-26T05:57:35.363Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-26T00:58:27.183Z","harness:codex","Duplicate check: searched all statuses for GH-720,GitHub source install,committed build output,missing dist entry,and npm alternative diagnostics. Closed pm-59gj owns package-first installation,pm-ejy7 owns an npm runtime-loader defect,and pm-2p7a owns TypeScript loading,but none owns the current GitHub-copy source mismatch and actionable fallback; this distinct issue is linked under the SDK-first ecosystem epic pm-usfg."
   "2026-07-26T00:58:41.081Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/720"

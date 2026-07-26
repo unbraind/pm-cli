@@ -6,15 +6,17 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:mcp","area:schema",extensibility
 created_at: "2026-07-25T21:13:30.593Z"
-updated_at: "2026-07-25T21:13:30.593Z"
+updated_at: "2026-07-26T05:59:27.865Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "MCP tool schemas are derived from the active workspace runtime rather than a static snapshot: registered custom item types and statuses appear in the relevant enums, and registered custom fields are declared and settable through pm_create and pm_update with the value persisting. Extension-contributed commands are discoverable over MCP, either as tools or via a runtime-populated pm_run action domain, rather than only guessable. The unexpected-argument warning distinguishes arguments that were honored from arguments that were discarded, and discarding a value never reports it as passed through unchanged. tools/list cost is measured before and after and does not regress for a workspace with no customization. A regression test drives the MCP server against a workspace with a custom type, status, field and extension command and asserts each is both discoverable and usable."
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-pww8ax,related,"2026-07-25T21:13:30.593Z",null,null
   pm-upi0,related,"2026-07-25T21:13:30.593Z",null,null
   pm-xwah,related,"2026-07-25T21:13:30.593Z",null,null
+  pm-1kxs,implements,"2026-07-26T05:49:32.011Z",null,null
+  pm-5k4v,implements,"2026-07-26T05:59:27.658Z",null,null
 body: ""

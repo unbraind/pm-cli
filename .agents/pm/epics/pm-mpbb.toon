@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:lifecycle",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:10.452Z"
-updated_at: "2026-07-25T06:32:04.787Z"
+updated_at: "2026-07-26T05:48:50.031Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: Never-block error contract holds across the command surface (recovery bundle with next steps on every failure path); agent-UX review findings closed or waived.
@@ -16,10 +16,11 @@ value: "Faster, safer agent/human workflows over the core item lifecycle"
 parent: pm-doxj
 risk: low
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-5t33or,related,"2026-07-24T23:54:46.178Z",null,null
   pm-j82fd3,related,"2026-07-24T23:54:46.178Z",null,null
   pm-z9x1r2,related,"2026-07-24T23:54:46.178Z",null,null
+  pm-j82fd3,implements,"2026-07-26T05:48:49.793Z",null,null
 comments[9]{created_at,author,text}:
   "2026-07-08T16:41:52.545Z",claude-code-agent,"Bundle evidence: wide agent-UX PR now covers GH-470 list recency shorthands and GH-442 contracts summary, with shared contract/completion/test updates for agent token efficiency."
   "2026-07-08T17:07:58.712Z",claude-code-agent,"Verification evidence: full coverage passed at 100/100/100/100 (5462 tests), lint/static/docs/contracts gates passed, and packed-install temp proof passed in /tmp/pm-agent-ux-proof-TYSgf1 for pm list --today, pm list --recent, pm contracts --summary, and SDK runAction({action:'contracts', options:{summary:true}})."

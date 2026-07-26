@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[4]: bug,gh-issue,health,never-block
 created_at: "2026-07-06T08:03:12.192Z"
-updated_at: "2026-07-06T08:03:44.622Z"
+updated_at: "2026-07-26T05:56:21.581Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "pm health always returns within a bounded time, reporting a timed-out vectorization check with --skip-vectors hint instead of hanging; spec with hanging fake provider; root blocking call identified"
 parent: pm-5oj5
 risk: medium
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-aems,related,"2026-07-06T08:03:44.599Z",null,null
+  pm-5oj5,implements,"2026-07-26T05:56:21.340Z",null,null
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/457\n\n## Problem (never-block violation)\n`pm health` can hang during the vectorization check with NO output until killed by an external timeout; same tracker returns immediately when vectorization is skipped. Reproduces with extensions disabled. Health is an agent-loop gating command — it must never hang silently.\n\n## Proposed fix\nHard timeout + progress/heartbeat around the vectorization probe (bounded like the lock-wait work in 010bb349); on timeout, report vectorization check as timed-out with skip hint (--skip-vectors) instead of hanging; investigate the underlying blocking call (likely embedding provider probe without socket timeout — same family as the GH-455 item).\n\n## Definition of done\npm health always returns within a bounded time with partial results on vectorization stall; timeout covered by spec with a hanging fake provider; docs note --skip-vectors."

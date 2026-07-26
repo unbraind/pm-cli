@@ -6,15 +6,16 @@ status: open
 priority: 2
 tags[3]: agent-ux,audit-followup,cli
 created_at: "2026-07-02T21:55:37.614Z"
-updated_at: "2026-07-17T21:40:24.664Z"
+updated_at: "2026-07-26T05:49:53.534Z"
 author: claude-code-agent
 estimated_minutes: 120
 acceptance_criteria: Unknown-option errors suggest valid flags via did-you-mean; list-closed projection is compact by default; schema add-field is discoverable from pm schema help output.
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-fpod,related,"2026-07-02T21:55:55.076Z",null,null
+  pm-1kxs,implements,"2026-07-26T05:49:53.289Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-07T14:19:22.611Z",maintainer-agent,"Fresh first-hand repro 2026-07-07 for defect 1: pm update <id> --expected-result ... -m 'msg' fails exit 2 'Unknown option -m' with zero suggestions, even though (a) --message exists on update and (b) -m is the close alias for the same concept — the cross-command hint layer shipped in pm-8nyc does not cover single-char short flags. Same alias-parity class as closed pm-1lws (--expected/--actual). Scope: did-you-mean must include short-flag aliases and cross-command parity for -m/--message on update. Note the failure is invisible under output truncation (| tail) — a second reason the structured error payload matters."
   "2026-07-07T14:45:57.827Z",maintainer-agent,"2026-07-07 verified defect in the shipped flag suggester, same fix locus: the unknown-option error's cross-command hint list is INCOMPLETE and therefore misleading. Repro: 'pm notes pm-vvib --format json' errors with '--format is a valid option on: config, list, list-all' — but get, search (and more) also accept --format (verified exit 0 same session). Wrong information is worse than none: an agent following the hint abandons valid commands. Fix: derive the valid-on list from the same contracts source used by completion/SCHEMA_CONTRACTS instead of a partial index; add a contract test asserting every command accepting --format appears in the hint."

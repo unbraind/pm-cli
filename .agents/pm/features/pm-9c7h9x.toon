@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,integrity,property-testing,quality,testing
 created_at: "2026-07-25T12:31:35.988Z"
-updated_at: "2026-07-25T12:35:41.275Z"
+updated_at: "2026-07-26T05:59:39.444Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "The invariant set is declared explicitly as data — chain verifiability, edge resolvability, derived-artifact agreement, lifecycle reachability, per-item reconstructability — with each invariant naming what violates it; Randomized sequences cover create, update, close, restore, delete, redact, compact, merge, schema change, and config change in arbitrary orders; A violation produces a minimal shrunk reproducer plus a seed that reproduces it deterministically; Every violation found is filed as an item with its reproducer added to the permanent regression corpus, linked discovered_from this item; The suite runs on a schedule with a time budget rather than blocking every change, and a violation opens work immediately rather than being retried; Coverage over the declared invariant set is reported, so an invariant no sequence has ever attacked is visible as a gap"
@@ -18,7 +18,7 @@ outcome: "Integrity defects are found by machine before a workspace hits them, w
 parent: pm-33cw
 risk: medium
 confidence: 65
-dependencies[12]{id,kind,created_at,author,source_kind}:
+dependencies[15]{id,kind,created_at,author,source_kind}:
   pm-0yi7,related,"2026-07-25T12:31:35.988Z",null,null
   pm-33cw,related,"2026-07-25T12:31:35.988Z",null,null
   pm-76dnfg,related,"2026-07-25T12:31:35.988Z",null,null
@@ -31,4 +31,7 @@ dependencies[12]{id,kind,created_at,author,source_kind}:
   pm-k6t4yb,related,"2026-07-25T12:35:40.664Z",null,null
   pm-wlqxg3,related,"2026-07-25T12:35:40.664Z",null,null
   pm-xp1xsw,related,"2026-07-25T12:35:40.664Z",null,null
+  pm-33cw,verifies,"2026-07-26T05:50:04.838Z",null,null
+  pm-33cw,implements,"2026-07-26T05:54:48.068Z",null,null
+  pm-rggtvd,verifies,"2026-07-26T05:59:39.196Z",null,null
 body: ""

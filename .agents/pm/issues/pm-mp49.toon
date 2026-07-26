@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:contracts","area:extensions",governance-audit
 created_at: "2026-07-13T21:36:43.027Z"
-updated_at: "2026-07-13T21:36:43.027Z"
+updated_at: "2026-07-26T05:56:27.325Z"
 author: codex-root
 estimated_minutes: 90
 acceptance_criteria: "dedupe-audit accepts --status all as an explicit no-restriction sentinel; output echoes filters.status=all; configured custom statuses still validate; omission and --status all return the same all-item candidate set; help, package contracts, completions, docs, and focused tests stay aligned"
@@ -20,9 +20,10 @@ expected_result: "The audit considers every lifecycle status, matching pm list/s
 actual_result: The command exits invalid_argument_value because its status domain excludes the all sentinel.
 component: pm-governance-audit/dedupe-audit
 customer_impact: Agents cannot express the repository-required all-status duplicate sweep through the audit command and must know that omitting the filter has undocumented broader semantics.
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-i02t,related,"2026-07-13T21:36:43.027Z",codex-root,null
   pm-vjk3,related,"2026-07-13T21:36:43.027Z",codex-root,null
+  pm-ugqx,implements,"2026-07-26T05:56:27.002Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-13T21:36:43.027Z",codex-root,"Duplicate check evidence: all-status searches for dedupe-audit status-all and governance audit contract parity found closed core parity item pm-i02t plus closed extraction lineage pm-vjk3/pm-79fr,but no active package-owned issue for the live pm 2026.7.13 rejection. Reproduced during the 1,784-item all-status audit."
 body: ""

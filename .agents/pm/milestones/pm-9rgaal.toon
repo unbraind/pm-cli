@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "horizon:near-mid",milestone,outcome,platform,sdk,universal-tool
 created_at: "2026-07-24T23:43:03.056Z"
-updated_at: "2026-07-25T12:36:28.453Z"
+updated_at: "2026-07-26T05:57:44.074Z"
 deadline: "2026-12-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 6000
@@ -20,7 +20,7 @@ why_now: Every new command shipped against private core widens the promotion bac
 parent: pm-doxj
 risk: medium
 confidence: high
-dependencies[9]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-feecbs,related,"2026-07-24T23:43:03.056Z",null,null
   pm-m08hza,related,"2026-07-24T23:43:03.056Z",null,null
   pm-m9xv,related,"2026-07-24T23:43:03.056Z",null,null
@@ -30,4 +30,5 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-j82fd3,related,"2026-07-24T23:44:36.707Z",null,null
   pm-g608fc,related,"2026-07-25T12:36:27.640Z",null,null
   pm-iiv1gl,related,"2026-07-25T12:36:27.640Z",null,null
+  pm-doxj,implements,"2026-07-26T05:57:43.773Z",null,null
 body: "## Outcome\nThe pm SDK is a complete, documented, public API for repository-native project context. The CLI is one presentation layer over it; MCP is another; third parties can build a third.\n\n## Why this is a milestone, not an epic\npm-usfg is the living promotion epic. This milestone is the outcome gate that the universal-domain milestone and the GA semver surface both consume.\n\n## Delivery chain\nRemaining pm-usfg promotion slices -> boundary ratchet hardened to a failing gate -> authoring docs and exemplar -> pm-feecbs conformance gate can then measure external packages against a stable surface.\n\n## Explicit non-goals\nNot an API freeze — semver commitments belong to the GA milestone. Not a rewrite: promotion moves code, it does not redesign it."

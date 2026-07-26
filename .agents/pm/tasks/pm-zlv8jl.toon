@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: ci,governance,quality,testing
 created_at: "2026-07-25T06:17:53.723Z"
-updated_at: "2026-07-25T06:17:53.723Z"
+updated_at: "2026-07-26T05:55:42.574Z"
 author: unknown
 estimated_minutes: 600
 acceptance_criteria: "CI collects per-test outcome history across runs and computes a stability score for every test in the suite; A test crossing the instability threshold automatically produces or updates one tracked item carrying the observed failure rate, the platforms involved, and links to the failing runs, with no duplicate filed for an already-tracked test; A quarantine list exists with a declared maximum size that ratchets downward and cannot be raised without an explicit recorded decision; Quarantined tests continue to execute and report their results; they are excluded only from the pass/fail gate, and their exclusion is visible in the run summary; A genuine regression in a quarantined test is still detectable, proven by an acceptance test that regresses a quarantined test and asserts the signal is not lost"
@@ -19,10 +19,12 @@ why_now: The defect-escape ratchet and mutation-testing gate both assume the sui
 parent: pm-u9d0
 risk: medium
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-a8lnoh,related,"2026-07-25T06:17:53.723Z",null,null
   pm-ld0z,related,"2026-07-25T06:17:53.723Z",null,null
   pm-rtn5h6,related,"2026-07-25T06:17:53.723Z",null,null
   pm-tgq6,related,"2026-07-25T06:17:53.723Z",null,null
   pm-zclzll,related,"2026-07-25T06:17:53.723Z",null,null
+  pm-u9d0,verifies,"2026-07-26T05:50:09.086Z",null,null
+  pm-u9d0,implements,"2026-07-26T05:55:42.346Z",null,null
 body: ""

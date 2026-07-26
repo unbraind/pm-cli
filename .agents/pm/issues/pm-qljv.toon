@@ -6,13 +6,14 @@ status: open
 priority: 2
 tags[6]: agent-ux,cli,gh-issue,hints,search,semantic
 created_at: "2026-07-12T18:53:06.487Z"
-updated_at: "2026-07-12T18:53:06.487Z"
+updated_at: "2026-07-26T05:56:24.860Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "The staleness warning renders a remediation that is executable in the CURRENT runtime configuration: when @unbrained/pm-search-advanced is absent it says to pm install the package first (or points to the actual base reindex path), when present it keeps the pm reindex --mode hybrid hint; no rendered hint on a base install leads to Unknown command; spec covers both configurations (--no-extensions and with the package)"
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-gdi7,related,"2026-07-12T18:53:06.487Z",null,null
+  pm-mpbb,implements,"2026-07-26T05:56:24.608Z",null,null
 body: ""

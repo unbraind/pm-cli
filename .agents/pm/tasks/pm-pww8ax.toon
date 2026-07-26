@@ -6,14 +6,14 @@ status: open
 priority: 3
 tags[4]: governance,pm-cli,quality-gate,self-hosting
 created_at: "2026-07-25T17:49:53.478Z"
-updated_at: "2026-07-25T17:59:13.231Z"
+updated_at: "2026-07-26T05:55:49.607Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "A report derived from the runtime schema and contract tables plus workspace history lists every shipped agent-reachable capability with its last-exercised timestamp in this workspace or never; every never-exercised capability carries a recorded disposition of adopt, cover (named scenario test), or waive (documented reason) on its owning item; a gate fails when a capability is neither exercised nor dispositioned, and the undispositioned set is shrinking-only so a newly shipped capability must arrive with its disposition; the currently-zero set (custom fields, custom statuses, applied profiles, Meeting/Event items, extension-contributed types and relationship kinds) is dispositioned as the first pass; the report is token-budgeted and runnable in CI"
 parent: pm-33cw
 risk: low
 confidence: high
-dependencies[8]{id,kind,created_at,author,source_kind}:
+dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-8jdc,related,"2026-07-25T17:49:53.478Z",null,null
   pm-jkjt,related,"2026-07-25T17:49:53.478Z",null,null
   pm-k6t4yb,related,"2026-07-25T17:49:53.478Z",null,null
@@ -22,4 +22,6 @@ dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-z5nb,related,"2026-07-25T17:49:53.478Z",null,null
   pm-8pnj,related,"2026-07-25T17:59:12.968Z",null,null
   pm-9yfo,related,"2026-07-25T17:59:12.968Z",null,null
+  pm-33cw,verifies,"2026-07-26T05:50:17.447Z",null,null
+  pm-33cw,implements,"2026-07-26T05:55:49.333Z",null,null
 body: "## Rationale\n\nThis repository's own `.agents/pm` workspace is the product's most-used deployment and its primary defect-discovery mechanism: nearly every agent-UX defect in the tracker was found by using pm to manage pm. That mechanism only covers capabilities the maintainer workspace actually exercises. A shipped capability nobody here uses has no live user at all, so its defects surface at an external adopter instead of in CI.\n\n## Measured coverage (2026-07-25, 2,022 items)\n\nExercised: 11 built-in types, 1 custom type (Story), Plans (21), Milestones (7), claims/releases, comments/notes/learnings, files/docs/tests links, structured deps across 9 edge kinds, history redact/repair/compact, merge drivers, telemetry, graph analytics.\n\nNever exercised:\n- **custom fields: 0** — `pm schema add-field` ships and the workspace declares no field, so field validation, projection, and merge behaviour for custom fields are untested by dogfooding.\n- **custom statuses: 0** — 6 built-ins only; per-type workflows unexercised (pm-z5nb owns completing that capability).\n- **project profiles: 3 shipped (agile, ops, research), 0 applied** — profile apply/lint has no dogfood signal.\n- **Meeting: 0 items, Event: 0 items, Reminder: 1** — the calendar surface (`pm meet`/`pm event`/`pm remind`) is effectively unused, which is exactly how GH-450 (`--duration 5m` parses as 5 months, pm-jkjt) survived: a silent wrong-data defect in a type nobody creates.\n- extension-contributed types, custom relationship kinds, and `--type-option` values likewise carry no live usage.\n\n## Deliverable\n\nNot \"adopt every feature\" — adoption for its own sake would pollute the tracker. The deliverable is **visibility plus a decision per capability**:\n\n1. A capability-usage report derived from the workspace and the runtime schema/contract tables: for each shipped, agent-reachable capability, when it was last exercised in this workspace (from history), or never.\n2. A disposition for every never-exercised capability, recorded on the owning item: **adopt** (use it here for real work), **cover** (a scenario test carries the load dogfooding would have), or **waive** (documented reason, e.g. a capability that only makes sense in a foreign domain).\n3. A ratchet: the never-exercised-and-undispositioned set may only shrink. A new capability ships with its disposition, so the gap cannot silently regrow — the same shrinking-allowlist shape as the eslint-suppression and unaudited-mutation ratchets.\n\n## Relationship to neighbours\n\n- pm-xgcp18 proves documented examples execute; this proves shipped capabilities are exercised by real tracked work. Complementary, not overlapping.\n- pm-k6t4yb registers enforced gates; this registers exercised capabilities.\n- pm-z5nb completes the schema-customization capability; this measures whether we then use it.\n- pm-rtn5h6 turns escaped defects into gates; \"never dogfooded\" is the leading indicator that predicts where those escapes come from."

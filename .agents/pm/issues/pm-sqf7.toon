@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-experience,gh-issue,install,onboarding
 created_at: "2026-07-06T21:08:48.035Z"
-updated_at: "2026-07-24T23:54:03.733Z"
+updated_at: "2026-07-26T05:57:20.766Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: pm --version (or pm doctor) detects multiple global installs / PATH-shadowed binaries and warns with the active binary path; or postinstall verifies the active pm on PATH matches the installed package
@@ -18,9 +18,10 @@ severity: medium
 repro_steps: 1. Have two npm global prefixes on PATH (e.g. ~/.npm-global and homebrew). 2. npm install -g @unbrained/pm-cli@latest into one prefix. 3. pm --version resolves the stale binary from the other prefix.
 expected_result: "pm --version reflects the just-installed package, or warns that the active binary path does not match the installed package"
 actual_result: pm --version silently reports the old version resolved from a different npm global prefix
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-d4ns,related,"2026-07-14T17:05:14.093Z",null,null
   pm-ir9vqy,related,"2026-07-24T23:54:03.489Z",null,null
   pm-pae3wo,related,"2026-07-24T23:54:03.489Z",null,null
   pm-u9d0,related,"2026-07-24T23:54:03.489Z",null,null
+  pm-u9d0,implements,"2026-07-26T05:57:20.528Z",null,null
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/469\n\n## Problem\nWhen multiple npm global prefix paths exist, `pm --version` can show a stale version even after `npm install -g @unbrained/pm-cli@latest` — agents conclude the upgrade failed or operate against an old surface.\n\n## Proposed fix\nDetect and warn about PATH-shadowed pm binaries (compare active binary path vs installed package), either at --version/doctor time or via a postinstall verification."

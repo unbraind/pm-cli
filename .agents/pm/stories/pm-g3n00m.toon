@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ux,context-management,story,token-efficiency
 created_at: "2026-07-25T12:39:48.106Z"
-updated_at: "2026-07-25T12:40:06.134Z"
+updated_at: "2026-07-26T05:49:09.891Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Tokens per completed task is measured over a representative agent-task corpus and tracked release over release as the composite figure; A component change that improves its own metric while raising the composite fails, proven by a deliberate negative-control scenario; The corpus covers the small-workspace, large-workspace, failing-command, and returning-agent cases, so no scenario is optimized at another's expense; An agent can obtain a per-invocation breakdown of what its budget was spent on without leaving its normal loop; No command's answer omits a field the corpus tasks actually consume, asserted by a completeness check rather than by reviewer judgment; The composite figure is published with the release so the trend is externally visible rather than internal-only"
@@ -18,7 +18,7 @@ outcome: "Token efficiency has one acceptance surface measured as tokens per com
 parent: pm-mpbb
 risk: low
 confidence: 75
-dependencies[16]{id,kind,created_at,author,source_kind}:
+dependencies[17]{id,kind,created_at,author,source_kind}:
   pm-1kxs,related,"2026-07-25T12:39:48.106Z",null,null
   pm-5t33or,related,"2026-07-25T12:39:48.106Z",null,null
   pm-8pnj,related,"2026-07-25T12:39:48.106Z",null,null
@@ -35,4 +35,5 @@ dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-m9xv,related,"2026-07-25T12:40:05.770Z",null,null
   pm-o87av6,related,"2026-07-25T12:40:05.770Z",null,null
   pm-z436,related,"2026-07-25T12:40:05.770Z",null,null
+  pm-j82fd3,implements,"2026-07-26T05:49:09.616Z",null,null
 body: ""

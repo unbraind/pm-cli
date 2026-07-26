@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: claude-plugin,distribution,dx,mcp
 created_at: "2026-07-11T10:05:12.199Z"
-updated_at: "2026-07-13T21:37:24.034Z"
+updated_at: "2026-07-26T05:56:29.596Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Marketplace/cache install serves MCP tools via in-process import from ${CLAUDE_PLUGIN_DATA} install (no npx at server start; offline after first session); SessionStart hook uses the same pinned local install instead of npx @latest; DONE via pm-hxsv (2026-07-11): plugin/marketplace/package versions are date-based and release-automation keeps them in lockstep with the root package (scripts/sync-versions.mjs apply in pipeline + version:check CI gate); duplicate version fields retained deliberately but always identical; Plugin ships a package.json pinning @unbrained/pm-cli to the exact version the snapshot was built against, so served tools match the plugin's skills/commands; Smoke test exercises the installed/cache layout (no dist/ ancestor) and asserts the native path, not the npx fallback; docs/CLAUDE_CODE_PLUGIN.md and plugin README updated to match actual resolution behavior"
@@ -22,6 +22,8 @@ expected_result: "Marketplace-installed plugin serves the native in-process MCP 
 actual_result: "findRepoServer() cannot resolve dist/mcp/server.js from the plugin cache, so every installed user runs the npx @latest fallback for both the MCP server and the SessionStart hook; plugin.json pins 1.4.1 (never bumped since 2026-07-02) while the fallback tracks npm latest — unbounded contract skew"
 affected_version: 1.4.1
 component: plugins/pm-claude
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ugqx,implements,"2026-07-26T05:56:29.363Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-11T10:19:45.696Z",maintainer-agent,"Partial progress via pm-hxsv (closed 2026-07-11): the version-skew half is fixed at the policy level — all plugin/marketplace/package manifests now carry the root date-based version (2026.7.11), the release pipeline re-stamps them on every cut, and the CI static gate rejects drift. Effect: marketplace users receive a plugin update with every release instead of being frozen at 1.4.1. STILL OPEN (core of this item): the npx@latest fallback itself — plugin must bundle a pinned package.json + ${CLAUDE_PLUGIN_DATA} install so the served MCP server matches the plugin version and works offline; date-lockstep makes that pin trivial (plugin version == npm version by construction)."
 notes[1]{created_at,author,text}:

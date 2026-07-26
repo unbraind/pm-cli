@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:sdk",customization,extensibility,platform,universal-domain
 created_at: "2026-07-25T12:30:36.097Z"
-updated_at: "2026-07-25T20:50:35.065Z"
+updated_at: "2026-07-26T05:49:30.912Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A domain pack declares custom types, custom edge kinds with their semantics, invariants, projections, and lifecycle rules through documented public SDK surface only, with no private core imports; Declared invariants are enforced by validation, so a pack can make an illegal state unrepresentable rather than merely discouraged; Declared projections honor the token budget and degrade deterministically, like core read surfaces; A scaffold generates a working pack, and a conformance test tells an author whether their pack is correct, with named failures rather than a generic error; Building the kit produces a filed item for every SDK gap encountered, linked to this item as discovered_from, and none are worked around privately; The kit is exercised by rebuilding at least one existing exemplar on top of it, proving it is sufficient rather than merely plausible"
@@ -18,7 +18,7 @@ outcome: "A developer models a new domain in hours using declared substrate, and
 parent: pm-8jdc
 risk: medium
 confidence: 60
-dependencies[15]{id,kind,created_at,author,source_kind}:
+dependencies[16]{id,kind,created_at,author,source_kind}:
   pm-8jdc,related,"2026-07-25T12:30:36.097Z",null,null
   pm-8ngt,related,"2026-07-25T12:30:36.097Z",null,null
   pm-cbwg,related,"2026-07-25T12:30:36.097Z",null,null
@@ -34,4 +34,5 @@ dependencies[15]{id,kind,created_at,author,source_kind}:
   pm-z5nb,related,"2026-07-25T12:35:33.331Z",null,null
   pm-t4d7nz,verifies,"2026-07-25T20:44:49.584Z",null,null
   pm-9rgaal,verifies,"2026-07-25T20:50:34.788Z",null,null
+  pm-xc68,implements,"2026-07-26T05:49:30.707Z",null,null
 body: ""

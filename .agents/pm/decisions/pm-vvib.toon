@@ -6,19 +6,20 @@ status: open
 priority: 2
 tags[3]: adr,"area:sdk",context-management
 created_at: "2026-07-06T23:46:02.648Z"
-updated_at: "2026-07-09T11:41:39.414Z"
+updated_at: "2026-07-26T05:49:24.590Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "ADR reviewed and moved to accepted or rejected with rationale recorded; if accepted: the mapping table names one owning implementation item per memory subsystem, pm-atfm scenario classes include returning-agent continuity cases, and a docs context-architecture page task is filed"
 parent: pm-m2u1
 risk: low
 confidence: medium
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-4k6b,related,"2026-07-06T23:46:41.204Z",null,null
   pm-5qmm,related,"2026-07-06T23:46:41.204Z",null,null
   pm-atfm,related,"2026-07-06T23:46:41.204Z",null,null
   pm-bwyw,related,"2026-07-06T23:46:41.204Z",null,null
   pm-hib1,related,"2026-07-06T23:46:41.204Z",null,null
+  pm-o87av6,implements,"2026-07-26T05:49:24.357Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-07T06:50:35.049Z",maintainer-agent,"Subsystem-map addition proposed: pm-uwfs (context usage feedback signal) supplies the one mechanism this ADR's seven-subsystem map omits — memory strengthening through recall (retrieval-practice effect). If this ADR is accepted, add it as the eighth mapping: served-then-acted-on outcomes -> usage-affinity scoring input in pm-4k6b, with the existing graceful-forgetting decay as the complementary weakening term. Exploration/anti-lock-in guard is stated in pm-uwfs acceptance criteria."
 notes[17]{created_at,author,text}:

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:mcp",context,tokens
 created_at: "2026-07-25T06:19:10.696Z"
-updated_at: "2026-07-25T06:19:10.696Z"
+updated_at: "2026-07-26T05:59:28.918Z"
 author: unknown
 estimated_minutes: 720
 acceptance_criteria: "The server declares and implements the resources capability, exposing at least the workspace context pack, the active focus and claims, and the agent guidance as addressable resources with stable URIs and change notifications; The server declares and implements the prompts capability, publishing the canonical agent workflows as named parameterized prompts generated from the same contracts table that generates tools; Resource and prompt payloads honour the declared output token budgets and the same projection and format contracts as the CLI; Adding these capabilities does not increase the tool count, and the cold-start token measurement is re-run to show the net effect; Hosts that support only tools are unaffected, proven by an acceptance test against a tools-only client"
@@ -19,11 +19,13 @@ why_now: "The MCP capability epic has no other open work, tool-count pressure is
 parent: pm-5k4v
 risk: medium
 confidence: medium
-dependencies[6]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-5t33or,related,"2026-07-25T06:19:10.696Z",null,null
   pm-9k90,related,"2026-07-25T06:19:10.696Z",null,null
   pm-ka6d,related,"2026-07-25T06:19:10.696Z",null,null
   pm-mu8m,related,"2026-07-25T06:19:10.696Z",null,null
   pm-xwah,related,"2026-07-25T06:19:10.696Z",null,null
   pm-z3ez,related,"2026-07-25T06:19:10.696Z",null,null
+  pm-1kxs,implements,"2026-07-26T05:49:33.604Z",null,null
+  pm-5k4v,implements,"2026-07-26T05:59:28.681Z",null,null
 body: ""

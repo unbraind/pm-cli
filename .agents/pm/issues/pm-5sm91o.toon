@@ -6,14 +6,15 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-26T01:00:16.908Z"
-updated_at: "2026-07-26T01:00:28.371Z"
+updated_at: "2026-07-26T05:59:20.670Z"
 author: "harness:codex"
 acceptance_criteria: A deterministic verbose-child regression reproduces the released EAGAIN path without excessive fixture output; Linked tests continuously drain child pipes through completion while bounding retained and disclosed output; Transport truncation and failures are classified separately from product assertion failures; Node and Bun subprocess acceptance plus full repository gates pass
 parent: pm-j36ypd
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-7rlp,related,"2026-07-26T01:00:16.908Z",null,null
   pm-vrsn,related,"2026-07-26T01:00:16.908Z",null,null
   pm-wo8,related,"2026-07-26T01:00:16.908Z",null,null
+  pm-u9d0,implements,"2026-07-26T05:59:20.429Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-26T01:00:16.908Z","harness:codex","Duplicate check: searched all statuses for EAGAIN,Resource temporarily unavailable,verbose linked-test output,bounded drain,and max-buffer behavior. Closed pm-j36ypd owns the original GH-679 fix; GH-714 is a released-version regression with contradictory evidence and therefore needs a distinct child issue rather than reopening the completed historical result."
   "2026-07-26T01:00:28.371Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/714"

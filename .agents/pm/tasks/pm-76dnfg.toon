@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: ci,concurrency,durability,merge,multi-agent,property-testing,quality-gate
 created_at: "2026-07-24T23:47:07.080Z"
-updated_at: "2026-07-25T20:44:58.125Z"
+updated_at: "2026-07-26T05:59:53.320Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: "The suite generates randomized divergent branches covering create, update, close, annotate, dependency edit, schema change, and config change; Merges are asserted order-independent: merging the same branch set in different orders converges to the same state; Every tracked artifact class is covered by the fence, and a new unfenced artifact class fails the suite rather than silently merging with the default driver; History union preserves every entry from every branch with no cross-author loss and a verifying chain after reanchor; Conflict count is asserted at zero for non-contradictory concurrent edits, and contradictory edits produce a deterministic, documented resolution"
@@ -19,7 +19,7 @@ why_now: "Since the merge program closed, new tracked artifact classes appeared 
 parent: pm-o2kc
 risk: medium
 confidence: medium
-dependencies[9]{id,kind,created_at,author,source_kind}:
+dependencies[12]{id,kind,created_at,author,source_kind}:
   pm-9yfo,related,"2026-07-24T23:47:07.080Z",null,null
   pm-a8lnoh,related,"2026-07-24T23:47:07.080Z",null,null
   pm-dj98,related,"2026-07-24T23:47:07.080Z",null,null
@@ -29,6 +29,9 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-rtn5h6,related,"2026-07-24T23:47:07.080Z",null,null
   pm-w7ccmv,related,"2026-07-24T23:47:07.080Z",null,null
   pm-2sbj8p,verifies,"2026-07-25T20:44:57.796Z",null,null
+  pm-c0wthb,verifies,"2026-07-26T05:50:15.420Z",null,null
+  pm-o2kc,implements,"2026-07-26T05:55:47.376Z",null,null
+  pm-9j2r3b,verifies,"2026-07-26T05:59:53.053Z",null,null
 notes[1]{created_at,author,text}:
   "2026-07-25T20:41:56.275Z","harness:claude-code","First live end-to-end run of this suite's core scenario against the shipped 2026.7.25 build, so the zero-conflict acceptance bar has a measured starting point. Throwaway git repository, pm merge install applied, base commit with a two-entry stream, then two branches each adding three entries to the same item, then git merge.\n\nProperties that already hold — record these as the baseline the suite must keep, not as work:\n- Zero conflict markers anywhere under .agents/pm. The only conflicts git reported were in my sandbox's PM_GLOBAL_PATH telemetry files, which I had placed inside the repository; no tracked pm artifact conflicted.\n- History union is complete and loses no author: 2 shared + 3 + 3 = 8 entries, ops create update comment_add update note_add comment_add update learning_add.\n- Field-aware convergence keeps both branches' non-contradictory edits: status in_progress from branch A and priority 1 from branch B in the same merged item.\n- Every annotation class survives from both sides: 2 comments, 1 note, 1 learning.\n- Point-in-time addressing of pre-divergence versions is stable across the merge: pm get --at 2 returns the identical state before and after.\n\nThe property that does not hold is the verifying chain after reanchor. Post-merge, pm history <id> --verify returns ok false with verify_failed:current_item_hash_mismatch (latest_after_hash f0dfb167..., current_item_hash 917a2941..., current_matches_latest false); pm validate reports validate_history_drift_hash_mismatches:1 with history_drift warn and overall ok true; and pm history-repair --dry-run reports chain_drift_before false with entries_rehashed 0, correctly declining because the chain itself verifies. The gap is that no entry describes the merged field set, so there is nothing to re-anchor to. The write-side primitive is filed as pm-9j2r3b; this suite's fourth acceptance clause is the property that proves it."
 body: "## Problem\nMerge safety was delivered as a program and closed. The artifact surface has grown since. The failure mode is quiet: a new file class ships without a merge driver entry, the default line-based driver applies, and two agents' work corrupts on merge — visible only after the fact.\n\n## Approach\nProperty-based conformance rather than example tests. Generate branch divergence randomly, merge in random orders, and assert algebraic properties: convergence, commutativity of independent merges, and history union completeness. Fence coverage becomes a derived assertion, not a checklist someone must remember to update.\n\n## Relationship to shipped work\nConsumes the shipped merge drivers, history union and reanchoring, storage integrity validation, and the fence. Adds the continuous proof those pieces lack. Shares the seeded-schedule infrastructure with the deterministic simulation harness rather than duplicating it.\n\n## Boundary\nNot a new merge algorithm. Contradictory-edit policy is documented behaviour to assert, not to redesign here."

@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: "area:sdk",exemplar,platform,proof,universal-domain
 created_at: "2026-07-25T12:30:38.270Z"
-updated_at: "2026-07-25T22:10:20.281Z"
+updated_at: "2026-07-26T05:50:25.925Z"
 author: "harness:claude-code"
 estimated_minutes: 960
 acceptance_criteria: "The exemplar is a package that imports public SDK surface only, asserted by the existing import-boundary gate with no waiver; Content-addressed objects, trees, commits, branches, merge, and point-in-time checkout are all expressed in pm primitives, with the mapping documented primitive by primitive; A property test commits a tree, branches, diverges, merges, and reconstructs an arbitrary prior state exactly, and runs in CI; Every capability that could not be expressed through public SDK surface is filed as an SDK gap item linked discovered_from this exemplar, and the exemplar documents the workaround it used meanwhile; The exemplar states plainly what it is not — it is a proof of expressiveness, not a production VCS — so the claim it supports stays accurate; A measured statement of scale limits is recorded, so the proof is not mistaken for a performance claim"
@@ -19,7 +19,7 @@ why_now: The claim is already published in the milestone and the marketing narra
 parent: pm-8jdc
 risk: high
 confidence: 50
-dependencies[12]{id,kind,created_at,author,source_kind}:
+dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-3z0k,related,"2026-07-25T12:30:38.270Z",null,null
   pm-4jk8kx,related,"2026-07-25T12:30:38.270Z",null,null
   pm-8ngt,verifies,"2026-07-25T12:30:38.270Z",null,null
@@ -32,4 +32,6 @@ dependencies[12]{id,kind,created_at,author,source_kind}:
   pm-wlqxg3,related,"2026-07-25T12:35:34.554Z",null,null
   pm-9rgaal,verifies,"2026-07-25T20:44:50.967Z",null,null
   pm-t4d7nz,verifies,"2026-07-25T22:10:20.063Z",null,null
+  pm-xc68,implements,"2026-07-26T05:49:49.016Z",null,null
+  pm-g608fc,verifies,"2026-07-26T05:50:25.668Z",null,null
 body: ""

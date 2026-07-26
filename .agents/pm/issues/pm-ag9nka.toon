@@ -6,15 +6,16 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli",diagnostics,observability,performance
 created_at: "2026-07-25T21:38:06.243Z"
-updated_at: "2026-07-25T21:38:06.243Z"
+updated_at: "2026-07-26T05:57:34.377Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The --profile output reports end-to-end invocation latency measured from process entry to output flush, and any narrower spans it also reports are labelled with what they cover so the total and its parts are distinguishable. The reported total agrees with externally measured wall clock within a stated tolerance for every command family, asserted by a regression test rather than by inspection. --profile is documented with its measured span and its output shape. Any latency budget or ratchet in this repository consumes the end-to-end figure."
 parent: pm-5oj5
 risk: low
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-801d,related,"2026-07-25T21:38:06.243Z",null,null
   pm-9rxu,related,"2026-07-25T21:38:06.243Z",null,null
   pm-yse5dt,related,"2026-07-25T21:38:06.243Z",null,null
+  pm-5oj5,implements,"2026-07-26T05:57:34.111Z",null,null
 body: ""

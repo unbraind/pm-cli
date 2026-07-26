@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,install,quality,release,testing
 created_at: "2026-07-25T12:31:34.837Z"
-updated_at: "2026-07-25T20:44:56.998Z"
+updated_at: "2026-07-26T05:55:41.280Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Acceptance installs the exact published artifact from the registry into a clean environment rather than building from the repository; A scripted agent session exercises the full cold-start loop — init, orient, create, claim, annotate, link evidence, close, validate, read context — asserting outcomes and bounded output at each step; The matrix covers the supported operating systems and the supported package managers, including the global-install path that has produced field defects; A failure blocks release advertisement and produces a report identifying the failing step, not merely a failing job; The acceptance session's token cost is recorded so cold-start cost is tracked release over release; The same session runs against the previous release to prove the harness itself is not the cause when a failure appears"
@@ -18,7 +18,7 @@ outcome: Install-shaped defects are caught before publication rather than report
 parent: pm-u9d0
 risk: medium
 confidence: 70
-dependencies[12]{id,kind,created_at,author,source_kind}:
+dependencies[14]{id,kind,created_at,author,source_kind}:
   pm-8pnj,related,"2026-07-25T12:31:34.837Z",null,null
   pm-998juj,related,"2026-07-25T12:31:34.837Z",null,null
   pm-feecbs,related,"2026-07-25T12:31:34.837Z",null,null
@@ -31,4 +31,6 @@ dependencies[12]{id,kind,created_at,author,source_kind}:
   pm-xp1xsw,related,"2026-07-25T12:35:37.084Z",null,null
   pm-z3ez,related,"2026-07-25T12:35:37.084Z",null,null
   pm-xp1xsw,verifies,"2026-07-25T20:44:56.737Z",null,null
+  pm-u9d0,verifies,"2026-07-26T05:50:07.948Z",null,null
+  pm-u9d0,implements,"2026-07-26T05:55:40.992Z",null,null
 body: ""

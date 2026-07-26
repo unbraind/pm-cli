@@ -6,15 +6,16 @@ status: open
 priority: 1
 tags[4]: "area:storage",data-loss,merge,multi-agent
 created_at: "2026-07-25T21:13:05.285Z"
-updated_at: "2026-07-25T21:13:05.285Z"
+updated_at: "2026-07-26T05:49:37.912Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "pm merge install verifies that the driver command it writes is resolvable from a clean environment and fails or warns loudly when it is not, recording the resolution strategy it chose. The driver invocation is resilient to a bare pm not being on PATH (absolute path to the resolved binary, a node-based fallback, or an equivalent documented mechanism). When a pm merge driver cannot execute, the merge surfaces a pm-branded diagnostic and does not leave a marker-free UU file that reads as already resolved. pm validate and pm health gain a check that reports a .gitattributes merge fence whose git config driver definitions are missing or unresolvable in the current clone. A regression test performs a two-branch merge with the driver unavailable and asserts no silent ours-wins field or history loss."
 parent: pm-o2kc
 risk: high
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-76dnfg,related,"2026-07-25T21:13:05.285Z",null,null
   pm-9j2r3b,related,"2026-07-25T21:13:05.285Z",null,null
   pm-i4fx,related,"2026-07-25T21:13:05.285Z",null,null
+  pm-szv11n,implements,"2026-07-26T05:49:37.645Z",null,null
 body: ""

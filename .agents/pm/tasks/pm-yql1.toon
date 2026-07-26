@@ -6,15 +6,16 @@ status: open
 priority: 2
 tags[3]: agent-ux,"area:cli",simplification
 created_at: "2026-07-05T05:08:35.381Z"
-updated_at: "2026-07-25T06:29:14.148Z"
+updated_at: "2026-07-26T05:55:24.697Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "One facet grammar covers all 8 annotation surfaces with identical flags and payloads; every old spelling dispatches through the alias shim with a migration hint; spelling-parity spec proves identical output old vs new; contracts, completions (bash/zsh/fish), docs, and MCP names regenerate from the contract table; top-level help lists item facets under a single noun entry."
 parent: pm-n7rr
 risk: medium
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-0z7n,blocked_by,"2026-07-05T05:08:35.381Z",null,null
   pm-iktj,related,"2026-07-25T06:29:13.921Z",null,null
   pm-x2vx,related,"2026-07-25T06:29:13.921Z",null,null
+  pm-n7rr,implements,"2026-07-26T05:55:24.503Z",null,null
 body: ""

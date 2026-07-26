@@ -6,16 +6,17 @@ status: open
 priority: 2
 tags[3]: ecosystem,governance,packages
 created_at: "2026-07-15T19:40:58.243Z"
-updated_at: "2026-07-25T21:41:46.740Z"
+updated_at: "2026-07-26T05:56:18.453Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Canonical home decided per package (extend an existing implementation, never a third); non-canonical repo README points to the canonical package and repo is archived or repurposed; capability divergence documented (external pm-beads import+export+validate+diff+bead_id schema vs in-repo import-only) with migration note; ecosystem dependency-range convention documented (caret year-range with verified floor; no exact pins, no unbounded >=) and pm-ops exact-pin 2026.7.13 plus pm-beads >=2026.7.10 ranges fixed; floor-verification folded into the reusable ecosystem smoke harness or the pm-o8um Verified-tier checklist"
 parent: pm-ugqx
 risk: medium
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-o8um,related,"2026-07-15T19:40:58.243Z",null,null
   pm-tll8,related,"2026-07-16T05:45:20.378Z",null,null
+  pm-ugqx,implements,"2026-07-26T05:56:18.177Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-15T20:06:33.442Z",codex-audit-20260715,"Review pass 91 live ecosystem matrix confirms source and npm latest alignment across pm-beads, brief, changelog, context, csv, gantt, github, graph, jira, linear, ops, presets, slack, slack-standup, starter, todos, ts-starter, and pm-web. The current external dependency-range split and the duplicated in-repo versus external beads/todos capability families remain the focused policy concerns already owned here; no duplicate ecosystem item created."
   "2026-07-24T12:05:44.479Z",claude-code-agent,"Current fleet refresh confirms the existing policy owner remains correct: official external packages use supported public SDK exports with no deep dist imports, but dependency placement and floors remain mixed. In-process extensions should converge on peerDependencies with a verified compatibility floor; standalone hosts such as pm-web can own a direct dependency. pm-feecbs will enforce the resulting rule and published-artifact proof, while this item retains canonical ownership of beads/todos homes and range decisions."

@@ -6,18 +6,19 @@ status: open
 priority: 1
 tags[4]: github-actions,least-privilege,scorecard,security
 created_at: "2026-07-14T22:40:26.943Z"
-updated_at: "2026-07-25T23:57:22.013Z"
+updated_at: "2026-07-26T05:55:36.723Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Every workflow under .github/workflows declares an explicit top-level permissions block (least privilege, job-level elevation only where required, matching the scorecard.yml/security.yml pattern); actionlint + Trivy misconfig green; next Scorecard run reports Token-Permissions 10"
 parent: pm-gnzh
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-5zca,related,"2026-07-15T06:29:47.248Z",null,null
   pm-e02lgu,related,"2026-07-24T23:53:12.394Z",null,null
   pm-qwoy,related,"2026-07-24T23:53:12.394Z",null,null
   pm-u9d0,related,"2026-07-24T23:53:12.394Z",null,null
+  pm-gnzh,implements,"2026-07-26T05:55:36.532Z",null,null
 comments[2]{created_at,author,text}:
   "2026-07-18T12:39:30.335Z",codex-gpt5,"GitHub report evidence 2026-07-18: open Scorecard TokenPermissionsID alerts #17 (auto-release.yml:34), #18 (codeql.yml:17), and #19 (release.yml:15), all high severity on refs/heads/main. These are canonicalized here; no duplicate item created."
   "2026-07-25T23:57:20.362Z","harness:codex","Implementation evidence: PR #718 now uses read-only top-level permissions in auto-release, Release, and CodeQL while granting each existing write scope only to its consuming job. Pinned actionlint 1.7.12 passed all workflows; Trivy HIGH/CRITICAL vulnerability, secret, and misconfiguration scan passed with zero findings. Final closure remains gated on the next main-branch Scorecard run reporting Token-Permissions 10."

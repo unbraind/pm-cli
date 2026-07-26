@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,grammar,"horizon:near",milestone,outcome,token-efficiency
 created_at: "2026-07-24T23:42:39.540Z"
-updated_at: "2026-07-25T12:40:09.893Z"
+updated_at: "2026-07-26T05:57:46.333Z"
 deadline: "2026-10-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 4800
@@ -20,7 +20,7 @@ why_now: "The surface is still growing (graph, plan, merge, history-* families a
 parent: pm-doxj
 risk: medium
 confidence: high
-dependencies[20]{id,kind,created_at,author,source_kind}:
+dependencies[21]{id,kind,created_at,author,source_kind}:
   pm-0z7n,related,"2026-07-24T23:42:39.540Z",null,null
   pm-1kxs,related,"2026-07-24T23:42:39.540Z",null,null
   pm-8pnj,related,"2026-07-24T23:42:39.540Z",null,null
@@ -41,4 +41,5 @@ dependencies[20]{id,kind,created_at,author,source_kind}:
   pm-sx52hr,related,"2026-07-25T12:36:15.661Z",null,null
   pm-zqsrt5,related,"2026-07-25T12:36:15.661Z",null,null
   pm-g3n00m,related,"2026-07-25T12:40:09.545Z",null,null
+  pm-doxj,implements,"2026-07-26T05:57:46.102Z",null,null
 body: "## Outcome\nA coding agent that has never seen this workspace can enumerate and operate the entire pm capability set from a single screen of help output, and every historical spelling keeps working.\n\n## Why this is a milestone, not an epic\npm-n7rr is the living execution epic (partition of consolidation tasks). This milestone is the outcome gate: it declares when the grammar work is done enough to freeze, which is the precondition the GA stability contract (pm-agou) consumes.\n\n## Delivery chain\npm-pbyu (ADR, accept first) -> pm-0z7n (alias shim foundation) -> the consolidation partition under pm-n7rr (pfqi/kcs4/tqel/yql1/tnud/6apl/xkgq/ik19/eq4x/o3fh/npr3/lp4j/szdc) -> pm-e2bq tiered help -> pm-8pnj transcript replay proves the outcome.\n\n## Explicit non-goals\nNo capability removal. No breaking rename without an alias. No grammar freeze here — freezing is pm-agou's job."

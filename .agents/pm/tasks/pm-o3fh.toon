@@ -6,15 +6,16 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli","area:extensions",calendar,simplification
 created_at: "2026-07-05T04:53:33.905Z"
-updated_at: "2026-07-25T06:29:10.745Z"
+updated_at: "2026-07-26T05:55:21.038Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: meet/event/remind live in builtin-calendar (package-owned commands) with full flag parity incl. scheduling presets and relative-time parsing; core alias shims keep old spellings working; uninstalling the package surfaces the owning-package hint (pm-b3e9 pattern); calendar shortcut specs pass via aliases
 parent: pm-n7rr
 risk: medium
 confidence: medium
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-0z7n,blocked_by,"2026-07-05T04:55:01.457Z",null,null
   pm-ixoa,related,"2026-07-25T06:29:10.512Z",null,null
   pm-jkjt,related,"2026-07-25T06:29:10.512Z",null,null
+  pm-n7rr,implements,"2026-07-26T05:55:20.797Z",null,null
 body: ""

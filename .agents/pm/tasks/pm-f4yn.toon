@@ -6,19 +6,20 @@ status: open
 priority: 3
 tags[2]: "area:quality",ci
 created_at: "2026-07-04T08:32:10.926Z"
-updated_at: "2026-07-25T21:16:59.000Z"
+updated_at: "2026-07-26T05:55:33.780Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Dead re-exports pruned from the commands barrel; knip runs in static gates with a zero-findings baseline.
 parent: pm-92if
 risk: low
 confidence: medium
-dependencies[5]{id,kind,created_at,author,source_kind}:
+dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-fb3i,related,"2026-07-14T17:05:10.764Z",null,null
   pm-92if,related,"2026-07-24T23:53:25.605Z",null,null
   pm-dvwm,related,"2026-07-24T23:53:25.605Z",null,null
   pm-kb5h,related,"2026-07-24T23:53:25.605Z",null,null
   pm-usfg,related,"2026-07-24T23:53:25.605Z",null,null
+  pm-92if,implements,"2026-07-26T05:55:33.524Z",null,null
 notes[1]{created_at,author,text}:
   "2026-07-25T21:16:59.000Z","harness:claude-code","Live knip census 2026-07-25 (evening ecosystem review), knip 6.29.0, no repo knip config present, run as `npx knip --reporter compact` against the working tree at dist build 2026.7.25. This is the baseline this item's gate would ratchet.\n\nTotals: 45 unused exports · 63 unused exported types · 3 duplicate exports · 14 unused files · 1 unlisted dependency · 1 unlisted binary. Combined dead-ish symbol surface 111.\n\nTwenty-three of the unused exports/types sit under src/sdk, i.e. on the public surface, which is why this census matters to pm-38bskj (SDK surface shape) and not only to dead-code hygiene: pruning here shrinks the published API before pm-e6tm5c freezes whatever shape exists.\n\nIMPORTANT interpretation caveat before anyone deletes from this list. Without a knip config declaring the published SDK subpaths as entrypoints, \"unused\" means \"no INTERNAL consumer\", not \"no consumer\". The clearest example in the output is src/sdk/merge/index.ts reporting mergeHistoryStreams, mergeItemDocuments and mergeJsonDocuments as unused — those are the core public merge primitives that external packages are meant to call. Same for the seven merge types on the same line. So the first deliverable of this item is the config (entrypoints = the eleven package.json exports subpaths plus dist/cli.js and dist/mcp/server.js), and only the residue after that config is a real burn-down list.\n\nSame caveat on the 14 \"unused files\": they include plugins/pm-claude/scripts/pm-mcp-server.mjs and plugins/pm-codex/scripts/pm-mcp-server.mjs (generated MCP wrappers, invoked by plugin manifests), the three docs/examples entrypoints, tests/types/*.test-d.ts (type-level tests run by a separate tsconfig), tests/helpers/cliWorkerBridge.worker.mjs (loaded by worker_threads at runtime) and vitest.bench.config.ts (referenced by the bench script and the CodSpeed workflow). All six categories are reachable through mechanisms knip cannot see statically and must be declared, not deleted.\n\nGenuinely actionable without further analysis: the 3 duplicate exports — flag-contracts.ts exports MEET_FLAG_CONTRACTS/EVENT_FLAG_CONTRACTS and a six-name EXTENSION_*_FLAG_CONTRACTS group as aliases of the same values, and types.ts exports BUILTIN_ITEM_TYPE_VALUES and ITEM_TYPE_VALUES as duplicates. Also flagged: @codspeed/vitest-plugin and @types/node reported as unused devDependencies (@types/node is a deliberate runtime dependency per docs/SDK.md, so that one is a config gap), `vite` imported by vitest.config.ts but unlisted, and the `ollama` binary referenced from src/core/search/semantic-defaults.ts but undeclared."
 body: "## Context\n2026-07-04 code-quality sweep: src/cli/commands/index.ts re-exports ~60 runtime symbols + ~80 types that nothing imports via the barrel (package.json exports only exposes ., ./sdk*, ./cli). knip reports 115 unused exports + 239 unused exported types repo-wide. A one-time manual sweep on 2026-07-04 already removed 57 dead loader.ts imports and 7 dead export keywords — this item is about keeping the class extinct.\n\n## Approach\n1. Prune the commands barrel to what's actually consumed (grep each symbol; the SDK/public surface is exempt).\n2. Adopt knip (preferred over ts-prune) with an allowlist for the intentional SDK public surface, wired as a CI static gate alongside the existing suppression/LOC gates.\nRisk to watch: the SDK allowlist must be curated, not blanket — otherwise the gate is decorative.\n\n## Definition of done\nBarrel exports only consumed symbols; knip gate green in CI and failing on a seeded dead export; allowlist documented (why each entry is public surface)."

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:ci","area:docs","area:release",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:13.323Z"
-updated_at: "2026-07-25T12:41:53.008Z"
+updated_at: "2026-07-26T05:48:55.649Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: Docs gates validate links and anchors; onboarding verified from a clean install; daily auto-release and nightly matrices stay green for 30 consecutive days without manual intervention.
@@ -16,11 +16,12 @@ value: Low-friction contribution and reliable releases
 parent: pm-doxj
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-pae3wo,related,"2026-07-24T23:54:44.691Z",null,null
   pm-rtn5h6,related,"2026-07-24T23:54:44.691Z",null,null
   pm-xp1xsw,related,"2026-07-24T23:54:44.691Z",null,null
   pm-zclzll,related,"2026-07-24T23:54:44.691Z",null,null
+  pm-xp1xsw,implements,"2026-07-26T05:48:55.434Z",null,null
 comments[8]{created_at,author,text}:
   "2026-06-04T05:37:37.958Z",codex-gh-triage,"GitHub triage evidence 2026-06-04: gh pr list open -> none; gh issue list open -> none; default branch main public active, latest main CI run 26921051508 success for 21f2bab2; workflows active: Auto Release, CI, Docs, Nightly Validation, Release, Dependabot Updates. Security/dependency: dependabot open alerts [], secret-scanning open alerts [], security-advisories open [], vulnerability-alerts endpoint HTTP 204 enabled/no body; code-scanning alerts endpoint returned 404 no analysis found plus admin:repo_hook scope hint. Dependabot update workflow latest runs succeeded on 2026-06-02. Release state: latest GitHub release remains v2026.5.31; npm @unbrained/pm-cli latest 2026.5.31 while local package is 2026.6.2. Auto Release latest scheduled runs 2026-06-01/02/03 all failed; run 26870058549 fails intentionally because SENTRY_PERSONAL_ADMIN_TOKEN is empty before push/tag creation. pm-changelog: npm latest 2026.6.3; project managed extension active 2026.6.3; pm package doctor deep ok. Bootstrap for this comment: npm install -g ., pm --version 2026.6.2, node v25.9.0, pnpm 10.33.4, pnpm build passed. No code changes made by codex-gh-triage."
   "2026-06-04T05:46:45.337Z",codex-sdk-cli-impl,"Follow-up fix: Sentry gate reported one high handled CommandError, PM-CLI-19 (Validation failed: 1 structural error(s)). This matches the existing handled validation CommandError allowlist class, so the combined branch adds the exact one-error validation wording to scripts/release/sentry-telemetry-gate.mjs and covers it in tests/integration/release-automation-contract.spec.ts."

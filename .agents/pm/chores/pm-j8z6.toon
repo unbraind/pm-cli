@@ -6,15 +6,16 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-25T17:55:55.499Z"
+updated_at: "2026-07-26T05:56:13.916Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."
 parent: pm-33cw
 risk: medium
 confidence: medium
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-kb5h,related,"2026-07-14T17:05:10.148Z",null,null
+  pm-33cw,implements,"2026-07-26T05:56:13.587Z",null,null
 comments[16]:
   - created_at: "2026-06-25T05:01:11.314Z"
     author: codex-ecosystem-auditor

@@ -6,16 +6,17 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:36.319Z"
-updated_at: "2026-07-25T06:27:14.082Z"
+updated_at: "2026-07-26T05:57:27.477Z"
 author: unknown
 estimated_minutes: 120
 acceptance_criteria: "pm list --tag accepts the same CSV shape tag mutations accept, matching any of the listed tags unless an explicit all-match modifier is requested; Unknown tag values produce a diagnostic naming the unmatched tags instead of an empty result set; Tag filter semantics are declared once in the flag contract and shared by CLI, SDK, and MCP list paths; Regression coverage asserts CSV, repeated-flag, and unknown-tag behaviour on the same corpus"
 parent: pm-usfg
-dependencies[4]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-1exil1,related_to,"2026-07-25T02:06:36.319Z",null,null
   pm-gknu,related,"2026-07-25T06:27:13.860Z",null,null
   pm-plwm,related,"2026-07-25T06:27:13.860Z",null,null
   pm-srns,related,"2026-07-25T06:27:13.860Z",null,null
+  pm-usfg,implements,"2026-07-26T05:57:27.237Z",null,null
 comments[1]{created_at,author,text}:
   "2026-07-25T02:06:36.319Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
 body: ""
