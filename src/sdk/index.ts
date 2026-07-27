@@ -29,6 +29,7 @@ export {
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
 export {
+  AGENT_PROVENANCE_DIMENSIONS,
   BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
   detectAgentIdentity,
   detectHarnessIdentity,
@@ -40,12 +41,20 @@ export {
   writeAuthorEnvironment,
   type AgentClientInfo,
   type AgentModelSource,
+  type AgentProvenance,
+  type AgentProvenanceObservation,
   type AuthorSource,
   type DetectedAgentIdentity,
   type HarnessDetectionSignals,
   type HarnessSignalDescriptor,
   type ResolvedAuthorIdentity,
 } from "../core/shared/author.js";
+export {
+  analyzeAgentProvenanceDescriptorCoverage,
+  summarizeAgentModelProvenance,
+  type AgentModelProvenanceCoverage,
+  type AgentProvenanceDescriptorCoverage,
+} from "./provenance.js";
 export { createPmCliProgram } from "./cli-program.js";
 export { runSearchRefreshWorkerEntrypoint } from "./search-refresh-worker.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
@@ -354,6 +363,7 @@ export {
   UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
   compactFlagAliasContracts,
+  analyzeSdkCliParameterCompleteness,
   isPmExtensionCapabilityContract,
   isPmExtensionPolicyModeContract,
   isPmExtensionPolicySurfaceContract,
@@ -386,6 +396,10 @@ export type {
   PmExtensionServiceNameContract,
   PmExtensionTrustModeContract,
   PmToolAction,
+  SdkCliActionParameterCoverage,
+  SdkCliCompletenessContractSource,
+  SdkCliParameterCoverageEntry,
+  SdkCliParameterDisposition,
   ToolOptionFlagContract,
 } from "./cli-contracts.js";
 export * from "./compose.js";

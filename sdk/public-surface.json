@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1227,
+    "covered_symbols": 1239,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1228
+    "required_symbols": 1240
   },
   "breaking_acknowledgements": [
     {
@@ -120,6 +120,29 @@
       ],
       "package_version": "2026.7.26",
       "reason": "Add audited merge receipt provenance and reconciliation result fields for durable branch-merge conformance"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AgentClientInfo",
+        "signature ./sdk:AgentModelSource",
+        "signature ./sdk:DetectedAgentIdentity",
+        "signature ./sdk:HarnessDetectionSignals",
+        "signature ./sdk:HarnessSignalDescriptor",
+        "signature ./sdk:PmSettings",
+        "signature ./sdk:TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk:TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk/contracts:TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk/contracts:TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk/core:AgentClientInfo",
+        "signature ./sdk/core:AgentModelSource",
+        "signature ./sdk/core:DetectedAgentIdentity",
+        "signature ./sdk/core:HarnessDetectionSignals",
+        "signature ./sdk/core:HarnessSignalDescriptor",
+        "signature ./sdk/core:PmSettings",
+        "signature ./sdk/runtime:PmSettings"
+      ],
+      "package_version": "2026.7.27",
+      "reason": "Extend optional agent provenance and strict action option contracts while preserving legacy model fields and runtime behavior"
     }
   ],
   "entrypoints": {
@@ -308,15 +331,45 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "AGENT_PROVENANCE_DIMENSIONS",
+          "signature": "readonly [\"model\", \"effort\", \"role\"]"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "AgentClientInfo",
-          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; }"
+          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; provenance?: Readonly<Record<string, string | undefined>>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentModelProvenanceCoverage",
+          "signature": "export interface AgentModelProvenanceCoverage { harness: string; entries: number; observed: number; unavailable: number; legacy_missing: number; coverage: number | null; inert: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "AgentModelSource",
-          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\";"
+          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AgentProvenance",
+          "signature": "export type AgentProvenance = Readonly<Record<string, AgentProvenanceObservation | null>>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentProvenanceDescriptorCoverage",
+          "signature": "export interface AgentProvenanceDescriptorCoverage { dimension: string; harnesses: string[]; covered: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentProvenanceObservation",
+          "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; }"
         },
         {
           "classification": "supported",
@@ -347,6 +400,12 @@
           "kind": "interface",
           "name": "AggregateRow",
           "signature": "export interface AggregateRow { group: AggregateGroupRecord; group_label: string; count: number; open?: number; in_progress?: number; closed?: number; other?: number; completion_pct?: number; null_count?: number; sum?: number | null; avg?: number | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "analyzeAgentProvenanceDescriptorCoverage",
+          "signature": "(descriptors?: readonly HarnessSignalDescriptor[], dimensions?: readonly string[]) => AgentProvenanceDescriptorCoverage[] | calls: (descriptors?: readonly HarnessSignalDescriptor[], dimensions?: readonly string[]) => AgentProvenanceDescriptorCoverage[]"
         },
         {
           "classification": "supported",
@@ -383,6 +442,12 @@
           "kind": "function",
           "name": "analyzeSdkActionCoverage",
           "signature": "(actions?: readonly string[]) => SdkActionCoverageRow[] | calls: (actions?: readonly string[]) => SdkActionCoverageRow[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "analyzeSdkCliParameterCompleteness",
+          "signature": "(source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[] | calls: (source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[]"
         },
         {
           "classification": "advanced_export",
@@ -2434,7 +2499,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DetectedAgentIdentity",
-          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; }"
+          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; provenance?: AgentProvenance; }"
         },
         {
           "classification": "supported",
@@ -3958,13 +4023,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessDetectionSignals",
-          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; descriptors?: readonly HarnessSignalDescriptor[]; }"
+          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; descriptors?: readonly HarnessSignalDescriptor[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessSignalDescriptor",
-          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
+          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; provenance_environment_keys?: Readonly<Record<string, readonly string[] | undefined>>; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -6358,7 +6423,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "contract_data",
@@ -9182,6 +9247,30 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "SdkCliActionParameterCoverage",
+          "signature": "export interface SdkCliActionParameterCoverage { action: PmToolAction; command: string; cli: SdkCliParameterCoverageEntry[]; sdk: SdkCliParameterCoverageEntry[]; unclassified: SdkCliParameterCoverageEntry[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SdkCliCompletenessContractSource",
+          "signature": "export interface SdkCliCompletenessContractSource { actions?: readonly PmToolAction[]; resolveFlags?: (command: string) => CliFlagContract[]; resolveParameters?: (action: PmToolAction) => string[] | undefined; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SdkCliParameterCoverageEntry",
+          "signature": "export interface SdkCliParameterCoverageEntry { surface: \"cli\" | \"sdk\"; input: string; counterpart?: string; disposition: SdkCliParameterDisposition; reason: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SdkCliParameterDisposition",
+          "signature": "export type SdkCliParameterDisposition = \"shared\" | \"compatibility_alias\" | \"cli_transport\" | \"cli_presentation\" | \"cli_adapter\" | \"cli_scope_selector\" | \"sdk_transport\" | \"cli_positional\" | \"sdk_native\" | \"unclassified\";"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "search",
           "signature": "(query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult> | calls: (query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult>"
@@ -9723,6 +9812,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "summarizeAgentModelProvenance",
+          "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], minimumExplicitSample?: number) => AgentModelProvenanceCoverage[] | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], minimumExplicitSample?: number) => AgentModelProvenanceCoverage[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "summarizeContextEvaluationReports",
           "signature": "(reports: readonly ContextEvaluationScenarioReport[], thresholds: ContextEvaluationThresholds) => ContextEvaluationCorpusReport | calls: (reports: readonly ContextEvaluationScenarioReport[], thresholds: ContextEvaluationThresholds) => ContextEvaluationCorpusReport"
         },
@@ -10102,7 +10197,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"filterStatus\"; readonly flag: \"--filter-status\"; }, { readonly param: \"filterType\"; readonly flag: \"--filter-type\"; }, { readonly param: \"filterTag\"; readonly flag: \"--filter-tag\"; }, { readonly param: \"filterPriority\"; readonly flag: \"--filter-priority\"; }, { readonly param: \"filterDeadlineBefore\"; readonly flag: \"--filter-deadline-before\"; }, { readonly param: \"filterDeadlineAfter\"; readonly flag: \"--filter-deadline-after\"; }, { readonly param: \"filterUpdatedAfter\"; readonly flag: \"--filter-updated-after\"; }, { readonly param: \"filterUpdatedBefore\"; readonly flag: \"--filter-updated-before\"; }, { readonly param: \"filterCreatedAfter\"; readonly flag: \"--filter-created-after\"; }, { readonly param: \"filterCreatedBefore\"; readonly flag: \"--filter-created-before\"; }, { readonly param: \"filterAssignee\"; readonly flag: \"--filter-assignee\"; }, { readonly param: \"filterAssigneeFilter\"; readonly flag: \"--filter-assignee-filter\"; }, { readonly param: \"filterParent\"; readonly flag: \"--filter-parent\"; }, { readonly param: \"filterSprint\"; readonly flag: \"--filter-sprint\"; }, { readonly param: \"filterRelease\"; readonly flag: \"--filter-release\"; }, { readonly param: \"filterReviewerMissing\"; readonly flag: \"--filter-reviewer-missing\"; }, { readonly param: \"filterRiskMissing\"; readonly flag: \"--filter-risk-missing\"; }, { readonly param: \"filterConfidenceMissing\"; readonly flag: \"--filter-confidence-missing\"; }, { readonly param: \"filterSprintMissing\"; readonly flag: \"--filter-sprint-missing\"; }, { readonly param: \"filterReleaseMissing\"; readonly flag: \"--filter-release-missing\"; }, { readonly param: \"filterHasNotes\"; readonly flag: \"--filter-has-notes\"; }, { readonly param: \"filterNoNotes\"; readonly flag: \"--filter-no-notes\"; }, { readonly param: \"filterHasLearnings\"; readonly flag: \"--filter-has-learnings\"; }, { readonly param: \"filterNoLearnings\"; readonly flag: \"--filter-no-learnings\"; }, { readonly param: \"filterHasFiles\"; readonly flag: \"--filter-has-files\"; }, { readonly param: \"filterNoFiles\"; readonly flag: \"--filter-no-files\"; }, { readonly param: \"filterHasDocs\"; readonly flag: \"--filter-has-docs\"; }, { readonly param: \"filterNoDocs\"; readonly flag: \"--filter-no-docs\"; }, { readonly param: \"filterHasTests\"; readonly flag: \"--filter-has-tests\"; }, { readonly param: \"filterNoTests\"; readonly flag: \"--filter-no-tests\"; }, { readonly param: \"filterHasComments\"; readonly flag: \"--filter-has-comments\"; }, { readonly param: \"filterNoComments\"; readonly flag: \"--filter-no-comments\"; }, { readonly param: \"filterHasDeps\"; readonly flag: \"--filter-has-deps\"; }, { readonly param: \"filterNoDeps\"; readonly flag: \"--filter-no-deps\"; }, { readonly param: \"filterHasBody\"; readonly flag: \"--filter-has-body\"; }, { readonly param: \"filterEmptyBody\"; readonly flag: \"--filter-empty-body\"; }, { readonly param: \"filterHasLinkedCommand\"; readonly flag: \"--filter-has-linked-command\"; }, { readonly param: \"filterNoLinkedCommand\"; readonly flag: \"--filter-no-linked-command\"; }, { readonly param: \"ids\"; readonly flag: \"--ids\"; }, { readonly param: \"limit\"; readonly flag: \"--limit\"; }, { readonly param: \"offset\"; readonly flag: \"--offset\"; }]"
+          "signature": "readonly [{ readonly param: \"filterStatus\"; readonly flag: \"--filter-status\"; }, { readonly param: \"filterType\"; readonly flag: \"--filter-type\"; }, { readonly param: \"filterTag\"; readonly flag: \"--filter-tag\"; }, { readonly param: \"filterPriority\"; readonly flag: \"--filter-priority\"; }, { readonly param: \"filterDeadlineBefore\"; readonly flag: \"--filter-deadline-before\"; }, { readonly param: \"filterDeadlineAfter\"; readonly flag: \"--filter-deadline-after\"; }, { readonly param: \"filterUpdatedAfter\"; readonly flag: \"--filter-updated-after\"; }, { readonly param: \"filterUpdatedBefore\"; readonly flag: \"--filter-updated-before\"; }, { readonly param: \"filterCreatedAfter\"; readonly flag: \"--filter-created-after\"; }, { readonly param: \"filterCreatedBefore\"; readonly flag: \"--filter-created-before\"; }, { readonly param: \"filterAssignee\"; readonly flag: \"--filter-assignee\"; }, { readonly param: \"filterAssigneeFilter\"; readonly flag: \"--filter-assignee-filter\"; }, { readonly param: \"filterParent\"; readonly flag: \"--filter-parent\"; }, { readonly param: \"filterSprint\"; readonly flag: \"--filter-sprint\"; }, { readonly param: \"filterRelease\"; readonly flag: \"--filter-release\"; }, { readonly param: \"filterAcMissing\"; readonly flag: \"--filter-ac-missing\"; }, { readonly param: \"filterEstimatesMissing\"; readonly flag: \"--filter-estimates-missing\"; }, { readonly param: \"filterResolutionMissing\"; readonly flag: \"--filter-resolution-missing\"; }, { readonly param: \"filterMetadataMissing\"; readonly flag: \"--filter-metadata-missing\"; }, { readonly param: \"filterReviewerMissing\"; readonly flag: \"--filter-reviewer-missing\"; }, { readonly param: \"filterRiskMissing\"; readonly flag: \"--filter-risk-missing\"; }, { readonly param: \"filterConfidenceMissing\"; readonly flag: \"--filter-confidence-missing\"; }, { readonly param: \"filterSprintMissing\"; readonly flag: \"--filter-sprint-missing\"; }, { readonly param: \"filterReleaseMissing\"; readonly flag: \"--filter-release-missing\"; }, { readonly param: \"filterHasNotes\"; readonly flag: \"--filter-has-notes\"; }, { readonly param: \"filterNoNotes\"; readonly flag: \"--filter-no-notes\"; }, { readonly param: \"filterHasLearnings\"; readonly flag: \"--filter-has-learnings\"; }, { readonly param: \"filterNoLearnings\"; readonly flag: \"--filter-no-learnings\"; }, { readonly param: \"filterHasFiles\"; readonly flag: \"--filter-has-files\"; }, { readonly param: \"filterNoFiles\"; readonly flag: \"--filter-no-files\"; }, { readonly param: \"filterHasDocs\"; readonly flag: \"--filter-has-docs\"; }, { readonly param: \"filterNoDocs\"; readonly flag: \"--filter-no-docs\"; }, { readonly param: \"filterHasTests\"; readonly flag: \"--filter-has-tests\"; }, { readonly param: \"filterNoTests\"; readonly flag: \"--filter-no-tests\"; }, { readonly param: \"filterHasComments\"; readonly flag: \"--filter-has-comments\"; }, { readonly param: \"filterNoComments\"; readonly flag: \"--filter-no-comments\"; }, { readonly param: \"filterHasDeps\"; readonly flag: \"--filter-has-deps\"; }, { readonly param: \"filterNoDeps\"; readonly flag: \"--filter-no-deps\"; }, { readonly param: \"filterHasBody\"; readonly flag: \"--filter-has-body\"; }, { readonly param: \"filterEmptyBody\"; readonly flag: \"--filter-empty-body\"; }, { readonly param: \"filterHasLinkedCommand\"; readonly flag: \"--filter-has-linked-command\"; }, { readonly param: \"filterNoLinkedCommand\"; readonly flag: \"--filter-no-linked-command\"; }, { readonly param: \"ids\"; readonly flag: \"--ids\"; }, { readonly param: \"limit\"; readonly flag: \"--limit\"; }, { readonly param: \"offset\"; readonly flag: \"--offset\"; }]"
         },
         {
           "classification": "contract_data",
@@ -10162,7 +10257,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"parent\"; readonly flag: \"--parent\"; }, { readonly param: \"reviewer\"; readonly flag: \"--reviewer\"; }, { readonly param: \"risk\"; readonly flag: \"--risk\"; }, { readonly param: \"confidence\"; readonly flag: \"--confidence\"; }, { readonly param: \"sprint\"; readonly flag: \"--sprint\"; }, { readonly param: \"release\"; readonly flag: \"--release\"; }, { readonly param: \"blockedBy\"; readonly flag: \"--blocked-by\"; }, { readonly param: \"blockedReason\"; readonly flag: \"--blocked-reason\"; }, { readonly param: \"unblockNote\"; readonly flag: \"--unblock-note\"; }, { readonly param: \"reporter\"; readonly flag: \"--reporter\"; }, { readonly param: \"severity\"; readonly flag: \"--severity\"; }, { readonly param: \"environment\"; readonly flag: \"--environment\"; }, { readonly param: \"reproSteps\"; readonly flag: \"--repro-steps\"; }, { readonly param: \"resolution\"; readonly flag: \"--resolution\"; }, { readonly param: \"expectedResult\"; readonly flag: \"--expected-result\"; }, { readonly param: \"actualResult\"; readonly flag: \"--actual-result\"; }, { readonly param: \"affectedVersion\"; readonly flag: \"--affected-version\"; }, { readonly param: \"fixedVersion\"; readonly flag: \"--fixed-version\"; }, { readonly param: \"component\"; readonly flag: \"--component\"; }, { readonly param: \"regression\"; readonly flag: \"--regression\"; readonly booleanish: true; }, { readonly param: \"customerImpact\"; readonly flag: \"--customer-impact\"; }, { readonly param: \"definitionOfReady\"; readonly flag: \"--definition-of-ready\"; readonly allowEmpty: true; }, { readonly param: \"order\"; readonly flag: \"--order\"; }, { readonly param: \"goal\"; readonly flag: \"--goal\"; }, { readonly param: \"objective\"; readonly flag: \"--objective\"; }, { readonly param: \"value\"; readonly flag: \"--value\"; }, { readonly param: \"impact\"; readonly flag: \"--impact\"; }, { readonly param: \"outcome\"; readonly flag: \"--outcome\"; }, { readonly param: \"whyNow\"; readonly flag: \"--why-now\"; }]"
+          "signature": "readonly [{ readonly param: \"parent\"; readonly flag: \"--parent\"; }, { readonly param: \"reviewer\"; readonly flag: \"--reviewer\"; }, { readonly param: \"risk\"; readonly flag: \"--risk\"; }, { readonly param: \"confidence\"; readonly flag: \"--confidence\"; }, { readonly param: \"sprint\"; readonly flag: \"--sprint\"; }, { readonly param: \"release\"; readonly flag: \"--release\"; }, { readonly param: \"blockedBy\"; readonly flag: \"--blocked-by\"; }, { readonly param: \"blockedReason\"; readonly flag: \"--blocked-reason\"; }, { readonly param: \"unblockNote\"; readonly flag: \"--unblock-note\"; }, { readonly param: \"reporter\"; readonly flag: \"--reporter\"; }, { readonly param: \"severity\"; readonly flag: \"--severity\"; }, { readonly param: \"environment\"; readonly flag: \"--environment\"; }, { readonly param: \"reproSteps\"; readonly flag: \"--repro-steps\"; }, { readonly param: \"resolution\"; readonly flag: \"--resolution\"; }, { readonly param: \"expectedResult\"; readonly flag: \"--expected-result\"; }, { readonly param: \"actualResult\"; readonly flag: \"--actual-result\"; }, { readonly param: \"affectedVersion\"; readonly flag: \"--affected-version\"; }, { readonly param: \"fixedVersion\"; readonly flag: \"--fixed-version\"; }, { readonly param: \"component\"; readonly flag: \"--component\"; }, { readonly param: \"regression\"; readonly flag: \"--regression\"; readonly booleanish: true; }, { readonly param: \"customerImpact\"; readonly flag: \"--customer-impact\"; }, { readonly param: \"definitionOfReady\"; readonly flag: \"--definition-of-ready\"; readonly allowEmpty: true; }, { readonly param: \"order\"; readonly flag: \"--order\"; }, { readonly param: \"rank\"; readonly flag: \"--rank\"; }, { readonly param: \"goal\"; readonly flag: \"--goal\"; }, { readonly param: \"objective\"; readonly flag: \"--objective\"; }, { readonly param: \"value\"; readonly flag: \"--value\"; }, { readonly param: \"impact\"; readonly flag: \"--impact\"; }, { readonly param: \"outcome\"; readonly flag: \"--outcome\"; }, { readonly param: \"whyNow\"; readonly flag: \"--why-now\"; }]"
         },
         {
           "classification": "contract_data",
@@ -12032,6 +12127,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "analyzeSdkCliParameterCompleteness",
+          "signature": "(source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[] | calls: (source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[]"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "APPEND_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -12758,6 +12859,30 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "SdkCliActionParameterCoverage",
+          "signature": "export interface SdkCliActionParameterCoverage { action: PmToolAction; command: string; cli: SdkCliParameterCoverageEntry[]; sdk: SdkCliParameterCoverageEntry[]; unclassified: SdkCliParameterCoverageEntry[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "SdkCliCompletenessContractSource",
+          "signature": "export interface SdkCliCompletenessContractSource { actions?: readonly PmToolAction[]; resolveFlags?: (command: string) => CliFlagContract[]; resolveParameters?: (action: PmToolAction) => string[] | undefined; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "SdkCliParameterCoverageEntry",
+          "signature": "export interface SdkCliParameterCoverageEntry { surface: \"cli\" | \"sdk\"; input: string; counterpart?: string; disposition: SdkCliParameterDisposition; reason: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "SdkCliParameterDisposition",
+          "signature": "export type SdkCliParameterDisposition = \"shared\" | \"compatibility_alias\" | \"cli_transport\" | \"cli_presentation\" | \"cli_adapter\" | \"cli_scope_selector\" | \"sdk_transport\" | \"cli_positional\" | \"sdk_native\" | \"unclassified\";"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "SEARCH_COMMANDER_STRING_OPTION_CONTRACTS",
           "signature": "CommanderOptionAliasContract[]"
@@ -12832,7 +12957,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"filterStatus\"; readonly flag: \"--filter-status\"; }, { readonly param: \"filterType\"; readonly flag: \"--filter-type\"; }, { readonly param: \"filterTag\"; readonly flag: \"--filter-tag\"; }, { readonly param: \"filterPriority\"; readonly flag: \"--filter-priority\"; }, { readonly param: \"filterDeadlineBefore\"; readonly flag: \"--filter-deadline-before\"; }, { readonly param: \"filterDeadlineAfter\"; readonly flag: \"--filter-deadline-after\"; }, { readonly param: \"filterUpdatedAfter\"; readonly flag: \"--filter-updated-after\"; }, { readonly param: \"filterUpdatedBefore\"; readonly flag: \"--filter-updated-before\"; }, { readonly param: \"filterCreatedAfter\"; readonly flag: \"--filter-created-after\"; }, { readonly param: \"filterCreatedBefore\"; readonly flag: \"--filter-created-before\"; }, { readonly param: \"filterAssignee\"; readonly flag: \"--filter-assignee\"; }, { readonly param: \"filterAssigneeFilter\"; readonly flag: \"--filter-assignee-filter\"; }, { readonly param: \"filterParent\"; readonly flag: \"--filter-parent\"; }, { readonly param: \"filterSprint\"; readonly flag: \"--filter-sprint\"; }, { readonly param: \"filterRelease\"; readonly flag: \"--filter-release\"; }, { readonly param: \"filterReviewerMissing\"; readonly flag: \"--filter-reviewer-missing\"; }, { readonly param: \"filterRiskMissing\"; readonly flag: \"--filter-risk-missing\"; }, { readonly param: \"filterConfidenceMissing\"; readonly flag: \"--filter-confidence-missing\"; }, { readonly param: \"filterSprintMissing\"; readonly flag: \"--filter-sprint-missing\"; }, { readonly param: \"filterReleaseMissing\"; readonly flag: \"--filter-release-missing\"; }, { readonly param: \"filterHasNotes\"; readonly flag: \"--filter-has-notes\"; }, { readonly param: \"filterNoNotes\"; readonly flag: \"--filter-no-notes\"; }, { readonly param: \"filterHasLearnings\"; readonly flag: \"--filter-has-learnings\"; }, { readonly param: \"filterNoLearnings\"; readonly flag: \"--filter-no-learnings\"; }, { readonly param: \"filterHasFiles\"; readonly flag: \"--filter-has-files\"; }, { readonly param: \"filterNoFiles\"; readonly flag: \"--filter-no-files\"; }, { readonly param: \"filterHasDocs\"; readonly flag: \"--filter-has-docs\"; }, { readonly param: \"filterNoDocs\"; readonly flag: \"--filter-no-docs\"; }, { readonly param: \"filterHasTests\"; readonly flag: \"--filter-has-tests\"; }, { readonly param: \"filterNoTests\"; readonly flag: \"--filter-no-tests\"; }, { readonly param: \"filterHasComments\"; readonly flag: \"--filter-has-comments\"; }, { readonly param: \"filterNoComments\"; readonly flag: \"--filter-no-comments\"; }, { readonly param: \"filterHasDeps\"; readonly flag: \"--filter-has-deps\"; }, { readonly param: \"filterNoDeps\"; readonly flag: \"--filter-no-deps\"; }, { readonly param: \"filterHasBody\"; readonly flag: \"--filter-has-body\"; }, { readonly param: \"filterEmptyBody\"; readonly flag: \"--filter-empty-body\"; }, { readonly param: \"filterHasLinkedCommand\"; readonly flag: \"--filter-has-linked-command\"; }, { readonly param: \"filterNoLinkedCommand\"; readonly flag: \"--filter-no-linked-command\"; }, { readonly param: \"ids\"; readonly flag: \"--ids\"; }, { readonly param: \"limit\"; readonly flag: \"--limit\"; }, { readonly param: \"offset\"; readonly flag: \"--offset\"; }]"
+          "signature": "readonly [{ readonly param: \"filterStatus\"; readonly flag: \"--filter-status\"; }, { readonly param: \"filterType\"; readonly flag: \"--filter-type\"; }, { readonly param: \"filterTag\"; readonly flag: \"--filter-tag\"; }, { readonly param: \"filterPriority\"; readonly flag: \"--filter-priority\"; }, { readonly param: \"filterDeadlineBefore\"; readonly flag: \"--filter-deadline-before\"; }, { readonly param: \"filterDeadlineAfter\"; readonly flag: \"--filter-deadline-after\"; }, { readonly param: \"filterUpdatedAfter\"; readonly flag: \"--filter-updated-after\"; }, { readonly param: \"filterUpdatedBefore\"; readonly flag: \"--filter-updated-before\"; }, { readonly param: \"filterCreatedAfter\"; readonly flag: \"--filter-created-after\"; }, { readonly param: \"filterCreatedBefore\"; readonly flag: \"--filter-created-before\"; }, { readonly param: \"filterAssignee\"; readonly flag: \"--filter-assignee\"; }, { readonly param: \"filterAssigneeFilter\"; readonly flag: \"--filter-assignee-filter\"; }, { readonly param: \"filterParent\"; readonly flag: \"--filter-parent\"; }, { readonly param: \"filterSprint\"; readonly flag: \"--filter-sprint\"; }, { readonly param: \"filterRelease\"; readonly flag: \"--filter-release\"; }, { readonly param: \"filterAcMissing\"; readonly flag: \"--filter-ac-missing\"; }, { readonly param: \"filterEstimatesMissing\"; readonly flag: \"--filter-estimates-missing\"; }, { readonly param: \"filterResolutionMissing\"; readonly flag: \"--filter-resolution-missing\"; }, { readonly param: \"filterMetadataMissing\"; readonly flag: \"--filter-metadata-missing\"; }, { readonly param: \"filterReviewerMissing\"; readonly flag: \"--filter-reviewer-missing\"; }, { readonly param: \"filterRiskMissing\"; readonly flag: \"--filter-risk-missing\"; }, { readonly param: \"filterConfidenceMissing\"; readonly flag: \"--filter-confidence-missing\"; }, { readonly param: \"filterSprintMissing\"; readonly flag: \"--filter-sprint-missing\"; }, { readonly param: \"filterReleaseMissing\"; readonly flag: \"--filter-release-missing\"; }, { readonly param: \"filterHasNotes\"; readonly flag: \"--filter-has-notes\"; }, { readonly param: \"filterNoNotes\"; readonly flag: \"--filter-no-notes\"; }, { readonly param: \"filterHasLearnings\"; readonly flag: \"--filter-has-learnings\"; }, { readonly param: \"filterNoLearnings\"; readonly flag: \"--filter-no-learnings\"; }, { readonly param: \"filterHasFiles\"; readonly flag: \"--filter-has-files\"; }, { readonly param: \"filterNoFiles\"; readonly flag: \"--filter-no-files\"; }, { readonly param: \"filterHasDocs\"; readonly flag: \"--filter-has-docs\"; }, { readonly param: \"filterNoDocs\"; readonly flag: \"--filter-no-docs\"; }, { readonly param: \"filterHasTests\"; readonly flag: \"--filter-has-tests\"; }, { readonly param: \"filterNoTests\"; readonly flag: \"--filter-no-tests\"; }, { readonly param: \"filterHasComments\"; readonly flag: \"--filter-has-comments\"; }, { readonly param: \"filterNoComments\"; readonly flag: \"--filter-no-comments\"; }, { readonly param: \"filterHasDeps\"; readonly flag: \"--filter-has-deps\"; }, { readonly param: \"filterNoDeps\"; readonly flag: \"--filter-no-deps\"; }, { readonly param: \"filterHasBody\"; readonly flag: \"--filter-has-body\"; }, { readonly param: \"filterEmptyBody\"; readonly flag: \"--filter-empty-body\"; }, { readonly param: \"filterHasLinkedCommand\"; readonly flag: \"--filter-has-linked-command\"; }, { readonly param: \"filterNoLinkedCommand\"; readonly flag: \"--filter-no-linked-command\"; }, { readonly param: \"ids\"; readonly flag: \"--ids\"; }, { readonly param: \"limit\"; readonly flag: \"--limit\"; }, { readonly param: \"offset\"; readonly flag: \"--offset\"; }]"
         },
         {
           "classification": "contract_data",
@@ -12892,7 +13017,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"parent\"; readonly flag: \"--parent\"; }, { readonly param: \"reviewer\"; readonly flag: \"--reviewer\"; }, { readonly param: \"risk\"; readonly flag: \"--risk\"; }, { readonly param: \"confidence\"; readonly flag: \"--confidence\"; }, { readonly param: \"sprint\"; readonly flag: \"--sprint\"; }, { readonly param: \"release\"; readonly flag: \"--release\"; }, { readonly param: \"blockedBy\"; readonly flag: \"--blocked-by\"; }, { readonly param: \"blockedReason\"; readonly flag: \"--blocked-reason\"; }, { readonly param: \"unblockNote\"; readonly flag: \"--unblock-note\"; }, { readonly param: \"reporter\"; readonly flag: \"--reporter\"; }, { readonly param: \"severity\"; readonly flag: \"--severity\"; }, { readonly param: \"environment\"; readonly flag: \"--environment\"; }, { readonly param: \"reproSteps\"; readonly flag: \"--repro-steps\"; }, { readonly param: \"resolution\"; readonly flag: \"--resolution\"; }, { readonly param: \"expectedResult\"; readonly flag: \"--expected-result\"; }, { readonly param: \"actualResult\"; readonly flag: \"--actual-result\"; }, { readonly param: \"affectedVersion\"; readonly flag: \"--affected-version\"; }, { readonly param: \"fixedVersion\"; readonly flag: \"--fixed-version\"; }, { readonly param: \"component\"; readonly flag: \"--component\"; }, { readonly param: \"regression\"; readonly flag: \"--regression\"; readonly booleanish: true; }, { readonly param: \"customerImpact\"; readonly flag: \"--customer-impact\"; }, { readonly param: \"definitionOfReady\"; readonly flag: \"--definition-of-ready\"; readonly allowEmpty: true; }, { readonly param: \"order\"; readonly flag: \"--order\"; }, { readonly param: \"goal\"; readonly flag: \"--goal\"; }, { readonly param: \"objective\"; readonly flag: \"--objective\"; }, { readonly param: \"value\"; readonly flag: \"--value\"; }, { readonly param: \"impact\"; readonly flag: \"--impact\"; }, { readonly param: \"outcome\"; readonly flag: \"--outcome\"; }, { readonly param: \"whyNow\"; readonly flag: \"--why-now\"; }]"
+          "signature": "readonly [{ readonly param: \"parent\"; readonly flag: \"--parent\"; }, { readonly param: \"reviewer\"; readonly flag: \"--reviewer\"; }, { readonly param: \"risk\"; readonly flag: \"--risk\"; }, { readonly param: \"confidence\"; readonly flag: \"--confidence\"; }, { readonly param: \"sprint\"; readonly flag: \"--sprint\"; }, { readonly param: \"release\"; readonly flag: \"--release\"; }, { readonly param: \"blockedBy\"; readonly flag: \"--blocked-by\"; }, { readonly param: \"blockedReason\"; readonly flag: \"--blocked-reason\"; }, { readonly param: \"unblockNote\"; readonly flag: \"--unblock-note\"; }, { readonly param: \"reporter\"; readonly flag: \"--reporter\"; }, { readonly param: \"severity\"; readonly flag: \"--severity\"; }, { readonly param: \"environment\"; readonly flag: \"--environment\"; }, { readonly param: \"reproSteps\"; readonly flag: \"--repro-steps\"; }, { readonly param: \"resolution\"; readonly flag: \"--resolution\"; }, { readonly param: \"expectedResult\"; readonly flag: \"--expected-result\"; }, { readonly param: \"actualResult\"; readonly flag: \"--actual-result\"; }, { readonly param: \"affectedVersion\"; readonly flag: \"--affected-version\"; }, { readonly param: \"fixedVersion\"; readonly flag: \"--fixed-version\"; }, { readonly param: \"component\"; readonly flag: \"--component\"; }, { readonly param: \"regression\"; readonly flag: \"--regression\"; readonly booleanish: true; }, { readonly param: \"customerImpact\"; readonly flag: \"--customer-impact\"; }, { readonly param: \"definitionOfReady\"; readonly flag: \"--definition-of-ready\"; readonly allowEmpty: true; }, { readonly param: \"order\"; readonly flag: \"--order\"; }, { readonly param: \"rank\"; readonly flag: \"--rank\"; }, { readonly param: \"goal\"; readonly flag: \"--goal\"; }, { readonly param: \"objective\"; readonly flag: \"--objective\"; }, { readonly param: \"value\"; readonly flag: \"--value\"; }, { readonly param: \"impact\"; readonly flag: \"--impact\"; }, { readonly param: \"outcome\"; readonly flag: \"--outcome\"; }, { readonly param: \"whyNow\"; readonly flag: \"--why-now\"; }]"
         },
         {
           "classification": "contract_data",
@@ -12980,15 +13105,45 @@
       "symbols": [
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "AGENT_PROVENANCE_DIMENSIONS",
+          "signature": "readonly [\"model\", \"effort\", \"role\"]"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "AgentClientInfo",
-          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; }"
+          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; provenance?: Readonly<Record<string, string | undefined>>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentModelProvenanceCoverage",
+          "signature": "export interface AgentModelProvenanceCoverage { harness: string; entries: number; observed: number; unavailable: number; legacy_missing: number; coverage: number | null; inert: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "AgentModelSource",
-          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\";"
+          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "AgentProvenance",
+          "signature": "export type AgentProvenance = Readonly<Record<string, AgentProvenanceObservation | null>>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentProvenanceDescriptorCoverage",
+          "signature": "export interface AgentProvenanceDescriptorCoverage { dimension: string; harnesses: string[]; covered: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentProvenanceObservation",
+          "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; }"
         },
         {
           "classification": "supported",
@@ -13013,6 +13168,18 @@
           "kind": "interface",
           "name": "AggregateRow",
           "signature": "export interface AggregateRow { group: AggregateGroupRecord; group_label: string; count: number; open?: number; in_progress?: number; closed?: number; other?: number; completion_pct?: number; null_count?: number; sum?: number | null; avg?: number | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "analyzeAgentProvenanceDescriptorCoverage",
+          "signature": "(descriptors?: readonly HarnessSignalDescriptor[], dimensions?: readonly string[]) => AgentProvenanceDescriptorCoverage[] | calls: (descriptors?: readonly HarnessSignalDescriptor[], dimensions?: readonly string[]) => AgentProvenanceDescriptorCoverage[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "analyzeSdkCliParameterCompleteness",
+          "signature": "(source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[] | calls: (source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[]"
         },
         {
           "classification": "supported",
@@ -13234,7 +13401,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DetectedAgentIdentity",
-          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; }"
+          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; provenance?: AgentProvenance; }"
         },
         {
           "classification": "supported",
@@ -13354,13 +13521,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessDetectionSignals",
-          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; descriptors?: readonly HarnessSignalDescriptor[]; }"
+          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; descriptors?: readonly HarnessSignalDescriptor[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessSignalDescriptor",
-          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
+          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; provenance_environment_keys?: Readonly<Record<string, readonly string[] | undefined>>; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -13564,7 +13731,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "supported",
@@ -13640,6 +13807,30 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "SdkCliActionParameterCoverage",
+          "signature": "export interface SdkCliActionParameterCoverage { action: PmToolAction; command: string; cli: SdkCliParameterCoverageEntry[]; sdk: SdkCliParameterCoverageEntry[]; unclassified: SdkCliParameterCoverageEntry[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SdkCliCompletenessContractSource",
+          "signature": "export interface SdkCliCompletenessContractSource { actions?: readonly PmToolAction[]; resolveFlags?: (command: string) => CliFlagContract[]; resolveParameters?: (action: PmToolAction) => string[] | undefined; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SdkCliParameterCoverageEntry",
+          "signature": "export interface SdkCliParameterCoverageEntry { surface: \"cli\" | \"sdk\"; input: string; counterpart?: string; disposition: SdkCliParameterDisposition; reason: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SdkCliParameterDisposition",
+          "signature": "export type SdkCliParameterDisposition = \"shared\" | \"compatibility_alias\" | \"cli_transport\" | \"cli_presentation\" | \"cli_adapter\" | \"cli_scope_selector\" | \"sdk_transport\" | \"cli_positional\" | \"sdk_native\" | \"unclassified\";"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "search",
           "signature": "(query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult> | calls: (query: string, options?: SearchOptions, clientOptions?: PmClientOptions) => Promise<SearchResult>"
@@ -13667,6 +13858,12 @@
           "kind": "value",
           "name": "STATUS_VALUES",
           "signature": "readonly [\"draft\", \"open\", \"in_progress\", \"blocked\", \"closed\", \"canceled\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "summarizeAgentModelProvenance",
+          "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], minimumExplicitSample?: number) => AgentModelProvenanceCoverage[] | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], minimumExplicitSample?: number) => AgentModelProvenanceCoverage[]"
         },
         {
           "classification": "supported",
@@ -17914,7 +18111,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "advanced_export",

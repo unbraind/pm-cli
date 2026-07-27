@@ -23,27 +23,30 @@ if (!existsSync(cliPath)) {
 }
 
 function runContracts() {
-  const isolatedGlobalPath = mkdtempSync(resolve(tmpdir(), "pm-cli-contracts-global-"));
+  const isolatedRoot = mkdtempSync(resolve(tmpdir(), "pm-cli-contracts-"));
+  const isolatedProjectRoot = resolve(isolatedRoot, "project");
   let result;
   try {
     // --no-extensions keeps the snapshot deterministic: it captures only the
     // baseline CLI/SDK contracts, independent of which npm extensions happen to
-    // be installed in the local tracker (installed extensions are untracked, so
-    // their contributed contracts vary by environment and upstream version).
+    // be installed. Isolating both project and global state also prevents a
+    // caller's tracker schema or settings from changing the generated baseline.
     result = spawnSync(process.execPath, [cliPath, "--no-extensions", "contracts", "--full", "--json"], {
       cwd: repoRoot,
       encoding: "utf8",
       env: {
         ...process.env,
         NO_COLOR: "1",
-        PM_GLOBAL_PATH: isolatedGlobalPath,
+        PM_PATH: resolve(isolatedProjectRoot, ".agents", "pm"),
+        PM_GLOBAL_PATH: resolve(isolatedRoot, "global"),
+        PM_SOURCE_WORKSPACE_ROOT: isolatedProjectRoot,
         PM_NO_TELEMETRY: "1",
         PM_TELEMETRY_DISABLED: "1",
       },
       maxBuffer: 50 * 1024 * 1024,
     });
   } finally {
-    removeTempDirectory(isolatedGlobalPath);
+    removeTempDirectory(isolatedRoot);
   }
   if (result.error !== undefined) {
     throw new Error(`pm contracts --full --json failed to start: ${result.error.message}`);

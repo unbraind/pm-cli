@@ -15,6 +15,7 @@ import {
   mergeItemDocuments,
 } from "../../src/sdk/merge/three-way.js";
 import {
+  canonicalDocument,
   parseItemDocument,
   serializeItemDocument,
 } from "../../src/core/item/item-format.js";
@@ -38,6 +39,54 @@ describe("project boundary property fuzzing", () => {
         (record) => {
           expect(decodeToonItemContent(encodeToon(record)).value).toEqual(
             record,
+          );
+        },
+      ),
+      { numRuns: FUZZ_RUNS },
+    );
+  });
+
+  it("round-trips adversarial item content through the guarded write path", () => {
+    const adversarialText = fc.oneof(
+      fc.string({ maxLength: 160 }),
+      fc.constantFrom(
+        "notes[]:",
+        "comments[2]:",
+        'quotes " and backslashes \\',
+        "multiple\nlines\nwith: colons",
+        "Unicode 🤖 你好 مرحبا",
+        "# comment-shaped scalar",
+        "POST [redacted_endpoint]: HTTP 200",
+      ),
+    );
+    fc.assert(
+      fc.property(
+        fc.record({
+          title: adversarialText,
+          description: adversarialText,
+          body: adversarialText,
+          tags: fc.array(adversarialText, { maxLength: 8 }),
+        }),
+        ({ title, description, body, tags }) => {
+          const document = {
+            metadata: {
+              id: "pm-toon-roundtrip",
+              title,
+              description,
+              type: "Task",
+              status: "open",
+              priority: 1,
+              tags,
+              created_at: "2026-07-27T00:00:00.000Z",
+              updated_at: "2026-07-27T00:00:00.000Z",
+            },
+            body,
+          };
+          const serialized = serializeItemDocument(document, {
+            format: "toon",
+          });
+          expect(parseItemDocument(serialized, { format: "toon" })).toEqual(
+            canonicalDocument(document),
           );
         },
       ),

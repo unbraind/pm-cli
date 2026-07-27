@@ -116,6 +116,10 @@ describe("core/store/settings-validator", () => {
           environment_keys: ["SYNTHETIC_AGENT"],
           model_environment_keys: ["SYNTHETIC_MODEL"],
           session_environment_keys: ["SYNTHETIC_SESSION"],
+          provenance_environment_keys: {
+            effort: ["SYNTHETIC_EFFORT"],
+            role: ["SYNTHETIC_ROLE"],
+          },
           argv_markers: ["synthetic-agent"],
           client_names: ["synthetic-client"],
         },
@@ -135,6 +139,7 @@ describe("core/store/settings-validator", () => {
       [{ harness: "Invalid-Namespace" }],
       [{ harness: " padded" }],
       [{ harness: "oversized", argv_markers: ["x".repeat(129)] }],
+      [{ harness: "invalid-provenance", provenance_environment_keys: { effort: [1] } }],
       [{ harness: "too-many-signals", environment_keys: Array.from({ length: 65 }, (_, index) => `K${index}`) }],
       "not-an-array",
     ]) {

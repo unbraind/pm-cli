@@ -2,7 +2,7 @@
 
 This page describes safe local tests, linked tests, coverage, and release-readiness checks.
 
-Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon).
+Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), [pm-mcxr](../.agents/pm/issues/pm-mcxr.toon), [pm-u42x](../.agents/pm/issues/pm-u42x.toon), [pm-atfm](../.agents/pm/features/pm-atfm.toon), [pm-xmp5](../.agents/pm/tasks/pm-xmp5.toon), [pm-39cqqx](../.agents/pm/tasks/pm-39cqqx.toon), [pm-5cgm2z](../.agents/pm/chores/pm-5cgm2z.toon), [pm-avv3wx](../.agents/pm/issues/pm-avv3wx.toon).
 
 ## Agent Quick Context
 
@@ -98,6 +98,28 @@ Static quality also enforces source documentation coverage through `pnpm
 quality:static`: every `src/**/*.ts` source file needs a module TSDoc block,
 every exported declaration needs a non-module TSDoc block, and known generated
 boilerplate summaries are rejected.
+
+## TOON Storage Round-Trip Gate
+
+TOON item serialization is a fail-closed storage boundary. Before returning
+bytes to any create, update, merge, migration, or package caller, pm decodes the
+new `@toon-format/toon` output and compares it with the JSON-like canonical
+payload. A decode failure or the first field-level mismatch raises
+`item_document_roundtrip_failed`; no item bytes are written.
+
+The property suite exercises generated and adversarial agent text, including
+array-header spellings, colons, quotes, backslashes, newlines, Unicode, comment
+prefixes, and bracketed endpoint-shaped strings:
+
+```bash
+node scripts/run-tests.mjs test -- tests/fuzz/project-boundaries.fuzz.spec.ts
+```
+
+Major codec upgrades additionally require a complete read/serialize/read sweep
+over every tracked `.toon` item, strict history and storage validation, the
+packed npx consumer smoke, and Bun SDK/bunx execution. A dependency-only green
+unit suite is not sufficient evidence for changing the canonical storage
+codec.
 
 ### Directory-load cap and the `tests/unit` split
 

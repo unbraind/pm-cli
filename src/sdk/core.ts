@@ -103,6 +103,7 @@ export {
   type UpdateResult,
 } from "./runtime.js";
 export {
+  AGENT_PROVENANCE_DIMENSIONS,
   BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
   detectAgentIdentity,
   detectHarnessIdentity,
@@ -114,12 +115,27 @@ export {
   writeAuthorEnvironment,
   type AgentClientInfo,
   type AgentModelSource,
+  type AgentProvenance,
+  type AgentProvenanceObservation,
   type AuthorSource,
   type DetectedAgentIdentity,
   type HarnessDetectionSignals,
   type HarnessSignalDescriptor,
   type ResolvedAuthorIdentity,
 } from "../core/shared/author.js";
+export {
+  analyzeAgentProvenanceDescriptorCoverage,
+  summarizeAgentModelProvenance,
+  type AgentModelProvenanceCoverage,
+  type AgentProvenanceDescriptorCoverage,
+} from "./provenance.js";
+export {
+  analyzeSdkCliParameterCompleteness,
+  type SdkCliActionParameterCoverage,
+  type SdkCliCompletenessContractSource,
+  type SdkCliParameterCoverageEntry,
+  type SdkCliParameterDisposition,
+} from "./cli-contracts.js";
 export type {
   ItemDocument,
   ItemMetadata,

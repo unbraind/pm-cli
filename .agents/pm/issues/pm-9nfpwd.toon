@@ -1,0 +1,24 @@
+id: pm-9nfpwd
+title: "GH-763: merge-decision receipt persists shell-quoted item_path that cannot resolve"
+description: "The Git merge driver double-quotes %P even though Git already shell-quotes that placeholder, so conflict receipts store literal quote characters around item_path. The merge decision remains durable but its repair target cannot be opened programmatically; older clone-local driver config also survives package upgrades."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-27T05:33:58.913Z"
+updated_at: "2026-07-27T05:34:24.121Z"
+author: "harness:codex"
+acceptance_criteria: "Generated merge-driver configuration passes %P exactly once without preserving Git shell quotes; the runtime defensively normalizes one legacy shell-quote pair; merge report and validate diagnose stale clone-local driver configuration; Linux, macOS, Windows, packed-consumer, and two-branch merge tests prove receipt paths resolve; existing receipt data remains readable."
+parent: pm-o2kc
+reporter: github-issue-763
+severity: high
+expected_result: "Every merge-decision receipt stores a repository-relative item_path that resolves directly, including in clones whose merge driver was installed by an older pm version."
+actual_result: "Receipts store values such as '.agents/pm/tasks/pm-id.toon' with the single quote characters included, so the recorded path does not exist."
+component: "merge:decision-receipt"
+dependencies[3]{id,kind,created_at}:
+  pm-c0wthb,related,"2026-07-27T05:34:21.450Z"
+  pm-g5sx,implements,"2026-07-27T05:34:21.450Z"
+  pm-rh98vo,discovered_from,"2026-07-27T05:34:21.450Z"
+comments[1]{created_at,author,text}:
+  "2026-07-27T05:33:58.913Z","harness:codex","Duplicate-check evidence: all-status searches for GH-763, item_path receipt, merge decision quote path, and literal shell quoting found closed GH-754 owner pm-rh98vo and merge-fence lineage but no item for this post-release receipt-path regression."
+body: ""

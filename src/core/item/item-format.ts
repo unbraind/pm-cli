@@ -4,6 +4,7 @@
  * Defines item parsing, formatting, and lifecycle helpers for Item Format.
  */
 import { encode as encodeToon } from "@toon-format/toon";
+import { isDeepStrictEqual } from "node:util";
 import type {
   CalendarEvent,
   Comment,
@@ -1882,7 +1883,56 @@ function serializeToonItemDocument(
   const normalizedMetadata = normalizeItemMetadata(document.metadata, options);
   const orderedMetadata = orderItemMetadata(normalizedMetadata);
   const normalizedBody = normalizeBody(document.body ?? "");
-  return `${encodeToon({ ...orderedMetadata, body: normalizedBody })}\n`;
+  const payload: Record<string, unknown> = {
+    ...orderedMetadata,
+    body: normalizedBody,
+  };
+  const encodablePayload = JSON.parse(
+    JSON.stringify(payload),
+  ) as Record<string, unknown>;
+  const serialized = encodeToon(encodablePayload);
+  let decoded: unknown;
+  try {
+    decoded = decodeToonItemContent(serialized).value;
+  } catch (error: unknown) {
+    throw new PmCliError(
+      "Refusing to persist a TOON item document that the configured decoder cannot read back.",
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "item_document_roundtrip_failed",
+        reason: "encode_decode_error",
+        format: "toon",
+        required:
+          "Upgrade or repair the TOON codec before retrying the mutation; no item bytes were written.",
+        why: error instanceof Error ? error.message : String(error),
+      },
+    );
+  }
+  if (!isDeepStrictEqual(decoded, encodablePayload)) {
+    const decodedRecord =
+      typeof decoded === "object" && decoded !== null && !Array.isArray(decoded)
+        ? (decoded as Record<string, unknown>)
+        : {};
+    const field =
+      Object.keys(encodablePayload).find(
+        (key) =>
+          !isDeepStrictEqual(encodablePayload[key], decodedRecord[key]),
+      ) ?? "document";
+    throw new PmCliError(
+      `Refusing to persist a lossy TOON item document; round-trip mismatch at field "${field}".`,
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "item_document_roundtrip_failed",
+        reason: "encode_decode_mismatch",
+        format: "toon",
+        field,
+        required:
+          "Upgrade or repair the TOON codec before retrying the mutation; no item bytes were written.",
+        why: "The encoded document decoded to a value different from the canonical item payload.",
+      },
+    );
+  }
+  return `${serialized}\n`;
 }
 
 /** Implements parse item document for the public runtime surface of this module. */

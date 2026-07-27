@@ -1,0 +1,46 @@
+id: pm-oskdmu
+title: "ADR amendment: extensible durable agent provenance dimensions and privacy boundaries"
+description: "Amend pm-qwuber so durable, bounded, non-secret provenance can add declared dimensions such as reasoning effort and explicit session role without serializing raw session identifiers; define source precedence, absence semantics, privacy, compatibility, and conformance gates."
+type: Decision
+status: closed
+priority: 1
+tags[6]: architecture,"area:sdk",history,identity,privacy,provenance
+created_at: "2026-07-27T04:36:34.996Z"
+updated_at: "2026-07-27T06:23:38.799Z"
+closed_at: "2026-07-27T06:23:26.580Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "The decision distinguishes durable descriptive provenance from transient session identifiers and authorization identity; Reasoning effort and explicit role/topic have declared bounded sources, absence semantics, and privacy rules; Raw session IDs remain transient while privacy-safe agent_instance continues to distinguish concurrent agents; Older history remains readable and every new dimension is optional and schema-gated; The decision defines a conformance gate that prevents declared dimensions from remaining inert"
+goal: project management = context management
+objective: Make automatic agent provenance extensible without weakening privacy or compatibility
+value: Agents remain zero-configuration while history records the context needed to understand who acted and under what reasoning profile
+why_now: The current accepted ADR requires an amendment before pm-itsjf0 can change the durable identity shape
+parent: pm-m2u1
+risk: medium
+confidence: high
+resolution: "Accepted and documented the extensible durable provenance amendment, including precedence, absence semantics, backward compatibility, privacy boundaries, and conformance reporting."
+expected_result: The architecture decision clearly separates descriptive provenance from authorization and transient session identity.
+actual_result: "The ADR and operator guide define optional schema-gated dimensions, hashed instances, raw-session privacy limits, compatibility behavior, and inert-source gates."
+dependencies[4]{id,kind,created_at}:
+  pm-0zcwz6,related,"2026-07-27T04:36:34.996Z"
+  pm-itsjf0,blocks,"2026-07-27T04:36:34.996Z"
+  pm-qwuber,supersedes,"2026-07-27T04:36:34.996Z"
+  pm-z8qd4k,related,"2026-07-27T04:36:34.996Z"
+comments[2]{created_at,author,text}:
+  "2026-07-27T04:36:34.996Z","harness:codex","Duplicate check evidence: searched all-status tracker for reasoning effort provenance identity,session role topic identity,model capture harness signal,and the closed identity ADR lineage; pm-itsjf0 owns implementation and pm-qwuber is the accepted predecessor,with no existing amendment Decision."
+  "2026-07-27T06:22:59.534Z","harness:codex","Final local evidence 2026-07-27: tracker-linked tests pass for every item; CI=1 pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budget, SDK surface/import-cost/transport ratchets; 377 files and 6,448 tests pass at exact 100% statements/branches/functions/lines. Fresh packed acceptance passed npx, Bun SDK import, bunx, an unrelated npm prefix with resolved executable containment, 86-action SDK/CLI completeness with zero unclassified inputs, three provenance dimensions, durable CLI model/effort/role history, and the 88-command package-first dogfood flow. TOON 4.1 passed a 2,127-item storage integrity read, the earlier 2,125-item read/serialize/read corpus sweep, 250-run adversarial properties, and fail-closed negative controls. Secret scan, pnpm audit, GitHub Dependabot/code/secret scanning, open PR inventory, and open-issue PM-link inventory are all clean; only canonically deferred incompatible Sentry, npm-package-arg, and TypeScript upgrades remain. Live pm validate reports zero history drift, zero storage failures, and only the existing 290 historical resolution warnings; pm health is healthy with real-time telemetry draining."
+files[4]{path,scope,note}:
+  src/core/history/history.ts,project,Backward compatible durable storage
+  src/core/shared/author.ts,project,Decision implementation for extensible provenance
+  src/types.ts,project,Public history and settings shape
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Decision conformance coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts tests/unit/sdk/provenance.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms2tp8bt-285ccm,test,passed,"2026-07-27T06:05:24.200Z","2026-07-27T06:05:33.930Z","2026-07-27T06:05:33.930Z",1,0,0
+docs[3]{path,scope,note}:
+  docs/AGENT_PROVENANCE_ADR.md,project,Accepted amendment text
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,Operator facing decision guidance
+  docs/README.md,project,Documentation index entry
+close_reason: "Provenance ADR amendment accepted, implemented, documented, and verified."
+body: ""

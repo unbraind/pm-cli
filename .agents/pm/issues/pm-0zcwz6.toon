@@ -2,11 +2,12 @@ id: pm-0zcwz6
 title: "Model capture is inert in practice: zero of 35,103 recorded entries carry a model, because the declared signal for the primary harness is an environment variable that harness does not set"
 description: "The recorded entry format carries agent_model and agent_model_source, the detection layer resolves a model candidate, and history writes the field when a candidate exists. All of that shipped. What did not ship is a working signal for the harness that actually drives this repository. The built-in descriptor for claude-code declares model_environment_keys of ANTHROPIC_MODEL and CLAUDE_MODEL. Neither is present in a live Claude Code session; the environment exposes CLAUDECODE, CLAUDE_CODE_SESSION_ID, CLAUDE_CODE_ENTRYPOINT, CLAUDE_CODE_EXECPATH, CLAUDE_PID and CLAUDE_EFFORT, and no model variable at all. The consequence is measurable rather than theoretical: scanning all 2,085 history streams and 35,103 recorded entries in this workspace returns zero entries carrying agent_model. Harness detection itself works correctly and is recorded on every entry as detected. So the capability reads as delivered on every surface — the type declares it, the detector resolves it, the writer persists it — and produces nothing, and no gate or check notices. Per-model attribution analytics, which depend entirely on this field, would return empty results that are indistinguishable from a fleet in which every agent happens to be unattributed."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: attribution,history,identity,multi-agent,observability,provenance
 created_at: "2026-07-26T11:06:52.473Z"
-updated_at: "2026-07-26T17:09:33.832Z"
+updated_at: "2026-07-27T06:23:37.361Z"
+closed_at: "2026-07-27T06:23:19.612Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The declared signals for each supported harness are validated against what that harness actually exposes, and a signal that cannot fire is either corrected or recorded as unavailable rather than left declared; For harnesses that expose no model variable, an alternative resolution path is defined — client handshake metadata, invocation argument, or explicit configuration — so the field can be populated without the agent naming itself; A check reports the proportion of recorded entries carrying a model, per harness, so an inert signal is visible instead of silent; The check fails when a harness that declares a model signal records no model across a window of mutations, which is the condition that exists today; Model capture is exercised end to end for at least one harness in the test suite, asserting the recorded entry rather than the detector's return value; Documentation states which harnesses currently yield a model and which do not, so the analytics that consume it can distinguish absent from unattributed"
@@ -19,17 +20,35 @@ why_now: "Every mutation written while the signal is inert is a permanently unat
 parent: pm-o2kc
 risk: medium
 confidence: 90
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-03pq3o,discovered_from,"2026-07-26T11:06:52.473Z",null,null
-  pm-9yfo,related,"2026-07-26T11:06:52.473Z",null,null
-  pm-brxdct,related,"2026-07-26T11:06:52.473Z",null,null
-  pm-gw6uyq,blocked_by,"2026-07-26T11:06:52.473Z",null,null
-  pm-o2kc,implements,"2026-07-26T11:06:52.473Z",null,null
-  pm-qwuber,related,"2026-07-26T11:06:52.473Z",null,null
-  pm-szv11n,implements,"2026-07-26T11:06:52.473Z",null,null
-  pm-u14c,related,"2026-07-26T11:06:52.473Z",null,null
-  pm-w7ccmv,verifies,"2026-07-26T11:06:52.473Z",null,null
-  pm-z8qd4k,related,"2026-07-26T11:06:52.473Z",null,null
-comments[1]{created_at,author,text}:
+resolution: "Added working environment, argv, and client model sources plus model capture analysis that distinguishes observed, unavailable, legacy-missing, and inert descriptors."
+expected_result: Supported harness model provenance is captured when available and absence or inert sources are machine-readable.
+actual_result: Installed CLI history persisted gpt-5.6-sol with override source; descriptor coverage and inert-capture negative controls pass.
+dependencies[9]{id,kind,created_at}:
+  pm-03pq3o,discovered_from,"2026-07-26T11:06:52.473Z"
+  pm-9yfo,related,"2026-07-26T11:06:52.473Z"
+  pm-brxdct,related,"2026-07-26T11:06:52.473Z"
+  pm-o2kc,implements,"2026-07-26T11:06:52.473Z"
+  pm-qwuber,related,"2026-07-26T11:06:52.473Z"
+  pm-szv11n,implements,"2026-07-26T11:06:52.473Z"
+  pm-u14c,related,"2026-07-26T11:06:52.473Z"
+  pm-w7ccmv,verifies,"2026-07-26T11:06:52.473Z"
+  pm-z8qd4k,related,"2026-07-26T11:06:52.473Z"
+comments[2]{created_at,author,text}:
   "2026-07-26T17:09:33.832Z","harness:claude-code","Re-measured live on 2026-07-26 after the v2026.7.26 release that shipped pm-03pq3o. The census now covers 37,202 history entries across the whole workspace, including roughly 3,500 entries this session wrote through the current build with the current harness: agent_model is present on 0 of 37,202, and no entry carries a session field either. Harness detection itself is healthy in the same census — claude-code 2,363, codex 570, opencode 66 — which isolates the failure precisely to the model dimension rather than to detection as a whole. No key matching effort or thinking appears anywhere in the entry schema, which is the pm-itsjf0 half. So the plumbing that pm-03pq3o and pm-brxdct shipped remains correct and inert: the descriptor still names ANTHROPIC_MODEL and CLAUDE_MODEL for claude-code and this harness sets neither, so a fresh release did not move the number."
+  "2026-07-27T06:22:57.917Z","harness:codex","Final local evidence 2026-07-27: tracker-linked tests pass for every item; CI=1 pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budget, SDK surface/import-cost/transport ratchets; 377 files and 6,448 tests pass at exact 100% statements/branches/functions/lines. Fresh packed acceptance passed npx, Bun SDK import, bunx, an unrelated npm prefix with resolved executable containment, 86-action SDK/CLI completeness with zero unclassified inputs, three provenance dimensions, durable CLI model/effort/role history, and the 88-command package-first dogfood flow. TOON 4.1 passed a 2,127-item storage integrity read, the earlier 2,125-item read/serialize/read corpus sweep, 250-run adversarial properties, and fail-closed negative controls. Secret scan, pnpm audit, GitHub Dependabot/code/secret scanning, open PR inventory, and open-issue PM-link inventory are all clean; only canonically deferred incompatible Sentry, npm-package-arg, and TypeScript upgrades remain. Live pm validate reports zero history drift, zero storage failures, and only the existing 290 historical resolution warnings; pm health is healthy with real-time telemetry draining."
+files[6]{path,scope,note}:
+  sdk/public-surface.json,project,Published analytics contract
+  src/sdk/core.ts,project,Core SDK analytics exports
+  src/sdk/index.ts,project,Aggregate SDK analytics exports
+  src/sdk/provenance.ts,project,Privacy safe capture coverage analysis
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Real mutation history capture proof
+  tests/unit/sdk/provenance.spec.ts,project,Observed unavailable legacy and inert capture tests
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/provenance.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms2tos34-ou7hj9,test,passed,"2026-07-27T06:05:02.956Z","2026-07-27T06:05:12.881Z","2026-07-27T06:05:12.881Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/AGENT_PROVENANCE_ADR.md,project,Coverage and availability semantics
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,History capture guidance
+close_reason: Live model capture and availability/inert analysis verified.
 body: ""

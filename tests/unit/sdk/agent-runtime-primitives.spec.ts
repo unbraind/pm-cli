@@ -103,6 +103,12 @@ describe("agent runtime SDK primitives", () => {
       instance: "6790ed693ac61e5353a1e2e4",
       model: "gpt-5.6-sol",
       model_source: "environment",
+      provenance: {
+        model: {
+          source: "environment",
+          value: "gpt-5.6-sol",
+        },
+      },
       session: "thread-123",
     });
     expect(
@@ -114,6 +120,12 @@ describe("agent runtime SDK primitives", () => {
       harness: "codex",
       model: "operator-model",
       model_source: "override",
+      provenance: {
+        model: {
+          source: "override",
+          value: "operator-model",
+        },
+      },
     });
     expect(
       detectAgentIdentity({
@@ -130,6 +142,12 @@ describe("agent runtime SDK primitives", () => {
       instance: expect.any(String),
       model: "claude-opus",
       model_source: "mcp_client",
+      provenance: {
+        model: {
+          source: "mcp_client",
+          value: "claude-opus",
+        },
+      },
       session: "mcp-session",
     });
     expect(
@@ -141,6 +159,63 @@ describe("agent runtime SDK primitives", () => {
       harness: "opencode",
       model: "qwen-coder",
       model_source: "argv",
+      provenance: {
+        model: {
+          source: "argv",
+          value: "qwen-coder",
+        },
+      },
+    });
+  });
+
+  it("uses ambient signals by default and records extensible effort and role provenance", () => {
+    const previousThread = process.env.CODEX_THREAD_ID;
+    const previousModel = process.env.PM_AGENT_MODEL;
+    const previousEffort = process.env.PM_AGENT_EFFORT;
+    const previousRole = process.env.PM_AGENT_ROLE;
+    process.env.CODEX_THREAD_ID = "ambient-thread";
+    process.env.PM_AGENT_MODEL = "ambient-model";
+    process.env.PM_AGENT_EFFORT = "xhigh";
+    process.env.PM_AGENT_ROLE = "reviewer";
+    try {
+      expect(detectAgentIdentity()).toEqual({
+        harness: "codex",
+        instance: expect.any(String),
+        model: "ambient-model",
+        model_source: "override",
+        provenance: {
+          effort: { source: "override", value: "xhigh" },
+          model: { source: "override", value: "ambient-model" },
+          role: { source: "override", value: "reviewer" },
+        },
+        session: "ambient-thread",
+      });
+      expect(detectHarnessIdentity()).toBe("codex");
+    } finally {
+      if (previousThread === undefined) delete process.env.CODEX_THREAD_ID;
+      else process.env.CODEX_THREAD_ID = previousThread;
+      if (previousModel === undefined) delete process.env.PM_AGENT_MODEL;
+      else process.env.PM_AGENT_MODEL = previousModel;
+      if (previousEffort === undefined) delete process.env.PM_AGENT_EFFORT;
+      else process.env.PM_AGENT_EFFORT = previousEffort;
+      if (previousRole === undefined) delete process.env.PM_AGENT_ROLE;
+      else process.env.PM_AGENT_ROLE = previousRole;
+    }
+  });
+
+  it("retains explicit default provenance overrides without requiring a harness marker", () => {
+    expect(
+      detectAgentIdentity({
+        env: {
+          PM_AGENT_EFFORT: "xhigh",
+          PM_AGENT_ROLE: "implementation-lead",
+        },
+      }),
+    ).toEqual({
+      provenance: {
+        effort: { source: "override", value: "xhigh" },
+        role: { source: "override", value: "implementation-lead" },
+      },
     });
   });
 
@@ -170,6 +245,12 @@ describe("agent runtime SDK primitives", () => {
         instance: "159ec307ab8c324e240c067e",
         model: "test-model",
         model_source: "environment",
+        provenance: {
+          model: {
+            source: "environment",
+            value: "test-model",
+          },
+        },
         session: "session-1",
       });
       expect(() =>
@@ -221,7 +302,7 @@ describe("agent runtime SDK primitives", () => {
         env: {},
         argv: ["codex", "--model"],
       }),
-    ).toEqual({ harness: "codex" });
+    ).toEqual({ harness: "codex", provenance: { model: null } });
     expect(
       detectAgentIdentity({ env: {}, argv: ["/home/pi/project", "status"] }),
     ).toEqual({});
@@ -253,6 +334,12 @@ describe("agent runtime SDK primitives", () => {
       harness: "codex",
       model: "gpt-5.6-sol",
       model_source: "environment",
+      provenance: {
+        model: {
+          source: "environment",
+          value: "gpt-5.6-sol",
+        },
+      },
     });
     expect(
       resolveAuthorIdentity(undefined, "configured", {
@@ -267,6 +354,7 @@ describe("agent runtime SDK primitives", () => {
       author: "configured",
       source: "configured",
       harness: "codex",
+      provenance: { model: null },
     });
     expect(
       resolveAuthorIdentity(undefined, "", {
@@ -276,6 +364,7 @@ describe("agent runtime SDK primitives", () => {
       author: "harness:codex",
       source: "detected",
       harness: "codex",
+      provenance: { model: null },
     });
     expect(resolveAuthorIdentity(undefined, "", { env: {} })).toEqual({
       author: "unknown",
@@ -295,6 +384,8 @@ describe("agent runtime SDK primitives", () => {
             CODEX_HOME: "/tmp/codex",
             CODEX_MODEL: "gpt-5.6-sol",
             CODEX_THREAD_ID: "thread-456",
+            PM_AGENT_EFFORT: "high",
+            PM_AGENT_ROLE: "implementation",
           },
         },
         () => {
@@ -314,6 +405,11 @@ describe("agent runtime SDK primitives", () => {
       agent_harness: "codex",
       agent_model: "gpt-5.6-sol",
       agent_model_source: "environment",
+      agent_provenance: {
+        effort: { source: "override", value: "high" },
+        model: { source: "environment", value: "gpt-5.6-sol" },
+        role: { source: "override", value: "implementation" },
+      },
     });
     expect(author).toBe("configured-agent");
   });
@@ -391,6 +487,7 @@ describe("agent runtime SDK primitives", () => {
           author_source: "detected",
           agent_harness: "codex",
           agent_instance: expect.any(String),
+          agent_provenance: { model: null },
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),
@@ -402,6 +499,7 @@ describe("agent runtime SDK primitives", () => {
           author_source: "detected",
           agent_harness: "codex",
           agent_instance: expect.any(String),
+          agent_provenance: { model: null },
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),

@@ -2,11 +2,12 @@ id: pm-pwq0g5
 title: "The public harness detectors default env to an empty object, so detectAgentIdentity() and detectHarnessIdentity() silently return empty for every SDK caller"
 description: "src/core/shared/author.ts:438 reads 'const env = signals.env ?? {}', so the two public detectors evaluate every descriptor against a zero-key environment when called with no arguments. Verified live: CLAUDECODE=1 is set and detectAgentIdentity() still returns {}. The CLI is unaffected because resolveAuthorIdentity routes through effectiveHarnessDetectionSignals, which supplies process.env."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:sdk",extensibility,identity,silent-failure
 created_at: "2026-07-26T18:25:57.996Z"
-updated_at: "2026-07-26T18:29:13.079Z"
+updated_at: "2026-07-27T06:23:36.704Z"
+closed_at: "2026-07-27T06:23:16.252Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "detectAgentIdentity() called with no arguments inside a known harness returns that harness rather than an empty object; The injected-signals path used by tests continues to work unchanged, including the AsyncLocalStorage seam; detectAgentIdentity and detectHarnessIdentity are documented in docs/SDK.md with the environment-resolution contract stated explicitly"
@@ -18,9 +19,28 @@ why_now: "Harness identity is the seam the project is actively investing in, and
 parent: pm-usfg
 risk: medium
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-03pq3o,implements,"2026-07-26T18:29:12.868Z",null,null
-  pm-0zcwz6,related,"2026-07-26T18:29:12.868Z",null,null
-  pm-itsjf0,related,"2026-07-26T18:29:12.868Z",null,null
-  pm-w7mqzt,related,"2026-07-26T18:29:12.868Z",null,null
+resolution: "Public no-argument identity detectors now consume ambient environment, argv, and registered client signals while preserving explicit injectable inputs for deterministic callers."
+expected_result: detectAgentIdentity() and detectHarnessIdentity() identify supported harnesses without callers forwarding process state.
+actual_result: "Ambient Codex detection and installed Node/Bun consumers return the harness plus bounded model, effort, role, session, and privacy-safe instance provenance."
+dependencies[4]{id,kind,created_at}:
+  pm-03pq3o,implements,"2026-07-26T18:29:12.868Z"
+  pm-0zcwz6,related,"2026-07-26T18:29:12.868Z"
+  pm-itsjf0,related,"2026-07-26T18:29:12.868Z"
+  pm-w7mqzt,related,"2026-07-26T18:29:12.868Z"
+comments[1]{created_at,author,text}:
+  "2026-07-27T06:22:57.156Z","harness:codex","Final local evidence 2026-07-27: tracker-linked tests pass for every item; CI=1 pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budget, SDK surface/import-cost/transport ratchets; 377 files and 6,448 tests pass at exact 100% statements/branches/functions/lines. Fresh packed acceptance passed npx, Bun SDK import, bunx, an unrelated npm prefix with resolved executable containment, 86-action SDK/CLI completeness with zero unclassified inputs, three provenance dimensions, durable CLI model/effort/role history, and the 88-command package-first dogfood flow. TOON 4.1 passed a 2,127-item storage integrity read, the earlier 2,125-item read/serialize/read corpus sweep, 250-run adversarial properties, and fail-closed negative controls. Secret scan, pnpm audit, GitHub Dependabot/code/secret scanning, open PR inventory, and open-issue PM-link inventory are all clean; only canonically deferred incompatible Sentry, npm-package-arg, and TypeScript upgrades remain. Live pm validate reports zero history drift, zero storage failures, and only the existing 290 historical resolution warnings; pm health is healthy with real-time telemetry draining."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Published compatibility snapshot
+  src/core/shared/author.ts,project,Ambient detector defaults and override provenance
+  src/sdk/core.ts,project,Public core SDK exports
+  src/sdk/index.ts,project,Aggregate SDK exports
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,Ambient no argument regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms2tojuj-rs144h,test,passed,"2026-07-27T06:04:52.686Z","2026-07-27T06:05:02.204Z","2026-07-27T06:05:02.204Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/AGENT_PROVENANCE_ADR.md,project,Precedence and privacy contract
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,Ambient detector contract
+close_reason: Ambient public detector behavior and installed consumer proof verified.
 body: "## Problem\n\n`detectAgentIdentity(signals = {})` and `detectHarnessIdentity(signals = {})`\nare public SDK exports. Both are documented as pure detectors. Called the way\ntheir signature invites — with no arguments — they always return empty,\nbecause src/core/shared/author.ts:438 reads:\n\n```ts\nconst env = signals.env ?? {};\n```\n\nThe default is an **empty environment**, not `process.env`. Every descriptor\nmatch is then evaluated against zero environment keys, so no harness can ever\nmatch.\n\n## Live proof (2026-07-26, inside a real Claude Code session)\n\n```\n$ echo $CLAUDECODE\n1\n$ node -e 'import(\"./dist/core/shared/author.js\").then(m =>\n    console.log(JSON.stringify(m.detectAgentIdentity())))'\n{}\n```\n\nCLAUDECODE=1 is set and is exactly the key the claude-code descriptor lists in\n`environment_keys` (author.ts:97). Detection still returns `{}`.\n\nThe CLI is unaffected because it does not use this path: `resolveAuthorIdentity`\ngoes through `effectiveHarnessDetectionSignals` (author.ts:287), which supplies\n`{ env: process.env, ... }`. That is why real history entries do carry\n`author: harness:claude-code` / `author_source: detected`. The bug is confined\nto — and fully covers — the two functions an extension author would actually\nreach for.\n\n## Why this matters for extensibility\n\n- Both symbols are exported from src/sdk/index.ts (lines 33-34) and again from\n  src/sdk/core.ts (lines 107-108), so they are surfaced twice on the public SDK.\n- Neither appears anywhere in docs/SDK.md, so there is no documentation that\n  tells an author to pass `{ env: process.env }`.\n- The failure is silent: `detectHarnessIdentity()` returns `undefined`, which\n  is indistinguishable from \"no known harness\". A package that gates behaviour\n  on harness identity degrades to its no-harness branch forever, on every host,\n  with no error, no warning, and no telemetry.\n\nThis is the same seam class as the other identity defects: a correct primitive\nexists, but the consumer-facing entry point cannot reach it.\n\n## Direction (not a mandate for the fix)\n\nEither default `signals.env` to `process.env` in the public detectors (keeping\nthe injected-signals path for tests, which is what the AsyncLocalStorage seam\nalready provides), or make the parameter required so the omission is a compile\nerror rather than a silent empty result. Whichever is chosen, add the symbol to\ndocs/SDK.md — it is currently undocumented in both directions.\n\n## Relationship to the other identity items\n\n- pm-0zcwz6 owns model capture being inert (field exists, key list wrong).\n- pm-itsjf0 owns provenance being a fixed three-dimension schema\n  (CLAUDE_EFFORT=xhigh has no field to hold it).\n- This item owns the **public detector entry point returning empty**, which is\n  upstream of both and is a distinct defect: even a correct descriptor set and\n  a correct history schema would still be unreachable through the SDK API."
