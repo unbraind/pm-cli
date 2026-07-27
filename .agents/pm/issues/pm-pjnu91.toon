@@ -6,8 +6,8 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",output,projection,token-efficiency
 created_at: "2026-07-26T17:05:50.828Z"
-updated_at: "2026-07-27T10:43:21.995Z"
-closed_at: "2026-07-27T10:43:19.171Z"
+updated_at: "2026-07-27T11:13:00.622Z"
+closed_at: "2026-07-27T11:12:57.848Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every read command declares its default projection in the contracts surface, and the declaration is machine-checkable against what the command actually emits; The response envelope names the active projection so a caller can tell that a field was not requested rather than not set; A caller can request the complete field set from any list-family command with one documented flag, and the flag behaves identically across the family; Divergences that remain are deliberate token-budget decisions recorded in the contract, not accidents of which code path built the row; A regression test asserts that a field present in one family member and absent in another is either justified in the contract or a build failure; Documentation states the rule that an absent key never implies an unset value"
@@ -34,9 +34,10 @@ dependencies[10]{id,kind,created_at}:
   pm-wrss,discovered_from,"2026-07-26T17:05:50.828Z"
   pm-wt43zj,blocks,"2026-07-26T17:05:50.828Z"
   pm-x4nn3z,related,"2026-07-26T17:05:50.828Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-27T10:05:41.432Z","harness:codex","Evidence: implementation is complete; pnpm lint passed with zero jscpd clones, static/docstring/SDK compatibility gates passed, 375 files and 6,404 tests passed at 100/100/100/100 coverage, and an unrelated packed consumer resolved its local executable then passed install/doctor/create/list plus npx and bunx version smoke tests."
   "2026-07-27T10:43:12.995Z","harness:codex","Final evidence: corrected package-first brief-projection acceptance and its script harness; focused 35-test suite passed, real 88-command dogfood passed, and aggregate coverage passed 375 files / 6,404 tests at exact 100/100/100/100. Release gates passed through npx pack and dogfood; hosted Greptile correctly deferred until a committed branch SHA exists."
+  "2026-07-27T11:12:39.624Z","harness:codex","PR #769 review evidence: registered the exact focused projection, 88-command package dogfood, packed npx consumer, and full coverage commands in PM test metadata; the focused combined acceptance passed."
 files[10]{path,scope,note}:
   scripts/dogfood-package-first.mjs,project,Package-first acceptance for declared brief projection
   src/cli/commands/contracts.ts,project,List projection defaults runtime envelope and contract parity
@@ -48,7 +49,10 @@ files[10]{path,scope,note}:
   tests/unit/commands/contracts-command.spec.ts,project,List projection defaults runtime envelope and contract parity
   tests/unit/commands/list-command.spec.ts,project,List projection defaults runtime envelope and contract parity
   tests/unit/scripts/dogfood-package-first.spec.ts,project,Projection dogfood fixture parity
-tests[1]{command,scope,timeout_seconds,note}:
+tests[4]{command,scope,timeout_seconds,note}:
+  node scripts/dogfood-package-first.mjs,project,240,Real package-first 88-command dogfood
+  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts,project,240,Focused projection and dogfood harness acceptance
+  node scripts/smoke-npx-from-pack.mjs,project,240,Packed npx consumer verification
   "pnpm test:coverage",project,300,Repo-wide 100/100/100/100 gate
-close_reason: List projection contracts and package-first acceptance now agree on explicit brief mode.
+close_reason: Projection contracts remain complete and all claimed acceptance commands are now linked as runnable PM tests.
 body: ""

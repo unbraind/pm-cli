@@ -84,9 +84,7 @@ function collectTypeToFolder(
   return typeRegistry.type_to_folder;
 }
 
-async function buildCompletionRuntimeConfig(
-  global: GlobalOptions,
-): Promise<{
+async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<{
   item_types?: string[];
   statuses?: string[];
   command_flags?: Partial<
@@ -108,10 +106,7 @@ async function buildCompletionRuntimeConfig(
   }
   const settings = await readSettings(pmRoot);
   const registrations = getActiveExtensionRegistrations();
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    registrations,
-  );
+  const typeRegistry = resolveItemTypeRegistry(settings, registrations);
   const itemTypes = collectTypeNames(typeRegistry);
   const statuses = resolveRuntimeStatusRegistry(settings.schema)
     .definitions.map((definition) => definition.id)
@@ -175,9 +170,7 @@ function readPayloadResult(payload: unknown): unknown {
   return record && Object.hasOwn(record, "result") ? record.result : payload;
 }
 
-function collectTagsFromItems(
-  items: ItemMetadata[],
-): string[] {
+function collectTagsFromItems(items: ItemMetadata[]): string[] {
   const tagSet = new Set<string>();
   for (const item of items) {
     const tags = Array.isArray(item.tags) ? item.tags : [];
@@ -287,15 +280,10 @@ export async function runCompletionTagsPackage(
   }
   const settings = await readSettings(pmRoot);
   const registrations = getActiveExtensionRegistrations();
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    registrations,
-  );
+  const typeRegistry = resolveItemTypeRegistry(settings, registrations);
   const typeToFolder = collectTypeToFolder(typeRegistry);
   const itemFormat = (
-    settings.item_format === "json_markdown"
-      ? "json_markdown"
-      : "toon"
+    settings.item_format === "json_markdown" ? "json_markdown" : "toon"
   ) as "toon" | "json_markdown";
   const items = await listAllItemMetadata(
     pmRoot,
@@ -316,6 +304,9 @@ export async function runCompletionStatusesPackage(
   global: GlobalOptions,
 ): Promise<{ statuses: string[]; count: number }> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return { statuses: [], count: 0 };
+  }
   const settings = await readSettings(pmRoot);
   const statuses = resolveRuntimeStatusRegistry(settings.schema)
     .definitions.map((definition) => definition.id)
@@ -332,12 +323,12 @@ export async function runCompletionTypesPackage(
   global: GlobalOptions,
 ): Promise<{ types: string[]; count: number }> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return { types: [], count: 0 };
+  }
   const settings = await readSettings(pmRoot);
   const registrations = getActiveExtensionRegistrations();
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    registrations,
-  );
+  const typeRegistry = resolveItemTypeRegistry(settings, registrations);
   const types = collectTypeNames(typeRegistry);
   return {
     types,

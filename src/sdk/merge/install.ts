@@ -471,16 +471,21 @@ export async function runMergeInstall(
   options: MergeInstallOptions,
   global: GlobalOptions,
 ): Promise<MergeInstallResult> {
+  const explicitPath = global.path?.trim();
   const sourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT?.trim();
   const sourcePmRoot = process.env.PM_SOURCE_PM_PATH?.trim();
   const usesLinkedTestSourceContext =
+    explicitPath === undefined &&
     sourceWorkspaceRoot !== undefined &&
     sourceWorkspaceRoot.length > 0 &&
     sourcePmRoot !== undefined &&
     sourcePmRoot.length > 0;
-  const pmRoot = usesLinkedTestSourceContext
-    ? path.resolve(sourcePmRoot)
-    : resolvePmRoot(process.cwd(), global.path);
+  const pmRoot =
+    explicitPath !== undefined
+      ? resolvePmRoot(process.cwd(), explicitPath)
+      : usesLinkedTestSourceContext
+        ? path.resolve(sourcePmRoot)
+        : resolvePmRoot(process.cwd());
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
       `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
@@ -488,9 +493,11 @@ export async function runMergeInstall(
     );
   }
   const workspaceRoot = await resolveGitWorkspaceRoot(
-    usesLinkedTestSourceContext
-      ? path.resolve(sourceWorkspaceRoot)
-      : process.cwd(),
+    explicitPath !== undefined
+      ? pmRoot
+      : usesLinkedTestSourceContext
+        ? path.resolve(sourceWorkspaceRoot)
+        : process.cwd(),
   );
   return installMergeFence({
     pmRoot,

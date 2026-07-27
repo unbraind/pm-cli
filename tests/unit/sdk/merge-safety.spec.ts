@@ -59,16 +59,14 @@ describe("public merge-safety SDK primitives", () => {
   afterEach(async () => {
     setActiveExtensionServices(null);
     await Promise.all(
-      workspaces
-        .splice(0)
-        .map((workspace) =>
-          rm(workspace, {
-            recursive: true,
-            force: true,
-            maxRetries: 5,
-            retryDelay: 100,
-          }),
-        ),
+      workspaces.splice(0).map((workspace) =>
+        rm(workspace, {
+          recursive: true,
+          force: true,
+          maxRetries: 5,
+          retryDelay: 100,
+        }),
+      ),
     );
   });
 
@@ -924,17 +922,24 @@ describe("public merge-safety SDK primitives", () => {
         }
       }
 
-      const nestedRepo = await mkdtemp(
-        path.join(os.tmpdir(), "pm-merge-nested-git-"),
+      const unrelatedRepo = await mkdtemp(
+        path.join(os.tmpdir(), "pm-merge-unrelated-git-"),
       );
-      workspaces.push(nestedRepo);
-      execFileSync("git", ["init", "-q"], { cwd: nestedRepo });
+      workspaces.push(unrelatedRepo);
+      execFileSync("git", ["init", "-q"], { cwd: unrelatedRepo });
+      await expect(
+        installMergeFence({
+          pmRoot: context.pmPath,
+          workspaceRoot: unrelatedRepo,
+          dryRun: true,
+        }),
+      ).rejects.toThrow(/outside the git repository/);
       const priorCwd = process.cwd();
       try {
-        process.chdir(nestedRepo);
+        process.chdir(unrelatedRepo);
         await expect(
-          runMergeInstall({}, { path: context.pmPath }),
-        ).rejects.toThrow(/outside the git repository/);
+          runMergeInstall({ dryRun: true }, { path: context.pmPath }),
+        ).resolves.toMatchObject({ workspace_root: context.tempRoot });
       } finally {
         process.chdir(priorCwd);
       }
@@ -1072,9 +1077,9 @@ describe("public merge-safety SDK primitives", () => {
     expect(() =>
       mergeRelationshipEventStreams(base, "<<<<<<< ours\n", ""),
     ).toThrow(/unresolved conflict markers/);
-    expect(() =>
-      mergeRelationshipEventStreams(base, "not json\n", ""),
-    ).toThrow(/invalid JSON/);
+    expect(() => mergeRelationshipEventStreams(base, "not json\n", "")).toThrow(
+      /invalid JSON/,
+    );
     expect(() =>
       mergeRelationshipEventStreams(base, '{"sequence":2}\n', ""),
     ).toThrow(/not a relationship event/);
@@ -1136,9 +1141,9 @@ describe("public merge-safety SDK primitives", () => {
         expect(
           (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
         ).toBe("not_installed");
-        expect((await auditMergeAttributeFence(context.pmPath, ["tasks"])).status).toBe(
-          "not_installed",
-        );
+        expect(
+          (await auditMergeAttributeFence(context.pmPath, ["tasks"])).status,
+        ).toBe("not_installed");
 
         // A .gitattributes without the fence marker still counts as not installed.
         await writeFile(
@@ -1239,10 +1244,9 @@ describe("public merge-safety SDK primitives", () => {
           installedAttributes.replace("# pm-cli:merge-drivers:end", ""),
           "utf8",
         );
-        const truncatedAudit = await auditMergeAttributeFence(
-          context.pmPath,
-          ["tasks"],
-        );
+        const truncatedAudit = await auditMergeAttributeFence(context.pmPath, [
+          "tasks",
+        ]);
         expect(truncatedAudit.status).toBe("drift");
         expect(truncatedAudit.missing_patterns.length).toBeGreaterThan(0);
         await runMergeInstall({}, { path: context.pmPath });
@@ -1307,23 +1311,50 @@ describe("public merge-safety SDK primitives", () => {
     });
   });
 
-  it("installs from protected source coordinates while linked-test storage remains sandboxed", async () => {
+  it("uses protected source coordinates as a fallback while explicit tracker paths win", async () => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
-      const sandboxRoot = await mkdtemp(path.join(os.tmpdir(), "pm-merge-linked-sandbox-"));
+      const sandboxRoot = await mkdtemp(
+        path.join(os.tmpdir(), "pm-merge-linked-sandbox-"),
+      );
       workspaces.push(sandboxRoot);
+      execFileSync("git", ["init", "-q"], { cwd: sandboxRoot });
+      const sandboxPmRoot = path.join(sandboxRoot, ".agents", "pm");
+      await mkdir(sandboxPmRoot, { recursive: true });
+      await writeFile(
+        path.join(sandboxPmRoot, "settings.json"),
+        await readFile(path.join(context.pmPath, "settings.json"), "utf8"),
+        "utf8",
+      );
       const previousSourcePmPath = process.env.PM_SOURCE_PM_PATH;
       const previousSourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT;
       process.env.PM_SOURCE_PM_PATH = context.pmPath;
       process.env.PM_SOURCE_WORKSPACE_ROOT = context.tempRoot;
       try {
-        const installed = await runMergeInstall(
-          { dryRun: true },
-          { path: path.join(sandboxRoot, ".agents", "pm") },
+        const sourceInstalled = await runMergeInstall({ dryRun: true }, {});
+        expect(sourceInstalled.workspace_root).toBe(context.tempRoot);
+        expect(sourceInstalled.gitattributes.schema_scope).toBe("project");
+        expect(sourceInstalled.gitattributes.patterns).toContain(
+          '".agents/pm/tasks/*.toon" merge=pm-item-toon',
         );
-        expect(installed.workspace_root).toBe(context.tempRoot);
-        expect(installed.gitattributes.schema_scope).toBe("project");
-        expect(installed.gitattributes.patterns).toContain(
+        delete process.env.PM_SOURCE_PM_PATH;
+        delete process.env.PM_SOURCE_WORKSPACE_ROOT;
+        const previousCwd = process.cwd();
+        try {
+          process.chdir(context.tempRoot);
+          const cwdInstalled = await runMergeInstall({ dryRun: true }, {});
+          expect(cwdInstalled.workspace_root).toBe(context.tempRoot);
+        } finally {
+          process.chdir(previousCwd);
+        }
+        process.env.PM_SOURCE_PM_PATH = context.pmPath;
+        process.env.PM_SOURCE_WORKSPACE_ROOT = context.tempRoot;
+        const explicitInstalled = await runMergeInstall(
+          { dryRun: true },
+          { path: sandboxPmRoot },
+        );
+        expect(explicitInstalled.workspace_root).toBe(sandboxRoot);
+        expect(explicitInstalled.gitattributes.patterns).toContain(
           '".agents/pm/tasks/*.toon" merge=pm-item-toon',
         );
       } finally {
