@@ -12,10 +12,6 @@
 * text=auto eol=lf
 
 # pm-cli:merge-drivers:start
-".agents/pm/cards/*.toon" merge=pm-item-toon
-".agents/pm/cards/*.md" merge=pm-item-markdown
-".agents/pm/changesets/*.toon" merge=pm-item-toon
-".agents/pm/changesets/*.md" merge=pm-item-markdown
 ".agents/pm/chores/*.toon" merge=pm-item-toon
 ".agents/pm/chores/*.md" merge=pm-item-markdown
 ".agents/pm/decisions/*.toon" merge=pm-item-toon
@@ -34,18 +30,12 @@
 ".agents/pm/milestones/*.md" merge=pm-item-markdown
 ".agents/pm/plans/*.toon" merge=pm-item-toon
 ".agents/pm/plans/*.md" merge=pm-item-markdown
-".agents/pm/refs/*.toon" merge=pm-item-toon
-".agents/pm/refs/*.md" merge=pm-item-markdown
 ".agents/pm/reminders/*.toon" merge=pm-item-toon
 ".agents/pm/reminders/*.md" merge=pm-item-markdown
 ".agents/pm/stories/*.toon" merge=pm-item-toon
 ".agents/pm/stories/*.md" merge=pm-item-markdown
 ".agents/pm/tasks/*.toon" merge=pm-item-toon
 ".agents/pm/tasks/*.md" merge=pm-item-markdown
-".agents/pm/twin-assets/*.toon" merge=pm-item-toon
-".agents/pm/twin-assets/*.md" merge=pm-item-markdown
-".agents/pm/twin-facilities/*.toon" merge=pm-item-toon
-".agents/pm/twin-facilities/*.md" merge=pm-item-markdown
 ".agents/pm/**/*.jsonl" merge=pm-relationship
 ".agents/pm/history/*.jsonl" merge=pm-history
 ".agents/pm/settings.json" merge=pm-json
