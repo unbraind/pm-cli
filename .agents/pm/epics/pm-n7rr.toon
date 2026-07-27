@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:cli","area:contracts",refactor,simplification
 created_at: "2026-07-05T04:51:21.783Z"
-updated_at: "2026-07-27T04:18:54.607Z"
+updated_at: "2026-07-27T12:57:19.528Z"
 author: maintainer-agent
 estimated_minutes: 2400
 acceptance_criteria: Top-level command list fits one help screen (~15 nouns); every pre-existing command spelling still works (hidden alias shims + deprecation notice); contracts/MCP/completions/docs regenerated with zero feature regression; agent token cost of 'pm --help' + contracts measurably reduced; all existing tests pass unchanged (aliases keep old spellings valid)
@@ -17,21 +17,55 @@ why_now: "The command surface has grown command-by-command to ~60 top-level entr
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[14]{id,kind,created_at,author,source_kind}:
-  pm-usfg,related,"2026-07-14T17:05:19.953Z",null,null
-  pm-pbyu,related,"2026-07-14T17:05:20.610Z",null,null
-  pm-mpbb,related,"2026-07-14T17:05:21.299Z",null,null
-  pm-5t33or,related,"2026-07-24T23:54:36.517Z",null,null
-  pm-j82fd3,related,"2026-07-24T23:54:36.517Z",null,null
-  pm-npr3,related,"2026-07-24T23:56:27.723Z",null,null
-  pm-tqel,related,"2026-07-24T23:56:27.723Z",null,null
-  pm-yql1,related,"2026-07-24T23:56:27.723Z",null,null
-  pm-cxr0jb,related,"2026-07-25T12:36:29.710Z",null,null
-  pm-kvxqp1,related,"2026-07-25T12:36:29.710Z",null,null
-  pm-sx52hr,related,"2026-07-25T12:36:29.710Z",null,null
-  pm-j82fd3,implements,"2026-07-25T22:10:13.567Z",null,null
-  pm-e9yevx,related,"2026-07-26T09:56:09.973Z",null,null
-  pm-gmdzaa,related,"2026-07-27T04:18:54.314Z",null,null
+dependencies[15]:
+  - id: pm-usfg
+    kind: related
+    created_at: "2026-07-14T17:05:19.953Z"
+  - id: pm-pbyu
+    kind: related
+    created_at: "2026-07-14T17:05:20.610Z"
+  - id: pm-mpbb
+    kind: related
+    created_at: "2026-07-14T17:05:21.299Z"
+  - id: pm-5t33or
+    kind: related
+    created_at: "2026-07-24T23:54:36.517Z"
+  - id: pm-j82fd3
+    kind: related
+    created_at: "2026-07-24T23:54:36.517Z"
+  - id: pm-npr3
+    kind: related
+    created_at: "2026-07-24T23:56:27.723Z"
+  - id: pm-tqel
+    kind: related
+    created_at: "2026-07-24T23:56:27.723Z"
+  - id: pm-yql1
+    kind: related
+    created_at: "2026-07-24T23:56:27.723Z"
+  - id: pm-cxr0jb
+    kind: related
+    created_at: "2026-07-25T12:36:29.710Z"
+  - id: pm-kvxqp1
+    kind: related
+    created_at: "2026-07-25T12:36:29.710Z"
+  - id: pm-sx52hr
+    kind: related
+    created_at: "2026-07-25T12:36:29.710Z"
+  - id: pm-j82fd3
+    kind: implements
+    created_at: "2026-07-25T22:10:13.567Z"
+  - id: pm-e9yevx
+    kind: related
+    created_at: "2026-07-26T09:56:09.973Z"
+  - id: pm-gmdzaa
+    kind: related
+    created_at: "2026-07-27T04:18:54.314Z"
+  - id: pm-sb0tns
+    kind: related
+    created_at: "2026-07-27T12:57:19.252Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[19]{created_at,author,text}:
   "2026-07-05T08:02:33.747Z",codex-sdk-agent,"Scope alignment evidence: PR #431 review caught that the target-surface body omitted append from item facets. Updated the live epic body through pm update so the consolidation grammar includes comments/notes/learnings/files/docs/deps/append/test."
   "2026-07-06T22:23:28.633Z",codex,"Audit evidence 2026-07-06/07 codex: live pm --help still exposes 64+ top-level/user-visible spellings plus extension commands and the internal test-runs-worker command. Existing child set covers list/history/package/lifecycle/calendar/facets/context/ops/aggregate/customization/help/contracts/alias-shim clusters. Duplicate-safe search found no focused item for the internal worker leakage, so pm-lp4j was created under this epic. This is a simplification gap only; no runtime feature is removed."
@@ -52,7 +86,7 @@ comments[19]{created_at,author,text}:
   "2026-07-24T12:05:47.149Z",claude-code-agent,"Current agent-surface evidence: root help exposes 75 top-level names while contracts summary exposes 63 canonical summaries. Default TOON remains the token-efficient baseline, but representative real-tracker payloads are still substantial: context --limit 10 about 7.6 KB / 793 words, search --limit 20 about 7.3 KB / 780 words, list-open --limit 20 about 3.6 KB / 419 words, and get brief about 2.3 KB / 289 words. The existing noun-verb consolidation, tiered help, generated contract/docs, and token-budget children fully own this; no parallel simplification item was created."
   "2026-07-26T10:30:05.389Z","harness:opencode","Command-surface census 2026-07-26 (audit plan pm-t9e3bc): live contracts summary reports 74 top-level command spellings (63 core + 11 extension-provided: beads, cal, calendar, changelog, command-kit, comments-audit, dedupe-audit, dedupe-merge, guide, normalize, reindex, search-advanced, templates, test-runs, todos, twin, vcs — 17 with the 6 deduped calendar/changelog alias pairs); pm --help renders 88 spelling lines including alias pairs (context|ctx, package|packages). Surface is stable vs the 75-name 2026-07-25 census (no growth pressure this week), confirming consolidation remains the binding constraint rather than surface expansion. contracts --flags-only payload measured at 117,070 bytes in this extension-loaded workspace."
   "2026-07-26T10:30:55.904Z","harness:opencode","Census precision correction (same pass): the verifiable split is 74 top-level spellings in contracts --summary and 88 spelling lines in pm --help including alias pairs; the runtime profile reports 7 extensions loaded contributing 21 command handlers and 7 parser overrides. The core/extension noun arithmetic in my previous comment was illustrative and mis-added — treat the 74/88/7-loaded/21-handler numbers as the census of record. Conclusion unchanged: surface stable vs the 75-name census, consolidation (not growth) remains the binding constraint."
-notes[14]:
+notes[15]:
   - created_at: "2026-07-05T04:55:44.581Z"
     author: maintainer-agent
     text: "Brainstorm census 2026-07-05 — current surface is ~60 top-level commands. Redundancy clusters found; 8 list-* status variants (list/all/draft/open/in-progress/blocked/closed/canceled), 5 history-family commands (history/history-redact/history-repair/history-compact/activity) plus restore, 4 package-lifecycle commands (extension/package/install/upgrade — extension and package are already partial synonyms), 3 lifecycle sugar commands (start-task/pause-task/close-task) duplicating claim/release/close+status, 3 calendar shortcuts (meet/event/remind) duplicating create with presets, 6 diagnostics commands (stats/health/validate/gc/telemetry/eval). Consolidating just these clusters removes ~24 top-level entries with zero feature loss."
@@ -96,6 +130,9 @@ notes[14]:
   - created_at: "2026-07-27T04:18:53.241Z"
     author: "harness:claude-code"
     text: "Simplification is being measured on the smallest of its three axes (2026-07-27 brainstorm, extends the placement proposal rather than replacing it).\n\nThis epic's acceptance criteria and its target-surface table are both expressed in nouns: roughly fifteen, one help screen. The 2026-07-26 census then found five core nouns with no home and a placement proposal followed. All of that is right and none of it is what an agent actually pays. Measured today against pm 2026.7.27, the surface an agent must learn has three axes, and the noun count is the smallest one.\n\nAxis one, spellings: 89 top-level entries, 152 commands and 126 actions in the contract enumeration. This is the axis the target table governs.\n\nAxis two, flags: 326 declared flags across 52 contract flag lists. Nothing in the target table constrains this, and it is where the real growth is. Two of the fifteen target nouns already carry more flags than the entire top-level command list has entries: pm create declares enough that its flags-only contract is 5994 bytes and pm update 6721. Consolidating list-open, list-closed and their six siblings into pm list --status moves complexity from axis one to axis two, which is the correct move for discoverability and a null move for the amount an agent must learn unless the flag lexicon is bounded at the same time. That is what pm-fs8q9x exists for, and the sequencing consequence is that a noun consolidation that lands before a flag lexicon can make the measured learning cost worse while making the help screen shorter.\n\nAxis three, output shapes: one per command, and none of them is declared anywhere an agent can read before paying for it. This is the axis with no owner in the target table at all, and it is the one that determines whether the second call an agent makes is cheap. An agent that has learned pm list still cannot predict what pm list returns, so it learns by paying.\n\nThe measurement that ties the three together, and the reason this note exists rather than a general observation about complexity: the call AGENTS.md designates for learning the surface, pm contracts --json, returns 125193 bytes, about 31000 tokens, and it is the brief form. It reports command_flags_omitted_reason, schema_omitted_reason and commander_aliases_omitted_reason all set to unfiltered_default_brief, so 31k tokens buys the spellings and neither the flags nor the shapes. Learning the flags for nine core commands costs about 29000 further bytes across nine more calls. The summary form is 5966 bytes. Filed as pm-gmdzaa, which is scoped to the cold-start entry point rather than to the ceiling contract that pm-5t33or owns.\n\nWhat this implies for the epic, offered for the ADR to accept or reject rather than asserted:\n\nFirst, the acceptance criteria should state a target on all three axes, because a fifteen-noun surface with 326 unconstrained flags satisfies the current wording while leaving the agent cost roughly unchanged. The existing criterion that agent token cost of pm --help plus contracts is measurably reduced is the right instinct and the right instrument; it is simply not connected to the noun target that the rest of the criteria describe.\n\nSecond, the ordering matters and currently runs the wrong way. The migration sequence recorded in the earlier note moves fragments noun by noun, with the conformance gates flipping from baseline to enforce at the end. If the flag lexicon is not bounded before the list family and the lifecycle aliases fold into their base nouns, each fold adds flags to a noun that already has many, and the gate at the end will be asserting a table whose second axis has grown throughout the migration. Bounding the lexicon first costs nothing that the folds need and makes each fold measurable.\n\nThird, the third axis needs an owner before the grammar is frozen. A declared output shape per command is what lets an agent decide whether to make a call, and it is the missing half of the contract that pm contracts already half-provides: the request side is declared, the response side is not. This is adjacent to the projection work in pm-cxr0jb but not the same thing, because an intent projection selects among shapes that are themselves undeclared.\n\nNothing here changes the placement proposal or the noun table. The claim is narrower: the epic will pass its own acceptance criteria while the thing it exists to fix, that the CLI is too complicated for agents, is only partly addressed, unless the flag lexicon and the output-shape declaration are inside the definition of done rather than beside it."
+  - created_at: "2026-07-27T12:57:18.340Z"
+    author: "harness:claude-code"
+    text: "Surface measurement 2026-07-27: 89 top-level command spellings on the installed build, against this epic's target of roughly 15 nouns on one help screen.\n\nCurrent list, for the record: activity, aggregate, append, beads, cal, calendar, changelog, claim, close, close-many, close-task, command-kit, comments, comments-audit, completion, completion-statuses, completion-tags, completion-types, config, context, contracts, copy, create, dedupe-audit, dedupe-merge, delete, deps, docs, duplicates, eval, event, events, extension, files, focus, gc, get, graph, guide, health, help, history, history-author-acknowledge, history-compact, history-redact, history-repair, init, install, item, learnings, list, list-all, list-blocked, list-canceled, list-closed, list-draft, list-in-progress, list-open, meet, merge, next, normalize, notes, package, pause-task, plan, pm, profile, reindex, release, remind, restore, schema, search, search-advanced, start-task, stats, telemetry, templates, test, test-all, test-runs, todos, twin, update, update-many, upgrade, validate, vcs.\n\nTwo structural observations that bear on the consolidation, beyond the raw count.\n\nThe seven list-* spellings and the four completion-* spellings are the obvious folds, and the note on this item already records that folding list-* into list --status is a null move unless the flag lexicon lands first. The same caveat applies to completion-*.\n\nThe less obvious one is that the surface is not one grammar but several stacked. Package-owned commands (beads, todos, twin, vcs, eval, search-advanced, normalize, reindex, command-kit, dedupe-audit, dedupe-merge, comments-audit) sit in the same namespace as core verbs and are indistinguishable in help output, yet they exit 2 with unknown command on a bare install. An agent reading the help of one installation learns a vocabulary that is wrong for another. Any consolidation that produces a one-screen surface has to decide whether extension-contributed commands appear on that screen at all, which is the tiering question pm-kxci8x owns; this note records the dependency rather than re-deciding it."
 learnings[3]{created_at,author,text}:
   "2026-07-05T04:55:45.356Z",maintainer-agent,Surface growth pattern learned from history; features were added as new top-level commands because that was the path of least resistance in Commander registration — the grammar ADR plus contracts-generated help removes that incentive by making subcommand addition cheaper than top-level addition.
   "2026-07-06T08:04:42.231Z",maintainer-agent,"Dogfood measurements (2026-07-05 external agent audit, GH-435/437/442/443/445) put hard numbers on the simplification thesis: bootstrap costs ~25KB (pm contracts) before the first real command; per-loop costs are dominated by output shape (full-item mutation echoes 12.7x over --id-only; tags 43% of pm context; JSON +48-53% over TOON). Consolidating the grammar (this epic) fixes discovery cost; the pm-mpbb lean-output cluster fixes loop cost. Both are needed to hit the agent token-cost AC."

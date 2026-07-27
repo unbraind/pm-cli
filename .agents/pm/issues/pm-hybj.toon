@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[1]: telemetry
 created_at: "2026-05-24T06:57:51.663Z"
-updated_at: "2026-07-26T17:16:03.755Z"
+updated_at: "2026-07-27T12:52:13.070Z"
 author: claude-code-agent
 estimated_minutes: 45
 acceptance_criteria: "pm-changelog generator includes all closed items readable by the current pm core (item_count equals total closed count); the bundled-SDK shadowing is either eliminated (host SDK used) or documented as release-gated; no regression to changelog:pm:check."
@@ -15,13 +15,31 @@ release: v2026.5.27
 resolution: pm-cli now uses npm pm-changelog 2026.5.24-9 to generate and check main CHANGELOG.md with clickable pm item links.
 expected_result: pm-changelog package provides the SDK/extension functionality needed for pm-cli changelog generation and CI/CD checks.
 actual_result: pm-changelog 2026.5.24-9 is installed; contracts expose --item-url-base; CHANGELOG.md is generated from 804 closed pm items with clickable .toon links; release/changelog tests and release gates passed.
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-1etl,related,"2026-07-26T17:16:03.572Z",null,null
-  pm-3akm,related,"2026-07-26T17:16:03.572Z",null,null
-  pm-iqgj,related,"2026-07-26T17:16:03.572Z",null,null
-  pm-qfuq,related,"2026-07-26T17:16:03.572Z",null,null
-  pm-qsk8,related,"2026-07-26T17:16:03.572Z",null,null
-  pm-rnpb,implements,"2026-07-26T17:16:03.572Z",null,null
+dependencies[7]:
+  - id: pm-1etl
+    kind: related
+    created_at: "2026-07-26T17:16:03.572Z"
+  - id: pm-3akm
+    kind: related
+    created_at: "2026-07-26T17:16:03.572Z"
+  - id: pm-iqgj
+    kind: related
+    created_at: "2026-07-26T17:16:03.572Z"
+  - id: pm-qfuq
+    kind: related
+    created_at: "2026-07-26T17:16:03.572Z"
+  - id: pm-qsk8
+    kind: related
+    created_at: "2026-07-26T17:16:03.572Z"
+  - id: pm-rnpb
+    kind: implements
+    created_at: "2026-07-26T17:16:03.572Z"
+  - id: pm-iqgj
+    kind: blocked_by
+    created_at: "2026-07-27T12:52:12.695Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[7]{created_at,author,text}:
   "2026-05-24T06:58:06.206Z",claude-code-agent,"Evidence: total closed=798, generator item_count=782, delta=16 = exactly the pm-iqgj-recovered files (pm-3akm/ss8d/1r6p... none present in CHANGELOG.pm.md while normal closed items pm-qsk8/c98b/xh0y/dpzc are). Extension dir has node_modules/@unbrained/pm-cli (bundled). Root-cause fix shipped in this PR via pm-iqgj (src/core/item/toon-decode.ts + parseToonItemDocument); this issue tracks propagation/hardening only and is blocked_by pm-iqgj."
   "2026-05-24T07:02:51.595Z",claude-code-agent,Submitted in PR #58 (branch recover-unreadable-toon-items-and-dedup-core-helpers).

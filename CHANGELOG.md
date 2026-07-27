@@ -1395,9 +1395,9 @@
 
 ### Added
 
+- pm-todos + pm-beads: migrate to registerImporter/registerExporter (importers capability exemplar) ([pm-13bn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-13bn.toon))
 - pm-search-advanced: register a built-in SearchProvider exemplar (search capability) ([pm-bqpg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bqpg.toon))
 - First-class importer/exporter registration: registerImporter/registerExporter accept command metadata (description/flags/intent/examples) ([pm-7qjk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7qjk.toon))
-- pm-todos + pm-beads: migrate to registerImporter/registerExporter (importers capability exemplar) ([pm-13bn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-13bn.toon))
 
 ### Other
 
@@ -1560,11 +1560,11 @@
 
 ### Fixed
 
+- pm-changelog generator silently drops items the bundled @unbrained/pm-cli SDK cannot read ([pm-hybj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hybj.toon))
 - Surface extension command handler error messages instead of opaque extension_command_handler_failed code ([pm-zwl7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zwl7.toon))
 - Fix Auto Release failure: build dist before pm-changelog generation runs ([pm-yf8t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yf8t.toon))
 - Calendar: improve positional view UX (PM-CLI-Z Sentry) ([pm-nb68](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb68.toon))
 - Address pre-existing extension/SDK issues surfaced by PR \#69 review (CodeRabbit) ([pm-ll50](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ll50.toon))
-- pm-changelog generator silently drops items the bundled @unbrained/pm-cli SDK cannot read ([pm-hybj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hybj.toon))
 - Handle concurrent project package installs without EEXIST ([pm-hw6z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw6z.toon))
 - Repeated loose-mapped --tag flags silently keep only the last value (agent-unfriendly) ([pm-cf1u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cf1u.toon))
 - Improve unknown-option recovery with nearest, abbreviated, and cross-command flag suggestions plus list --sort aliases ([pm-8nyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nyc.toon))

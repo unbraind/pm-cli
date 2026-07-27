@@ -6,16 +6,28 @@ status: closed
 priority: 2
 tags[5]: "area:packages","area:sdk",dx,importers,living-map
 created_at: "2026-05-31T19:44:24.669Z"
-updated_at: "2026-07-26T17:00:50.409Z"
+updated_at: "2026-07-27T12:52:07.897Z"
 author: maintainer-agent
 acceptance_criteria: Both migrate to api.registerImporter/registerExporter retaining backward-compatible command paths; manifests gain importers capability; tests+SDK.md importer example updated.
 value: "pm-todos/pm-beads implement import/export via registerCommand, so the importers capability has no first-party exemplar and external authors have no model."
 parent: pm-ugqx
 release: v2026.6.2
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-7qjk,related,"2026-07-26T17:00:50.154Z",null,null
-  pm-kfd8,related,"2026-07-26T17:00:50.154Z",null,null
-  pm-ugqx,implements,"2026-07-26T17:00:50.154Z",null,null
+dependencies[4]:
+  - id: pm-7qjk
+    kind: related
+    created_at: "2026-07-26T17:00:50.154Z"
+  - id: pm-kfd8
+    kind: related
+    created_at: "2026-07-26T17:00:50.154Z"
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-07-26T17:00:50.154Z"
+  - id: pm-7qjk
+    kind: blocked_by
+    created_at: "2026-07-27T12:52:07.653Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[3]{created_at,author,text}:
   "2026-05-31T22:18:39.074Z",maintainer-agent,"Unblocked + ready: pm-kfd8 (closed this PR) shipped assertRegisteredImporter/assertRegisteredExporter in src/sdk/testing.ts (match on registrations.importers[].importer / registrations.exporters[].exporter). When pm-todos/pm-beads migrate to api.registerImporter/registerExporter, their package specs should assert via these helpers for non-synthetic first-party importer/exporter exemplars. Finding: no first-party package registers an importer/exporter today, so this item is the real importers-capability exemplar."
   "2026-06-01T19:37:48.303Z",maintainer-agent,"Plan (depends on pm-7qjk, now landed): migrate pm-todos (import+export) and pm-beads (import) from registerCommand to registerImporter/registerExporter using the new ImportExportRegistrationOptions 3rd arg, preserving command paths (todos import/export, beads import), actions (todos-import/todos-export/beads-import), descriptions and all flags (--folder/--author/--message, --file/--preserve-source-ids). Manifests gain 'importers' capability in 3 places each: manifest.json, the in-module `manifest` const (index.ts), and the hand-maintained index.js mirror. Tests: builtin-extension-entrypoints.spec.ts createCommandOnlyApi stub captures importers/exporters (was throwing); manifest-equality + todos/beads blocks updated to assert importer/exporter registration + options metadata + invoke the importer/exporter fn (runtime stub via PM_CLI_PACKAGE_ROOT unchanged). Plus a real-loader activation test asserting via assertRegisteredImporter/assertRegisteredExporter for a non-synthetic first-party exemplar (acceptance). registerImporter('todos')→'todos import' path is exact (toRegistrationCommandPath), so backward compatible. runtime.ts/js unchanged (beads runtime.js stays coverage-gated+green)."

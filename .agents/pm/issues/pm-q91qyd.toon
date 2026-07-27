@@ -1,0 +1,32 @@
+id: pm-q91qyd
+title: "The project keeps three release ledgers that disagree in both directions: six published npm artifacts have no changelog section at all and seven git tags were never published"
+description: "Measured 2026-07-27 by reconciling the three records the project actually maintains. CHANGELOG.md carries 69 version sections, git carries 77 release tags, and the npm registry carries 70 published versions of the package. Every pairwise comparison finds divergence, and it runs in both directions. Five versions the changelog announces to users were never published anywhere: 2026.5.23, 2026.5.3-2, 2026.6.1, 2026.6.2, and 2026.7.24-2. Eight tags exist with no changelog section: 2026.5.3-3 through 2026.5.3-8, 2026.5.4, and 2026.5.5. Most seriously, six artifacts that are installable from npm right now have no changelog entry of any kind: 2026.5.3-5, 2026.5.3-6, 2026.5.3-7, 2026.5.3-8, 2026.5.4, and 2026.5.5. A user can install those versions and there is no record in the repository of what is in them. Seven tags in total were declared and never delivered. The reason none of this was caught is that every existing control measures a different pair. The changelog check in CI proves the changelog matches the pm tracker, never that it matches what shipped. The release-health reminder pm-7zs0 is forward-only and same-day: it asks whether the next release advanced npm latest, so it cannot see a historical gap and demonstrably did not see any of these seven. The publish verifier checks the artifact it just pushed. Nothing ever asks the whole-history question, which is whether the set of releases the project claims to have made equals the set it can prove it made. That question is the one that matters for a record intended to stay readable for decades, and it is currently unanswered and unanswerable without an ad hoc script."
+type: Issue
+status: open
+priority: 1
+tags[5]: ci,governance,provenance,release,traceability
+created_at: "2026-07-27T12:46:06.729Z"
+updated_at: "2026-07-27T12:57:57.865Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "A reconciliation control compares the full declared release set (changelog sections and git tags) against the full delivered set (registry versions) across all history, not only the most recent cut; Each divergence class is reported separately and named: declared-but-never-delivered, delivered-but-undocumented, and tagged-but-unsectioned, because the three have different causes and different remedies; The current 18 divergences are dispositioned individually as either a real gap to backfill or a recorded historical exception with a reason, so the baseline is explained rather than merely frozen; The control runs on a schedule and fails loudly, so a divergence introduced by a partial release is visible the same week rather than at the next manual reconciliation; The reconciliation reads the registry through the same published-artifact path the acceptance stage uses, so it is proof of delivery and not proof of intent"
+goal: project management = context management
+objective: "Make the set of releases the project claims equal the set it can prove, and keep them equal"
+value: "A changelog that documents versions nobody can install, and hides versions anybody can install, is not a record of the project"
+why_now: The terminal release attribution backfill made the changelog authoritative over item history; nothing yet makes it authoritative over shipped artifacts
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+  pm-44u3wt,discovered_from,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-7zs0,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-csuce0,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-e5yupa,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-e70zh5,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-h6wmtc,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-nwuzaq,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-pcys9n,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,verifies,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-ygli86,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
+  pm-doxj,implements,"2026-07-27T12:57:57.598Z","harness:claude-code","cli:update:dep",detected
+body: ""

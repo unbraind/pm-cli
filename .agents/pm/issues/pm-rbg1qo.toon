@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[5]: agent-ux,attribution,identity,observability,provenance
 created_at: "2026-07-27T07:07:26.295Z"
-updated_at: "2026-07-27T07:07:48.672Z"
+updated_at: "2026-07-27T12:58:23.867Z"
 author: "harness:opencode"
+estimated_minutes: 240
 acceptance_criteria: "Every built-in agent descriptor either declares keys for topic, effort and role or carries a recorded no-signal note for the missing dimension; detection tests prove each declared key flows into history provenance; fleet attribution (pm-gw6uyq) can group recorded history by topic and effort for the harnesses that expose them; no agent is ever required to set PM_AUTHOR or an identity flag"
 goal: project management = context management
 objective: "Attribution rich enough that per-harness, per-model, per-effort and per-topic fleet analytics (pm-gw6uyq) run on recorded history alone"

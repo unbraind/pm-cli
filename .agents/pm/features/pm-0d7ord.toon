@@ -6,9 +6,13 @@ status: open
 priority: 3
 tags[7]: "area:sdk",context-management,dashboard,export,"horizon:far",package,visualization
 created_at: "2026-07-26T22:34:43.941Z"
-updated_at: "2026-07-27T07:10:18.068Z"
+updated_at: "2026-07-27T12:58:20.658Z"
 author: "harness:opencode"
+estimated_minutes: 900
+acceptance_criteria: "A versioned render-ready projection is declared in the SDK with its own schema, so a visualization stack consumes a contract rather than scraping CLI text; The projection covers bounded typed subgraph slices, flow-metric series, milestone-ladder progress and fleet attribution, each with a stated bound so no slice is unbounded at million-item scale; The projection is emitted as documented JSON and NDJSON through the shared row contract, not as a bespoke shape; A reference dashboard package renders the projection as a static site with no daemon and no privileged access, proving the projection is sufficient without CLI access; Projection generation is a read-side materialization over the derived read index and adds no new stored state of its own; A schema-compatibility check fails when the projection changes shape without a version bump"
 parent: pm-ugqx
+risk: medium
+confidence: medium
 dependencies[9]{id,kind,created_at}:
   pm-v4iypw,discovered_from,"2026-07-26T22:39:11.549Z"
   pm-pee5,related,"2026-07-26T22:39:13.301Z"

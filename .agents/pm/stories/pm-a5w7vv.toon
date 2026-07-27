@@ -6,9 +6,13 @@ status: open
 priority: 4
 tags[7]: adr-needed,agent-ux,exploration,"horizon:far",nl-intent,search,spike
 created_at: "2026-07-26T22:34:25.668Z"
-updated_at: "2026-07-27T07:07:50.657Z"
+updated_at: "2026-07-27T12:58:21.716Z"
 author: "harness:opencode"
+estimated_minutes: 480
+acceptance_criteria: "The spike produces an ADR with a recorded decision and rejected alternatives, not an implementation; The compiled structured query is always shown alongside the answer and is executable verbatim by hand, so natural language is an input convenience and never a hidden second query engine; Compilation is deterministic for a given workspace and question, and non-determinism is a defect rather than an accepted property; Quality is measured by the retrieval quality contract rather than by prose plausibility, and the ADR states the acceptance threshold before any implementation slice starts; The ADR states which grammar version the compiler targets and why the work is sequenced after the grammar freeze; A refusal path is specified for questions the compiler cannot map, so an unmappable question yields an explicit decline rather than a plausible wrong query"
 parent: pm-ydp6
+risk: high
+confidence: low
 dependencies[8]{id,kind,created_at}:
   pm-v4iypw,discovered_from,"2026-07-26T22:39:07.316Z"
   pm-4k6b,related,"2026-07-26T22:39:08.628Z"

@@ -1,0 +1,34 @@
+id: pm-sb0tns
+title: "Read surfaces have no common row contract: field projection reaches 4 of 11 commands and the row collection sits under a different key on each, so no single shell or jq expression works across pm"
+description: "Measured 2026-07-27 across the eleven read commands an agent or a shell pipeline actually uses: list, next, search, context, deps, graph, get, aggregate, activity, stats, events. Four capabilities decide whether a command can be composed with grep, jq, awk, or xargs. Field projection with --fields exists on four of eleven (list, search, context, get). An encoding choice with --format exists on six (list, next, search, context, deps, get) and is absent from graph, aggregate, activity, stats, and events. Row streaming with --stream exists on two (list, activity). One-row-per-line ndjson exists on four (list, search, context, activity). The newest and structurally richest surface, pm graph with its sixteen subcommands, has none of the four. The second-order problem is worse than the flag matrix. The collection of rows lives under a different key on every command: items on list and search, ready on next, ids on graph traversals, affected on graph impact, groups on aggregate, compact_activity on activity, and a set of scalar buckets on stats. An agent that has learned to pipe one command has learned nothing transferable about the next, and a wrapper script must special-case each surface. The consequence is measurable in tokens as well as in ergonomics: without --fields the only way to get a list of identifiers out of pm graph or pm aggregate is to fetch the full payload and discard almost all of it. This is the projection and row-identity axis specifically. Uniform row streaming as a constant-memory scale primitive is pm-mav1ak, format-flag grammar is pm-srns, the three incompatible list-family json projections are pm-pjnu91, and mode-paired envelopes that report a count beside an empty array are pm-cyrfjq. None of those four asks whether one expression can address a row on every surface."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ergonomics,cli,composability,contracts,tokens
+created_at: "2026-07-27T12:46:35.521Z"
+updated_at: "2026-07-27T12:48:05.601Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "Every read surface declares its row collection through one contract, so the key that holds rows is derivable rather than memorized per command; --fields is available on every surface that returns rows, and requesting only identifiers costs output proportional to the identifiers rather than to the full payload; A documented one-liner extracts identifiers from any read command without special-casing, and that one-liner is exercised by a test so it cannot silently rot; Surfaces that genuinely cannot project fields state why in their contract rather than omitting the flag; The contract is declared once in the CLI contract layer and consumed by CLI, MCP, and completions, so a new read command inherits it instead of re-deciding it"
+goal: project management = context management
+objective: Make one shell or jq expression work against every pm read surface
+value: Terminal composability is a first-class product requirement; today it is a property of the list family and an accident everywhere else
+why_now: "pm graph shipped sixteen subcommands with none of the four composability affordances, so the gap is growing with each new surface"
+parent: pm-mpbb
+risk: medium
+confidence: high
+dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-cxr0jb,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-cyrfjq,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-fs8q9x,blocked_by,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-g3n00m,implements,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,verifies,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-kxci8x,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-mav1ak,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-mfy1ux,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-n7rr,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-pjnu91,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-plwm,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+  pm-srns,related,"2026-07-27T12:48:05.337Z","harness:claude-code","cli:update:dep",detected
+body: ""

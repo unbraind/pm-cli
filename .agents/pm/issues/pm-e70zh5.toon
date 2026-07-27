@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:release",ci,observability,reliability,slo
 created_at: "2026-07-27T04:05:41.511Z"
-updated_at: "2026-07-27T04:21:30.942Z"
+updated_at: "2026-07-27T13:01:11.067Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Release automation reliability is expressed as a measured rate over a stated window, not as the conclusion of the latest run; A degradation in that rate is detectable without reading the raw run list, and the detection survives the blocker-issue recovery path closing its own evidence; A skipped run caused by the same-day guard is distinguishable in the reliability measure from a run that had nothing to release and from a run that failed; The measure names the failing stage, so a publish-step regression and a build-step regression are not aggregated into one opaque number"
@@ -22,12 +22,14 @@ environment: "GitHub Actions hosted runners, unbraind/pm-cli, workflow auto-rele
 repro_steps: "Run: gh api \"repos/unbraind/pm-cli/actions/workflows/auto-release.yml/runs?event=schedule&per_page=100\" --jq \"[.workflow_runs[].conclusion]|group_by(.)|map({(.[0]):length})|add\""
 expected_result: Release automation reliability is observable as a rate with a threshold that fails when the pipeline degrades
 actual_result: 32 of 84 scheduled runs failed and no artefact anywhere in the project records that fact or reacts to it
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-44u3wt,related,"2026-07-27T04:05:41.511Z",null,null
-  pm-7zs0,related,"2026-07-27T04:05:41.511Z",null,null
-  pm-k6t4yb,related,"2026-07-27T04:05:41.511Z",null,null
-  pm-u9d0,implements,"2026-07-27T04:05:41.511Z",null,null
-  pm-44u3wt,blocked_by,"2026-07-27T04:21:29.909Z",null,null
-  pm-9gxi,related,"2026-07-27T04:21:29.909Z",null,null
-  pm-xp1xsw,implements,"2026-07-27T04:21:29.909Z",null,null
+dependencies[7]{id,kind,created_at}:
+  pm-44u3wt,related,"2026-07-27T04:05:41.511Z"
+  pm-7zs0,related,"2026-07-27T04:05:41.511Z"
+  pm-k6t4yb,related,"2026-07-27T04:05:41.511Z"
+  pm-u9d0,implements,"2026-07-27T04:05:41.511Z"
+  pm-44u3wt,blocked_by,"2026-07-27T04:21:29.909Z"
+  pm-9gxi,related,"2026-07-27T04:21:29.909Z"
+  pm-xp1xsw,implements,"2026-07-27T04:21:29.909Z"
+comments[1]{created_at,author,text}:
+  "2026-07-27T13:01:11.067Z","harness:claude-code","Observation 2026-07-27 on the denominator used to compute the failure rate.\n\nThe Auto Release workflow has three triggers and they produce wildly different run volumes. The schedule fires once a day, which is the 84 runs this item measures. The workflow_dispatch fires on demand. The issues trigger fires on every issue closure in the repository, and because there is no concurrency key that collapses them, closing several issues at once produces a burst of near-simultaneous runs: four runs within one second at 12:09:44Z today, six at 08:45 on 2026-07-26, five at 08:54 today with one of them cancelled.\n\nThey are all correctly filtered at job level by the if condition that restricts issues-triggered runs to the bot-authored blocker recovery, so they skip in seconds and cannot cut a release. Two things still follow. The workflow run history is dominated by runs that were never going to do anything, which makes the pipeline look far busier and far healthier than the scheduled path actually is, and any rate computed over all runs rather than over event equals schedule will be wrong by an order of magnitude. And one of today's burst runs shows conclusion cancelled rather than skipped, which is the cancel-in-progress pattern that this project has already learned masks red gates elsewhere.\n\nNeither changes the 32 of 84 scheduled figure this item owns, which was measured on the schedule event alone. Recording it so the denominator is not silently recomputed the easy way later."
 body: ""

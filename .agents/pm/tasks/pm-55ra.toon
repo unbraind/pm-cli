@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context,relevance,scale,token-efficiency
 created_at: "2026-07-06T23:50:39.960Z"
-updated_at: "2026-07-26T17:04:31.747Z"
+updated_at: "2026-07-27T12:52:05.141Z"
 closed_at: "2026-07-13T19:56:00.971Z"
 author: codex-agent
 estimated_minutes: 360
@@ -18,11 +18,39 @@ release: v2026.7.14
 resolution: Delivered reusable intent-profiled token and latency budget packing primitives shared by pm context and pm next.
 expected_result: "Relevant required and diverse items remain inside explicit bounded packets, degrading projection before omission with transparent accounting."
 actual_result: "Public SDK packer, CLI integration, latency certificate, five-scenario quality corpus, 10k scale proof, packed consumer, and exact 100% coverage all pass."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-atfm,related,"2026-07-06T23:50:39.960Z",codex-agent,null
-  pm-cu1i,related,"2026-07-06T23:50:39.960Z",codex-agent,null
-  pm-uwfs,related,"2026-07-13T19:27:47.877Z",null,null
-  pm-4k6b,implements,"2026-07-26T17:04:31.455Z",null,null
+dependencies[7]:
+  - id: pm-atfm
+    kind: related
+    created_at: "2026-07-06T23:50:39.960Z"
+    author: codex-agent
+  - id: pm-cu1i
+    kind: related
+    created_at: "2026-07-06T23:50:39.960Z"
+    author: codex-agent
+  - id: pm-uwfs
+    kind: related
+    created_at: "2026-07-13T19:27:47.877Z"
+  - id: pm-4k6b
+    kind: implements
+    created_at: "2026-07-26T17:04:31.455Z"
+  - id: pm-h3no
+    kind: blocked_by
+    created_at: "2026-07-27T12:52:02.120Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-atfm
+    kind: blocked_by
+    created_at: "2026-07-27T12:52:03.517Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-dfg0
+    kind: blocked_by
+    created_at: "2026-07-27T12:52:04.796Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-07-06T23:50:39.960Z",codex-agent,"Duplicate check: searched all statuses for token budget packer/projection degradation/context ranking; existing items cover token measurement and pagination, but no packer implementation item existed."
   "2026-07-13T18:17:04.538Z",codex-root,"Progress evidence: SDK-first packer, context/next integration, projection accounting, diversity and uncertainty handling, focused 79-test suite green."
