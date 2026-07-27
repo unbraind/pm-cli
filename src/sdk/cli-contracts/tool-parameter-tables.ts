@@ -1709,6 +1709,18 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
       examples: [600, "1200"],
     },
   },
+  close: {
+    text: {
+      description:
+        "Backward-compatible alias for the item close reason when reason is not provided.",
+    },
+  },
+  "close-task": {
+    text: {
+      description:
+        "Close reason used before releasing the item's active assignment.",
+    },
+  },
   schema: {
     name: {
       description:

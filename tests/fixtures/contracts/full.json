@@ -9520,7 +9520,7 @@
             "type": "string"
           },
           "text": {
-            "description": "Text payload used by append, comment, note, or learning mutations.",
+            "description": "Backward-compatible alias for the item close reason when reason is not provided.",
             "type": "string"
           },
           "timeoutMs": {
@@ -28767,7 +28767,7 @@
             "type": "string"
           },
           "text": {
-            "description": "Text payload used by append, comment, note, or learning mutations.",
+            "description": "Backward-compatible alias for the item close reason when reason is not provided.",
             "type": "string"
           },
           "timeoutMs": {
@@ -32936,7 +32936,7 @@
             "type": "boolean"
           },
           "text": {
-            "description": "Text payload used by append, comment, note, or learning mutations.",
+            "description": "Close reason used before releasing the item's active assignment.",
             "type": "string"
           },
           "timeoutMs": {

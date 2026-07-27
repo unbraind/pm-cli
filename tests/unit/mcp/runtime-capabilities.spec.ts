@@ -109,6 +109,14 @@ describe("runtime MCP capabilities", () => {
       },
       force: { description: expect.stringContaining("ownership") },
     });
+    expect(buildPmActionToolInputSchema("close").properties).toMatchObject({
+      text: { description: expect.stringContaining("close reason") },
+    });
+    expect(
+      buildPmActionToolInputSchema("close-task").properties,
+    ).toMatchObject({
+      text: { description: expect.stringContaining("active assignment") },
+    });
     const transportKeys = new Set(Object.keys(TOOL_SCHEMA_BASE.properties));
     for (const [toolName, action] of Object.entries(NARROW_TOOL_ACTIONS)) {
       const actual = TOOLS.find((tool) => tool.name === toolName);
