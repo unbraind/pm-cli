@@ -9,7 +9,6 @@ import {
   listPmMcpToolsForProfile,
   type PmMcpToolProfile,
 } from "../sdk/agent-capability-contracts.js";
-import { buildPmActionToolInputSchema } from "../sdk/cli-contracts/tool-schema.js";
 import {
   getWorkspaceContracts,
   type WorkspaceContracts,
@@ -22,7 +21,7 @@ import {
   resolvePmRoot,
 } from "../sdk/runtime-primitives.js";
 import {
-  TOOL_SCHEMA_BASE,
+  TOOLS,
   type ToolDefinition,
 } from "./tool-definitions.js";
 
@@ -319,15 +318,12 @@ export async function normalizeWorkspaceToolArguments(
       ? { ...(args.options as Record<string, unknown>) }
       : {};
   const normalizedArgs = { ...args };
-  const canonicalProperties = new Set([
-    ...Object.keys(TOOL_SCHEMA_BASE.properties),
-    ...Object.keys(
-      buildPmActionToolInputSchema(command).properties as Record<
-        string,
-        unknown
-      >,
+  const canonicalTool = TOOLS.find((tool) => tool.name === toolName)!;
+  const canonicalProperties = new Set(
+    Object.keys(
+      canonicalTool.inputSchema.properties as Record<string, unknown>,
     ),
-  ]);
+  );
   let changed = false;
   for (const field of workspaceFields(workspace)) {
     if (

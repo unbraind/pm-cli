@@ -4,9 +4,9 @@
 
 ### Added
 
+- MCP tool profiles: core/standard/full/custom tiers with an allowlist override, so 31 tools are the maximum surface, not the default ([pm-9k90](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9k90.toon))
 - MCP resources and prompts surface: expose workspace context as addressable resources and canonical workflows as prompts, not only as tools ([pm-yf07b7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yf07b7.toon))
 - Project live workspace schema and extension commands into MCP discovery and mutations ([pm-m4ikkz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m4ikkz.toon))
-- MCP tool profiles: core/standard/full/custom tiers with an allowlist override, so 28 tools are the maximum surface, not the default ([pm-9k90](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9k90.toon))
 - Public SDK contracts and static runtimes let extension authors reuse the CLI baseline ([pm-w7mqzt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-w7mqzt.toon))
 
 ### Changed

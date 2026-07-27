@@ -319,7 +319,12 @@ describe("runtime MCP capabilities", () => {
         "--json",
       ]);
       expect(addField.code).toBe(0);
-      for (const collision of ["cwd", "path", "options"]) {
+      for (const collision of [
+        "cwd",
+        "path",
+        "options",
+        "allow-missing-parent",
+      ]) {
         expect(
           context.runCli([
             "schema",
@@ -353,6 +358,9 @@ describe("runtime MCP capabilities", () => {
       expect(create?.inputSchema.properties).toMatchObject({
         cwd: TOOL_SCHEMA_BASE.properties.cwd,
         path: TOOL_SCHEMA_BASE.properties.path,
+        allowMissingParent: (
+          canonicalCreate.inputSchema.properties as Record<string, unknown>
+        ).allowMissingParent,
         options: (
           canonicalCreate.inputSchema.properties as Record<string, unknown>
         ).options,
@@ -370,7 +378,9 @@ describe("runtime MCP capabilities", () => {
         normalizeWorkspaceToolArguments("pm_create", {
           cwd: context.tempRoot,
           path: context.pmPath,
+          allowMissingParent: true,
           options: {
+            allowMissingParent: "custom allow-missing-parent",
             cwd: "custom cwd",
             path: "custom path",
             options: "custom options",
@@ -380,7 +390,9 @@ describe("runtime MCP capabilities", () => {
       ).resolves.toEqual({
         cwd: context.tempRoot,
         path: context.pmPath,
+        allowMissingParent: true,
         options: {
+          allowMissingParent: "custom allow-missing-parent",
           cwd: "custom cwd",
           path: "custom path",
           options: "custom options",

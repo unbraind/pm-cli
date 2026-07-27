@@ -6,8 +6,8 @@ status: closed
 priority: 3
 tags[4]: "area:contracts","area:mcp",dx,simplification
 created_at: "2026-07-13T17:29:48.188Z"
-updated_at: "2026-07-27T20:51:53.245Z"
-closed_at: "2026-07-27T20:51:50.043Z"
+updated_at: "2026-07-27T21:46:26.989Z"
+closed_at: "2026-07-27T21:46:22.956Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Every mutation/query MCP tool in src/mcp/tool-definitions.ts derives its flat camelCase inputSchema keys from the corresponding *_FLAG_CONTRACTS table (as pm_copy does from COPY_FLAG_CONTRACTS since PR#545) instead of a hand-declared parallel table; contracts:check snapshot regenerated once and stays byte-stable across a no-op rebuild; a unit spec asserts no tool schema key exists without a backing flag-contract entry (drift becomes structurally impossible, not just snapshot-caught); MCP integration suites stay warning-clean"
@@ -16,26 +16,30 @@ risk: low
 confidence: high
 resolution: implemented
 expected_result: MCP schema keys derive from canonical flag and action contracts with structural drift coverage.
-actual_result: Canonical contracts remain authoritative during runtime enrichment; collision and hosted-analysis regressions are resolved with strict gates green.
-dependencies[3]{id,kind,created_at}:
-  pm-srns,related,"2026-07-13T17:29:48.188Z"
-  pm-mpbb,implements,"2026-07-26T05:55:59.163Z"
-  pm-m4ikkz,implements,"2026-07-26T05:59:25.606Z"
-comments[4]{created_at,author,text}:
+actual_result: "All dedicated MCP schemas derive from canonical action and flag contracts; conformance, snapshot, handshake, and runtime-integration gates pass; runtime enrichment and normalization preserve actual tool and transport properties across custom-field collisions; hosted nullability analysis is clean."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-srns,related,"2026-07-13T17:29:48.188Z",null,null
+  pm-mpbb,implements,"2026-07-26T05:55:59.163Z",null,null
+  pm-m4ikkz,implements,"2026-07-26T05:59:25.606Z",null,null
+comments[5]{created_at,author,text}:
   "2026-07-27T16:42:25.670Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:06.330Z","harness:codex","Evidence: all dedicated MCP schemas now project from canonical SDK action/flag contracts through buildPmActionToolInputSchema; the conformance test rejects any non-transport schema key without a canonical backing property. Contract snapshot/check and the 38-test MCP focused suite pass warning-clean."
   "2026-07-27T20:33:06.688Z","harness:codex","Exact-head Greptile P1 remediation: verified that runtime custom fields named cwd, path, or options could overwrite canonical MCP schema keys and move transport arguments into the mutation options bag. Runtime projection now leaves every existing canonical property intact; normalization derives reserved names from TOOL_SCHEMA_BASE and the canonical action schema before moving custom inputs. A real temporary tracker registers all three colliding fields and verifies stable workspace routing plus nested custom values. The finding was up-voted, answered inline, and resolved. Verification: focused runtime suite, full typechecks, ESLint, zero duplicates, strict static/docstring quality, contract drift, and 379-file/6,428-test coverage at 100% statements (44,601/44,601), branches (31,721/31,721), functions (9,138/9,138), and lines (43,318/43,318)."
   "2026-07-27T20:51:43.947Z","harness:codex","Hosted-analysis follow-up: DeepScan reported NULL_POINTER at the new test's optional canonicalCreate access. Queried the exact public analysis API for defect 231228873, confirmed the warning, and replaced optional access with an explicit invariant guard before dereference. Focused runtime tests, complete TypeScript/package/example checks, ESLint, zero-duplication, strict static/docstring quality, SDK snapshots, and transport benchmarks pass. The prior authoritative full coverage remains 100/100/100/100 because this follow-up changes only the test invariant; final-head CI will rerun all four coverage shards."
+  "2026-07-27T21:46:15.463Z","harness:codex","Final verification evidence: normalization now derives canonical reserved keys from the actual MCP tool definition, including tool-specific inputs such as allowMissingParent, while preserving nested custom values for colliding runtime fields. Linked handshake (33 tests), runtime capability (6 tests), and contracts snapshot checks pass. The isolated extension install regression test passed in 12 seconds; bounded-worker full coverage then passed 379 files and 6,428 tests at 100% statements (44,603/44,603), branches (31,721/31,721), functions (9,139/9,139), and lines (43,319/43,319). TypeScript, ESLint, zero-duplication, strict docstring/static quality, SDK snapshots, and the six-operation transport floor are green."
 files[4]{path,scope,note}:
   src/mcp/runtime-capabilities.ts,project,protect canonical MCP transport/action parameters from runtime field collisions
   src/mcp/tool-definitions.ts,project,narrow MCP schemas derived from action contracts
   src/sdk/cli-contracts/tool-schema.ts,project,canonical action schema projection
   tests/unit/mcp/runtime-capabilities.spec.ts,project,regression coverage for colliding runtime fields and nested options
-tests[1]{command,scope,timeout_seconds}:
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  node scripts/run-tests.mjs test -- tests/unit/mcp/runtime-capabilities.spec.ts,project,240
+  "pnpm contracts:check",project,180
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms3jonyj-t2eatf,test,passed,"2026-07-27T18:12:43.784Z","2026-07-27T18:12:57.547Z","2026-07-27T18:12:57.547Z",1,0,0
+  test-local-ms3pvqjl-b6kzr8,test,passed,"2026-07-27T21:05:39.820Z","2026-07-27T21:06:25.185Z","2026-07-27T21:06:25.185Z",3,0,0
 docs[1]{path,scope,note}:
   docs/MCP_CAPABILITY_SURFACES.md,project,canonical MCP schema and surface guidance
-close_reason: Canonical schema collision protection and hosted-analysis nullability remediation are complete with strict local gates green.
+close_reason: "Implemented canonical contract-derived MCP input schemas with structural conformance and snapshot enforcement; preserved canonical transport and tool-specific properties during workspace runtime enrichment and normalization; verified warning-clean handshake/integration behavior, hosted nullability, strict quality gates, transport floors, and 100/100/100/100 coverage."
 body: ""
