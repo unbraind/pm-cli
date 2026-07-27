@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: "area:graph",attribution,gh-issue,graph,identity,relationships
 created_at: "2026-07-26T22:04:22.700Z"
-updated_at: "2026-07-27T08:42:45.315Z"
+updated_at: "2026-07-27T08:44:19.340Z"
 closed_at: "2026-07-27T08:18:06.020Z"
 author: "harness:claude-code"
 estimated_minutes: 120
@@ -28,10 +28,11 @@ dependencies[6]{id,kind,created_at}:
   pm-hnc9w7,blocks,"2026-07-26T22:04:22.700Z"
   pm-s5e04g,blocks,"2026-07-26T22:04:22.700Z"
   pm-u14c,implements,"2026-07-26T22:04:22.700Z"
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-27T07:35:34.868Z","harness:codex","Start evidence 2026-07-27: selected after live all-status review of 2,129 items (1,807 closed, 309 open, 13 canceled; zero pre-existing in-progress), full canonical metadata/closed-lineage review, and GitHub/security/dependency inventory. This item is actively implemented in one cohesive public SDK/CLI integrity PR; unrelated backlog and container epics remain open and unclaimed."
   "2026-07-27T08:17:34.012Z","harness:codex","Implementation evidence: create/update dependency edges now persist effective author, author_source asserted/detected, and mutation source_kind while preserving explicit external/import source kinds and legacy readability. Item serialization, SDK structured mutation transport, CLI and integration regressions are aligned. Full sandboxed coverage passed 377 files and 6,452 tests at exact 100/100/100/100."
   "2026-07-27T08:41:47.745Z","harness:codex","Verification evidence: fresh unrelated packed consumer created a real dependency and read author_source=detected with source_kind=cli:create:dep; direct binary, npx --no-install, and bunx all returned 2026.7.27. Full 6452-test coverage remained 100/100/100/100."
+  "2026-07-27T08:44:19.340Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/767 at implementation head ab7f41a33. PR description links this canonical PM item and the corresponding GitHub issue; exact-head hosted checks and reviews are pending."
 files[7]{path,scope,note}:
   src/cli/commands/create.ts,project,Create edge attribution
   src/cli/commands/update.ts,project,Update edge attribution

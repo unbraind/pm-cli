@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,cli,error-recovery
 created_at: "2026-07-20T03:19:23.954Z"
-updated_at: "2026-07-27T08:42:47.554Z"
+updated_at: "2026-07-27T08:44:20.442Z"
 closed_at: "2026-07-27T08:18:11.924Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -23,12 +23,13 @@ dependencies[5]{id,kind,created_at}:
   pm-ju83,discovered_from,"2026-07-20T03:19:23.954Z"
   pm-psy1,related,"2026-07-20T03:45:22.381Z"
   pm-mpbb,implements,"2026-07-26T05:57:12.138Z"
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-20T03:19:36.131Z",maintainer-agent,"Duplicate check 2026-07-20: searched 'recovery bundle suggested_retry misleading flag' across all statuses — pm-6y58 (GH-500, built-in flag arity) and pm-9qcr (GH-507, extension contract arity) both FIXED and cover arity only; no existing item covers missing-flag PROVENANCE (mining flag tokens from error prose). Filed from the pm-ju83/6x7o/7ob5 graph-platform lane manual E2E."
   "2026-07-26T22:06:12.498Z","harness:claude-code","GitHub issue 757 is an instance of this class rather than a new defect. Same generator, same root cause: the recovery bundle derives flag suggestions from error-message prose instead of from the invoked command's declared flag contract. The new dimension it adds is cross-command leakage — --validate-close is a real pm flag, just not one pm update accepts — and a case where the correct recovery is a command redirect (use pm close) rather than any flag at all. Fixing this item must cover both: reject undeclared flags, and emit a command-level suggestion when no flag on the invoked command can resolve the failure. Sibling pm-ulqu stays separate: it is about rendering an enum flag's allowed values and about blocker ordering on a command that does accept the flag."
   "2026-07-27T07:35:29.070Z","harness:codex","Start evidence 2026-07-27: selected after live all-status review of 2,129 items (1,807 closed, 309 open, 13 canceled; zero pre-existing in-progress), full canonical metadata/closed-lineage review, and GitHub/security/dependency inventory. This item is actively implemented in one cohesive public SDK/CLI integrity PR; unrelated backlog and container epics remain open and unclaimed."
   "2026-07-27T08:17:34.694Z","harness:codex","Implementation evidence: recovery inference now requires missing/required semantics and filters candidates through the invoked command's declared flags; graph scope errors no longer invent --clear/--rebuild/--save-baseline retries. Strict close failures carry structured missing fields and a direct pm close retry rather than leaking update-incompatible flags. Full sandboxed coverage passed 377 files and 6,452 tests at exact 100/100/100/100."
   "2026-07-27T08:41:49.153Z","harness:codex","Verification evidence: full release gate reached the hosted-only boundary after 6452 tests at 100/100/100/100, packed npm smoke, and 88-command dogfood passed."
+  "2026-07-27T08:44:20.440Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/767 at implementation head ab7f41a33. PR description links this canonical PM item and the corresponding GitHub issue; exact-head hosted checks and reviews are pending."
 files[3]{path,scope,note}:
   src/cli/commands/close.ts,project,Structured close redirect recovery
   src/cli/main.ts,project,Contract-scoped recovery derivation

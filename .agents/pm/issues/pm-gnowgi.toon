@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-27T05:34:25.181Z"
-updated_at: "2026-07-27T08:42:48.390Z"
+updated_at: "2026-07-27T08:44:22.044Z"
 closed_at: "2026-07-27T08:18:18.756Z"
 author: "harness:codex"
 acceptance_criteria: "The integrity decision between per-command quarantine and atomic extension activation is documented; diagnostics state the chosen blast radius; unknown-command recovery suppresses generic install advice when a matching activation failure exists; installed package identity is preserved; multi-command extension, bundled-alias, doctor, packed-package, and token-efficient error-envelope tests pass."
@@ -21,12 +21,13 @@ dependencies[3]{id,kind,created_at}:
   pm-ikv6m0,related,"2026-07-27T05:34:31.663Z"
   pm-ill9gv,discovered_from,"2026-07-27T05:34:31.663Z"
   pm-w7mqzt,implements,"2026-07-27T05:34:31.663Z"
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-27T05:34:25.181Z","harness:codex","Duplicate-check evidence: all-status searches for GH-764, whole extension skipped host flag collision, and installed-package unknown-command remediation found closed GH-719 owner pm-ill9gv and extension recovery lineage but no item for this blast-radius and misleading-remediation regression."
   "2026-07-27T06:26:41.633Z","harness:codex","Triage linkage: follow-up report is documented in broad PR #765 https://github.com/unbraind/pm-cli/pull/765 but intentionally remains open and unclaimed; no implementation for GH-764 is included."
   "2026-07-27T07:35:25.381Z","harness:codex","Start evidence 2026-07-27: selected after live all-status review of 2,129 items (1,807 closed, 309 open, 13 canceled; zero pre-existing in-progress), full canonical metadata/closed-lineage review, and GitHub/security/dependency inventory. This item is actively implemented in one cohesive public SDK/CLI integrity PR; unrelated backlog and container epics remain open and unclaimed."
   "2026-07-27T08:17:35.594Z","harness:codex","Implementation evidence: invalid definition-based commands are quarantined individually with trace-rich activation failures while healthy siblings before and after remain registered. Unknown-command guidance receives installed activation failures and suppresses false reinstall advice for the matching package. Full sandboxed coverage passed 377 files and 6,452 tests at exact 100/100/100/100."
   "2026-07-27T08:41:50.052Z","harness:codex","Verification evidence: full release gate reached the hosted-only boundary after 6452 tests at 100/100/100/100, packed npm smoke, and 88-command dogfood passed."
+  "2026-07-27T08:44:22.044Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/767 at implementation head ab7f41a33. PR description links this canonical PM item and the corresponding GitHub issue; exact-head hosted checks and reviews are pending."
 files[6]{path,scope,note}:
   src/cli/commander-usage.ts,project,Failure-aware usage context
   src/cli/error-guidance.ts,project,Activation-aware package advice
