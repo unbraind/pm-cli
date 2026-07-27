@@ -391,6 +391,15 @@ CI runs `pnpm contracts:check` in the static gate. Snapshot diffs should be
 reviewed like an API change and paired with the package-owned changelog flow
 when the contract surface changes intentionally.
 
+The agent-facing output-size gate is separate from schema drift. Run
+`pnpm quality:token-surface` after changing help, contracts, or MCP tool
+registration. It measures root help, every advertised command help page, the
+summary/default/full contracts family, and MCP `tools/list` against
+`scripts/agent-token-surface-baseline.json`. Use
+`pnpm quality:token-surface:update` only for an intentional reviewed change;
+the baseline stores explicit byte ceilings with headroom rather than volatile
+timestamps or package versions.
+
 The CLI contract snapshot is separate from the TypeScript SDK surface snapshot.
 When public SDK declarations or SDK error codes change, also run:
 

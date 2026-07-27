@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-07-25T20:44:19.810Z"
+updated_at: "2026-07-27T13:20:33.860Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; A test asserts no surface maintains its own independent visibility list; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier through the same field, so extensions cannot bypass tiering"
@@ -18,17 +18,19 @@ outcome: "Raising or lowering a command's visibility is a one-field change that 
 parent: pm-n7rr
 risk: low
 confidence: 75
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-1kxs,related,"2026-07-25T12:28:50.389Z",null,null
-  pm-9k90,related,"2026-07-25T12:28:50.389Z",null,null
-  pm-e2bq,related,"2026-07-25T12:28:50.389Z",null,null
-  pm-lp4j,related,"2026-07-25T12:28:50.389Z",null,null
-  pm-mu8m,related,"2026-07-25T12:28:50.389Z",null,null
-  pm-szdc,related,"2026-07-25T12:28:50.389Z",null,null
-  pm-0z7n,related,"2026-07-25T12:35:12.677Z",null,null
-  pm-5k4v,related,"2026-07-25T12:35:12.677Z",null,null
-  pm-fs8q9x,related,"2026-07-25T12:35:12.677Z",null,null
-  pm-ka6d,related,"2026-07-25T12:35:12.677Z",null,null
-  pm-xp1xsw,related,"2026-07-25T12:35:12.677Z",null,null
-  pm-1kxs,implements,"2026-07-25T20:44:19.567Z",null,null
+dependencies[12]{id,kind,created_at}:
+  pm-1kxs,related,"2026-07-25T12:28:50.389Z"
+  pm-9k90,related,"2026-07-25T12:28:50.389Z"
+  pm-e2bq,related,"2026-07-25T12:28:50.389Z"
+  pm-lp4j,related,"2026-07-25T12:28:50.389Z"
+  pm-mu8m,related,"2026-07-25T12:28:50.389Z"
+  pm-szdc,related,"2026-07-25T12:28:50.389Z"
+  pm-0z7n,related,"2026-07-25T12:35:12.677Z"
+  pm-5k4v,related,"2026-07-25T12:35:12.677Z"
+  pm-fs8q9x,related,"2026-07-25T12:35:12.677Z"
+  pm-ka6d,related,"2026-07-25T12:35:12.677Z"
+  pm-xp1xsw,related,"2026-07-25T12:35:12.677Z"
+  pm-1kxs,implements,"2026-07-25T20:44:19.567Z"
+comments[1]{created_at,author,text}:
+  "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
 body: ""

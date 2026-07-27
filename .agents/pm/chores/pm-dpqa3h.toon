@@ -2,11 +2,12 @@ id: pm-dpqa3h
 title: "The agent token-surface harness from pm-a22j is wired into nothing, so output-size regressions like the 33k-token health check land undetected"
 description: "scripts/measure-agent-token-surface.mjs measures root help, per-command help, contracts payloads and MCP tools/list, and has a covering spec, but has no package.json script, no CI step and no committed baseline. Repo-wide search finds one reference outside the file itself, a historical CHANGELOG line."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",ci-gate,observability,token-efficiency
 created_at: "2026-07-26T18:28:20.913Z"
-updated_at: "2026-07-26T18:29:22.020Z"
+updated_at: "2026-07-27T15:51:44.744Z"
+closed_at: "2026-07-27T14:00:45.668Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A package.json script runs the token-surface harness and a committed baseline artifact records the current surface; A static CI gate diffs measured against baseline and fails when growth exceeds the declared threshold, with a documented baseline-update path; The gate reproduces the currently measured values for health, validate, context, next, get and list-open so the baseline is verifiable"
@@ -18,10 +19,42 @@ why_now: "pm health --check-only currently emits 132,585 B (~33k tokens) and is 
 parent: pm-5t33or
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-a22j,discovered_from,"2026-07-26T18:29:21.789Z",null,null
-  pm-cha95z,related,"2026-07-26T18:29:21.789Z",null,null
-  pm-du93sr,verifies,"2026-07-26T18:29:21.789Z",null,null
-  pm-mfy1ux,verifies,"2026-07-26T18:29:21.789Z",null,null
-  pm-okgxwa,verifies,"2026-07-26T18:29:21.789Z",null,null
+resolution: Turned the dormant token-surface measurement into a versioned committed regression ratchet enforced by context quality CI and release gates.
+expected_result: "Every measured agent-facing surface has a reproducible baseline, documented update path, and automated growth check."
+actual_result: "Ninety-five surfaces and a seventeen-command representative corpus are checked; linked tests, context evaluation, and full coverage pass."
+dependencies[5]{id,kind,created_at}:
+  pm-a22j,discovered_from,"2026-07-26T18:29:21.789Z"
+  pm-cha95z,related,"2026-07-26T18:29:21.789Z"
+  pm-du93sr,verifies,"2026-07-26T18:29:21.789Z"
+  pm-mfy1ux,verifies,"2026-07-26T18:29:21.789Z"
+  pm-okgxwa,verifies,"2026-07-26T18:29:21.789Z"
+comments[9]{created_at,author,text}:
+  "2026-07-27T14:00:38.252Z","harness:codex","Evidence: promoted the existing measurement into a versioned 95-surface UTF-8 byte ratchet with checked baseline/update modes; wired quality:token-surface into the context quality CI and release gate; expanded the representative command corpus from 14 to 17 with list-open, health summary, and validate counts. Verification: linked tests passed 2/2; context corpus scored 1.0 across NDCG, reciprocal rank, recall, continuity, and token adherence; full repository coverage passed 6,413 tests at 100/100/100/100; static quality and pnpm audit passed."
+  "2026-07-27T14:07:53.993Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/774 at implementation head 8173f7f73. Exact-head hosted checks and bot review will follow after this PM evidence is committed."
+  "2026-07-27T14:18:29.732Z","harness:codex","Hosted feedback correction for PR #774: the first smoke run proved the new ratchet incorrectly depended on a globally installed pm executable. The script now defaults to this checkout's built dist/cli.js through process.execPath while preserving explicit PM_BIN overrides. The exact context entitlement gate and focused tests pass locally."
+  "2026-07-27T14:35:28.208Z","harness:codex","Final gate correction: pruning the obsolete DeepScan-identified suppression reduced the real checked-in ESLint suppression baseline from 133 to 132. Tightened the static-quality default, package gate, and both release contract mirrors to 132 so the removed suppression cannot silently return. Focused release contracts passed 51/51; ESLint, static quality, package boundary, 17-surface token gate, SDK snapshot, SDK entrypoint costs, and CLI transport floor all pass."
+  "2026-07-27T14:59:24.681Z","harness:codex","Greptile review correction: aligned measurement tokens with the published ceil(bytes/4) SDK formula and made baseline comparison bidirectional, so removed/renamed/omitted command and contracts surfaces now fail as stale instead of shrinking aggregates unnoticed. Focused review regression tests and the real 95-surface ratchet pass."
+  "2026-07-27T15:08:18.190Z","harness:codex","Coverage gate correction: added an incomplete-baseline case that exercises missing contracts and command maps through the real comparison primitive, proving fail-closed missing-surface diagnostics without ignore pragmas. Focused ratchet tests pass 12/12 and ESLint passes."
+  "2026-07-27T15:22:34.938Z","harness:codex","Hosted clean-runner correction: v1 treated locally installed extension commands as universally required, so a clean CI runner failed on 19 intentionally absent package surfaces. v2 records the canonical core-command intersection as required while still measuring and bounding active extension commands when present. Proof: project installation passes 95 surfaces; a fresh isolated PM_PATH/PM_GLOBAL_PATH with no project extensions passes 74 surfaces; focused tests and ESLint pass."
+  "2026-07-27T15:29:54.101Z","harness:codex","Final coverage correction for v2 classification: added a multi-core-command baseline assertion that exercises deterministic required-command sorting and verifies extension alias exclusion. Focused ratchet tests pass 12/12 and ESLint passes; this covers the only line/function missed by the prior full suite."
+  "2026-07-27T15:51:44.744Z","harness:codex","DeepScan correction: reproduced all seven new findings through the analyzer API; each was the same insufficient-null-check root cause from mixing optional surfaces reads with one required access. Normalized the surface map once and added a wholly-missing-map regression assertion, preserving fail-closed diagnostics. Focused contracts/ratchet tests pass 57/57; ESLint, static quality, both token gates, SDK snapshot, entrypoint costs, and transport floor pass."
+files[10]{path,scope,note}:
+  package.json,project,static quality and operator scripts
+  scripts/agent-token-surface-baseline.json,project,committed all-surface regression ceilings
+  scripts/measure-agent-token-surface.mjs,project,versioned baseline update and check modes
+  scripts/release/static-quality-gate.mts,project,Strict suppression budget ratchet reduced with obsolete suppression
+  scripts/release/token-budget-gate.mjs,project,Expanded representative CLI token entitlement corpus
+  scripts/release/token-budgets.json,project,Measured budgets for expanded token entitlement corpus
+  tests/integration/release-automation-contract.spec.ts,project,Release automation budget contract
+  tests/integration/release-readiness-runtime.spec.ts,project,Release readiness budget contract
+  tests/unit/scripts/measure-agent-token-surface.spec.ts,project,"Real measurement,update,comparison,regression,MCP,and failure mode coverage"
+  tests/unit/scripts/release/token-budget-gate.spec.ts,project,Expanded corpus and baseline enforcement coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/measure-agent-token-surface.spec.ts,project,240
+  "pnpm quality:context-eval",project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms3amrvd-0vdwxs,test,passed,"2026-07-27T13:58:31.502Z","2026-07-27T13:59:32.762Z","2026-07-27T13:59:32.762Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,token-surface gate workflow
+close_reason: "Shipped a committed 95-surface token regression baseline, CI/release enforcement, documented update path, and expanded representative command corpus; linked tests, full 100% coverage, static quality, context evaluation, security scan, and dependency audit passed."
 body: "## Problem\n\npm-a22j (closed) built scripts/measure-agent-token-surface.mjs: it measures the\nfull agent-facing token surface — root help, every per-command help, the\ncontracts payload family, and the MCP tools/list payload — and emits JSON so a\nratchet can diff it. pm-ksca (closed) then added a covering spec for it.\n\nThe harness is wired into nothing. Repository-wide search for\n`measure-agent-token-surface` outside the script itself returns exactly one\nhit, a historical CHANGELOG line. It has no package.json script, no CI step,\nand no recorded baseline to diff against. Its own header comment tells the\nreader to \"re-run after each consolidation slice lands and diff against the\nrecorded baseline\" — a baseline that is not stored anywhere in the repo.\n\n## Consequence, measured 2026-07-26 on the live workspace\n\nNothing detects token-surface regressions, and they are present:\n\n| command | output | approx tokens |\n|---|---|---|\n| pm graph audit --summary | 1,534 B | ~383 |\n| pm list-open --limit 20 | 4,556 B | ~1,139 |\n| pm get pm-96h7 | 5,365 B | ~1,341 |\n| pm context --limit 10 | 6,195 B | ~1,548 |\n| pm next --limit 5 | 8,799 B | ~2,199 |\n| pm validate | 22,719 B | ~5,679 |\n| **pm health --check-only** | **132,585 B** | **~33,146** |\n\n`pm health --check-only` is the diagnostic AGENTS.md \"When Unsure\" routes\nagents to, and a single invocation costs roughly a sixth of a 200k context\nwindow. That specific regression is owned by pm-du93sr and `graph impact` by\npm-mfy1ux — this item owns the reason such regressions land and persist\nundetected: the instrument that would have caught them on the commit that\nintroduced them runs nowhere.\n\n## Why this is a child of pm-5t33or, not a duplicate\n\npm-5t33or owns the forward design: every command declares a default output\nceiling in its contract and degrades deterministically when it would exceed it.\nThat is the destination. This item is the enabling tranche that can ship\nindependently and immediately: take the harness that already exists and already\nhas a spec, record a committed baseline, and fail CI when the surface grows\nbeyond it. It requires no contract changes and no command behaviour changes,\nand it makes pm-5t33or's rollout measurable slice by slice instead of\nretrospective.\n\n## Direction (not a mandate for the fix)\n\nAdd a package.json script, commit a baseline JSON artifact next to the\nsdk-surface-snapshot baseline that already follows this pattern, and add a\nstatic CI gate that diffs current against baseline with an allowed-growth\nthreshold and a documented update path. The sdk-surface-snapshot gate is the\nworking precedent for exactly this shape."

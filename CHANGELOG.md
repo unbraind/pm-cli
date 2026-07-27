@@ -12,6 +12,7 @@
 
 ### Fixed
 
+- The surface-discovery contract costs 31k tokens in its brief form and still omits every flag, so the cheapest way to learn pm is the most expensive call it offers ([pm-gmdzaa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gmdzaa.toon))
 - Linked-test schema sandbox breaks package prepare hooks that install the PM merge driver ([pm-uawujr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uawujr.toon))
 - The list family exposes three incompatible --json projections under one flag, so an agent filtering on an unprojected field silently reads absent instead of unset ([pm-pjnu91](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pjnu91.toon))
 - GH-768: deduplicate public SDK provenance exports across core and root entrypoints ([pm-44aa4x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-44aa4x.toon))
@@ -30,6 +31,7 @@
 
 ### Other
 
+- The agent token-surface harness from pm-a22j is wired into nothing, so output-size regressions like the 33k-token health check land undetected ([pm-dpqa3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dpqa3h.toon))
 - Ecosystem review and deep-graph enrichment pass 2026-07-27: all-status census, CLI simplification + token-efficiency + long-term brainstorm, dedupe-checked gap filing ([pm-89qv6b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89qv6b.toon))
 - Evaluate @toon-format/toon 4 compatibility and item-format migration ([pm-5cgm2z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5cgm2z.toon))
 - ADR amendment: extensible durable agent provenance dimensions and privacy boundaries ([pm-oskdmu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-oskdmu.toon))

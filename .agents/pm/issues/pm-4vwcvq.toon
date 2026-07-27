@@ -1,0 +1,28 @@
+id: pm-4vwcvq
+title: "GH-772: rejected extension command registration leaves silent partial activation and zero-exit command gaps"
+description: "When one extension command registration is rejected, earlier siblings remain active while the rejected and later commands disappear; invoking a dropped command yields misleading parent help or arity output with exit zero, and extension manage reports unknown activation state."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-27T14:04:33.678Z"
+updated_at: "2026-07-27T14:07:57.427Z"
+author: "harness:codex"
+acceptance_criteria: "Rejected command registration cannot leave an undisclosed partially active surface; manifest-declared unavailable commands return a stable nonzero diagnostic; extension manage and help expose exact runtime activation status; real packed-extension tests cover rejection before, within, and after sibling command registrations."
+goal: project management = context management
+parent: pm-ugqx
+reporter: github-issue-772
+severity: high
+environment: pm 2026.7.27 with a command extension that collides with a host-owned global flag
+repro_steps: "Install pm-csv@2026.7.23 in a fresh workspace, inspect install diagnostics and extension manage, then invoke csv validate help and csv validate."
+expected_result: "Extension activation is atomic or every unavailable declared command fails nonzero with its activation cause, and manage reports the same runtime status as health."
+actual_result: "Earlier commands survive, the rejected and later siblings vanish, dropped command paths exit zero with misleading output, and manage reports runtime_active null and activation_status unknown."
+component: "extensions:command-registration"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-185870,related,"2026-07-27T14:04:39.676Z","harness:codex","cli:update:dep",detected
+  pm-usfg,implements,"2026-07-27T14:04:39.676Z","harness:codex","cli:update:dep",detected
+  pm-yffj,discovered_from,"2026-07-27T14:04:39.676Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-27T14:04:33.678Z","harness:codex","Duplicate-check evidence: all-status searches for GH-772 and partial activation found the closed visibility owner pm-yffj and command-dispatch lineage but no item covering atomic registration,zero-exit dropped paths,or manage status parity."
+  "2026-07-27T14:07:57.427Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/772. Canonical PM link was posted on the issue; this PR includes tracker-only triage and does not claim or implement the open report."
+body: ""

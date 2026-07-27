@@ -543,6 +543,59 @@ and terminal-holder rows; use the explicit active field for gating.
 `no_active_blocker_sentinel_count` separately identifies the legacy scalar
 sentinel rather than presenting it as a mistyped pm id.
 
+### Agent output budgets and discovery
+
+Tracked by [pm-5t33or](../.agents/pm/features/pm-5t33or.toon),
+[pm-gmdzaa](../.agents/pm/issues/pm-gmdzaa.toon), and
+[pm-dpqa3h](../.agents/pm/chores/pm-dpqa3h.toon).
+
+`PM_COMMAND_OUTPUT_BUDGET_CONTRACTS` declares one default estimated-token
+ceiling for every built-in command. Each row also carries its workload class,
+the stable `ceil(UTF-8 bytes / 4)` estimate, whether an explicit unbounded
+request is allowed, and the shared deterministic degradation ladder:
+`full → compact → brief → summary → counts`. These contracts are policy data,
+not renderer-specific code, so package authors can reuse
+`definePmCommandOutputBudget`, `resolvePmCommandOutputBudget`, and
+`estimatePmOutputTokens` in custom transports.
+
+```ts
+import {
+  definePmCommandOutputBudget,
+  estimatePmOutputTokens,
+  resolvePmCommandOutputBudget,
+} from "@unbraind/pm-cli/sdk/contracts";
+
+const compactRead = definePmCommandOutputBudget({
+  command: "get",
+  budget_class: "read",
+  default_max_estimated_tokens: 800,
+  degradation_ladder: ["compact", "summary"],
+  allows_unbounded_opt_out: false,
+  token_estimate: "ceil(utf8_bytes / 4)",
+} as const);
+
+const builtIn = resolvePmCommandOutputBudget("contracts --summary");
+const measured = estimatePmOutputTokens(
+  new TextEncoder().encode(JSON.stringify(result)).byteLength,
+);
+```
+
+Unfiltered `pm contracts` now selects the summary projection by default. It
+returns canonical commands, terse intents, the most useful flags for the core
+agent loop, per-command ceilings, and the shared output policy. Use
+`pm contracts --command <name> --flags-only` for the complete flag surface,
+`--schema-only` for tool schemas, or the explicit `--full` escape for the
+historical complete payload. The SDK `getContracts({ full: true })` uses the
+same opt-in.
+
+The committed `scripts/agent-token-surface-baseline.json` covers root help,
+every advertised command help payload, all contracts projections, and MCP
+`tools/list`. `pnpm quality:token-surface` fails on a missing or exceeded
+surface; `pnpm quality:token-surface:update` intentionally refreshes the
+versioned baseline after a reviewed output change. The context-quality CI and
+release gates run the check, so a new command cannot silently expand the agent
+context surface.
+
 Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 
 - `createExtensionTestHarness`

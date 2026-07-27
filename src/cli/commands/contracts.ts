@@ -94,6 +94,7 @@ import {
   PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS,
   PM_EXTENSION_SERVICE_NAME_CONTRACTS,
   PM_EXTENSION_TRUST_MODE_CONTRACTS,
+  PM_OUTPUT_DEGRADATION_STEPS,
   PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_TOOL_ACTIONS,
@@ -122,7 +123,7 @@ import {
   UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
   compactFlagAliasContracts,
-  withFlagAliasMetadata,
+  resolvePmCommandOutputBudget,
   type CliFlagContract,
   type CommanderOptionAliasContract,
 } from "../../sdk/cli-contracts.js";
@@ -226,6 +227,12 @@ export interface ContractsResult {
   extension_commands?: ExtensionCommandContract[];
   /** Value that configures or reports command summaries for this contract. */
   command_summaries?: CommandSummarySurface[];
+  /** Shared deterministic degradation policy for command output budgets. */
+  output_policy?: {
+    token_estimate: "ceil(utf8_bytes / 4)";
+    degradation_ladder: string[];
+    allows_unbounded_opt_out: boolean;
+  };
   /** Value that configures or reports runtime schema for this contract. */
   runtime_schema?: {
     statuses: string[];
@@ -332,7 +339,112 @@ interface ExtensionCommandContract {
 interface CommandSummarySurface {
   command: string;
   intent: string;
+  flags?: string[];
+  default_max_estimated_tokens: number | null;
 }
+
+const AGENT_BOOTSTRAP_FLAGS = new Map<string, readonly string[]>([
+  [
+    "claim",
+    [
+      "--if-available",
+      "--next",
+      "--type",
+      "--priority",
+      "--token-budget",
+      "--explain-ranking",
+    ],
+  ],
+  [
+    "close",
+    [
+      "--reason",
+      "--validate-close",
+      "--resolution",
+      "--expected-result",
+      "--actual-result",
+      "--message",
+    ],
+  ],
+  [
+    "context",
+    [
+      "--limit",
+      "--after",
+      "--depth",
+      "--section",
+      "--token-budget",
+      "--explain-ranking",
+    ],
+  ],
+  [
+    "contracts",
+    [
+      "--command",
+      "--flags-only",
+      "--summary",
+      "--runtime-only",
+      "--availability-only",
+      "--full",
+    ],
+  ],
+  [
+    "create",
+    ["--title", "--type", "--status", "--priority", "--dep", "--comment"],
+  ],
+  ["get", ["--full", "--depth", "--fields", "--tree", "--tree-depth", "--format"]],
+  [
+    "health",
+    [
+      "--check-only",
+      "--summary",
+      "--brief",
+      "--check-telemetry",
+      "--strict-exit",
+      "--full",
+    ],
+  ],
+  ["list", ["--status", "--type", "--limit", "--after", "--brief", "--fields"]],
+  [
+    "next",
+    [
+      "--limit",
+      "--blocked-limit",
+      "--ready-only",
+      "--token-budget",
+      "--explain-ranking",
+      "--format",
+    ],
+  ],
+  ["search", ["--mode", "--status", "--type", "--limit", "--after", "--fields"]],
+  ["update", ["--status", "--message", "--dep", "--comment", "--file", "--test"]],
+  [
+    "validate",
+    [
+      "--check-resolution",
+      "--check-history-drift",
+      "--check-storage-integrity",
+      "--counts",
+      "--strict-exit",
+      "--fix-hints",
+    ],
+  ],
+]);
+
+const AGENT_BOUNDED_FLAG_PRIORITY = [
+  "--limit",
+  "--after",
+  "--offset",
+  "--token-budget",
+  "--brief",
+  "--summary",
+  "--compact",
+  "--fields",
+  "--full",
+  "--format",
+  "--since",
+  "--until",
+] as const;
 
 const LIST_COMMAND_NAMES = new Set([
   "list",
@@ -564,10 +676,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["history-compact", HISTORY_COMPACT_FLAG_CONTRACTS],
   ["history-redact", HISTORY_REDACT_FLAG_CONTRACTS],
   ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],
-  [
-    "history-author-acknowledge",
-    HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
-  ],
+  ["history-author-acknowledge", HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS],
   ["merge", MERGE_FLAG_CONTRACTS],
   ["schema", SCHEMA_FLAG_CONTRACTS],
   ["profile", PROFILE_FLAG_CONTRACTS],
@@ -1794,7 +1903,19 @@ interface ContractsSchemaContext {
 function resolveContractsSelection(
   options: ContractsCommandOptions,
 ): ContractsSelection {
-  const summary = options.summary === true;
+  const explicitlyScoped =
+    normalizeToken(options.action) !== undefined ||
+    normalizeToken(options.command) !== undefined;
+  const projectionSelected =
+    options.schemaOnly === true ||
+    options.flagsOnly === true ||
+    options.availabilityOnly === true;
+  const summary =
+    options.summary === true ||
+    (options.full !== true &&
+      options.runtimeOnly !== true &&
+      !explicitlyScoped &&
+      !projectionSelected);
   const schemaOnly = options.schemaOnly === true;
   const flagsOnly = options.flagsOnly === true;
   const availabilityOnly = options.availabilityOnly === true;
@@ -2302,10 +2423,22 @@ function buildCommandSummarySurface(
   ]
     .filter((command) => command.length > 0)
     .sort((left, right) => left.localeCompare(right));
-  return rootCommands.map((command) => ({
-    command,
-    intent: summarizeCommandIntent(command),
-  }));
+  return rootCommands.map((command) => {
+    const budget = resolvePmCommandOutputBudget(command);
+    const availableFlags = new Set(
+      resolveCoreCommandFlags(command).map((contract) => contract.flag),
+    );
+    const flags = (
+      AGENT_BOOTSTRAP_FLAGS.get(command) ?? AGENT_BOUNDED_FLAG_PRIORITY
+    ).filter((flag) => availableFlags.has(flag));
+    return {
+      command,
+      intent: summarizeCommandIntent(command),
+      ...(flags.length > 0 ? { flags } : {}),
+      default_max_estimated_tokens:
+        budget?.default_max_estimated_tokens ?? null,
+    };
+  });
 }
 
 function resolveExtensionCommandContracts(
@@ -2410,9 +2543,7 @@ function attachRuntimeContractsResult(
     },
   };
   result.governance_contracts = {
-    ownership_enforcement_modes: [
-      ...GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES,
-    ],
+    ownership_enforcement_modes: [...GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES],
     create_modes: [...GOVERNANCE_CREATE_MODE_DEFAULT_VALUES],
     close_validation_modes: [...GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES],
     workflow_enforcement_modes: [...GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES],
@@ -2521,6 +2652,11 @@ export async function runContracts(
 
   if (selection.summary) {
     result.command_summaries = buildCommandSummarySurface(outputCommands);
+    result.output_policy = {
+      token_estimate: "ceil(utf8_bytes / 4)",
+      degradation_ladder: [...PM_OUTPUT_DEGRADATION_STEPS],
+      allows_unbounded_opt_out: true,
+    };
     return result;
   }
   const commandAliases = buildCommandAliasSurface(commands);
