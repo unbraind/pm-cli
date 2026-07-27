@@ -192,7 +192,7 @@
     "commander": "^15.0.0",
     "fast-glob": "^3.3.3",
     "fast-json-patch": "^3.1.1",
-    "npm-package-arg": "^13.0.2"
+    "npm-package-arg": "^14.0.0"
   },
   "devDependencies": {
     "@codspeed/vitest-plugin": "^5.7.1",
