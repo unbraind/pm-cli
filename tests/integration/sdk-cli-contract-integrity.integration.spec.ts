@@ -1,16 +1,26 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { TOOLS } from "../../src/mcp/tool-definitions.js";
 import { resolveWorkspaceRoot } from "../../src/core/store/paths.js";
 import { PM_TOOL_ACTION_PARAMETER_CONTRACTS } from "../../src/sdk/cli-contracts.js";
 import { anchorLinkedPath } from "../../src/sdk/linked-artifacts.js";
-import { runAction } from "../../src/sdk/runtime.js";
+import {
+  runAction,
+  type PmActionInput,
+} from "../../src/sdk/runtime.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 interface JsonErrorEnvelope {
   code: string;
   detail: string;
+}
+
+interface BehaviorParityBaseline {
+  minimum_cases: number;
+  required_actions: string[];
+  permitted_sdk_enrichment_keys: string[];
+  permitted_volatile_paths: string[];
 }
 
 function itemId(payload: unknown): string {
@@ -23,7 +33,201 @@ function schemaProperties(toolName: string): Record<string, unknown> {
   return (tool?.inputSchema.properties ?? {}) as Record<string, unknown>;
 }
 
+function comparableBehaviorEnvelope(
+  payload: unknown,
+  permittedSdkEnrichmentKeys: readonly string[],
+  permittedVolatilePaths: readonly string[],
+  parentPath = "",
+): unknown {
+  if (Array.isArray(payload)) {
+    return payload.map((entry, index) =>
+      comparableBehaviorEnvelope(
+        entry,
+        permittedSdkEnrichmentKeys,
+        permittedVolatilePaths,
+        `${parentPath}[${index}]`,
+      ),
+    );
+  }
+  if (payload === null || typeof payload !== "object") {
+    return payload;
+  }
+  return Object.fromEntries(
+    Object.entries(payload)
+      .filter(([key, value]) => {
+        const fieldPath = parentPath.length === 0 ? key : `${parentPath}.${key}`;
+        return (
+          value !== undefined &&
+          !permittedSdkEnrichmentKeys.includes(key) &&
+          !permittedVolatilePaths.includes(fieldPath)
+        );
+      })
+      .map(([key, value]) => [
+        key,
+        comparableBehaviorEnvelope(
+          value,
+          permittedSdkEnrichmentKeys,
+          permittedVolatilePaths,
+          parentPath.length === 0 ? key : `${parentPath}.${key}`,
+        ),
+      ]),
+  );
+}
+
 describe("SDK and CLI contract integrity", () => {
+  it("keeps representative CLI and SDK result envelopes equivalent behind a shrinking-only action baseline", async () => {
+    const baseline = JSON.parse(
+      await readFile(
+        path.resolve("tests/fixtures/sdk/sdk-cli-behavior-parity.json"),
+        "utf8",
+      ),
+    ) as BehaviorParityBaseline;
+
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "SDK CLI envelope parity",
+          "--description",
+          "Representative behavioral equivalence",
+          "--type",
+          "Task",
+          "--tag",
+          "sdk-parity",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const id = itemId(created.json);
+      const cases: Array<{
+        action: string;
+        cli: string[];
+        sdk: PmActionInput;
+      }> = [
+        {
+          action: "get",
+          cli: ["get", id, "--json", "--full"],
+          sdk: { action: "get", id, options: { full: true } },
+        },
+        {
+          action: "list-open",
+          cli: ["list-open", "--json", "--compact", "--limit", "20"],
+          sdk: {
+            action: "list-open",
+            options: { compact: true, limit: "20" },
+          },
+        },
+        {
+          action: "search",
+          cli: ["search", "envelope parity", "--json", "--compact"],
+          sdk: {
+            action: "search",
+            query: "envelope parity",
+            options: { compact: true },
+          },
+        },
+        {
+          action: "context",
+          cli: ["context", "--json", "--depth", "brief"],
+          sdk: { action: "context", options: { depth: "brief" } },
+        },
+        {
+          action: "next",
+          cli: ["next", "--json", "--ready-only", "--limit", "5"],
+          sdk: {
+            action: "next",
+            options: { readyOnly: true, limit: "5" },
+          },
+        },
+        {
+          action: "aggregate",
+          cli: ["aggregate", "--json", "--group-by", "status", "--count"],
+          sdk: {
+            action: "aggregate",
+            options: { groupBy: "status", count: true },
+          },
+        },
+        {
+          action: "stats",
+          cli: ["stats", "--json"],
+          sdk: { action: "stats", options: {} },
+        },
+        {
+          action: "duplicates",
+          cli: ["duplicates", "--json", "--threshold", "0.8"],
+          sdk: { action: "duplicates", options: { threshold: 0.8 } },
+        },
+        {
+          action: "comments",
+          cli: ["comments", id, "--json", "--limit", "20"],
+          sdk: { action: "comments", id, options: { limit: "20" } },
+        },
+        {
+          action: "notes",
+          cli: ["notes", id, "--json", "--limit", "20"],
+          sdk: { action: "notes", id, options: { limit: "20" } },
+        },
+        {
+          action: "learnings",
+          cli: ["learnings", id, "--json", "--limit", "20"],
+          sdk: { action: "learnings", id, options: { limit: "20" } },
+        },
+        {
+          action: "files",
+          cli: ["files", id, "--json", "--list"],
+          sdk: { action: "files", id, options: { list: true } },
+        },
+        {
+          action: "docs",
+          cli: ["docs", id, "--json", "--list"],
+          sdk: { action: "docs", id, options: { list: true } },
+        },
+        {
+          action: "history",
+          cli: ["history", id, "--json", "--full"],
+          sdk: { action: "history", id, options: { full: true } },
+        },
+        {
+          action: "deps",
+          cli: ["deps", id, "--json", "--summary"],
+          sdk: { action: "deps", id, options: { summary: true } },
+        },
+        {
+          action: "activity",
+          cli: ["activity", "--json", "--id", id, "--compact"],
+          sdk: { action: "activity", options: { id, compact: true } },
+        },
+      ];
+
+      expect(cases.length).toBeGreaterThanOrEqual(baseline.minimum_cases);
+      expect(cases.map(({ action }) => action)).toEqual(
+        expect.arrayContaining(baseline.required_actions),
+      );
+      for (const parityCase of cases) {
+        const cli = context.runCli(parityCase.cli, { expectJson: true });
+        const sdk = await runAction({
+          ...parityCase.sdk,
+          path: context.pmPath,
+        });
+        expect(cli.code, parityCase.action).toBe(0);
+        expect(
+          comparableBehaviorEnvelope(
+            sdk,
+            baseline.permitted_sdk_enrichment_keys,
+            baseline.permitted_volatile_paths,
+          ),
+          parityCase.action,
+        ).toEqual(
+          comparableBehaviorEnvelope(
+            cli.json,
+            baseline.permitted_sdk_enrichment_keys,
+            baseline.permitted_volatile_paths,
+          ),
+        );
+      }
+    });
+  });
+
   it("resolves standard and root-layout workspaces with stable path forms", () => {
     expect(resolveWorkspaceRoot("/repo/.agents/pm")).toBe(path.resolve("/repo"));
     expect(resolveWorkspaceRoot("/tracker-root")).toBe(path.resolve("/tracker-root"));
@@ -37,6 +241,7 @@ describe("SDK and CLI contract integrity", () => {
 
   it("anchors linked paths to the workspace when invoked from a nested directory", async () => {
     await withTempPmPath(async (context) => {
+      context.env.PM_SOURCE_WORKSPACE_ROOT = context.tempRoot;
       const nestedDirectory = path.join(context.tempRoot, "packages", "app");
       await mkdir(path.join(nestedDirectory, "src"), { recursive: true });
       await writeFile(path.join(nestedDirectory, "src", "entry.ts"), "export {};\n", "utf8");

@@ -1,8 +1,10 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   PM_TOOL_ACTIONS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
-  type PmToolAction,
+  analyzeSdkCliParameterCompleteness,
 } from "../../../src/sdk/cli-contracts.js";
 import {
   _testOnlyCliContracts,
@@ -15,61 +17,9 @@ type SchemaWithProperties = {
   properties?: Record<string, unknown>;
 };
 
-const FLAG_PARAMETER_OVERRIDES: Record<string, string> = {
-  "--action": "contractAction",
-};
-
-const SCHEMA_PARITY_CASES: Array<{
-  action: PmToolAction;
-  command: string;
-  flags: string[];
-}> = [
-  {
-    action: "close",
-    command: "close",
-    flags: [
-      "--reason",
-      "--close-reason",
-      "--validate-close",
-      "--resolution",
-      "--expected-result",
-      "--actual-result",
-    ],
-  },
-  { action: "close-task", command: "close-task", flags: ["--validate-close"] },
-  { action: "files", command: "files", flags: ["--list"] },
-  {
-    action: "health",
-    command: "health",
-    flags: ["--brief", "--summary", "--full"],
-  },
-  { action: "plan", command: "plan", flags: ["--field"] },
-  {
-    action: "validate",
-    command: "validate",
-    flags: ["--dependency-cycle-severity", "--parent-cycle-severity"],
-  },
-  {
-    action: "contracts",
-    command: "contracts",
-    flags: [
-      "--action",
-      "--command",
-      "--summary",
-      "--schema-only",
-      "--flags-only",
-      "--availability-only",
-      "--runtime-only",
-      "--active-only",
-      "--full",
-    ],
-  },
-];
-
-function camelCaseFlagName(flag: string): string {
-  return flag
-    .replace(/^--/, "")
-    .replace(/-([a-z])/g, (_match, value: string) => value.toUpperCase());
+interface CompletenessBaseline {
+  minimum_public_actions: number;
+  maximum_waivers: Record<string, number>;
 }
 
 describe("action-scoped MCP schema parity", () => {
@@ -122,33 +72,70 @@ describe("action-scoped MCP schema parity", () => {
     }
   });
 
-  it.each(SCHEMA_PARITY_CASES)(
-    "accepts non-interactive CLI flags for action $action",
-    ({ action, command, flags }) => {
-      const commandFlags = new Set(
-        resolveSubcommandFlagContractsForCommand(command).map(
-          (contract) => contract.flag,
+  it("derives bidirectional CLI/SDK reachability with a shrinking-only waiver ratchet", async () => {
+    const baseline = JSON.parse(
+      await readFile(
+        path.resolve(
+          "tests/fixtures/sdk/sdk-cli-parameter-completeness.json",
         ),
+        "utf8",
+      ),
+    ) as CompletenessBaseline;
+    const coverage = analyzeSdkCliParameterCompleteness();
+    const entries = coverage.flatMap(({ cli, sdk }) => [...cli, ...sdk]);
+    const waiverCounts = new Map<string, number>();
+    for (const { disposition } of entries) {
+      if (disposition === "shared" || disposition === "unclassified") continue;
+      waiverCounts.set(
+        disposition,
+        (waiverCounts.get(disposition) ?? 0) + 1,
       );
-      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(
-        action,
-      ) as SchemaWithProperties;
-      const schemaProperties = new Set(Object.keys(schema.properties ?? {}));
+    }
 
-      for (const flag of flags) {
-        const parameter =
-          FLAG_PARAMETER_OVERRIDES[flag] ?? camelCaseFlagName(flag);
-        expect(
-          commandFlags.has(flag),
-          `${command} should advertise ${flag}`,
-        ).toBe(true);
-        expect(
-          schemaProperties.has(parameter),
-          `${action} schema should accept ${parameter} for ${flag}`,
-        ).toBe(true);
-      }
-    },
-  );
+    expect(coverage).toHaveLength(PM_TOOL_ACTIONS.length);
+    expect(coverage.length).toBeGreaterThanOrEqual(
+      baseline.minimum_public_actions,
+    );
+    expect(coverage.flatMap(({ unclassified }) => unclassified)).toEqual([]);
+    for (const [disposition, maximum] of Object.entries(
+      baseline.maximum_waivers,
+    )) {
+      expect(
+        waiverCounts.get(disposition) ?? 0,
+        `${disposition} waiver count must only shrink`,
+      ).toBeLessThanOrEqual(maximum);
+    }
+    expect([...waiverCounts.keys()].sort()).toEqual(
+      Object.keys(baseline.maximum_waivers).sort(),
+    );
+  });
+
+  it("fails closed when a new CLI flag lacks a schema mapping or waiver", () => {
+    const coverage = analyzeSdkCliParameterCompleteness({
+      actions: ["create"],
+      resolveFlags: (command) => [
+        ...resolveSubcommandFlagContractsForCommand(command),
+        { flag: "--synthetic-unmapped-control" },
+      ],
+    });
+
+    expect(coverage[0]?.unclassified).toContainEqual(
+      expect.objectContaining({
+        input: "--synthetic-unmapped-control",
+        disposition: "unclassified",
+      }),
+    );
+  });
+
+  it("fails closed when an action has no strict SDK parameter contract", () => {
+    const coverage = analyzeSdkCliParameterCompleteness({
+      actions: ["create"],
+      resolveParameters: () => undefined,
+    });
+
+    expect(coverage[0]?.sdk).toEqual([]);
+    expect(coverage[0]?.unclassified.length).toBeGreaterThan(0);
+  });
 
   it("documents newly exposed terse health output for MCP clients", () => {
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema(

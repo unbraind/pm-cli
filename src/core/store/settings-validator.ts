@@ -44,6 +44,7 @@ export interface ParsedSettings {
       environment_keys?: string[];
       model_environment_keys?: string[];
       session_environment_keys?: string[];
+      provenance_environment_keys?: Record<string, string[]>;
       argv_markers?: string[];
       client_names?: string[];
     }>;
@@ -494,6 +495,9 @@ const harnessSignalDescriptor = vObject({
   environment_keys: vOptional(vArray(harnessSignalLiteral, 64)),
   model_environment_keys: vOptional(vArray(harnessSignalLiteral, 64)),
   session_environment_keys: vOptional(vArray(harnessSignalLiteral, 64)),
+  provenance_environment_keys: vOptional(
+    vRecordOf(vArray(harnessSignalLiteral, 64)),
+  ),
   argv_markers: vOptional(vArray(harnessSignalLiteral, 64)),
   client_names: vOptional(vArray(harnessSignalLiteral, 64)),
 });

@@ -14,7 +14,7 @@ describe("decodeToonItemContent", () => {
     expect(result.value).toMatchObject({ title: "Hello", priority: 2 });
   });
 
-  it("decodes a quoted bracketed-token-then-colon natively with TOON 2.3.1", () => {
+  it("decodes a quoted bracketed-token-then-colon natively with TOON 4.1", () => {
     const result = decodeToonItemContent(
       'body: "POST [redacted_endpoint]: HTTP 200, accepted:1"',
     );
@@ -29,7 +29,7 @@ describe("decodeToonItemContent", () => {
       /Duplicate sibling key/,
     );
     expect(() => decodeToonItemContent("tags[2]: one")).toThrow(
-      /Expected 2 inline array items/,
+      /Expected 2 inline-form values/,
     );
     expect(() =>
       decodeToonItemContent(

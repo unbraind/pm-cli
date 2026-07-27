@@ -195,3 +195,10 @@ export {
   PM_PROVIDER_TOOL_PARAMETERS_SCHEMA,
   _testOnlyCliContracts,
 } from "./cli-contracts/tool-schema.js";
+export {
+  analyzeSdkCliParameterCompleteness,
+  type SdkCliActionParameterCoverage,
+  type SdkCliCompletenessContractSource,
+  type SdkCliParameterCoverageEntry,
+  type SdkCliParameterDisposition,
+} from "./cli-contracts/completeness.js";

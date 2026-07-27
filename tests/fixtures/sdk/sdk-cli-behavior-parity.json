@@ -1,0 +1,34 @@
+{
+  "minimum_cases": 16,
+  "permitted_sdk_enrichment_keys": [
+    "has_more",
+    "limit",
+    "query_summary",
+    "returned_count",
+    "total_count"
+  ],
+  "permitted_volatile_paths": [
+    "generated_at",
+    "now",
+    "window.anchor",
+    "window.start"
+  ],
+  "required_actions": [
+    "get",
+    "list-open",
+    "search",
+    "context",
+    "next",
+    "aggregate",
+    "stats",
+    "duplicates",
+    "comments",
+    "notes",
+    "learnings",
+    "files",
+    "docs",
+    "history",
+    "deps",
+    "activity"
+  ]
+}

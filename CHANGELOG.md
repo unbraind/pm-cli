@@ -4,7 +4,17 @@
 
 ### Fixed
 
+- GH-747: the bundled TOON encoder emits documents its own decoder rejects, so a valid item becomes permanently unreadable ([pm-avv3wx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-avv3wx.toon))
+- Identity provenance is a fixed three-dimension schema, so the reasoning level sitting in the environment right now and any session role are structurally unrepresentable ([pm-itsjf0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-itsjf0.toon))
+- Model capture is inert in practice: zero of 35,103 recorded entries carry a model, because the declared signal for the primary harness is an environment variable that harness does not set ([pm-0zcwz6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0zcwz6.toon))
+- The public harness detectors default env to an empty object, so detectAgentIdentity() and detectHarnessIdentity() silently return empty for every SDK caller ([pm-pwq0g5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pwq0g5.toon))
 - GH-746: the release publish step guards on a package scope that does not exist, so publish idempotence and access recovery are permanently dead code ([pm-2z9263](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2z9263.toon))
+
+### Other
+
+- Evaluate @toon-format/toon 4 compatibility and item-format migration ([pm-5cgm2z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5cgm2z.toon))
+- ADR amendment: extensible durable agent provenance dimensions and privacy boundaries ([pm-oskdmu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-oskdmu.toon))
+- SDK completeness is asserted by a 10-case curated array against 85 declared actions: the boundary proves the CLI reaches nothing below the SDK, nothing proves the SDK can do what the CLI does ([pm-te6elw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-te6elw.toon))
 
 ## 2026.7.27 - 2026-07-27
 

@@ -177,6 +177,10 @@ describe("sparse settings persistence", () => {
               environment_keys: ["SYNTHETIC_AGENT"],
               model_environment_keys: ["SYNTHETIC_MODEL"],
               session_environment_keys: ["SYNTHETIC_SESSION"],
+              provenance_environment_keys: {
+                effort: ["SYNTHETIC_EFFORT"],
+                role: ["SYNTHETIC_ROLE"],
+              },
               argv_markers: ["synthetic-agent"],
               client_names: ["synthetic-client"],
             },

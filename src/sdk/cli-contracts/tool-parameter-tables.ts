@@ -23,6 +23,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   timeoutMs: { type: "number" },
   id: { type: "string" },
   target: { type: "string" },
+  capability: { type: "string", minLength: 1 },
+  declarative: { type: "boolean" },
   output: { type: "string", minLength: 1 },
   markdown: { type: "boolean" },
   init: { type: "boolean" },
@@ -71,6 +73,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     ],
   },
   prefix: { type: "string" },
+  idPrefix: { type: "string" },
+  workspace: { type: "string" },
   preset: { type: "string", enum: ["minimal", "default", "strict", "custom"] },
   typePreset: { type: "string", enum: ["agile", "ops", "research"] },
   defaults: { type: "boolean" },
@@ -185,6 +189,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   date: { type: "string" },
   from: { type: "string" },
   before: { type: "string" },
+  at: { type: "string" },
   to: { type: "string" },
   migrationId: { type: "string" },
   fieldTypeScope: { type: "string" },
@@ -323,6 +328,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   dependencyCycleSeverity: { type: "string", enum: ["off", "warn", "error"] },
   parentCycleSeverity: { type: "string", enum: ["off", "warn", "error"] },
   checkFiles: { type: "boolean" },
+  checkStorageIntegrity: { type: "boolean" },
   strictDirectories: { type: "boolean" },
   checkOnly: { type: "boolean" },
   checkTelemetry: { type: "boolean" },
@@ -683,6 +689,15 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
       "Positional target argument for the selected action (ID, source, package source, or extension name).",
     examples: ["pm-a1b2", ".agents/pm/extensions/sample", "sample-extension"],
   },
+  capability: {
+    description:
+      "Starter capability selected by extension-init or package-init scaffolding.",
+    examples: ["commands", "hooks", "search", "schema"],
+  },
+  declarative: {
+    description:
+      "Generate the package composeExtension declarative blueprint starter.",
+  },
   output: {
     description:
       "File path for commands that write generated output, such as package/extension describe Markdown references.",
@@ -850,6 +865,16 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   preset: {
     description: "Governance preset for initialization flows.",
     examples: ["minimal", "default", "strict"],
+  },
+  idPrefix: {
+    description:
+      "Tracker item identifier prefix used by initialization; overrides the positional compatibility prefix.",
+    examples: ["pm", "work"],
+  },
+  workspace: {
+    description:
+      "Workspace directory where initialization resolves or creates the tracker.",
+    examples: [".", "packages/app"],
   },
   typePreset: {
     description: "Domain item-type preset registered during initialization.",
@@ -1183,6 +1208,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
       "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp). Single-id mode only.",
     examples: ["5", "2026-06-01T00:00:00.000Z"],
   },
+  at: {
+    description:
+      "Read-only historical projection boundary as an item version or ISO timestamp.",
+    examples: ["3", "2026-07-01T12:00:00.000Z"],
+  },
   allOver: {
     description:
       "For history-compact bulk mode, compact every stream with more than N entries. When history.compact_policy is enabled and this is omitted, the policy's max_entries is used.",
@@ -1248,6 +1278,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   checkFiles: {
     description: "Run linked-file and orphaned-file checks.",
+  },
+  checkStorageIntegrity: {
+    description:
+      "Run deep item, history, index, and vector storage integrity checks.",
   },
   strictDirectories: {
     description:

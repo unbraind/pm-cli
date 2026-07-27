@@ -920,9 +920,26 @@ export interface HistoryEntry {
   /** Observed agent model identifier, retained in local history. */
   agent_model?: string;
   /** Bounded signal class that supplied `agent_model`. */
-  agent_model_source?: "override" | "environment" | "mcp_client" | "argv";
+  agent_model_source?:
+    | "override"
+    | "environment"
+    | "mcp_client"
+    | "argv"
+    | "host";
   /** Privacy-safe fingerprint distinguishing concurrent harness invocations. */
   agent_instance?: string;
+  /** Extensible local-only descriptive agent provenance; null means declared but unavailable. */
+  agent_provenance?: Readonly<
+    Record<
+    string,
+    {
+      /** Bounded descriptive value observed for this dimension. */
+      value: string;
+      /** Bounded signal class that supplied the value. */
+      source: "override" | "environment" | "mcp_client" | "argv" | "host";
+    } | null
+    >
+  >;
   /** Value that configures or reports op for this contract. */
   op: string;
   /** Value that configures or reports patch for this contract. */
@@ -1191,6 +1208,8 @@ export interface PmSettings {
       model_environment_keys?: string[];
       /** Environment keys checked in order for a session identifier. */
       session_environment_keys?: string[];
+      /** Extensible provenance dimensions mapped to ordered environment keys. */
+      provenance_environment_keys?: Record<string, string[]>;
       /** Literal executable or argument markers. */
       argv_markers?: string[];
       /** Literal MCP client-name markers. */

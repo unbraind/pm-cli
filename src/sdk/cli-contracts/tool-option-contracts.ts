@@ -71,6 +71,14 @@ const TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS: readonly SharedToolOptionFlagCon
     { param: "filterReleaseMissing", flag: "--filter-release-missing" },
   ];
 
+const TOOL_CORE_MISSING_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] =
+  [
+    { param: "filterAcMissing", flag: "--filter-ac-missing" },
+    { param: "filterEstimatesMissing", flag: "--filter-estimates-missing" },
+    { param: "filterResolutionMissing", flag: "--filter-resolution-missing" },
+    { param: "filterMetadataMissing", flag: "--filter-metadata-missing" },
+  ];
+
 const TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS: readonly SharedToolOptionFlagContract[] =
   [
     { param: "hasNotes", flag: "--has-notes" },
@@ -101,10 +109,7 @@ export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   ...cloneOptionContracts(TOOL_LIST_WINDOW_FILTER_OPTION_CONTRACTS),
   { param: "ids", flag: "--ids" },
   ...cloneOptionContracts(TOOL_ITEM_RELATION_FILTER_OPTION_CONTRACTS),
-  { param: "filterAcMissing", flag: "--filter-ac-missing" },
-  { param: "filterEstimatesMissing", flag: "--filter-estimates-missing" },
-  { param: "filterResolutionMissing", flag: "--filter-resolution-missing" },
-  { param: "filterMetadataMissing", flag: "--filter-metadata-missing" },
+  ...cloneOptionContracts(TOOL_CORE_MISSING_OPTION_CONTRACTS),
   ...cloneOptionContracts(TOOL_GOVERNANCE_MISSING_OPTION_CONTRACTS),
   ...cloneOptionContracts(TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS),
   { param: "limit", flag: "--limit" },
@@ -171,6 +176,7 @@ export const TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT_SOURCE = [
       allowEmpty: true,
     },
     { param: "order", flag: "--order" },
+    { param: "rank", flag: "--rank" },
     { param: "goal", flag: "--goal" },
     { param: "objective", flag: "--objective" },
     { param: "value", flag: "--value" },
@@ -309,6 +315,10 @@ export const TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE = [
     { param: "filterParent", flag: "--filter-parent" },
     { param: "filterSprint", flag: "--filter-sprint" },
     { param: "filterRelease", flag: "--filter-release" },
+    { param: "filterAcMissing", flag: "--filter-ac-missing" },
+    { param: "filterEstimatesMissing", flag: "--filter-estimates-missing" },
+    { param: "filterResolutionMissing", flag: "--filter-resolution-missing" },
+    { param: "filterMetadataMissing", flag: "--filter-metadata-missing" },
     { param: "filterReviewerMissing", flag: "--filter-reviewer-missing" },
     { param: "filterRiskMissing", flag: "--filter-risk-missing" },
     { param: "filterConfidenceMissing", flag: "--filter-confidence-missing" },

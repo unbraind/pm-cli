@@ -326,6 +326,8 @@ const LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = [
 const MANAGED_EXTENSION_PACKAGE_OPTION_KEYS = [
   "target",
   "scope",
+  "capability",
+  "declarative",
   "github",
   "ref",
   "init",
@@ -339,6 +341,7 @@ const MANAGED_EXTENSION_PACKAGE_OPTION_KEYS = [
   "reload",
   "doctor",
   "catalog",
+  "list",
   "adopt",
   "adoptAll",
   "activate",
@@ -358,7 +361,14 @@ function managedLifecycleSchemaContracts(
   prefix: "extension" | "package",
 ): Record<string, PmActionSchemaContract> {
   return {
-    [`${prefix}-init`]: { required: ["target"], optional: ["scope"] },
+    [`${prefix}-init`]: {
+      required: ["target"],
+      optional: [
+        "scope",
+        "capability",
+        ...(prefix === "package" ? ["declarative"] : []),
+      ],
+    },
     [`${prefix}-install`]: {
       optional: ["target", "github", "scope", "ref"],
       anyOfRequired: [["target"], ["github"]],
@@ -403,6 +413,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     init: {
       optional: [
         "prefix",
+        "idPrefix",
+        "workspace",
         "preset",
         "typePreset",
         "defaults",
@@ -497,7 +509,15 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
     get: {
       required: ["id"],
-      optional: ["depth", "full", "fields", "tree", "treeDepth", "format"],
+      optional: [
+        "at",
+        "depth",
+        "full",
+        "fields",
+        "tree",
+        "treeDepth",
+        "format",
+      ],
     },
     search: {
       optional: SEARCH_CONTRACT_PARAMETER_KEYS,
@@ -507,7 +527,17 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     reindex: { optional: ["mode", "progress"] },
     history: {
       required: ["id"],
-      optional: ["limit", "compact", "full", "diff", "verify", "format"],
+      optional: [
+        "limit",
+        "compact",
+        "full",
+        "diff",
+        "verify",
+        "field",
+        "strictExit",
+        "failOnWarn",
+        "format",
+      ],
     },
     "history-redact": {
       required: ["id"],
@@ -628,6 +658,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "reorderTo",
         "title",
         "description",
+        "template",
         "scope",
         "parent",
         "related",
@@ -915,6 +946,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     validate: {
       optional: [
+        "checkStorageIntegrity",
         "checkMetadata",
         "metadataProfile",
         "checkResolution",

@@ -10396,7 +10396,6 @@
       "Milestone",
       "Plan",
       "Reminder",
-      "Story",
       "Task"
     ]
   },
@@ -10438,6 +10437,14 @@
           "force": {
             "description": "Force.",
             "type": "boolean"
+          },
+          "idPrefix": {
+            "description": "Tracker item identifier prefix used by initialization; overrides the positional compatibility prefix.",
+            "examples": [
+              "pm",
+              "work"
+            ],
+            "type": "string"
           },
           "json": {
             "default": true,
@@ -10522,6 +10529,14 @@
           "withPackages": {
             "description": "Install all bundled first-party pm packages during initialization.",
             "type": "boolean"
+          },
+          "workspace": {
+            "description": "Workspace directory where initialization resolves or creates the tracker.",
+            "examples": [
+              ".",
+              "packages/app"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -10640,6 +10655,17 @@
           "action": {
             "const": "extension-init",
             "description": "Tool action to execute."
+          },
+          "capability": {
+            "description": "Starter capability selected by extension-init or package-init scaffolding.",
+            "examples": [
+              "commands",
+              "hooks",
+              "search",
+              "schema"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "json": {
             "default": true,
@@ -11680,12 +11706,27 @@
             "description": "Adopt All.",
             "type": "boolean"
           },
+          "capability": {
+            "description": "Starter capability selected by extension-init or package-init scaffolding.",
+            "examples": [
+              "commands",
+              "hooks",
+              "search",
+              "schema"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "catalog": {
             "description": "Catalog.",
             "type": "boolean"
           },
           "deactivate": {
             "description": "Deactivate.",
+            "type": "boolean"
+          },
+          "declarative": {
+            "description": "Generate the package composeExtension declarative blueprint starter.",
             "type": "boolean"
           },
           "describe": {
@@ -11746,6 +11787,13 @@
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "list": {
+            "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "manage": {
@@ -11867,6 +11915,21 @@
           "action": {
             "const": "package-init",
             "description": "Tool action to execute."
+          },
+          "capability": {
+            "description": "Starter capability selected by extension-init or package-init scaffolding.",
+            "examples": [
+              "commands",
+              "hooks",
+              "search",
+              "schema"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "declarative": {
+            "description": "Generate the package composeExtension declarative blueprint starter.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -12907,12 +12970,27 @@
             "description": "Adopt All.",
             "type": "boolean"
           },
+          "capability": {
+            "description": "Starter capability selected by extension-init or package-init scaffolding.",
+            "examples": [
+              "commands",
+              "hooks",
+              "search",
+              "schema"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "catalog": {
             "description": "Catalog.",
             "type": "boolean"
           },
           "deactivate": {
             "description": "Deactivate.",
+            "type": "boolean"
+          },
+          "declarative": {
+            "description": "Generate the package composeExtension declarative blueprint starter.",
             "type": "boolean"
           },
           "describe": {
@@ -12973,6 +13051,13 @@
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "list": {
+            "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "manage": {
@@ -13654,6 +13739,18 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^-?\\d+$",
+                "type": "string"
+              }
+            ],
+            "description": "Rank."
+          },
           "regression": {
             "anyOf": [
               {
@@ -13920,18 +14017,6 @@
                   "required_type_options": []
                 },
                 "Reminder": {
-                  "policy_errors": [],
-                  "required_flags": [
-                    "--title",
-                    "--type"
-                  ],
-                  "required_option_keys": [
-                    "title",
-                    "type"
-                  ],
-                  "required_type_options": []
-                },
-                "Story": {
                   "policy_errors": [],
                   "required_flags": [
                     "--title",
@@ -14434,18 +14519,6 @@
                     "status",
                     "tags",
                     "test",
-                    "title",
-                    "type"
-                  ],
-                  "required_type_options": []
-                },
-                "Story": {
-                  "policy_errors": [],
-                  "required_flags": [
-                    "--title",
-                    "--type"
-                  ],
-                  "required_option_keys": [
                     "title",
                     "type"
                   ],
@@ -19221,6 +19294,14 @@
             "const": "get",
             "description": "Tool action to execute."
           },
+          "at": {
+            "description": "Read-only historical projection boundary as an item version or ISO timestamp.",
+            "examples": [
+              "3",
+              "2026-07-01T12:00:00.000Z"
+            ],
+            "type": "string"
+          },
           "depth": {
             "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
             "enum": [
@@ -19979,6 +20060,17 @@
             "description": "Diff.",
             "type": "boolean"
           },
+          "failOnWarn": {
+            "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
+            "type": "boolean"
+          },
+          "field": {
+            "description": "Field.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "format": {
             "description": "Format.",
             "enum": [
@@ -20039,6 +20131,10 @@
           },
           "quiet": {
             "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "strictExit": {
+            "description": "Return non-zero exit when health/validate/extension-doctor warnings are present.",
             "type": "boolean"
           },
           "timeoutMs": {
@@ -21691,6 +21787,18 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^-?\\d+$",
+                "type": "string"
+              }
+            ],
+            "description": "Rank."
+          },
           "regression": {
             "anyOf": [
               {
@@ -22088,6 +22196,10 @@
             },
             "type": "array"
           },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
           "filterAssignee": {
             "description": "Filter Assignee.",
             "type": "string"
@@ -22124,6 +22236,10 @@
             "description": "Filter Empty Body.",
             "type": "boolean"
           },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
           "filterHasBody": {
             "description": "Filter Has Body.",
             "type": "boolean"
@@ -22158,6 +22274,10 @@
           },
           "filterHasTests": {
             "description": "Filter Has Tests.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
           "filterNoComments": {
@@ -22213,6 +22333,10 @@
           },
           "filterReleaseMissing": {
             "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
           "filterReviewerMissing": {
@@ -22418,6 +22542,18 @@
           "quiet": {
             "description": "Suppress stdout payload output.",
             "type": "boolean"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^-?\\d+$",
+                "type": "string"
+              }
+            ],
+            "description": "Rank."
           },
           "regression": {
             "anyOf": [
@@ -22739,6 +22875,10 @@
             "description": "Expected Result.",
             "type": "string"
           },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
           "filterAssignee": {
             "description": "Filter Assignee.",
             "type": "string"
@@ -22775,6 +22915,10 @@
             "description": "Filter Empty Body.",
             "type": "boolean"
           },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
           "filterHasBody": {
             "description": "Filter Has Body.",
             "type": "boolean"
@@ -22809,6 +22953,10 @@
           },
           "filterHasTests": {
             "description": "Filter Has Tests.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
             "type": "boolean"
           },
           "filterNoComments": {
@@ -22864,6 +23012,10 @@
           },
           "filterReleaseMissing": {
             "description": "Filter Release Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
             "type": "boolean"
           },
           "filterReviewerMissing": {
@@ -23943,6 +24095,10 @@
             "examples": [
               "pm-cli,agent-ux"
             ],
+            "type": "string"
+          },
+          "template": {
+            "description": "Template.",
             "type": "string"
           },
           "test": {
@@ -25656,6 +25812,10 @@
           },
           "checkStaleBlockers": {
             "description": "Include stale blocker-pattern diagnostics in lifecycle checks.",
+            "type": "boolean"
+          },
+          "checkStorageIntegrity": {
+            "description": "Run deep item, history, index, and vector storage integrity checks.",
             "type": "boolean"
           },
           "counts": {

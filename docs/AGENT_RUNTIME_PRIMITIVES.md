@@ -11,7 +11,11 @@ bundle [pm-qwuber](../.agents/pm/decisions/pm-qwuber.toon),
 [pm-6uxhe0](../.agents/pm/issues/pm-6uxhe0.toon),
 [pm-zqsrt5](../.agents/pm/issues/pm-zqsrt5.toon),
 [pm-sx52hr](../.agents/pm/issues/pm-sx52hr.toon), and
-[pm-brxdct](../.agents/pm/tasks/pm-brxdct.toon).
+[pm-brxdct](../.agents/pm/tasks/pm-brxdct.toon). The extensible provenance
+amendment is tracked by [pm-oskdmu](../.agents/pm/decisions/pm-oskdmu.toon),
+[pm-itsjf0](../.agents/pm/features/pm-itsjf0.toon),
+[pm-0zcwz6](../.agents/pm/issues/pm-0zcwz6.toon), and
+[pm-pwq0g5](../.agents/pm/issues/pm-pwq0g5.toon).
 
 `pm` treats project management as context management. These primitives keep
 mutation provenance, source-workspace identity, extension flags, and bounded
@@ -36,8 +40,11 @@ The stable resolution order is:
 Every newly created `HistoryEntry` records `author_source` as `asserted`,
 `configured`, `detected`, or `unknown`. Author selection and agent observation
 are independent: even an explicit, environment, or configured author retains
-the observed `agent_harness`, `agent_model`, and `agent_model_source` fields.
-Older history remains valid because all agent fields are optional.
+the observed `agent_harness`, legacy `agent_model`/`agent_model_source`, and
+extensible `agent_provenance` fields. The built-in provenance dimensions are
+`model`, `effort`, and `role`; package descriptors and trusted embedded hosts
+can add bounded dimensions such as `topic`. Older history remains valid because
+all agent fields are optional.
 
 Detection is a pure, bounded signal match: it does not launch a subprocess,
 traverse an unbounded process tree, execute user regexes, emit environment
@@ -55,21 +62,22 @@ import {
   resolveAuthorIdentity,
 } from "@unbrained/pm-cli/sdk";
 
-const agent = detectAgentIdentity({
-  env: process.env,
-  argv: process.argv,
-});
-const harness = detectHarnessIdentity({
-  env: process.env,
-  argv: process.argv,
-});
+const agent = detectAgentIdentity();
+const harness = detectHarnessIdentity();
 const identity = resolveAuthorIdentity(undefined, configuredAuthor);
 ```
 
-`PM_AGENT_MODEL` is the explicit model observation override. Built-in
-harness-specific model and session variables are evaluated next, followed by
-MCP client metadata and `--model` argv tokens. Missing model/session signals
-remain absent rather than guessed.
+Omitting detector arguments reads the current bounded invocation context:
+process environment/argv for ordinary SDK calls or the active
+`runWithHarnessDetectionSignals()` scope for embedded hosts. Passing an explicit
+signal object remains deterministic and isolated.
+
+`PM_AGENT_MODEL`, `PM_AGENT_EFFORT`, and `PM_AGENT_ROLE` are explicit
+observation overrides. Built-in harness-specific environment variables are
+evaluated next, followed by MCP client metadata, trusted host provenance, and
+bounded argv tokens. A detected harness with no model records
+`agent_provenance.model: null`, making unavailable model data distinguishable
+from legacy history written before the provenance contract.
 
 ## Custom harness descriptors
 
@@ -88,6 +96,11 @@ automatically using `settings.agent_identity.harness_signals`.
         "environment_keys": ["ACME_AGENT"],
         "model_environment_keys": ["ACME_MODEL"],
         "session_environment_keys": ["ACME_SESSION"],
+        "provenance_environment_keys": {
+          "effort": ["ACME_EFFORT"],
+          "role": ["ACME_ROLE"],
+          "topic": ["ACME_TOPIC"]
+        },
         "argv_markers": ["acme-agent"],
         "client_names": ["acme-agent"]
       }
@@ -103,8 +116,10 @@ workspace. Registration performs no filesystem, process, or network access.
 
 MCP captures `clientInfo.name` and `clientInfo.version` during initialize and
 scopes all later tool calls to that client signal. Optional host-provided
-`model` and `session` fields are supported, but version is not misclassified as
-a model or session.
+`model`, `session`, and `provenance` fields are supported, but version is not
+misclassified as a model or session. See
+[Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) for precedence,
+privacy, compatibility, and coverage-report contracts.
 
 ## Unknown-author remediation
 
