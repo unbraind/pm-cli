@@ -132,6 +132,13 @@ import {
   GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES,
   GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES,
 } from "../../types.js";
+import {
+  BRIEF_LIST_FIELDS,
+  DEFAULT_COMPACT_LIST_FIELDS,
+  LIST_COMMAND_DEFAULT_PROJECTIONS,
+  type ListCommandName,
+  type ListProjectionMode,
+} from "../../sdk/query/list.js";
 
 /** Documents the contracts command options payload exchanged by command, SDK, and package integrations. */
 export interface ContractsCommandOptions {
@@ -168,6 +175,14 @@ interface CommandAliasSurface {
   aliases: string[];
 }
 
+/** Machine-readable projection behavior for one list command. */
+interface ListCommandProjectionSurface {
+  command: ListCommandName;
+  default: Exclude<ListProjectionMode, "fields">;
+  brief_fields: string[];
+  compact_fields: string[];
+}
+
 /** Documents the contracts result payload exchanged by command, SDK, and package integrations. */
 export interface ContractsResult {
   /** Value that configures or reports schema version for this contract. */
@@ -201,6 +216,8 @@ export interface ContractsResult {
   commander_aliases_omitted_reason?: string;
   /** Value that configures or reports command flags for this contract. */
   command_flags?: CommandFlagSurface[];
+  /** Default and named field projections for list-family commands in scope. */
+  list_projections?: ListCommandProjectionSurface[];
   /** Value that configures or reports command aliases for this contract. */
   command_aliases?: CommandAliasSurface[];
   /** Value that configures or reports commander aliases for this contract. */
@@ -2436,6 +2453,22 @@ function attachFlagContractsResult(
       runtime.extensionFlagMap,
       runtime.runtimeFieldFlagMap,
     );
+    const commandSet = new Set(outputCommands);
+    result.list_projections = (
+      Object.entries(LIST_COMMAND_DEFAULT_PROJECTIONS) as Array<
+        [
+          ListCommandName,
+          (typeof LIST_COMMAND_DEFAULT_PROJECTIONS)[ListCommandName],
+        ]
+      >
+    )
+      .filter(([command]) => commandSet.has(command))
+      .map(([command, defaultProjection]) => ({
+        command,
+        default: defaultProjection,
+        brief_fields: [...BRIEF_LIST_FIELDS],
+        compact_fields: [...DEFAULT_COMPACT_LIST_FIELDS],
+      }));
   } else {
     result.command_flags_omitted_reason = "unfiltered_default_brief";
   }

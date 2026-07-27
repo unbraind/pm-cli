@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, describe, expect, it } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -15,6 +15,7 @@ import type {
   ServiceOverride,
 } from "../../../src/core/extensions/loader.js";
 import { activateExtensions } from "../../../src/core/extensions/loader.js";
+import { runInit } from "../../../src/cli/commands/init.js";
 import {
   assertRegisteredExporter,
   assertRegisteredHook,
@@ -40,6 +41,9 @@ import todosBuiltin, {
   activate as activateTodos,
   manifest as todosManifest,
 } from "../../../packages/pm-todos/extensions/todos/index.ts";
+import * as beadsRuntime from "../../../packages/pm-beads/extensions/beads/runtime.ts";
+import * as sdkRuntime from "../../../src/sdk/runtime.js";
+import * as todosRuntime from "../../../packages/pm-todos/extensions/todos/runtime.ts";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -340,6 +344,7 @@ const globalFlags = {
   noExtensions: false,
   profile: false,
   author: "host-agent",
+  path: "",
 };
 
 interface CapturedImporter {
@@ -492,10 +497,95 @@ describe("built-in extension entrypoints", () => {
     );
     await seedRuntimeCommandStubs(testPackageRoot);
     process.env[PM_PACKAGE_ROOT_ENV] = testPackageRoot;
+    globalFlags.path = path.join(testPackageRoot, ".agents", "pm");
+    await runInit(
+      undefined,
+      {
+        ...globalFlags,
+        path: globalFlags.path,
+      },
+      { defaults: true },
+    );
+    vi.spyOn(sdkRuntime, "runCalendar").mockImplementation(async (options, global) => {
+      const calls = readRuntimeCalls();
+      calls.push({ kind: "calendar", options, global });
+      return {
+        view: typeof options.view === "string" ? options.view : "agenda",
+        output_default: "markdown",
+        now: "2026-04-02T00:00:00.000Z",
+        anchor: "2026-04-02T00:00:00.000Z",
+        range: {
+          start: null,
+          end: null,
+          period_start: null,
+          period_end: null,
+          full_period: false,
+          past: false,
+          from: null,
+          to: null,
+        },
+        filters: {},
+        summary: {
+          events: 0,
+          items: 0,
+          deadlines: 0,
+          reminders: 0,
+          scheduled: 0,
+          by_kind: { deadline: 0, reminder: 0, event: 0 },
+          by_type: {},
+          by_status: {},
+          recurring_events: 0,
+        },
+        events: [],
+        days: [],
+      };
+    });
+    vi.spyOn(sdkRuntime, "renderCalendarMarkdown").mockReturnValue("# package calendar");
+    vi.spyOn(sdkRuntime, "renderCalendarToon").mockReturnValue("view: package calendar\n");
+    vi.spyOn(sdkRuntime, "resolveCalendarOutputFormat").mockImplementation((options) =>
+      options.format === "json" ? "json" : options.format === "toon" ? "toon" : "markdown",
+    );
+    vi.spyOn(beadsRuntime, "runBeadsImport").mockImplementation(async (options, global) => {
+      const calls = readRuntimeCalls();
+      calls.push({ kind: "beads", options, global });
+      return {
+        ok: true,
+        source: options.file ?? ".beads/issues.jsonl",
+        imported: 1,
+        skipped: 0,
+        ids: ["pm-bead"],
+        warnings: [],
+      };
+    });
+    vi.spyOn(todosRuntime, "runTodosImport").mockImplementation(async (options, global) => {
+      const calls = readRuntimeCalls();
+      calls.push({ kind: "todos-import", options, global });
+      return {
+        ok: true,
+        folder: options.folder ?? ".pm/todos",
+        imported: 2,
+        skipped: 0,
+        ids: ["pm-a", "pm-b"],
+        warnings: [],
+      };
+    });
+    vi.spyOn(todosRuntime, "runTodosExport").mockImplementation(async (options, global) => {
+      const calls = readRuntimeCalls();
+      calls.push({ kind: "todos-export", options, global });
+      return {
+        ok: true,
+        folder: options.folder ?? ".pm/todos",
+        exported: 3,
+        ids: ["pm-a", "pm-b", "pm-c"],
+        warnings: [],
+      };
+    });
   });
 
   afterEach(async () => {
     delete process.env[PM_PACKAGE_ROOT_ENV];
+    vi.restoreAllMocks();
+    globalFlags.path = "";
     resetRuntimeCalls();
     if (testPackageRoot.length > 0) {
       await rm(testPackageRoot, { recursive: true, force: true });
@@ -1126,7 +1216,7 @@ describe("built-in extension entrypoints", () => {
     });
   });
 
-  it("throws when the bundled beads runtime is missing runBeadsImport()", async () => {
+  it("keeps the statically bound beads runtime independent from package-root overrides", async () => {
     const emptyRoot = await mkdtemp(
       path.join(os.tmpdir(), "pm-beads-missing-fn-"),
     );
@@ -1158,7 +1248,7 @@ describe("built-in extension entrypoints", () => {
           global: globalFlags,
           pm_root: "/tmp/pm",
         }),
-      ).rejects.toThrow("missing runBeadsImport()");
+      ).resolves.toMatchObject({ ok: true, imported: 1 });
     } finally {
       await rm(emptyRoot, { recursive: true, force: true });
     }
@@ -1281,7 +1371,7 @@ describe("built-in extension entrypoints", () => {
     });
   });
 
-  it("throws when the bundled todos runtime is missing runTodosImport()/runTodosExport()", async () => {
+  it("keeps statically bound todos runtimes independent from package-root overrides", async () => {
     const emptyRoot = await mkdtemp(
       path.join(os.tmpdir(), "pm-todos-missing-fn-"),
     );
@@ -1313,7 +1403,7 @@ describe("built-in extension entrypoints", () => {
           global: globalFlags,
           pm_root: "/tmp/pm",
         }),
-      ).rejects.toThrow("missing runTodosImport()");
+      ).resolves.toMatchObject({ ok: true, imported: 2 });
       await expect(
         exporters[0]!.exporter({
           registration: "todos",
@@ -1324,7 +1414,7 @@ describe("built-in extension entrypoints", () => {
           global: globalFlags,
           pm_root: "/tmp/pm",
         }),
-      ).rejects.toThrow("missing runTodosExport()");
+      ).resolves.toMatchObject({ ok: true, exported: 3 });
     } finally {
       await rm(emptyRoot, { recursive: true, force: true });
     }

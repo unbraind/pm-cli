@@ -19,14 +19,6 @@
       "count": 1
     }
   },
-  "scripts/gen-package-runtime-loaders.mjs": {
-    "no-useless-assignment": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "scripts/gen-plugin-mcp-wrappers.mjs": {
     "no-useless-assignment": {
       "count": 1

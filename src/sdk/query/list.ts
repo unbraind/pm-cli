@@ -307,7 +307,8 @@ export type ListProjectedItem = ListProjectedItemCore & Record<string, unknown>;
 /** Honest union of item shapes returned by the list engine. */
 export type ListResultItem = ListedItem | ListTreeItem | ListProjectedItem;
 
-type ListProjectionMode = "full" | "compact" | "fields";
+/** Stable projection names emitted by list envelopes and command contracts. */
+export type ListProjectionMode = "full" | "compact" | "brief" | "fields";
 
 interface ListProjectionConfig {
   mode: ListProjectionMode;
@@ -331,7 +332,8 @@ export const LIST_SORT_ORDER_VALUES = ["asc", "desc"] as const;
 /** Restricts list sort order values accepted by command, SDK, and storage contracts. */
 export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];
 
-const DEFAULT_COMPACT_LIST_FIELDS = [
+/** Stable field order for the compact list projection. */
+export const DEFAULT_COMPACT_LIST_FIELDS = [
   "id",
   "title",
   "status",
@@ -340,7 +342,23 @@ const DEFAULT_COMPACT_LIST_FIELDS = [
   "parent",
   "updated_at",
 ] as const;
-const BRIEF_LIST_FIELDS = ["id", "status", "type", "title"] as const;
+/** Stable field order for the agent-optimized brief list projection. */
+export const BRIEF_LIST_FIELDS = ["id", "status", "type", "title"] as const;
+
+/** Machine-readable default projection contract for every list command. */
+export const LIST_COMMAND_DEFAULT_PROJECTIONS = {
+  list: "brief",
+  "list-all": "full",
+  "list-draft": "full",
+  "list-open": "brief",
+  "list-in-progress": "brief",
+  "list-blocked": "brief",
+  "list-closed": "full",
+  "list-canceled": "full",
+} as const satisfies Record<string, Exclude<ListProjectionMode, "fields">>;
+
+/** Command names whose output defaults are described by the list projection contract. */
+export type ListCommandName = keyof typeof LIST_COMMAND_DEFAULT_PROJECTIONS;
 const TREE_METADATA_FIELDS = [
   "tree_depth",
   "tree_parent",
@@ -425,7 +443,10 @@ export interface ListCompactResult extends ListResultBase {
   /** Value that configures or reports filters for this contract. */
   filters: Record<string, unknown>;
   /** Value that configures or reports projection for this contract. */
-  projection?: undefined;
+  projection: {
+    mode: "compact";
+    fields: string[];
+  };
   /** Value that configures or reports sorting for this contract. */
   sorting?: undefined;
   /** Value that configures or reports now for this contract. */
@@ -878,7 +899,7 @@ function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
   }
   if (briefRequested) {
     return {
-      mode: "compact",
+      mode: "brief",
       fields: [...BRIEF_LIST_FIELDS],
     };
   }
@@ -1971,6 +1992,10 @@ export async function runList(
       ...page.pageExtras,
       completeness,
       filters: compactFilters,
+      projection: {
+        mode: "compact",
+        fields: projectionFields as string[],
+      },
       ...(warnings.length > 0 ? { warnings } : {}),
     };
   }

@@ -20,6 +20,8 @@ import {
 describe("linked-test constants", () => {
   it("exposes the protected keys, name pattern, and context modes", () => {
     expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_PATH")).toBe(true);
+    expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_SOURCE_PM_PATH")).toBe(true);
+    expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_SOURCE_WORKSPACE_ROOT")).toBe(true);
     expect(LINKED_TEST_ENV_NAME_PATTERN.test("PORT")).toBe(true);
     expect(LINKED_TEST_ENV_NAME_PATTERN.test("1BAD")).toBe(false);
     expect([...LINKED_TEST_PM_CONTEXT_MODE_VALUES]).toEqual([

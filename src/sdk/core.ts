@@ -102,40 +102,7 @@ export {
   type SearchResult,
   type UpdateResult,
 } from "./runtime.js";
-export {
-  AGENT_PROVENANCE_DIMENSIONS,
-  BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
-  detectAgentIdentity,
-  detectHarnessIdentity,
-  readAuthorEnvironment,
-  registerHarnessSignalDescriptors,
-  resolveAuthorIdentity,
-  runWithHarnessDetectionSignals,
-  runWithWorkspaceHarnessSignalDescriptors,
-  writeAuthorEnvironment,
-  type AgentClientInfo,
-  type AgentModelSource,
-  type AgentProvenance,
-  type AgentProvenanceObservation,
-  type AuthorSource,
-  type DetectedAgentIdentity,
-  type HarnessDetectionSignals,
-  type HarnessSignalDescriptor,
-  type ResolvedAuthorIdentity,
-} from "../core/shared/author.js";
-export {
-  analyzeAgentProvenanceDescriptorCoverage,
-  summarizeAgentModelProvenance,
-  type AgentModelProvenanceCoverage,
-  type AgentProvenanceDescriptorCoverage,
-} from "./provenance.js";
-export {
-  analyzeSdkCliParameterCompleteness,
-  type SdkCliActionParameterCoverage,
-  type SdkCliCompletenessContractSource,
-  type SdkCliParameterCoverageEntry,
-  type SdkCliParameterDisposition,
-} from "./cli-contracts.js";
+export * from "./core-governance.js";
 export type {
   ItemDocument,
   ItemMetadata,

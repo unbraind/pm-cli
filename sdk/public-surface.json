@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1239,
+    "covered_symbols": 1245,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1240
+    "required_symbols": 1246
   },
   "breaking_acknowledgements": [
     {
@@ -156,6 +156,21 @@
       ],
       "package_version": "2026.7.27",
       "reason": "Additive optional list strict-read and dependency provenance fields; result completeness is a required truthfulness contract in the new minor release"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContractsResult",
+        "signature ./sdk:ListCompactResult",
+        "signature ./sdk:MergeFenceAuditResult",
+        "signature ./sdk:MergeInstallResult",
+        "signature ./sdk/merge:MergeFenceAuditResult",
+        "signature ./sdk/merge:MergeInstallResult",
+        "signature ./sdk/query:ListCompactResult",
+        "signature ./sdk/runtime:ContractsResult",
+        "signature ./sdk/runtime:ListCompactResult"
+      ],
+      "package_version": "2026.7.27",
+      "reason": "List results now identify brief and compact projections explicitly, contracts expose per-command projection defaults, and merge-fence results declare project schema scope; consumers should accept the new metadata fields and brief mode."
     }
   ],
   "entrypoints": {
@@ -887,6 +902,12 @@
           "kind": "interface",
           "name": "BootstrapNormalizationEvent",
           "signature": "export interface BootstrapNormalizationEvent { from: string; to: string[]; reason: BootstrapNormalizationReason; confidence: BootstrapNormalizationConfidence; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "BRIEF_LIST_FIELDS",
+          "signature": "readonly [\"id\", \"status\", \"type\", \"title\"]"
         },
         {
           "classification": "supported",
@@ -1930,7 +1951,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
         },
         {
           "classification": "supported",
@@ -2165,6 +2186,12 @@
           "kind": "value",
           "name": "DEFAULT_CHILD_SAMPLE_LIMIT",
           "signature": "20"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "DEFAULT_COMPACT_LIST_FIELDS",
+          "signature": "readonly [\"id\", \"title\", \"status\", \"type\", \"priority\", \"parent\", \"updated_at\"]"
         },
         {
           "classification": "supported",
@@ -4867,6 +4894,12 @@
           "signature": "(options?: ListOptions, clientOptions?: PmClientOptions) => Promise<ListResult> | calls: (options?: ListOptions, clientOptions?: PmClientOptions) => Promise<ListResult>"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "LIST_COMMAND_DEFAULT_PROJECTIONS",
+          "signature": "{ readonly list: \"brief\"; readonly \"list-all\": \"full\"; readonly \"list-draft\": \"full\"; readonly \"list-open\": \"brief\"; readonly \"list-in-progress\": \"brief\"; readonly \"list-blocked\": \"brief\"; readonly \"list-closed\": \"full\"; readonly \"list-canceled\": \"full\"; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "LIST_COMMANDER_STRING_OPTION_CONTRACTS",
@@ -4922,9 +4955,15 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "ListCommandName",
+          "signature": "export type ListCommandName = keyof typeof LIST_COMMAND_DEFAULT_PROJECTIONS;"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ListCompactResult",
-          "signature": "export interface ListCompactResult extends ListResultBase { filters: Record<string, unknown>; projection?: undefined; sorting?: undefined; now?: undefined; }"
+          "signature": "export interface ListCompactResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: \"compact\"; fields: string[]; }; sorting?: undefined; now?: undefined; }"
         },
         {
           "classification": "supported",
@@ -4985,6 +5024,12 @@
           "kind": "interface",
           "name": "ListProjectedItemCore",
           "signature": "export interface ListProjectedItemCore { id?: string; title?: string; status?: string; type?: string; priority?: number; parent?: string | null; updated_at?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ListProjectionMode",
+          "signature": "export type ListProjectionMode = \"full\" | \"compact\" | \"brief\" | \"fields\";"
         },
         {
           "classification": "supported",
@@ -5182,7 +5227,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeFenceAuditResult",
-          "signature": "export interface MergeFenceAuditResult { status: \"not_installed\" | \"ok\" | \"drift\"; path?: string; missing_patterns: string[]; stale_patterns: string[]; }"
+          "signature": "export interface MergeFenceAuditResult { status: \"not_installed\" | \"ok\" | \"drift\"; path?: string; missing_patterns: string[]; stale_patterns: string[]; schema_scope: \"project\"; }"
         },
         {
           "classification": "supported",
@@ -5206,7 +5251,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeInstallResult",
-          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; gitattributes: { path: string; changed: boolean; patterns: string[]; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -8105,6 +8150,12 @@
           "kind": "function",
           "name": "resolveProfile",
           "signature": "(rawValue: string | undefined) => ProjectProfileDefinition | calls: (rawValue: string | undefined) => ProjectProfileDefinition"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveProjectMergeTypeFolders",
+          "signature": "(settings: Awaited<ReturnType<typeof readSettings>>) => string[] | calls: (settings: Awaited<ReturnType<typeof readSettings>>) => string[]"
         },
         {
           "classification": "supported",
@@ -15718,7 +15769,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeFenceAuditResult",
-          "signature": "export interface MergeFenceAuditResult { status: \"not_installed\" | \"ok\" | \"drift\"; path?: string; missing_patterns: string[]; stale_patterns: string[]; }"
+          "signature": "export interface MergeFenceAuditResult { status: \"not_installed\" | \"ok\" | \"drift\"; path?: string; missing_patterns: string[]; stale_patterns: string[]; schema_scope: \"project\"; }"
         },
         {
           "classification": "supported",
@@ -15742,7 +15793,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeInstallResult",
-          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; gitattributes: { path: string; changed: boolean; patterns: string[]; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -15813,6 +15864,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "resolveProjectMergeTypeFolders",
+          "signature": "(settings: Awaited<ReturnType<typeof readSettings>>) => string[] | calls: (settings: Awaited<ReturnType<typeof readSettings>>) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "runMergeDriver",
           "signature": "(options: MergeDriverOptions, global: GlobalOptions) => Promise<MergeDriverResult> | calls: (options: MergeDriverOptions, global: GlobalOptions) => Promise<MergeDriverResult>"
         },
@@ -15875,6 +15932,12 @@
           "kind": "function",
           "name": "applyFilterValueEcho",
           "signature": "(filters: Record<string, unknown>, options: Record<string, unknown>, entries: ReadonlyArray<FilterValueEchoEntry>) => void | calls: (filters: Record<string, unknown>, options: Record<string, unknown>, entries: ReadonlyArray<FilterValueEchoEntry>) => void"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "BRIEF_LIST_FIELDS",
+          "signature": "readonly [\"id\", \"status\", \"type\", \"title\"]"
         },
         {
           "classification": "supported",
@@ -16257,6 +16320,12 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "DEFAULT_COMPACT_LIST_FIELDS",
+          "signature": "readonly [\"id\", \"title\", \"status\", \"type\", \"priority\", \"parent\", \"updated_at\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS",
           "signature": "500"
         },
@@ -16335,6 +16404,12 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "LIST_COMMAND_DEFAULT_PROJECTIONS",
+          "signature": "{ readonly list: \"brief\"; readonly \"list-all\": \"full\"; readonly \"list-draft\": \"full\"; readonly \"list-open\": \"brief\"; readonly \"list-in-progress\": \"brief\"; readonly \"list-blocked\": \"brief\"; readonly \"list-closed\": \"full\"; readonly \"list-canceled\": \"full\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "LIST_SORT_FIELDS",
           "signature": "readonly [\"priority\", \"deadline\", \"updated_at\", \"created_at\", \"title\", \"parent\"]"
         },
@@ -16346,9 +16421,15 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "ListCommandName",
+          "signature": "export type ListCommandName = keyof typeof LIST_COMMAND_DEFAULT_PROJECTIONS;"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ListCompactResult",
-          "signature": "export interface ListCompactResult extends ListResultBase { filters: Record<string, unknown>; projection?: undefined; sorting?: undefined; now?: undefined; }"
+          "signature": "export interface ListCompactResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: \"compact\"; fields: string[]; }; sorting?: undefined; now?: undefined; }"
         },
         {
           "classification": "supported",
@@ -16379,6 +16460,12 @@
           "kind": "interface",
           "name": "ListProjectedItemCore",
           "signature": "export interface ListProjectedItemCore { id?: string; title?: string; status?: string; type?: string; priority?: number; parent?: string | null; updated_at?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ListProjectionMode",
+          "signature": "export type ListProjectionMode = \"full\" | \"compact\" | \"brief\" | \"fields\";"
         },
         {
           "classification": "supported",
@@ -17122,7 +17209,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
         },
         {
           "classification": "supported",
@@ -17734,7 +17821,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListCompactResult",
-          "signature": "export interface ListCompactResult extends ListResultBase { filters: Record<string, unknown>; projection?: undefined; sorting?: undefined; now?: undefined; }"
+          "signature": "export interface ListCompactResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: \"compact\"; fields: string[]; }; sorting?: undefined; now?: undefined; }"
         },
         {
           "classification": "supported",

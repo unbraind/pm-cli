@@ -12,7 +12,13 @@ published surface data, embedded concurrency, and duplicate discovery are
 tracked by [pm-obbh43](../.agents/pm/issues/pm-obbh43.toon),
 [pm-lnswp0](../.agents/pm/issues/pm-lnswp0.toon),
 [pm-zpoyg9](../.agents/pm/issues/pm-zpoyg9.toon), and
-[pm-n13lzc](../.agents/pm/issues/pm-n13lzc.toon).
+[pm-n13lzc](../.agents/pm/issues/pm-n13lzc.toon). Public package-runtime
+imports, list projection contracts, merge-fence schema scope, and linked-test
+source coordinates are tracked by
+[pm-w7mqzt](../.agents/pm/features/pm-w7mqzt.toon),
+[pm-pjnu91](../.agents/pm/issues/pm-pjnu91.toon),
+[pm-mkzw1x](../.agents/pm/issues/pm-mkzw1x.toon), and
+[pm-uawujr](../.agents/pm/issues/pm-uawujr.toon).
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
@@ -66,6 +72,20 @@ resolution, not a typed library API. The committed
 [entrypoint import-cost table](performance/sdk-entrypoint-import-costs.md)
 records fresh-process latency, RSS, and reduction versus the aggregate barrel.
 Every narrow entrypoint is bundled and type-tested independently.
+
+Package runtime modules use ordinary static ESM imports from these public
+entrypoints. They do not locate copied source files through
+`PM_CLI_PACKAGE_ROOT`, generate loader shims, or dynamically import host
+internals. The package installer provides the host SDK link for copied
+extensions, so the same source works from npm, GitHub, a bundled package, or a
+local directory.
+
+List consumers can inspect `LIST_COMMAND_DEFAULT_PROJECTIONS` instead of
+copying command-specific defaults. Every compact or field-projected list result
+now echoes the applied `projection`; `brief` remains distinct from `compact`,
+and `DEFAULT_COMPACT_LIST_FIELDS` / `BRIEF_LIST_FIELDS` provide the canonical
+field sets. `pm contracts --command list-open --flags-only --json` includes the
+same per-command projection surface.
 
 ### Public-surface compatibility
 

@@ -2,11 +2,12 @@ id: pm-mkzw1x
 title: "Merge-fence scope ambiguity: extension-contributed item folders make default validation disagree with the no-extensions CI baseline"
 description: "Default extension-aware pm validate and pm merge install include item types contributed by active project extensions, while the repository merge-safety CI deliberately runs both commands with --no-extensions. The same committed .gitattributes can therefore be reported stale locally and over-specified in CI. Define a stable project-schema versus optional-runtime-extension fence contract, surface the selected scope in diagnostics, and ensure one documented command produces the committed baseline without contradictory remediation."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: ci,extensions,merge,multi-agent,ux,validation
 created_at: "2026-07-27T01:53:33.846Z"
-updated_at: "2026-07-27T07:10:15.964Z"
+updated_at: "2026-07-27T10:08:22.300Z"
+closed_at: "2026-07-27T10:08:19.495Z"
 author: "harness:codex"
 acceptance_criteria: The committed fence has one explicit reproducible schema scope shared by CI and operator guidance; default validation does not recommend a change that the required CI gate reverses; diagnostics name whether core project schema or active extension schema was audited; tests cover tracked project profiles and optional runtime-only profiles without weakening custom item merge protection
 parent: pm-g5sx
@@ -14,14 +15,23 @@ risk: medium
 confidence: high
 severity: medium
 environment: pm validate and pm merge install with active project extensions versus --no-extensions CI
-expected_result: Local diagnostics and CI agree on the committed semantic merge-fence contract.
-actual_result: Extension-aware local validation requested ten optional profile folder patterns that the no-extensions CI then removed and rejected.
+resolution: Separated project merge-type resolution from active extension registrations and added explicit project schema scope to merge install and audit results.
+expected_result: Merge safety is stable across hosts regardless of which optional extensions happen to be active.
+actual_result: "Merge install, audit, and validation use persisted project folders; adversarial regression coverage and all quality gates pass."
 component: merge-fence-governance
 dependencies[4]{id,kind,created_at}:
   pm-08sv,related,"2026-07-27T01:53:33.846Z"
   pm-i4fx,discovered_from,"2026-07-27T01:53:33.846Z"
   pm-pdr8t1,related,"2026-07-27T01:53:33.846Z"
   pm-dj98,implements,"2026-07-27T07:10:15.757Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-27T01:53:33.846Z","harness:codex","Duplicate check: all-status search for profile apply activation merge fence refresh found pm-i4fx as the shipped baseline and pm-08sv as profile registration, but no item governing the contradictory extension-aware versus no-extensions fence scope. PR #759 CI run 30230355975 is the reproduction."
+  "2026-07-27T10:05:42.744Z","harness:codex","Evidence: implementation is complete; pnpm lint passed with zero jscpd clones, static/docstring/SDK compatibility gates passed, 375 files and 6,404 tests passed at 100/100/100/100 coverage, and an unrelated packed consumer resolved its local executable then passed install/doctor/create/list plus npx and bunx version smoke tests."
+files[3]{path,scope,note}:
+  src/sdk/governance/validate.ts,project,Project-schema merge fence and validation parity
+  src/sdk/merge/install.ts,project,Project-schema merge fence and validation parity
+  tests/unit/sdk/merge-safety.spec.ts,project,Project-schema merge fence and validation parity
+tests[1]{command,scope,timeout_seconds,note}:
+  "pnpm test:coverage",project,300,Repo-wide 100/100/100/100 gate
+close_reason: Merge fences now validate the persisted project schema deterministically.
 body: ""

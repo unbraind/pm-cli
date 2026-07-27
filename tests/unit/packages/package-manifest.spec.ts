@@ -6,7 +6,6 @@ import {
   readdir,
   writeFile,
 } from "node:fs/promises";
-import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -853,18 +852,6 @@ describe("pm package manifest model", () => {
           "pm-beads",
           "extensions",
           "beads",
-          "runtime-loader.ts",
-        ),
-      ),
-    ).resolves.toBeUndefined();
-    await expect(
-      access(
-        path.join(
-          repoRoot,
-          "packages",
-          "pm-beads",
-          "extensions",
-          "beads",
           "runtime.ts",
         ),
       ),
@@ -1093,38 +1080,10 @@ describe("pm package manifest model", () => {
           "pm-todos",
           "extensions",
           "todos",
-          "runtime-loader.ts",
-        ),
-      ),
-    ).resolves.toBeUndefined();
-    await expect(
-      access(
-        path.join(
-          repoRoot,
-          "packages",
-          "pm-todos",
-          "extensions",
-          "todos",
           "runtime.ts",
         ),
       ),
     ).resolves.toBeUndefined();
-  });
-
-  it("keeps generated package runtime loaders in sync", () => {
-    expect(() =>
-      execFileSync(
-        process.execPath,
-        [
-          path.join(repoRoot, "scripts", "gen-package-runtime-loaders.mjs"),
-          "--check",
-        ],
-        {
-          cwd: repoRoot,
-          stdio: "pipe",
-        },
-      ),
-    ).not.toThrow();
   });
 
   it("keeps shipped extension module manifest capabilities aligned with manifest.json", async () => {
@@ -1368,8 +1327,7 @@ describe("pm package manifest model", () => {
   it("keeps shipped package sources on the public SDK surface", async () => {
     // ADR pm-m1uz: first-party packages ship only TypeScript source (no compiled
     // .js). index.ts/runtime.ts author against the published `@unbrained/pm-cli/sdk`
-    // specifier, which self-resolves through the package's own `exports` map when
-    // the runtime-loader imports the runtime from inside the installed CLI tree.
+    // specifier, which resolves through the host package's `exports` map.
     const packageSourceFiles = [
       path.join(
         repoRoot,
@@ -1378,14 +1336,6 @@ describe("pm package manifest model", () => {
         "extensions",
         "beads",
         "index.ts",
-      ),
-      path.join(
-        repoRoot,
-        "packages",
-        "pm-beads",
-        "extensions",
-        "beads",
-        "runtime-loader.ts",
       ),
       path.join(
         repoRoot,
@@ -1545,14 +1495,6 @@ describe("pm package manifest model", () => {
         "pm-todos",
         "extensions",
         "todos",
-        "runtime-loader.ts",
-      ),
-      path.join(
-        repoRoot,
-        "packages",
-        "pm-todos",
-        "extensions",
-        "todos",
         "runtime.ts",
       ),
     ];
@@ -1567,11 +1509,7 @@ describe("pm package manifest model", () => {
       // the published specifier is the only sanctioned SDK surface post-ADR pm-m1uz.
       expect(source, sourceFile).not.toContain("../../../../src/sdk/");
       expect(source, sourceFile).not.toContain("../../../../dist/sdk/");
-      if (sourceFile.endsWith("runtime-loader.ts")) {
-        // The generated loader stays import-light so copied installs load it without
-        // resolving the SDK at module-evaluation time.
-        expect(source, sourceFile).not.toContain("@unbrained/pm-cli");
-      } else if (
+      if (
         sourceFile.endsWith(path.join("governance-audit", "runtime.ts"))
       ) {
         expect(source, sourceFile).toContain('from "./sdk.ts"');

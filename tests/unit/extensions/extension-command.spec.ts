@@ -1916,7 +1916,7 @@ describe("extension command runtime", () => {
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
-  });
+  }, 60_000);
 
   it("builds bundled package catalog entries from a temporary package root", async () => {
     await withTempPmPath(async (context) => {

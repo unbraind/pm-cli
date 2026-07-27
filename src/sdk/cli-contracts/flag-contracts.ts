@@ -109,13 +109,12 @@ export function compactFlagAliasContracts(
 }
 
 /** Public contract for subcommand global flag contracts, shared by SDK and presentation-layer consumers. */
-export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
-  ...RESERVED_EXTENSION_HOST_FLAGS.map((definition) => ({
+export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] =
+  RESERVED_EXTENSION_HOST_FLAGS.map((definition) => ({
     flag: definition.flag,
     ...(definition.aliases ? { aliases: [...definition.aliases] } : {}),
     ...(definition.value_name ? { value_name: definition.value_name } : {}),
-  })),
-];
+  }));
 
 /** Public contract for global flag contracts, shared by SDK and presentation-layer consumers. */
 export const GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [

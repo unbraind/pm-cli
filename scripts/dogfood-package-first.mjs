@@ -279,7 +279,7 @@ try {
   assert(getBrief?.linked === undefined, "get --depth brief should omit linked containers");
   assert(getBrief?.claim_state === undefined, "get --depth brief should omit claim state history");
   const listOpenBrief = run("list-open default brief", ["list-open", "--limit", "1"]);
-  assert(listOpenBrief?.projection?.mode === "compact", "list-open default should use compact brief projection");
+  assert(listOpenBrief?.projection?.mode === "brief", "list-open default should declare its brief projection");
   assert(
     listOpenBrief?.projection?.fields?.join(",") === "id,status,type,title",
     "list-open default brief fields drifted",

@@ -1,7 +1,6 @@
 import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { acquireLock } from "../../../src/core/lock/lock.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
@@ -20,24 +19,6 @@ async function writeTodoMarkdown(
   const itemMetadataText = typeof itemMetadata === "string" ? itemMetadata : JSON.stringify(itemMetadata, null, 2);
   const content = body.length > 0 ? `${itemMetadataText}\n\n${body}\n` : `${itemMetadataText}\n`;
   await writeFile(path.join(folder, filename), content, "utf8");
-}
-
-function cacheBustToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-async function importTodosRuntimeLoader(): Promise<{
-  loadPackageRuntimeModule: () => Promise<unknown>;
-}> {
-  const runtimeLoaderPath = path.join(process.cwd(), "packages", "pm-todos", "extensions", "todos", "runtime-loader.ts");
-  return (await import(`${pathToFileURL(runtimeLoaderPath).href}?todosLoader=${cacheBustToken()}`)) as {
-    loadPackageRuntimeModule: () => Promise<unknown>;
-  };
-}
-
-async function importTodosRuntime(): Promise<unknown> {
-  const runtimePath = path.join(process.cwd(), "packages", "pm-todos", "extensions", "todos", "runtime.ts");
-  return import(`${pathToFileURL(runtimePath).href}?todosRuntime=${cacheBustToken()}`);
 }
 
 describe("built-in todos extension import/export", () => {
@@ -1442,137 +1423,4 @@ describe("built-in todos extension import/export", () => {
     });
   });
 
-  it("resolves todos runtime-loader candidates and preserves explicit runtime errors", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-loader-root-"));
-    try {
-      const packageRuntimeDir = path.join(tempRoot, "packages", "pm-todos", "extensions", "todos");
-      await mkdir(packageRuntimeDir, { recursive: true });
-      await writeFile(
-        path.join(packageRuntimeDir, "runtime.ts"),
-        [
-          "export const marker = 'custom-todos-runtime';",
-          "export async function runTodosImport() {",
-          "  return { ok: true, folder: '.pm/todos', imported: 0, skipped: 0, ids: [], warnings: [] };",
-          "}",
-          "export async function runTodosExport() {",
-          "  return { ok: true, folder: '.pm/todos', exported: 0, ids: [], warnings: [] };",
-          "}",
-          "",
-        ].join("\n"),
-        "utf8",
-      );
-
-      const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-      process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
-      try {
-        const loader = await importTodosRuntimeLoader();
-        const runtime = await loader.loadPackageRuntimeModule();
-        expect((runtime as { marker?: string }).marker).toBe("custom-todos-runtime");
-      } finally {
-        if (previousPackageRoot === undefined) {
-          delete process.env.PM_CLI_PACKAGE_ROOT;
-        } else {
-          process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
-        }
-      }
-    } finally {
-      await rm(tempRoot, { recursive: true, force: true });
-    }
-
-    const throwRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-loader-throw-"));
-    try {
-      const throwingRuntimeDir = path.join(throwRoot, ".agents", "pm", "extensions", "todos");
-      await mkdir(throwingRuntimeDir, { recursive: true });
-      await writeFile(
-        path.join(throwingRuntimeDir, "runtime.ts"),
-        ["throw new Error('todos-loader-boom');", ""].join("\n"),
-        "utf8",
-      );
-
-      const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-      process.env.PM_CLI_PACKAGE_ROOT = throwRoot;
-      try {
-        const loader = await importTodosRuntimeLoader();
-        await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("todos-loader-boom");
-      } finally {
-        if (previousPackageRoot === undefined) {
-          delete process.env.PM_CLI_PACKAGE_ROOT;
-        } else {
-          process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
-        }
-      }
-    } finally {
-      await rm(throwRoot, { recursive: true, force: true });
-    }
-  });
-
-  it("reports a deterministic error when the configured SDK root is invalid", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-missing-"));
-    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
-    try {
-      let thrown: unknown;
-      try {
-        await importTodosRuntime();
-      } catch (error: unknown) {
-        thrown = error;
-      }
-      expect(thrown).toBeInstanceOf(Error);
-      expect((thrown as Error).message).toContain("builtin-todos failed to load SDK exports");
-      expect((thrown as Error & { cause?: unknown }).cause).toBeInstanceOf(Error);
-    } finally {
-      if (previousPackageRoot === undefined) {
-        delete process.env.PM_CLI_PACKAGE_ROOT;
-      } else {
-        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
-      }
-      await rm(tempRoot, { recursive: true, force: true });
-    }
-  });
-
-  it("rejects a configured SDK module with incomplete todos exit codes", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-exit-code-"));
-    const sdkDir = path.join(tempRoot, "dist", "sdk");
-    const realSdkUrl = pathToFileURL(path.join(process.cwd(), "src", "sdk", "index.ts")).href;
-    await mkdir(sdkDir, { recursive: true });
-    await writeFile(
-      path.join(sdkDir, "index.js"),
-      [`export * from ${JSON.stringify(realSdkUrl)};`, "export const EXIT_CODE = {};\n"].join("\n"),
-      "utf8",
-    );
-    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
-    try {
-      const failure = await importTodosRuntime().catch((error: unknown) => error);
-      expect(failure).toBeInstanceOf(Error);
-      expect((failure as Error).message).toContain("builtin-todos failed to load SDK exports");
-      expect("cause" in (failure as object)).toBe(false);
-    } finally {
-      if (previousPackageRoot === undefined) {
-        delete process.env.PM_CLI_PACKAGE_ROOT;
-      } else {
-        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
-      }
-      await rm(tempRoot, { recursive: true, force: true });
-    }
-  });
-
-  it("reports a deterministic error when the configured SDK module is incomplete", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-sdk-incomplete-"));
-    const sdkDir = path.join(tempRoot, "dist", "sdk");
-    await mkdir(sdkDir, { recursive: true });
-    await writeFile(path.join(sdkDir, "index.js"), "export const CONFIDENCE_TEXT_VALUES = [];\n", "utf8");
-    const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
-    process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
-    try {
-      await expect(importTodosRuntime()).rejects.toThrow("builtin-todos failed to load SDK exports");
-    } finally {
-      if (previousPackageRoot === undefined) {
-        delete process.env.PM_CLI_PACKAGE_ROOT;
-      } else {
-        process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
-      }
-      await rm(tempRoot, { recursive: true, force: true });
-    }
-  });
 });

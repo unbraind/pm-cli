@@ -2,8 +2,21 @@
 
 ## Unreleased
 
+### Added
+
+- Public SDK contracts and static runtimes let extension authors reuse the CLI baseline ([pm-w7mqzt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-w7mqzt.toon))
+
+### Changed
+
+- Dedupe flag-contracts.ts repetitive per-command blocks (9 internal clones, ~150 lines) ([pm-ueuq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ueuq.toon))
+
 ### Fixed
 
+- Linked-test schema sandbox breaks package prepare hooks that install the PM merge driver ([pm-uawujr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uawujr.toon))
+- The list family exposes three incompatible --json projections under one flag, so an agent filtering on an unprojected field silently reads absent instead of unset ([pm-pjnu91](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pjnu91.toon))
+- GH-768: deduplicate public SDK provenance exports across core and root entrypoints ([pm-44aa4x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-44aa4x.toon))
+- GH-766: Windows nightly extension timeout and merge-safety cleanup EBUSY ([pm-25b7tg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-25b7tg.toon))
+- Merge-fence scope ambiguity: extension-contributed item folders make default validation disagree with the no-extensions CI baseline ([pm-mkzw1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mkzw1x.toon))
 - GH-764: one host-global flag collision quarantines an entire extension and suggests reinstalling the installed package ([pm-gnowgi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gnowgi.toon))
 - Recovery bundle mines flag names from usage-error prose: scope errors like '--rebuild and --clear apply only to graph index' yield missing:--clear + suggested_retry appending the other invalid flag ([pm-ikv6m0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ikv6m0.toon))
 - GH-755: dependency edges are written with a null author, so the relationship graph is the only recorded collection with no provenance ([pm-0a24f5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0a24f5.toon))

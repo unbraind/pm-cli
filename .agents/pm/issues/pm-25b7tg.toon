@@ -1,0 +1,41 @@
+id: pm-25b7tg
+title: "GH-766: Windows nightly extension timeout and merge-safety cleanup EBUSY"
+description: "Scheduled Nightly Validation run 30246735868 at commit f4817e0 passed 6,442 tests but failed only on Windows Node 24: the extension install-source helper branch test exceeded the generic 5 second timeout and merge-safety cleanup failed with EBUSY on a temporary directory. Restore deterministic Windows completion without widening repository-wide timeouts."
+type: Issue
+status: closed
+priority: 1
+tags[7]: ci,extensions,"gh:766",merge-safety,nightly,regression,windows
+created_at: "2026-07-27T09:09:08.043Z"
+updated_at: "2026-07-27T10:08:37.228Z"
+closed_at: "2026-07-27T10:08:34.125Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Focused tests tolerate measured Windows external-work latency without raising global suite timeouts; temporary Git/merge resources are closed before cleanup and EBUSY cleanup is retried in a bounded portable helper; the full Windows Node 24 nightly passes; the GitHub issue links this PM item.
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+environment: "windows-latest, Node 24, scheduled Nightly Validation run 30246735868"
+repro_steps: Run the full nightly test command on Windows Node 24 at f4817e0; observe extension-command.spec.ts line 1604 timeout and merge-safety.spec.ts temp cleanup EBUSY.
+resolution: Raised the Windows-sensitive external-work timeout to 60 seconds and hardened merge cleanup with bounded EBUSY-style retries.
+expected_result: Nightly Windows verification tolerates realistic installation and filesystem latency without masking genuine hangs.
+actual_result: "The regression uses an explicit 60-second timeout, cleanup retries are bounded, and cross-platform-focused plus full suites pass."
+affected_version: 2026.7.27
+component: Windows nightly test reliability
+regression: true
+customer_impact: A red nightly weakens release confidence even though all product assertions pass.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0vkmqs,discovered_from,"2026-07-27T09:09:08.043Z","harness:codex","cli:create:dep",detected
+  pm-i4fx,related,"2026-07-27T09:09:08.043Z","harness:codex","cli:create:dep",detected
+  pm-uawujr,related,"2026-07-27T09:09:08.043Z","harness:codex","cli:create:dep",detected
+  pm-wr8utz,related,"2026-07-27T09:09:08.043Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-27T09:09:08.043Z","harness:codex","Duplicate check evidence 2026-07-27: all-status searches across Windows nightly Node 24,extension install helper timeout,merge-safety EBUSY,init timeout,and earlier portability failures found only closed pm-0vkmqs/pm-wr8utz/pm-2kkl with distinct causes. GH-766 is the canonical external report for this new two-failure signature."
+  "2026-07-27T10:05:45.633Z","harness:codex","Evidence: implementation is complete; pnpm lint passed with zero jscpd clones, static/docstring/SDK compatibility gates passed, 375 files and 6,404 tests passed at 100/100/100/100 coverage, and an unrelated packed consumer resolved its local executable then passed install/doctor/create/list plus npx and bunx version smoke tests."
+files[2]{path,scope,note}:
+  tests/unit/extensions/extension-command.spec.ts,project,Windows timeout and retry-safe cleanup regressions
+  tests/unit/sdk/merge-safety.spec.ts,project,Windows timeout and retry-safe cleanup regressions
+tests[1]{command,scope,timeout_seconds,note}:
+  "pnpm test:coverage",project,300,Repo-wide 100/100/100/100 gate
+close_reason: Windows extension-install regression coverage now has explicit filesystem retry and timeout resilience.
+body: ""
