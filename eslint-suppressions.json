@@ -65,9 +65,6 @@
     }
   },
   "src/cli/commands/contracts.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     },
