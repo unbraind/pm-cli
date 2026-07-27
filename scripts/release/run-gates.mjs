@@ -85,6 +85,9 @@ function main() {
   runCheckedStep("static-quality-gate", pnpm, ["quality:static"]);
   checks.push({ name: "static-quality-gate", ok: true });
 
+  runCheckedStep("context-entitlement-gate", pnpm, ["quality:context-eval"]);
+  checks.push({ name: "context-entitlement-gate", ok: true });
+
   runCheckedStep("coverage", pnpm, ["test:coverage"], { env: { PM_RUN_TESTS_SKIP_BUILD: "1" } });
   checks.push({ name: "coverage", ok: true });
 

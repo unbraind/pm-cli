@@ -2,11 +2,12 @@ id: pm-gmdzaa
 title: "The surface-discovery contract costs 31k tokens in its brief form and still omits every flag, so the cheapest way to learn pm is the most expensive call it offers"
 description: "Measured 2026-07-27 on pm 2026.7.27. AGENTS.md tells agents to use runtime contracts to learn the exact surface, because packages and settings change what is active. That call, pm contracts --json with no filter, returns 125193 bytes, roughly 31000 tokens. It enumerates 152 commands and 126 actions. It is also the brief form: three separate keys report what it left out, with command_flags_omitted_reason, schema_omitted_reason and commander_aliases_omitted_reason all set to unfiltered_default_brief. So an agent that pays 31k tokens to discover the surface still knows no flag of any command and must issue a second call per command it wants to use. Those calls are not small either: get is 913 bytes but list is 5066, create 5994, update 6721, search 3979 and context 2374, so learning the flags of just nine core commands costs about 29000 further bytes. The cheap form exists and is not the default: pm contracts --summary --json is 5966 bytes, a 21-fold reduction, which is the same shape already recorded for graph impact and health --check-only. The compounding problem is specific to this command though, and it is worth stating separately from the general ceiling work: contracts is not one output among many, it is the designated entry point for an agent that does not yet know the surface, which means it is paid before any useful work and paid by every agent on every cold start. A surface whose own description does not fit in a reasonable budget cannot be simplified by consolidating nouns alone, because the noun list is the smallest of the three axes an agent must actually learn. The full surface is 89 top-level spellings, 326 declared flags across 52 contract flag lists, and one output shape per command, and only the first of those three is what the simplification target counts."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",scale,simplification,token-efficiency
 created_at: "2026-07-27T04:18:05.625Z"
-updated_at: "2026-07-27T04:21:41.438Z"
+updated_at: "2026-07-27T14:00:55.026Z"
+closed_at: "2026-07-27T14:00:52.106Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The default surface-discovery call returns a payload sized for an agent cold start rather than a full enumeration, and the expensive complete form is opt-in; Discovering the flags an agent needs does not require one call per command, and the cost of learning a working subset of the surface is stated; The brief form does not silently omit the three things a caller most needs while remaining the default; whatever it omits is either unnecessary or reachable in one further bounded call; Simplification progress is measured on all three axes an agent must learn, spellings and flags and output shapes, not on the top-level noun count alone"
@@ -21,17 +22,28 @@ confidence: high
 severity: medium
 environment: "pm 2026.7.27, this checkout, extensions active, measured with pm contracts --json, pm contracts --summary --json and pm contracts --command <name> --flags-only --json"
 repro_steps: "Run pm contracts --json | wc -c and read command_flags_omitted_reason from the same payload; compare against pm contracts --summary --json | wc -c and against the per-command flags-only payloads for get, list, create, update, close, context, next, search and graph"
-expected_result: The documented way to discover the runtime surface fits comfortably inside an agent cold-start budget
-actual_result: "pm contracts --json returns 125193 bytes and omits flags, schema and aliases; the 5966-byte summary form exists but is not the default"
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-5t33or,blocked_by,"2026-07-27T04:18:05.625Z",null,null
-  pm-cha95z,related,"2026-07-27T04:18:05.625Z",null,null
-  pm-cxr0jb,related,"2026-07-27T04:18:05.625Z",null,null
-  pm-fs8q9x,related,"2026-07-27T04:18:05.625Z",null,null
-  pm-kxci8x,related,"2026-07-27T04:18:05.625Z",null,null
-  pm-n7rr,implements,"2026-07-27T04:18:05.625Z",null,null
-  pm-wt43zj,related,"2026-07-27T04:18:05.625Z",null,null
-  pm-e9yevx,related,"2026-07-27T04:21:41.192Z",null,null
-  pm-j82fd3,implements,"2026-07-27T04:21:41.192Z",null,null
-  pm-ydshl9,related,"2026-07-27T04:21:41.192Z",null,null
+resolution: Made unfiltered runtime contract discovery summary-first and budget-disclosing while retaining explicit full and scoped compatibility.
+expected_result: The documented runtime discovery entrypoint fits an agent cold-start budget and routes bounded follow-up discovery.
+actual_result: "Default output is 11,413 bytes versus 125,193 bytes before; it includes intents, bootstrap flags, and output-policy ceilings, while --full preserves complete discovery."
+dependencies[9]{id,kind,created_at}:
+  pm-cha95z,related,"2026-07-27T04:18:05.625Z"
+  pm-cxr0jb,related,"2026-07-27T04:18:05.625Z"
+  pm-fs8q9x,related,"2026-07-27T04:18:05.625Z"
+  pm-kxci8x,related,"2026-07-27T04:18:05.625Z"
+  pm-n7rr,implements,"2026-07-27T04:18:05.625Z"
+  pm-wt43zj,related,"2026-07-27T04:18:05.625Z"
+  pm-e9yevx,related,"2026-07-27T04:21:41.192Z"
+  pm-j82fd3,implements,"2026-07-27T04:21:41.192Z"
+  pm-ydshl9,related,"2026-07-27T04:21:41.192Z"
+comments[1]{created_at,author,text}:
+  "2026-07-27T14:00:38.914Z","harness:codex","Evidence: changed only the unfiltered default contracts projection to summary-first while preserving scoped, runtime-only, explicit projections, and --full compatibility. Live size changed from 125,193 bytes to 11,413 bytes (about 91% smaller, about 2,854 estimated tokens); explicit full remains available. The bounded default includes intents, the core bootstrap flags, and declared output policy so a cold-start agent can route its next bounded call without per-command enumeration. Packed unrelated-consumer acceptance passed through the installed binary plus SDK subpath, npx --no-install, and bunx --bun. Linked tests passed 2/2; full repository coverage passed 6,413 tests at 100/100/100/100."
+files[2]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,bounded default discovery projection with full opt-in
+  tests/unit/commands/contracts-command.spec.ts,project,Summary-first default and explicit full discovery compatibility coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/unit/scripts/contracts-snapshot.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms3an7cb-cutuo5,test,passed,"2026-07-27T13:59:33.420Z","2026-07-27T13:59:52.811Z","2026-07-27T13:59:52.811Z",2,0,0
+close_reason: "Shipped summary-first bounded cold-start discovery with explicit full/scoped compatibility and output-policy routing; measured a 91% default payload reduction and verified packed npm, SDK, npx, and bunx consumption."
 body: ""

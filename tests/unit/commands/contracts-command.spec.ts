@@ -566,7 +566,7 @@ describe("contracts command helper coverage", () => {
 
 describe("contracts command runtime", () => {
   it("returns schema, actions, command flags, and alias surfaces", async () => {
-    const result = await runContracts({}, GLOBAL_OPTIONS);
+    const result = await runContracts({ full: true }, GLOBAL_OPTIONS);
     expect(result.schema_version).toBe(PM_TOOL_PARAMETERS_SCHEMA_VERSION);
     expect(result.schema_id).toBe(
       `https://schema.unbrained.dev/pm-cli/tool-parameters-v${PM_TOOL_PARAMETERS_SCHEMA_MAJOR}.schema.json`,
@@ -591,12 +591,12 @@ describe("contracts command runtime", () => {
         { canonical: "package", aliases: ["extension", "packages", "install"] },
       ]),
     );
-    expect(result.schema).toBeUndefined();
-    expect(result.schema_omitted_reason).toBe("unfiltered_default_brief");
-    expect(result.command_flags).toBeUndefined();
-    expect(result.command_flags_omitted_reason).toBe("unfiltered_default_brief");
-    expect(result.commander_aliases).toBeUndefined();
-    expect(result.commander_aliases_omitted_reason).toBe("unfiltered_default_brief");
+    expect(result.schema).toBeDefined();
+    expect(result.schema_omitted_reason).toBeUndefined();
+    expect(result.command_flags).toBeDefined();
+    expect(result.command_flags_omitted_reason).toBeUndefined();
+    expect(result.commander_aliases).toBeDefined();
+    expect(result.commander_aliases_omitted_reason).toBeUndefined();
     expect(
       (result.action_availability ?? []).some(
         (entry) => entry.action === "create" && entry.invocable,
@@ -716,7 +716,7 @@ describe("contracts command runtime", () => {
   it("keeps every advertised governance mode executable by config set", async () => {
     await withTempPmPath(async (context) => {
       const contracts = await runContracts(
-        {},
+        { full: true },
         { ...GLOBAL_OPTIONS, path: context.pmPath },
       );
       const governance = contracts.governance_contracts;
@@ -824,12 +824,27 @@ describe("contracts command runtime", () => {
     expect(result.command_flags).toBeUndefined();
     expect(result.command_summaries).toEqual(
       expect.arrayContaining([
-        { command: "contracts", intent: "Inspect contracts." },
-        { command: "list", intent: "List work." },
+        expect.objectContaining({
+          command: "contracts",
+          intent: "Inspect contracts.",
+          flags: expect.arrayContaining(["--command", "--flags-only"]),
+          default_max_estimated_tokens: 3000,
+        }),
+        expect.objectContaining({
+          command: "list",
+          intent: "List work.",
+          flags: expect.arrayContaining(["--status", "--type"]),
+          default_max_estimated_tokens: 4000,
+        }),
       ]),
     );
+    expect(result.output_policy).toEqual({
+      token_estimate: "ceil(utf8_bytes / 4)",
+      degradation_ladder: ["full", "compact", "brief", "summary", "counts"],
+      allows_unbounded_opt_out: true,
+    });
     expect(result.commands).toEqual([]);
-    expect(JSON.stringify(result).length).toBeLessThan(3000);
+    expect(JSON.stringify(result).length).toBeLessThan(12_000);
   });
 
   it("summarizes aliased and namespaced commands for compact bootstrap output", () => {
@@ -845,17 +860,21 @@ describe("contracts command runtime", () => {
         "reindex",
         "mystery command",
       ]),
-    ).toEqual([
-      { command: "completion", intent: "Generate shell completions." },
-      { command: "context", intent: "Build context." },
-      { command: "guide", intent: "Show user guides." },
-      { command: "history", intent: "Inspect history." },
-      { command: "list", intent: "List work." },
-      { command: "mystery", intent: "Inspect flags." },
-      { command: "ops", intent: "Run operations." },
-      { command: "package", intent: "Manage packages." },
-      { command: "reindex", intent: "Refresh search index." },
-    ]);
+    ).toEqual(
+      [
+        ["completion", "Generate shell completions."],
+        ["context", "Build context."],
+        ["guide", "Show user guides."],
+        ["history", "Inspect history."],
+        ["list", "List work."],
+        ["mystery", "Inspect flags."],
+        ["ops", "Run operations."],
+        ["package", "Manage packages."],
+        ["reindex", "Refresh search index."],
+      ].map(([command, intent]) =>
+        expect.objectContaining({ command, intent }),
+      ),
+    );
   });
 
   it("normalizes extension flag names defensively", () => {
@@ -1098,7 +1117,7 @@ describe("contracts command runtime", () => {
       expect(updateManyFlags).not.toContain("--single-review-stage");
 
       const runtimeContracts = await runContracts(
-        {},
+        { full: true },
         {
           ...GLOBAL_OPTIONS,
           path: context.pmPath,

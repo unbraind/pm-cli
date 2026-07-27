@@ -202,3 +202,14 @@ export {
   type SdkCliParameterCoverageEntry,
   type SdkCliParameterDisposition,
 } from "./cli-contracts/completeness.js";
+export {
+  PM_COMMAND_OUTPUT_BUDGET_CONTRACTS,
+  PM_OUTPUT_BUDGET_CLASSES,
+  PM_OUTPUT_DEGRADATION_STEPS,
+  definePmCommandOutputBudget,
+  estimatePmOutputTokens,
+  resolvePmCommandOutputBudget,
+  type PmCommandOutputBudgetContract,
+  type PmOutputBudgetClass,
+  type PmOutputDegradationStep,
+} from "./cli-contracts/agent-output-contracts.js";

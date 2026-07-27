@@ -122,6 +122,7 @@ import {
   UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
   compactFlagAliasContracts,
+  resolvePmCommandOutputBudget,
   withFlagAliasMetadata,
   type CliFlagContract,
   type CommanderOptionAliasContract,
@@ -226,6 +227,12 @@ export interface ContractsResult {
   extension_commands?: ExtensionCommandContract[];
   /** Value that configures or reports command summaries for this contract. */
   command_summaries?: CommandSummarySurface[];
+  /** Shared deterministic degradation policy for command output budgets. */
+  output_policy?: {
+    token_estimate: "ceil(utf8_bytes / 4)";
+    degradation_ladder: string[];
+    allows_unbounded_opt_out: boolean;
+  };
   /** Value that configures or reports runtime schema for this contract. */
   runtime_schema?: {
     statuses: string[];
@@ -332,7 +339,24 @@ interface ExtensionCommandContract {
 interface CommandSummarySurface {
   command: string;
   intent: string;
+  flags?: string[];
+  default_max_estimated_tokens: number | null;
 }
+
+const AGENT_BOOTSTRAP_FLAG_COMMANDS = new Set([
+  "claim",
+  "close",
+  "context",
+  "contracts",
+  "create",
+  "get",
+  "health",
+  "list",
+  "next",
+  "search",
+  "update",
+  "validate",
+]);
 
 const LIST_COMMAND_NAMES = new Set([
   "list",
@@ -1794,7 +1818,19 @@ interface ContractsSchemaContext {
 function resolveContractsSelection(
   options: ContractsCommandOptions,
 ): ContractsSelection {
-  const summary = options.summary === true;
+  const explicitlyScoped =
+    normalizeToken(options.action) !== undefined ||
+    normalizeToken(options.command) !== undefined;
+  const projectionSelected =
+    options.schemaOnly === true ||
+    options.flagsOnly === true ||
+    options.availabilityOnly === true;
+  const summary =
+    options.summary === true ||
+    (options.full !== true &&
+      options.runtimeOnly !== true &&
+      !explicitlyScoped &&
+      !projectionSelected);
   const schemaOnly = options.schemaOnly === true;
   const flagsOnly = options.flagsOnly === true;
   const availabilityOnly = options.availabilityOnly === true;
@@ -2302,10 +2338,21 @@ function buildCommandSummarySurface(
   ]
     .filter((command) => command.length > 0)
     .sort((left, right) => left.localeCompare(right));
-  return rootCommands.map((command) => ({
-    command,
-    intent: summarizeCommandIntent(command),
-  }));
+  return rootCommands.map((command) => {
+    const budget = resolvePmCommandOutputBudget(command);
+    const flags = AGENT_BOOTSTRAP_FLAG_COMMANDS.has(command)
+      ? resolveCoreCommandFlags(command)
+          .map((contract) => contract.flag)
+          .slice(0, 6)
+      : undefined;
+    return {
+      command,
+      intent: summarizeCommandIntent(command),
+      ...(flags ? { flags } : {}),
+      default_max_estimated_tokens:
+        budget?.default_max_estimated_tokens ?? null,
+    };
+  });
 }
 
 function resolveExtensionCommandContracts(
@@ -2521,6 +2568,17 @@ export async function runContracts(
 
   if (selection.summary) {
     result.command_summaries = buildCommandSummarySurface(outputCommands);
+    result.output_policy = {
+      token_estimate: "ceil(utf8_bytes / 4)",
+      degradation_ladder: [
+        "full",
+        "compact",
+        "brief",
+        "summary",
+        "counts",
+      ],
+      allows_unbounded_opt_out: true,
+    };
     return result;
   }
   const commandAliases = buildCommandAliasSurface(commands);

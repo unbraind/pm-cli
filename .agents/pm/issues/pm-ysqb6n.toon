@@ -1,0 +1,27 @@
+id: pm-ysqb6n
+title: "GH-770: pending merge receipts remain invisible to validation and CI before reconciliation"
+description: "A clone-local pending merge receipt can contain a discarded peer value while pm validate remains ok:true and names no receipt, so the natural CI gate can approve an unresolved data-loss decision before pm merge reconcile persists it."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-27T14:04:23.340Z"
+updated_at: "2026-07-27T14:04:32.920Z"
+author: "harness:codex"
+acceptance_criteria: Pending merge receipts are a machine-enforced validation or standalone strict gate; the diagnostic names the affected item and fields without leaking private content by default; item-merge guidance routes agents to reconcile before commit; sandboxed two-branch and CI acceptance tests prove the unresolved state cannot pass.
+goal: project management = context management
+parent: pm-o2kc
+reporter: github-issue-770
+severity: high
+environment: pm 2026.7.27 on Linux with installed merge drivers
+repro_steps: "Create divergent item edits, merge, commit the resolved item without pm merge reconcile, then compare pm merge report --json with pm validate --json."
+expected_result: Validation or a dedicated strict gate fails while any merge receipt remains pending and provides actionable receipt context.
+actual_result: "pm merge report shows a pending receipt with the discarded value while pm validate remains ok:true and does not mention receipts."
+component: "merge:decision-receipt"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9nfpwd,related,"2026-07-27T14:04:28.401Z","harness:codex","cli:update:dep",detected
+  pm-g5sx,implements,"2026-07-27T14:04:28.401Z","harness:codex","cli:update:dep",detected
+  pm-rh98vo,discovered_from,"2026-07-27T14:04:28.401Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-27T14:04:23.340Z","harness:codex","Duplicate-check evidence: all-status searches for GH-770 and pending merge receipt validation found no canonical item. The closest canonical lineage is the storage durability epic pm-o2kc and closed receipt work pm-rh98vo and pm-9nfpwd."
+body: ""

@@ -52,11 +52,14 @@ const CORPUS_IDS = [
   "contracts-summary-json",
   "contracts-flags-json",
   "list-default",
+  "list-open-default",
   "list-json",
   "get-default",
   "get-json-compact-fields",
   "context-default",
   "next-default",
+  "health-summary",
+  "validate-counts",
   "search-inline-default",
   "search-inline-json",
 ];
@@ -271,7 +274,7 @@ describe("scripts/release/token-budget-gate", () => {
 
     await harness.importModule<TokenBudgetGateModule>("scripts/release/token-budget-gate.mjs");
 
-    expect(runtime.runCommand).toHaveBeenCalledTimes(19);
+    expect(runtime.runCommand).toHaveBeenCalledTimes(22);
     const runOptions = runtime.runCommand.mock.calls[0]?.[2] as { env?: Record<string, string | undefined> } | undefined;
     expect(runOptions?.env).toMatchObject({
       PM_AUTHOR: "token-budget-gate",
@@ -294,7 +297,7 @@ describe("scripts/release/token-budget-gate", () => {
 
     mod.main();
 
-    expect(log).toHaveBeenCalledWith("Token budget gate passed (14 surfaces checked).");
+    expect(log).toHaveBeenCalledWith("Token budget gate passed (17 surfaces checked).");
   });
 
   it("uses the default manifest path for a bare manifest flag", async () => {
@@ -306,7 +309,7 @@ describe("scripts/release/token-budget-gate", () => {
     mod.main();
 
     expect(runtime.readFileSync.mock.calls[0]?.[0]).toBe(path.join("/repo", "scripts", "release", "token-budgets.json"));
-    expect(log).toHaveBeenCalledWith("Token budget gate passed (14 surfaces checked).");
+    expect(log).toHaveBeenCalledWith("Token budget gate passed (17 surfaces checked).");
   });
 
   it("fails for invalid headroom", async () => {

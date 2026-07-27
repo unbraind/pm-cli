@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1245,
+    "covered_symbols": 1254,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1246
+    "required_symbols": 1255
   },
   "breaking_acknowledgements": [
     {
@@ -171,6 +171,14 @@
       ],
       "package_version": "2026.7.27",
       "reason": "List results now identify brief and compact projections explicitly, contracts expose per-command projection defaults, and merge-fence results declare project schema scope; consumers should accept the new metadata fields and brief mode."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContractsResult",
+        "signature ./sdk/runtime:ContractsResult"
+      ],
+      "package_version": "2026.7.27",
+      "reason": "pm-gmdzaa makes unfiltered contracts summary-first and adds optional output policy metadata; full:true preserves the complete contract surface"
     }
   ],
   "entrypoints": {
@@ -1951,7 +1959,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
         },
         {
           "classification": "supported",
@@ -2318,6 +2326,12 @@
           "kind": "function",
           "name": "defineParserOverride",
           "signature": "(override: ParserOverride) => ParserOverride | calls: (override: ParserOverride) => ParserOverride"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "definePmCommandOutputBudget",
+          "signature": "<TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract | calls: <TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract"
         },
         {
           "classification": "supported",
@@ -2762,6 +2776,12 @@
           "kind": "function",
           "name": "enumerateRelationshipPaths",
           "signature": "(graph: RelationshipGraph, source: string, target: string, options?: GraphPathOptions) => RelationshipQueryResult<RelationshipPath[]> | calls: (graph: RelationshipGraph, source: string, target: string, options?: GraphPathOptions) => RelationshipQueryResult<RelationshipPath[]>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "estimatePmOutputTokens",
+          "signature": "(utf8Bytes: number) => number | calls: (utf8Bytes: number) => number"
         },
         {
           "classification": "contract_data",
@@ -6156,6 +6176,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
+          "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
           "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
         },
@@ -6224,6 +6250,18 @@
           "kind": "value",
           "name": "PM_MUTATION_ACTION_CONTRACTS",
           "signature": "readonly [{ readonly action: \"append\"; readonly history_scope: \"item\"; }, { readonly action: \"claim\"; readonly history_scope: \"item\"; }, { readonly action: \"close\"; readonly history_scope: \"item\"; }, { readonly action: \"close-many\"; readonly history_scope: \"item\"; }, { readonly action: \"close-task\"; readonly history_scope: \"item\"; }, { readonly action: \"comments\"; readonly history_scope: \"conditional\"; }, { readonly action: \"config\"; readonly history_scope: \"conditional\"; }, { readonly action: \"copy\"; readonly history_scope: \"item\"; }, { readonly action: \"create\"; readonly history_scope: \"item\"; }, { readonly action: \"delete\"; readonly history_scope: \"item\"; }, { readonly action: \"deps\"; readonly history_scope: \"conditional\"; }, { readonly action: \"discover\"; readonly history_scope: \"item\"; }, { readonly action: \"docs\"; readonly history_scope: \"conditional\"; }, { readonly action: \"files\"; readonly history_scope: \"conditional\"; }, { readonly action: \"focus\"; readonly history_scope: \"conditional\"; }, { readonly action: \"gc\"; readonly history_scope: \"conditional\"; }, { readonly action: \"history-compact\"; readonly history_scope: \"history\"; }, { readonly action: \"history-author-acknowledge\"; readonly history_scope: \"workspace\"; }, { readonly action: \"history-redact\"; readonly history_scope: \"history\"; }, { readonly action: \"history-repair\"; readonly history_scope: \"history\"; }, { readonly action: \"init\"; readonly history_scope: \"workspace\"; }, { readonly action: \"install\"; readonly history_scope: \"conditional\"; }, { readonly action: \"learnings\"; readonly history_scope: \"conditional\"; }, { readonly action: \"notes\"; readonly history_scope: \"conditional\"; }, { readonly action: \"package\"; readonly history_scope: \"conditional\"; }, { readonly action: \"pause-task\"; readonly history_scope: \"item\"; }, { readonly action: \"plan\"; readonly history_scope: \"conditional\"; }, { readonly action: \"profile\"; readonly history_scope: \"conditional\"; }, { readonly action: \"release\"; readonly history_scope: \"item\"; }, { readonly action: \"restore\"; readonly history_scope: \"item\"; }, { readonly action: \"schema\"; readonly history_scope: \"conditional\"; }, { readonly action: \"start-task\"; readonly history_scope: \"item\"; }, { readonly action: \"templates\"; readonly history_scope: \"conditional\"; }, { readonly action: \"test\"; readonly history_scope: \"conditional\"; }, { readonly action: \"test-all\"; readonly history_scope: \"conditional\"; }, { readonly action: \"update\"; readonly history_scope: \"item\"; }, { readonly action: \"update-many\"; readonly history_scope: \"item\"; }, { readonly action: \"upgrade\"; readonly history_scope: \"conditional\"; }]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_OUTPUT_BUDGET_CLASSES",
+          "signature": "readonly [\"mutation\", \"read\", \"discovery\", \"governance\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_OUTPUT_DEGRADATION_STEPS",
+          "signature": "readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]"
         },
         {
           "classification": "supported",
@@ -6389,6 +6427,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandOutputBudgetContract",
+          "signature": "export interface PmCommandOutputBudgetContract { command: (typeof PM_CORE_COMMAND_NAMES)[number]; budget_class: PmOutputBudgetClass; default_max_estimated_tokens: number; degradation_ladder: readonly PmOutputDegradationStep[]; allows_unbounded_opt_out: boolean; token_estimate: \"ceil(utf8_bytes / 4)\"; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
           "signature": "export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;"
@@ -6440,6 +6484,18 @@
           "kind": "type",
           "name": "PmOptionScalar",
           "signature": "export type PmOptionScalar = string | number | boolean;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmOutputBudgetClass",
+          "signature": "export type PmOutputBudgetClass = (typeof PM_OUTPUT_BUDGET_CLASSES)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmOutputDegradationStep",
+          "signature": "export type PmOutputDegradationStep = (typeof PM_OUTPUT_DEGRADATION_STEPS)[number];"
         },
         {
           "classification": "supported",
@@ -8126,6 +8182,12 @@
           "kind": "function",
           "name": "resolvePmCliVersion",
           "signature": "(metaUrl: string, fallbackRelativeSegments?: string[]) => string | undefined | calls: (metaUrl: string, fallbackRelativeSegments?: string[]) => string | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmCommandOutputBudget",
+          "signature": "(command: string) => PmCommandOutputBudgetContract | null | calls: (command: string) => PmCommandOutputBudgetContract | null"
         },
         {
           "classification": "advanced_export",
@@ -12335,6 +12397,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "definePmCommandOutputBudget",
+          "signature": "<TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract | calls: <TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "DELETE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -12356,6 +12424,12 @@
           "kind": "value",
           "name": "DUPLICATES_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "estimatePmOutputTokens",
+          "signature": "(utf8Bytes: number) => number | calls: (utf8Bytes: number) => number"
         },
         {
           "classification": "contract_data",
@@ -12678,6 +12752,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
+          "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
           "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
         },
@@ -12716,6 +12796,18 @@
           "kind": "value",
           "name": "PM_EXTENSION_TRUST_MODE_CONTRACTS",
           "signature": "readonly [\"off\", \"warn\", \"enforce\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_OUTPUT_BUDGET_CLASSES",
+          "signature": "readonly [\"mutation\", \"read\", \"discovery\", \"governance\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_OUTPUT_DEGRADATION_STEPS",
+          "signature": "readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]"
         },
         {
           "classification": "contract_data",
@@ -12791,6 +12883,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmCommandOutputBudgetContract",
+          "signature": "export interface PmCommandOutputBudgetContract { command: (typeof PM_CORE_COMMAND_NAMES)[number]; budget_class: PmOutputBudgetClass; default_max_estimated_tokens: number; degradation_ladder: readonly PmOutputDegradationStep[]; allows_unbounded_opt_out: boolean; token_estimate: \"ceil(utf8_bytes / 4)\"; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
           "signature": "export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;"
@@ -12842,6 +12940,18 @@
           "kind": "type",
           "name": "PmOptionScalar",
           "signature": "export type PmOptionScalar = string | number | boolean;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmOutputBudgetClass",
+          "signature": "export type PmOutputBudgetClass = (typeof PM_OUTPUT_BUDGET_CLASSES)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmOutputDegradationStep",
+          "signature": "export type PmOutputDegradationStep = (typeof PM_OUTPUT_DEGRADATION_STEPS)[number];"
         },
         {
           "classification": "contract_data",
@@ -12902,6 +13012,12 @@
           "kind": "value",
           "name": "REMIND_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmCommandOutputBudget",
+          "signature": "(command: string) => PmCommandOutputBudgetContract | null | calls: (command: string) => PmCommandOutputBudgetContract | null"
         },
         {
           "classification": "contract_data",
@@ -17209,7 +17325,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
         },
         {
           "classification": "supported",

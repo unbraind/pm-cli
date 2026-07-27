@@ -7,15 +7,89 @@
 // Re-run after each consolidation slice lands and diff against the recorded baseline.
 
 import { execFileSync, spawn } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PM_BIN = process.env.PM_BIN ?? "pm";
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const MCP_SERVER = join(REPO_ROOT, "dist", "mcp", "server.js");
+const DEFAULT_BASELINE = join(
+  REPO_ROOT,
+  "scripts",
+  "agent-token-surface-baseline.json",
+);
 
 function tokens(bytes) {
   return Math.round(bytes / 4);
+}
+
+/** Build a versioned regression baseline with explicit percentage headroom. */
+export function buildBaseline(report, headroom = 1.1) {
+  const budget = (measurement) => Math.ceil(measurement.bytes * headroom);
+  return {
+    version: 1,
+    metric: "utf8_bytes",
+    headroom,
+    surfaces: {
+      root_help: budget(report.root_help),
+      per_command_total: budget(report.per_command_total),
+      full_help_surface: budget(report.full_help_surface),
+      contracts: Object.fromEntries(
+        Object.entries(report.contracts).map(([name, measurement]) => [
+          name,
+          budget(measurement),
+        ]),
+      ),
+      mcp_tools_list: budget(report.mcp_tools_list),
+      commands: Object.fromEntries(
+        report.commands.map((entry) => [entry.name, budget(entry)]),
+      ),
+    },
+  };
+}
+
+/** Compare a measured report with a committed token-surface baseline. */
+export function compareBaseline(report, baseline) {
+  const violations = [];
+  const compare = (name, bytes, maxBytes) => {
+    if (!Number.isFinite(maxBytes)) {
+      violations.push(`${name}: missing baseline`);
+    } else if (bytes > maxBytes) {
+      violations.push(`${name}: ${bytes} bytes exceeds ${maxBytes}`);
+    }
+  };
+  compare("root_help", report.root_help.bytes, baseline.surfaces?.root_help);
+  compare(
+    "per_command_total",
+    report.per_command_total.bytes,
+    baseline.surfaces?.per_command_total,
+  );
+  compare(
+    "full_help_surface",
+    report.full_help_surface.bytes,
+    baseline.surfaces?.full_help_surface,
+  );
+  compare(
+    "mcp_tools_list",
+    report.mcp_tools_list.bytes,
+    baseline.surfaces?.mcp_tools_list,
+  );
+  for (const [name, measurement] of Object.entries(report.contracts)) {
+    compare(
+      `contracts.${name}`,
+      measurement.bytes,
+      baseline.surfaces?.contracts?.[name],
+    );
+  }
+  for (const measurement of report.commands) {
+    compare(
+      `commands.${measurement.name}`,
+      measurement.bytes,
+      baseline.surfaces?.commands?.[measurement.name],
+    );
+  }
+  return violations;
 }
 
 function measure(args) {
@@ -131,4 +205,34 @@ const report = {
   mcp_tools_list: await measureMcpToolsList(),
 };
 
-process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+const baselineFlagIndex = process.argv.indexOf("--baseline");
+const baselinePath =
+  baselineFlagIndex >= 0 && process.argv[baselineFlagIndex + 1]
+    ? process.argv[baselineFlagIndex + 1]
+    : DEFAULT_BASELINE;
+if (process.argv.includes("--update")) {
+  writeFileSync(
+    baselinePath,
+    `${JSON.stringify(buildBaseline(report), null, 2)}\n`,
+    "utf8",
+  );
+  process.stdout.write(`Updated agent token-surface baseline: ${baselinePath}\n`);
+} else if (process.argv.includes("--check")) {
+  const baseline = JSON.parse(readFileSync(baselinePath, "utf8"));
+  if (baseline.version !== 1 || baseline.metric !== "utf8_bytes") {
+    throw new Error(`Unsupported agent token-surface baseline: ${baselinePath}`);
+  }
+  const violations = compareBaseline(report, baseline);
+  if (violations.length > 0) {
+    throw new Error(
+      `Agent token-surface regression:\n${violations
+        .map((violation) => `- ${violation}`)
+        .join("\n")}`,
+    );
+  }
+  process.stdout.write(
+    `Agent token-surface gate passed (${report.command_count + Object.keys(report.contracts).length + 4} surfaces).\n`,
+  );
+} else {
+  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+}

@@ -79,6 +79,42 @@ function mockChildProcess(execFileSync: ReturnType<typeof vi.fn>, spawn: ReturnT
   vi.doMock("node:child_process", () => ({ execFileSync, spawn }));
 }
 
+function configureSuccessfulMeasurement(): void {
+  const execFileSync = createExecFileSync();
+  const { spawn } = createMcpChild((mcp) => {
+    mcp.stdout.emit(
+      "data",
+      `${JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        result: { tools: [{ name: "pm_get" }] },
+      })}\n`,
+    );
+  });
+  mockChildProcess(execFileSync, spawn);
+}
+
+function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
+  return JSON.stringify({
+    version: 1,
+    metric: "utf8_bytes",
+    surfaces: {
+      root_help: 1_000_000,
+      per_command_total: 1_000_000,
+      full_help_surface: 1_000_000,
+      mcp_tools_list: 1_000_000,
+      contracts: {
+        summary_toon: 1_000_000,
+        summary_json: 1_000_000,
+        json: 1_000_000,
+        full: 1_000_000,
+      },
+      commands: { ls: 1_000_000, get: 1_000_000 },
+    },
+    ...overrides,
+  });
+}
+
 interface Report {
   pm_version: string;
   root_help: { bytes: number; tokens: number };
@@ -90,12 +126,47 @@ interface Report {
   mcp_tools_list: { bytes: number; tokens: number; tool_count: number };
 }
 
+interface TokenSurfaceBaseline {
+  version: number;
+  metric: string;
+  headroom: number;
+  surfaces: {
+    root_help: number;
+    per_command_total: number;
+    full_help_surface: number;
+    contracts: Record<string, number>;
+    mcp_tools_list: number;
+    commands: Record<string, number>;
+  };
+}
+
+interface TokenSurfaceModule {
+  buildBaseline: (report: Report, headroom?: number) => TokenSurfaceBaseline;
+  compareBaseline: (
+    report: Report,
+    baseline: TokenSurfaceBaseline,
+  ) => string[];
+}
+
 async function importAndCaptureReport(): Promise<Report> {
   const stdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   await harness.importModule(SCRIPT);
   const payload = String(stdoutWrite.mock.calls.at(-1)?.[0] ?? "{}");
   stdoutWrite.mockRestore();
   return JSON.parse(payload) as Report;
+}
+
+async function importAndCaptureModule(): Promise<{
+  report: Report;
+  module: TokenSurfaceModule;
+}> {
+  const stdoutWrite = vi
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
+  const module = await harness.importModule<TokenSurfaceModule>(SCRIPT);
+  const payload = String(stdoutWrite.mock.calls.at(-1)?.[0] ?? "{}");
+  stdoutWrite.mockRestore();
+  return { report: JSON.parse(payload) as Report, module };
 }
 
 describe("measure-agent-token-surface", () => {
@@ -160,6 +231,168 @@ describe("measure-agent-token-surface", () => {
 
     expect(execFileSync.mock.calls[0]?.[0]).toBe("pm-alt");
     expect(report.mcp_tools_list.tool_count).toBe(0);
+  });
+
+  it("builds and compares versioned per-surface regression baselines", async () => {
+    delete process.env.PM_BIN;
+    const execFileSync = createExecFileSync();
+    const { spawn } = createMcpChild((mcp) => {
+      mcp.stdout.emit(
+        "data",
+        `${JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          result: { tools: [{ name: "pm_get" }] },
+        })}\n`,
+      );
+    });
+    mockChildProcess(execFileSync, spawn);
+
+    const { report, module } = await importAndCaptureModule();
+    const baseline = module.buildBaseline(report, 1);
+
+    expect(baseline).toMatchObject({
+      version: 1,
+      metric: "utf8_bytes",
+      headroom: 1,
+      surfaces: {
+        root_help: report.root_help.bytes,
+        contracts: {
+          summary_toon: report.contracts.summary_toon?.bytes,
+        },
+      },
+    });
+    expect(module.compareBaseline(report, baseline)).toEqual([]);
+
+    baseline.surfaces.root_help = 1;
+    delete baseline.surfaces.commands.ls;
+    expect(module.compareBaseline(report, baseline)).toEqual([
+      `root_help: ${report.root_help.bytes} bytes exceeds 1`,
+      "commands.ls: missing baseline",
+    ]);
+  });
+
+  it("writes an intentional baseline update to an explicit path", async () => {
+    delete process.env.PM_BIN;
+    configureSuccessfulMeasurement();
+    const writeFileSync = vi.fn();
+    vi.doMock("node:fs", () => ({
+      readFileSync: vi.fn(),
+      writeFileSync,
+    }));
+    const originalArgv = process.argv;
+    process.argv = [
+      "node",
+      SCRIPT,
+      "--update",
+      "--baseline",
+      "/tmp/token-surface.json",
+    ];
+    const stdoutWrite = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    try {
+      await harness.importModule(SCRIPT);
+      expect(writeFileSync).toHaveBeenCalledWith(
+        "/tmp/token-surface.json",
+        expect.stringContaining('"version": 1'),
+        "utf8",
+      );
+      expect(stdoutWrite).toHaveBeenCalledWith(
+        "Updated agent token-surface baseline: /tmp/token-surface.json\n",
+      );
+    } finally {
+      stdoutWrite.mockRestore();
+      process.argv = originalArgv;
+    }
+  });
+
+  it("passes a checked baseline and falls back when --baseline has no value", async () => {
+    delete process.env.PM_BIN;
+    configureSuccessfulMeasurement();
+    const readFileSync = vi.fn(() => permissiveBaseline());
+    vi.doMock("node:fs", () => ({
+      readFileSync,
+      writeFileSync: vi.fn(),
+    }));
+    const originalArgv = process.argv;
+    process.argv = ["node", SCRIPT, "--check", "--baseline"];
+    const stdoutWrite = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    try {
+      await harness.importModule(SCRIPT);
+      expect(readFileSync).toHaveBeenCalledWith(
+        expect.stringMatching(/scripts[\\/]agent-token-surface-baseline\.json$/),
+        "utf8",
+      );
+      expect(stdoutWrite).toHaveBeenCalledWith(
+        "Agent token-surface gate passed (10 surfaces).\n",
+      );
+    } finally {
+      stdoutWrite.mockRestore();
+      process.argv = originalArgv;
+    }
+  });
+
+  it.each([
+    ["version", permissiveBaseline({ version: 2 })],
+    ["metric", permissiveBaseline({ metric: "tokens" })],
+  ])("rejects a checked baseline with an unsupported %s", async (_field, baselineText) => {
+    const originalArgv = process.argv;
+    process.argv = [
+      "node",
+      SCRIPT,
+      "--check",
+      "--baseline",
+      "/tmp/token-surface.json",
+    ];
+    configureSuccessfulMeasurement();
+    vi.doMock("node:fs", () => ({
+      readFileSync: vi.fn(() => baselineText),
+      writeFileSync: vi.fn(),
+    }));
+    try {
+      await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+        "Unsupported agent token-surface baseline",
+      );
+    } finally {
+      process.argv = originalArgv;
+    }
+  });
+
+  it("rejects a checked baseline with token-surface regressions", async () => {
+    const originalArgv = process.argv;
+    process.argv = [
+      "node",
+      SCRIPT,
+      "--check",
+      "--baseline",
+      "/tmp/token-surface.json",
+    ];
+    configureSuccessfulMeasurement();
+    vi.doMock("node:fs", () => ({
+      readFileSync: vi.fn(() =>
+        permissiveBaseline({
+          surfaces: {
+            root_help: 0,
+            per_command_total: 0,
+            full_help_surface: 0,
+            mcp_tools_list: 0,
+            contracts: {},
+            commands: {},
+          },
+        }),
+      ),
+      writeFileSync: vi.fn(),
+    }));
+    try {
+      await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+        "Agent token-surface regression",
+      );
+    } finally {
+      process.argv = originalArgv;
+    }
   });
 
   it("reports tool_count 0 when the result carries no tools array", async () => {
