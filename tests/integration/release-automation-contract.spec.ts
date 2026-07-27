@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -459,9 +460,8 @@ describe("release automation contract", () => {
     expect(workflow).toContain(
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
     );
-    expect(workflow).toContain(
-      "npm access set status=public @unbraind/pm-cli",
-    );
+    expect(workflow).toContain('NPM_PACKAGE: "@unbrained/pm-cli"');
+    expect(workflow).toContain('npm access set status=public "${NPM_PACKAGE}"');
     expect(workflow).toContain(
       "attempting access recovery before immutable publication",
     );
@@ -471,17 +471,137 @@ describe("release automation contract", () => {
     expect(workflow).toContain(
       "grep -Eq 'E404|404 Not Found|Package not found'",
     );
-    expect(workflow).not.toContain(
-      'elif npm view "@unbraind/pm-cli@${VERSION}"',
+    expect(workflow).toContain(
+      'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
     );
-    expect(workflow.indexOf("npm access set status=public")).toBeLessThan(
-      workflow.indexOf("npm publish --access public --provenance --tag latest"),
+    expect(
+      workflow.indexOf(
+        'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
+      ),
+    ).toBeLessThan(
+      workflow.indexOf("npm access set status=public"),
     );
+    expect(workflow.match(/@unbrained\/pm-cli/g)?.length).toBe(1);
     expect(workflow).toContain('env -u NODE_AUTH_TOKEN -u NPM_TOKEN');
     expect(workflow).toContain(
       'npm_config_userconfig="${PUBLIC_NPMRC}"',
     );
     expect(workflow).toContain('npm_config_cache="${PUBLIC_NPM_CACHE}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");
+  });
+
+  it("executes the npm publication guard without mutating access for a public package", async () => {
+    const workflow = await readFile(
+      path.join(repoRoot, ".github/workflows/release.yml"),
+      "utf8",
+    );
+    const publishStep = workflow.match(
+      / {6}- name: Publish to npm[\s\S]*? {8}run: \|\n([\s\S]*?)(?=\n {6}- name:)/u,
+    )?.[1];
+    expect(publishStep).toBeDefined();
+    const publishScript = publishStep
+      ?.split("\n")
+      .map((line) => line.slice(10))
+      .join("\n");
+    expect(publishScript).toBeDefined();
+
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-release-publish-guard-"),
+    );
+    try {
+      const fakeNpm = path.join(tempRoot, "npm");
+      const npmLog = path.join(tempRoot, "npm.log");
+      await writeFile(
+        fakeNpm,
+        `#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\\n' "$*" >> "\${NPM_FAKE_LOG}"
+case "$*" in
+  "view \${NPM_PACKAGE}@\${RELEASE_VERSION} version --json")
+    exit "\${TARGET_VERSION_STATUS}"
+    ;;
+  "view \${NPM_PACKAGE} name --json")
+    exit "\${PACKAGE_STATUS}"
+    ;;
+  "access set status=public \${NPM_PACKAGE}")
+    printf '%s\\n' "\${ACCESS_OUTPUT}"
+    exit "\${ACCESS_STATUS}"
+    ;;
+  "publish --access public --provenance --tag latest")
+    exit 0
+    ;;
+  *)
+    printf 'Unexpected npm invocation: %s\\n' "$*" >&2
+    exit 97
+    ;;
+esac
+`,
+        "utf8",
+      );
+      await chmod(fakeNpm, 0o755);
+
+      const runScenario = (overrides: NodeJS.ProcessEnv) =>
+        spawnSync("bash", ["-c", publishScript ?? ""], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            PATH: `${tempRoot}:${process.env.PATH ?? ""}`,
+            RELEASE_TAG: "v2026.7.27",
+            RELEASE_VERSION: "2026.7.27",
+            RUNNER_TEMP: tempRoot,
+            NPM_PACKAGE: "@unbrained/pm-cli",
+            NPM_FAKE_LOG: npmLog,
+            TARGET_VERSION_STATUS: "1",
+            PACKAGE_STATUS: "0",
+            ACCESS_STATUS: "99",
+            ACCESS_OUTPUT: "access should not run",
+            ...overrides,
+          },
+        });
+
+      const publicPackage = runScenario({});
+      expect(publicPackage.status).toBe(0);
+      expect(publicPackage.stdout).toContain(
+        "@unbrained/pm-cli is publicly available but 2026.7.27 is not; publishing.",
+      );
+      let invocations = await readFile(npmLog, "utf8");
+      expect(invocations).toContain(
+        "view @unbrained/pm-cli@2026.7.27 version --json",
+      );
+      expect(invocations).toContain("view @unbrained/pm-cli name --json");
+      expect(invocations).toContain(
+        "publish --access public --provenance --tag latest",
+      );
+      expect(invocations).not.toContain("access set status=public");
+
+      await writeFile(npmLog, "", "utf8");
+      const existingVersion = runScenario({ TARGET_VERSION_STATUS: "0" });
+      expect(existingVersion.status).toBe(0);
+      expect(existingVersion.stdout).toContain(
+        "@unbrained/pm-cli@2026.7.27 is publicly available; skipping npm publish.",
+      );
+      invocations = await readFile(npmLog, "utf8");
+      expect(invocations).not.toContain("publish --access public");
+      expect(invocations).not.toContain("access set status=public");
+
+      await writeFile(npmLog, "", "utf8");
+      const deniedRecovery = runScenario({
+        PACKAGE_STATUS: "1",
+        ACCESS_STATUS: "1",
+        ACCESS_OUTPUT: "npm error code E403",
+      });
+      expect(deniedRecovery.status).not.toBe(0);
+      expect(deniedRecovery.stderr).toContain(
+        "Public-access recovery failed without a definitive package-not-found response",
+      );
+      invocations = await readFile(npmLog, "utf8");
+      expect(invocations).toContain(
+        "access set status=public @unbrained/pm-cli",
+      );
+      expect(invocations).not.toContain("publish --access public");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 });

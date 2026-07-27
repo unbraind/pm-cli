@@ -30,6 +30,7 @@ jobs:
       name: release
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      NPM_PACKAGE: "@unbrained/pm-cli"
 
     steps:
       - name: Checkout
@@ -185,22 +186,43 @@ jobs:
           PUBLIC_NPMRC="${RUNNER_TEMP}/npmrc-public"
           PUBLIC_NPM_CACHE="${RUNNER_TEMP}/npm-cache-public"
           : > "${PUBLIC_NPMRC}"
-          if env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
-            npm_config_userconfig="${PUBLIC_NPMRC}" \
-            npm_config_cache="${PUBLIC_NPM_CACHE}" \
-            npm view "@unbraind/pm-cli@${VERSION}" version --json >/dev/null 2>&1; then
-            echo "@unbraind/pm-cli@${VERSION} is publicly available; skipping npm publish."
+
+          anonymous_npm_view() {
+            env -u NODE_AUTH_TOKEN -u NPM_TOKEN \
+              npm_config_userconfig="${PUBLIC_NPMRC}" \
+              npm_config_cache="${PUBLIC_NPM_CACHE}" \
+              npm view "$1" "$2" --json >/dev/null 2>&1
+          }
+
+          publish_release() {
+            npm publish --access public --provenance --tag latest
+          }
+
+          if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then
+            echo "${NPM_PACKAGE}@${VERSION} is publicly available; skipping npm publish."
+          elif anonymous_npm_view "${NPM_PACKAGE}" name; then
+            echo "${NPM_PACKAGE} is publicly available but ${VERSION} is not; publishing."
+            publish_release
           else
-            echo "@unbraind/pm-cli@${VERSION} is not public; attempting access recovery before immutable publication."
-            if access_output="$(npm access set status=public @unbraind/pm-cli 2>&1)"; then
+            echo "${NPM_PACKAGE} is not public; attempting access recovery before immutable publication."
+            if access_output="$(npm access set status=public "${NPM_PACKAGE}" 2>&1)"; then
               printf '%s\n' "${access_output}"
-              echo "Restored public access for @unbraind/pm-cli."
+              echo "Restored public access for ${NPM_PACKAGE}."
+              if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then
+                echo "${NPM_PACKAGE}@${VERSION} became publicly available; skipping npm publish."
+              elif anonymous_npm_view "${NPM_PACKAGE}" name; then
+                echo "${NPM_PACKAGE} is public after access recovery but ${VERSION} is not; publishing."
+                publish_release
+              else
+                echo "Public-access recovery succeeded but anonymous package metadata is still unavailable; refusing immutable publication." >&2
+                exit 1
+              fi
             else
               access_status=$?
               printf '%s\n' "${access_output}" >&2
               if printf '%s\n' "${access_output}" | grep -Eq 'E404|404 Not Found|Package not found'; then
-                echo "@unbraind/pm-cli does not exist for this credential; publishing ${VERSION}."
-                npm publish --access public --provenance --tag latest
+                echo "${NPM_PACKAGE} does not exist for this credential; publishing ${VERSION}."
+                publish_release
               else
                 echo "Public-access recovery failed without a definitive package-not-found response; refusing immutable publication." >&2
                 exit "${access_status}"

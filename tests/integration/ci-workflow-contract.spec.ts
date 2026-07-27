@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import fg from "fast-glob";
 import { describe, expect, it } from "vitest";
 import { checkDirectoryLoad, collectTypeScriptFiles, relativeToRepo } from "../../scripts/release/static-quality-gate.mts";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -481,10 +482,14 @@ describe("GitHub workflow contract", () => {
       "body_path: ${{ runner.temp }}/release-notes.md",
       PINNED_ACTIONS.setupBun,
       "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
+      'NPM_PACKAGE: "@unbrained/pm-cli"',
+      'anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version',
+      'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
+      "${NPM_PACKAGE} is publicly available but ${VERSION} is not; publishing.",
       "npm publish --access public --provenance --tag latest",
       "is publicly available; skipping npm publish.",
       "attempting access recovery before immutable publication.",
-      "npm access set status=public @unbraind/pm-cli",
+      'npm access set status=public "${NPM_PACKAGE}"',
       "grep -Eq 'E404|404 Not Found|Package not found'",
       "refusing immutable publication.",
       "env -u NODE_AUTH_TOKEN -u NPM_TOKEN",
@@ -503,21 +508,38 @@ describe("GitHub workflow contract", () => {
     const untaggedNpmPublish =
       /(?:^|[!;&|(){}]|\b(?:then|do)\b)\s*npm publish\b(?![^;&|\n]*--tag\s+latest\b)/m;
     expect(releaseWorkflow).not.toMatch(untaggedNpmPublish);
-    expect(releaseWorkflow).not.toContain(
-      'elif npm view "@unbraind/pm-cli@${VERSION}"',
-    );
     expect(
-      releaseWorkflow.indexOf("npm access set status=public"),
-    ).toBeLessThan(
       releaseWorkflow.indexOf(
-        "npm publish --access public --provenance --tag latest",
+        'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
       ),
+    ).toBeLessThan(
+      releaseWorkflow.indexOf("npm access set status=public"),
     );
+    expect(releaseWorkflow.match(/@unbrained\/pm-cli/g)?.length).toBe(1);
     expect("if should_publish; then npm publish --access public; fi").toMatch(
       untaggedNpmPublish,
     );
     expect("{ npm publish --access public; }").toMatch(untaggedNpmPublish);
     expect("! npm publish --access public").toMatch(untaggedNpmPublish);
+  });
+
+  it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {
+    const productionFiles = await fg([".github/workflows/**/*", "scripts/**/*", "src/**/*"], {
+      cwd: repoRoot,
+      dot: true,
+      onlyFiles: true,
+    });
+    const exposures = (
+      await Promise.all(
+        productionFiles.map(async (file) => ({
+          file,
+          content: await readFile(path.join(repoRoot, file), "utf8"),
+        })),
+      )
+    )
+      .filter(({ content }) => content.includes("@unbraind/"))
+      .map(({ file }) => file);
+    expect(exposures).toEqual([]);
   });
 
   it("keeps auto-release workflow aligned with one-production-release-per-day policy", async () => {

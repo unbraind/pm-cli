@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-746: the release publish step guards on a package scope that does not exist, so publish idempotence and access recovery are permanently dead code ([pm-2z9263](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2z9263.toon))
+
 ## 2026.7.27 - 2026-07-27
 
 ### Fixed
@@ -251,8 +257,8 @@
 
 ### Added
 
-- Tracker merge semantics: field-aware merge guidance, history-chain-safe JSONL merging, and post-merge reconciliation for multi-branch agent workflows ([pm-g5sx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-g5sx.toon))
 - Merge-driver fence completeness: relationships/\*.jsonl event stores uncovered and schema-added custom type folders silently drop driver coverage ([pm-i4fx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i4fx.toon))
+- Tracker merge semantics: field-aware merge guidance, history-chain-safe JSONL merging, and post-merge reconciliation for multi-branch agent workflows ([pm-g5sx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-g5sx.toon))
 - GH-613: public SDK bulk item-mutation helper on commitWorkspaceTransaction — atomic create/update/close batches without hand-rolled step+compensation wiring ([pm-y9hq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-y9hq.toon))
 - GH-612: additive --add-ac/--remove-ac forms for acceptance criteria — replace-only --ac clobbers concurrent branch edits ([pm-xh82](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xh82.toon))
 - GH-599: git merge driver + documented workflow for append-only history/\*.jsonl (concurrent appends fork the hash chain) ([pm-wc1r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wc1r.toon))
