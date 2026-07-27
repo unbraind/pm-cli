@@ -347,11 +347,14 @@ describe("runtime MCP capabilities", () => {
         )?.portfolioSignal,
       ).toMatchObject({ type: "string" });
       const canonicalCreate = TOOLS.find((tool) => tool.name === "pm_create");
+      if (!canonicalCreate) {
+        throw new Error("Expected the canonical pm_create tool definition");
+      }
       expect(create?.inputSchema.properties).toMatchObject({
         cwd: TOOL_SCHEMA_BASE.properties.cwd,
         path: TOOL_SCHEMA_BASE.properties.path,
         options: (
-          canonicalCreate?.inputSchema.properties as Record<string, unknown>
+          canonicalCreate.inputSchema.properties as Record<string, unknown>
         ).options,
       });
       await expect(
