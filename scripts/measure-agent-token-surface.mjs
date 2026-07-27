@@ -11,8 +11,12 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PM_BIN = process.env.PM_BIN ?? "pm";
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const CONFIGURED_PM_BIN = process.env.PM_BIN;
+const PM_BIN = CONFIGURED_PM_BIN ?? process.execPath;
+const PM_PREFIX_ARGS = CONFIGURED_PM_BIN
+  ? []
+  : [join(REPO_ROOT, "dist", "cli.js")];
 const MCP_SERVER = join(REPO_ROOT, "dist", "mcp", "server.js");
 const DEFAULT_BASELINE = join(
   REPO_ROOT,
@@ -94,11 +98,15 @@ export function compareBaseline(report, baseline) {
 
 function measure(args) {
   try {
-    const out = execFileSync(PM_BIN, [...args, "--no-pager"], {
-      encoding: "utf8",
-      maxBuffer: 64 * 1024 * 1024,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const out = execFileSync(
+      PM_BIN,
+      [...PM_PREFIX_ARGS, ...args, "--no-pager"],
+      {
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
     return Buffer.byteLength(out);
   } catch (error) {
     const out = typeof error.stdout === "string" ? error.stdout : "";
@@ -110,10 +118,14 @@ function measure(args) {
 }
 
 function listCommands() {
-  const help = execFileSync(PM_BIN, ["--help", "--no-pager"], {
-    encoding: "utf8",
-    maxBuffer: 16 * 1024 * 1024,
-  });
+  const help = execFileSync(
+    PM_BIN,
+    [...PM_PREFIX_ARGS, "--help", "--no-pager"],
+    {
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+    },
+  );
   const lines = help.split("\n");
   const start = lines.findIndex((line) => line.trim() === "Commands:");
   const names = [];
@@ -168,7 +180,9 @@ function measureMcpToolsList() {
   });
 }
 
-const pmVersion = execFileSync(PM_BIN, ["--version"], { encoding: "utf8" }).trim();
+const pmVersion = execFileSync(PM_BIN, [...PM_PREFIX_ARGS, "--version"], {
+  encoding: "utf8",
+}).trim();
 const { rootHelpBytes, names } = listCommands();
 
 const commands = names
@@ -195,7 +209,10 @@ const report = {
   pm_version: pmVersion,
   root_help: { bytes: rootHelpBytes, tokens: tokens(rootHelpBytes) },
   command_count: commands.length,
-  per_command_total: { bytes: perCommandBytes, tokens: tokens(perCommandBytes) },
+  per_command_total: {
+    bytes: perCommandBytes,
+    tokens: tokens(perCommandBytes),
+  },
   full_help_surface: {
     bytes: rootHelpBytes + perCommandBytes,
     tokens: tokens(rootHelpBytes + perCommandBytes),
@@ -216,11 +233,15 @@ if (process.argv.includes("--update")) {
     `${JSON.stringify(buildBaseline(report), null, 2)}\n`,
     "utf8",
   );
-  process.stdout.write(`Updated agent token-surface baseline: ${baselinePath}\n`);
+  process.stdout.write(
+    `Updated agent token-surface baseline: ${baselinePath}\n`,
+  );
 } else if (process.argv.includes("--check")) {
   const baseline = JSON.parse(readFileSync(baselinePath, "utf8"));
   if (baseline.version !== 1 || baseline.metric !== "utf8_bytes") {
-    throw new Error(`Unsupported agent token-surface baseline: ${baselinePath}`);
+    throw new Error(
+      `Unsupported agent token-surface baseline: ${baselinePath}`,
+    );
   }
   const violations = compareBaseline(report, baseline);
   if (violations.length > 0) {

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",scale,simplification,token-efficiency
 created_at: "2026-07-27T04:18:05.625Z"
-updated_at: "2026-07-27T14:07:54.754Z"
+updated_at: "2026-07-27T14:18:30.527Z"
 closed_at: "2026-07-27T14:00:52.106Z"
 author: "harness:claude-code"
 estimated_minutes: 240
@@ -35,9 +35,10 @@ dependencies[9]{id,kind,created_at}:
   pm-e9yevx,related,"2026-07-27T04:21:41.192Z"
   pm-j82fd3,implements,"2026-07-27T04:21:41.192Z"
   pm-ydshl9,related,"2026-07-27T04:21:41.192Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-27T14:00:38.914Z","harness:codex","Evidence: changed only the unfiltered default contracts projection to summary-first while preserving scoped, runtime-only, explicit projections, and --full compatibility. Live size changed from 125,193 bytes to 11,413 bytes (about 91% smaller, about 2,854 estimated tokens); explicit full remains available. The bounded default includes intents, the core bootstrap flags, and declared output policy so a cold-start agent can route its next bounded call without per-command enumeration. Packed unrelated-consumer acceptance passed through the installed binary plus SDK subpath, npx --no-install, and bunx --bun. Linked tests passed 2/2; full repository coverage passed 6,413 tests at 100/100/100/100."
   "2026-07-27T14:07:54.754Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/774 at implementation head 8173f7f73. Exact-head hosted checks and bot review will follow after this PM evidence is committed."
+  "2026-07-27T14:18:30.527Z","harness:codex","Hosted analysis correction for PR #774: DeepScan identified one unused contracts import. Removed it; static quality and focused contracts tests pass. No behavior or compatibility change was required."
 files[2]{path,scope,note}:
   src/cli/commands/contracts.ts,project,bounded default discovery projection with full opt-in
   tests/unit/commands/contracts-command.spec.ts,project,Summary-first default and explicit full discovery compatibility coverage

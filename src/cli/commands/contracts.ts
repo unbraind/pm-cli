@@ -123,7 +123,6 @@ import {
   VALIDATE_FLAG_CONTRACTS,
   compactFlagAliasContracts,
   resolvePmCommandOutputBudget,
-  withFlagAliasMetadata,
   type CliFlagContract,
   type CommanderOptionAliasContract,
 } from "../../sdk/cli-contracts.js";
@@ -588,10 +587,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["history-compact", HISTORY_COMPACT_FLAG_CONTRACTS],
   ["history-redact", HISTORY_REDACT_FLAG_CONTRACTS],
   ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],
-  [
-    "history-author-acknowledge",
-    HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS,
-  ],
+  ["history-author-acknowledge", HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS],
   ["merge", MERGE_FLAG_CONTRACTS],
   ["schema", SCHEMA_FLAG_CONTRACTS],
   ["profile", PROFILE_FLAG_CONTRACTS],
@@ -2457,9 +2453,7 @@ function attachRuntimeContractsResult(
     },
   };
   result.governance_contracts = {
-    ownership_enforcement_modes: [
-      ...GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES,
-    ],
+    ownership_enforcement_modes: [...GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES],
     create_modes: [...GOVERNANCE_CREATE_MODE_DEFAULT_VALUES],
     close_validation_modes: [...GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES],
     workflow_enforcement_modes: [...GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES],
@@ -2570,13 +2564,7 @@ export async function runContracts(
     result.command_summaries = buildCommandSummarySurface(outputCommands);
     result.output_policy = {
       token_estimate: "ceil(utf8_bytes / 4)",
-      degradation_ladder: [
-        "full",
-        "compact",
-        "brief",
-        "summary",
-        "counts",
-      ],
+      degradation_ladder: ["full", "compact", "brief", "summary", "counts"],
       allows_unbounded_opt_out: true,
     };
     return result;

@@ -20,7 +20,8 @@ const ROOT_HELP = [
   "",
 ].join("\n");
 
-const LS_HELP = "Usage: pm ls [options] — a deliberately longer help payload for sorting";
+const LS_HELP =
+  "Usage: pm ls [options] — a deliberately longer help payload for sorting";
 const GET_HELP_STDOUT = "GET HELP VIA STDOUT";
 const CONTRACTS = {
   summary_toon: "SUMMARY-TOON",
@@ -39,7 +40,11 @@ function keyOf(args: readonly string[]): string {
 
 function createExecFileSync(overrides: ExecOverrides = {}) {
   return vi.fn((_command: string, args: readonly string[]) => {
-    const key = keyOf(args);
+    const commandArgs =
+      args[0]?.endsWith("dist/cli.js") || args[0]?.endsWith("dist\\cli.js")
+        ? args.slice(1)
+        : args;
+    const key = keyOf(commandArgs);
     if (key === "--version") return "9.9.9-test\n";
     if (key === "--help --no-pager") return ROOT_HELP;
     if (key === "ls --help --no-pager") {
@@ -49,7 +54,8 @@ function createExecFileSync(overrides: ExecOverrides = {}) {
       throw Object.assign(new Error("exit 2"), { stdout: GET_HELP_STDOUT });
     }
     if (key === "contracts --summary --no-pager") return CONTRACTS.summary_toon;
-    if (key === "contracts --summary --json --no-pager") return CONTRACTS.summary_json;
+    if (key === "contracts --summary --json --no-pager")
+      return CONTRACTS.summary_json;
     if (key === "contracts --json --no-pager") return CONTRACTS.json;
     if (key === "contracts --full --no-pager") return CONTRACTS.full;
     throw new Error(`unexpected execFileSync args: ${key}`);
@@ -65,7 +71,9 @@ interface FakeMcpChild {
   spawn: ReturnType<typeof vi.fn>;
 }
 
-function createMcpChild(onRequest: (child: FakeMcpChild["child"]) => void): FakeMcpChild {
+function createMcpChild(
+  onRequest: (child: FakeMcpChild["child"]) => void,
+): FakeMcpChild {
   const child = Object.assign(new EventEmitter(), {
     stdout: new EventEmitter(),
     kill: vi.fn(),
@@ -75,7 +83,10 @@ function createMcpChild(onRequest: (child: FakeMcpChild["child"]) => void): Fake
   return { child, spawn };
 }
 
-function mockChildProcess(execFileSync: ReturnType<typeof vi.fn>, spawn: ReturnType<typeof vi.fn>): void {
+function mockChildProcess(
+  execFileSync: ReturnType<typeof vi.fn>,
+  spawn: ReturnType<typeof vi.fn>,
+): void {
   vi.doMock("node:child_process", () => ({ execFileSync, spawn }));
 }
 
@@ -142,14 +153,13 @@ interface TokenSurfaceBaseline {
 
 interface TokenSurfaceModule {
   buildBaseline: (report: Report, headroom?: number) => TokenSurfaceBaseline;
-  compareBaseline: (
-    report: Report,
-    baseline: TokenSurfaceBaseline,
-  ) => string[];
+  compareBaseline: (report: Report, baseline: TokenSurfaceBaseline) => string[];
 }
 
 async function importAndCaptureReport(): Promise<Report> {
-  const stdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+  const stdoutWrite = vi
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
   await harness.importModule(SCRIPT);
   const payload = String(stdoutWrite.mock.calls.at(-1)?.[0] ?? "{}");
   stdoutWrite.mockRestore();
@@ -181,23 +191,33 @@ describe("measure-agent-token-surface", () => {
     const { child, spawn } = createMcpChild((mcp) => {
       mcp.stdout.emit(
         "data",
-        ["   ", "not-json", '{"jsonrpc":"2.0","id":2,"result":{}}', toolsLine].join("\n"),
+        [
+          "   ",
+          "not-json",
+          '{"jsonrpc":"2.0","id":2,"result":{}}',
+          toolsLine,
+        ].join("\n"),
       );
     });
     mockChildProcess(execFileSync, spawn);
 
     const report = await importAndCaptureReport();
 
-    expect(execFileSync.mock.calls[0]?.[0]).toBe("pm");
+    expect(execFileSync.mock.calls[0]?.[0]).toBe(process.execPath);
+    expect(execFileSync.mock.calls[0]?.[1]?.[0]).toMatch(/dist[\\/]cli\.js$/);
     expect(report.pm_version).toBe("9.9.9-test");
     const rootBytes = Buffer.byteLength(ROOT_HELP);
-    expect(report.root_help).toEqual({ bytes: rootBytes, tokens: Math.round(rootBytes / 4) });
+    expect(report.root_help).toEqual({
+      bytes: rootBytes,
+      tokens: Math.round(rootBytes / 4),
+    });
     // "help" is filtered, the alias line contributes only its primary name, and
     // the deeper-indented continuation line is skipped without ending the scan.
     expect(report.command_count).toBe(2);
     expect(report.commands.map((entry) => entry.name)).toEqual(["ls", "get"]);
     expect(report.commands[1]?.bytes).toBe(Buffer.byteLength(GET_HELP_STDOUT));
-    const perCommand = Buffer.byteLength(LS_HELP) + Buffer.byteLength(GET_HELP_STDOUT);
+    const perCommand =
+      Buffer.byteLength(LS_HELP) + Buffer.byteLength(GET_HELP_STDOUT);
     expect(report.per_command_total.bytes).toBe(perCommand);
     expect(report.full_help_surface).toEqual({
       bytes: rootBytes + perCommand,
@@ -323,7 +343,9 @@ describe("measure-agent-token-surface", () => {
     try {
       await harness.importModule(SCRIPT);
       expect(readFileSync).toHaveBeenCalledWith(
-        expect.stringMatching(/scripts[\\/]agent-token-surface-baseline\.json$/),
+        expect.stringMatching(
+          /scripts[\\/]agent-token-surface-baseline\.json$/,
+        ),
         "utf8",
       );
       expect(stdoutWrite).toHaveBeenCalledWith(
@@ -338,28 +360,31 @@ describe("measure-agent-token-surface", () => {
   it.each([
     ["version", permissiveBaseline({ version: 2 })],
     ["metric", permissiveBaseline({ metric: "tokens" })],
-  ])("rejects a checked baseline with an unsupported %s", async (_field, baselineText) => {
-    const originalArgv = process.argv;
-    process.argv = [
-      "node",
-      SCRIPT,
-      "--check",
-      "--baseline",
-      "/tmp/token-surface.json",
-    ];
-    configureSuccessfulMeasurement();
-    vi.doMock("node:fs", () => ({
-      readFileSync: vi.fn(() => baselineText),
-      writeFileSync: vi.fn(),
-    }));
-    try {
-      await expect(harness.importModule(SCRIPT)).rejects.toThrow(
-        "Unsupported agent token-surface baseline",
-      );
-    } finally {
-      process.argv = originalArgv;
-    }
-  });
+  ])(
+    "rejects a checked baseline with an unsupported %s",
+    async (_field, baselineText) => {
+      const originalArgv = process.argv;
+      process.argv = [
+        "node",
+        SCRIPT,
+        "--check",
+        "--baseline",
+        "/tmp/token-surface.json",
+      ];
+      configureSuccessfulMeasurement();
+      vi.doMock("node:fs", () => ({
+        readFileSync: vi.fn(() => baselineText),
+        writeFileSync: vi.fn(),
+      }));
+      try {
+        await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+          "Unsupported agent token-surface baseline",
+        );
+      } finally {
+        process.argv = originalArgv;
+      }
+    },
+  );
 
   it("rejects a checked baseline with token-surface regressions", async () => {
     const originalArgv = process.argv;
@@ -418,7 +443,9 @@ describe("measure-agent-token-surface", () => {
     const { spawn } = createMcpChild(() => undefined);
     mockChildProcess(execFileSync, spawn);
 
-    await expect(harness.importModule(SCRIPT)).rejects.toThrow(/pm ls --help failed: spawn pm ENOENT/);
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+      /pm ls --help failed: spawn pm ENOENT/,
+    );
   });
 
   it("rejects when the MCP server process errors", async () => {
@@ -429,7 +456,9 @@ describe("measure-agent-token-surface", () => {
     });
     mockChildProcess(execFileSync, spawn);
 
-    await expect(harness.importModule(SCRIPT)).rejects.toThrow(/mcp spawn boom/);
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(
+      /mcp spawn boom/,
+    );
   });
 
   it("times out when the MCP server never answers tools/list", async () => {
@@ -450,7 +479,9 @@ describe("measure-agent-token-surface", () => {
       vi.advanceTimersByTime(30_001);
       const error = await moduleError;
       expect(error).toBeInstanceOf(Error);
-      expect((error as Error).message).toMatch(/MCP tools\/list timed out after 30s/);
+      expect((error as Error).message).toMatch(
+        /MCP tools\/list timed out after 30s/,
+      );
       expect(child.kill).toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
