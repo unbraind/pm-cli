@@ -23,6 +23,7 @@ import {
   runMergeDriver,
   runMergeInstall,
   runMergeReconcile,
+  runMergeReceiptReport,
 } from "./commands/merge.js";
 import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
@@ -1262,6 +1263,21 @@ async function runMergeAction(
     case "reconcile":
       await runMergeReconcileSubcommand(artifact, options, globalOptions);
       break;
+    case "report": {
+      if (artifact !== undefined) {
+        throw new PmCliError(
+          "merge report takes no positional arguments.",
+          EXIT_CODE.USAGE,
+        );
+      }
+      printResult(
+        await runMergeReceiptReport({
+          includeReconciled: options.includeReconciled === true,
+        }),
+        globalOptions,
+      );
+      break;
+    }
     case "driver":
       await runMergeDriverSubcommand(
         artifact,
@@ -1274,7 +1290,7 @@ async function runMergeAction(
       break;
     default:
       throw new PmCliError(
-        `Unknown merge subcommand "${subcommand}". Supported subcommands: install, reconcile, driver.`,
+        `Unknown merge subcommand "${subcommand}". Supported subcommands: install, reconcile, report, driver.`,
         EXIT_CODE.USAGE,
       );
   }
@@ -3113,7 +3129,10 @@ export function registerMutationCommands(
 
   program
     .command("merge")
-    .argument("<subcommand>", "Merge subcommand: install, reconcile, driver")
+    .argument(
+      "<subcommand>",
+      "Merge subcommand: install, reconcile, report, driver",
+    )
     .argument(
       "[artifact]",
       `driver only: artifact class to merge (${MERGE_DRIVER_ARTIFACT_VALUES.join(", ")})`,
@@ -3131,6 +3150,10 @@ export function registerMutationCommands(
       "reconcile only: permit the underlying audited history ownership override",
     )
     .option(
+      "--include-reconciled",
+      "report only: include clone-local receipts already recorded in history",
+    )
+    .option(
       "--output <path>",
       "driver only: write the merged content to this path instead of the ours path",
     )
@@ -3143,7 +3166,7 @@ export function registerMutationCommands(
       "driver only: side that wins unresolvable conflicts (ours|theirs; default ours)",
     )
     .description(
-      "Install merge drivers, reconcile post-merge history, or run a field-aware driver.",
+      "Install merge drivers, reconcile or report post-merge history, or run a field-aware driver.",
     )
     .action(runMergeAction);
 

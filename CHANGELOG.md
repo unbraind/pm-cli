@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-754: the merge driver's field-level conflict report is transient stdout, so the value it discarded leaves no durable record anywhere ([pm-rh98vo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rh98vo.toon))
+- Merge fence fails open: an unresolvable pm driver leaves unmarked UU files whose naive resolution silently discards the other branch's fields and history ([pm-c0wthb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c0wthb.toon))
 - Merged-main Windows init package acceptance exceeds generic Vitest timeout ([pm-0vkmqs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0vkmqs.toon))
 - GH-739: expose duplicate-cluster discovery as a first-class CLI and SDK workflow ([pm-n13lzc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n13lzc.toon))
 - PmClient activation queue serializes unrelated workspaces and extension-free actions ([pm-zpoyg9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpoyg9.toon))
@@ -28,6 +30,10 @@
 
 ### Other
 
+- The merge-safety gate verifies one history stream of 2,058 and never checks drift, so a clean merge that provably corrupts stream anchoring passes CI green ([pm-pdr8t1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pdr8t1.toon))
+- Branch merge is an unrecorded mutation: the field-aware merge produces an item state that no history entry ever produced, so the merged state is unaddressable by restore and point-in-time reads ([pm-9j2r3b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9j2r3b.toon))
+- Continuous multi-branch merge conformance: randomized N-branch divergence and merge property suite with a zero-conflict acceptance bar ([pm-76dnfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-76dnfg.toon))
+- 2026-07-26 ecosystem review: all-status walk, graph depth enrichment, agent-ergonomics and release-pipeline verification ([pm-v4iypw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-v4iypw.toon))
 - Historical release attribution backfill: stamp every terminal item with the release tag that contains its close event ([pm-3j6it6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3j6it6.toon))
 - Terminal relationship backfill, evidence-derived tranche: make every closed and canceled item reachable by typed graph traversal ([pm-qudvto](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qudvto.toon))
 - 2026-07-26 agent-context readiness audit: full CLI, SDK, and ecosystem review and optimization plan ([pm-t9e3bc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-t9e3bc.toon))
@@ -562,9 +568,9 @@
 
 ### Fixed
 
+- Relative lancedb vector-store path resolves against process cwd, creating nested .agents/pm/.agents/pm stores ([pm-og1v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-og1v.toon))
 - Annotation --add silently stores flag-like tokens as content: pm notes <id\> --add --stdin records the literal note "--stdin" ([pm-vcu7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vcu7.toon))
 - pm plan create silently ignores the root --id-only flag (prints full plan envelope) ([pm-oz0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oz0k.toon))
-- Relative lancedb vector-store path resolves against process cwd, creating nested .agents/pm/.agents/pm stores ([pm-og1v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-og1v.toon))
 - GH-427: Windows Node 24 nightly fails — POSIX-only error-code assertions (EACCES/EISDIR) in restore-command and history-rewrite specs ([pm-lt6n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lt6n.toon))
 - pm extension --install pm-<alias\> / @unbrained/pm-<alias\> fails with 'Local extension source does not exist' instead of suggesting the bundled catalog alias ([pm-jqd2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqd2.toon))
 - GH-455: pm health auto-selects an uninstalled Ollama embedding model then fails vector refresh ([pm-aems](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aems.toon))
@@ -640,11 +646,11 @@
 ### Other
 
 - Perf: pm context / pm next hot path ~700ms on an ~850-item tracker ([pm-z1pv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z1pv.toon))
+- 2026-07-02 full ecosystem audit & optimization pass (CLI+SDK+packages+docs+CI) ([pm-fpod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fpod.toon))
 - Lane E: Docs audit (progressive disclosure, minimal README, link graph, duplicated docs/skills) ([pm-p99b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-p99b.toon))
 - Lane F: CI/CD best-practice + secret/PII leak scan incl. pm history files ([pm-mo2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mo2v.toon))
 - Lane A: E2E ecosystem smoke in temp workspace (pack+install CLI, all first-party packages, full command surface, agent UX/token-efficiency) ([pm-kes3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kes3.toon))
 - Lane C: Code quality audit (complexity, dead code, cross-file duplication, long files, type safety, dependencies) ([pm-hfli](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hfli.toon))
-- 2026-07-02 full ecosystem audit & optimization pass (CLI+SDK+packages+docs+CI) ([pm-fpod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fpod.toon))
 - Zero the jscpd clone baseline: dedupe registration-helpers/flag-contracts source clones and 21 test-spec clones ([pm-chxp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chxp.toon))
 - CodeFactor residual complexity and duplication cleanup for 27-issue main snapshot ([pm-bssk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bssk.toon))
 - Lane B: SDK best-practice + package-authoring DX review (define/compose/harness/preflight loop, scaffold matrix) ([pm-6vy7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6vy7.toon))
@@ -854,8 +860,8 @@
 
 ### Other
 
-- SDK testing helper for registerFlags registrations ([pm-oveq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-oveq.toon))
 - Code quality & perf audit 2026-06-12 ([pm-nimu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-nimu.toon))
+- SDK testing helper for registerFlags registrations ([pm-oveq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-oveq.toon))
 
 ## 2026.6.20 - 2026-06-20
 
@@ -903,13 +909,13 @@
 
 ### Other
 
+- Export hygiene: 1 dead export + ~57 exported-but-internal-only symbols ([pm-vn9l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vn9l.toon))
 - Unknown-command did-you-mean misses executable aliases: 'pm shwo' gets no suggestion (show/view/comment not in candidate set) ([pm-i35t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-i35t.toon))
 - Sentry tracesSampleRate is hardcoded at 0.2 — expose as configurable knob or document intent ([pm-gg8e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gg8e.toon))
 - Document search eval golden-query harness usage in TESTING.md ([pm-eg9k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eg9k.toon))
 - CLAUDE_CODE_PLUGIN.md drift: architecture tree shows 9/14 commands + 1/4 agents; compat table says plugin 1.0.0 (actual 1.4.0) ([pm-cxi9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cxi9.toon))
 - Docs index missing EXTENSION_AUTHOR_CONTRACTS + MIGRATION_CLI_SIMPLIFICATION links; migration note predates --pm-path ([pm-c97q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-c97q.toon))
 - pm todos import: positional source arg silently ignored + folder-not-found error omits --folder flag (beads parity) ([pm-90hp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-90hp.toon))
-- Export hygiene: 1 dead export + ~57 exported-but-internal-only symbols ([pm-vn9l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vn9l.toon))
 
 ## 2026.6.19 - 2026-06-19
 
@@ -937,9 +943,9 @@
 
 ### Fixed
 
+- pm templates: unknown subcommand + flags silently fall back to 'list' (exit 0) instead of erroring ([pm-r2kd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r2kd.toon))
 - linked-test-adapters package install loses ESM module type ([pm-v8fy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v8fy.toon))
 - GH-215: enforce timestamps in history entries ([pm-u42x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u42x.toon))
-- pm templates: unknown subcommand + flags silently fall back to 'list' (exit 0) instead of erroring ([pm-r2kd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r2kd.toon))
 - GH-281: exact-ID search match is rank-diluted in hybrid/semantic mode (keyword score normalized + capped by keyword weight) ([pm-oqgf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oqgf.toon))
 - Dynamic package commands should reject excess args and unknown parent tokens ([pm-nt1y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nt1y.toon))
 - GH-206: test-all silent run process-liveness regression ([pm-mcxr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcxr.toon))
@@ -953,11 +959,11 @@
 
 ### Other
 
+- Dogfood audit 2026-06-12: ecosystem verification (CLI+SDK+packages) ([pm-krgd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-krgd.toon))
 - GH \#268-\#270 agent lookup and context output polish ([pm-x7g1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x7g1.toon))
 - SDK.md PM_PACKAGE_RESOURCE_KINDS drift: assets/prompts kinds missing ([pm-u8y9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-u8y9.toon))
 - GH-276: metadata check skip terminal items for planning fields ([pm-pktw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pktw.toon))
 - Repo-wide docstring coverage gate for source files ([pm-p4mw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p4mw.toon))
-- Dogfood audit 2026-06-12: ecosystem verification (CLI+SDK+packages) ([pm-krgd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-krgd.toon))
 - GH-277: files --remove path-only input clarity ([pm-k8ld](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k8ld.toon))
 - GH \#267/\#271/\#272 follow-up: lifecycle automation, logical dependency validation, read format parity ([pm-8uhf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-8uhf.toon))
 - PR \#274 second review follow-up: prefix, format, and owner scoring ([pm-89ur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89ur.toon))
@@ -987,13 +993,13 @@
 
 ### Added
 
+- pm search keyword mode: --match-mode (and/or/exact) + default result limit (GH-181 remainder) ([pm-i1z6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i1z6.toon))
 - Metadata governance & coverage observability (missing-field filters, stats breakdowns, validate full-id lists, aggregate explicit labels) ([pm-yq7m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yq7m.toon))
 - GH-235: detect duplicate logical issue code prefixes ([pm-rpag](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rpag.toon))
 - GH-236: governance metadata missing-field filters ([pm-mfl1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-mfl1.toon))
 - Module-mirrored test reorganization: retire lane/wave naming, add shared script harness ([pm-m449](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m449.toon))
 - Search corpus: include type, priority, parent, assignee fields in keyword and semantic corpus ([pm-jyie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-jyie.toon))
 - pm context --depth full: comprehensive snapshot (all sections, no per-section cap) (GH-156) ([pm-j0vc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-j0vc.toon))
-- pm search keyword mode: --match-mode (and/or/exact) + default result limit (GH-181 remainder) ([pm-i1z6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i1z6.toon))
 - pm close: short aliases -m/-r/-d for --message/--reason/--duplicate-of (GH-226) ([pm-i1mu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i1mu.toon))
 - GH-242: field-existence filters for list/search ([pm-hntj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hntj.toon))
 - GH-244: surface provider/vector-store resolution source in pm health ([pm-gnu2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gnu2.toon))
@@ -1021,6 +1027,7 @@
 
 ### Fixed
 
+- Extension activation failure is invisible outside pm health --json: extension list shows ok, no stderr hint, commands partially registered ([pm-yffj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yffj.toon))
 - GH-256: update-many --dry-run skips field validation (priority/type/status/deadline) ([pm-v4tb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v4tb.toon))
 - GH-253: invalid --type create error hardcodes .agents/pm path, ignoring active --pm-path ([pm-nd08](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nd08.toon))
 - GH-205: surface telemetry flush/probe + OTEL export diagnostics in pm health ([pm-hx5a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hx5a.toon))
@@ -1031,7 +1038,6 @@
 - GH-248: fix schema add-type silent slug-collision overwrite + malformed-name acceptance ([pm-3l0f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3l0f.toon))
 - GH-209 follow-up: OTEL span export keeps the CLI alive ~10s (and can exit 13) when the traces endpoint is unreachable ([pm-25se](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-25se.toon))
 - GH-250: pm close checks item existence before the close-reason gate ([pm-1jtl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1jtl.toon))
-- Extension activation failure is invisible outside pm health --json: extension list shows ok, no stderr hint, commands partially registered ([pm-yffj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yffj.toon))
 
 ### Security
 
@@ -1039,16 +1045,19 @@
 
 ### Other
 
+- GitHub issue triage 2026-06-12 ([pm-tk1z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tk1z.toon))
+- pm close: when require_close_reason is on, accept --resolution text as the close reason instead of hard-blocking ([pm-7x8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7x8d.toon))
+- Content-field & governance introspection (GH-241/242/236) ([pm-php4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-php4.toon))
+- Source-correctness audit of all-source-100%-coverage branch src/ edits ([pm-e2jt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-e2jt.toon))
+- Test-suite dedup & best-practice audit (post module-mirror reorg) ([pm-2nqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2nqx.toon))
 - pm aggregate: explicit (unassigned)/(none) labels for blank group keys in all output modes (GH-225) ([pm-zcx9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zcx9.toon))
 - Literal 100% all-source test coverage & module-mirrored test reorganization ([pm-xau3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-xau3.toon))
 - ADR: literal all-src coverage supersedes curated include/exclude allowlist ([pm-w13j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-w13j.toon))
 - tests/unit is at exactly 120/120 spec files: zero headroom before Gates(static) fails; consolidation candidates identified ([pm-vks9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vks9.toon))
 - Coverage to 100%: src/cli infrastructure (registration, bootstrap, help, main) ([pm-uvxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-uvxc.toon))
 - Coverage to 100%: src/cli command handlers (group A — mutation, history, storage, schema) ([pm-ud1x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ud1x.toon))
-- GitHub issue triage 2026-06-12 ([pm-tk1z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tk1z.toon))
 - Document and test telemetry env-var surface: PM_TELEMETRY_DISABLED, PM_NO_TELEMETRY, PM_TELEMETRY_SOURCE_CONTEXT, PM_TELEMETRY_OTEL_DISABLED, PM_TELEMETRY_INLINE_FLUSH ([pm-r7md](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r7md.toon))
 - Slim guided-error boilerplate in agent contexts; lead unknown-command Examples with the did-you-mean candidate ([pm-q0kr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q0kr.toon))
-- Content-field & governance introspection (GH-241/242/236) ([pm-php4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-php4.toon))
 - pm validate: --all-affected-ids flag + never truncate ID lists in JSON mode (GH-224) ([pm-o0d2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o0d2.toon))
 - PR \#240 review: applied vs declined Gemini findings (with rationale) ([pm-lg65](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-lg65.toon))
 - ADR: test organization convention — module-mirrored spec files, no lane/wave naming ([pm-kjmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-kjmx.toon))
@@ -1057,13 +1066,10 @@
 - pm list: --filter-ac-missing/--filter-estimates-missing/--filter-resolution-missing/--filter-metadata-missing (GH-228) ([pm-fryg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fryg.toon))
 - Coverage to 100%: build, release, and smoke scripts ([pm-f2ne](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-f2ne.toon))
 - Close c8-exposed coverage gaps in src/cli/commands/create.ts to 100% ([pm-eifq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eifq.toon))
-- Source-correctness audit of all-source-100%-coverage branch src/ edits ([pm-e2jt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-e2jt.toon))
 - Close c8-exposed coverage gaps in src/cli/commands/contracts.ts and restore.ts to 100% ([pm-dmuq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dmuq.toon))
 - Close c8-exposed coverage gaps in src/cli/commands/history-redact.ts and normalize.ts to 100% ([pm-byl1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-byl1.toon))
 - Coverage to 100%: src/cli command handlers (group B — query, search, calendar, test, init, extension) ([pm-7v9s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7v9s.toon))
 - Coverage to 100%: packages, plugins, and docs examples ([pm-6tch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6tch.toon))
-- Test-suite dedup & best-practice audit (post module-mirror reorg) ([pm-2nqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2nqx.toon))
-- pm close: when require_close_reason is on, accept --resolution text as the close reason instead of hard-blocking ([pm-7x8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7x8d.toon))
 
 ## 2026.6.13 - 2026-06-13
 
@@ -1074,10 +1080,10 @@
 ### Fixed
 
 - pm-mcp bin is dead on npm installs: main-module guard fails under symlinked argv\[1\] (silent exit 0, no JSON-RPC output) ([pm-qtbc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qtbc.toon))
-- Claude Code plugin install spec drift: README says pm-cli@pm but plugin name is pm-claude ([pm-m4bx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4bx.toon))
 - pm validate --check-files misclassifies existing directories as deleted (GH-203, prune/auto-fix data-loss path) ([pm-b1ni](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b1ni.toon))
-- GH-209: successful pm mutations can exit 13 from unsettled top-level await ([pm-1byt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1byt.toon))
 - Compact strict-create recovery duplicates missing fields under two keys ([pm-3rjo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3rjo.toon))
+- Claude Code plugin install spec drift: README says pm-cli@pm but plugin name is pm-claude ([pm-m4bx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4bx.toon))
+- GH-209: successful pm mutations can exit 13 from unsettled top-level await ([pm-1byt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1byt.toon))
 
 ### Other
 
@@ -1098,13 +1104,13 @@
 
 ### Fixed
 
+- Telemetry first-run prompt CI guard is inverted: CI=true does not skip, only CI=false/0/no/off does ([pm-0hx2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0hx2.toon))
+- Lifecycle subcommand flags duplicated on the parent extension/package command are silently dropped (commander hoists them) ([pm-df9k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-df9k.toon))
 - MCP pm_files discover/apply/discoveryNote params are declared but ignored by the files action handler ([pm-wcaa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wcaa.toon))
 - Session 2026-06-11: validation auto-fix & self-repair PR (validate --auto-fix/--prune-missing/grouped metadata, history-repair --all, health locks, files/docs --note, plan --step accumulate, consent CI guard, completion drift) ([pm-dhrp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-dhrp.toon))
 - pm validate lifecycle: auto-fix for active items with closed/terminal parents (GH-168) ([pm-8jss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8jss.toon))
 - pm plan create: repeated --step silently keeps only the last value instead of accumulating steps ([pm-6mit](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6mit.toon))
 - PR \#200 review: batch validate prune-missing auto-fix removals ([pm-60p0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-60p0.toon))
-- Telemetry first-run prompt CI guard is inverted: CI=true does not skip, only CI=false/0/no/off does ([pm-0hx2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0hx2.toon))
-- Lifecycle subcommand flags duplicated on the parent extension/package command are silently dropped (commander hoists them) ([pm-df9k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-df9k.toon))
 
 ### Other
 
@@ -1223,8 +1229,8 @@
 
 ### Other
 
-- 2026-06-07 agent UX package ecosystem and path guardrail hardening ([pm-yo3f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yo3f.toon))
 - 2026-06-07 pm CLI ecosystem audit lanes ([pm-xm98](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-xm98.toon))
+- 2026-06-07 agent UX package ecosystem and path guardrail hardening ([pm-yo3f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yo3f.toon))
 - Warn in pm health when server-advertised max telemetry schema version exceeds client version ([pm-dfhp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dfhp.toon))
 - ADR: Agent self-repair via a centralized remediation registry surfaced through pm health --json and pm validate --fix-hints ([pm-cc04](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-cc04.toon))
 - Ecosystem-wide PM living-context audit & forward-backlog rebuild (2026-06-07) ([pm-8u2a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-8u2a.toon))
@@ -1296,6 +1302,7 @@
 
 ### Other
 
+- MCP & contract platform maturity PR (pm-5k4v): narrow tools pm_notes/pm_learnings/pm_deps + schema-base hardening + action-list drift-gen + schema-version constant + handshake tests ([pm-at83](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-at83.toon))
 - Document capture_level semantics for extension authors ([pm-te9x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-te9x.toon))
 - Telemetry schema versioning/negotiation preparation ([pm-t4wb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-t4wb.toon))
 - History & storage observability: pm gc locks scope, pm history --diff before/after, pm stats --storage ([pm-l709](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-l709.toon))
@@ -1303,7 +1310,6 @@
 - Drift-lock the .agents/plugins/marketplace.json (pm-local) manifest in the plugin contract test ([pm-g3xl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-g3xl.toon))
 - Clean up stale closed tracker-item references in docs/ header lines ([pm-e376](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-e376.toon))
 - Contract schema golden-file snapshot gate in CI ([pm-d6kq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-d6kq.toon))
-- MCP & contract platform maturity PR (pm-5k4v): narrow tools pm_notes/pm_learnings/pm_deps + schema-base hardening + action-list drift-gen + schema-version constant + handshake tests ([pm-at83](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-at83.toon))
 - Evaluate commander 15.0.0 major upgrade (current 14.0.3) ([pm-7j8t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7j8t.toon))
 - Document changelog classifier keyword routing for contributors ([pm-5vsv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5vsv.toon))
 
@@ -1331,8 +1337,8 @@
 
 ### Fixed
 
-- Sentry reliability gate blocks release on dogfood-generated expected CLI errors (brittle per-count + missing standup-export patterns) ([pm-yohx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yohx.toon))
 - Auto Release 2026-06-01 tagged v2026.6.1 but npm publish never completed (latest npm = 2026.5.31) ([pm-kcba](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kcba.toon))
+- Sentry reliability gate blocks release on dogfood-generated expected CLI errors (brittle per-count + missing standup-export patterns) ([pm-yohx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yohx.toon))
 - governance.create_default_type is not settable via pm config set ([pm-jpwo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jpwo.toon))
 - Fix GitHub \#98 dependency --dep type parsing ([pm-dlfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dlfq.toon))
 - Warn on global service and renderer override footguns ([pm-5teq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5teq.toon))
@@ -1388,6 +1394,9 @@
 
 ### Other
 
+- Runtime-resolved shell completion for custom statuses/types via helper command ([pm-q4zx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q4zx.toon))
+- Lazy extension activation: defer import+activate until a command needs contributions ([pm-5wb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5wb6.toon))
+- Ecosystem-wide PM living-context map: audit, ADRs, roadmap, and forward backlog (2026-05-31) ([pm-w7f2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-w7f2.toon))
 - Verify living-map: ecosystem coverage gaps ([pm-xmhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmhn.toon))
 - ADR: Stable CLI exit-code contract (0 success, 1 generic, 2 usage, 3 not_found, 4 conflict, 5 dependency_failed) ([pm-x1z3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-x1z3.toon))
 - ADR: Three-tier metadata cache (light scalars / bodies / collections) keyed by file stat ([pm-vnie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-vnie.toon))
@@ -1398,7 +1407,6 @@
 - ADR: First-party packages ship hand-maintained .js alongside .ts (no per-package build) ([pm-tsio](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-tsio.toon))
 - ADR: TOON as canonical item storage; JSON-Markdown is legacy read-only ([pm-rvbt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-rvbt.toon))
 - Audit domain: MCP server, SDK & contracts ([pm-rpc3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rpc3.toon))
-- Runtime-resolved shell completion for custom statuses/types via helper command ([pm-q4zx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q4zx.toon))
 - ADR: Hand-rolled dependency-free MCP server (JSON-RPC over stdio) ([pm-pif3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-pif3.toon))
 - ADR: Product vision & guiding principle — project management = context management ([pm-oxq5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-oxq5.toon))
 - ADR: Governance presets (minimal/default/strict/custom) as the primary config surface ([pm-ouvu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-ouvu.toon))
@@ -1426,13 +1434,11 @@
 - ADR: Plugin hybrid model: pm is the git-native store; the editor/agent panel is a live session view ([pm-7c4t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-7c4t.toon))
 - ADR: CHANGELOG is auto-generated from closed items by pm-changelog; never hand-edited ([pm-6san](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-6san.toon))
 - ADR: Hybrid search = normalized linear interpolation with a configurable weight ([pm-66ig](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-66ig.toon))
-- Lazy extension activation: defer import+activate until a command needs contributions ([pm-5wb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5wb6.toon))
 - Audit domain: Config, schema, custom types & init ([pm-4uxz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4uxz.toon))
 - Refresh changelog after PR closeout merge ([pm-2y28](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2y28.toon))
 - ADR: Single-source contracts: cli-contracts.ts is the authoritative CLI+MCP+contracts surface ([pm-2evy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-2evy.toon))
 - ADR: LanceDB pure-JSON snapshot vector store (no native bindings) ([pm-164t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-164t.toon))
 - ADR: Collision-checked random short IDs (configurable prefix + base36 token) ([pm-12j1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-12j1.toon))
-- Ecosystem-wide PM living-context map: audit, ADRs, roadmap, and forward backlog (2026-05-31) ([pm-w7f2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-w7f2.toon))
 
 ## 2026.5.31 - 2026-05-31
 
@@ -1446,25 +1452,25 @@
 
 ### Fixed
 
-- Fix Windows npm command resolution for extension package installs ([pm-arax](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-arax.toon))
 - Fix slow/oversized local vector snapshot and mislabeled search fallback ([pm-f58e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f58e.toon))
 - Fix per-type default_status config was silently ignored at create ([pm-y0gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y0gl.toon))
 - Calendar date math is UTC-only: ignores event.timezone and all-day semantics ([pm-0l88](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0l88.toon))
 - pm health ok:false from legacy unused 'index' required subdir ([pm-yf31](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yf31.toon))
+- Fix Windows npm command resolution for extension package installs ([pm-arax](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-arax.toon))
 
 ### Other
 
-- 2026-05-30 package SDK dogfood audit and startup telemetry performance pass ([pm-qmx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qmx3.toon))
 - Defer eager per-command startup work: completion flag-strings, MCP tool schema build, telemetry flush spawn ([pm-3mal](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3mal.toon))
 - Make MCP status enum + shell completion runtime-resolved from schema (not hardcoded) ([pm-jtdc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jtdc.toon))
 - Calendar view/format did-you-mean + dependency and type-safety cleanup ([pm-5oxq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5oxq.toon))
+- 2026-05-30 package SDK dogfood audit and startup telemetry performance pass ([pm-qmx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qmx3.toon))
 
 ## 2026.5.30 - 2026-05-30
 
 ### Added
 
-- Reduce ESM module-resolution startup overhead (~85ms) via core bundling ([pm-ss1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ss1d.toon))
 - Semantic index not auto-refreshed on mutation: create then pm search --semantic misses the new item (stale index) ([pm-bpaj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bpaj.toon))
+- Reduce ESM module-resolution startup overhead (~85ms) via core bundling ([pm-ss1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ss1d.toon))
 
 ### Fixed
 
@@ -1507,15 +1513,15 @@
 
 ### Added
 
-- Add pm config set positional value form and shorten the invalid config-key error ([pm-mf4j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mf4j.toon))
 - Bundle CLI with esbuild for sub-200ms startup ([pm-gt82](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gt82.toon))
+- Add pm config set positional value form and shorten the invalid config-key error ([pm-mf4j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mf4j.toon))
 - Add --no-changed-fields flag and compact MCP mutation output to drop the redundant changed_fields array ([pm-ch59](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ch59.toon))
 - Cut list/search latency: skip 4.9MB cache rewrite + drop bodies + onRead short-circuit ([pm-4r5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4r5t.toon))
 
 ### Changed
 
-- Deduplicate item/metadata to record widening casts behind a shared toItemRecord helper ([pm-p5if](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5if.toon))
 - Split large command files exceeding 2000 LOC ([pm-mbdu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mbdu.toon))
+- Deduplicate item/metadata to record widening casts behind a shared toItemRecord helper ([pm-p5if](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5if.toon))
 
 ### Fixed
 
@@ -1537,9 +1543,9 @@
 
 ### Other
 
+- Deduplicate beads/todos index.ts package-runtime loader (install-safe mechanism needed) ([pm-wwa7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wwa7.toon))
 - Deduplicate Beads and Todos package adapter runtimes ([pm-ybfj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ybfj.toon))
 - Deduplicate bundled package runtime option parsing helpers ([pm-y5u0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-y5u0.toon))
-- Deduplicate beads/todos index.ts package-runtime loader (install-safe mechanism needed) ([pm-wwa7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wwa7.toon))
 - Code dedup: extract shared CLI parser blocks and consolidate item-record casts ([pm-why9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-why9.toon))
 - Single-source extension capability and policy-surface contract lists ([pm-w98k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-w98k.toon))
 - Harden read-then-lock window uniformly across history-redact/restore/history-repair ([pm-uer0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-uer0.toon))
@@ -1572,8 +1578,8 @@
 
 ### Added
 
-- Default-safety policy for destructive pm commands (gc keeps delete-by-default; add pm delete --dry-run) ([pm-tobi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-tobi.toon))
 - pm schema add-type CLI + invalid-type error hint (pm-e1va) ([pm-fy8o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-fy8o.toon))
+- Default-safety policy for destructive pm commands (gc keeps delete-by-default; add pm delete --dry-run) ([pm-tobi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-tobi.toon))
 - Config-driven custom item types: wire schema/types.json into runtime schema ([pm-e1va](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e1va.toon))
 
 ### Fixed
@@ -1587,8 +1593,8 @@
 
 ### Removed
 
-- Deduplicate item-store mutation and delete lifecycle setup ([pm-za3c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-za3c.toon))
 - CLI ergonomics polish: concise init, help alias collapse, named priorities, package install hints, starter templates, delete dry-run ([pm-fuat](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-fuat.toon))
+- Deduplicate item-store mutation and delete lifecycle setup ([pm-za3c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-za3c.toon))
 
 ### Security
 
@@ -1597,6 +1603,7 @@
 
 ### Other
 
+- history-repair command + legacy drift cleanup + replay dedup ([pm-c3dx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-c3dx.toon))
 - Deduplicate templates package runtime and legacy command implementation ([pm-ypqp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ypqp.toon))
 - Deduplicate mutation author fallback resolution across commands ([pm-xh0y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xh0y.toon))
 - Deduplicate item-type definition normalization across settings and registry ([pm-v798](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-v798.toon))
@@ -1609,7 +1616,6 @@
 - Dogfood 2026-05-21 follow-ups: test --add key validation, semantic-fallback labeling, close active-children info, stale blocker on close ([pm-fu5d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fu5d.toon))
 - Extract shared test item factories for command specs ([pm-eltf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eltf.toon))
 - Deduplicate lazy dynamic-import cache boilerplate in CLI registration ([pm-c98b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-c98b.toon))
-- history-repair command + legacy drift cleanup + replay dedup ([pm-c3dx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-c3dx.toon))
 - Extract shared JSON error-envelope test assertions ([pm-alqo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-alqo.toon))
 - Deduplicate comments, notes, and learnings command stacks ([pm-9y8q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-9y8q.toon))
 - Deduplicate front-matter key-order contract literals in tests ([pm-8fx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8fx3.toon))
@@ -1655,28 +1661,37 @@
 
 ### Added
 
-- Add pm plan list subcommand or did-you-mean to pm list --type Plan ([pm-zpa5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zpa5.toon))
-- Add agent-optimized pm plan command with linked dependencies ([pm-v7dj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v7dj.toon))
-- Drastically improve GitHub runner time and resource usage (free-tier only) ([pm-tzwy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tzwy.toon))
-- Add built-in Plan item type and storage/search integration ([pm-jauk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jauk.toon))
-- Add --with-packages flag to pm init for one-shot package install ([pm-hosd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hosd.toon))
-- Add pm init checks for AGENTS/CLAUDE pm workflow guidance ([pm-7t04](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7t04.toon))
 - pm claim --if-available (skip when held) — reduce 533 ownership_conflict events ([pm-d4bo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-d4bo.toon))
 - pm list should default to --brief (full output via --full) to halve token cost ([pm-b7sd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-b7sd.toon))
 - Auto-route pm update --status closed --close-reason to pm close (telemetry: 248 hits/30d) ([pm-12ib](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-12ib.toon))
 - pm update with no fields should noop-succeed, not fail (telemetry: 128 hits/30d) ([pm-7cup](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7cup.toon))
 - pm init footer + bundle calendar so cal/templates are discoverable ([pm-8wwl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8wwl.toon))
 - pm get/show: did-you-mean suggestions for unknown IDs (telemetry: 233 hits/30d) ([pm-99x5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-99x5.toon))
+- Add pm plan list subcommand or did-you-mean to pm list --type Plan ([pm-zpa5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zpa5.toon))
+- Add agent-optimized pm plan command with linked dependencies ([pm-v7dj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v7dj.toon))
+- Drastically improve GitHub runner time and resource usage (free-tier only) ([pm-tzwy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tzwy.toon))
+- Add built-in Plan item type and storage/search integration ([pm-jauk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jauk.toon))
+- Add --with-packages flag to pm init for one-shot package install ([pm-hosd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hosd.toon))
+- Add pm init checks for AGENTS/CLAUDE pm workflow guidance ([pm-7t04](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7t04.toon))
 
 ### Fixed
 
+- Sentry extension errors: cannot find module and activate failures ([pm-p7av](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p7av.toon))
+- Embedding timeout UX: improve ollama feedback for PM-CLI-A/9 ([pm-ibp7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ibp7.toon))
+- pm bare command silent exit 0 — no help shown ([pm-8rj2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8rj2.toon))
+- pm contracts default returns 286 KB / 9612 lines — token catastrophe for agents ([pm-p8j6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p8j6.toon))
+- auto-release.yml workflow_dispatch silently overrides explicit push=false to true ([pm-qa2h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qa2h.toon))
+- pm validate after fresh create is scary — downgrade default profile noise ([pm-tylj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tylj.toon))
+- pm install <invalid\> lacks did-you-mean for built-in aliases ([pm-uuee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uuee.toon))
+- CLI silently corrupts --tags '\["a","b"\]' JSON-array input (agent-unfriendly) ([pm-klqo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-klqo.toon))
+- pm install exits 0 on error (CRITICAL agent-blocker) ([pm-naiv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-naiv.toon))
+- MCP pm_context crashes on caller-supplied projection flags (compact/brief/fields/includeBody) ([pm-xy02](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xy02.toon))
 - Fix CSV status filter and multi-status support in pm list ([pm-ziv0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ziv0.toon))
 - Clean project linked-file validation hygiene ([pm-xz1p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xz1p.toon))
 - pm install writes absolute-home-path into tracked .managed-extensions.json ([pm-u83w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u83w.toon))
 - Perf: pm health takes 2.5s due to vectorization check ([pm-tibg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tibg.toon))
 - MCP pm_update --comment string crashes with 'values.map is not a function' ([pm-qeu1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qeu1.toon))
 - Fix TOON array-of-objects continuation lines double-indent ([pm-ps85](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ps85.toon))
-- Sentry extension errors: cannot find module and activate failures ([pm-p7av](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p7av.toon))
 - Default project scope for files/docs/tests and simplify scope UX ([pm-ntnf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ntnf.toon))
 - Telemetry queue tmp file orphan cleanup (83MB stale) ([pm-nhka](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nhka.toon))
 - CI: cache .agents/pm/search/lancedb + sentry release cache ([pm-n28v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n28v.toon))
@@ -1684,7 +1699,6 @@
 - Cache item body in metadata cache for fast keyword search ([pm-jw36](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jw36.toon))
 - Stop listing provided --flag as missing in error recovery bundle ([pm-ixi1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ixi1.toon))
 - CI: skip non-source jobs on docs-only changes ([pm-iv1u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-iv1u.toon))
-- Embedding timeout UX: improve ollama feedback for PM-CLI-A/9 ([pm-ibp7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ibp7.toon))
 - CI: combine pnpm test + pnpm test:coverage into single coverage run ([pm-hpjd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hpjd.toon))
 - pm test --add causes immediate history drift via null timeout_seconds ([pm-er4q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-er4q.toon))
 - Investigate validate/health telemetry classification (71-74% failure rate) ([pm-bzx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bzx3.toon))
@@ -1696,22 +1710,15 @@
 - CI: split quality+smoke gates into a parallel job, share dist via artifact ([pm-27yz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-27yz.toon))
 - CI: cache vitest/.cache + tsbuildinfo for incremental builds + faster tests ([pm-1pah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1pah.toon))
 - Add regression coverage for pm init agent guidance workflows ([pm-0nia](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0nia.toon))
-- pm bare command silent exit 0 — no help shown ([pm-8rj2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8rj2.toon))
-- pm contracts default returns 286 KB / 9612 lines — token catastrophe for agents ([pm-p8j6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p8j6.toon))
-- auto-release.yml workflow_dispatch silently overrides explicit push=false to true ([pm-qa2h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qa2h.toon))
-- pm validate after fresh create is scary — downgrade default profile noise ([pm-tylj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tylj.toon))
-- pm install <invalid\> lacks did-you-mean for built-in aliases ([pm-uuee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uuee.toon))
-- CLI silently corrupts --tags '\["a","b"\]' JSON-array input (agent-unfriendly) ([pm-klqo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-klqo.toon))
-- pm install exits 0 on error (CRITICAL agent-blocker) ([pm-naiv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-naiv.toon))
-- MCP pm_context crashes on caller-supplied projection flags (compact/brief/fields/includeBody) ([pm-xy02](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xy02.toon))
 
 ### Other
 
-- Implement pm plan command family for agent harness workflows ([pm-ze5g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ze5g.toon))
+- Smoke test after audit ([pm-xmsn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmsn.toon))
 - Dogfood + remediation session 13 (2026-05-17) ([pm-vmeo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-vmeo.toon))
+- 2026-05-03 latest PM CLI dogfood audit ([pm-jrjt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-jrjt.toon))
+- Implement pm plan command family for agent harness workflows ([pm-ze5g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ze5g.toon))
 - Accept positional title for pm plan create like pm create does ([pm-qbts](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qbts.toon))
 - Accept pm init --yes alias for --defaults ([pm-lwbr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lwbr.toon))
-- 2026-05-03 latest PM CLI dogfood audit ([pm-jrjt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-jrjt.toon))
 - Build idempotent AGENTS/CLAUDE pm guidance detector and writer ([pm-g2nd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g2nd.toon))
 - Release @unbrained/pm-cli after 2026.5.12 ([pm-dc5d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dc5d.toon))
 - Expose agent guidance init option in settings, contracts, help, and config ([pm-b8rf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-b8rf.toon))
@@ -1721,7 +1728,6 @@
 - Merge Dependabot PRs: dev+prod deps and pnpm/action-setup ([pm-2723](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2723.toon))
 - Opt CI JavaScript actions into Node 24 runtime ([pm-1lef](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-1lef.toon))
 - Document pm init agent guidance context workflow ([pm-1265](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1265.toon))
-- Smoke test after audit ([pm-xmsn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmsn.toon))
 
 ## 2026.5.14 - 2026-05-14
 
@@ -1833,6 +1839,8 @@
 
 ### Other
 
+- 2026-05-03 Full PM CLI Re-Audit (Live Cycle) ([pm-476d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-476d.toon))
+- 2026-05-02 Comprehensive PM CLI Audit (v2026.5.2) ([pm-5zkg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-5zkg.toon))
 - Telemetry + Sentry analysis and remediation ([pm-xwl6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xwl6.toon))
 - Calendar + agent output audit ([pm-wyvu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wyvu.toon))
 - Decision: Re-audit final verification and system health summary ([pm-tdo5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-tdo5.toon))
@@ -1846,11 +1854,9 @@
 - Search + Calendar + SDK deep validation ([pm-937o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-937o.toon))
 - main.ts exceeds 5000+ lines - assess decomposition into per-command registration modules ([pm-6c3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6c3h.toon))
 - Search/vector/auto-indexing deep audit (critical path) ([pm-4u2e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4u2e.toon))
-- 2026-05-03 Full PM CLI Re-Audit (Live Cycle) ([pm-476d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-476d.toon))
 - CI/CD + telemetry/Sentry client re-audit ([pm-44hv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-44hv.toon))
 - Live remote infra + Sentry SaaS analysis ([pm-2o82](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2o82.toon))
 - CI/CD hardening sweep - workflows + release scripts ([pm-0kd4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0kd4.toon))
-- 2026-05-02 Comprehensive PM CLI Audit (v2026.5.2) ([pm-5zkg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-5zkg.toon))
 
 ## 2026.5.2 - 2026-05-02
 
@@ -1876,6 +1882,8 @@
 ### Fixed
 
 - pm cal --include events\|scheduled expands recurring events without default cap ([pm-vg5h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vg5h.toon))
+- pm health ok:false for normal telemetry queue draining is non-actionable noise ([pm-gmnh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gmnh.toon))
+- Calendar recurring event line has redundant double-title (item title repeated in event title field) ([pm-b1pd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b1pd.toon))
 - Telemetry queue timeout: 21 events stuck with flush timeout ([pm-sgmb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sgmb.toon))
 - Telemetry: Fix queue bloat and move flush to background ([pm-sgko](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-sgko.toon))
 - SDK: bundled extensions use internal imports instead of @unbrained/pm-cli/sdk ([pm-qfuq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qfuq.toon))
@@ -1883,10 +1891,8 @@
 - Issue: Telemetry queue bloat from oversized result_summary payloads ([pm-ntr0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ntr0.toon))
 - Calendar --include scheduled alias missing (calendar summary uses 'scheduled' but filter requires 'events') ([pm-itb0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-itb0.toon))
 - Search: Fix cosine similarity with L2 normalization ([pm-h2pi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h2pi.toon))
-- pm health ok:false for normal telemetry queue draining is non-actionable noise ([pm-gmnh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gmnh.toon))
 - Project tracker validation hygiene warnings remain ([pm-e0b5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e0b5.toon))
 - pm templates bare command shows empty output (should list templates) ([pm-dc2y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dc2y.toon))
-- Calendar recurring event line has redundant double-title (item title repeated in event title field) ([pm-b1pd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b1pd.toon))
 - pm files --add bare path fails with misleading error (scope implied required) ([pm-8r2r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8r2r.toon))
 - Code duplication: toErrorMessage and toNonEmptyString across 5+ files ([pm-540l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-540l.toon))
 - Priority --priority error message missing 0..4 range and semantic labels ([pm-1h7w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1h7w.toon))
@@ -1897,20 +1903,23 @@
 
 ### Security
 
-- Pin release dependency ranges for Dependabot hygiene ([pm-q71q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q71q.toon))
 - 2026-05-02 Full PM CLI Audit: Build Fix, Security, Performance, Telemetry ([pm-nnhi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-nnhi.toon))
 - 2026-05-02 Full PM CLI Audit Phase 2: Dead Code Removal, Security Enhancement, Sentry Optimization ([pm-kkmo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-kkmo.toon))
-- Enhance check-secrets.mjs with private IP detection rule ([pm-daft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-daft.toon))
 - Documentation overhaul and public docs safety ([pm-3042](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-3042.toon))
+- Pin release dependency ranges for Dependabot hygiene ([pm-q71q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q71q.toon))
+- Enhance check-secrets.mjs with private IP detection rule ([pm-daft](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-daft.toon))
 - Chore: 2026-05-02 Phase 3 Audit - IP scrub, dogfood, analysis tooling ([pm-2326](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2326.toon))
 - Rewrite README and public documentation ([pm-1sb2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1sb2.toon))
 
 ### Other
 
+- Verify remote telemetry stack receives events and data flows to \[redacted_monitoring_ui\] ([pm-g8gj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g8gj.toon))
+- 2026-05-02 Comprehensive PM CLI Audit ([pm-rrjv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-rrjv.toon))
+- 2026-04-30 Full PM CLI Dogfood Audit ([pm-23me](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-23me.toon))
+- 2026-05-01 Full PM CLI Audit Implementation ([pm-twpc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-twpc.toon))
 - Lower Sentry tracesSampleRate from 1.0 to 0.2 for free plan quota ([pm-wvhs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wvhs.toon))
 - Chore: Prune stuck telemetry queue entries ([pm-wrbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wrbo.toon))
 - 2026-05-02 Full Audit: All Systems Verified ([pm-ss8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ss8d.toon))
-- 2026-05-02 Comprehensive PM CLI Audit ([pm-rrjv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-rrjv.toon))
 - Decision: Cap telemetry result_summary payload size ([pm-q9yt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-q9yt.toon))
 - Sentry CLI token needs broader scopes for issue analysis ([pm-q4jp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q4jp.toon))
 - Dead code: root-level facade re-export shims unused ([pm-nr8k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-nr8k.toon))
@@ -1920,9 +1929,6 @@
 - Release @unbrained/pm-cli 2026.5.2 ([pm-5jw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5jw8.toon))
 - Docs: Create telemetry stack runbook ([pm-2lbp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2lbp.toon))
 - 2026-05-01 Full PM CLI Dogfood Audit v2 ([pm-2eb3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-2eb3.toon))
-- 2026-04-30 Full PM CLI Dogfood Audit ([pm-23me](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-23me.toon))
-- Verify remote telemetry stack receives events and data flows to \[redacted_monitoring_ui\] ([pm-g8gj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g8gj.toon))
-- 2026-05-01 Full PM CLI Audit Implementation ([pm-twpc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-twpc.toon))
 
 ## 2026.5.1-2 - 2026-05-01
 
@@ -1938,6 +1944,11 @@
 
 ### Added
 
+- Add scoped audit override mode for pm update metadata mutations ([pm-umhv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-umhv.toon))
+- Add opt-in runtime probe mode for extension manage parity ([pm-p0ij](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p0ij.toon))
+- List command large-output ergonomics ([pm-a4z3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-a4z3.toon))
+- Harden entry and add input resilience ([pm-nhgt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-nhgt.toon))
+- Governance sweep 2026-04-03 net-new remediation ([pm-r7t2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-r7t2.toon))
 - Activate semantic defaults via local Ollama runtime detection ([pm-zvn2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-zvn2.toon))
 - Add dependency mutation command for existing items ([pm-zdec](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zdec.toon))
 - Full registration runtime wiring ([pm-zd6y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-zd6y.toon))
@@ -1955,7 +1966,6 @@
 - Add governance normalize command with dry-run and apply modes ([pm-vi2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vi2v.toon))
 - List parent filtering and get recovery guidance ([pm-v7o7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v7o7.toon))
 - Add notes and learnings command parity ([pm-v1s1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v1s1.toon))
-- Add scoped audit override mode for pm update metadata mutations ([pm-umhv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-umhv.toon))
 - Command integration tests and docs for TOON storage ([pm-u919](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-u919.toon))
 - Calendar command with markdown default and multi-view rendering ([pm-tuhf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tuhf.toon))
 - Compatibility docs and verification hardening ([pm-tob5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-tob5.toon))
@@ -1965,12 +1975,10 @@
 - Phase 2 pluggable core service kernel ([pm-qlo0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qlo0.toon))
 - Feature: SDK & Extension System Audit - Comprehensive ([pm-qdha](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qdha.toon))
 - Search UX and projection controls ([pm-qb71](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qb71.toon))
-- Add opt-in runtime probe mode for extension manage parity ([pm-p0ij](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p0ij.toon))
 - Stdin and PTY fail-safe behavior ([pm-olxl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-olxl.toon))
 - SDK publishing and stability contract ([pm-oga6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oga6.toon))
 - Add AGENTS rule to check existing pm items before creating new ones ([pm-o5uw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o5uw.toon))
 - Add compact/full/fields search output controls with compact default ([pm-nrxm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nrxm.toon))
-- Harden entry and add input resilience ([pm-nhgt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-nhgt.toon))
 - Add files discovery subcommand for referenced paths ([pm-n2ts](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-n2ts.toon))
 - Feature: update close_reason lifecycle integrity ([pm-m4vu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m4vu.toon))
 - Implement deterministic guard for ambiguous create log seeds ([pm-m3mf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m3mf.toon))
@@ -2016,7 +2024,6 @@
 - Stability regressions and update/file UX guidance hardening ([pm-ap8l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ap8l.toon))
 - Core command-dispatch override engine ([pm-al0h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-al0h.toon))
 - Issue5: comments audit append policy path ([pm-ahq1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ahq1.toon))
-- List command large-output ergonomics ([pm-a4z3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-a4z3.toon))
 - Extend SDK contracts and Pi wrapper for extension lifecycle actions ([pm-9ajy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9ajy.toon))
 - Phase 2 preflight and lifecycle interception engine ([pm-977j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-977j.toon))
 - Add history missing-stream policy setting and config support ([pm-8wnm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-8wnm.toon))
@@ -2061,12 +2068,12 @@
 - Event and recurrence schema with mutation contracts ([pm-0ab3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0ab3.toon))
 - Add --parent filter support for list and list-\* commands ([pm-08zg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-08zg.toon))
 - Calendar parity integrations and release hardening ([pm-02gd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-02gd.toon))
-- Governance sweep 2026-04-03 net-new remediation ([pm-r7t2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-r7t2.toon))
 
 ### Changed
 
-- Parser update: support +m and flexible date strings ([pm-y8a8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-y8a8.toon))
 - Update-many: improve error message when no mutation flags provided ([pm-twtu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-twtu.toon))
+- Update body backfill normalization parity ([pm-ihfm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-ihfm.toon))
+- Parser update: support +m and flexible date strings ([pm-y8a8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-y8a8.toon))
 - Implement atomic dependency replacement mode for pm update ([pm-tixl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tixl.toon))
 - Improve update-command close and audit-owner failure guidance from telemetry ([pm-syt7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-syt7.toon))
 - Update completion and Pi wrapper for calendar/reminder support ([pm-qze9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qze9.toon))
@@ -2075,7 +2082,6 @@
 - Update docs and verify status alias release readiness ([pm-posc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-posc.toon))
 - Implement pm update-many with dry-run checkpoints and rollback ([pm-lf6s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lf6s.toon))
 - Document update body support and ship verification evidence ([pm-ipm8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ipm8.toon))
-- Update body backfill normalization parity ([pm-ihfm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-ihfm.toon))
 - Align update body contracts completion and regressions ([pm-ha5a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ha5a.toon))
 - Task: implement update close_reason flag and reopen auto-clear ([pm-g8jp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g8jp.toon))
 - Wire update body runtime mutation path ([pm-eszd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eszd.toon))
@@ -2095,6 +2101,7 @@
 
 ### Fixed
 
+- Templates command: document correct invocation syntax (positional vs --name) ([pm-6y6i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6y6i.toon))
 - Auto-migrate previous-version trackers on first mutation ([pm-yvwt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yvwt.toon))
 - Cross-command regression verification for date parsing expansion ([pm-x6l7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x6l7.toon))
 - Validate UUID fields at telemetry ingestion boundary ([pm-vhdc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vhdc.toon))
@@ -2129,7 +2136,6 @@
 - Add regression coverage for Ollama-backed semantic defaults ([pm-9k33](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9k33.toon))
 - Calendar: allow --full-period for agenda view or improve error message ([pm-8qpc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8qpc.toon))
 - Fix parser overrides for core commands without positional args ([pm-7jkm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7jkm.toon))
-- Templates command: document correct invocation syntax (positional vs --name) ([pm-6y6i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6y6i.toon))
 - Linked-test PM command context can drift from workspace dataset ([pm-6pij](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6pij.toon))
 - Phase 2: parser override regression and docs coverage ([pm-6024](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-6024.toon))
 - Expand recurrence regression and runtime contract tests ([pm-5xih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5xih.toon))
@@ -2144,6 +2150,7 @@
 
 ### Security
 
+- Remediate open GitHub findings and recurring checks ([pm-i7w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-i7w2.toon))
 - Track GitHub Dependabot alert \#26 for undici (GHSA-v9p9-hfj2-hcw8) ([pm-ylg3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ylg3.toon))
 - Issue: Private IP address in committed pm task files ([pm-xk8b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xk8b.toon))
 - Track GitHub Dependabot alert \#24 for undici (GHSA-2mjp-6q6p-2qxm) ([pm-x4sy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x4sy.toon))
@@ -2156,7 +2163,6 @@
 - Track GitHub Dependabot alert \#5 for fast-json-patch (GHSA-8gh8-hqwg-xf34) ([pm-pacx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pacx.toon))
 - Track GitHub Dependabot alert \#1 for undici (GHSA-3cvr-822r-rqcc) ([pm-ncbe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ncbe.toon))
 - Track GitHub Dependabot alert \#10 for undici (GHSA-m4v8-wqvr-p9f7) ([pm-ipul](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ipul.toon))
-- Remediate open GitHub findings and recurring checks ([pm-i7w2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-i7w2.toon))
 - Track GitHub Dependabot alert \#22 for undici (GHSA-vrm6-8vpv-qv8q) ([pm-i1rm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i1rm.toon))
 - Track GitHub Dependabot alert \#4 for undici (GHSA-f772-66g8-q5h3) ([pm-eu59](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eu59.toon))
 - Track GitHub Dependabot alert \#9 for undici (GHSA-3787-6prv-h9w3) ([pm-d3i5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d3i5.toon))
@@ -2176,8 +2182,47 @@
 
 ### Other
 
-- Differentiate pm list (active-only) from pm list-all (all items) ([pm-zzt1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zzt1.toon))
+- Make lifecycle validate patterns configurable ([pm-urxb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-urxb.toon))
+- Run weekly GitHub findings review ([pm-lou4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lou4.toon))
+- Implement search argument and projection mode changes ([pm-0nxf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0nxf.toon))
+- Extension system audit: install/manage/doctor/activate lifecycle fully working ([pm-3s52](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3s52.toon))
+- Core commands audit: full CRUD lifecycle verified with all item types ([pm-ewxk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ewxk.toon))
 - 2026-04-26 Comprehensive PM CLI Dogfood Audit - Full Results ([pm-z87r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-z87r.toon))
+- Full Override SDK + Extensions Platform ([pm-x395](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-x395.toon))
+- PM CLI governance and documentation overhaul ([pm-wtsp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-wtsp.toon))
+- Epic: 2026-04-28 Full PM CLI Dogfood Audit ([pm-wg1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-wg1d.toon))
+- Deadline/date parsing compatibility hardening ([pm-va6e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-va6e.toon))
+- Configurable item types and required-option UX ([pm-r15d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-r15d.toon))
+- Agent-optimized calendar and reminders ([pm-qh3p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-qh3p.toon))
+- External audit follow-up: validation and large-output ergonomics ([pm-qfg8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-qfg8.toon))
+- External audit Issue1 follow-up: log-seed ambiguity guard ([pm-pb0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-pb0g.toon))
+- History stream resilience and restore recovery hardening ([pm-ofh9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-ofh9.toon))
+- PM CLI 2026-04-06 audit findings remediation ([pm-o7be](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-o7be.toon))
+- External audit issue remediation and compatibility hardening ([pm-my6o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-my6o.toon))
+- Linked-test parity and runnable command enforcement ([pm-mf5z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-mf5z.toon))
+- Extension lifecycle manager and SDK parity rollout ([pm-m9jc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-m9jc.toon))
+- Telemetry and observability rollout ([pm-lnq3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-lnq3.toon))
+- CLI UX Overhaul: Help, Errors, and Output ([pm-izbd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-izbd.toon))
+- External audit follow-up: unresolved UX and dependency visualization gaps ([pm-iswo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-iswo.toon))
+- CLI UX and Integrity Hardening ([pm-hp31](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-hp31.toon))
+- External issue report remediation 2026-04-05 ([pm-gt8u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-gt8u.toon))
+- Status alias compatibility hardening ([pm-g6a2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-g6a2.toon))
+- TOON item storage migration ([pm-bckz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-bckz.toon))
+- Agent context command ( / ) ([pm-abhj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-abhj.toon))
+- Auto-enable semantic search when local Ollama is available ([pm-67uh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-67uh.toon))
+- External audit follow-up: linked-test evidence and extension diagnostics ([pm-5z9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-5z9r.toon))
+- Continuous governance automation and policy enforcement ([pm-5rjn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-5rjn.toon))
+- List JSON Body Projection Contract ([pm-0lbm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-0lbm.toon))
+- Configurable option policies for core commands ([pm-00yy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-00yy.toon))
+- Agent-friendly comments command UX hardening ([pm-v3g3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-v3g3.toon))
+- Issue2: Shared-host linked-test determinism ([pm-9dp3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-9dp3.toon))
+- Issue3: Validate stale PM-id command references ([pm-br88](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-br88.toon))
+- Calendar parity phase 2: events and recurrence ([pm-vdrn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-vdrn.toon))
+- Health drift and vectorization integrity ([pm-1hkq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-1hkq.toon))
+- Agent-First CLI UX v3 follow-up ([pm-pfn8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-pfn8.toon))
+- Universal terminal compatibility hardening ([pm-mudv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-mudv.toon))
+- Background linked-test service and item result tracking ([pm-lm0j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-lm0j.toon))
+- Differentiate pm list (active-only) from pm list-all (all items) ([pm-zzt1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zzt1.toon))
 - Document and verify health drift/vectorization changes ([pm-yo5m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yo5m.toon))
 - External audit follow-up docs sync and verification gate ([pm-ykgu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ykgu.toon))
 - Ship1: Full verification, closure evidence, commit, and push ([pm-y76e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-y76e.toon))
@@ -2186,21 +2231,16 @@
 - Governance standards alignment follow-up 2026-04-04 ([pm-xjf9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xjf9.toon))
 - Generate shell completion flags from command contracts ([pm-xhot](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xhot.toon))
 - Output1: Implement command-aware non-JSON result summaries ([pm-x3fh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x3fh.toon))
-- Full Override SDK + Extensions Platform ([pm-x395](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-x395.toon))
 - Implement health history drift diagnostics ([pm-x0vj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-x0vj.toon))
 - Issue3 Task: Contracts Pi docs and tests parity ([pm-wvr0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wvr0.toon))
-- PM CLI governance and documentation overhaul ([pm-wtsp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-wtsp.toon))
 - Implement Ollama-aware semantic default resolution in runtime ([pm-wn3r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wn3r.toon))
 - Enforce command-required linked test mutations ([pm-wn34](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wn34.toon))
-- Epic: 2026-04-28 Full PM CLI Dogfood Audit ([pm-wg1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-wg1d.toon))
 - Implement comments-audit command with filters/latest ([pm-w1j3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-w1j3.toon))
 - Implement include-body retrieval in list command pipeline ([pm-vsux](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vsux.toon))
 - Implement PM-context parity mode and mismatch metadata for linked tests ([pm-vrsn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vrsn.toon))
 - Help1: Centralize help composer and command narratives ([pm-vf7n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vf7n.toon))
-- Deadline/date parsing compatibility hardening ([pm-va6e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-va6e.toon))
 - Implement Issue4 create progressive policy mode ([pm-v7aw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-v7aw.toon))
 - Implement health vectorization targeted refresh ([pm-v48k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-v48k.toon))
-- Make lifecycle validate patterns configurable ([pm-urxb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-urxb.toon))
 - Decision: PM CLI audit confirms production readiness ([pm-unbq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-unbq.toon))
 - Track open Dependabot PR \#9 ([pm-u4hy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-u4hy.toon))
 - Document recurrence features and finalize release evidence ([pm-tytr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tytr.toon))
@@ -2216,38 +2256,27 @@
 - E2: Final verification and closure evidence ([pm-rl7j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rl7j.toon))
 - T6: Run full verification, close items, and ship ([pm-r4t0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-r4t0.toon))
 - Drive repository coverage gate back to 100 percent ([pm-r28k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r28k.toon))
-- Configurable item types and required-option UX ([pm-r15d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-r15d.toon))
 - Implement sandbox seeding for project/global extension parity ([pm-qtvv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qtvv.toon))
 - SDK docs: document cli-contracts exports and extension capability requirements ([pm-qrxb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qrxb.toon))
 - M5 follow-up: validate extension registration handler types ([pm-qkx0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qkx0.toon))
 - Docs1: Refresh README/PRD/architecture/extensions/changelog ([pm-qhcw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qhcw.toon))
-- Agent-optimized calendar and reminders ([pm-qh3p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-qh3p.toon))
-- External audit follow-up: validation and large-output ergonomics ([pm-qfg8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-qfg8.toon))
 - Implement centralized status alias normalization ([pm-ptal](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ptal.toon))
 - M4: Keyword indexing and search command ([pm-pmd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pmd.toon))
-- External audit Issue1 follow-up: log-seed ambiguity guard ([pm-pb0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-pb0g.toon))
 - M2: RFC6902 patch generation per mutation ([pm-p9z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-p9z.toon))
 - Follow-up: expand built-in item types for calendar-native work ([pm-p5q3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-p5q3.toon))
 - A3: Hook context parity and lifecycle symmetry ([pm-osk5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-osk5.toon))
 - Implement background start paths and test-runs command surface ([pm-ormq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ormq.toon))
-- History stream resilience and restore recovery hardening ([pm-ofh9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-ofh9.toon))
 - Implement dual-format codec and store lookup ([pm-oex4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-oex4.toon))
 - M5: Built-in beads import extension ([pm-odt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odt.toon))
 - Consolidate 2026-04-25 dogfood audit evidence and tracker links ([pm-odcr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-odcr.toon))
-- PM CLI 2026-04-06 audit findings remediation ([pm-o7be](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-o7be.toon))
 - Execute telemetry + observability rollout implementation ([pm-ny6y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ny6y.toon))
 - Phase 2: compatibility adapters and migration diagnostics ([pm-ngdf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ngdf.toon))
 - Phase 2: wire parser override contracts in runtime ([pm-nfii](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-nfii.toon))
 - Track open Dependabot PR \#7 ([pm-n8w4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-n8w4.toon))
 - Wave 8/9: restore replay patch compatibility and diagnostics ([pm-n5cw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-n5cw.toon))
-- External audit issue remediation and compatibility hardening ([pm-my6o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-my6o.toon))
-- Linked-test parity and runnable command enforcement ([pm-mf5z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-mf5z.toon))
 - 2026-04-26 comprehensive dogfood audit stabilization ([pm-mb4n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mb4n.toon))
-- Extension lifecycle manager and SDK parity rollout ([pm-m9jc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-m9jc.toon))
 - Release @unbrained/pm-cli 2026.3.12 ([pm-lz4m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lz4m.toon))
 - Implement tolerant entry parser and stdin token utility ([pm-luay](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-luay.toon))
-- Run weekly GitHub findings review ([pm-lou4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lou4.toon))
-- Telemetry and observability rollout ([pm-lnq3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-lnq3.toon))
 - Phase 2: integrate service overrides into core modules ([pm-leol](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-leol.toon))
 - Code/test/docs for create log-seed ambiguity guard ([pm-l5tr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l5tr.toon))
 - C1: Publish explicit extension SDK exports ([pm-l16r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l16r.toon))
@@ -2257,12 +2286,9 @@
 - Implement list parent filter and get guidance updates ([pm-jlsh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jlsh.toon))
 - Phase 2: publish SDK contracts for parser/preflight/services ([pm-j24z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-j24z.toon))
 - Run latest-build temp-project dogfood audit and remediate findings ([pm-j16d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-j16d.toon))
-- CLI UX Overhaul: Help, Errors, and Output ([pm-izbd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-izbd.toon))
-- External audit follow-up: unresolved UX and dependency visualization gaps ([pm-iswo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-iswo.toon))
 - Implement list offset pagination and JSON stream mode ([pm-ice4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ice4.toon))
 - Persist bounded test run summaries on item records ([pm-i2pc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-i2pc.toon))
 - M5 hardening: unknown extension capability diagnostics ([pm-hzh6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hzh6.toon))
-- CLI UX and Integrity Hardening ([pm-hp31](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-hp31.toon))
 - Implement extension doctor summary/deep diagnostics command ([pm-hjrr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hjrr.toon))
 - C1: Implement intuitive comments argument parsing ([pm-hcco](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hcco.toon))
 - Align extension hook docs with runtime types and SDK surface ([pm-hbtn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hbtn.toon))
@@ -2270,10 +2296,8 @@
 - Align extension metadata and completion/wrapper parity ([pm-h2eo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-h2eo.toon))
 - Build and wire runtime item type registry ([pm-h1no](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-h1no.toon))
 - Document include-body list contract and capture validation evidence ([pm-gudp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-gudp.toon))
-- External issue report remediation 2026-04-05 ([pm-gt8u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-gt8u.toon))
 - Error1: Introduce structured error model and builders ([pm-gggs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-gggs.toon))
 - Wave 8/9: clarify get --json body field behavior ([pm-gb25](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-gb25.toon))
-- Status alias compatibility hardening ([pm-g6a2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-g6a2.toon))
 - T1: Implement stdin and PTY fail-safe behavior ([pm-fas4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fas4.toon))
 - Implement and verify pm context command ([pm-f583](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-f583.toon))
 - Implement calendar command core views and filtering ([pm-ezri](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ezri.toon))
@@ -2286,12 +2310,10 @@
 - Implement pm notes and pm learnings command stack ([pm-c465](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-c465.toon))
 - C2: Backward-safe extension SDK compatibility shims ([pm-bw3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bw3h.toon))
 - Harden mutation-triggered vector refresh coverage across write paths ([pm-bgd8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bgd8.toon))
-- TOON item storage migration ([pm-bckz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-bckz.toon))
 - Execute Agent-First CLI UX v3 implementation ([pm-b21u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-b21u.toon))
 - Implement fail-on-skipped policy and linked-test assertions ([pm-au2z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-au2z.toon))
 - Track open Dependabot PR \#5 ([pm-akty](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-akty.toon))
 - Run full verification and release evidence for audit remediation ([pm-ac8x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ac8x.toon))
-- Agent context command ( / ) ([pm-abhj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-abhj.toon))
 - Wave 8/9: event parse errors with field-specific attribution ([pm-a3eq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a3eq.toon))
 - External follow-up: reduce tracked-all orphaned noise from PM internals ([pm-a228](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a228.toon))
 - Generate unknown-command remediation examples from runtime registry ([pm-a01m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a01m.toon))
@@ -2307,10 +2329,7 @@
 - Track open Dependabot PR \#6 ([pm-7akk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7akk.toon))
 - Phase 2: implement service override contracts and runtime registry ([pm-78jt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-78jt.toon))
 - Calendar audit: all views verified working, reminders and deadlines render correctly ([pm-71sj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-71sj.toon))
-- Auto-enable semantic search when local Ollama is available ([pm-67uh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-67uh.toon))
 - Docs, contracts, and verification sweep for external audit follow-up ([pm-64f1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-64f1.toon))
-- External audit follow-up: linked-test evidence and extension diagnostics ([pm-5z9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-5z9r.toon))
-- Continuous governance automation and policy enforcement ([pm-5rjn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-5rjn.toon))
 - Phase 2: lifecycle mutation safety and compatibility tests ([pm-5mqd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5mqd.toon))
 - Implement config list/export command actions ([pm-5lmj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5lmj.toon))
 - Full-repo audit hardening pass (warnings + metadata alignment) ([pm-4vm7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4vm7.toon))
@@ -2335,22 +2354,9 @@
 - B2: Wire search providers and vector adapters ([pm-14qs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-14qs.toon))
 - Finalize tests docs verification and release evidence for history hardening ([pm-0vnr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0vnr.toon))
 - Wire resilient entry ingestion across mutation commands ([pm-0pvk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0pvk.toon))
-- Implement search argument and projection mode changes ([pm-0nxf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0nxf.toon))
-- List JSON Body Projection Contract ([pm-0lbm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-0lbm.toon))
 - Track open Dependabot PR \#14 ([pm-0jpx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0jpx.toon))
 - Implement recurrence occurrence expansion in calendar views ([pm-0c0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0c0g.toon))
 - Task: allow claim takeover without force for non-terminal items ([pm-05u4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-05u4.toon))
-- Configurable option policies for core commands ([pm-00yy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-00yy.toon))
-- Agent-friendly comments command UX hardening ([pm-v3g3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-v3g3.toon))
-- Issue2: Shared-host linked-test determinism ([pm-9dp3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-9dp3.toon))
-- Issue3: Validate stale PM-id command references ([pm-br88](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-br88.toon))
-- Extension system audit: install/manage/doctor/activate lifecycle fully working ([pm-3s52](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3s52.toon))
-- Calendar parity phase 2: events and recurrence ([pm-vdrn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-vdrn.toon))
-- Health drift and vectorization integrity ([pm-1hkq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-1hkq.toon))
-- Agent-First CLI UX v3 follow-up ([pm-pfn8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-pfn8.toon))
-- Universal terminal compatibility hardening ([pm-mudv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-mudv.toon))
-- Background linked-test service and item result tracking ([pm-lm0j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-lm0j.toon))
-- Core commands audit: full CRUD lifecycle verified with all item types ([pm-ewxk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ewxk.toon))
 
 ## 2026.3.12 - 2026-03-13
 
@@ -2401,9 +2407,9 @@
 
 ### Changed
 
+- Release readiness refactor ([pm-ote](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-ote.toon))
 - Installer scripts and update path ([pm-tq1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-tq1.toon))
 - Promote strategic metadata flags into canonical create/update contract ([pm-phob](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-phob.toon))
-- Release readiness refactor ([pm-ote](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-ote.toon))
 - Release-readiness guard for update help/contract parity ([pm-cujj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cujj.toon))
 - Pi wrapper all-fields create/update parity ([pm-096j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-096j.toon))
 - M1: Core command set init create get update append delete claim release close ([pm-06t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-06t.toon))
@@ -2435,6 +2441,14 @@
 
 ### Other
 
+- Build pm-cli v1 ([pm-j7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-j7a.toon))
+- Milestone 5 - Extension System + Built-ins ([pm-b1w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-b1w.toon))
+- Milestone 0 - Foundations ([pm-2xl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-2xl.toon))
+- Milestone 1 - Core Item CRUD + Locking ([pm-u9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-u9r.toon))
+- Milestone 2 - History + Restore ([pm-c0r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-c0r.toon))
+- Milestone 3 - Query + Operations ([pm-54d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-54d.toon))
+- Milestone 4 - Search ([pm-f45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-f45.toon))
+- Milestone 6 - Hardening + Release Readiness ([pm-jiw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-jiw.toon))
 - Preserve confidence in todos import mapping ([pm-zoyg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zoyg.toon))
 - M4: Mutation-triggered search cache invalidation ([pm-zgkk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zgkk.toon))
 - M3: stats health and gc commands ([pm-zau](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zau.toon))
@@ -2488,7 +2502,6 @@
 - Maintain release readiness 2026-03-09 (Run 3) ([pm-k4u5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-k4u5.toon))
 - Harden recursive test-all detection for global-flag invocation forms ([pm-k3zx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k3zx.toon))
 - M5 roadmap: Runtime wiring for extension registrations ([pm-jvfw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jvfw.toon))
-- Build pm-cli v1 ([pm-j7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-j7a.toon))
 - Release-readiness maintenance loop 2026-03-07 run 4 ([pm-iziy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-iziy.toon))
 - M5 follow-up: Extension API registration surface baseline ([pm-iuzs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-iuzs.toon))
 - M4 roadmap: Advanced provider optimization ([pm-ip91](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ip91.toon))
@@ -2521,7 +2534,6 @@
 - M5 roadmap: Broader override surfaces ([pm-bfd9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bfd9.toon))
 - M5 roadmap: Pi tool wrapper packaging/distribution polish ([pm-bdz5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bdz5.toon))
 - Make semantic search fully working using Ollama ([pm-b4pb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-b4pb.toon))
-- Milestone 5 - Extension System + Built-ins ([pm-b1w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-b1w.toon))
 - Create contract verification sample ([pm-awo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-awo.toon))
 - Release-readiness maintenance loop 2026-03-07 run 9 ([pm-acx9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-acx9.toon))
 - Release-readiness maintenance loop 2026-03-07 run 8 ([pm-a5ea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a5ea.toon))
@@ -2553,9 +2565,3 @@
 - M6: Command help and README examples validated in tests ([pm-15o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-15o.toon))
 - Harden recursive test-all detection for pnpm dlx and npm exec launchers ([pm-11t5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-11t5.toon))
 - M5: Harden extension command handler context sandbox ([pm-0e8w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0e8w.toon))
-- Milestone 0 - Foundations ([pm-2xl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-2xl.toon))
-- Milestone 1 - Core Item CRUD + Locking ([pm-u9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-u9r.toon))
-- Milestone 2 - History + Restore ([pm-c0r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-c0r.toon))
-- Milestone 3 - Query + Operations ([pm-54d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-54d.toon))
-- Milestone 4 - Search ([pm-f45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-f45.toon))
-- Milestone 6 - Hardening + Release Readiness ([pm-jiw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-jiw.toon))

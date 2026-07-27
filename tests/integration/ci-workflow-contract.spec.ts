@@ -1,8 +1,9 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { checkDirectoryLoad, collectTypeScriptFiles, relativeToRepo } from "../../scripts/release/static-quality-gate.mts";
+import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -150,6 +151,10 @@ describe("GitHub workflow contract", () => {
       "pnpm version:check",
       "pnpm security:scan",
       "pnpm lint",
+      "node dist/cli.js merge install --no-extensions --json",
+      "git diff --exit-code -- .gitattributes",
+      "node dist/cli.js validate --check-storage-integrity --check-history-drift --strict-exit --json --no-extensions",
+      'node dist/cli.js history "${representative_id}" --verify --strict-exit --json --no-extensions > /dev/null',
       "run: pnpm typecheck",
       "pnpm test:coverage --",
       "run: node scripts/release/compatibility-check.mjs --json",
@@ -246,6 +251,97 @@ describe("GitHub workflow contract", () => {
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(ciWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
+  });
+
+  it("proves the full CI merge-integrity command rejects a non-representative drifted stream", async () => {
+    await withTempPmPath(async (context) => {
+      const drifted = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "CI merge drift negative control",
+          "--description",
+          "Prove CI scans every stream",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      expect(drifted.code).toBe(0);
+      const driftedId = (drifted.json as { item: { id: string } }).item.id;
+      const representative = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "CI representative history smoke",
+          "--description",
+          "Remain clean while a different stream is corrupted",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      expect(representative.code).toBe(0);
+      const representativeId = (
+        representative.json as { item: { id: string } }
+      ).item.id;
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        `${driftedId}.jsonl`,
+      );
+      const history = (await readFile(historyPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+      history[0].after_hash = "0".repeat(64);
+      await writeFile(
+        historyPath,
+        `${history.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+        "utf8",
+      );
+
+      const representativeHistory = context.runCli(
+        [
+          "history",
+          representativeId,
+          "--verify",
+          "--strict-exit",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const validation = context.runCli(
+        [
+          "validate",
+          "--check-storage-integrity",
+          "--check-history-drift",
+          "--strict-exit",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+
+      expect(representativeHistory.code).toBe(0);
+      expect(validation.code).not.toBe(0);
+      expect(
+        (
+          validation.json as {
+            checks: Array<{ name: string; status: string }>;
+          }
+        ).checks,
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: "history_drift", status: "warn" }),
+        ]),
+      );
+    });
   });
 
   it("keeps docs workflow setup pinned and aligned with docs gates", async () => {

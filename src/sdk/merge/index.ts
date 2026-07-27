@@ -17,9 +17,19 @@ export {
   type HistoryMergeStrategy,
   type ItemDocumentMergeResult,
   type JsonDocumentMergeResult,
+  type ItemMergeConflictDecision,
   type MergePreferredSide,
   type RelationshipStreamMergeResult,
 } from "./three-way.js";
+export {
+  listMergeReceipts,
+  markMergeReceiptReconciled,
+  runMergeReceiptReport,
+  summarizeMergeReceipt,
+  type MergeDecisionReceipt,
+  type MergeDecisionReceiptSummary,
+  type MergeReceiptReport,
+} from "./receipts.js";
 export {
   MERGE_DRIVER_ARTIFACT_VALUES,
   runMergeDriver,
@@ -29,12 +39,15 @@ export {
 } from "./driver.js";
 export {
   auditMergeAttributeFence,
+  auditMergeDriverConfiguration,
   buildMergeAttributePatterns,
+  findGitWorkspaceRoot,
   PM_GITATTRIBUTES_END,
   PM_GITATTRIBUTES_START,
   refreshMergeAttributeFenceIfInstalled,
   runMergeInstall,
   type MergeFenceAuditResult,
+  type MergeDriverConfigurationAuditResult,
   type MergeFenceRefreshOutcome,
   type MergeInstallOptions,
   type MergeInstallResult,

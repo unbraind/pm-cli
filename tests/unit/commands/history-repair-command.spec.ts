@@ -235,6 +235,9 @@ describe("history-repair command", () => {
           {
             author: "   ",
             message: "   ",
+            auditContext: {
+              merge: { receipt_id: "local-receipt" },
+            },
           },
           { path: context.pmPath },
         );
@@ -244,6 +247,9 @@ describe("history-repair command", () => {
         const auditEntry = JSON.parse(historyLines[historyLines.length - 1]!);
         expect(auditEntry.op).toBe("history_repair");
         expect(auditEntry.message).toContain("history-repair re-anchored");
+        expect(auditEntry.context).toEqual({
+          merge: { receipt_id: "local-receipt" },
+        });
       } finally {
         lockSpy.mockRestore();
         if (previousPmAuthor === undefined) {

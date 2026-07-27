@@ -406,6 +406,22 @@ export const ITEM_UNION_COLLECTION_FIELDS = [
 /** Item metadata fields resolved by deterministic latest-timestamp-wins instead of three-way conflict, so disjoint-field edits never conflict on the shared freshness scalar every mutation rewrites. */
 export const ITEM_LATEST_TIMESTAMP_FIELDS = ["updated_at"] as const;
 
+/** Documents one recoverable scalar decision made during an item merge. */
+export interface ItemMergeConflictDecision {
+  /** Metadata field name, or `body`. */
+  field: string;
+  /** Common-ancestor value. */
+  base: unknown;
+  /** Current-branch value. */
+  ours: unknown;
+  /** Other-branch value. */
+  theirs: unknown;
+  /** Value retained in the merged item. */
+  retained: unknown;
+  /** Value not retained in the merged item. */
+  discarded: unknown;
+}
+
 /** Documents the item document merge result payload exchanged by command, SDK, and package integrations. */
 export interface ItemDocumentMergeResult {
   /** Serialized merged item document (always parseable; count headers recomputed by canonical serialization). */
@@ -416,6 +432,8 @@ export interface ItemDocumentMergeResult {
   fields_from_theirs: string[];
   /** Collection fields that merged by element-identity union. */
   union_fields: string[];
+  /** Scalar conflict decisions; callers choose a privacy-appropriate persistence boundary. */
+  conflict_decisions: ItemMergeConflictDecision[];
   /** Which side unresolvable conflicts were resolved toward. */
   preferred: MergePreferredSide;
 }
@@ -515,6 +533,8 @@ interface ItemMetadataMergeAccumulator {
   fieldsFromTheirs: string[];
   /** Collection fields whose final union differs from ours. */
   unionFields: string[];
+  /** Scalar decisions whose losing values must remain recoverable. */
+  conflictDecisions: ItemMergeConflictDecision[];
 }
 
 function mergeItemMetadataRecords(
@@ -533,6 +553,7 @@ function mergeItemMetadataRecords(
     conflictFields: [],
     fieldsFromTheirs: [],
     unionFields: [],
+    conflictDecisions: [],
   };
 
   for (const field of fieldNames) {
@@ -565,6 +586,14 @@ function mergeItemMetadataRecords(
     }
     if (outcome.conflict) {
       accumulator.conflictFields.push(field);
+      accumulator.conflictDecisions.push({
+        field,
+        base: baseValue,
+        ours: oursValue,
+        theirs: theirsValue,
+        retained: outcome.value,
+        discarded: preferred === "theirs" ? oursValue : theirsValue,
+      });
     } else if (outcome.from_theirs) {
       accumulator.fieldsFromTheirs.push(field);
     }
@@ -607,7 +636,13 @@ export function mergeItemDocuments(
     : ({} as Record<string, unknown>);
   const oursRecord = toMetadataRecord(ours);
   const theirsRecord = toMetadataRecord(theirs);
-  const { merged, conflictFields, fieldsFromTheirs, unionFields } =
+  const {
+    merged,
+    conflictFields,
+    fieldsFromTheirs,
+    unionFields,
+    conflictDecisions,
+  } =
     mergeItemMetadataRecords(baseRecord, oursRecord, theirsRecord, preferred);
 
   const bodyOutcome = mergeScalarThreeWay(
@@ -618,6 +653,14 @@ export function mergeItemDocuments(
   );
   if (bodyOutcome.conflict) {
     conflictFields.push("body");
+    conflictDecisions.push({
+      field: "body",
+      base: hasBase ? base.body : "",
+      ours: ours.body,
+      theirs: theirs.body,
+      retained: bodyOutcome.value,
+      discarded: preferred === "theirs" ? ours.body : theirs.body,
+    });
   } else if (bodyOutcome.from_theirs) {
     fieldsFromTheirs.push("body");
   }
@@ -634,6 +677,7 @@ export function mergeItemDocuments(
     conflict_fields: conflictFields,
     fields_from_theirs: fieldsFromTheirs,
     union_fields: unionFields,
+    conflict_decisions: conflictDecisions,
     preferred,
   };
 }

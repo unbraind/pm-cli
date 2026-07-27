@@ -22,7 +22,9 @@ import {
 } from "../../../src/core/item/item-format.js";
 import {
   auditMergeAttributeFence,
+  auditMergeDriverConfiguration,
   installMergeFence,
+  listMergeReceipts,
   mergeHistoryStreams,
   mergeItemDocuments,
   mergeJsonDocuments,
@@ -484,20 +486,45 @@ describe("public merge-safety SDK primitives", () => {
           "utf8",
         ),
       ]);
-      expect(
-        (
-          await runMergeDriver(
-            {
-              artifact: "item",
-              basePath: base,
-              oursPath: ours,
-              theirsPath: theirs,
-              itemPath: ".agents/pm/tasks/pm-merge.md",
-            },
-            { path: path.join(workspace, "missing-pm") },
-          )
-        ).ok,
-      ).toBe(true);
+      const outsideGitResult = await runMergeDriver(
+        {
+          artifact: "item",
+          basePath: base,
+          oursPath: ours,
+          theirsPath: theirs,
+          itemPath: ".agents/pm/tasks/pm-merge.md",
+        },
+        { path: path.join(workspace, "missing-pm") },
+      );
+      expect(outsideGitResult.receipt).toBeUndefined();
+      execFileSync("git", ["init", "-q"], { cwd: workspace });
+      const itemResult = await runMergeDriver(
+        {
+          artifact: "item",
+          basePath: base,
+          oursPath: ours,
+          theirsPath: theirs,
+          itemPath: ".agents/pm/tasks/pm-merge.md",
+        },
+        { path: path.join(workspace, "missing-pm") },
+      );
+      expect(itemResult.ok).toBe(true);
+      expect(itemResult.receipt?.item_id).toBe("pm-merge");
+      expect(await listMergeReceipts(workspace)).toHaveLength(1);
+      await expect(
+        runMergeDriver(
+          {
+            artifact: "item",
+            basePath: base,
+            oursPath: ours,
+            theirsPath: theirs,
+            itemPath: ".agents/pm/tasks/pm-phantom.md",
+            outputPath: workspace,
+          },
+          { path: path.join(workspace, "missing-pm") },
+        ),
+      ).rejects.toThrow();
+      expect(await listMergeReceipts(workspace)).toHaveLength(1);
     } finally {
       process.chdir(priorItemCwd);
     }
@@ -672,18 +699,53 @@ describe("public merge-safety SDK primitives", () => {
           (entry) => entry.key === "merge.pm-item-toon.driver",
         )?.value,
       ).toMatch(
-        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path item\.toon$/,
+        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path "%P"$/,
       );
       expect(
         installed.git_config.find(
           (entry) => entry.key === "merge.pm-item-markdown.driver",
         )?.value,
       ).toMatch(
-        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path item\.md$/,
+        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path "%P"$/,
       );
       expect(
-        installed.git_config.every((entry) => !entry.value.includes("%P")),
+        installed.git_config
+          .filter((entry) => entry.key.endsWith(".driver"))
+          .filter((entry) => !entry.key.includes("pm-item"))
+          .every((entry) => !entry.value.includes("%P")),
       ).toBe(true);
+      expect(
+        (await auditMergeDriverConfiguration(context.tempRoot)).status,
+      ).toBe("ok");
+      execFileSync(
+        "git",
+        ["config", "--local", "--unset", "merge.pm-history.driver"],
+        { cwd: context.tempRoot },
+      );
+      expect(
+        await auditMergeDriverConfiguration(context.tempRoot),
+      ).toMatchObject({
+        status: "missing",
+        missing_keys: ["merge.pm-history.driver"],
+      });
+      await runMergeInstall({}, { path: context.pmPath });
+      execFileSync(
+        "git",
+        [
+          "config",
+          "--local",
+          "merge.pm-history.driver",
+          "node stale-driver.js",
+        ],
+        { cwd: context.tempRoot },
+      );
+      expect(
+        await auditMergeDriverConfiguration(context.tempRoot),
+      ).toMatchObject({
+        status: "drift",
+        drifted_keys: ["merge.pm-history.driver"],
+      });
+      await runMergeInstall({}, { path: context.pmPath });
       expect(
         await readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
       ).toContain("# pm-cli:merge-drivers:start");

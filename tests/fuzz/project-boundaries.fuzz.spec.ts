@@ -10,7 +10,14 @@ import {
 import { replayHistoryToTarget } from "../../src/core/history/projection.js";
 import { decodeToonItemContent } from "../../src/core/item/toon-decode.js";
 import { resolveIsoOrRelative } from "../../src/core/shared/time.js";
-import { mergeHistoryStreams } from "../../src/sdk/merge/three-way.js";
+import {
+  mergeHistoryStreams,
+  mergeItemDocuments,
+} from "../../src/sdk/merge/three-way.js";
+import {
+  parseItemDocument,
+  serializeItemDocument,
+} from "../../src/core/item/item-format.js";
 import {
   decodeQueryCursorState,
   encodeQueryCursor,
@@ -154,6 +161,57 @@ describe("project boundary property fuzzing", () => {
           ).toBe(
             new Date(now.getTime() + amount * milliseconds).toISOString(),
           );
+        },
+      ),
+      { numRuns: FUZZ_RUNS },
+    );
+  });
+
+  it("converges randomized N-branch item appends independent of merge order", () => {
+    fc.assert(
+      fc.property(
+        fc.uniqueArray(fc.stringMatching(/^[a-z]{1,24}$/), {
+          minLength: 2,
+          maxLength: 12,
+        }),
+        (tags) => {
+          const base = {
+            metadata: {
+              id: "pm-fuzz-merge",
+              title: "N-branch convergence",
+              description: "property merge",
+              type: "Task",
+              status: "open",
+              priority: 2,
+              tags: [],
+              created_at: "2026-07-27T00:00:00.000Z",
+              updated_at: "2026-07-27T00:00:00.000Z",
+            },
+            body: "",
+          };
+          const baseRaw = serializeItemDocument(base, { format: "toon" });
+          const converge = (order: string[]): string[] => {
+            let current = baseRaw;
+            for (const [index, tag] of order.entries()) {
+              const branch = structuredClone(base);
+              branch.metadata.tags = [tag];
+              branch.metadata.updated_at = new Date(
+                Date.UTC(2026, 6, 27, 0, 0, index + 1),
+              ).toISOString();
+              current = mergeItemDocuments(
+                baseRaw,
+                current,
+                serializeItemDocument(branch, { format: "toon" }),
+                { format: "toon" },
+              ).merged;
+            }
+            return parseItemDocument(current, { format: "toon" }).metadata.tags;
+          };
+
+          expect(converge(tags).sort()).toEqual(
+            converge([...tags].reverse()).sort(),
+          );
+          expect(converge(tags).sort()).toEqual([...tags].sort());
         },
       ),
       { numRuns: FUZZ_RUNS },

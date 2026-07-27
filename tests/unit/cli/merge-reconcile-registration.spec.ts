@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   runMergeDriver: vi.fn(),
   runMergeInstall: vi.fn(),
+  runMergeReceiptReport: vi.fn(),
   runMergeReconcile: vi.fn(),
 }));
 
@@ -11,6 +12,7 @@ vi.mock("../../../src/cli/commands/merge.js", () => ({
   MERGE_DRIVER_ARTIFACT_VALUES: ["history"],
   runMergeDriver: mocks.runMergeDriver,
   runMergeInstall: mocks.runMergeInstall,
+  runMergeReceiptReport: mocks.runMergeReceiptReport,
   runMergeReconcile: mocks.runMergeReconcile,
 }));
 
@@ -28,6 +30,7 @@ describe("merge reconcile registration", () => {
   afterEach(() => {
     process.exitCode = undefined;
     vi.restoreAllMocks();
+    mocks.runMergeReceiptReport.mockReset();
     mocks.runMergeReconcile.mockReset();
   });
 
@@ -71,5 +74,35 @@ describe("merge reconcile registration", () => {
         "unexpected",
       ]),
     ).rejects.toThrow("merge reconcile takes no positional arguments");
+  });
+
+  it("reports clone-local decisions and rejects positional report arguments", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    mocks.runMergeReceiptReport.mockResolvedValueOnce({
+      ok: true,
+      count: 1,
+      receipts: [],
+    });
+
+    await createProgram().parseAsync([
+      "node",
+      "pm",
+      "merge",
+      "report",
+      "--include-reconciled",
+    ]);
+
+    expect(mocks.runMergeReceiptReport).toHaveBeenCalledWith({
+      includeReconciled: true,
+    });
+    await expect(
+      createProgram().parseAsync([
+        "node",
+        "pm",
+        "merge",
+        "report",
+        "unexpected",
+      ]),
+    ).rejects.toThrow("merge report takes no positional arguments");
   });
 });
