@@ -264,7 +264,7 @@ function normalizePackageCommandAliasToken(value: string): string {
   let normalized = normalizeExtensionNameForMatch(value);
   // Strip outer package/source prefixes and then the pm- package stem so scoped
   // and builtin package guesses converge on the exported command alias.
-  for (const prefix of ["@unbraind/", "@unbrained/", "builtin-", "pm-"]) {
+  for (const prefix of ["@unbrained/", "builtin-", "pm-"]) {
     if (normalized.startsWith(prefix)) {
       normalized = normalized.slice(prefix.length);
     }

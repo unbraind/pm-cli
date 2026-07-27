@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
+
+const NPM_PACKAGE =
+  process.env.NPM_PACKAGE?.trim() ||
+  JSON.parse(
+    readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+  ).name;
 
 function usage() {
   console.log(`Usage:
@@ -85,7 +91,7 @@ function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   return runWithRetries("npm metadata", attempts, 15000, () => {
     const result = runCommand(
       npm,
-      ["view", `@unbrained/pm-cli@${version}`, "version", "dist.integrity", "dist.unpackedSize", "--json"],
+      ["view", `${NPM_PACKAGE}@${version}`, "version", "dist.integrity", "dist.unpackedSize", "--json"],
       { capture: true, allowFailure: true, env: publicRegistryEnv },
     );
     if (result.status !== 0) {
@@ -155,7 +161,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
 
     const npxDirect = verifyRequiredExecutor(
       "npx-direct",
-      [commandFor("npx"), "--yes", `@unbrained/pm-cli@${version}`, "--version"],
+      [commandFor("npx"), "--yes", `${NPM_PACKAGE}@${version}`, "--version"],
       version,
       executorAttempts,
       tempRoot,
@@ -164,7 +170,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
 
     const npxPackage = verifyRequiredExecutor(
       "npx-package",
-      [commandFor("npx"), "--yes", "--package", `@unbrained/pm-cli@${version}`, "--", "pm", "--version"],
+      [commandFor("npx"), "--yes", "--package", `${NPM_PACKAGE}@${version}`, "--", "pm", "--version"],
       version,
       executorAttempts,
       tempRoot,
@@ -173,7 +179,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
 
     const bunx = verifyRequiredExecutor(
       "bunx",
-      [commandFor("bunx"), "--bun", `@unbrained/pm-cli@${version}`, "pm", "--version"],
+      [commandFor("bunx"), "--bun", `${NPM_PACKAGE}@${version}`, "pm", "--version"],
       version,
       executorAttempts,
       tempRoot,

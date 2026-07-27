@@ -12,17 +12,31 @@ type RunCommandResult = { status: number; stdout: string; stderr: string };
 
 interface ScenarioOptions {
   argv: string[];
+  npmPackage?: string;
   runCommand?: (command: string, args: string[], call: number) => RunCommandResult;
   sleepMs?: string;
 }
 
 async function runVerify(options: ScenarioOptions) {
   process.env.PM_VERIFY_SLEEP_MS = options.sleepMs ?? "0";
+  if (options.npmPackage === undefined) {
+    delete process.env.NPM_PACKAGE;
+  } else {
+    process.env.NPM_PACKAGE = options.npmPackage;
+  }
 
   const mkdtempSync = vi.fn(() => "/tmp/pm-cli-published-verify-test");
+  const readFileSync = vi.fn(() =>
+    JSON.stringify({ name: "@unbrained/pm-cli" }),
+  );
   const rmSync = vi.fn();
   const writeFileSync = vi.fn();
-  vi.doMock("node:fs", () => ({ mkdtempSync, rmSync, writeFileSync }));
+  vi.doMock("node:fs", () => ({
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+  }));
 
   let callIndex = 0;
   const runCommand = vi.fn((command: string, args: string[]) => {
@@ -158,6 +172,9 @@ describe("scripts/release/verify-published-release: success path", () => {
     expect(json.package.npx.package.ok).toBe(true);
     expect(json.package.bunx.ok).toBe(true);
     expect(json.github_release.tagName).toBe("v2026.6.14");
+    expect(runCommand.mock.calls[0]?.[1]?.[1]).toBe(
+      "@unbrained/pm-cli@2026.6.14",
+    );
     expect(writeFileSync).toHaveBeenCalledWith(
       path.join("/tmp/pm-cli-published-verify-test", "npmrc-public"),
       "",
@@ -191,6 +208,23 @@ describe("scripts/release/verify-published-release: success path", () => {
       argv: ["--version", "2026.6.14", "--skip-package", "--skip-github-release"],
     });
     expect(logs.join("\n")).toContain("Published release 2026.6.14 verified.");
+  });
+
+  it("uses the workflow package identity for every public package surface", async () => {
+    const { runCommand } = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      npmPackage: "@example/pm-cli",
+      runCommand: (command, args) =>
+        command === "npm" && args[0] === "view"
+          ? npmViewResult("2026.6.14")
+          : { status: 0, stdout: "2026.6.14\n", stderr: "" },
+    });
+    expect(runCommand.mock.calls.slice(0, 4).map((call) => call[1])).toEqual([
+      ["view", "@example/pm-cli@2026.6.14", "version", "dist.integrity", "dist.unpackedSize", "--json"],
+      ["--yes", "@example/pm-cli@2026.6.14", "--version"],
+      ["--yes", "--package", "@example/pm-cli@2026.6.14", "--", "pm", "--version"],
+      ["--bun", "@example/pm-cli@2026.6.14", "pm", "--version"],
+    ]);
   });
 });
 
