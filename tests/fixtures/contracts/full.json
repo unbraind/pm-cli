@@ -9101,7 +9101,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -9138,7 +9138,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -9282,7 +9286,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "maxAttempts": {
             "anyOf": [
@@ -9329,7 +9337,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -9369,11 +9381,10 @@
             "type": "string"
           },
           "tag": {
-            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
+            "description": "When claiming the next item, only consider work carrying this exact tag.",
             "examples": [
-              "latest",
-              "next",
-              "2026.5.11"
+              "sdk",
+              "release"
             ],
             "type": "string"
           },
@@ -9394,7 +9405,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the next-item context returned with the claim.",
             "examples": [
               600,
               "1200"
@@ -9409,15 +9420,11 @@
             "type": "string"
           }
         },
-        "required": [
-          "id"
-        ],
+        "required": [],
         "type": "object"
       },
       "name": "pm_claim",
-      "required": [
-        "id"
-      ]
+      "required": []
     },
     {
       "description": "Close a pm item with optional close reason and optional close validation (reason requirement follows governance settings). Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
@@ -9449,7 +9456,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -9489,7 +9496,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -9509,7 +9520,7 @@
             "type": "string"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {
@@ -9575,7 +9586,7 @@
             "type": "integer"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -9596,7 +9607,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -9618,7 +9633,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -9634,7 +9653,7 @@
             "type": "boolean"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {
@@ -9719,7 +9738,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "policy": {
@@ -9871,7 +9894,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -9904,7 +9931,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -10252,7 +10283,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -10344,7 +10379,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -10712,7 +10751,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -11043,7 +11086,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -11150,7 +11197,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -11196,7 +11243,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -11384,7 +11435,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -11430,7 +11481,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -11523,7 +11578,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -11632,7 +11691,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -11851,7 +11914,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -11994,7 +12061,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -12082,7 +12153,7 @@
             "type": "integer"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -12103,7 +12174,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -12125,7 +12200,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -12141,7 +12220,7 @@
             "type": "boolean"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {
@@ -12508,7 +12587,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -12771,7 +12854,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -12796,7 +12883,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -12836,11 +12927,10 @@
             "type": "string"
           },
           "tag": {
-            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
+            "description": "Only recommend items carrying this exact tag.",
             "examples": [
-              "latest",
-              "next",
-              "2026.5.11"
+              "sdk",
+              "release"
             ],
             "type": "string"
           },
@@ -12861,7 +12951,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the recommendation context.",
             "examples": [
               600,
               "1200"
@@ -12913,7 +13003,7 @@
             "type": "integer"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -12934,7 +13024,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -12956,7 +13050,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -12972,7 +13070,7 @@
             "type": "boolean"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {
@@ -13247,7 +13345,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fromSearch": {
@@ -13402,7 +13500,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -13808,7 +13910,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -13896,7 +14002,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -14425,7 +14535,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -14771,7 +14885,11 @@
             "type": "boolean"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -14848,15 +14966,11 @@
             "type": "string"
           }
         },
-        "required": [
-          "query"
-        ],
+        "required": [],
         "type": "object"
       },
       "name": "pm_search",
-      "required": [
-        "query"
-      ]
+      "required": []
     },
     {
       "description": "List, add, remove, or run linked tests for a pm item.",
@@ -14940,7 +15054,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -15017,7 +15131,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -15309,7 +15427,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -15418,7 +15536,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -15794,7 +15916,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -15913,7 +16039,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "idPrefix": {
@@ -15949,7 +16075,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "prefix": {
@@ -16080,7 +16210,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "policy": {
@@ -16166,7 +16300,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16260,7 +16398,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16342,7 +16484,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16417,7 +16563,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16486,7 +16636,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16570,7 +16724,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16644,7 +16802,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16741,7 +16903,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16823,7 +16989,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16895,7 +17065,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -16978,7 +17152,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17043,7 +17221,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17118,7 +17300,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17309,7 +17495,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17430,7 +17620,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17524,7 +17718,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17606,7 +17804,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17681,7 +17883,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17750,7 +17956,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17834,7 +18044,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -17908,7 +18122,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18005,7 +18223,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18087,7 +18309,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18159,7 +18385,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18242,7 +18472,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18307,7 +18541,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18382,7 +18620,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18573,7 +18815,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18698,7 +18944,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -18799,7 +19049,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -19190,7 +19444,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -20111,7 +20369,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -20190,7 +20452,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -20473,7 +20739,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noComments": {
             "description": "No Comments.",
@@ -20568,7 +20838,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -20960,7 +21234,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noComments": {
             "description": "No Comments.",
@@ -21055,7 +21333,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -21447,7 +21729,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noComments": {
             "description": "No Comments.",
@@ -21542,7 +21828,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -21934,7 +22224,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noComments": {
             "description": "No Comments.",
@@ -22029,7 +22323,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -22421,7 +22719,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noComments": {
             "description": "No Comments.",
@@ -22516,7 +22818,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -22908,7 +23214,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noComments": {
             "description": "No Comments.",
@@ -23003,7 +23313,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -23395,7 +23709,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noComments": {
             "description": "No Comments.",
@@ -23490,7 +23808,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -23882,7 +24204,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noComments": {
             "description": "No Comments.",
@@ -23977,7 +24303,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -24201,7 +24531,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -24384,7 +24718,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -24417,7 +24755,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -24641,7 +24983,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -24674,7 +25020,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -24877,7 +25227,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -25088,7 +25442,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "matchMode": {
             "description": "Match Mode.",
@@ -25183,7 +25541,11 @@
             "type": "boolean"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -25313,7 +25675,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -25331,7 +25697,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -25444,7 +25814,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -25469,7 +25843,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -25509,11 +25887,10 @@
             "type": "string"
           },
           "tag": {
-            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
+            "description": "Only recommend items carrying this exact tag.",
             "examples": [
-              "latest",
-              "next",
-              "2026.5.11"
+              "sdk",
+              "release"
             ],
             "type": "string"
           },
@@ -25534,7 +25911,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the recommendation context.",
             "examples": [
               600,
               "1200"
@@ -25614,7 +25991,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -25632,7 +26013,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -25694,7 +26079,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -25739,7 +26124,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -25838,7 +26227,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -25873,7 +26262,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -25938,7 +26331,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -25985,7 +26378,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -26058,7 +26455,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -26421,7 +26822,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "infer": {
@@ -26491,7 +26892,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -26648,7 +27053,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "json": {
@@ -26681,7 +27086,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -26755,7 +27164,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -26783,7 +27196,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -26852,7 +27269,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -26895,7 +27312,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -27158,7 +27579,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -27270,7 +27691,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -27890,7 +28315,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -27930,7 +28355,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "linkedFile": {
             "description": "Linked File.",
@@ -28026,7 +28455,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -28267,7 +28700,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -28310,7 +28743,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -28330,7 +28767,7 @@
             "type": "string"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {
@@ -28565,7 +29002,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -28590,7 +29027,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -28632,7 +29073,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -28699,7 +29144,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -28734,7 +29179,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -28776,7 +29225,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fullChangedFields": {
@@ -28815,7 +29264,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -28871,7 +29324,7 @@
             "type": "integer"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -28895,7 +29348,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -28917,7 +29374,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -28933,7 +29394,7 @@
             "type": "boolean"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {
@@ -29203,7 +29664,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "fromSearch": {
@@ -29360,7 +29821,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -29711,7 +30176,7 @@
             "type": "integer"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -29735,7 +30200,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -29757,7 +30226,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -29773,7 +30246,7 @@
             "type": "boolean"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {
@@ -29820,7 +30293,7 @@
             "type": "integer"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -29844,7 +30317,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -29866,7 +30343,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -29882,7 +30363,7 @@
             "type": "boolean"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {
@@ -29975,7 +30456,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -30024,7 +30505,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -30117,7 +30602,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -30166,7 +30651,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -30340,7 +30829,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -30553,7 +31046,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -30702,7 +31199,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -30782,7 +31279,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -30912,7 +31413,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -30964,7 +31469,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -31041,7 +31550,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -31059,7 +31572,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -31136,7 +31653,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -31224,7 +31745,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -31436,7 +31961,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -31551,7 +32080,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -31795,7 +32328,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -31913,7 +32450,7 @@
             "type": "boolean"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "format": {
@@ -31949,7 +32486,11 @@
                 "type": "number"
               }
             ],
-            "description": "Limit."
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
           },
           "maxAttempts": {
             "anyOf": [
@@ -31996,7 +32537,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "priority": {
@@ -32036,11 +32581,10 @@
             "type": "string"
           },
           "tag": {
-            "description": "npm version or dist-tag used for CLI and registry package upgrades.",
+            "description": "When claiming the next item, only consider work carrying this exact tag.",
             "examples": [
-              "latest",
-              "next",
-              "2026.5.11"
+              "sdk",
+              "release"
             ],
             "type": "string"
           },
@@ -32061,7 +32605,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the next-item context returned with the claim.",
             "examples": [
               600,
               "1200"
@@ -32098,7 +32642,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -32133,7 +32677,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -32175,7 +32723,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -32210,7 +32758,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -32252,7 +32804,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -32287,7 +32839,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -32329,7 +32885,7 @@
             "type": "string"
           },
           "force": {
-            "description": "Force.",
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
           },
           "id": {
@@ -32364,7 +32920,11 @@
             "type": "string"
           },
           "pmExecutable": {
-            "description": "Pm Executable.",
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
             "type": "string"
           },
           "profile": {
@@ -32376,7 +32936,7 @@
             "type": "boolean"
           },
           "text": {
-            "description": "Text.",
+            "description": "Text payload used by append, comment, note, or learning mutations.",
             "type": "string"
           },
           "timeoutMs": {

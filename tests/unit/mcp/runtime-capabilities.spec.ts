@@ -1,7 +1,10 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { writeFile } from "node:fs/promises";
+import path from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import {
+  _testOnlyMcpRuntimeCapabilities,
   normalizeWorkspaceToolArguments,
+  resolveMcpToolAccess,
   resolveMcpToolProfile,
   resolveMcpToolSurface,
   selectMcpExtensionActions,
@@ -19,7 +22,9 @@ import {
   resolvePmCommandVisibilityTier,
 } from "../../../src/sdk/agent-capability-contracts.js";
 import { buildPmActionToolInputSchema } from "../../../src/sdk/cli-contracts.js";
+import { buildWorkspaceExtensionCommandContracts } from "../../../src/sdk/workspace-contracts.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { writeTestExtension } from "../../helpers/extensions.js";
 
 describe("runtime MCP capabilities", () => {
   const originalProfile = process.env.PM_MCP_PROFILE;
@@ -47,8 +52,11 @@ describe("runtime MCP capabilities", () => {
     expect(full.tools).toHaveLength(TOOLS.length);
     expect(core.tools.map((tool) => tool.name)).toContain("pm_context");
     expect(JSON.stringify(core.tools[0]?.inputSchema)).not.toContain(
-      '"description"',
+      "Workspace directory to run the native pm operation in.",
     );
+    const coreCreate = core.tools.find((tool) => tool.name === "pm_create");
+    expect(coreCreate).toBeDefined();
+    expect(coreCreate?.inputSchema.properties).toHaveProperty("description");
     expect(JSON.stringify(full.tools[0]?.inputSchema)).toContain(
       '"description"',
     );
@@ -75,6 +83,32 @@ describe("runtime MCP capabilities", () => {
         required: [],
       }),
     ).toMatchObject({ additionalProperties: false, required: [] });
+    expect(
+      buildPmActionToolInputSchema("search", {
+        properties: {},
+        required: ["query"],
+      }),
+    ).toMatchObject({
+      required: [],
+      anyOf: [{ required: ["query"] }, { required: ["keywords"] }],
+    });
+    expect(
+      buildPmActionToolInputSchema("claim", {
+        properties: {},
+        required: ["id"],
+      }),
+    ).toMatchObject({
+      required: [],
+      oneOf: [{ required: ["id"] }, { required: ["next"] }],
+    });
+    const claimSchema = buildPmActionToolInputSchema("claim");
+    expect(claimSchema.properties).toMatchObject({
+      tag: { description: expect.stringContaining("exact tag") },
+      tokenBudget: {
+        description: expect.stringContaining("next-item context"),
+      },
+      force: { description: expect.stringContaining("ownership") },
+    });
     const transportKeys = new Set(Object.keys(TOOL_SCHEMA_BASE.properties));
     for (const [toolName, action] of Object.entries(NARROW_TOOL_ACTIONS)) {
       const actual = TOOLS.find((tool) => tool.name === toolName);
@@ -124,6 +158,52 @@ describe("runtime MCP capabilities", () => {
     expect(
       selectMcpExtensionActions(extensionCommands, "custom", new Set()),
     ).toEqual([]);
+    expect(_testOnlyMcpRuntimeCapabilities.workspaceFields({})).toEqual([]);
+    expect(
+      _testOnlyMcpRuntimeCapabilities.workspaceExtensionCommands({}),
+    ).toEqual([]);
+    expect(
+      buildWorkspaceExtensionCommandContracts([
+        {
+          layer: "project",
+          name: "projection-test",
+          command: "projection test",
+          action: "projection-test",
+          examples: [],
+          failure_hints: [],
+          arguments: [
+            {
+              name: "targets",
+              required: true,
+              variadic: true,
+              description: "Targets to project.",
+            },
+            { name: "mode" },
+          ],
+        },
+      ]),
+    ).toEqual([
+      {
+        command: "projection test",
+        action: "projection-test",
+        arguments: [
+          {
+            name: "targets",
+            required: true,
+            variadic: true,
+            description: "Targets to project.",
+          },
+          {
+            name: "mode",
+            required: false,
+            variadic: false,
+            description: undefined,
+          },
+        ],
+        description: undefined,
+        tier: "standard",
+      },
+    ]);
   });
 
   it("validates custom profiles and exact tool allowlists", async () => {
@@ -202,6 +282,18 @@ describe("runtime MCP capabilities", () => {
         params: { name: "pm_run", arguments: { action: "context" } },
       }),
     ).rejects.toThrow("unavailable in the core profile");
+    await expect(
+      resolveMcpToolAccess(TOOLS, "pm_context", {}, {}),
+    ).resolves.toEqual({ profile: "core", available: true });
+    await expect(resolveMcpToolAccess(TOOLS, "pm_run", {}, {})).resolves.toEqual(
+      { profile: "core", available: false },
+    );
+    await expect(
+      resolveMcpToolAccess(TOOLS, "pm_run", {}, {
+        PM_MCP_PROFILE: "custom",
+        PM_MCP_TOOLS: "pm_context",
+      }),
+    ).resolves.toEqual({ profile: "custom", available: false });
   });
 
   it("projects runtime fields into schemas and mutation options", async () => {
@@ -237,7 +329,8 @@ describe("runtime MCP capabilities", () => {
           path: context.pmPath,
           portfolioSignal: "high",
         }),
-      ).resolves.toMatchObject({
+      ).resolves.toEqual({
+        path: context.pmPath,
         options: { portfolioSignal: "high" },
       });
       await expect(
@@ -293,12 +386,61 @@ describe("runtime MCP capabilities", () => {
         { path: context.pmPath },
         { PM_MCP_PROFILE: "full" },
       );
+      const refreshedCreate = refreshed.tools.find(
+        (tool) => tool.name === "pm_create",
+      );
+      expect(refreshedCreate).toBeDefined();
       expect(
-        (
-          refreshed.tools.find((tool) => tool.name === "pm_create")?.inputSchema
-            .properties as Record<string, unknown>
-        ).deliveryMarkers,
-      ).toMatchObject({ type: "array", items: { type: "string" } });
+        refreshedCreate?.inputSchema.properties,
+      ).toMatchObject({
+        deliveryMarkers: {
+          type: "array",
+          items: { type: "string" },
+        },
+      });
+    });
+  });
+
+  it("promotes pm_run only for a visible activated extension action", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions"),
+        directory: "mcp-core-command",
+        name: "mcp-core-command",
+        entrySource: [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'mcp core ping',",
+          "      tier: 'core',",
+          "      arguments: [{ name: 'target', required: true }],",
+          "      run: () => ({ ok: true }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      });
+      await expect(
+        resolveMcpToolAccess(
+          TOOLS,
+          "pm_run",
+          { cwd: context.tempRoot, path: context.pmPath },
+          {},
+        ),
+      ).resolves.toEqual({ profile: "core", available: true });
+      const surface = await resolveMcpToolSurface(
+        TOOLS,
+        { cwd: context.tempRoot, path: context.pmPath },
+        {},
+      );
+      expect(surface.extensionActions).toContain("mcp-core-ping");
+      expect(
+        surface.tools.find((tool) => tool.name === "pm_run")?.inputSchema
+          .properties,
+      ).toMatchObject({
+        action: { enum: expect.arrayContaining(["mcp-core-ping"]) },
+      });
     });
   });
 

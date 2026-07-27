@@ -1337,10 +1337,22 @@ export function buildPmActionToolInputSchema(
     ...(actionSchema.properties as Record<string, unknown>),
   };
   delete actionProperties.action;
+  const conditionalBranches = [
+    ...((actionSchema.anyOf as Array<{ required?: unknown[] }> | undefined) ??
+      []),
+    ...((actionSchema.oneOf as Array<{ required?: unknown[] }> | undefined) ??
+      []),
+  ];
   const required = (
     options.required ??
     (actionSchema.required as unknown[]).map(String)
-  ).filter((key) => key !== "action");
+  ).filter((key) => {
+    if (key === "action") return false;
+    if (options.required === undefined) return true;
+    return !conditionalBranches.some((branch) =>
+      branch.required?.map(String).includes(key),
+    );
+  });
   const schema: Record<string, unknown> = {
     type: "object",
     additionalProperties: options.additionalProperties ?? true,

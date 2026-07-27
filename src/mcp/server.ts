@@ -35,6 +35,7 @@ import {
 import { TOOLS } from "./tool-definitions.js";
 import {
   normalizeWorkspaceToolArguments,
+  resolveMcpToolAccess,
   resolveMcpToolSurface,
 } from "./runtime-capabilities.js";
 import {
@@ -435,10 +436,10 @@ async function handleToolCall(
       const requestedArgs = decodeHtmlEntitiesInOptions(
         asRecordClone(params.arguments),
       );
-      const surface = await resolveMcpToolSurface(TOOLS, requestedArgs);
-      if (!surface.tools.some((tool) => tool.name === name)) {
+      const access = await resolveMcpToolAccess(TOOLS, name, requestedArgs);
+      if (!access.available) {
         throw new PmCliError(
-          `pm MCP tool "${name}" is unavailable in the ${surface.profile} profile.`,
+          `pm MCP tool "${name}" is unavailable in the ${access.profile} profile.`,
           64,
         );
       }
@@ -471,7 +472,7 @@ async function handleToolCall(
             ...detectUnexpectedTopLevelKeys(
               name,
               args,
-              declaredToolKeys(surface.tools),
+              declaredToolKeys(),
             ),
             ...detectUnexpectedOptionKeys(name, action, args),
             ...(await collectMutationGuardWarnings(name, action, args)),

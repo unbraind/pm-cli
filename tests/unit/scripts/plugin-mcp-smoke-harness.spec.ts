@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
@@ -51,7 +52,7 @@ describe("plugin-mcp-smoke-harness", () => {
       expect.objectContaining({
         env: expect.objectContaining({
           PM_MCP_PROFILE: "full",
-          PM_PATH: "/tmp/pm-mcp-harness/.agents/pm",
+          PM_PATH: path.join("/tmp/pm-mcp-harness", ".agents", "pm"),
         }),
       }),
     );

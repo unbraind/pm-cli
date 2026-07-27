@@ -40,7 +40,30 @@ export interface ResolvedMcpToolSurface {
   extensionActions: string[];
 }
 
-function compactSchemaDescriptions<Value>(value: Value): Value {
+/** Profile decision for one tool call without projecting every tool schema. */
+export interface ResolvedMcpToolAccess {
+  /** Resolved profile after environment validation. */
+  profile: PmMcpToolProfile;
+  /** Whether the requested tool is callable in that profile and workspace. */
+  available: boolean;
+}
+
+function workspaceFields(
+  workspace: Pick<WorkspaceContracts, "fields">,
+): NonNullable<WorkspaceContracts["fields"]> {
+  return workspace.fields ?? [];
+}
+
+function workspaceExtensionCommands(
+  workspace: Pick<WorkspaceContracts, "extensionCommands">,
+): NonNullable<WorkspaceContracts["extensionCommands"]> {
+  return workspace.extensionCommands ?? [];
+}
+
+function compactSchemaDescriptions<Value>(
+  value: Value,
+  inProperties = false,
+): Value {
   if (Array.isArray(value)) {
     return value.map((entry) => compactSchemaDescriptions(entry)) as Value;
   }
@@ -49,8 +72,11 @@ function compactSchemaDescriptions<Value>(value: Value): Value {
   }
   return Object.fromEntries(
     Object.entries(value)
-      .filter(([key]) => key !== "description")
-      .map(([key, entry]) => [key, compactSchemaDescriptions(entry)]),
+      .filter(([key]) => inProperties || key !== "description")
+      .map(([key, entry]) => [
+        key,
+        compactSchemaDescriptions(entry, key === "properties"),
+      ]),
   ) as Value;
 }
 
@@ -78,6 +104,17 @@ function parseCustomToolAllowlist(
     );
   }
   return requested;
+}
+
+function resolveSelectedToolNames(
+  availableTools: readonly ToolDefinition[],
+  profile: PmMcpToolProfile,
+  environment: McpProfileEnvironment,
+): Set<string> {
+  const availableNames = new Set(availableTools.map((tool) => tool.name));
+  return profile === "custom"
+    ? parseCustomToolAllowlist(environment.PM_MCP_TOOLS, availableNames)
+    : new Set(listPmMcpToolsForProfile([...availableNames], profile));
 }
 
 /** Resolve and validate the configured MCP profile. */
@@ -148,7 +185,7 @@ function projectWorkspaceToolDefinition(
   if (workspace && command) {
     if (properties.type) properties.type.enum = [...workspace.types];
     if (properties.status) properties.status.enum = [...workspace.statuses];
-    for (const field of workspace.fields!) {
+    for (const field of workspaceFields(workspace)) {
       if (field.commands.includes(command)) {
         properties[field.optionName] = fieldProperty(
           field.type,
@@ -179,16 +216,11 @@ export async function resolveMcpToolSurface(
   environment: McpProfileEnvironment = process.env,
 ): Promise<ResolvedMcpToolSurface> {
   const profile = resolveMcpToolProfile(environment);
-  const availableNames = new Set(availableTools.map((tool) => tool.name));
-  const selectedNames =
-    profile === "custom"
-      ? parseCustomToolAllowlist(environment.PM_MCP_TOOLS, availableNames)
-      : new Set(
-          listPmMcpToolsForProfile(
-            [...availableNames],
-            profile,
-          ),
-        );
+  const selectedNames = resolveSelectedToolNames(
+    availableTools,
+    profile,
+    environment,
+  );
   const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
   const pmRoot = resolvePmRoot(
     cwd,
@@ -198,7 +230,7 @@ export async function resolveMcpToolSurface(
     ? await getWorkspaceContracts(pmRoot, { cwd })
     : null;
   const extensionActions = selectMcpExtensionActions(
-    workspace?.extensionCommands ?? [],
+    workspace ? workspaceExtensionCommands(workspace) : [],
     profile,
     selectedNames,
   );
@@ -216,6 +248,47 @@ export async function resolveMcpToolSurface(
       ),
     );
   return { profile, tools, extensionActions };
+}
+
+/**
+ * Resolve one tool's callability without cloning and enriching the complete
+ * schema surface. Only compact/standard `pm_run` calls need workspace
+ * contracts because an activated extension action can promote that dispatcher.
+ */
+export async function resolveMcpToolAccess(
+  availableTools: readonly ToolDefinition[],
+  toolName: string,
+  args: Record<string, unknown> = {},
+  environment: McpProfileEnvironment = process.env,
+): Promise<ResolvedMcpToolAccess> {
+  const profile = resolveMcpToolProfile(environment);
+  const selectedNames = resolveSelectedToolNames(
+    availableTools,
+    profile,
+    environment,
+  );
+  if (selectedNames.has(toolName)) return { profile, available: true };
+  if (toolName !== "pm_run" || profile === "custom") {
+    return { profile, available: false };
+  }
+  const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
+  const pmRoot = resolvePmRoot(
+    cwd,
+    typeof args.path === "string" ? args.path : undefined,
+  );
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return { profile, available: false };
+  }
+  const workspace = await getWorkspaceContracts(pmRoot, { cwd });
+  return {
+    profile,
+    available:
+      selectMcpExtensionActions(
+        workspaceExtensionCommands(workspace),
+        profile,
+        selectedNames,
+      ).length > 0,
+  };
 }
 
 /** Move declared custom-field inputs into the runtime action option bag. */
@@ -238,15 +311,23 @@ export async function normalizeWorkspaceToolArguments(
     !Array.isArray(args.options)
       ? { ...(args.options as Record<string, unknown>) }
       : {};
+  const normalizedArgs = { ...args };
   let changed = false;
-  for (const field of workspace.fields!) {
+  for (const field of workspaceFields(workspace)) {
     if (
       field.commands.includes(command) &&
       Object.prototype.hasOwnProperty.call(args, field.optionName)
     ) {
       options[field.optionName] = args[field.optionName];
+      delete normalizedArgs[field.optionName];
       changed = true;
     }
   }
-  return changed ? { ...args, options } : args;
+  return changed ? { ...normalizedArgs, options } : args;
 }
+
+/** Internal compatibility helpers exposed only for exhaustive fallback tests. */
+export const _testOnlyMcpRuntimeCapabilities = {
+  workspaceExtensionCommands,
+  workspaceFields,
+};

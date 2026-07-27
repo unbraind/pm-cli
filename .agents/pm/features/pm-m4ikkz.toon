@@ -1,12 +1,12 @@
 id: pm-m4ikkz
-title: "MCP tool surface is a static snapshot: blind to runtime workspace schema and extension commands, and custom fields are unreachable through it"
+title: Project live workspace schema and extension commands into MCP discovery and mutations
 description: "The CLI derives its surface from the active workspace at runtime: pm schema add-field mints a real CLI flag, pm schema add-type/add-status widen the accepted domains, installed extensions register real commands, and pm contracts reports all of it. The MCP server does none of that. tools/list is a static 31-tool snapshot that never consults the workspace, so the agent surface that most agents actually drive is strictly less capable than the CLI, and is blind to exactly the customization the product's thesis rests on. Measured against dist build 2026.7.25 on a sandbox workspace carrying a custom type Experiment, a custom status needs_review, a custom field hypothesis, and an installed extension registering 'myext ping'.\n\nFindings, in increasing severity:\n\n1. Custom item types and custom statuses are usable but undeclared. tools/list contains no occurrence of 'Experiment' or 'needs_review'; a pm_create call passing them succeeds and persists correctly. So they work only if the agent already knows they exist from outside the protocol.\n\n2. Extension commands are executable but undiscoverable. 'myext ping' appears in no tool. It IS reachable as pm_run with action 'myext ping' and returns the extension's payload correctly, but pm_run.action is declared as a plain string whose description embeds a hardcoded list of operation names that does not include it. There is no enum, so there is no client-side validation and no discovery path.\n\n3. Custom fields are not reachable at all. pm_create with a top-level hypothesis argument returns the warning 'Unexpected top-level argument \"hypothesis\" for pm_create. It was passed through unchanged; declared arguments are: cwd, path, author, fullChangedFields, allowMissingParent, allowDuplicate, options.' The item is created and the field is silently dropped (pm get shows hypothesis null). Passing it nested as options.hypothesis is likewise dropped. The same warning text is emitted for title, type and status in the same call, and those three DO persist, so the warning does not distinguish honored arguments from discarded ones and an agent cannot tell which happened. A field that the CLI exposes as a first-class flag is therefore write-impossible over MCP.\n\nCost context: the static tools/list already costs 40,010 bytes, roughly 10k tokens, for 31 tools, so growing it naively is not the answer; the surface should be derived and scoped to what the workspace actually has.\n\nDistinct from pm-xwah, which derives MCP inputSchemas from the static *_FLAG_CONTRACTS tables. This item is about deriving from the RUNTIME workspace (schema registry + extension registry), which those tables cannot know. Distinct from pm-upi0, which is about unknown keys in nested options being dropped generally; finding 3 here is a declared-capability gap, not an unknown-key warning gap."
 type: Feature
 status: closed
 priority: 1
 tags[4]: agent-ux,"area:mcp","area:schema",extensibility
 created_at: "2026-07-25T21:13:30.593Z"
-updated_at: "2026-07-27T18:20:30.011Z"
+updated_at: "2026-07-27T19:03:44.546Z"
 closed_at: "2026-07-27T18:19:48.619Z"
 author: "harness:claude-code"
 estimated_minutes: 480
@@ -23,9 +23,10 @@ dependencies[5]{id,kind,created_at}:
   pm-xwah,related,"2026-07-25T21:13:30.593Z"
   pm-1kxs,implements,"2026-07-26T05:49:32.011Z"
   pm-5k4v,implements,"2026-07-26T05:59:27.658Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-27T16:42:37.169Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:09.327Z","harness:codex","Evidence: getWorkspaceContracts now exposes runtime fields and activated extension commands; tools/list projects live type/status enums, camelCase custom fields, and extension actions, while tools/call normalizes field values into native action options. Unrelated packed-consumer proof discovered delivery_marker and extension actions through SDK/MCP; focused runtime and dynamic package action suites pass."
+  "2026-07-27T19:03:44.546Z","harness:codex","Review follow-up: renamed the completed feature to describe its delivered live schema/extension projection. The detailed original limitation remains preserved in the description and history; pm-changelog will regenerate the public release entry from the positive outcome title."
 files[3]{path,scope,note}:
   src/mcp/runtime-capabilities.ts,project,live workspace schema projection and argument normalization
   src/sdk/runtime.ts,project,workspace field and extension command contracts
