@@ -319,6 +319,20 @@ describe("runtime MCP capabilities", () => {
         "--json",
       ]);
       expect(addField.code).toBe(0);
+      for (const collision of ["cwd", "path", "options"]) {
+        expect(
+          context.runCli([
+            "schema",
+            "add-field",
+            collision,
+            "--type",
+            "string",
+            "--commands",
+            "create,update",
+            "--json",
+          ]).code,
+        ).toBe(0);
+      }
       const surface = await resolveMcpToolSurface(
         TOOLS,
         { path: context.pmPath },
@@ -332,6 +346,14 @@ describe("runtime MCP capabilities", () => {
             | undefined
         )?.portfolioSignal,
       ).toMatchObject({ type: "string" });
+      const canonicalCreate = TOOLS.find((tool) => tool.name === "pm_create");
+      expect(create?.inputSchema.properties).toMatchObject({
+        cwd: TOOL_SCHEMA_BASE.properties.cwd,
+        path: TOOL_SCHEMA_BASE.properties.path,
+        options: (
+          canonicalCreate?.inputSchema.properties as Record<string, unknown>
+        ).options,
+      });
       await expect(
         normalizeWorkspaceToolArguments("pm_create", {
           path: context.pmPath,
@@ -340,6 +362,27 @@ describe("runtime MCP capabilities", () => {
       ).resolves.toEqual({
         path: context.pmPath,
         options: { portfolioSignal: "high" },
+      });
+      await expect(
+        normalizeWorkspaceToolArguments("pm_create", {
+          cwd: context.tempRoot,
+          path: context.pmPath,
+          options: {
+            cwd: "custom cwd",
+            path: "custom path",
+            options: "custom options",
+          },
+          portfolioSignal: "high",
+        }),
+      ).resolves.toEqual({
+        cwd: context.tempRoot,
+        path: context.pmPath,
+        options: {
+          cwd: "custom cwd",
+          path: "custom path",
+          options: "custom options",
+          portfolioSignal: "high",
+        },
       });
       await expect(
         normalizeWorkspaceToolArguments("pm_update", {

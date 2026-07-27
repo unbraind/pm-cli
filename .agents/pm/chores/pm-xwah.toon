@@ -6,8 +6,8 @@ status: closed
 priority: 3
 tags[4]: "area:contracts","area:mcp",dx,simplification
 created_at: "2026-07-13T17:29:48.188Z"
-updated_at: "2026-07-27T18:20:27.163Z"
-closed_at: "2026-07-27T18:19:26.326Z"
+updated_at: "2026-07-27T20:33:15.794Z"
+closed_at: "2026-07-27T20:33:12.673Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Every mutation/query MCP tool in src/mcp/tool-definitions.ts derives its flat camelCase inputSchema keys from the corresponding *_FLAG_CONTRACTS table (as pm_copy does from COPY_FLAG_CONTRACTS since PR#545) instead of a hand-declared parallel table; contracts:check snapshot regenerated once and stays byte-stable across a no-op rebuild; a unit spec asserts no tool schema key exists without a backing flag-contract entry (drift becomes structurally impossible, not just snapshot-caught); MCP integration suites stay warning-clean"
@@ -16,22 +16,25 @@ risk: low
 confidence: high
 resolution: implemented
 expected_result: MCP schema keys derive from canonical flag and action contracts with structural drift coverage.
-actual_result: "All dedicated tool schemas use buildPmActionToolInputSchema; conformance, snapshot, and MCP integration checks pass."
+actual_result: "All dedicated schemas derive from canonical contracts; runtime enrichment cannot overwrite canonical keys, and collision regressions plus all gates pass."
 dependencies[3]{id,kind,created_at}:
   pm-srns,related,"2026-07-13T17:29:48.188Z"
   pm-mpbb,implements,"2026-07-26T05:55:59.163Z"
   pm-m4ikkz,implements,"2026-07-26T05:59:25.606Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-27T16:42:25.670Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:06.330Z","harness:codex","Evidence: all dedicated MCP schemas now project from canonical SDK action/flag contracts through buildPmActionToolInputSchema; the conformance test rejects any non-transport schema key without a canonical backing property. Contract snapshot/check and the 38-test MCP focused suite pass warning-clean."
-files[2]{path,scope,note}:
+  "2026-07-27T20:33:06.688Z","harness:codex","Exact-head Greptile P1 remediation: verified that runtime custom fields named cwd, path, or options could overwrite canonical MCP schema keys and move transport arguments into the mutation options bag. Runtime projection now leaves every existing canonical property intact; normalization derives reserved names from TOOL_SCHEMA_BASE and the canonical action schema before moving custom inputs. A real temporary tracker registers all three colliding fields and verifies stable workspace routing plus nested custom values. The finding was up-voted, answered inline, and resolved. Verification: focused runtime suite, full typechecks, ESLint, zero duplicates, strict static/docstring quality, contract drift, and 379-file/6,428-test coverage at 100% statements (44,601/44,601), branches (31,721/31,721), functions (9,138/9,138), and lines (43,318/43,318)."
+files[4]{path,scope,note}:
+  src/mcp/runtime-capabilities.ts,project,protect canonical MCP transport/action parameters from runtime field collisions
   src/mcp/tool-definitions.ts,project,narrow MCP schemas derived from action contracts
   src/sdk/cli-contracts/tool-schema.ts,project,canonical action schema projection
+  tests/unit/mcp/runtime-capabilities.spec.ts,project,regression coverage for colliding runtime fields and nested options
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms3jonyj-t2eatf,test,passed,"2026-07-27T18:12:43.784Z","2026-07-27T18:12:57.547Z","2026-07-27T18:12:57.547Z",1,0,0
 docs[1]{path,scope,note}:
   docs/MCP_CAPABILITY_SURFACES.md,project,canonical MCP schema and surface guidance
-close_reason: "Canonical contract-derived schemas, conformance test, stable snapshot, and warning-clean MCP integration are complete."
+close_reason: "Canonical MCP schemas and runtime custom-field projection now structurally preserve transport/action properties, with exact-head review and 100/100/100/100 coverage complete."
 body: ""

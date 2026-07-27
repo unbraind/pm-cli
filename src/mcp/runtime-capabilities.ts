@@ -9,6 +9,7 @@ import {
   listPmMcpToolsForProfile,
   type PmMcpToolProfile,
 } from "../sdk/agent-capability-contracts.js";
+import { buildPmActionToolInputSchema } from "../sdk/cli-contracts/tool-schema.js";
 import {
   getWorkspaceContracts,
   type WorkspaceContracts,
@@ -20,7 +21,10 @@ import {
   pathExists,
   resolvePmRoot,
 } from "../sdk/runtime-primitives.js";
-import type { ToolDefinition } from "./tool-definitions.js";
+import {
+  TOOL_SCHEMA_BASE,
+  type ToolDefinition,
+} from "./tool-definitions.js";
 
 /** Environment configuration accepted by the MCP profile resolver. */
 export interface McpProfileEnvironment {
@@ -186,7 +190,10 @@ function projectWorkspaceToolDefinition(
     if (properties.type) properties.type.enum = [...workspace.types];
     if (properties.status) properties.status.enum = [...workspace.statuses];
     for (const field of workspaceFields(workspace)) {
-      if (field.commands.includes(command)) {
+      if (
+        field.commands.includes(command) &&
+        !Object.prototype.hasOwnProperty.call(properties, field.optionName)
+      ) {
         properties[field.optionName] = fieldProperty(
           field.type,
           field.description,
@@ -312,10 +319,20 @@ export async function normalizeWorkspaceToolArguments(
       ? { ...(args.options as Record<string, unknown>) }
       : {};
   const normalizedArgs = { ...args };
+  const canonicalProperties = new Set([
+    ...Object.keys(TOOL_SCHEMA_BASE.properties),
+    ...Object.keys(
+      buildPmActionToolInputSchema(command).properties as Record<
+        string,
+        unknown
+      >,
+    ),
+  ]);
   let changed = false;
   for (const field of workspaceFields(workspace)) {
     if (
       field.commands.includes(command) &&
+      !canonicalProperties.has(field.optionName) &&
       Object.prototype.hasOwnProperty.call(args, field.optionName)
     ) {
       options[field.optionName] = args[field.optionName];
