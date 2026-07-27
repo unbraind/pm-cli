@@ -26,9 +26,17 @@ async function runVerify(options: ScenarioOptions) {
   }
 
   const mkdtempSync = vi.fn(() => "/tmp/pm-cli-published-verify-test");
+  const readFileSync = vi.fn(() =>
+    JSON.stringify({ name: "@unbrained/pm-cli" }),
+  );
   const rmSync = vi.fn();
   const writeFileSync = vi.fn();
-  vi.doMock("node:fs", () => ({ mkdtempSync, rmSync, writeFileSync }));
+  vi.doMock("node:fs", () => ({
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+  }));
 
   let callIndex = 0;
   const runCommand = vi.fn((command: string, args: string[]) => {
@@ -164,6 +172,9 @@ describe("scripts/release/verify-published-release: success path", () => {
     expect(json.package.npx.package.ok).toBe(true);
     expect(json.package.bunx.ok).toBe(true);
     expect(json.github_release.tagName).toBe("v2026.6.14");
+    expect(runCommand.mock.calls[0]?.[1]?.[1]).toBe(
+      "@unbrained/pm-cli@2026.6.14",
+    );
     expect(writeFileSync).toHaveBeenCalledWith(
       path.join("/tmp/pm-cli-published-verify-test", "npmrc-public"),
       "",

@@ -460,7 +460,9 @@ describe("release automation contract", () => {
     expect(workflow).toContain(
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
     );
-    expect(workflow).toContain('NPM_PACKAGE: "@unbrained/pm-cli"');
+    expect(workflow).toContain(
+      'export NPM_PACKAGE="$(node -p \'require("./package.json").name\')"',
+    );
     expect(workflow).toContain('npm access set status=public "${NPM_PACKAGE}"');
     expect(workflow).toContain(
       "attempting access recovery before immutable publication",
@@ -481,7 +483,7 @@ describe("release automation contract", () => {
     ).toBeLessThan(
       workflow.indexOf("npm access set status=public"),
     );
-    expect(workflow.match(/@unbrained\/pm-cli/g)?.length).toBe(1);
+    expect(workflow).not.toContain("@unbrained/pm-cli");
     expect(workflow).toContain('env -u NODE_AUTH_TOKEN -u NPM_TOKEN');
     expect(workflow).toContain(
       'npm_config_userconfig="${PUBLIC_NPMRC}"',
@@ -511,6 +513,7 @@ describe("release automation contract", () => {
     try {
       const fakeNpm = path.join(tempRoot, "npm");
       const npmLog = path.join(tempRoot, "npm.log");
+      const accessMarker = path.join(tempRoot, "access-attempted");
       await writeFile(
         fakeNpm,
         `#!/usr/bin/env bash
@@ -518,12 +521,19 @@ set -euo pipefail
 printf '%s\\n' "$*" >> "\${NPM_FAKE_LOG}"
 case "$*" in
   "view \${NPM_PACKAGE}@\${RELEASE_VERSION} version --json")
+    if [[ -f "\${ACCESS_MARKER}" ]]; then
+      exit "\${POST_RECOVERY_TARGET_STATUS}"
+    fi
     exit "\${TARGET_VERSION_STATUS}"
     ;;
   "view \${NPM_PACKAGE} name --json")
+    if [[ -f "\${ACCESS_MARKER}" ]]; then
+      exit "\${POST_RECOVERY_PACKAGE_STATUS}"
+    fi
     exit "\${PACKAGE_STATUS}"
     ;;
   "access set status=public \${NPM_PACKAGE}")
+    : > "\${ACCESS_MARKER}"
     printf '%s\\n' "\${ACCESS_OUTPUT}"
     exit "\${ACCESS_STATUS}"
     ;;
@@ -552,8 +562,11 @@ esac
             RUNNER_TEMP: tempRoot,
             NPM_PACKAGE: "@unbrained/pm-cli",
             NPM_FAKE_LOG: npmLog,
+            ACCESS_MARKER: accessMarker,
             TARGET_VERSION_STATUS: "1",
             PACKAGE_STATUS: "0",
+            POST_RECOVERY_TARGET_STATUS: "1",
+            POST_RECOVERY_PACKAGE_STATUS: "1",
             ACCESS_STATUS: "99",
             ACCESS_OUTPUT: "access should not run",
             ...overrides,
@@ -586,6 +599,64 @@ esac
       expect(invocations).not.toContain("access set status=public");
 
       await writeFile(npmLog, "", "utf8");
+      await rm(accessMarker, { force: true });
+      const recoveredExistingVersion = runScenario({
+        PACKAGE_STATUS: "1",
+        ACCESS_STATUS: "0",
+        ACCESS_OUTPUT: "access restored",
+        POST_RECOVERY_TARGET_STATUS: "0",
+      });
+      expect(recoveredExistingVersion.status).toBe(0);
+      expect(recoveredExistingVersion.stdout).toContain(
+        "@unbrained/pm-cli@2026.7.27 became publicly available; skipping npm publish.",
+      );
+      invocations = await readFile(npmLog, "utf8");
+      expect(invocations).toContain(
+        "access set status=public @unbrained/pm-cli",
+      );
+      expect(invocations).not.toContain("publish --access public");
+
+      await writeFile(npmLog, "", "utf8");
+      await rm(accessMarker, { force: true });
+      const recoveredMissingVersion = runScenario({
+        PACKAGE_STATUS: "1",
+        ACCESS_STATUS: "0",
+        ACCESS_OUTPUT: "access restored",
+        POST_RECOVERY_PACKAGE_STATUS: "0",
+      });
+      expect(recoveredMissingVersion.status).toBe(0);
+      expect(recoveredMissingVersion.stdout).toContain(
+        "@unbrained/pm-cli is public after access recovery but 2026.7.27 is not; publishing.",
+      );
+      invocations = await readFile(npmLog, "utf8");
+      expect(invocations).toContain(
+        "access set status=public @unbrained/pm-cli",
+      );
+      expect(invocations).toContain(
+        "publish --access public --provenance --tag latest",
+      );
+
+      await writeFile(npmLog, "", "utf8");
+      await rm(accessMarker, { force: true });
+      const firstPublication = runScenario({
+        PACKAGE_STATUS: "1",
+        ACCESS_STATUS: "1",
+        ACCESS_OUTPUT: "npm error code E404",
+      });
+      expect(firstPublication.status).toBe(0);
+      expect(firstPublication.stdout).toContain(
+        "@unbrained/pm-cli does not exist for this credential; publishing 2026.7.27.",
+      );
+      invocations = await readFile(npmLog, "utf8");
+      expect(invocations).toContain(
+        "access set status=public @unbrained/pm-cli",
+      );
+      expect(invocations).toContain(
+        "publish --access public --provenance --tag latest",
+      );
+
+      await writeFile(npmLog, "", "utf8");
+      await rm(accessMarker, { force: true });
       const deniedRecovery = runScenario({
         PACKAGE_STATUS: "1",
         ACCESS_STATUS: "1",

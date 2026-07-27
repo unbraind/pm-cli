@@ -248,9 +248,10 @@ git push origin v<version>
   successful access recovery it rechecks anonymous metadata, then either skips
   the now-visible target or publishes the still-missing version. Permission,
   authentication, and registry failures stop the workflow instead of risking
-  an immutable-version overwrite. One `NPM_PACKAGE` workflow variable supplies
-  the publish guard, access recovery, and post-publish npm/npx/bunx verifier so
-  those identities cannot drift. The explicit stable dist-tag also preserves
+  an immutable-version overwrite. The checked-out tag's `package.json` supplies
+  the canonical package identity to both the publish guard and the
+  post-publish npm/npx/bunx verifier so those identities cannot drift. The
+  explicit stable dist-tag also preserves
   correct `latest` behavior when rerunning historical ordinal tags.
 - post-publish npm/npx/bunx verification through
   `scripts/release/verify-published-release.mjs`, using isolated empty npm and

@@ -482,7 +482,7 @@ describe("GitHub workflow contract", () => {
       "body_path: ${{ runner.temp }}/release-notes.md",
       PINNED_ACTIONS.setupBun,
       "NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}",
-      'NPM_PACKAGE: "@unbrained/pm-cli"',
+      'export NPM_PACKAGE="$(node -p \'require("./package.json").name\')"',
       'anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version',
       'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
       "${NPM_PACKAGE} is publicly available but ${VERSION} is not; publishing.",
@@ -515,7 +515,7 @@ describe("GitHub workflow contract", () => {
     ).toBeLessThan(
       releaseWorkflow.indexOf("npm access set status=public"),
     );
-    expect(releaseWorkflow.match(/@unbrained\/pm-cli/g)?.length).toBe(1);
+    expect(releaseWorkflow).not.toContain("@unbrained/pm-cli");
     expect("if should_publish; then npm publish --access public; fi").toMatch(
       untaggedNpmPublish,
     );

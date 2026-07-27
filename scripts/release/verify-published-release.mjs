@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
 
-const NPM_PACKAGE = process.env.NPM_PACKAGE?.trim() || "@unbrained/pm-cli";
+const NPM_PACKAGE =
+  process.env.NPM_PACKAGE?.trim() ||
+  JSON.parse(
+    readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+  ).name;
 
 function usage() {
   console.log(`Usage:
