@@ -94,6 +94,7 @@ import {
   PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS,
   PM_EXTENSION_SERVICE_NAME_CONTRACTS,
   PM_EXTENSION_TRUST_MODE_CONTRACTS,
+  PM_OUTPUT_DEGRADATION_STEPS,
   PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_TOOL_ACTIONS,
@@ -342,19 +343,92 @@ interface CommandSummarySurface {
   default_max_estimated_tokens: number | null;
 }
 
-const AGENT_BOOTSTRAP_FLAG_COMMANDS = new Set([
-  "claim",
-  "close",
-  "context",
-  "contracts",
-  "create",
-  "get",
-  "health",
-  "list",
-  "next",
-  "search",
-  "update",
-  "validate",
+const AGENT_BOOTSTRAP_FLAGS = new Map<string, readonly string[]>([
+  [
+    "claim",
+    [
+      "--if-available",
+      "--next",
+      "--type",
+      "--priority",
+      "--token-budget",
+      "--explain-ranking",
+    ],
+  ],
+  [
+    "close",
+    [
+      "--reason",
+      "--validate-close",
+      "--resolution",
+      "--expected-result",
+      "--actual-result",
+      "--message",
+    ],
+  ],
+  [
+    "context",
+    [
+      "--limit",
+      "--after",
+      "--depth",
+      "--section",
+      "--token-budget",
+      "--explain-ranking",
+    ],
+  ],
+  [
+    "contracts",
+    [
+      "--command",
+      "--flags-only",
+      "--summary",
+      "--runtime-only",
+      "--availability-only",
+      "--full",
+    ],
+  ],
+  [
+    "create",
+    ["--title", "--type", "--status", "--priority", "--dep", "--comment"],
+  ],
+  ["get", ["--full", "--depth", "--fields", "--tree", "--tree-depth", "--format"]],
+  [
+    "health",
+    [
+      "--check-only",
+      "--summary",
+      "--brief",
+      "--check-telemetry",
+      "--strict-exit",
+      "--full",
+    ],
+  ],
+  ["list", ["--status", "--type", "--limit", "--after", "--brief", "--fields"]],
+  [
+    "next",
+    [
+      "--limit",
+      "--blocked-limit",
+      "--ready-only",
+      "--token-budget",
+      "--explain-ranking",
+      "--format",
+    ],
+  ],
+  ["search", ["--mode", "--status", "--type", "--limit", "--after", "--fields"]],
+  ["update", ["--status", "--message", "--dep", "--comment", "--file", "--test"]],
+  [
+    "validate",
+    [
+      "--check-resolution",
+      "--check-history-drift",
+      "--check-storage-integrity",
+      "--counts",
+      "--strict-exit",
+      "--fix-hints",
+    ],
+  ],
 ]);
 
 const LIST_COMMAND_NAMES = new Set([
@@ -2336,11 +2410,11 @@ function buildCommandSummarySurface(
     .sort((left, right) => left.localeCompare(right));
   return rootCommands.map((command) => {
     const budget = resolvePmCommandOutputBudget(command);
-    const flags = AGENT_BOOTSTRAP_FLAG_COMMANDS.has(command)
-      ? resolveCoreCommandFlags(command)
-          .map((contract) => contract.flag)
-          .slice(0, 6)
-      : undefined;
+    const configuredFlags = AGENT_BOOTSTRAP_FLAGS.get(command);
+    const availableFlags = configuredFlags
+      ? new Set(resolveCoreCommandFlags(command).map((contract) => contract.flag))
+      : null;
+    const flags = configuredFlags?.filter((flag) => availableFlags?.has(flag));
     return {
       command,
       intent: summarizeCommandIntent(command),
@@ -2564,7 +2638,7 @@ export async function runContracts(
     result.command_summaries = buildCommandSummarySurface(outputCommands);
     result.output_policy = {
       token_estimate: "ceil(utf8_bytes / 4)",
-      degradation_ladder: ["full", "compact", "brief", "summary", "counts"],
+      degradation_ladder: [...PM_OUTPUT_DEGRADATION_STEPS],
       allows_unbounded_opt_out: true,
     };
     return result;

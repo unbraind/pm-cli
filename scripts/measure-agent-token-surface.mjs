@@ -25,7 +25,7 @@ const DEFAULT_BASELINE = join(
 );
 
 function tokens(bytes) {
-  return Math.round(bytes / 4);
+  return Math.ceil(bytes / 4);
 }
 
 /** Build a versioned regression baseline with explicit percentage headroom. */
@@ -86,6 +86,14 @@ export function compareBaseline(report, baseline) {
       baseline.surfaces?.contracts?.[name],
     );
   }
+  violations.push(
+    ...Object.keys(baseline.surfaces?.contracts ?? {})
+      .filter((name) => !Object.hasOwn(report.contracts, name))
+      .map((name) => `contracts.${name}: stale baseline surface`),
+  );
+  const reportCommandNames = new Set(
+    report.commands.map((measurement) => measurement.name),
+  );
   for (const measurement of report.commands) {
     compare(
       `commands.${measurement.name}`,
@@ -93,6 +101,11 @@ export function compareBaseline(report, baseline) {
       baseline.surfaces?.commands?.[measurement.name],
     );
   }
+  violations.push(
+    ...Object.keys(baseline.surfaces?.commands ?? {})
+      .filter((name) => !reportCommandNames.has(name))
+      .map((name) => `commands.${name}: stale baseline surface`),
+  );
   return violations;
 }
 

@@ -54,4 +54,24 @@ describe("agent output contracts", () => {
     expect(contract.default_max_estimated_tokens).toBe(800);
     expect(contract.degradation_ladder).toEqual(["compact", "summary"]);
   });
+
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects an invalid package-authored token ceiling (%s)",
+    (defaultMaxEstimatedTokens) => {
+      expect(() =>
+        definePmCommandOutputBudget({
+          command: "get",
+          budget_class: "read",
+          default_max_estimated_tokens: defaultMaxEstimatedTokens,
+          degradation_ladder: ["summary"],
+          allows_unbounded_opt_out: false,
+          token_estimate: "ceil(utf8_bytes / 4)",
+        }),
+      ).toThrow(
+        new RangeError(
+          "default_max_estimated_tokens must be a positive safe integer",
+        ),
+      );
+    },
+  );
 });

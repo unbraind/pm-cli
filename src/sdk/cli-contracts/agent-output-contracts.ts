@@ -112,11 +112,20 @@ const DEFAULT_MAX_ESTIMATED_TOKENS: Record<PmOutputBudgetClass, number> = {
 
 /**
  * Declares one budget contract while preserving literal command metadata for
- * package-authored registries and test fixtures.
+ * package-authored registries and test fixtures. Rejects ceilings that cannot
+ * represent a positive, deterministic token allowance.
  */
 export function definePmCommandOutputBudget<
   TContract extends PmCommandOutputBudgetContract,
 >(contract: TContract): TContract {
+  if (
+    !Number.isSafeInteger(contract.default_max_estimated_tokens) ||
+    contract.default_max_estimated_tokens <= 0
+  ) {
+    throw new RangeError(
+      "default_max_estimated_tokens must be a positive safe integer",
+    );
+  }
   return contract;
 }
 

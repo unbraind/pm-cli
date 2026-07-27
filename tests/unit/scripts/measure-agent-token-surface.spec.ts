@@ -209,7 +209,7 @@ describe("measure-agent-token-surface", () => {
     const rootBytes = Buffer.byteLength(ROOT_HELP);
     expect(report.root_help).toEqual({
       bytes: rootBytes,
-      tokens: Math.round(rootBytes / 4),
+      tokens: Math.ceil(rootBytes / 4),
     });
     // "help" is filtered, the alias line contributes only its primary name, and
     // the deeper-indented continuation line is skipped without ending the scan.
@@ -221,7 +221,7 @@ describe("measure-agent-token-surface", () => {
     expect(report.per_command_total.bytes).toBe(perCommand);
     expect(report.full_help_surface).toEqual({
       bytes: rootBytes + perCommand,
-      tokens: Math.round((rootBytes + perCommand) / 4),
+      tokens: Math.ceil((rootBytes + perCommand) / 4),
     });
     for (const [key, payload] of Object.entries(CONTRACTS)) {
       expect(report.contracts[key]?.bytes).toBe(Buffer.byteLength(payload));
@@ -233,7 +233,7 @@ describe("measure-agent-token-surface", () => {
     );
     expect(report.mcp_tools_list).toEqual({
       bytes: Buffer.byteLength(toolsLine),
-      tokens: Math.round(Buffer.byteLength(toolsLine) / 4),
+      tokens: Math.ceil(Buffer.byteLength(toolsLine) / 4),
       tool_count: 2,
     });
     expect(child.kill).toHaveBeenCalled();
@@ -286,9 +286,13 @@ describe("measure-agent-token-surface", () => {
 
     baseline.surfaces.root_help = 1;
     delete baseline.surfaces.commands.ls;
+    baseline.surfaces.contracts.retired_projection = 100;
+    baseline.surfaces.commands.retired_command = 100;
     expect(module.compareBaseline(report, baseline)).toEqual([
       `root_help: ${report.root_help.bytes} bytes exceeds 1`,
+      "contracts.retired_projection: stale baseline surface",
       "commands.ls: missing baseline",
+      "commands.retired_command: stale baseline surface",
     ]);
   });
 

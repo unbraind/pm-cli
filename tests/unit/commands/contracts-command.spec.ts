@@ -827,14 +827,39 @@ describe("contracts command runtime", () => {
         expect.objectContaining({
           command: "contracts",
           intent: "Inspect contracts.",
-          flags: expect.arrayContaining(["--command", "--flags-only"]),
+          flags: [
+            "--command",
+            "--flags-only",
+            "--summary",
+            "--runtime-only",
+            "--availability-only",
+            "--full",
+          ],
           default_max_estimated_tokens: 3000,
         }),
         expect.objectContaining({
           command: "list",
           intent: "List work.",
-          flags: expect.arrayContaining(["--status", "--type"]),
+          flags: [
+            "--status",
+            "--type",
+            "--limit",
+            "--after",
+            "--brief",
+            "--fields",
+          ],
           default_max_estimated_tokens: 4000,
+        }),
+        expect.objectContaining({
+          command: "next",
+          flags: [
+            "--limit",
+            "--blocked-limit",
+            "--ready-only",
+            "--token-budget",
+            "--explain-ranking",
+            "--format",
+          ],
         }),
       ]),
     );
