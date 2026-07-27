@@ -2,16 +2,18 @@ id: pm-9nfpwd
 title: "GH-763: merge-decision receipt persists shell-quoted item_path that cannot resolve"
 description: "The Git merge driver double-quotes %P even though Git already shell-quotes that placeholder, so conflict receipts store literal quote characters around item_path. The merge decision remains durable but its repair target cannot be opened programmatically; older clone-local driver config also survives package upgrades."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-27T05:33:58.913Z"
-updated_at: "2026-07-27T06:26:40.831Z"
+updated_at: "2026-07-27T08:49:53.150Z"
+closed_at: "2026-07-27T08:17:53.884Z"
 author: "harness:codex"
 acceptance_criteria: "Generated merge-driver configuration passes %P exactly once without preserving Git shell quotes; the runtime defensively normalizes one legacy shell-quote pair; merge report and validate diagnose stale clone-local driver configuration; Linux, macOS, Windows, packed-consumer, and two-branch merge tests prove receipt paths resolve; existing receipt data remains readable."
 parent: pm-o2kc
 reporter: github-issue-763
 severity: high
+resolution: "Git merge drivers now pass the percent-P placeholder unquoted, receipt parsing removes one legacy matching quote pair, and merge installation refreshes every runtime item-type fence."
 expected_result: "Every merge-decision receipt stores a repository-relative item_path that resolves directly, including in clones whose merge driver was installed by an older pm version."
 actual_result: "Receipts store values such as '.agents/pm/tasks/pm-id.toon' with the single quote characters included, so the recorded path does not exist."
 component: "merge:decision-receipt"
@@ -19,7 +21,23 @@ dependencies[3]{id,kind,created_at}:
   pm-c0wthb,related,"2026-07-27T05:34:21.450Z"
   pm-g5sx,implements,"2026-07-27T05:34:21.450Z"
   pm-rh98vo,discovered_from,"2026-07-27T05:34:21.450Z"
-comments[2]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-27T05:33:58.913Z","harness:codex","Duplicate-check evidence: all-status searches for GH-763, item_path receipt, merge decision quote path, and literal shell quoting found closed GH-754 owner pm-rh98vo and merge-fence lineage but no item for this post-release receipt-path regression."
   "2026-07-27T06:26:40.831Z","harness:codex","Triage linkage: follow-up report is documented in broad PR #765 https://github.com/unbraind/pm-cli/pull/765 but intentionally remains open and unclaimed; no implementation for GH-763 is included."
+  "2026-07-27T07:35:37.945Z","harness:codex","Start evidence 2026-07-27: selected after live all-status review of 2,129 items (1,807 closed, 309 open, 13 canceled; zero pre-existing in-progress), full canonical metadata/closed-lineage review, and GitHub/security/dependency inventory. This item is actively implemented in one cohesive public SDK/CLI integrity PR; unrelated backlog and container epics remain open and unclaimed."
+  "2026-07-27T08:17:32.479Z","harness:codex","Implementation evidence: clone-local item merge drivers now leave Git's %P placeholder unquoted so Git performs exactly one shell-quoting pass; receipt ingestion normalizes one legacy single- or double-quote pair. Unit and end-to-end merge safety regressions cover bare, single-quoted, and double-quoted paths. Full sandboxed coverage passed 377 files and 6,452 tests at exact 100/100/100/100."
+  "2026-07-27T08:41:48.456Z","harness:codex","Verification evidence: full release gates passed merge safety tests, 100/100/100/100 coverage, secret scan, packed npm smoke, and package-first dogfood; only hosted exact-SHA analysis awaits push."
+  "2026-07-27T08:44:23.128Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/767 at implementation head ab7f41a33. PR description links this canonical PM item and the corresponding GitHub issue; exact-head hosted checks and reviews are pending."
+  "2026-07-27T08:49:53.149Z","harness:codex","Hosted static-gate diagnosis at PR #767 head 04ddbd71e: local extension activation had added clone-local package item types to .gitattributes. CI correctly ran merge install --no-extensions and detected non-deterministic fence drift. Removed only those extension-local fence rows; the exact CI sequence now reports gitattributes.changed=false, strict storage/history validation passes, and representative history verification passes."
+files[4]{path,scope,note}:
+  .gitattributes,project,Refreshed merge fence includes every runtime item-type directory
+  src/sdk/merge/install.ts,project,Git placeholder quoting contract
+  src/sdk/merge/receipts.ts,project,Legacy receipt path normalization
+  tests/unit/sdk/merge-receipts.spec.ts,project,Quoted path regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Portable driver and receipt contract
+close_reason: Fixed Git item-path placeholder quoting and legacy receipt normalization; bare and both quoted forms pass merge regressions and full exact coverage.
 body: ""

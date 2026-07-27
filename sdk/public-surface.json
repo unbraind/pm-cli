@@ -143,6 +143,19 @@
       ],
       "package_version": "2026.7.27",
       "reason": "Extend optional agent provenance and strict action option contracts while preserving legacy model fields and runtime behavior"
+    },
+    {
+      "changes": [
+        "signature ./sdk:Dependency",
+        "signature ./sdk:ListOptions",
+        "signature ./sdk/core:Dependency",
+        "signature ./sdk/core:ListOptions",
+        "signature ./sdk/query:ListOptions",
+        "signature ./sdk/runtime:Dependency",
+        "signature ./sdk/runtime:ListOptions"
+      ],
+      "package_version": "2026.7.27",
+      "reason": "Additive optional list strict-read and dependency provenance fields; result completeness is a required truthfulness contract in the new minor release"
     }
   ],
   "entrypoints": {
@@ -2337,7 +2350,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",
@@ -4953,7 +4966,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListOptions",
-          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
+          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
           "classification": "supported",
@@ -13365,7 +13378,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",
@@ -13617,7 +13630,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListOptions",
-          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
+          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
           "classification": "supported",
@@ -16353,7 +16366,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListOptions",
-          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
+          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
           "classification": "supported",
@@ -17181,7 +17194,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",
@@ -17739,7 +17752,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListOptions",
-          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
+          "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
           "classification": "supported",
@@ -19771,6 +19784,7 @@
     "invalid_event_since",
     "invalid_query_cursor",
     "likely_duplicate",
+    "list_source_incomplete",
     "local_source_not_found_bare_name",
     "manifest_capabilities_absent",
     "merge_git_config_unwritable",

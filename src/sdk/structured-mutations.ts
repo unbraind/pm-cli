@@ -352,7 +352,17 @@ function appendFacetOptions(
 ): void {
   const mappings: ReadonlyArray<readonly [string, string, readonly string[]]> =
     [
-      ["dependencies", "dep", ["id", "kind", "created_at", "author"]],
+      [
+        "dependencies",
+        "dep",
+        [
+          "id",
+          "kind",
+          "created_at",
+          "author",
+          "source_kind",
+        ],
+      ],
       ["comments", "comment", ["text", "created_at", "author"]],
       ["notes", "note", ["text", "created_at", "author"]],
       ["learnings", "learning", ["text", "created_at", "author"]],

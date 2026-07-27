@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- GH-764: one host-global flag collision quarantines an entire extension and suggests reinstalling the installed package ([pm-gnowgi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gnowgi.toon))
+- Recovery bundle mines flag names from usage-error prose: scope errors like '--rebuild and --clear apply only to graph index' yield missing:--clear + suggested_retry appending the other invalid flag ([pm-ikv6m0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ikv6m0.toon))
+- GH-755: dependency edges are written with a null author, so the relationship graph is the only recorded collection with no provenance ([pm-0a24f5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0a24f5.toon))
+- GH-752: list results claim completeness while unreadable items are omitted ([pm-57ir3b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-57ir3b.toon))
+- GH-763: merge-decision receipt persists shell-quoted item_path that cannot resolve ([pm-9nfpwd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9nfpwd.toon))
 - GH-747: the bundled TOON encoder emits documents its own decoder rejects, so a valid item becomes permanently unreadable ([pm-avv3wx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-avv3wx.toon))
 - Identity provenance is a fixed three-dimension schema, so the reasoning level sitting in the environment right now and any session role are structurally unrepresentable ([pm-itsjf0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-itsjf0.toon))
 - Model capture is inert in practice: zero of 35,103 recorded entries carry a model, because the declared signal for the primary harness is an environment variable that harness does not set ([pm-0zcwz6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0zcwz6.toon))
@@ -12,6 +17,7 @@
 
 ### Other
 
+- Ecosystem review and deep-graph enrichment pass 2026-07-27: all-status census, CLI simplification + token-efficiency + long-term brainstorm, dedupe-checked gap filing ([pm-89qv6b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89qv6b.toon))
 - Evaluate @toon-format/toon 4 compatibility and item-format migration ([pm-5cgm2z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5cgm2z.toon))
 - ADR amendment: extensible durable agent provenance dimensions and privacy boundaries ([pm-oskdmu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-oskdmu.toon))
 - SDK completeness is asserted by a 10-case curated array against 85 declared actions: the boundary proves the CLI reaches nothing below the SDK, nothing proves the SDK can do what the CLI does ([pm-te6elw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-te6elw.toon))
@@ -596,14 +602,14 @@
 
 ### Other
 
-- Triage: close stale dogfood reports GH-436 (pm next/focus) and GH-440 (context --fields) with shipped evidence ([pm-7cx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7cx8.toon))
 - 2026-07-07 ecosystem audit \#16: all-status review, long-horizon gap items (merge semantics, event stream, policy roles, flow metrics) ([pm-su60](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-su60.toon))
-- GH-458: claim/start-task reject --assignee with an untargeted recovery hint (alias or better hint) ([pm-qfte](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qfte.toon))
 - 2026-07-06 ecosystem audit \#15: WIP hygiene, GH/commit coverage verification, grammar+SDK domain completions, horizon-4 planning ([pm-pvij](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pvij.toon))
-- chore: 2026-07-06 ecosystem audit \#13 — Semgrep-issue metadata backfill, scale-out initiative pm-9rxu, composability contract set ([pm-lgim](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lgim.toon))
-- pm install should accept multiple package targets (help already advertises \[targets...\]) ([pm-hj9h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hj9h.toon))
 - chore: 2026-07-06 ecosystem audit \#14 — WIP status hygiene (docstring family reset) + stale in-progress detection backlog ([pm-6a1g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6a1g.toon))
+- chore: 2026-07-06 ecosystem audit \#13 — Semgrep-issue metadata backfill, scale-out initiative pm-9rxu, composability contract set ([pm-lgim](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lgim.toon))
 - 2026-07-06 ecosystem audit \#12: GH-467..474 backlog coverage + code-scanning capability epic ([pm-3rgp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3rgp.toon))
+- Triage: close stale dogfood reports GH-436 (pm next/focus) and GH-440 (context --fields) with shipped evidence ([pm-7cx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7cx8.toon))
+- GH-458: claim/start-task reject --assignee with an untargeted recovery hint (alias or better hint) ([pm-qfte](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qfte.toon))
+- pm install should accept multiple package targets (help already advertises \[targets...\]) ([pm-hj9h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hj9h.toon))
 - Unblock dependabot PRs: @types/node 26 type error, pnpm release-age cooldown, codeql-action lockstep group ([pm-2czc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2czc.toon))
 - GH-468: clarify or publish the pm SDK npm package coordinates (@unbrained/pm-sdk is 404) ([pm-25d0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-25d0.toon))
 
@@ -634,10 +640,10 @@
 
 ### Other
 
+- 2026-07-04 ecosystem audit \#4: coverage matrix, governance capability epic & relationship modeling ([pm-osea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-osea.toon))
 - Backfill full-context bodies (and comments/deps/risk) on all active items so context is rebuildable from pm CLI alone ([pm-o043](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-o043.toon))
 - 2026-07-04 full pm-backlog audit: reconcile pm items with entire ecosystem (code, tests, docs, ideas, decisions) ([pm-y904](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-y904.toon))
 - Bundle GH-433 self-parent guard, Windows nightly lock proof, and pnpm 11 bootstrap hardening ([pm-q1ke](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-q1ke.toon))
-- 2026-07-04 ecosystem audit \#4: coverage matrix, governance capability epic & relationship modeling ([pm-osea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-osea.toon))
 - Inventory the CLI-to-core call graph: map every command to core modules and classify logic for SDK promotion ([pm-lodl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lodl.toon))
 - Sandbox audit fixes: package describe accepts npm package name; pm context <id\> routes to pm get ([pm-ayn7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ayn7.toon))
 - SDK testing-helper input validation: runRegisteredCommandForTest positional misuse crashes; createExtensionTestHarness accepts non-extension module silently ([pm-2exf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2exf.toon))
@@ -661,9 +667,9 @@
 
 ### Other
 
+- 2026-07-02 full ecosystem audit & optimization pass (CLI+SDK+packages+docs+CI) ([pm-fpod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fpod.toon))
 - Zero the jscpd clone baseline: dedupe registration-helpers/flag-contracts source clones and 21 test-spec clones ([pm-chxp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chxp.toon))
 - Perf: pm context / pm next hot path ~700ms on an ~850-item tracker ([pm-z1pv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z1pv.toon))
-- 2026-07-02 full ecosystem audit & optimization pass (CLI+SDK+packages+docs+CI) ([pm-fpod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fpod.toon))
 - Lane E: Docs audit (progressive disclosure, minimal README, link graph, duplicated docs/skills) ([pm-p99b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-p99b.toon))
 - Lane F: CI/CD best-practice + secret/PII leak scan incl. pm history files ([pm-mo2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mo2v.toon))
 - Lane A: E2E ecosystem smoke in temp workspace (pack+install CLI, all first-party packages, full command surface, agent UX/token-efficiency) ([pm-kes3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kes3.toon))

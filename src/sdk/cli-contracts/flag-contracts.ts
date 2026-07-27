@@ -227,6 +227,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
       { flag: "--tree-depth" },
       { flag: "--tree_depth" },
       { flag: "--include-body" },
+      { flag: "--strict-read" },
       { flag: "--format" },
       { flag: "--stream" },
     ],
@@ -240,6 +241,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
       "--full",
       "--fields",
       "--include-body",
+      "--strict-read",
     ]),
   );
 

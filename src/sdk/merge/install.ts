@@ -336,7 +336,7 @@ export async function auditMergeDriverConfiguration(
   const driftedKeys: string[] = [];
   for (const definition of MERGE_DRIVER_DEFINITIONS) {
     const key = `merge.${definition.key}.driver`;
-    const expected = `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path "${definition.itemPath}"`}`;
+    const expected = `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`;
     try {
       const { stdout } = await execFileAsync(
         "git",
@@ -546,7 +546,7 @@ export async function installMergeFence(options: {
     });
     gitConfigEntries.push({
       key: `merge.${definition.key}.driver`,
-      value: `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path "${definition.itemPath}"`}`,
+      value: `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`,
     });
   }
   if (!dryRun) {

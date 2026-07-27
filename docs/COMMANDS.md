@@ -246,11 +246,12 @@ pm eval --fail-under 0.6 --json      # CI gate: exit non-zero when aggregate nDC
 
 ### Full results, totals, and bodies
 
-`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. Every JSON/TOON result has the same pagination envelope: `total` is the pre-pagination match count, `has_more` and `truncated` are booleans, and `next_cursor` is either the continuation token or `null`. The `filters` object omits unset values instead of emitting null placeholders, keeping long-running agent context stable and lean. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
+`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. Every JSON/TOON result has the same pagination envelope: `total` is the pre-pagination match count, `has_more` and `truncated` are booleans, and `next_cursor` is either the continuation token or `null`. `completeness` reports whether the corpus was `complete`, `partial`, or `unchecked` (derived-index page), with unreadable item/directory counts. Use `--strict-read` when omissions must fail the command. The `filters` object omits unset values instead of emitting null placeholders, keeping long-running agent context stable and lean. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
 
 ```bash
 pm list-all --no-truncate --brief          # every matched row, ignoring any --limit
 pm list-open --limit 20 --json             # stable total/has_more/truncated/next_cursor envelope
+pm list-all --strict-read --json           # fail if any source item cannot be read
 ```
 
 Compatibility note: older responses emitted `total` only when pagination

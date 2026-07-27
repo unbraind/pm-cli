@@ -699,14 +699,14 @@ describe("public merge-safety SDK primitives", () => {
           (entry) => entry.key === "merge.pm-item-toon.driver",
         )?.value,
       ).toMatch(
-        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path "%P"$/,
+        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path %P$/,
       );
       expect(
         installed.git_config.find(
           (entry) => entry.key === "merge.pm-item-markdown.driver",
         )?.value,
       ).toMatch(
-        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path "%P"$/,
+        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path %P$/,
       );
       expect(
         installed.git_config

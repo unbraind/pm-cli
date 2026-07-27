@@ -2215,6 +2215,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
   readonly #rendererRegistry: ExtensionRendererRegistry;
   readonly #registrationRegistry: ExtensionRegistrationRegistry;
   readonly #activationWarnings: string[];
+  readonly #activationFailures: FailedExtensionActivation[];
   readonly #policy: NormalizedExtensionPolicy;
 
   public constructor(
@@ -2227,6 +2228,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
     renderers: ExtensionRendererRegistry,
     registrations: ExtensionRegistrationRegistry,
     activationWarnings: string[],
+    activationFailures: FailedExtensionActivation[],
     policy: NormalizedExtensionPolicy,
   ) {
     this.#loadedExtension = extension;
@@ -2240,6 +2242,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
     this.#rendererRegistry = renderers;
     this.#registrationRegistry = registrations;
     this.#activationWarnings = activationWarnings;
+    this.#activationFailures = activationFailures;
     this.#policy = policy;
     this.registerCommand = this.registerCommand.bind(this);
     this.registerParser = this.registerParser.bind(this);
@@ -2519,10 +2522,21 @@ class ExtensionApiRegistrar implements ExtensionApi {
         definition,
         reason,
       );
-      throw createRegistrationValidationError(
+      const validationError = createRegistrationValidationError(
         `registerCommand definition metadata invalid (command="${normalizedCommand}", registration_index=${trace.registration_index}): ${reason}`,
         trace,
       );
+      this.#activationWarnings.push(
+        `extension_command_quarantined:${this.#loadedExtension.layer}:${this.#loadedExtension.name}:${normalizedCommand}`,
+      );
+      this.#activationFailures.push({
+        layer: this.#loadedExtension.layer,
+        name: this.#loadedExtension.name,
+        entry_path: this.#loadedExtension.entry_path,
+        error: validationError.message,
+        trace,
+      });
+      return;
     }
     this.#commandRegistry.handlers.push({
       layer: this.#loadedExtension.layer,
@@ -3277,6 +3291,7 @@ function createExtensionApi(
   renderers: ExtensionRendererRegistry,
   registrations: ExtensionRegistrationRegistry,
   activationWarnings: string[],
+  activationFailures: FailedExtensionActivation[],
   policy: NormalizedExtensionPolicy,
 ): ExtensionApi {
   return new ExtensionApiRegistrar(
@@ -3289,6 +3304,7 @@ function createExtensionApi(
     renderers,
     registrations,
     activationWarnings,
+    activationFailures,
     policy,
   );
 }
@@ -3537,6 +3553,7 @@ export async function activateExtensions(
           renderers,
           registrations,
           warnings,
+          failed,
           policy,
         ),
       );

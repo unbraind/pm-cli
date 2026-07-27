@@ -942,6 +942,47 @@ describe("runList", () => {
     }
   });
 
+  it("reports partial source reads and lets strict consumers fail closed", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Readable list row",
+        status: "open",
+        priority: "2",
+        tags: "complete",
+        deadline: "+1d",
+      });
+      await writeFile(
+        path.join(context.pmPath, "tasks", "pm-unreadable.toon"),
+        "{invalid",
+        "utf8",
+      );
+
+      const partial = await runList(
+        undefined,
+        { status: "all", full: true },
+        { path: context.pmPath },
+      );
+      expect(partial.completeness).toEqual({
+        status: "partial",
+        unreadable_item_count: 1,
+        unreadable_directory_count: 0,
+      });
+      expect(partial.warnings).toEqual([
+        "item_list_item_read_failed:tasks/pm-unreadable.toon",
+      ]);
+      await expect(
+        runList(
+          undefined,
+          { status: "all", full: true, strictRead: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        context: { code: "list_source_incomplete" },
+      });
+    });
+  });
+
   it("applies status/field filters and limit", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, {
@@ -1066,6 +1107,11 @@ describe("runList", () => {
         total: 3,
         has_more: true,
         applied_limit: 1,
+        completeness: {
+          status: "unchecked",
+          unreadable_item_count: 0,
+          unreadable_directory_count: 0,
+        },
       });
       expect(indexed.items[0]?.title).toBe("Indexed priority two");
       const activeOnly = await runList(

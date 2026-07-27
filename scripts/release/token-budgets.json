@@ -9,8 +9,8 @@
       "args": [
         "--help"
       ],
-      "max_bytes": 11688,
-      "max_estimated_tokens": 2923
+      "max_bytes": 12200,
+      "max_estimated_tokens": 3051
     },
     {
       "id": "search-help",
@@ -18,8 +18,8 @@
         "search",
         "--help"
       ],
-      "max_bytes": 6722,
-      "max_estimated_tokens": 1681
+      "max_bytes": 6729,
+      "max_estimated_tokens": 1684
     },
     {
       "id": "create-help",
@@ -27,8 +27,8 @@
         "create",
         "--help"
       ],
-      "max_bytes": 8376,
-      "max_estimated_tokens": 2095
+      "max_bytes": 8545,
+      "max_estimated_tokens": 2137
     },
     {
       "id": "update-help",
@@ -36,8 +36,8 @@
         "update",
         "--help"
       ],
-      "max_bytes": 8737,
-      "max_estimated_tokens": 2185
+      "max_bytes": 8770,
+      "max_estimated_tokens": 2193
     },
     {
       "id": "contracts-summary-json",
@@ -46,8 +46,8 @@
         "--summary",
         "--json"
       ],
-      "max_bytes": 4594,
-      "max_estimated_tokens": 1149
+      "max_bytes": 4770,
+      "max_estimated_tokens": 1193
     },
     {
       "id": "contracts-flags-json",
@@ -56,16 +56,16 @@
         "--flags-only",
         "--json"
       ],
-      "max_bytes": 116189,
-      "max_estimated_tokens": 29048
+      "max_bytes": 127351,
+      "max_estimated_tokens": 31839
     },
     {
       "id": "list-default",
       "args": [
         "list"
       ],
-      "max_bytes": 548,
-      "max_estimated_tokens": 138
+      "max_bytes": 652,
+      "max_estimated_tokens": 163
     },
     {
       "id": "list-json",
@@ -73,29 +73,29 @@
         "list",
         "--json"
       ],
-      "max_bytes": 828,
-      "max_estimated_tokens": 207
+      "max_bytes": 959,
+      "max_estimated_tokens": 240
     },
     {
       "id": "get-default",
       "args": [
         "get",
-        "pm-0h1e"
+        "pm-2dts"
       ],
-      "max_bytes": 591,
-      "max_estimated_tokens": 149
+      "max_bytes": 711,
+      "max_estimated_tokens": 179
     },
     {
       "id": "get-json-compact-fields",
       "args": [
         "get",
-        "pm-0h1e",
+        "pm-2dts",
         "--json",
         "--fields",
         "id,title,status,type,priority,tags,dependencies"
       ],
-      "max_bytes": 411,
-      "max_estimated_tokens": 104
+      "max_bytes": 504,
+      "max_estimated_tokens": 127
     },
     {
       "id": "context-default",
@@ -104,8 +104,8 @@
         "--limit",
         "5"
       ],
-      "max_bytes": 1098,
-      "max_estimated_tokens": 275
+      "max_bytes": 1120,
+      "max_estimated_tokens": 281
     },
     {
       "id": "next-default",
@@ -114,8 +114,8 @@
         "--limit",
         "5"
       ],
-      "max_bytes": 1043,
-      "max_estimated_tokens": 261
+      "max_bytes": 1065,
+      "max_estimated_tokens": 267
     },
     {
       "id": "search-inline-default",

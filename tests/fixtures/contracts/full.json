@@ -3181,6 +3181,10 @@
           "flag": "--include-body"
         },
         {
+          "cursor_semantics": "presentation",
+          "flag": "--strict-read"
+        },
+        {
           "flag": "--format"
         },
         {
@@ -3398,6 +3402,10 @@
         {
           "cursor_semantics": "presentation",
           "flag": "--include-body"
+        },
+        {
+          "cursor_semantics": "presentation",
+          "flag": "--strict-read"
         },
         {
           "flag": "--format"
@@ -3619,6 +3627,10 @@
           "flag": "--include-body"
         },
         {
+          "cursor_semantics": "presentation",
+          "flag": "--strict-read"
+        },
+        {
           "flag": "--format"
         },
         {
@@ -3836,6 +3848,10 @@
         {
           "cursor_semantics": "presentation",
           "flag": "--include-body"
+        },
+        {
+          "cursor_semantics": "presentation",
+          "flag": "--strict-read"
         },
         {
           "flag": "--format"
@@ -4057,6 +4073,10 @@
           "flag": "--include-body"
         },
         {
+          "cursor_semantics": "presentation",
+          "flag": "--strict-read"
+        },
+        {
           "flag": "--format"
         },
         {
@@ -4274,6 +4294,10 @@
         {
           "cursor_semantics": "presentation",
           "flag": "--include-body"
+        },
+        {
+          "cursor_semantics": "presentation",
+          "flag": "--strict-read"
         },
         {
           "flag": "--format"
@@ -4495,6 +4519,10 @@
           "flag": "--include-body"
         },
         {
+          "cursor_semantics": "presentation",
+          "flag": "--strict-read"
+        },
+        {
           "flag": "--format"
         },
         {
@@ -4712,6 +4740,10 @@
         {
           "cursor_semantics": "presentation",
           "flag": "--include-body"
+        },
+        {
+          "cursor_semantics": "presentation",
+          "flag": "--strict-read"
         },
         {
           "flag": "--format"
@@ -15157,6 +15189,10 @@
             ],
             "type": "string"
           },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
+          },
           "tag": {
             "description": "npm version or dist-tag used for CLI and registry package upgrades.",
             "examples": [
@@ -15639,6 +15675,10 @@
               "in_progress"
             ],
             "type": "string"
+          },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
           },
           "tag": {
             "description": "npm version or dist-tag used for CLI and registry package upgrades.",
@@ -16123,6 +16163,10 @@
             ],
             "type": "string"
           },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
+          },
           "tag": {
             "description": "npm version or dist-tag used for CLI and registry package upgrades.",
             "examples": [
@@ -16605,6 +16649,10 @@
               "in_progress"
             ],
             "type": "string"
+          },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
           },
           "tag": {
             "description": "npm version or dist-tag used for CLI and registry package upgrades.",
@@ -17089,6 +17137,10 @@
             ],
             "type": "string"
           },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
+          },
           "tag": {
             "description": "npm version or dist-tag used for CLI and registry package upgrades.",
             "examples": [
@@ -17571,6 +17623,10 @@
               "in_progress"
             ],
             "type": "string"
+          },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
           },
           "tag": {
             "description": "npm version or dist-tag used for CLI and registry package upgrades.",
@@ -18055,6 +18111,10 @@
             ],
             "type": "string"
           },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
+          },
           "tag": {
             "description": "npm version or dist-tag used for CLI and registry package upgrades.",
             "examples": [
@@ -18537,6 +18597,10 @@
               "in_progress"
             ],
             "type": "string"
+          },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
           },
           "tag": {
             "description": "npm version or dist-tag used for CLI and registry package upgrades.",

@@ -2,11 +2,12 @@ id: pm-57ir3b
 title: "GH-752: list results claim completeness while unreadable items are omitted"
 description: "Make list-family and SDK query results fail closed or expose structured unreadable-item incompleteness, and report decoder compatibility evidence without misattributing environment drift to item corruption."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: context,github,integrity,sdk,storage
 created_at: "2026-07-26T19:39:00.227Z"
-updated_at: "2026-07-26T22:05:49.769Z"
+updated_at: "2026-07-27T08:44:18.431Z"
+closed_at: "2026-07-27T08:17:59.830Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: "List-family CLI, SDK, and MCP result contracts expose structured completeness and unreadable counts; strict behavior is available without token-heavy parsing; decoder version/range diagnostics distinguish dependency drift; regression tests cover pagination and all-status reads; docs and contracts are updated."
@@ -15,16 +16,33 @@ risk: high
 confidence: high
 reporter: GitHub #752
 severity: high
+resolution: "List results now include complete, partial, or unchecked corpus certificates; strict-read bypasses unchecked indexes and fails closed on unreadable source data."
 expected_result: Agents and SDK consumers can mechanically distinguish a complete item set from a partial result whenever any item cannot be decoded.
 actual_result: "Unreadable items are omitted while count, total, has_more:false, and truncated:false still present the filtered result as complete; only a warning string signals loss."
 affected_version: 2026.7.26
 component: list/query integrity
 customer_impact: Agents can make planning and mutation decisions from a silently incomplete workspace view.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,implements,"2026-07-26T19:39:00.227Z",null,null
-  pm-cxyv,related,"2026-07-26T19:39:00.227Z",null,null
-  pm-hybj,related,"2026-07-26T19:39:00.227Z",null,null
-  pm-iqgj,related,"2026-07-26T19:39:00.227Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[4]{id,kind,created_at}:
+  pm-4k6b,implements,"2026-07-26T19:39:00.227Z"
+  pm-cxyv,related,"2026-07-26T19:39:00.227Z"
+  pm-hybj,related,"2026-07-26T19:39:00.227Z"
+  pm-iqgj,related,"2026-07-26T19:39:00.227Z"
+comments[5]{created_at,author,text}:
   "2026-07-26T19:39:00.227Z","harness:codex","Duplicate-check evidence: all-status searches for GH-752, unreadable list completeness, decoder drift, and storage integrity found shipped pm-cxyv/pm-iqgj/pm-hybj plus context owner pm-4k6b, but no item representing the distinct successful-partial-result contract reported in GitHub #752. Created open and intentionally unclaimed during the active SDK delivery tranche."
+  "2026-07-27T07:35:32.026Z","harness:codex","Start evidence 2026-07-27: selected after live all-status review of 2,129 items (1,807 closed, 309 open, 13 canceled; zero pre-existing in-progress), full canonical metadata/closed-lineage review, and GitHub/security/dependency inventory. This item is actively implemented in one cohesive public SDK/CLI integrity PR; unrelated backlog and container epics remain open and unclaimed."
+  "2026-07-27T08:17:33.246Z","harness:codex","Implementation evidence: every list envelope now carries a source-corpus completeness certificate (complete, partial, or unchecked) with unreadable item/directory counts; --strict-read and SDK strictRead fail closed on partial scans and bypass index-only certainty. CLI contracts, MCP schemas, public SDK snapshots, docs, and complete/partial/index regressions are aligned. Full sandboxed coverage passed 377 files and 6,452 tests at exact 100/100/100/100."
+  "2026-07-27T08:41:47.072Z","harness:codex","Verification evidence: full release gate passed docs/skills, static quality, package boundary, token budgets, SDK snapshot/import costs, transport floor, 6452-test coverage at 100/100/100/100, version sync, secret scan, packed npm smoke, and 88-command package-first dogfood. Hosted analysis correctly deferred because the exact local SHA is not pushed yet. Fresh unrelated installed consumer resolved its own package binary and verified strict-read completeness=complete through direct, npx, and bunx execution."
+  "2026-07-27T08:44:18.431Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/767 at implementation head ab7f41a33. PR description links this canonical PM item and the corresponding GitHub issue; exact-head hosted checks and reviews are pending."
+files[4]{path,scope,note}:
+  scripts/release/token-budgets.json,project,Intentional context completeness output budget baseline
+  src/cli/register-list-query.ts,project,CLI strict-read flag
+  src/sdk/query/list.ts,project,Machine-readable list completeness and strict reads
+  tests/unit/commands/list-command.spec.ts,project,Complete partial unchecked and fail-closed regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,CLI strict read guidance
+  docs/SDK.md,project,SDK completeness contract
+close_reason: "Added honest complete/partial/unchecked list corpus certificates and strict fail-closed reads across CLI, SDK, and tool contracts with exact coverage."
 body: ""

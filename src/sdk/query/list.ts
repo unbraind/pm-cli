@@ -115,6 +115,8 @@ export interface ListOptions extends SharedItemFilterOptions {
   treeDepth?: string;
   /** Value that configures or reports exclude terminal for this contract. */
   excludeTerminal?: boolean;
+  /** Fail instead of returning a partial result when any item or item directory cannot be read. */
+  strictRead?: boolean;
   /**
    * Select items that are blocked under the shared edge-aware definition
    * (blocked lifecycle status OR at least one open `blocked_by` edge), the
@@ -367,7 +369,55 @@ interface ListResultBase {
   applied_limit?: number;
   /** Explicit marker that the response is a bounded page. */
   truncated: boolean;
+  /** Machine-readable truthfulness contract for the source corpus behind this page. */
+  completeness: {
+    /** Complete after a source scan, partial when reads failed, or unchecked when served from a derived index. */
+    status: "complete" | "partial" | "unchecked";
+    /** Item documents omitted because they could not be read or decoded. */
+    unreadable_item_count: number;
+    /** Type directories omitted because they could not be read. */
+    unreadable_directory_count: number;
+  };
   warnings?: string[];
+}
+
+/** Build the source-corpus certificate and enforce fail-closed list reads. */
+function resolveListCompleteness(
+  warnings: string[],
+  indexed: boolean,
+  strict: boolean,
+): ListResultBase["completeness"] {
+  const unreadableItemCount = warnings.filter((warning) =>
+    warning.startsWith("item_list_item_read_failed:"),
+  ).length;
+  const unreadableDirectoryCount = warnings.filter((warning) =>
+    warning.startsWith("item_list_directory_read_failed:"),
+  ).length;
+  const completeness: ListResultBase["completeness"] = {
+    status:
+      indexed
+        ? "unchecked"
+        : unreadableItemCount + unreadableDirectoryCount > 0
+          ? "partial"
+          : "complete",
+    unreadable_item_count: unreadableItemCount,
+    unreadable_directory_count: unreadableDirectoryCount,
+  };
+  if (strict && completeness.status === "partial") {
+    throw new PmCliError(
+      `List source is incomplete: ${unreadableItemCount} item document(s) and ${unreadableDirectoryCount} item directory/directories could not be read.`,
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "list_source_incomplete",
+        why: "Strict list reads fail closed so agents and SDK consumers never treat an omitted item as a complete workspace.",
+        nextSteps: [
+          "Run pm validate --check-storage-integrity to locate unreadable tracker artifacts.",
+          "Repair the reported files or align the installed decoder version, then retry.",
+        ],
+      },
+    );
+  }
+  return completeness;
 }
 
 /** Documents the list compact result payload exchanged by command, SDK, and package integrations. */
@@ -1694,6 +1744,7 @@ async function tryLoadIndexedListPage(params: {
     options.noTruncate === true,
     options.includeBody === true,
     options.dependencyBlocked === true,
+    options.strictRead === true,
     ordering.treeEnabled,
     ordering.sortField !== undefined,
     projectionNeedsHeavyData,
@@ -1894,6 +1945,11 @@ export async function runList(
   const warnings = [...new Set(listWarnings)].sort((left, right) =>
     left.localeCompare(right),
   );
+  const completeness = resolveListCompleteness(
+    warnings,
+    indexedPage !== null,
+    options.strictRead === true,
+  );
   const projectionFields =
     runtime.projection.mode === "full" ? null : [...runtime.projection.fields];
   const compactSummaryMode =
@@ -1913,6 +1969,7 @@ export async function runList(
       count: page.projected.length,
       total: page.totalMatched,
       ...page.pageExtras,
+      completeness,
       filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
     };
@@ -1922,6 +1979,7 @@ export async function runList(
     count: page.projected.length,
     total: page.totalMatched,
     ...page.pageExtras,
+    completeness,
     filters: buildVerboseListFilters({
       filtersStatus: statusSelection.filtersStatus,
       options,

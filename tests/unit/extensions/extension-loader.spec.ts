@@ -5435,6 +5435,48 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     ]);
   });
 
+  it("quarantines one malformed command definition without disabling healthy siblings", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "bundle before",
+            run: () => ({ ok: true }),
+          });
+          api.registerCommand({
+            name: "bundle malformed",
+            action: "!!!",
+            run: () => ({ ok: false }),
+          });
+          api.registerCommand({
+            name: "bundle after",
+            run: () => ({ ok: true }),
+          });
+        },
+      },
+      { name: "partial-command-bundle", capabilities: ["commands"] },
+    );
+
+    const result = await activateExtensions(loadResult);
+    expect(result.commands.handlers.map((entry) => entry.command)).toEqual([
+      "bundle before",
+      "bundle after",
+    ]);
+    expect(result.failed).toEqual([
+      expect.objectContaining({
+        name: "partial-command-bundle",
+        trace: expect.objectContaining({
+          method: "registerCommand",
+          command: "bundle malformed",
+          registration_index: 1,
+        }),
+      }),
+    ]);
+    expect(result.warnings).toContain(
+      "extension_command_quarantined:project:partial-command-bundle:bundle malformed",
+    );
+  });
+
   it("fails activation for command and schema registration metadata edge cases", async () => {
     const makeLoaded = (name: string, activate: (api: ExtensionApi) => void) => ({
       ...inMemoryLoadResult({ activate }, { name, capabilities: ["commands", "schema", "services"] }).loaded[0],

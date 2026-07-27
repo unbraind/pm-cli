@@ -767,6 +767,7 @@ function parseDependencyAdditions(
   raw: string[] | undefined,
   prefix: string,
   nowIso: string,
+  fallbackAuthor: string,
 ): ParsedDependencyUpdates {
   if (!raw) {
     return { additions: [] };
@@ -803,12 +804,14 @@ function parseDependencyAdditions(
     const sourceKind = normalizeDependencySourceKind(
       parseOptionalDependencyString(kv.source_kind),
     );
+    const explicitAuthor = parseOptionalDependencyString(kv.author);
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
       kind: ensureEnum(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),
       created_at: parseDependencyCreatedAt(kv.created_at, nowIso),
-      author: parseOptionalDependencyString(kv.author),
-      source_kind: sourceKind,
+      author: explicitAuthor ?? fallbackAuthor,
+      source_kind: sourceKind ?? "cli:update:dep",
+      author_source: explicitAuthor ? "asserted" : "detected",
     };
   });
   return { additions };
@@ -917,6 +920,8 @@ function reconcileBlockedByDependency(
       kind: "blocked_by",
       created_at: nowIsoValue,
       author,
+      source_kind: "cli:update:blocked_by",
+      author_source: "detected",
     });
     changed = true;
   }
@@ -2815,6 +2820,7 @@ export async function runUpdate(
     options.dep,
     settings.id_prefix,
     nowIso,
+    author,
   );
   const dependencyRemovals = parseDependencyRemovals(
     options.depRemove,

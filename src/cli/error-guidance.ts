@@ -99,6 +99,8 @@ export interface CommanderGuidanceContext {
   unknownOptionOtherCommands?: string[];
   /** Value that configures or reports suggested retry command for this contract. */
   suggestedRetryCommand?: string;
+  /** Installed extensions whose activation failed for this invocation. */
+  failedExtensions?: Array<{ name: string }>;
 }
 
 // JSON/classification payloads are consumed heavily by agents; suppress common
@@ -1298,7 +1300,18 @@ function buildUnknownCommandGuidance(
   const baseNextSteps = runtimeNextSteps ?? [
     "Verify spelling and active extensions, then rerun.",
   ];
-  if (packageHint) {
+  const failedExtensionNames = new Set(
+    context?.failedExtensions?.map((entry) =>
+      entry.name.trim().toLowerCase(),
+    ),
+  );
+  const hintedExtensionName = packageHint?.packageName
+    .replace(/^@unbrained\/pm-/, "")
+    .toLowerCase();
+  if (
+    packageHint &&
+    (!hintedExtensionName || !failedExtensionNames.has(hintedExtensionName))
+  ) {
     return buildKnownPackageCommandGuidance(
       commandToken,
       packageHint,

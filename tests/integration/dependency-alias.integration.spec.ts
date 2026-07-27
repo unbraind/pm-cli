@@ -44,6 +44,9 @@ describe("dependency CLI aliases", () => {
           id: "pm-dep-blocker",
           kind: "blocked_by",
           created_at: "2026-03-02T12:00:00.000Z",
+          author: "integration-test",
+          source_kind: "cli:update:dep",
+          author_source: "detected",
         },
       ]);
     });

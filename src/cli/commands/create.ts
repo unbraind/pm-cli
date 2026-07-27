@@ -417,6 +417,7 @@ function parseDependencies(
   raw: string[] | undefined,
   nowValue: string,
   prefix: string,
+  fallbackAuthor: string,
 ): { values: Dependency[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0)
     return { values: undefined, explicitEmpty: false };
@@ -454,12 +455,14 @@ function parseDependencies(
     const sourceKind = normalizeDependencySourceKind(
       parseOptionalString(kv.source_kind),
     );
+    const explicitAuthor = parseOptionalString(kv.author);
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
       kind: ensureEnumValue(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),
       created_at: parseCreatedAt(kv.created_at, nowValue),
-      author: parseOptionalString(kv.author),
-      source_kind: sourceKind,
+      author: explicitAuthor ?? fallbackAuthor,
+      source_kind: sourceKind ?? "cli:create:dep",
+      author_source: explicitAuthor ? "asserted" : "detected",
     };
   });
   return { values, explicitEmpty: false };
@@ -1741,6 +1744,8 @@ async function resolveCreateBlockedByDependency(params: {
         kind: "blocked_by",
         created_at: nowValue,
         author,
+        source_kind: "cli:create:blocked_by",
+        author_source: "detected",
       },
     ];
   }
@@ -2563,6 +2568,7 @@ export async function runCreate(
     resolvedOptions.dep,
     nowValue,
     settings.id_prefix,
+    author,
   );
   const comments = parseLogSeed(
     "--comment",

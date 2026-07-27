@@ -1109,6 +1109,21 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("does not mine graph scope-error prose for missing flags", async () => {
+    await withTempPmPath(async (context) => {
+      for (const args of [
+        ["graph", "analyze", "--rebuild", "--json"],
+        ["graph", "analyze", "--save-baseline", "--json"],
+      ]) {
+        const usage = context.runCli(args);
+        expect(usage.code).toBe(2);
+        const envelope = parseJsonErrorEnvelope(usage.stderr);
+        expect(envelope.recovery?.missing).toBeUndefined();
+        expect(envelope.recovery?.suggested_retry).toBeUndefined();
+      }
+    });
+  });
+
   it("allows create templates to satisfy missing --type", async () => {
     await withTempPmPath(async (context) => {
       const installTemplates = context.runCli(

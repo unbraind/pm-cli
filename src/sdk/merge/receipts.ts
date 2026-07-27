@@ -137,11 +137,18 @@ export async function writeMergeReceipt(params: {
   if (directory === null) {
     return null;
   }
-  const itemId = path.basename(params.itemPath, path.extname(params.itemPath));
+  const trimmedItemPath = params.itemPath.trim();
+  const itemPath =
+    trimmedItemPath.length >= 2 &&
+    ((trimmedItemPath.startsWith("'") && trimmedItemPath.endsWith("'")) ||
+      (trimmedItemPath.startsWith('"') && trimmedItemPath.endsWith('"')))
+      ? trimmedItemPath.slice(1, -1)
+      : trimmedItemPath;
+  const itemId = path.basename(itemPath, path.extname(itemPath));
   const receipt: MergeDecisionReceipt = {
     version: 1,
     id: randomUUID(),
-    item_path: params.itemPath.replaceAll("\\", "/"),
+    item_path: itemPath.replaceAll("\\", "/"),
     item_id: itemId,
     preferred: params.preferred,
     fields_from_theirs: [...params.fieldsFromTheirs],

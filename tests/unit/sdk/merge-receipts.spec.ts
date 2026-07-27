@@ -52,6 +52,22 @@ describe("clone-local merge decision receipts", () => {
       unionFields: ["tags"],
       decisions: [],
     });
+    const shellQuotedReceipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: "'.agents/pm/tasks/pm-shell-quoted.toon'",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [],
+    });
+    const doubleQuotedReceipt = await writeMergeReceipt({
+      cwd: workspace,
+      itemPath: "\".agents/pm/tasks/pm-double-quoted.toon\"",
+      preferred: "ours",
+      fieldsFromTheirs: [],
+      unionFields: [],
+      decisions: [],
+    });
     const receiptDirectory = execFileSync(
       "git",
       [
@@ -66,7 +82,15 @@ describe("clone-local merge decision receipts", () => {
 
     expect(receipt).not.toBeNull();
     expect(laterReceipt).not.toBeNull();
-    expect(await listMergeReceipts(workspace)).toHaveLength(2);
+    expect(shellQuotedReceipt).toMatchObject({
+      item_path: ".agents/pm/tasks/pm-shell-quoted.toon",
+      item_id: "pm-shell-quoted",
+    });
+    expect(doubleQuotedReceipt).toMatchObject({
+      item_path: ".agents/pm/tasks/pm-double-quoted.toon",
+      item_id: "pm-double-quoted",
+    });
+    expect(await listMergeReceipts(workspace)).toHaveLength(4);
     expect((await listMergeReceipts(workspace))[0]).toMatchObject({
       item_id: "pm-merge",
       state: "pending",
@@ -88,6 +112,8 @@ describe("clone-local merge decision receipts", () => {
 
     await markMergeReceiptReconciled(workspace, receipt!);
     await markMergeReceiptReconciled(workspace, laterReceipt!);
+    await markMergeReceiptReconciled(workspace, shellQuotedReceipt!);
+    await markMergeReceiptReconciled(workspace, doubleQuotedReceipt!);
     expect(await listMergeReceipts(workspace)).toEqual([]);
     expect(
       await runMergeReceiptReport({
@@ -96,8 +122,13 @@ describe("clone-local merge decision receipts", () => {
       }),
     ).toMatchObject({
       ok: true,
-      count: 2,
-      receipts: [{ state: "reconciled" }, { state: "reconciled" }],
+      count: 4,
+      receipts: [
+        { state: "reconciled" },
+        { state: "reconciled" },
+        { state: "reconciled" },
+        { state: "reconciled" },
+      ],
     });
   });
 

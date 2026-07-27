@@ -2493,12 +2493,17 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           id: "pm-dep-alpha",
           kind: "blocks",
           created_at: "2026-03-01T00:00:00.000Z",
+          author: "integration-test",
+          source_kind: "cli:update:dep",
+          author_source: "detected",
         },
         {
           id: "pm-dep-beta",
           kind: "related",
           created_at: "2026-03-02T00:00:00.000Z",
           source_kind: "imported",
+          author: "integration-test",
+          author_source: "detected",
         },
       ]);
 
@@ -2525,6 +2530,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           kind: "related",
           created_at: "2026-03-02T00:00:00.000Z",
           source_kind: "imported",
+          author: "integration-test",
+          author_source: "detected",
         },
       ]);
 
@@ -2551,6 +2558,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           id: "pm-dep-gamma",
           kind: "blocks",
           created_at: "2026-03-03T00:00:00.000Z",
+          author: "integration-test",
+          source_kind: "cli:update:dep",
+          author_source: "detected",
         },
       ]);
 
