@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:storage",data-durability,gh-issue,round-trip,storage,toon
 created_at: "2026-07-26T22:04:03.166Z"
-updated_at: "2026-07-27T06:23:40.406Z"
+updated_at: "2026-07-27T06:26:40.046Z"
 closed_at: "2026-07-27T06:23:33.036Z"
 author: "harness:claude-code"
 estimated_minutes: 240
@@ -30,9 +30,10 @@ dependencies[8]{id,kind,created_at}:
   pm-iqgj,discovered_from,"2026-07-26T22:04:03.166Z"
   pm-w7ccmv,implements,"2026-07-26T22:04:03.166Z"
   pm-5cgm2z,implements,"2026-07-27T05:36:53.833Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-27T05:36:40.844Z","harness:codex","Implementation evidence: serializeItemDocument now decodes every newly encoded TOON payload before any caller can write it, refuses decoder exceptions, and reports the first mismatched field under item_document_roundtrip_failed. The exact notes[]/colon/bracket family plus quotes, backslashes, multiline text, Unicode, comment prefixes, and bracketed endpoint-shaped strings is property-tested; 2,125 tracked items round-trip successfully on TOON 4.1.0."
   "2026-07-27T06:23:01.133Z","harness:codex","Final local evidence 2026-07-27: tracker-linked tests pass for every item; CI=1 pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budget, SDK surface/import-cost/transport ratchets; 377 files and 6,448 tests pass at exact 100% statements/branches/functions/lines. Fresh packed acceptance passed npx, Bun SDK import, bunx, an unrelated npm prefix with resolved executable containment, 86-action SDK/CLI completeness with zero unclassified inputs, three provenance dimensions, durable CLI model/effort/role history, and the 88-command package-first dogfood flow. TOON 4.1 passed a 2,127-item storage integrity read, the earlier 2,125-item read/serialize/read corpus sweep, 250-run adversarial properties, and fail-closed negative controls. Secret scan, pnpm audit, GitHub Dependabot/code/secret scanning, open PR inventory, and open-issue PM-link inventory are all clean; only canonically deferred incompatible Sentry, npm-package-arg, and TypeScript upgrades remain. Live pm validate reports zero history drift, zero storage failures, and only the existing 290 historical resolution warnings; pm health is healthy with real-time telemetry draining."
+  "2026-07-27T06:26:40.045Z","harness:codex","PR evidence: broad SDK parity, agent provenance, and TOON durability delivery published as GitHub PR #765 https://github.com/unbraind/pm-cli/pull/765 at implementation head 46e26717fa913cc2caa4914c730e77e75bae693a. Exact-head checks and AI review loop are pending."
 files[7]{path,scope,note}:
   package.json,project,TOON 4.1 runtime dependency
   pnpm-lock.yaml,project,resolved TOON 4.1 dependency graph

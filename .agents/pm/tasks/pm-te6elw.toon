@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: architecture,"area:cli","area:contracts","area:sdk",ci-gate,ratchet,sdk-first
 created_at: "2026-07-26T05:44:44.266Z"
-updated_at: "2026-07-27T06:23:35.985Z"
+updated_at: "2026-07-27T06:26:35.050Z"
 closed_at: "2026-07-27T06:23:12.841Z"
 author: "harness:claude-code"
 estimated_minutes: 480
@@ -34,7 +34,7 @@ dependencies[12]{id,kind,created_at}:
   pm-0zcwz6,verifies,"2026-07-27T05:06:58.763Z"
   pm-itsjf0,verifies,"2026-07-27T05:06:58.763Z"
   pm-pwq0g5,verifies,"2026-07-27T05:06:58.763Z"
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-07-26T10:31:25.247Z","harness:opencode","Surface-shape evidence 2026-07-26 (audit plan pm-t9e3bc): the promoted surface now spans 3,113 symbols over 10 entrypoints (census on pm-usfg same pass), including 923 advanced_export-tier symbols. The completeness-proof direction this item owns is now the load-bearing one: the boundary ratchet proves CLI cannot reach below the SDK, but with 384 symbols on ./sdk/runtime alone, only this item's reverse assertion can prove the SDK can do what each of the 74 contract command spellings does."
   "2026-07-26T11:46:08.615Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:47:22.186Z","harness:codex","Partial implementation evidence: added a public registry-derived analyzer over all 85 actions, exhaustive action dispatch coverage, exhaustive required/optional schema parameter presence, missing-action negative control, and repaired every discovered canonical parameter definition. Behavioural envelope equivalence, bidirectional CLI-flag reachability, and a committed shrinking-only ratchet remain outstanding; do not close this item from this PR."
@@ -49,6 +49,7 @@ comments[14]{created_at,author,text}:
   "2026-07-27T06:04:01.725Z","harness:codex","Root-cause correction: contracts-snapshot isolated global state but inherited PM_PATH and PM_SOURCE_WORKSPACE_ROOT, so the supposedly canonical baseline varied with the caller tracker. The script now uses one disposable isolated project/global root; checks pass both from the live repo environment and a synthetic enclosing linked-test sandbox. Snapshot regenerated from this deterministic baseline."
   "2026-07-27T06:14:12.495Z","harness:codex","Final isolation refinement: full coverage showed that globally overriding PM_SOURCE_WORKSPACE_ROOT in withTempPmPath would violate the extension host contract, which must disclose the original checkout plus a relative tracker coordinate. The override is now scoped only to the nested linked-path parity case. Both SDK parity and extension portable-coordinate integrations pass together with an enclosing source-workspace signal."
   "2026-07-27T06:22:56.356Z","harness:codex","Final local evidence 2026-07-27: tracker-linked tests pass for every item; CI=1 pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budget, SDK surface/import-cost/transport ratchets; 377 files and 6,448 tests pass at exact 100% statements/branches/functions/lines. Fresh packed acceptance passed npx, Bun SDK import, bunx, an unrelated npm prefix with resolved executable containment, 86-action SDK/CLI completeness with zero unclassified inputs, three provenance dimensions, durable CLI model/effort/role history, and the 88-command package-first dogfood flow. TOON 4.1 passed a 2,127-item storage integrity read, the earlier 2,125-item read/serialize/read corpus sweep, 250-run adversarial properties, and fail-closed negative controls. Secret scan, pnpm audit, GitHub Dependabot/code/secret scanning, open PR inventory, and open-issue PM-link inventory are all clean; only canonically deferred incompatible Sentry, npm-package-arg, and TypeScript upgrades remain. Live pm validate reports zero history drift, zero storage failures, and only the existing 290 historical resolution warnings; pm health is healthy with real-time telemetry draining."
+  "2026-07-27T06:26:35.048Z","harness:codex","PR evidence: broad SDK parity, agent provenance, and TOON durability delivery published as GitHub PR #765 https://github.com/unbraind/pm-cli/pull/765 at implementation head 46e26717fa913cc2caa4914c730e77e75bae693a. Exact-head checks and AI review loop are pending."
 files[17]{path,scope,note}:
   scripts/contracts-snapshot.mjs,project,Tracker-independent project and global contract snapshot isolation
   scripts/sdk-surface-snapshot.mjs,project,reverse aggregate export ratchet

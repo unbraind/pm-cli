@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:sdk",extensibility,identity,silent-failure
 created_at: "2026-07-26T18:25:57.996Z"
-updated_at: "2026-07-27T06:23:36.704Z"
+updated_at: "2026-07-27T06:26:35.854Z"
 closed_at: "2026-07-27T06:23:16.252Z"
 author: "harness:claude-code"
 estimated_minutes: 180
@@ -27,8 +27,9 @@ dependencies[4]{id,kind,created_at}:
   pm-0zcwz6,related,"2026-07-26T18:29:12.868Z"
   pm-itsjf0,related,"2026-07-26T18:29:12.868Z"
   pm-w7mqzt,related,"2026-07-26T18:29:12.868Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-27T06:22:57.156Z","harness:codex","Final local evidence 2026-07-27: tracker-linked tests pass for every item; CI=1 pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budget, SDK surface/import-cost/transport ratchets; 377 files and 6,448 tests pass at exact 100% statements/branches/functions/lines. Fresh packed acceptance passed npx, Bun SDK import, bunx, an unrelated npm prefix with resolved executable containment, 86-action SDK/CLI completeness with zero unclassified inputs, three provenance dimensions, durable CLI model/effort/role history, and the 88-command package-first dogfood flow. TOON 4.1 passed a 2,127-item storage integrity read, the earlier 2,125-item read/serialize/read corpus sweep, 250-run adversarial properties, and fail-closed negative controls. Secret scan, pnpm audit, GitHub Dependabot/code/secret scanning, open PR inventory, and open-issue PM-link inventory are all clean; only canonically deferred incompatible Sentry, npm-package-arg, and TypeScript upgrades remain. Live pm validate reports zero history drift, zero storage failures, and only the existing 290 historical resolution warnings; pm health is healthy with real-time telemetry draining."
+  "2026-07-27T06:26:35.853Z","harness:codex","PR evidence: broad SDK parity, agent provenance, and TOON durability delivery published as GitHub PR #765 https://github.com/unbraind/pm-cli/pull/765 at implementation head 46e26717fa913cc2caa4914c730e77e75bae693a. Exact-head checks and AI review loop are pending."
 files[5]{path,scope,note}:
   sdk/public-surface.json,project,Published compatibility snapshot
   src/core/shared/author.ts,project,Ambient detector defaults and override provenance

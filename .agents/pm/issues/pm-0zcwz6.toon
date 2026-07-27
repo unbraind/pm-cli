@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: attribution,history,identity,multi-agent,observability,provenance
 created_at: "2026-07-26T11:06:52.473Z"
-updated_at: "2026-07-27T06:23:37.361Z"
+updated_at: "2026-07-27T06:26:36.654Z"
 closed_at: "2026-07-27T06:23:19.612Z"
 author: "harness:claude-code"
 estimated_minutes: 300
@@ -33,9 +33,10 @@ dependencies[9]{id,kind,created_at}:
   pm-u14c,related,"2026-07-26T11:06:52.473Z"
   pm-w7ccmv,verifies,"2026-07-26T11:06:52.473Z"
   pm-z8qd4k,related,"2026-07-26T11:06:52.473Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T17:09:33.832Z","harness:claude-code","Re-measured live on 2026-07-26 after the v2026.7.26 release that shipped pm-03pq3o. The census now covers 37,202 history entries across the whole workspace, including roughly 3,500 entries this session wrote through the current build with the current harness: agent_model is present on 0 of 37,202, and no entry carries a session field either. Harness detection itself is healthy in the same census — claude-code 2,363, codex 570, opencode 66 — which isolates the failure precisely to the model dimension rather than to detection as a whole. No key matching effort or thinking appears anywhere in the entry schema, which is the pm-itsjf0 half. So the plumbing that pm-03pq3o and pm-brxdct shipped remains correct and inert: the descriptor still names ANTHROPIC_MODEL and CLAUDE_MODEL for claude-code and this harness sets neither, so a fresh release did not move the number."
   "2026-07-27T06:22:57.917Z","harness:codex","Final local evidence 2026-07-27: tracker-linked tests pass for every item; CI=1 pnpm lint passes ESLint, zero jscpd clones, static quality, 100% docstrings, package boundary, token budget, SDK surface/import-cost/transport ratchets; 377 files and 6,448 tests pass at exact 100% statements/branches/functions/lines. Fresh packed acceptance passed npx, Bun SDK import, bunx, an unrelated npm prefix with resolved executable containment, 86-action SDK/CLI completeness with zero unclassified inputs, three provenance dimensions, durable CLI model/effort/role history, and the 88-command package-first dogfood flow. TOON 4.1 passed a 2,127-item storage integrity read, the earlier 2,125-item read/serialize/read corpus sweep, 250-run adversarial properties, and fail-closed negative controls. Secret scan, pnpm audit, GitHub Dependabot/code/secret scanning, open PR inventory, and open-issue PM-link inventory are all clean; only canonically deferred incompatible Sentry, npm-package-arg, and TypeScript upgrades remain. Live pm validate reports zero history drift, zero storage failures, and only the existing 290 historical resolution warnings; pm health is healthy with real-time telemetry draining."
+  "2026-07-27T06:26:36.654Z","harness:codex","PR evidence: broad SDK parity, agent provenance, and TOON durability delivery published as GitHub PR #765 https://github.com/unbraind/pm-cli/pull/765 at implementation head 46e26717fa913cc2caa4914c730e77e75bae693a. Exact-head checks and AI review loop are pending."
 files[6]{path,scope,note}:
   sdk/public-surface.json,project,Published analytics contract
   src/sdk/core.ts,project,Core SDK analytics exports
