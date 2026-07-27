@@ -62,6 +62,7 @@ export function buildBaseline(report, headroom = 1.1) {
 /** Compare a measured report with a committed token-surface baseline. */
 export function compareBaseline(report, baseline) {
   const violations = [];
+  const surfaces = baseline.surfaces ?? {};
   const compare = (name, bytes, maxBytes) => {
     if (!Number.isFinite(maxBytes)) {
       violations.push(`${name}: missing baseline`);
@@ -69,45 +70,43 @@ export function compareBaseline(report, baseline) {
       violations.push(`${name}: ${bytes} bytes exceeds ${maxBytes}`);
     }
   };
-  compare("root_help", report.root_help.bytes, baseline.surfaces?.root_help);
+  compare("root_help", report.root_help.bytes, surfaces.root_help);
   compare(
     "per_command_total",
     report.per_command_total.bytes,
-    baseline.surfaces?.per_command_total,
+    surfaces.per_command_total,
   );
   compare(
     "full_help_surface",
     report.full_help_surface.bytes,
-    baseline.surfaces?.full_help_surface,
+    surfaces.full_help_surface,
   );
   compare(
     "mcp_tools_list",
     report.mcp_tools_list.bytes,
-    baseline.surfaces?.mcp_tools_list,
+    surfaces.mcp_tools_list,
   );
   for (const [name, measurement] of Object.entries(report.contracts)) {
     compare(
       `contracts.${name}`,
       measurement.bytes,
-      baseline.surfaces?.contracts?.[name],
+      surfaces.contracts?.[name],
     );
   }
   violations.push(
-    ...Object.keys(baseline.surfaces?.contracts ?? {})
+    ...Object.keys(surfaces.contracts ?? {})
       .filter((name) => !Object.hasOwn(report.contracts, name))
       .map((name) => `contracts.${name}: stale baseline surface`),
   );
   const reportCommandNames = new Set(
     report.commands.map((measurement) => measurement.name),
   );
-  const requiredCommandNames = new Set(
-    baseline.surfaces.required_commands,
-  );
+  const requiredCommandNames = new Set(surfaces.required_commands ?? []);
   for (const measurement of report.commands) {
     compare(
       `commands.${measurement.name}`,
       measurement.bytes,
-      baseline.surfaces?.commands?.[measurement.name],
+      surfaces.commands?.[measurement.name],
     );
   }
   violations.push(

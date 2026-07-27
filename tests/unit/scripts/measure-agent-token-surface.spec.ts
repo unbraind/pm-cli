@@ -330,6 +330,12 @@ describe("measure-agent-token-surface", () => {
         "commands.ls: missing baseline",
       ]),
     );
+    expect(
+      module.compareBaseline(report, {
+        ...cleanBaseline,
+        surfaces: undefined,
+      } as unknown as TokenSurfaceBaseline),
+    ).toHaveLength(10);
   });
 
   it("writes an intentional baseline update to an explicit path", async () => {
