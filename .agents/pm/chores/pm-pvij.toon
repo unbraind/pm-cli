@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: audit,backlog,governance,pm-cli
 created_at: "2026-07-06T22:01:13.578Z"
-updated_at: "2026-07-26T17:23:25.085Z"
+updated_at: "2026-07-27T07:13:22.057Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: All in_progress items are genuinely claimed or reset; every open GH issue and post-release commit maps to a pm item; every command family has a grammar-table owner under pm-n7rr and every SDK domain an owner under pm-usfg; long-term horizons extended where genuinely uncovered; zero duplicate items created
@@ -17,22 +17,23 @@ release: v2026.7.7
 resolution: completed
 expected_result: "Audit finds and fixes all tracker drift; every ecosystem surface (commands, SDK domains, GH issues, commits, long-term goals) has a well-defined pm item owner; zero duplicates"
 actual_result: "3 phantom-WIP items resolved (pm-lt6n closed verified-shipped via green 2026-07-06 nightly + GH-427 completed; pm-rjqr and pm-92if reset to open with rationale); GH coverage 26/26 open issues mapped; commit coverage complete since 2026.7.6 cut; 160 open items all fully-metadata'd, zero orphans, all 17 epics milestone-indexed; 8 new items created (pm-395t, pm-hq0r, pm-xkgq, pm-npr3, pm-x6jf, pm-rml5, pm-is1a, pm-agou, pm-ugld = 9 incl. this finding), 3 learnings recorded"
-dependencies[15]{id,kind,created_at,author,source_kind}:
-  pm-33cw,implements,"2026-07-26T17:23:24.794Z",null,null
-  pm-395t,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-92if,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-agou,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-doxj,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-e9zh,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-hq0r,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-is1a,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-lt6n,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-muhw,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-n7rr,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-npr3,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-pbyu,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-pivf,related,"2026-07-26T17:23:24.794Z",null,null
-  pm-rjqr,related,"2026-07-26T17:23:24.794Z",null,null
+dependencies[16]{id,kind,created_at}:
+  pm-33cw,implements,"2026-07-26T17:23:24.794Z"
+  pm-395t,related,"2026-07-26T17:23:24.794Z"
+  pm-92if,related,"2026-07-26T17:23:24.794Z"
+  pm-agou,related,"2026-07-26T17:23:24.794Z"
+  pm-doxj,related,"2026-07-26T17:23:24.794Z"
+  pm-e9zh,related,"2026-07-26T17:23:24.794Z"
+  pm-hq0r,related,"2026-07-26T17:23:24.794Z"
+  pm-is1a,related,"2026-07-26T17:23:24.794Z"
+  pm-lt6n,related,"2026-07-26T17:23:24.794Z"
+  pm-muhw,related,"2026-07-26T17:23:24.794Z"
+  pm-n7rr,related,"2026-07-26T17:23:24.794Z"
+  pm-npr3,related,"2026-07-26T17:23:24.794Z"
+  pm-pbyu,related,"2026-07-26T17:23:24.794Z"
+  pm-pivf,related,"2026-07-26T17:23:24.794Z"
+  pm-rjqr,related,"2026-07-26T17:23:24.794Z"
+  pm-6a1g,supersedes,"2026-07-27T07:13:21.812Z"
 learnings[3]{created_at,author,text}:
   "2026-07-06T22:01:27.073Z",maintainer-agent,"CLI pm search --format json wraps results in an envelope: {query, mode, items[]} — results live under .items (NOT .results). jq '.results[]' silently yields nothing and fakes zero hits, the same failure shape as the --format json|toon trap. Always sanity-check one raw search payload before trusting empty dedupe sweeps."
   "2026-07-06T22:01:27.516Z",maintainer-agent,"Phantom WIP recurred one audit after #14: claim release does not reset status (pm-rjqr stayed in_progress after its claim was released post-merge), and epics drift into unclaimed in_progress (pm-92if). Until pm-w8q4 ships stale-WIP detection, every audit must sweep: grep -rl \"^status: in_progress\" .agents/pm/ and require a live claim."

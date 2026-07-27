@@ -6,19 +6,20 @@ status: closed
 priority: 1
 tags[8]: agent-ux,all-status,ecosystem,graph,planning,relationships,release,review
 created_at: "2026-07-26T22:29:52.903Z"
-updated_at: "2026-07-26T22:41:56.442Z"
+updated_at: "2026-07-27T07:13:27.886Z"
 closed_at: "2026-07-26T22:41:40.600Z"
 author: "harness:opencode"
 parent: pm-doxj
 resolution: "Ecosystem review pass executed and closed with evidence: full open-item walk, two live verifications, three gap items filed with typed edges, one reminder defect fixed, gates green"
 expected_result: Every product principle maps to living tracked work; gaps filed as dedupe-checked items; no duplicate items created; graph stays fully connected
 actual_result: "All principles already tracked; 3 genuine gaps found and filed (pm-a5w7vv, pm-0d7ord, pm-hipfu9); release pipeline verified healthy with same-day idempotence; harness auto-attribution verified in practice; 0 isolated active nodes maintained"
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-7zs0,verifies,"2026-07-26T22:39:36.212Z",null,null
-  pm-z9x1r2,verifies,"2026-07-26T22:39:37.299Z",null,null
-  pm-zeifd2,related,"2026-07-26T22:39:38.606Z",null,null
-  pm-96h7,related,"2026-07-26T22:39:39.843Z",null,null
-  pm-bzmeaa,related,"2026-07-26T22:39:41.083Z",null,null
+dependencies[6]{id,kind,created_at}:
+  pm-7zs0,verifies,"2026-07-26T22:39:36.212Z"
+  pm-z9x1r2,verifies,"2026-07-26T22:39:37.299Z"
+  pm-zeifd2,related,"2026-07-26T22:39:38.606Z"
+  pm-96h7,related,"2026-07-26T22:39:39.843Z"
+  pm-bzmeaa,related,"2026-07-26T22:39:41.083Z"
+  pm-t9e3bc,supersedes,"2026-07-27T07:13:27.717Z"
 comments[3]{created_at,author,text}:
   "2026-07-26T22:30:09.179Z","harness:opencode","Duplicate-check evidence: searched 'ecosystem review', 'all-status review', 'release pipeline verification' before create; nearest living anchors are pm-doxj (roadmap), pm-96h7 (graph maturity), pm-7zs0 (release-health reminder). This pass is a dated session item under pm-doxj per convention (decision pm-zeifd2: date+theme, never numbered); it coordinates but does not duplicate the standing epics."
   "2026-07-26T22:35:20.743Z","harness:opencode","Harness auto-attribution verified live: this item was claimed and mutated with no PM_AUTHOR and no --author flag; history records author=harness:opencode with detected provenance (pm-z9x1r2 shipped). Open remainder: pm-itsjf0 (reasoning-level/session-role provenance schema), pm-0zcwz6 (model capture inert: declared env signal unset by primary harness)."

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: ci,extensions,merge,multi-agent,ux,validation
 created_at: "2026-07-27T01:53:33.846Z"
-updated_at: "2026-07-27T01:53:33.846Z"
+updated_at: "2026-07-27T07:10:15.964Z"
 author: "harness:codex"
 acceptance_criteria: The committed fence has one explicit reproducible schema scope shared by CI and operator guidance; default validation does not recommend a change that the required CI gate reverses; diagnostics name whether core project schema or active extension schema was audited; tests cover tracked project profiles and optional runtime-only profiles without weakening custom item merge protection
 parent: pm-g5sx
@@ -17,10 +17,11 @@ environment: pm validate and pm merge install with active project extensions ver
 expected_result: Local diagnostics and CI agree on the committed semantic merge-fence contract.
 actual_result: Extension-aware local validation requested ten optional profile folder patterns that the no-extensions CI then removed and rejected.
 component: merge-fence-governance
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-08sv,related,"2026-07-27T01:53:33.846Z",null,null
-  pm-i4fx,discovered_from,"2026-07-27T01:53:33.846Z",null,null
-  pm-pdr8t1,related,"2026-07-27T01:53:33.846Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-08sv,related,"2026-07-27T01:53:33.846Z"
+  pm-i4fx,discovered_from,"2026-07-27T01:53:33.846Z"
+  pm-pdr8t1,related,"2026-07-27T01:53:33.846Z"
+  pm-dj98,implements,"2026-07-27T07:10:15.757Z"
 comments[1]{created_at,author,text}:
   "2026-07-27T01:53:33.846Z","harness:codex","Duplicate check: all-status search for profile apply activation merge fence refresh found pm-i4fx as the shipped baseline and pm-08sv as profile registration, but no item governing the contradictory extension-aware versus no-extensions fence scope. PR #759 CI run 30230355975 is the reproduction."
 body: ""

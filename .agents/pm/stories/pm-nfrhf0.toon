@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: context-management,evaluation,rl,sdk,story,universal-platform,verifier
 created_at: "2026-07-26T22:04:31.606Z"
-updated_at: "2026-07-26T22:04:31.606Z"
+updated_at: "2026-07-27T07:17:58.609Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "An environment author can create an episode workspace from a declared seed and obtain byte-identical state across repeated runs, with identifiers, timestamps and ordering reproducible; the task an agent is given is a bounded pm projection of a real item, and the fields the grader uses are separable from the fields the agent may read; a verdict for an episode is computed from recorded workspace state by pm itself, with no environment-specific code in the grader, and is stable under replay; a worked exemplar runs end to end and is executable from the repository, covering a passing episode, a failing episode and an episode that fails for the wrong reason; the whole loop is reachable through the public SDK alone, with the CLI used only as a convenience, so an environment can embed pm without shelling out; the loop degrades to a single item and a single episode with no special path, and scales to concurrent episodes without shared mutable state"
@@ -18,11 +18,15 @@ why_now: "The immutable history, point-in-time reads, linked-test execution and 
 parent: pm-8jdc
 risk: medium
 confidence: medium
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-g608fc,related,"2026-07-26T22:04:31.606Z",null,null
-  pm-iiv1gl,related,"2026-07-26T22:04:31.606Z",null,null
-  pm-saoe9t,related,"2026-07-26T22:04:31.606Z",null,null
-  pm-t4d7nz,implements,"2026-07-26T22:04:31.606Z",null,null
-  pm-usfg,blocked_by,"2026-07-26T22:04:31.606Z",null,null
-  pm-wlqxg3,blocked_by,"2026-07-26T22:04:31.606Z",null,null
+dependencies[8]{id,kind,created_at}:
+  pm-g608fc,related,"2026-07-26T22:04:31.606Z"
+  pm-iiv1gl,related,"2026-07-26T22:04:31.606Z"
+  pm-saoe9t,related,"2026-07-26T22:04:31.606Z"
+  pm-t4d7nz,implements,"2026-07-26T22:04:31.606Z"
+  pm-usfg,blocked_by,"2026-07-26T22:04:31.606Z"
+  pm-wlqxg3,blocked_by,"2026-07-26T22:04:31.606Z"
+  pm-e96opw,blocked_by,"2026-07-27T07:17:32.227Z"
+  pm-rbcvt2,blocked_by,"2026-07-27T07:17:32.227Z"
+notes[1]{created_at,author,text}:
+  "2026-07-27T07:17:58.609Z","harness:opencode","Composition map for the RL/eval entitlement (recorded 2026-07-27, from the full-ecosystem review pass pm-89qv6b): the story body names four missing pieces and each already has an owning item, so this story is the composition layer, not four new features.\n\n1. Verdict computability -> pm-e96opw (executable acceptance criteria). The grader cannot parse prose AC; once every criterion carries a machine-checkable predicate with a recorded result, the episode verdict is pm close --validate-close semantics run over recorded state, with zero environment-specific grader code. Edge added: blocked_by pm-e96opw.\n\n2. Seed reproducibility -> pm-rbcvt2 (reproducible workspace instances). Byte-identical episodes need seeded identifiers, an injectable clock, and deterministic ordering — exactly that item's scope. Edge added: blocked_by pm-rbcvt2.\n\n3. Episode boundary (agent-visible vs grader-visible state) -> composed from pm-cxr0jb (intent-scoped read projections): the task projection is an intent-scoped read of a real item, and the grader reads the full item through the SDK. No new primitive needed; the boundary is two declared intents over one record.\n\n4. Bounded score projection -> pm-t5dt4z (self-reported token accounting) for cost-shaped rewards and pm-e96opw predicates for correctness-shaped rewards; the score is a declared projection over history (correctness, cost, route) rather than a new store.\n\nWhy the philosophy holds here: project management = context management, and an RL episode is a context problem twice over — the agent gets the smallest sufficient task description (a bounded projection, not the tracker), and the reward comes from recorded evidence (immutable history), never from agent self-report. pm as the environment other systems are tested in: not pm-a8lnoh/pm-9c7h9x/pm-atfm (those test pm itself). Delivery vehicle per the roadmap: domain-pack kit pm-g608fc + beyond-PM exemplar pm-iiv1gl prove the pattern; the RL pack is the second exemplar, not a fork of the first."
 body: ""

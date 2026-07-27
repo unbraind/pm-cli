@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: brainstorm,context-management,governance,graph,organization,planning,review
 created_at: "2026-07-26T09:51:48.895Z"
-updated_at: "2026-07-26T17:12:42.355Z"
+updated_at: "2026-07-27T07:13:25.462Z"
 closed_at: "2026-07-26T10:08:09.110Z"
 author: "harness:opencode"
 acceptance_criteria: All-status census recorded with live verification evidence; brainstorms recorded on the canonical items; every new item dedupe-checked with search evidence; no numbered pass identifiers; graph edges added only where semantically true; pm validate/health re-run clean at the end
@@ -17,26 +17,27 @@ why_now: "Requested full-ecosystem review, brainstorm, and long-term planning pa
 parent: pm-doxj
 risk: low
 confidence: high
-dependencies[19]{id,kind,created_at,author,source_kind}:
-  pm-bzmeaa,related,"2026-07-26T10:04:35.025Z",null,null
-  pm-doxj,verifies,"2026-07-26T10:04:35.025Z",null,null
-  pm-m08hza,related,"2026-07-26T10:04:35.025Z",null,null
-  pm-zeifd2,related,"2026-07-26T10:04:35.025Z",null,null
-  pm-4k6b,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-8pnj,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-96h7,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-9rgaal,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-agou,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-doxj,implements,"2026-07-26T17:12:42.109Z",null,null
-  pm-e9zh,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-g8t7b9,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-hnc9w7,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-htbetn,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-j82fd3,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-ka6d,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-lnrk,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-n7rr,related,"2026-07-26T17:12:42.109Z",null,null
-  pm-o87av6,related,"2026-07-26T17:12:42.109Z",null,null
+dependencies[20]{id,kind,created_at}:
+  pm-bzmeaa,related,"2026-07-26T10:04:35.025Z"
+  pm-doxj,verifies,"2026-07-26T10:04:35.025Z"
+  pm-m08hza,related,"2026-07-26T10:04:35.025Z"
+  pm-zeifd2,related,"2026-07-26T10:04:35.025Z"
+  pm-4k6b,related,"2026-07-26T17:12:42.109Z"
+  pm-8pnj,related,"2026-07-26T17:12:42.109Z"
+  pm-96h7,related,"2026-07-26T17:12:42.109Z"
+  pm-9rgaal,related,"2026-07-26T17:12:42.109Z"
+  pm-agou,related,"2026-07-26T17:12:42.109Z"
+  pm-doxj,implements,"2026-07-26T17:12:42.109Z"
+  pm-e9zh,related,"2026-07-26T17:12:42.109Z"
+  pm-g8t7b9,related,"2026-07-26T17:12:42.109Z"
+  pm-hnc9w7,related,"2026-07-26T17:12:42.109Z"
+  pm-htbetn,related,"2026-07-26T17:12:42.109Z"
+  pm-j82fd3,related,"2026-07-26T17:12:42.109Z"
+  pm-ka6d,related,"2026-07-26T17:12:42.109Z"
+  pm-lnrk,related,"2026-07-26T17:12:42.109Z"
+  pm-n7rr,related,"2026-07-26T17:12:42.109Z"
+  pm-o87av6,related,"2026-07-26T17:12:42.109Z"
+  pm-45lr,supersedes,"2026-07-27T07:13:25.198Z"
 comments[2]{created_at,author,text}:
   "2026-07-26T09:53:12.245Z","harness:opencode","VERIFICATION CENSUS 2026-07-26 (live, this checkout's build): items=2063 (open=271 in_progress=1 closed=1778 canceled=13; types: Task=635 Issue=551 Feature=380 Chore=268 Epic=87 Decision=62 Story=50 Plan=21 Milestone=7 Reminder=1). pm health --check-only: ok, 0 warnings. pm validate --check-resolution --check-history-drift: history_drift ok 0/2063; resolution check warns on 287 closed items missing resolution/expected/actual fields — known warning class already mapped to open items pm-e9zh (terminal evidence backfill) and pm-wenq (close-time completeness signal). pm graph audit: nodes=2065 edges=4920 (parent=1887 related=2139 blocked_by=366 implements=288 verifies=91 blocks=69 discovered_from=64 child=15 incident_from=1); isolated_active=0, degree_leq_one_active=0; 11 info-severity legacy findings (8 duplicate terminal edges, 98 no-blocker sentinels, 49 legacy ordering-cycle subjects, 3 missing-reference terminals) — all owned by pm-96h7 wave items pm-hnc9w7/pm-lnrk. Outcome ladder verified live: pm-j82fd3<-blocked_by pm-pbyu; pm-o87av6<-blocked_by pm-9rgaal; pm-xp1xsw<-blocked_by pm-9rgaal+pm-agou+pm-j82fd3+pm-w7ccmv; pm-t4d7nz<-blocked_by pm-9rgaal+pm-w7ccmv; all six implements->pm-doxj. pm next recommends this item. CONCLUSION: ecosystem structure is healthy; this pass enriches depth and records brainstorms rather than repairing damage."
   "2026-07-26T10:07:51.103Z","harness:opencode","PASS SUMMARY 2026-07-26 (date+theme id per pm-zeifd2, no numbering). REVIEW: all 2,063 items inspected by census (open 271/closed 1778/canceled 13); health 0 warnings; history drift 0; resolution-warning class (287) confirmed mapped to pm-e9zh+pm-wenq; graph audit 11 info findings all owned by pm-96h7 waves. Outcome ladder verified live with correct blocked_by chains. BRAINSTORMS RECORDED: (1) CLI simplification on pm-n7rr — verified 87 top-level commands live (ADR said ~60; +45% growth = urgency evidence), full 87-command→~20-noun mapping table, five ADR-strengthening principles (one-spelling, error-surface-in-grammar, tokens-per-task fitness via pm-8pnj, two-call cold-start pm-ka6d, grammar serves context-management philosophy), sequenced rollout feeding pm-j82fd3. (2) Context algorithms on pm-4k6b — full stack: 5-channel candidate retrieval, 7-signal scoring with scale-adaptive decay half-life, token-budget knapsack with projection degradation, 4 scale tiers (scratch→civilizational), explainable deterministic ranking, fleet thundering-herd mitigation, eval-gated learning loop, portfolio dispositions for pm-g8t7b9. (3) Post-ladder horizons on pm-doxj — five evidence-gated themes (org digital twins in production, inter-org work networks, context protocol standard, self-tuning workspaces, civilizational memory) each naming its enabling evidence per policy pm-m08hza. GAP ITEMS FILED (all dedupe-searched): pm-qapjw5 changeset-to-item traceability CI gate (verifies pm-w7ccmv), pm-htbetn per-type lifecycle field-completeness contract (verifies pm-xp1xsw), pm-saoe9t organizational digital-twin exemplar story (implements pm-xc68, verifies pm-t4d7nz, P4 parked). GRAPH: active items with <=1 edge 1→0; directed reachability to outcome milestones remains 100% (6@0, 87@1, 143@2, 39@3 — the 39 distance-3 items are honest scanner-finding→batch→epic→outcome chains); typed edges grew (verifies 91→95, discovered_from 64→67); one terminal-item edge added then reverted and routed to the changelog-safe wave pm-hnc9w7 per pm-96h7 principles. No duplicates created; no numbered identifiers used; no fabricated edges."

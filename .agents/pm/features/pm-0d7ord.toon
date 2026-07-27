@@ -6,16 +6,17 @@ status: open
 priority: 3
 tags[7]: "area:sdk",context-management,dashboard,export,"horizon:far",package,visualization
 created_at: "2026-07-26T22:34:43.941Z"
-updated_at: "2026-07-26T22:39:23.396Z"
+updated_at: "2026-07-27T07:10:18.068Z"
 author: "harness:opencode"
 parent: pm-ugqx
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-v4iypw,discovered_from,"2026-07-26T22:39:11.549Z",null,null
-  pm-pee5,related,"2026-07-26T22:39:13.301Z",null,null
-  pm-7ob5,related,"2026-07-26T22:39:14.910Z",null,null
-  pm-mav1ak,related,"2026-07-26T22:39:16.591Z",null,null
-  pm-801d,blocked_by,"2026-07-26T22:39:18.551Z",null,null
-  pm-gw6uyq,related,"2026-07-26T22:39:20.199Z",null,null
-  pm-t4d7nz,related,"2026-07-26T22:39:21.938Z",null,null
-  pm-usfg,related,"2026-07-26T22:39:23.159Z",null,null
+dependencies[9]{id,kind,created_at}:
+  pm-v4iypw,discovered_from,"2026-07-26T22:39:11.549Z"
+  pm-pee5,related,"2026-07-26T22:39:13.301Z"
+  pm-7ob5,related,"2026-07-26T22:39:14.910Z"
+  pm-mav1ak,related,"2026-07-26T22:39:16.591Z"
+  pm-801d,blocked_by,"2026-07-26T22:39:18.551Z"
+  pm-gw6uyq,related,"2026-07-26T22:39:20.199Z"
+  pm-t4d7nz,related,"2026-07-26T22:39:21.938Z"
+  pm-usfg,related,"2026-07-26T22:39:23.159Z"
+  pm-t4d7nz,implements,"2026-07-27T07:10:17.834Z"
 body: ""

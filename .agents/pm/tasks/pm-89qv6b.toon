@@ -1,0 +1,45 @@
+id: pm-89qv6b
+title: "Ecosystem review and deep-graph enrichment pass 2026-07-27: all-status census, CLI simplification + token-efficiency + long-term brainstorm, dedupe-checked gap filing"
+description: "Date+theme-identified review/organization/planning pass per decision pm-zeifd2 (never sequentially numbered), successor to closed pass pm-e9yevx. Full all-status inspection of the 2,127-item workspace; live verification of release automation, npm/bun publish state, and CI; recorded brainstorms for CLI grammar simplification (pm-n7rr), token-efficient output (pm-g3n00m/pm-5t33or), adaptive context algorithms (pm-4k6b), SDK-first completeness (pm-usfg), immutable history (pm-w7ccmv), and multi-agent scale (pm-dj98/pm-9rxu); dedupe-checked gap filing; typed-edge enrichment so the all-status graph stays traversable to outcome milestones with explainable paths (pm-bzmeaa invariant)."
+type: Task
+status: closed
+priority: 1
+tags[7]: brainstorm,context-management,governance,graph,organization,planning,review
+created_at: "2026-07-27T06:59:13.980Z"
+updated_at: "2026-07-27T07:27:28.508Z"
+closed_at: "2026-07-27T07:27:14.965Z"
+author: "harness:opencode"
+acceptance_criteria: "All-status census recorded with live verification evidence (auto-release, npm, CI); brainstorms recorded on the canonical items; every new item dedupe-checked with search evidence; no numbered pass identifiers; graph edges added only where semantically true; pm validate/health re-run clean at the end"
+goal: project management = context management
+objective: "Keep the living backlog a complete, deeply-linked, duplicate-free map of the entire pm ecosystem and its long-term future"
+value: Agents and humans can traverse from any active work to the outcome it serves; brainstorm output is preserved as tracker knowledge instead of chat ephemera
+why_now: "Maintainer requested a comprehensive review, brainstorm, organization, and long-term planning pass across all items with deep graph linking"
+parent: pm-doxj
+dependencies[8]{id,kind,created_at}:
+  pm-4k6b,related,"2026-07-27T06:59:30.778Z"
+  pm-96h7,related,"2026-07-27T06:59:30.778Z"
+  pm-bzmeaa,related,"2026-07-27T06:59:30.778Z"
+  pm-doxj,implements,"2026-07-27T06:59:30.778Z"
+  pm-n7rr,related,"2026-07-27T06:59:30.778Z"
+  pm-usfg,related,"2026-07-27T06:59:30.778Z"
+  pm-zeifd2,related,"2026-07-27T06:59:30.778Z"
+  pm-v4iypw,supersedes,"2026-07-27T07:13:00.580Z"
+comments[3]{created_at,author,text}:
+  "2026-07-27T07:00:45.792Z","harness:opencode","Census evidence (live): 2,127 items + this pass item = 2,128 streams; by status open 308 / closed 1,806 / canceled 13 / in_progress 1 (this item). Types: Task 641, Issue 593, Feature 389, Chore 271, Epic 87, Decision 63, Story 53, Plan 22, Milestone 7. History: 39,625 entries across 2,138 streams, drift 0/2,128. Graph: 2,130 nodes, 9,405 edges (related 4,479, implements 1,989, parent 1,952, blocked_by 385, blocks 219, discovered_from 190, verifies 133, supersedes 41, child 15, incident_from 2), 0 isolated active nodes, 0 degree<=1 active nodes. Live system: auto-release scheduled run succeeded 2026-07-27T06:05Z (v2026.7.27 on npm dist-tags.latest + GitHub release, one auto-release today); CI green on main (CodeQL, CodSpeed, Docs, OSSF, Security). Health: only warn is local merge_driver_configuration:5 (environment, not tracker data). Validate: history_drift 0; resolution backfill warning 290 (tracked by pm-e9zh/pm-wrbe). Duplicate check for this pass: pm search 'ecosystem review brainstorm organization planning pass' shows only closed pm-e9yevx (2026-07-26) as predecessor; pm duplicates shows no open cluster matching this theme."
+  "2026-07-27T07:18:38.231Z","harness:opencode",warm-loop probe
+  "2026-07-27T07:20:55.964Z","harness:opencode","Enrichment evidence: graph grew 9,405 -> 9,446 edges (+41) and 2,130 -> 2,132 nodes (+2: this pass, pm-rbg1qo) with zero new audit findings (11 info-level legacy findings unchanged, owned by pm-p9a4/pm-hnc9w7). Edges added: (1) 13-edge supersedes chain across all 14 historical review/audit passes 2026-06-07 pm-xm98 .. 2026-07-27 pm-89qv6b, verified traversable end-to-end via pm graph paths (13 hops); (2) implements/verifies anchors for the 5 active items that lacked them (pm-mkzw1x + pm-gjicmx -> pm-dj98, pm-0d7ord -> pm-t4d7nz, pm-hipfu9 + pm-s4y3z4 -> pm-u9d0) plus pm-a5w7vv (blocked_by pm-xp1xsw grammar freeze, implements pm-j82fd3) leaving only the roadmap root unanchored by design; (3) outcome-milestone DAG completed: pm-9rgaal blocked_by pm-j82fd3, pm-t4d7nz blocked_by pm-xp1xsw + pm-o87av6, verified multi-path from 2028-06 milestone to 2026-10 milestone; (4) RL entitlement composition: pm-nfrhf0 blocked_by pm-e96opw + pm-rbcvt2 with the four-piece composition map recorded as a note; (5) new item pm-rbg1qo (session-topic + effort/role provenance coverage) wired discovered_from this pass, implements pm-szv11n, related pm-gw6uyq/pm-oskdmu/pm-itsjf0/pm-03pq3o/pm-qwuber. Brainstorms recorded: warm steady-state token loop baseline on pm-g3n00m (4.3kB default vs ~50B disciplined per cycle; routing-not-capability finding), RL composition map on pm-nfrhf0. Not filed (deliberate): a seventh outcome milestone — pm-doxj horizons note 2026-07-26 records the ladder as fixed at six with promotion owned by pm-m08hza."
+learnings[1]{created_at,author,text}:
+  "2026-07-27T07:19:48.769Z","harness:opencode","Review-pass economics: on a mature tracker the highest-value moves are compositional, not additive. This pass filed exactly one new item (pm-rbg1qo) because search-first duplicate checking against 2,127 items showed the CLI-simplification, token-efficiency, scale, immutability, multi-agent and CI themes were all already owned; the genuine work was wiring — a 14-node supersedes chain across every historical review pass, implements/verifies anchors for the six items that lacked them, blocked_by completion of the outcome-milestone DAG, and composition maps (RL entitlement, warm token loop) recorded on the stories that bind the primitives. A pass that creates many items on a mature map is usually a sign the search step was skipped."
+files[1]{path,scope,note}:
+  src/core/shared/author.ts,project,"Evidence for pm-rbg1qo: built-in descriptor table declares effort only for claude-code/codex,role only for codex,topic for none"
+tests[1]{command,scope,timeout_seconds,pm_context_mode}:
+  pm validate --check-history-drift && pm health --check-only,project,240,tracker
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms2webd7-i82mod,test,failed,"2026-07-27T07:21:02.062Z","2026-07-27T07:21:03.499Z","2026-07-27T07:21:03.499Z",0,1,0
+  test-local-ms2wetqo-qsxi4g,test,failed,"2026-07-27T07:21:26.199Z","2026-07-27T07:21:27.313Z","2026-07-27T07:21:27.313Z",0,1,0
+  test-local-ms2wfeb4-e2mgwx,test,failed,"2026-07-27T07:21:51.670Z","2026-07-27T07:21:53.968Z","2026-07-27T07:21:53.968Z",0,1,0
+  test-local-ms2wlhz6-tnwpca,test,passed,"2026-07-27T07:25:58.022Z","2026-07-27T07:26:38.658Z","2026-07-27T07:26:38.658Z",1,0,0
+docs[1]{path,scope,note}:
+  AGENTS.md,project,"Operating rules verified during pass: date+theme pass naming per pm-zeifd2,no numbered runs"
+close_reason: "Ecosystem review, brainstorm, and deep-graph enrichment pass complete. Census verified live: 2,128 items (+1 filed: pm-rbg1qo session-topic/effort/role provenance coverage), auto-release succeeded today (v2026.7.27 on npm + GitHub, exactly one auto-release), CI green on main, history drift 0/2,129, graph audit findings unchanged (11 info legacy, no new). Graph enriched +41 edges: 13-edge supersedes chain across all 14 historical review passes (verified 13-hop path pm-89qv6b..pm-xm98), implements/verifies anchors for all 5 anchorless active items + pm-a5w7vv (only roadmap root remains unanchored by design), outcome-milestone DAG completed (multi-path 2028-06 -> 2026-10 via blocked_by), RL entitlement composition (pm-nfrhf0 blocked_by pm-e96opw + pm-rbcvt2). Brainstorms recorded: warm steady-state token loop baseline on pm-g3n00m (default 4.3kB vs disciplined ~50B per cycle; routing-not-capability), RL composition map on pm-nfrhf0. Deliberately not filed: seventh outcome milestone (pm-doxj horizons note fixes ladder at six, promotion via pm-m08hza). Linked test passing 1/0 (pm validate --check-history-drift && pm health --check-only, pm_context_mode=tracker — sandbox mode runs against an empty schema tracker and false-fails repo-invariant assertions). Duplicate check: searches across pass/review/provenance/release themes found only the closed predecessor pm-e9yevx lineage; no open duplicates created."
+body: ""

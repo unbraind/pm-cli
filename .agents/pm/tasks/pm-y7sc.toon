@@ -6,19 +6,20 @@ status: closed
 priority: 1
 tags[2]: audit-2026-06-13,session
 created_at: "2026-06-12T22:38:35.775Z"
-updated_at: "2026-07-26T22:20:44.468Z"
+updated_at: "2026-07-27T07:13:14.797Z"
 author: maintainer-agent
 release: v2026.6.13
 resolution: "Fixed the feasible combined branch scope: duplicate close reason autofill, container child rollups, linked-test pipe/sandbox ergonomics, audit-update retry guidance, esbuild security override, coverage expansion and threshold ratchet, plus tracker evidence/backlog items."
 expected_result: "Branch is verified, package-owned changelog remains current, security alerts are resolved locally, and unresolved future items remain tracked instead of being over-claimed."
 actual_result: All local gates passed; pm-w13j remains open for future literal 100% coverage ratchets and unrelated GitHub issues such as validate owner diagnostics remain open.
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-1lll,related,"2026-07-26T17:30:07.248Z",null,null
-  pm-cstl,related,"2026-07-26T17:30:07.248Z",null,null
-  pm-gcm3,related,"2026-07-26T17:30:07.248Z",null,null
-  pm-i1z6,related,"2026-07-26T17:30:07.248Z",null,null
-  pm-w13j,related,"2026-07-26T17:30:07.248Z",null,null
-  pm-doxj,blocks,"2026-07-26T22:20:44.251Z",null,null
+dependencies[7]{id,kind,created_at}:
+  pm-1lll,related,"2026-07-26T17:30:07.248Z"
+  pm-cstl,related,"2026-07-26T17:30:07.248Z"
+  pm-gcm3,related,"2026-07-26T17:30:07.248Z"
+  pm-i1z6,related,"2026-07-26T17:30:07.248Z"
+  pm-w13j,related,"2026-07-26T17:30:07.248Z"
+  pm-doxj,blocks,"2026-07-26T22:20:44.251Z"
+  pm-xm98,supersedes,"2026-07-27T07:13:14.629Z"
 comments[6]{created_at,author,text}:
   "2026-06-12T22:52:34.282Z",codex-sdk-sidecar,"Sidecar diff review: close.ts targets GH-204 by letting --duplicate-of auto-fill close reason under require_close_reason; get.ts targets GH-155/pm-gcm3 with children rollup for milestone/epic plus --fields children; update.ts targets GH-207 by returning exact replacement commands for restricted audit-update flags. Main risks: test.ts only adds unused DEFAULT_LINKED_TEST_PIPE_CLOSE_GRACE_MS with no behavior wired yet; no tracked tests/docs updated for the new close/get/update behavior; get --fields children currently projects children as an item field as well as root children, so JSON shape should be asserted. Next best step: add focused unit/integration tests for duplicate close without reason, get child rollup/field projection, audit-update replacement metadata, then wire or remove the linked-test pipe-close grace constant."
   "2026-06-12T22:53:07.266Z",codex-github-sidecar,"GitHub/dependency/security sidecar 2026-06-13: no open PRs and current branch has no associated PR; GH issues #203-#220 remain open except #211 absent from open issue list, with #204-#208/#210 matching active remediation scope and #212-#220 fresh backlog. Latest main CI/CodeQL/Docs, Nightly Validation, Auto Release, Release, and Dependabot Updates runs checked green; latest release is v2026.6.12. GitHub Dependabot and CodeQL alert APIs show only fixed alerts; secret-scanning alerts empty. Local pnpm security:scan passed. pnpm audit fails: esbuild vulnerabilities GHSA-gv7w-rqvm-qjhr and GHSA-g7r4-m6w7-qqqr affect esbuild >=0.17.0/<0.28.1 and >=0.27.3/<0.28.1 via direct esbuild@0.28.0 and vite/vitest path esbuild@0.27.7. pnpm outdated shows @types/node 25.9.2->25.9.3, esbuild 0.28.0->0.28.1, commander 14.0.3->15.0.0; commander@15 requires Node >=22.12.0, so do not bump while repo supports Node >=20. Recommended fix: update/override esbuild to patched 0.28.1 across direct and transitive lockfile paths, then rerun pnpm audit --audit-level low, pnpm security:scan, and normal gates."

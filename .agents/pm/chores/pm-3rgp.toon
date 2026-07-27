@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: audit,backlog,governance,pm-cli
 created_at: "2026-07-06T21:10:23.139Z"
-updated_at: "2026-07-26T17:03:22.280Z"
+updated_at: "2026-07-27T07:13:18.395Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Every open GitHub issue maps to a pm item; zero unparented items except the root milestone; new capability epic follows the living-backlog + agent-story conventions; validate/health green with all warnings mapped to open items
@@ -17,22 +17,23 @@ release: v2026.7.7
 resolution: "Audit complete: 8 GH-issue items created (pm-6abs pm-25d0 pm-sqf7 pm-bfma pm-h85e pm-4bzq pm-yjim pm-alnj), security capability epic pm-qwoy + agent story pm-6ixn created, pm-oz8u/pm-2czc reparented; validate/health green, zero open orphans, branch commits fully mapped to closed items"
 expected_result: Every open GitHub issue and all branch work tracked in well-defined pm items; no orphaned open items
 actual_result: GH-467..474 untracked and pm-oz8u/pm-2czc orphaned pre-audit; all gaps closed during audit
-dependencies[15]{id,kind,created_at,author,source_kind}:
-  pm-1k57,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-25d0,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-28cf,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-2czc,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-4bzq,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-6abs,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-6ixn,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-6mn1,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-7cx8,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-alnj,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-b3e9,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-bfma,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-doxj,implements,"2026-07-26T17:03:22.077Z",null,null
-  pm-ds3b,related,"2026-07-26T17:03:22.077Z",null,null
-  pm-e9zh,related,"2026-07-26T17:03:22.077Z",null,null
+dependencies[16]{id,kind,created_at}:
+  pm-1k57,related,"2026-07-26T17:03:22.077Z"
+  pm-25d0,related,"2026-07-26T17:03:22.077Z"
+  pm-28cf,related,"2026-07-26T17:03:22.077Z"
+  pm-2czc,related,"2026-07-26T17:03:22.077Z"
+  pm-4bzq,related,"2026-07-26T17:03:22.077Z"
+  pm-6abs,related,"2026-07-26T17:03:22.077Z"
+  pm-6ixn,related,"2026-07-26T17:03:22.077Z"
+  pm-6mn1,related,"2026-07-26T17:03:22.077Z"
+  pm-7cx8,related,"2026-07-26T17:03:22.077Z"
+  pm-alnj,related,"2026-07-26T17:03:22.077Z"
+  pm-b3e9,related,"2026-07-26T17:03:22.077Z"
+  pm-bfma,related,"2026-07-26T17:03:22.077Z"
+  pm-doxj,implements,"2026-07-26T17:03:22.077Z"
+  pm-ds3b,related,"2026-07-26T17:03:22.077Z"
+  pm-e9zh,related,"2026-07-26T17:03:22.077Z"
+  pm-osea,supersedes,"2026-07-27T07:13:18.113Z"
 learnings[3]{created_at,author,text}:
   "2026-07-06T21:10:35.285Z",maintainer-agent,"pm search accepts --format json|toon ONLY (not table, unlike pm list): with stderr suppressed, an invalid-format error looks identical to zero search hits — always validate search plumbing with a known-hit query (e.g. GH-457 -> pm-tu71) before trusting empty dedupe results."
   "2026-07-06T21:10:35.651Z",maintainer-agent,pm update does not accept -m (that shorthand is pm close only); update history messages need the full --message flag.
