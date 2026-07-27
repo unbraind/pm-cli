@@ -6,8 +6,8 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,codegen,contracts,drift-gate
 created_at: "2026-07-06T22:18:14.074Z"
-updated_at: "2026-07-27T18:20:27.990Z"
-closed_at: "2026-07-27T18:19:35.640Z"
+updated_at: "2026-07-27T18:47:25.549Z"
+closed_at: "2026-07-27T18:47:21.906Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: CI drift gate fails when completions/MCP table/docs skeleton diverge from the contract table; documented new-command wiring checklist shrinks to <=3 manual sites; existing surfaces byte-stable or intentionally improved via reviewed snapshots
@@ -24,18 +24,30 @@ dependencies[6]{id,kind,created_at}:
   pm-xgcp18,related,"2026-07-25T06:29:18.278Z"
   pm-1kxs,implements,"2026-07-25T20:44:22.071Z"
   pm-kxci8x,implements,"2026-07-26T05:59:24.550Z"
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-27T13:20:29.165Z","harness:codex","Scope decision: this delivery consumes the existing contract-derived completion and MCP primitives but does not actively edit the generated-surface wiring item; returning it to open so only actively implemented work remains in progress."
   "2026-07-27T16:42:31.098Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:06.984Z","harness:codex","Evidence: command tier contracts now generate docs, drive MCP registration profiles, and supply the command set used by bash/zsh/fish completion. The mandatory contracts:agent-surfaces:check gate passes and package contracts/check includes it."
-files[2]{path,scope,note}:
+  "2026-07-27T18:44:32.706Z","harness:codex","Verification note: the first linked smoke exposed inherited PM_PATH precedence inside the pm test sandbox. The harness now pins both project and global tracker roots to its own fresh temporary workspace, eliminating external tracker leakage while retaining the explicit full MCP profile."
+  "2026-07-27T18:47:16.645Z","harness:codex","Hosted-failure resolution: the plugin smoke harness now selects PM_MCP_PROFILE=full because the end-to-end workflow intentionally exercises all 31 compatibility tools, and pins PM_PATH/PM_GLOBAL_PATH to its fresh temp root so linked-test environments cannot leak a seeded tracker into pm_run init. Evidence: linked tests 2/2 passed; focused 22-test suite passed; real Claude and Codex MCP stdio smokes passed; static quality, ESLint, zero-duplicate scan, token budgets, SDK snapshots, transport benchmarks, and TypeScript typecheck passed."
+files[4]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,generated command tier projection
   scripts/generate-agent-capability-surfaces.mjs,project,generated agent documentation
-tests[1]{command,scope,timeout_seconds}:
-  "pnpm contracts:agent-surfaces:check",project,120
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  scripts/plugin-mcp-smoke-harness.mjs,project,explicit full-profile workflow smoke
+  tests/unit/scripts/plugin-mcp-smoke-harness.spec.ts,project,full-profile launcher regression
+tests[2]:
+  - command: node scripts/smoke-claude-plugin.mjs
+    scope: project
+    timeout_seconds: 180
+    note: Claude plugin full-profile smoke
+  - command: "pnpm contracts:agent-surfaces:check"
+    scope: project
+    timeout_seconds: 120
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms3jozq7-4kdqvu,test,passed,"2026-07-27T18:13:10.223Z","2026-07-27T18:13:12.800Z","2026-07-27T18:13:12.800Z",1,0,0
+  test-local-ms3kszk8-zhjscn,test,failed,"2026-07-27T18:44:15.316Z","2026-07-27T18:44:18.825Z","2026-07-27T18:44:18.825Z",1,1,0
+  test-local-ms3ktdkl-7fl7z0,test,passed,"2026-07-27T18:44:33.384Z","2026-07-27T18:44:36.981Z","2026-07-27T18:44:36.981Z",2,0,0
 docs[1]{path,scope,note}:
   docs/generated/AGENT_COMMAND_SURFACE.md,project,generated surface reference
-close_reason: "Generated command surface, MCP registration tiering, completion derivation, documentation, and mandatory drift gate are complete."
+close_reason: Capability-derived surfaces are complete and the hosted plugin smoke now validates explicit full-profile compatibility in a tracker-isolated temp workspace.
 body: "# Generate completions, MCP tool registrations, and command docs from the contracts table\n\nMake `src/sdk/cli-contracts.ts` the single machine-consumed source of truth for every derived command surface: bash/zsh/fish completions, the MCP tool registration table, and the command reference docs. Today each of these is hand-maintained, which is why adding one command requires touching ~10 sites (commands/index.ts, register-mutation.ts, mcp/server.ts, cli-contracts names/actions/flag-contracts/schema-contracts/params, commands/contracts.ts, three completion scripts, docs, vitest.config.ts) and why contract drift keeps recurring (pm-zx13, pm-4os2, GH-449/pm-kjbh are all instances of the same class).\n\n## Why now\nGrammar principle 6 of this epic's charter says \"help tiers, completions, MCP tools, and docs are all generated from the same contract table\", but only the help tier has an implementing child (pm-e2bq). Doing this BEFORE the noun-verb consolidation lands means every consolidation child (pm-pfqi, pm-tqel, pm-tnud, …) updates one table instead of ten files, and the alias shim layer (pm-0z7n) gets its alias list from the same table.\n\n## Scope\n- Completions: generate bash/zsh/fish from the contract table at build time (checked-in generated output + a drift gate, matching the contracts:update pattern).\n- MCP: derive tool registration (names, action mapping, input schemas) from PM_TOOL_ACTIONS + SCHEMA_CONTRACTS so a missing SCHEMA_CONTRACTS entry is a build-time error, not a `contracts --full` crash (PR#357 trap).\n- Docs: generate the per-command reference skeleton (flags, defaults, aliases) into docs, keeping prose sections hand-written.\n- Reduce the documented new-command wiring checklist to: implement handler + add one contracts entry + prose docs.\n\n## Acceptance criteria\nA drift gate fails CI when completions/MCP table/docs skeleton do not match the contract table; the new-command wiring checklist in docs shrinks to ≤3 manual sites; existing surfaces are byte-stable or intentionally improved (snapshot-reviewed).\n\n## Out of scope\nThe help-tier renderer (pm-e2bq), the grammar/alias decisions themselves (ADR pm-pbyu), SDK promotion of contracts (covered by pm-usfg children)."
