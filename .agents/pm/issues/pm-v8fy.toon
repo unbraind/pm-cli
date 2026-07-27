@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:packages","area:testing"
 created_at: "2026-06-18T19:08:11.244Z"
-updated_at: "2026-07-26T17:27:48.108Z"
+updated_at: "2026-07-27T04:12:59.346Z"
 author: codex-gpt5
 parent: pm-ugqx
 release: v2026.6.19
 resolution: Preserved ESM semantics for copied linked-test-adapters extension installs by shipping local package metadata with the extension payload.
 expected_result: Installing linked-test-adapters into a temp project makes the test-runs command family available without Node CommonJS/ESM load failures.
 actual_result: "Temp tarball smoke installed linked-test-adapters, package doctor passed, test-runs status returned the background run, and copied-extension import regression coverage passed."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-mcxr,related,"2026-07-26T17:27:47.832Z",null,null
   pm-ugqx,implements,"2026-07-26T17:27:47.832Z",null,null
+  pm-mcxr,discovered_from,"2026-07-27T04:12:59.077Z",null,null
 comments[2]{created_at,author,text}:
   "2026-06-18T19:08:11.244Z",codex-gpt5,"Duplicate check: searched all pm items for linked-test-adapters CommonJS/ES module/test-runs unknown command and found no canonical open item; this is an adjacent package-platform bug discovered during pm-mcxr manual smoke."
   "2026-06-18T19:14:58.270Z",codex-gpt5,"Evidence: fixed copied linked-test-adapters installs by adding local ESM package metadata, added regression coverage for importing the copied extension entry, verified package linked test and temp tarball smoke with installed linked-test-adapters/test-runs status."

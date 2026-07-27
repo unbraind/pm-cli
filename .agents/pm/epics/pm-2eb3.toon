@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-05-01T18:02:37.805Z"
-updated_at: "2026-07-26T17:01:52.371Z"
+updated_at: "2026-07-27T04:11:11.748Z"
 deadline: "2026-05-08T18:02:37.805Z"
 author: audit-agent
 estimated_minutes: 480
@@ -16,9 +16,10 @@ release: v2026.5.2
 resolution: "Resolution normalized from close_reason: Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
 expected_result: "Expected closure outcome: Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
 actual_result: "Actual closure outcome: Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-23me,parent,"2026-05-01T18:02:37.805Z",audit-agent,null
   pm-23me,implements,"2026-07-26T17:01:52.123Z",null,null
+  pm-23me,supersedes,"2026-07-27T04:11:11.461Z",null,null
 comments[2]{created_at,author,text}:
   "2026-05-01T18:02:37.805Z",audit-agent,"Duplicate check: pm-23me is predecessor from 2026-04-30 and still open. This v2 audit covers the latest 2026.5.1-2 build with comprehensive end-to-end verification."
   "2026-05-02T11:03:21.885Z",codex-agent,"Audit reseal: current redacted item state re-recorded through pm mutation after prior hygiene edits; no secret material added."

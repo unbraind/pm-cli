@@ -6,15 +6,16 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:packages","area:sdk",hooks,review-followup
 created_at: "2026-06-06T18:10:18.340Z"
-updated_at: "2026-07-26T17:20:46.253Z"
+updated_at: "2026-07-27T04:12:49.625Z"
 author: codex-implementation
 parent: pm-7m8p
 release: v2026.6.7
 resolution: Made optional governance hook sidecar logging best-effort so filesystem errors cannot interrupt core read/write hook flows.
 expected_result: Invalid or unwritable sidecar paths do not throw from governance audit hooks; normal compact sidecar logging still works.
 actual_result: "Hook helper wraps mkdir/append in try/catch, caches log directories, keeps compact records unchanged, and tests/smoke/coverage all passed."
-dependencies[1]{id,kind,created_at,author,source_kind}:
+dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7m8p,implements,"2026-07-26T17:20:45.961Z",null,null
+  pm-7m8p,discovered_from,"2026-07-27T04:12:49.330Z",null,null
 comments[2]{created_at,author,text}:
   "2026-06-06T18:10:25.398Z",codex-implementation,"Investigation note: duplicate check reused closed parent pm-7m8p and created this narrow child because terminal items cannot be reclaimed without force. Review findings from CodeRabbit/Gemini are valid: optional sidecar logging must not propagate filesystem errors."
   "2026-06-06T18:14:15.313Z",codex-implementation,"Evidence: addressed PR #123 CodeRabbit/Gemini feedback by making governance hook sidecar filesystem writes fail-open and caching created log directories in TS and shipped JS. Added regression coverage for invalid log path resolving to a directory. Verification passed: focused unit/package/SDK tests 62/62; pnpm build; temp PM_PATH/PM_GLOBAL_PATH governance-audit install smoke with valid sidecar logging plus invalid sidecar path fail-open; full coverage 146 files, 2517 tests, 100% statements/branches/functions/lines."

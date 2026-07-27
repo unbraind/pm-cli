@@ -6,17 +6,18 @@ status: closed
 priority: 2
 tags[3]: "area:extensions","area:sdk",pm-cli
 created_at: "2026-06-22T22:00:08.557Z"
-updated_at: "2026-07-26T17:04:32.622Z"
+updated_at: "2026-07-27T04:12:36.151Z"
 author: claude-code-agent
 parent: pm-ugqx
 release: v2026.6.23
 resolution: deriveExtensionCapabilities now adds schema for inline-flags command definitions.
 expected_result: deriveExtensionCapabilities(blueprint) yields a manifest grant that activates without extension_capability_missing.
 actual_result: "Added schema when any blueprint.commands[].flags !== undefined; unit-tested and pinned by the inline-flags parity test."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-iqq0,related,"2026-06-22T22:00:21.450Z",null,null
   pm-tlpv,related,"2026-06-22T22:00:22.410Z",null,null
   pm-ugqx,implements,"2026-07-26T17:04:32.419Z",null,null
+  pm-tlpv,discovered_from,"2026-07-27T04:12:35.910Z",null,null
 files[1]{path,scope,note}:
   src/sdk/compose.ts,project,null
 tests[1]{command,scope}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli",context-management,data-safety,linked-files
 created_at: "2026-06-26T04:13:20.706Z"
-updated_at: "2026-07-26T17:17:58.731Z"
+updated_at: "2026-07-27T04:12:47.467Z"
 author: claude-code-agent
 parent: pm-mpbb
 risk: low
@@ -15,7 +15,7 @@ release: v2026.6.30
 resolution: "Added pure helper isRemoteLinkedArtifactReference (scheme:// detection, 2+ char scheme so Windows drive/UNC paths stay local) and wired it into buildFilesCheck (validate.ts) and validateLinkedPaths (linked-artifacts.ts): remote (URL) refs are now surfaced in benign remote_linked_paths / remote_references categories and are never stat'd, classified moved/deleted, counted missing, or planned for --prune-missing. Shipped in PR #372."
 expected_result: "A recorded https:// doc reference (e.g. a PR URL) stays a benign tracked reference; pm validate --check-files does not report it as missing/deleted and pm validate --prune-missing never deletes it."
 actual_result: "Before the fix the URL fs.stat-failed, was classified 'deleted', and was planned for deletion by --prune-missing (silent data loss); after the fix it appears under remote_linked_paths and is never pruned (verified by temp-dir smoke + unit tests)."
-dependencies[7]{id,kind,created_at,author,source_kind}:
+dependencies[8]{id,kind,created_at,author,source_kind}:
   pm-0v2m,related,"2026-06-26T04:13:59.840Z",null,null
   pm-j8z6,related,"2026-06-26T04:13:59.840Z",null,null
   pm-o2kc,related,"2026-06-26T04:13:59.840Z",null,null
@@ -23,6 +23,7 @@ dependencies[7]{id,kind,created_at,author,source_kind}:
   pm-mpbb,implements,"2026-07-26T17:17:58.458Z",null,null
   pm-qawd,related,"2026-07-26T17:17:58.458Z",null,null
   pm-v37g,related,"2026-07-26T17:17:58.458Z",null,null
+  pm-0v2m,discovered_from,"2026-07-27T04:12:47.224Z",null,null
 files[2]{path,scope,note}:
   src/core/validate/linked-artifact-reference.ts,project,remote-reference detection helper
   tests/unit/validate/linked-artifact-reference.spec.ts,project,helper unit tests

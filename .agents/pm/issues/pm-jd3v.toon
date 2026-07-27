@@ -6,13 +6,14 @@ status: closed
 priority: 2
 tags[4]: cache,list,perf,startup
 created_at: "2026-05-29T22:28:11.242Z"
-updated_at: "2026-07-26T22:19:42.115Z"
+updated_at: "2026-07-27T04:12:46.182Z"
 author: maintainer-agent
 release: v2026.5.30
 resolution: Fixed
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-4r5t,related,"2026-07-26T17:17:20.920Z",null,null
   pm-rnpb,related,"2026-07-26T17:17:20.920Z",null,null
   pm-th6y,discovered_from,"2026-07-26T22:19:41.885Z",null,null
+  pm-4r5t,discovered_from,"2026-07-27T04:12:45.937Z",null,null
 close_reason: Split metadata cache into light + lazily-loaded collections tiers; hot list/stats/deps/activity/calendar/close/test-all paths use listAllFrontMatterLight and skip the heavy collections cache.
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:docs","area:release-readiness","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T07:23:53.401Z"
-updated_at: "2026-07-26T17:23:02.944Z"
+updated_at: "2026-07-27T04:11:22.344Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -41,7 +41,7 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-07-ru
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-07 run 2.
-dependencies[10]{id,kind,created_at,author,source_kind}:
+dependencies[19]{id,kind,created_at,author,source_kind}:
   pm-204c,related,"2026-07-26T17:23:02.675Z",null,null
   pm-8a2s,implements,"2026-07-26T17:23:02.675Z",null,null
   pm-a5ea,related,"2026-07-26T17:23:02.675Z",null,null
@@ -52,6 +52,15 @@ dependencies[10]{id,kind,created_at,author,source_kind}:
   pm-mn6w,related,"2026-07-26T17:23:02.675Z",null,null
   pm-u8fr,related,"2026-07-26T17:23:02.675Z",null,null
   pm-wjdr,related,"2026-07-26T17:23:02.675Z",null,null
+  pm-204c,supersedes,"2026-07-27T04:11:21.937Z",null,null
+  pm-a5ea,supersedes,"2026-07-27T04:11:21.937Z",null,null
+  pm-acx9,supersedes,"2026-07-27T04:11:21.937Z",null,null
+  pm-dyu6,supersedes,"2026-07-27T04:11:21.937Z",null,null
+  pm-f0e9,supersedes,"2026-07-27T04:11:21.937Z",null,null
+  pm-iziy,supersedes,"2026-07-27T04:11:21.937Z",null,null
+  pm-mn6w,supersedes,"2026-07-27T04:11:21.937Z",null,null
+  pm-u8fr,supersedes,"2026-07-27T04:11:21.937Z",null,null
+  pm-wjdr,supersedes,"2026-07-27T04:11:21.937Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-07T07:23:53.401Z",maintainer-agent,This item exists to keep docs implementation and tests aligned while preserving release readiness.
   "2026-03-07T07:24:12.786Z",maintainer-agent,Starting gap audit from live --help output and contract tests to identify the smallest high-value hardening change for this run.

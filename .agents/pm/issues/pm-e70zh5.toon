@@ -1,0 +1,33 @@
+id: pm-e70zh5
+title: "Scheduled auto-release has failed 32 of 84 times and nothing measures the rate, so a chronically degraded pipeline reads as healthy one run at a time"
+description: "Measured 2026-07-27 from the workflow runs API. Across the full recorded history of event=schedule runs of auto-release.yml the conclusions are 52 success and 32 failure, a 38 percent failure rate, with failures on 2026-07-21, 2026-07-23 and 2026-07-24 inside the last week alone. Every control the project has is per-run: a failed scheduled run opens a blocker issue, closing that issue re-triggers the workflow, and the release-health reminder asks whether the most recent release tagged and published. None of these observes the rate. A pipeline that fails two days in three satisfies every existing check the day it succeeds, and the recovery path itself hides the signal, because the blocker issue is closed once the retry lands and the run history is the only remaining evidence. The gap is not a missing alert on a single failure; it is that reliability is not a tracked quantity, so no one can say whether the release automation is improving or degrading. The same 2026-07-27 window shows the sharper form of the problem: the daily release for the day was produced by two manual dispatches after a scheduled-path failure, and the still-pending scheduled run will find a release already cut and conclude skipped, which is indistinguishable in the run list from a healthy no-op."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:release",ci,observability,reliability,slo
+created_at: "2026-07-27T04:05:41.511Z"
+updated_at: "2026-07-27T04:21:30.942Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Release automation reliability is expressed as a measured rate over a stated window, not as the conclusion of the latest run; A degradation in that rate is detectable without reading the raw run list, and the detection survives the blocker-issue recovery path closing its own evidence; A skipped run caused by the same-day guard is distinguishable in the reliability measure from a run that had nothing to release and from a run that failed; The measure names the failing stage, so a publish-step regression and a build-step regression are not aggregated into one opaque number"
+goal: project management = context management
+objective: Make release-automation reliability a first-class tracked quantity with a trend rather than a per-run verdict
+value: "The project can tell whether its release path is getting better or worse, which is the precondition for spending effort on it deliberately"
+why_now: "Three scheduled failures landed in the last seven days and the overall rate is 38 percent, yet every existing control reported healthy because each looked at one run"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: medium
+environment: "GitHub Actions hosted runners, unbraind/pm-cli, workflow auto-release.yml and its downstream release.yml publish job"
+repro_steps: "Run: gh api \"repos/unbraind/pm-cli/actions/workflows/auto-release.yml/runs?event=schedule&per_page=100\" --jq \"[.workflow_runs[].conclusion]|group_by(.)|map({(.[0]):length})|add\""
+expected_result: Release automation reliability is observable as a rate with a threshold that fails when the pipeline degrades
+actual_result: 32 of 84 scheduled runs failed and no artefact anywhere in the project records that fact or reacts to it
+dependencies[7]{id,kind,created_at,author,source_kind}:
+  pm-44u3wt,related,"2026-07-27T04:05:41.511Z",null,null
+  pm-7zs0,related,"2026-07-27T04:05:41.511Z",null,null
+  pm-k6t4yb,related,"2026-07-27T04:05:41.511Z",null,null
+  pm-u9d0,implements,"2026-07-27T04:05:41.511Z",null,null
+  pm-44u3wt,blocked_by,"2026-07-27T04:21:29.909Z",null,null
+  pm-9gxi,related,"2026-07-27T04:21:29.909Z",null,null
+  pm-xp1xsw,implements,"2026-07-27T04:21:29.909Z",null,null
+body: ""

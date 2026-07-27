@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: architecture,audit,code-quality,refactor
 created_at: "2026-05-02T16:09:25.850Z"
-updated_at: "2026-07-26T17:25:36.434Z"
+updated_at: "2026-07-27T04:12:55.122Z"
 author: audit-agent
 acceptance_criteria: main.ts reduced to <1200 lines with extracted modules
 parent: pm-5zkg
@@ -14,9 +14,10 @@ release: v2026.5.3
 resolution: "Extracted 5 modules from main.ts: extension-command-help.ts, bootstrap-args.ts, migration-gates.ts, commander-usage.ts, help-json-payload.ts"
 expected_result: main.ts reduced to <1200 lines with extracted modules
 actual_result: main.ts reduced from 2555 to 1110 lines (56.5% reduction); all 1117 tests pass; build clean
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-5zkg,implements,"2026-07-26T17:25:36.134Z",null,null
   pm-6c3h,related,"2026-07-26T17:25:36.134Z",null,null
+  pm-6c3h,discovered_from,"2026-07-27T04:12:54.934Z",null,null
 comments[3]{created_at,author,text}:
   "2026-05-02T17:07:34.710Z",cursor-agent,"Extraction round 2 complete: created commander-usage.ts (~210 lines) and help-json-payload.ts (~300 lines). main.ts reduced from 2555→1110 lines (56.5% reduction), well under the 1200-line target. Build + full test suite green. Five modules total extracted: extension-command-help.ts, bootstrap-args.ts, migration-gates.ts, commander-usage.ts, help-json-payload.ts."
   "2026-05-02T17:10:44.637Z",cursor-agent,"Full temp-directory dogfood sweep: 25+ commands tested in isolated PM_PATH/PM_GLOBAL_PATH. All core commands pass: init, health, create, update, get, list*, search, calendar, context, history, activity, comments, notes, learnings, files, docs, test, deps, stats, validate, gc, reindex, contracts, completion, close, claim/release, start-task/pause-task/close-task, append, config, help --json. No functional regressions after modularization."

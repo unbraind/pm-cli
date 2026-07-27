@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags[4]: "area:cli",code-quality,codefactor,tech-debt
 created_at: "2026-07-01T05:35:48.850Z"
-updated_at: "2026-07-26T17:00:15.410Z"
+updated_at: "2026-07-27T04:12:33.027Z"
 author: claude-code-agent
 parent: pm-92if
 release: v2026.7.2
 resolution: fixed
 expected_result: Update and register-mutation command paths stay behavior-compatible while the CodeFactor complex-method suppressions are removed and review feedback is resolved.
 actual_result: "runUpdate, its mutation callback, and register-mutation actions were decomposed into focused helpers; canceled-status assignee cleanup and runtime field set/unset conflict handling are covered; PR #413 passed local/manual verification and all GitHub checks and AI reviews."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-g7vl,related,"2026-07-01T05:35:57.931Z",null,null
   pm-92if,implements,"2026-07-26T17:00:15.213Z",null,null
+  pm-g7vl,discovered_from,"2026-07-27T04:12:32.794Z",null,null
 comments[11]{created_at,author,text}:
   "2026-07-01T07:10:59.487Z",claude-code-agent,"Implementation start: duplicate-safe all-status search reused existing CodeFactor child pm-0n6p under pm-92if. Live sweep on 2026-07-01: no open PRs, no open GitHub issues, no open Dependabot alerts, no open code-scanning alerts; scheduled Auto Release run 28499297083 succeeded on main b2617dac and npm latest is @unbrained/pm-cli 2026.7.1. Scope is behavior-preserving complexity decomposition for update command and MCP register-mutation handlers with contracts unchanged and 100% coverage."
   "2026-07-01T08:04:10.045Z",claude-code-agent,"Evidence: implemented CodeFactor complexity remediation for update/register-mutation. Removed target complexity suppressions, added register-mutation schema repeatable alias/role coverage, and manually smoke-tested installed pm in /tmp/tmp.3bglbDFU7O with custom status aliases, custom type, runtime schema field CLI flags, create/update/list/health. Gates: linked pm test run passed all 4 commands under tracker context (coverage 100/100/100/100, focused update/register tests, contracts check, lint/static quality); direct pnpm typecheck, pnpm build, pnpm contracts:check, pnpm lint, pnpm changelog:pm:check, secrets scan, pnpm audit, pm health summary, git diff --check passed. GitHub: no open PRs/issues, no Dependabot/code-scanning alerts, latest Auto Release 28499297083 success on 2026-07-01T06:52:39Z. Sentry: issue list reachable; sampled unresolved PM-CLI-16 and PM-CLI-1Q are stale with lastSeen 2026-06-13, not new current-regression evidence; telemetry status enabled with last successful flush 2026-07-01T08:03:07.606Z. pm validate strict-exit still reports pre-existing closed-item resolution metadata warnings, but command references and history drift are clean."

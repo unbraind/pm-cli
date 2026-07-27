@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: ci,code-quality,codefactor,eslint,tooling
 created_at: "2026-06-26T13:33:22.673Z"
-updated_at: "2026-07-26T17:05:49.973Z"
+updated_at: "2026-07-27T04:12:37.174Z"
 author: claude-code-agent
 acceptance_criteria: "A local lint command reproduces the CodeFactor Maintainability findings (rule counts reconcile within tolerance); ESLint --fix mechanically clears the auto-fixable unicorn rules; a duplication check (e.g. jscpd) surfaces the Duplication category; optionally wired as a CI gate so new PRs cannot introduce CodeFactor findings. Adding the config must not regress existing gates (typecheck, 100% coverage, quality:static, contracts:check)."
 parent: pm-92if
@@ -14,10 +14,11 @@ release: v2026.6.30
 resolution: "Added pnpm lint with ESLint CodeFactor maintainability rules, jscpd duplicate baseline reporting, and static quality profile; wired it into CI and docs."
 expected_result: "Local CodeFactor parity tooling is reproducible, documented, CI-enforced, and does not regress existing gates."
 actual_result: "pnpm lint passes, jscpd reports current 30-clone baseline under a 0.35 threshold, CI static gate runs lint, coverage remains 100/100/100/100, and temp smokes passed."
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-92if,implements,"2026-07-26T17:05:49.716Z",null,null
   pm-arzz,related,"2026-07-26T17:05:49.716Z",null,null
   pm-fmjy,related,"2026-07-26T17:05:49.716Z",null,null
+  pm-arzz,discovered_from,"2026-07-27T04:12:36.963Z",null,null
 comments[5]{created_at,author,text}:
   "2026-06-26T21:48:48.484Z",codex-gpt5,"Relationship note: this CodeFactor parity tooling is the preventive follow-up to sibling remediation items pm-arzz (complexity) and pm-fmjy (duplication) under parent pm-92if; it keeps those fixes reproducible locally and in CI without creating duplicate tracker items."
   "2026-06-26T21:55:47.890Z",codex-gpt5,"Evidence: implemented local CodeFactor parity tooling. Added ESLint flat config for complexity, no-unsafe-optional-chaining, and unicorn no-thenable/no-useless-* maintainability rules; added jscpd duplicate detector with current 30-clone / 0.34% baseline and 0.35 regression threshold; wired pnpm lint into package scripts and CI static gate; documented testing/release workflow; contract tests assert the scripts and workflow. Verification passed: pm test pm-6sqo --run --progress (2/2); pnpm lint; focused workflow/release contract tests (54 tests); pnpm typecheck; pnpm quality:static; pnpm contracts:check; pnpm security:scan; pnpm audit --audit-level moderate; pnpm changelog:pm:check with pm-changelog 2026.6.20 unchanged; node scripts/run-tests.mjs coverage 256 files / 5133 tests / 100% statements branches functions lines; npm pack --dry-run --silent; package doctor deep ok; pm health ok 0 warnings; Sentry/telemetry gate ok with critical=0 high=0 and telemetry finish_error_rate_pct=0.7. Repo validate history drift ok with known pre-existing validate_resolution_missing_fields:258 warning. Manual temp smoke: first run intentionally demonstrated recovery for obsolete --acceptance alias; rerun with --acceptance-criteria passed full lifecycle plus todos package doctor in /tmp/tmp.ExXdcpRd86. Strict warning-free temp smoke passed in /tmp/tmp.vRdXivNLZS with item temp-codefactor-lint-zbd9: linked test, strict close/release, health 0 warnings, validate resolution/history drift ok."

@@ -1,0 +1,35 @@
+id: pm-ydshl9
+title: "Reading one item by its primary key scans the whole workspace: pm get is O(corpus) and the projection flags bound the output but not the work"
+description: "Measured 2026-07-27 on this workspace at 2118 items. pm get is the single most frequent read in an agent loop and it is a lookup by primary key, so it should cost one file open. It does not. pm get pm-n7rr --depth standard reports children.scanned 2118, meaning it walked every item file in the workspace to compute a children rollup, and then emitted sample_limit 0 with truncated true, so the scan produced counts and nothing else. The cost is not hypothetical: the same command takes about 820ms here against about 300ms for a freshly initialised three-item workspace, and pm --version returns in 66ms, so roughly 500ms of every point read is corpus-proportional work. The projection flags do not help. pm get pm-n7rr --fields id,title returns 206 bytes, a 36-fold reduction in output, and still costs about 645ms. That is the precise shape of the defect: the token lever works and the latency lever does not exist, because the projection is applied to the rendered result rather than to the work that produces it. At the scale the proven-scale milestone targets this is disqualifying. A corpus 500 times larger makes the most common single read in the system proportionally slower for an answer whose size never changes, and a fleet of agents pays that cost once per read each. pm-801d covers serving list, context, next and get-by-filter from a derived index; this is the narrower and sharper case that needs no index at all, because the row is addressable by name and only the unrequested rollup forces the walk."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:sdk",performance,scale,token-efficiency
+created_at: "2026-07-27T04:06:26.179Z"
+updated_at: "2026-07-27T04:21:33.480Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "A read of one item by its identifier costs work proportional to that item and its own record, not to the number of items in the workspace; Any rollup over other items that pm get chooses to include is either derived from an index or is requested explicitly, and is never computed to be discarded; A narrowed projection narrows the work as well as the output: --fields and --depth brief measurably reduce latency, not only bytes; The behaviour is proven by a measurement that varies corpus size and holds the requested item constant, so a regression that reintroduces the scan is detectable"
+goal: project management = context management
+objective: Make the primary-key read O(1) in corpus size so the most frequent agent operation stays constant-cost as the workspace grows
+value: Every agent loop begins and ends with point reads; making them constant-cost is the difference between a tracker that scales and one that degrades with its own history
+impact: At the million-item target the current behaviour makes routine item inspection unusable while returning an answer of unchanged size
+why_now: "The scale milestone targets sub-second bounded-token context at a million items, and the cheapest possible read already costs half a second at two thousand"
+parent: pm-9rxu
+risk: medium
+confidence: high
+severity: high
+environment: "pm 2026.7.27, local checkout, .agents/pm at 2118 items and 177MB, warm filesystem cache, timings averaged over repeated runs"
+repro_steps: "Run pm get pm-n7rr --depth standard and read children.scanned; then time pm get pm-n7rr --fields id,title against the same command in a freshly initialised sandbox workspace with PM_PATH and PM_GLOBAL_PATH pointed at a temporary directory"
+expected_result: "pm get pm-n7rr --fields id,title costs about the same on a two-thousand-item workspace as on a three-item one, because it reads one record"
+actual_result: "It costs about 645ms against about 300ms, and the standard depth reports children.scanned 2118 with sample_limit 0"
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-801d,related,"2026-07-27T04:06:26.179Z",null,null
+  pm-9rxu,implements,"2026-07-27T04:06:26.179Z",null,null
+  pm-cxr0jb,related,"2026-07-27T04:06:26.179Z",null,null
+  pm-o87av6,related,"2026-07-27T04:06:26.179Z",null,null
+  pm-t5dt4z,related,"2026-07-27T04:06:26.179Z",null,null
+  pm-gmdzaa,related,"2026-07-27T04:21:33.262Z",null,null
+  pm-o87av6,implements,"2026-07-27T04:21:33.262Z",null,null
+  pm-yse5dt,related,"2026-07-27T04:21:33.262Z",null,null
+body: ""

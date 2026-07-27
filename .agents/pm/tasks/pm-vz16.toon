@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:release",code,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-08T13:38:46.107Z"
-updated_at: "2026-07-26T17:28:22.318Z"
+updated_at: "2026-07-27T04:11:27.635Z"
 deadline: "2026-03-09T13:38:45.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -41,10 +41,12 @@ fixed_version: archive-2026q2
 component: project-management/release-readiness-maintenance-loop-2026-03-08-ru
 regression: true
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-08 run 1.
-dependencies[3]{id,kind,created_at,author,source_kind}:
+dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-3tjx,related,"2026-07-26T17:28:21.996Z",null,null
   pm-8a2s,implements,"2026-07-26T17:28:21.996Z",null,null
   pm-knwz,related,"2026-07-26T17:28:21.996Z",null,null
+  pm-3tjx,supersedes,"2026-07-27T04:11:27.338Z",null,null
+  pm-knwz,supersedes,"2026-07-27T04:11:27.338Z",null,null
 comments[6]{created_at,author,text}:
   "2026-03-08T13:38:46.107Z",maintainer-agent,"Why this exists: explicit restore help metadata contract is not covered by release-readiness guard suite yet."
   "2026-03-08T13:38:56.395Z",maintainer-agent,"Planned changeset: add explicit restore help metadata parity assertions (usage/description and --author/--message/--force) to release-readiness contract suite before running linked tests and regression sweeps."

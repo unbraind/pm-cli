@@ -1,0 +1,32 @@
+id: pm-44u3wt
+title: "Daily auto-release never runs in its declared window: all 84 scheduled runs fired 2.5-4 hours after the cron time, so the release clock is undocumented drift"
+description: "Measured 2026-07-27 against the live workflow history. auto-release.yml declares schedule cron \"35 2 * * *\" and has declared exactly that value in every commit that touched the file since 2026-06-24. The GitHub API reports 84 runs for event=schedule. Not one of them started inside the declared window. The twenty most recent scheduled starts range from 05:10:04Z to 06:29:57Z, clustering near 05:35Z, which is a systematic lag of roughly three hours rather than the few minutes of jitter the platform documents. The declared cron is therefore not a description of when the project releases; it is a value nothing has ever validated against observed behaviour. Two consequences follow. First, the same-day guard computes its date key at run time, not at scheduled time, so the boundary that enforces one automatic release per day is anchored to a drifting instant that no configuration states. Second, any operator reading the workflow file forms a false expectation of the release window, and the release-health reminder that asks whether the daily release happened has no declared instant to compare against."
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:release",ci,observability,reliability,scheduling
+created_at: "2026-07-27T04:05:01.742Z"
+updated_at: "2026-07-27T04:21:28.765Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "The observed scheduled start time is measured against the declared cron and the divergence is reported rather than assumed to be jitter; The release window is expressed as a policy the project can assert, so a run that starts outside it is a detectable condition rather than an invisible one; The same-day release guard keys off an instant whose definition is stated in the workflow and does not silently move with platform scheduling lag; The release-health verification procedure names the window it expects, so a missing release is distinguishable from a late one"
+goal: project management = context management
+objective: "Make the automatic release clock an asserted, observable contract instead of an unvalidated cron literal"
+value: "Operators and agents can tell a late release from a failed one, and the one-release-per-day guarantee rests on a stated instant"
+why_now: "The 2026-07-27 release was not produced by the schedule at all; it was driven by two manual dispatches, and the scheduled run for the day will find the work already done and skip, which reads as success"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: medium
+environment: "GitHub Actions hosted runners, unbraind/pm-cli, workflow auto-release.yml, measured via the workflow runs API filtered to event=schedule"
+repro_steps: "Run: gh api \"repos/unbraind/pm-cli/actions/workflows/auto-release.yml/runs?event=schedule&per_page=100\" --jq \".workflow_runs[].created_at\" and compare every value against the cron literal in .github/workflows/auto-release.yml"
+expected_result: "Scheduled auto-release runs start within a small, stated tolerance of the declared cron window, or the divergence is surfaced"
+actual_result: "All 84 scheduled runs started 2.5 to 4 hours late; the declared 02:35Z window has never once been observed"
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-7zs0,related,"2026-07-27T04:05:01.742Z",null,null
+  pm-k6t4yb,related,"2026-07-27T04:05:01.742Z",null,null
+  pm-u9d0,implements,"2026-07-27T04:05:01.742Z",null,null
+  pm-9gxi,related,"2026-07-27T04:21:28.511Z",null,null
+  pm-e70zh5,blocks,"2026-07-27T04:21:28.511Z",null,null
+  pm-xp1xsw,implements,"2026-07-27T04:21:28.511Z",null,null
+body: ""

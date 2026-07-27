@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:extensions","area:packages","area:sdk"
 created_at: "2026-06-25T20:24:56.707Z"
-updated_at: "2026-07-26T17:26:48.813Z"
+updated_at: "2026-07-27T04:12:58.278Z"
 author: codex-gpt5
 parent: pm-ugqx
 release: v2026.6.30
 resolution: "Implemented --output for package/extension describe Markdown generation with contract, completion, docs, fixture, and regression coverage."
 expected_result: pm package/extension describe --markdown can write deterministic reference Markdown directly to a requested file path without stdout duplication and remains discoverable through SDK contracts/completions.
 actual_result: "CLI writes Markdown to the requested file, creates parent directories, supports quiet output, rejects invalid --output usage before dispatch, and SDK contracts/completions/docs advertise the flag."
-dependencies[2]{id,kind,created_at,author,source_kind}:
+dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-dmum,related,"2026-07-26T17:26:48.532Z",null,null
   pm-ugqx,implements,"2026-07-26T17:26:48.532Z",null,null
+  pm-dmum,discovered_from,"2026-07-27T04:12:58.070Z",null,null
 comments[8]{created_at,author,text}:
   "2026-06-25T20:43:45.044Z",codex-gpt5,"Evidence: pnpm build passed; focused register-command test passed; contract/completion/sdk tests passed; pnpm contracts:check passed after regenerating tests/fixtures/contracts/full.json; pnpm quality:docs-skills passed; pnpm quality:static passed; node scripts/run-tests.mjs coverage passed with Statements 100% (31801/31801), Branches 100% (24765/24765), Functions 100% (5401/5401), Lines 100% (30523/30523)."
   "2026-06-25T20:44:39.414Z",codex-gpt5,"Manual smoke evidence: in an isolated temp project with PM_PATH and PM_GLOBAL_PATH, initialized a tracker, scaffolded ./context-kit with package init --capability commands, installed it project-scope, ran package describe --project --markdown --output docs/context-kit-reference.md, verified the file was non-empty and contained Package surface reference, context-kit, and Commands, and verified --output emitted no stdout. A second isolated smoke also verified --quiet --output writes nested parent directories."
