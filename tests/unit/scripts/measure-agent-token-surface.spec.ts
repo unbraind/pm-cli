@@ -284,6 +284,17 @@ describe("measure-agent-token-surface", () => {
         },
       },
     });
+    const coreBaseline = module.buildBaseline(
+      {
+        ...report,
+        commands: [
+          ...report.commands,
+          { ...report.commands[0], name: "list" },
+        ],
+      },
+      1,
+    );
+    expect(coreBaseline.surfaces.required_commands).toEqual(["get", "list"]);
     expect(module.compareBaseline(report, baseline)).toEqual([]);
 
     baseline.surfaces.root_help = 1;
