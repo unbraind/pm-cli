@@ -125,16 +125,17 @@ export async function runMergeReconcile(
   receiptOnlyResults.forEach((settled, index) => {
     const id = receiptOnlyIds[index];
     if (settled.status === "fulfilled") {
+      const outcome = settled.value.changed ? "repaired" : "skipped_clean";
       repair.streams.push({
         id,
-        outcome: dryRun ? "skipped_clean" : "repaired",
+        outcome,
         entries_rehashed: settled.value.history.entries_rehashed,
         entries_patch_repaired: settled.value.history.entries_patch_repaired,
         reconciled_with_item:
           settled.value.history.reconciled_with_item,
         warnings: settled.value.warnings,
       });
-      repair.totals[dryRun ? "skipped_clean" : "repaired"] += 1;
+      repair.totals[outcome] += 1;
     } else {
       repair.streams.push({
         id,

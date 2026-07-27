@@ -81,6 +81,7 @@ import { collectDanglingDependencyReferences } from "../graph/assembly.js";
 import {
   auditMergeAttributeFence,
   auditMergeDriverConfiguration,
+  findGitWorkspaceRoot,
 } from "../merge/install.js";
 import { listMergeReceipts } from "../merge/receipts.js";
 import { scanStorageIntegrity } from "./storage-integrity.js";
@@ -3286,19 +3287,20 @@ async function buildStorageIntegrityCheck(
       `validate_merge_fence_drift:${fenceAudit.missing_patterns.length + fenceAudit.stale_patterns.length}`,
     );
   }
+  const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
   const mergeDriverAudit =
-    fenceAudit.path === undefined
+    gitWorkspaceRoot === null
       ? null
-      : await auditMergeDriverConfiguration(path.dirname(fenceAudit.path));
+      : await auditMergeDriverConfiguration(gitWorkspaceRoot);
   if (mergeDriverAudit !== null && mergeDriverAudit.status !== "ok") {
     warnings.push(
       `validate_merge_driver_configuration:${mergeDriverAudit.missing_keys.length + mergeDriverAudit.drifted_keys.length}`,
     );
   }
   const pendingMergeReceipts =
-    fenceAudit.path === undefined
+    gitWorkspaceRoot === null
       ? []
-      : await listMergeReceipts(path.dirname(fenceAudit.path));
+      : await listMergeReceipts(gitWorkspaceRoot);
   if (pendingMergeReceipts.length > 0) {
     warnings.push(
       `validate_merge_decisions_unreviewed:${pendingMergeReceipts.length}`,

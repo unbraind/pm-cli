@@ -255,7 +255,7 @@ describe("GitHub workflow contract", () => {
 
   it("proves the full CI merge-integrity command rejects a non-representative drifted stream", async () => {
     await withTempPmPath(async (context) => {
-      const created = context.runCli(
+      const drifted = context.runCli(
         [
           "create",
           "--json",
@@ -270,9 +270,32 @@ describe("GitHub workflow contract", () => {
         ],
         { expectJson: true },
       );
-      expect(created.code).toBe(0);
-      const id = (created.json as { item: { id: string } }).item.id;
-      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      expect(drifted.code).toBe(0);
+      const driftedId = (drifted.json as { item: { id: string } }).item.id;
+      const representative = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "CI representative history smoke",
+          "--description",
+          "Remain clean while a different stream is corrupted",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+        ],
+        { expectJson: true },
+      );
+      expect(representative.code).toBe(0);
+      const representativeId = (
+        representative.json as { item: { id: string } }
+      ).item.id;
+      const historyPath = path.join(
+        context.pmPath,
+        "history",
+        `${driftedId}.jsonl`,
+      );
       const history = (await readFile(historyPath, "utf8"))
         .trim()
         .split("\n")
@@ -284,6 +307,16 @@ describe("GitHub workflow contract", () => {
         "utf8",
       );
 
+      const representativeHistory = context.runCli(
+        [
+          "history",
+          representativeId,
+          "--verify",
+          "--strict-exit",
+          "--json",
+        ],
+        { expectJson: true },
+      );
       const validation = context.runCli(
         [
           "validate",
@@ -295,6 +328,7 @@ describe("GitHub workflow contract", () => {
         { expectJson: true },
       );
 
+      expect(representativeHistory.code).toBe(0);
       expect(validation.code).not.toBe(0);
       expect(
         (

@@ -6,8 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:storage",data-loss,merge,multi-agent
 created_at: "2026-07-25T21:13:05.285Z"
-updated_at: "2026-07-26T23:52:19.700Z"
-closed_at: "2026-07-26T23:50:13.038Z"
+updated_at: "2026-07-27T00:28:50.859Z"
+closed_at: "2026-07-27T00:28:48.594Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "pm merge install verifies that the driver command it writes is resolvable from a clean environment and fails or warns loudly when it is not, recording the resolution strategy it chose. The driver invocation is resilient to a bare pm not being on PATH (absolute path to the resolved binary, a node-based fallback, or an equivalent documented mechanism). When a pm merge driver cannot execute, the merge surfaces a pm-branded diagnostic and does not leave a marker-free UU file that reads as already resolved. pm validate and pm health gain a check that reports a .gitattributes merge fence whose git config driver definitions are missing or unresolvable in the current clone. A regression test performs a two-branch merge with the driver unavailable and asserts no silent ours-wins field or history loss."
@@ -22,7 +22,7 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-9j2r3b,related,"2026-07-25T21:13:05.285Z",null,null
   pm-i4fx,related,"2026-07-25T21:13:05.285Z",null,null
   pm-szv11n,implements,"2026-07-26T05:49:37.645Z",null,null
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-07-26T11:46:19.959Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:47:21.417Z","harness:codex","Partial implementation evidence: merge install now writes the absolute current Node executable plus the absolute host dist/cli.js, shell-quotes both, and fresh-init/merge suites prove clone-local config no longer depends on bare pm being on PATH. The separate validate/health resolvability audit and adversarial two-branch conformance clauses remain outstanding, so this item stays active through PR review and must return to open rather than close."
   "2026-07-26T13:11:34.793Z","harness:codex","Verification 2026-07-26: repository release gates passed build/typecheck/docs/static quality, SDK surface/import-cost/transport ratchets, secret scan, version policy, 374 files and 6,420 tests at exact 100% statements/branches/functions/lines, packed npx smoke, and 88-command package-first dogfood. Aggregate stopped only at hosted-analysis because the branch exact SHA was not yet pushed. Manual unrelated-directory packed consumer also proved the installed SDK link, 85-action coverage, same-harness cross-session claim exclusion, and bounded 22 MB Bun output capture."
@@ -32,6 +32,8 @@ comments[9]{created_at,author,text}:
   "2026-07-26T14:09:11.879Z","harness:codex","Exact-head hosted evidence: PR #744 commit b28d3cb736a32cbcd54266243cd3f6848372f6df passed the complete required GitHub check matrix with zero failed checks. Thread-aware inventory found zero inline threads. CodeRabbit completed the explicitly retriggered full-review request under its external fair-usage limit and emitted no finding; all new bot surfaces were reacted to and acknowledged. Local final evidence remains 374 files, 6,420 tests, exact 100/100/100/100 coverage, clean lint/static/contracts/changelog/health, and real-time telemetry drain."
   "2026-07-26T23:47:22.068Z","harness:codex","Implementation evidence: merge install now records absolute Node and built-CLI paths, passes Git's real %P item path into item drivers, and exposes an exact local-driver audit consumed by health and validate. A packed unrelated consumer merged two real branches with PATH restricted to /usr/bin:/bin; the driver still ran, returned the expected conflict exit, preserved both append-only sides, and produced one decision receipt. Focused driver install/drift tests, strict static gates, and full 6,437-test coverage pass."
   "2026-07-26T23:49:53.145Z","harness:codex","Final local verification: linked PM tests pass; full sandboxed suite passes 376 files and 6,437 tests at exact 100% statements (44,398/44,398), branches (31,515/31,515), functions (9,082/9,082), and lines (43,135/43,135). Lint, zero-duplicate scan, 100% docstring/static quality, SDK surface/import/transport ratchets, docs/skills, secret scan, npm audit, compatibility, packed npx, 88-command package-first dogfood, and Sentry 14-day zero-critical/zero-high gate pass. Live tracker strict validation checked 2,117 items and 2,128 history streams with zero drift, duplicate IDs, config errors, driver drift, or pending receipts. Telemetry successfully flushed to the configured endpoint at 2026-07-26T23:49:30.656Z."
+  "2026-07-27T00:27:30.398Z","harness:codex","Governance correction: review correctly identified that earlier metadata was appended after release. Immutable history is retained; ownership was explicitly reacquired before this correction. This active pass now records all review fixes and evidence before close, then releases only after close. Runtime correction also aligns health and validate on the same Git workspace root and persists receipts only after the merged output write succeeds."
+  "2026-07-27T00:28:42.309Z","harness:codex","Review-fix verification: linked 18-test merge-safety suite passes. Full sandboxed repository suite passes 376 files and 6,437 tests at exact 100% statements (44,401/44,401), branches (31,515/31,515), functions (9,082/9,082), and lines (43,138/43,138). ESLint, zero-duplicate detection, 100% docstring/static quality, package boundary, token budgets, SDK surface/import costs, and CLI transport floors all pass."
 learnings[1]{created_at,author,text}:
   "2026-07-26T23:47:22.747Z","harness:codex","A merge fence is only fail-closed when both attribute routing and the clone-local driver command are audited. Absolute executable paths remove shell PATH drift, while exact command comparison detects moved or stale installations before a merge silently falls back."
 files[5]{path,scope,note}:
@@ -42,9 +44,10 @@ files[5]{path,scope,note}:
   tests/unit/sdk/merge-safety.spec.ts,project,Clone-local driver contract regression
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms2g84fm-clseuq,test,passed,"2026-07-26T23:48:04.844Z","2026-07-26T23:48:20.722Z","2026-07-26T23:48:20.722Z",1,0,0
+  test-local-ms2hmyrw-bvb4z3,test,passed,"2026-07-27T00:27:36.048Z","2026-07-27T00:27:52.844Z","2026-07-27T00:27:52.845Z",1,0,0
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,PATH-independent merge driver documentation
-close_reason: "Delivered PATH-independent absolute merge drivers, real %P routing, configuration drift audits, and adversarial packed two-branch proof."
+close_reason: "Implemented fail-closed absolute merge drivers, root-consistent audits, output-before-receipt persistence, adversarial tests, and full quality evidence."
 body: ""

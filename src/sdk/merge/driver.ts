@@ -196,6 +196,7 @@ export async function runMergeDriver(
   ]);
 
   let merged: string;
+  let receiptInput: Parameters<typeof writeMergeReceipt>[0] | undefined;
   const conflicts: string[] = [];
   const result: Partial<MergeDriverResult> = {};
   if (artifact === "history") {
@@ -241,17 +242,14 @@ export async function runMergeDriver(
       union_fields: itemMerge.union_fields,
     };
     if (options.itemPath !== undefined) {
-      const receipt = await writeMergeReceipt({
+      receiptInput = {
         cwd: process.cwd(),
         itemPath: options.itemPath,
         preferred,
         fieldsFromTheirs: itemMerge.fields_from_theirs,
         unionFields: itemMerge.union_fields,
         decisions: itemMerge.conflict_decisions,
-      });
-      if (receipt !== null) {
-        result.receipt = summarizeMergeReceipt(receipt);
-      }
+      };
     }
   } else {
     const jsonMerge = mergeJsonDocuments(baseRaw, oursRaw, theirsRaw, {
@@ -265,6 +263,12 @@ export async function runMergeDriver(
   }
 
   await writeFile(outputPath, merged, "utf8");
+  if (receiptInput !== undefined) {
+    const receipt = await writeMergeReceipt(receiptInput);
+    if (receipt !== null) {
+      result.receipt = summarizeMergeReceipt(receipt);
+    }
+  }
   const guidance: string[] = [];
   if (conflicts.length > 0) {
     guidance.push(

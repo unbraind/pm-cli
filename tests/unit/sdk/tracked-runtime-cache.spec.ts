@@ -99,6 +99,7 @@ describe("tracked runtime cache governance", () => {
         status: "warn",
         details: {
           counts: { tracked_runtime_cache_files: 5 },
+          merge_driver_configuration: { status: "missing" },
           pending_merge_decision_items: ["pm-alpha", "pm-zeta"],
           tracked_runtime_cache: {
             tracked_path_count: 5,
@@ -123,6 +124,7 @@ describe("tracked runtime cache governance", () => {
         name: "storage_integrity",
         status: "warn",
         details: {
+          merge_driver_configuration: { status: "missing" },
           tracked_runtime_cache: {
             tracked_path_count: 5,
             tracked_paths: expect.arrayContaining(relativePaths),

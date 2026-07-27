@@ -24,6 +24,7 @@ import {
   auditMergeAttributeFence,
   auditMergeDriverConfiguration,
   installMergeFence,
+  listMergeReceipts,
   mergeHistoryStreams,
   mergeItemDocuments,
   mergeJsonDocuments,
@@ -509,6 +510,21 @@ describe("public merge-safety SDK primitives", () => {
       );
       expect(itemResult.ok).toBe(true);
       expect(itemResult.receipt?.item_id).toBe("pm-merge");
+      expect(await listMergeReceipts(workspace)).toHaveLength(1);
+      await expect(
+        runMergeDriver(
+          {
+            artifact: "item",
+            basePath: base,
+            oursPath: ours,
+            theirsPath: theirs,
+            itemPath: ".agents/pm/tasks/pm-phantom.md",
+            outputPath: workspace,
+          },
+          { path: path.join(workspace, "missing-pm") },
+        ),
+      ).rejects.toThrow();
+      expect(await listMergeReceipts(workspace)).toHaveLength(1);
     } finally {
       process.chdir(priorItemCwd);
     }

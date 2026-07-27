@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Merge fence fails open: an unresolvable pm driver leaves unmarked UU files whose naive resolution silently discards the other branch's fields and history ([pm-c0wthb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c0wthb.toon))
 - GH-754: the merge driver's field-level conflict report is transient stdout, so the value it discarded leaves no durable record anywhere ([pm-rh98vo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rh98vo.toon))
+- Merge fence fails open: an unresolvable pm driver leaves unmarked UU files whose naive resolution silently discards the other branch's fields and history ([pm-c0wthb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c0wthb.toon))
 - Merged-main Windows init package acceptance exceeds generic Vitest timeout ([pm-0vkmqs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0vkmqs.toon))
 - GH-739: expose duplicate-cluster discovery as a first-class CLI and SDK workflow ([pm-n13lzc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n13lzc.toon))
 - PmClient activation queue serializes unrelated workspaces and extension-free actions ([pm-zpoyg9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpoyg9.toon))
@@ -31,8 +31,8 @@
 ### Other
 
 - The merge-safety gate verifies one history stream of 2,058 and never checks drift, so a clean merge that provably corrupts stream anchoring passes CI green ([pm-pdr8t1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pdr8t1.toon))
-- Continuous multi-branch merge conformance: randomized N-branch divergence and merge property suite with a zero-conflict acceptance bar ([pm-76dnfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-76dnfg.toon))
 - Branch merge is an unrecorded mutation: the field-aware merge produces an item state that no history entry ever produced, so the merged state is unaddressable by restore and point-in-time reads ([pm-9j2r3b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9j2r3b.toon))
+- Continuous multi-branch merge conformance: randomized N-branch divergence and merge property suite with a zero-conflict acceptance bar ([pm-76dnfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-76dnfg.toon))
 - 2026-07-26 ecosystem review: all-status walk, graph depth enrichment, agent-ergonomics and release-pipeline verification ([pm-v4iypw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-v4iypw.toon))
 - Historical release attribution backfill: stamp every terminal item with the release tag that contains its close event ([pm-3j6it6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3j6it6.toon))
 - Terminal relationship backfill, evidence-derived tranche: make every closed and canceled item reachable by typed graph traversal ([pm-qudvto](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qudvto.toon))

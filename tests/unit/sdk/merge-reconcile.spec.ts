@@ -130,6 +130,7 @@ describe("merge reconciliation SDK", () => {
       totals: { repaired: 0, skipped_clean: 0, failed: 0 },
     });
     mocks.runHistoryRepair.mockResolvedValue({
+      changed: true,
       history: {
         entries_rehashed: 0,
         entries_patch_repaired: 0,
@@ -206,6 +207,7 @@ describe("merge reconciliation SDK", () => {
       totals: { repaired: 0, skipped_clean: 0, failed: 0 },
     });
     mocks.runHistoryRepair.mockResolvedValue({
+      changed: false,
       history: {
         entries_rehashed: 0,
         entries_patch_repaired: 0,
