@@ -861,6 +861,14 @@ describe("contracts command runtime", () => {
             "--format",
           ],
         }),
+        expect.objectContaining({
+          command: "activity",
+          flags: ["--limit", "--compact", "--full"],
+        }),
+        expect.objectContaining({
+          command: "history",
+          flags: ["--limit", "--compact", "--full", "--format"],
+        }),
       ]),
     );
     expect(result.output_policy).toEqual({

@@ -431,6 +431,21 @@ const AGENT_BOOTSTRAP_FLAGS = new Map<string, readonly string[]>([
   ],
 ]);
 
+const AGENT_BOUNDED_FLAG_PRIORITY = [
+  "--limit",
+  "--after",
+  "--offset",
+  "--token-budget",
+  "--brief",
+  "--summary",
+  "--compact",
+  "--fields",
+  "--full",
+  "--format",
+  "--since",
+  "--until",
+] as const;
+
 const LIST_COMMAND_NAMES = new Set([
   "list",
   "list-all",
@@ -2410,15 +2425,16 @@ function buildCommandSummarySurface(
     .sort((left, right) => left.localeCompare(right));
   return rootCommands.map((command) => {
     const budget = resolvePmCommandOutputBudget(command);
-    const configuredFlags = AGENT_BOOTSTRAP_FLAGS.get(command);
-    const availableFlags = configuredFlags
-      ? new Set(resolveCoreCommandFlags(command).map((contract) => contract.flag))
-      : null;
-    const flags = configuredFlags?.filter((flag) => availableFlags?.has(flag));
+    const availableFlags = new Set(
+      resolveCoreCommandFlags(command).map((contract) => contract.flag),
+    );
+    const flags = (
+      AGENT_BOOTSTRAP_FLAGS.get(command) ?? AGENT_BOUNDED_FLAG_PRIORITY
+    ).filter((flag) => availableFlags.has(flag));
     return {
       command,
       intent: summarizeCommandIntent(command),
-      ...(flags ? { flags } : {}),
+      ...(flags.length > 0 ? { flags } : {}),
       default_max_estimated_tokens:
         budget?.default_max_estimated_tokens ?? null,
     };

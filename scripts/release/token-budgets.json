@@ -46,8 +46,8 @@
         "--summary",
         "--json"
       ],
-      "max_bytes": 9745,
-      "max_estimated_tokens": 2437
+      "max_bytes": 10729,
+      "max_estimated_tokens": 2683
     },
     {
       "id": "contracts-flags-json",
@@ -88,7 +88,7 @@
       "id": "get-default",
       "args": [
         "get",
-        "pm-b9nd"
+        "pm-18bq"
       ],
       "max_bytes": 711,
       "max_estimated_tokens": 179
@@ -97,7 +97,7 @@
       "id": "get-json-compact-fields",
       "args": [
         "get",
-        "pm-b9nd",
+        "pm-18bq",
         "--json",
         "--fields",
         "id,title,status,type,priority,tags,dependencies"
