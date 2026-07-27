@@ -1,0 +1,42 @@
+id: pm-u2tqn6
+title: "GH-776: preserve output override compatibility and export the public decision contract"
+description: "The 2026.7.27 output_format override decision semantics can silently render the service context when legacy extensions return context.payload, while ServiceOverrideDecision is absent from public SDK authoring types."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-07-27T22:01:13.721Z"
+updated_at: "2026-07-27T23:32:28.111Z"
+closed_at: "2026-07-27T23:32:25.098Z"
+author: "harness:codex"
+acceptance_criteria: ServiceOverrideDecision is publicly exported from SDK and authoring surfaces; Legacy reference-identical payload pass-through declines safely with an actionable migration diagnostic; Extension fixtures and isolated package tests prove ordinary command output cannot be corrupted silently; SDK migration documentation explains handled and decline semantics
+goal: project management = context management
+objective: Make SDK extension override contracts explicit compatible and safe by default
+value: Extension authors can customize rendering without silently corrupting every CLI response
+parent: pm-usfg
+risk: high
+confidence: high
+resolution: Hardened output service ownership compatibility and exported the typed public override decision contract.
+expected_result: "SDK output service overrides remain backward compatible without silently owning output when returning the unchanged payload, and the decision type is publicly authorable."
+actual_result: "Legacy echo returns now decline with a deprecation warning in synchronous and asynchronous hooks, and ServiceOverrideDecision is exported from the authoring surface."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-5teq,related,"2026-07-27T22:01:13.721Z","harness:codex","cli:create:dep"
+  pm-ixoa,discovered_from,"2026-07-27T22:01:13.721Z","harness:codex","cli:create:dep"
+  pm-oxyo,related,"2026-07-27T22:01:13.721Z","harness:codex","cli:create:dep"
+  pm-oi4zs3,related,"2026-07-27T22:02:37.756Z","harness:codex","cli:update:dep"
+comments[3]{created_at,author,text}:
+  "2026-07-27T22:01:13.721Z","harness:codex","Duplicate check evidence: all-status search found only closed collision and generic footgun items; none owns the compatibility break plus missing public decision type reported by GH-776."
+  "2026-07-27T22:03:01.695Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/776. Claimed for the public SDK override-contract and compatibility bundle."
+  "2026-07-27T23:31:47.005Z","harness:codex","Final verification evidence: lint, zero-warning static quality, TypeScript checking, contracts, docs/skills, context evaluation, secret scanning, and dependency audit passed. Full sandboxed coverage passed 380 files and 6,436 tests at exactly 100% statements (44,686/44,686), branches (31,786/31,786), functions (9,153/9,153), and lines (43,399/43,399). A packed tarball installed in a fresh unrelated consumer resolved its own CLI for npm/npx/bunx, completed init/create/claim/update/lean-output/health/validate/merge-install flows, and exercised the real Git merge driver across independent branches. Live repository health has zero warnings and authoritative history validation reports 0 missing, unreadable, hash-mismatch, or chain-mismatch streams."
+files[5]{path,scope,note}:
+  sdk/public-surface.json,project,Additive SDK contract snapshot
+  src/core/extensions/extension-hook-runtime.ts,project,Legacy echo compatibility and explicit decisions
+  src/core/output/output.ts,project,Actionable compatibility warning
+  src/sdk/authoring.ts,project,Public decision type export
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,Service override compatibility regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Service override migration guidance
+close_reason: "Completed and verified in the broad SDK/CLI context-integrity bundle: linked implementation, documentation, focused tests, exact 100% full coverage, live health/history integrity, and isolated packed-consumer npm/npx/bunx proof all passed."
+body: ""

@@ -723,6 +723,72 @@ function parseJsonSide(raw: string, label: string): unknown {
   }
 }
 
+function mergeAdditiveJsonArrays(
+  base: unknown,
+  ours: unknown,
+  theirs: unknown,
+): { merged: unknown[]; acceptedTheirs: boolean } | null {
+  if (!Array.isArray(base) || !Array.isArray(ours) || !Array.isArray(theirs)) {
+    return null;
+  }
+  const baseIdentities = new Set(base.map((entry) => stableStringify(entry)));
+  const oursIdentities = new Set(ours.map((entry) => stableStringify(entry)));
+  const theirsIdentities = new Set(
+    theirs.map((entry) => stableStringify(entry)),
+  );
+  if (
+    [...baseIdentities].some(
+      (identity) =>
+        !oursIdentities.has(identity) || !theirsIdentities.has(identity),
+    )
+  ) {
+    return null;
+  }
+  const additionsFromTheirs = theirs.filter(
+    (entry) => !oursIdentities.has(stableStringify(entry)),
+  );
+  return {
+    merged: [...ours, ...additionsFromTheirs],
+    acceptedTheirs: additionsFromTheirs.length > 0,
+  };
+}
+
+function mergeJsonObjects(
+  base: unknown,
+  ours: unknown,
+  theirs: unknown,
+  preferred: MergePreferredSide,
+  pathPrefix: string,
+  conflictPaths: string[],
+  pathsFromTheirs: string[],
+): Record<string, unknown> | null {
+  if (!isPlainObject(ours) || !isPlainObject(theirs)) {
+    return null;
+  }
+  const baseObject = isPlainObject(base) ? base : {};
+  const merged: Record<string, unknown> = {};
+  const keys = [
+    ...new Set([...Object.keys(ours), ...Object.keys(theirs)]),
+  ].sort((left, right) => left.localeCompare(right));
+  for (const key of keys) {
+    const childPath = pathPrefix.length > 0 ? `${pathPrefix}.${key}` : key;
+    const child = mergeJsonKey(
+      baseObject,
+      ours,
+      theirs,
+      key,
+      preferred,
+      childPath,
+      conflictPaths,
+      pathsFromTheirs,
+    );
+    if (child !== undefined) {
+      merged[key] = child;
+    }
+  }
+  return merged;
+}
+
 function mergeJsonValue(
   base: unknown,
   ours: unknown,
@@ -735,29 +801,24 @@ function mergeJsonValue(
   if (jsonEquals(ours, theirs)) {
     return ours;
   }
-  if (isPlainObject(ours) && isPlainObject(theirs)) {
-    const baseObject = isPlainObject(base) ? base : {};
-    const merged: Record<string, unknown> = {};
-    const keys = [
-      ...new Set([...Object.keys(ours), ...Object.keys(theirs)]),
-    ].sort((left, right) => left.localeCompare(right));
-    for (const key of keys) {
-      const childPath = pathPrefix.length > 0 ? `${pathPrefix}.${key}` : key;
-      const child = mergeJsonKey(
-        baseObject,
-        ours,
-        theirs,
-        key,
-        preferred,
-        childPath,
-        conflictPaths,
-        pathsFromTheirs,
-      );
-      if (child !== undefined) {
-        merged[key] = child;
-      }
+  const additiveArrayMerge = mergeAdditiveJsonArrays(base, ours, theirs);
+  if (additiveArrayMerge !== null) {
+    if (additiveArrayMerge.acceptedTheirs) {
+      pathsFromTheirs.push(pathPrefix);
     }
-    return merged;
+    return additiveArrayMerge.merged;
+  }
+  const mergedObject = mergeJsonObjects(
+    base,
+    ours,
+    theirs,
+    preferred,
+    pathPrefix,
+    conflictPaths,
+    pathsFromTheirs,
+  );
+  if (mergedObject !== null) {
+    return mergedObject;
   }
   const outcome = mergeScalarThreeWay(base, ours, theirs, preferred);
   if (outcome.conflict) {
@@ -818,13 +879,12 @@ function mergeJsonKey(
 }
 
 /**
- * Key-level three-way merge for the tracker's single-file JSON configuration
- * artifacts (`settings.json`, `schema/*.json`). Nested objects merge
- * recursively per key so two branches editing disjoint settings never
- * conflict; both-sides-changed leaf values resolve toward the preferred side
- * and are reported in `conflict_paths`. The output is always valid JSON, so a
- * merged configuration can never regress into the silent-defaults fallback
- * that raw conflict markers cause.
+ * Key-level three-way merge for the tracker's JSON configuration artifacts.
+ * Nested objects merge recursively per key, while arrays compose only when
+ * both branches preserve every base element and contribute additive entries.
+ * Removals or edits retain scalar three-way conflict semantics. The output is
+ * always valid JSON, so merged configuration cannot regress into the
+ * silent-defaults fallback that raw conflict markers cause.
  */
 export function mergeJsonDocuments(
   baseRaw: string,

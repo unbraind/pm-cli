@@ -223,13 +223,14 @@ export async function listAllItemMetadataLight(
   return documents.map((document) => document.metadata);
 }
 
-/** Implements list all item metadata with body for the public runtime surface of this module. */
+/** List item metadata with bodies, optionally bypassing the derived-index fast path when an integrity workflow must re-read authoritative files. */
 export async function listAllItemMetadataWithBody(
   pmRoot: string,
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
+  options: { forceSourceScan?: boolean } = {},
 ): Promise<Array<ItemMetadata & { body: string }>> {
   const candidates = await listAllDocumentCandidatesCached(
     pmRoot,
@@ -237,7 +238,10 @@ export async function listAllItemMetadataWithBody(
     typeToFolder,
     warnings,
     schema,
-    { includeBody: true },
+    {
+      includeBody: true,
+      forceSourceScan: options.forceSourceScan,
+    },
   );
   return candidates.map((candidate) => ({
     ...candidate.metadata,

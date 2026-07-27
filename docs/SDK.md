@@ -18,7 +18,12 @@ source coordinates are tracked by
 [pm-w7mqzt](../.agents/pm/features/pm-w7mqzt.toon),
 [pm-pjnu91](../.agents/pm/issues/pm-pjnu91.toon),
 [pm-mkzw1x](../.agents/pm/issues/pm-mkzw1x.toon), and
-[pm-uawujr](../.agents/pm/issues/pm-uawujr.toon).
+[pm-uawujr](../.agents/pm/issues/pm-uawujr.toon). Lean read envelopes,
+service-override compatibility, and mutation-aware drift-cache invalidation are
+tracked by [pm-oi4zs3](../.agents/pm/issues/pm-oi4zs3.toon),
+[pm-u2tqn6](../.agents/pm/issues/pm-u2tqn6.toon), and
+[pm-ajaskl](../.agents/pm/issues/pm-ajaskl.toon). Fresh-clone directory
+semantics are tracked by [pm-xyuhh7](../.agents/pm/issues/pm-xyuhh7.toon).
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
@@ -53,19 +58,19 @@ Choose the narrowest stable entrypoint that owns the capability you need. This
 keeps package startup and memory proportional to its purpose while the aggregate
 barrel remains source-compatible:
 
-| Package export                     | Intended capability family                                                 |
-| ---------------------------------- | -------------------------------------------------------------------------- |
-| `@unbrained/pm-cli/sdk/authoring`  | Extension blueprints, builders, manifests, and package-author helpers      |
-| `@unbrained/pm-cli/sdk/contracts`  | Static CLI command/action contracts and expected-error protocol            |
-| `@unbrained/pm-cli/sdk/core`       | Broad item, schema, profile, transaction, and runtime primitives           |
-| `@unbrained/pm-cli/sdk/governance` | Validation, health, garbage collection, and transaction cleanup            |
-| `@unbrained/pm-cli/sdk/graph`      | Relationship stores, graph assembly, traversal, analytics, and remediation |
-| `@unbrained/pm-cli/sdk/merge`      | VCS-neutral tracker merge contracts                                        |
-| `@unbrained/pm-cli/sdk/query`      | List/search engines, filtering, pagination, and query rendering            |
-| `@unbrained/pm-cli/sdk/runtime`    | Embedded command execution and package runtime helpers                     |
-| `@unbrained/pm-cli/sdk/testing`    | Package and extension assertion/invocation helpers                         |
-| `@unbrained/pm-cli/sdk/public-surface.json` | Published machine-readable SDK compatibility snapshot            |
-| `@unbrained/pm-cli/sdk`            | Compatibility aggregate containing every supported SDK export              |
+| Package export                              | Intended capability family                                                 |
+| ------------------------------------------- | -------------------------------------------------------------------------- |
+| `@unbrained/pm-cli/sdk/authoring`           | Extension blueprints, builders, manifests, and package-author helpers      |
+| `@unbrained/pm-cli/sdk/contracts`           | Static CLI command/action contracts and expected-error protocol            |
+| `@unbrained/pm-cli/sdk/core`                | Broad item, schema, profile, transaction, and runtime primitives           |
+| `@unbrained/pm-cli/sdk/governance`          | Validation, health, garbage collection, and transaction cleanup            |
+| `@unbrained/pm-cli/sdk/graph`               | Relationship stores, graph assembly, traversal, analytics, and remediation |
+| `@unbrained/pm-cli/sdk/merge`               | VCS-neutral tracker merge contracts                                        |
+| `@unbrained/pm-cli/sdk/query`               | List/search engines, filtering, pagination, and query rendering            |
+| `@unbrained/pm-cli/sdk/runtime`             | Embedded command execution and package runtime helpers                     |
+| `@unbrained/pm-cli/sdk/testing`             | Package and extension assertion/invocation helpers                         |
+| `@unbrained/pm-cli/sdk/public-surface.json` | Published machine-readable SDK compatibility snapshot                      |
+| `@unbrained/pm-cli/sdk`                     | Compatibility aggregate containing every supported SDK export              |
 
 `@unbrained/pm-cli/cli` remains the runtime CLI module entrypoint for package
 resolution, not a typed library API. The committed
@@ -891,6 +896,7 @@ Common types:
 - `FlagDefinition`
 - `ImportExportRegistrationOptions`
 - `ServiceOverrideContext`
+- `ServiceOverrideDecision`
 - `PmCliExpectedError`
 - `CreatePmCliExpectedErrorOptions`
 - `SchemaFieldDefinition`
@@ -1328,6 +1334,12 @@ the same bounded maintenance engine as the CLI. Prefer these typed calls over
 shelling out when building CI, editor integrations, or long-running agent
 runtimes.
 
+Health treats structural tracker directories (`schema`, `history`, `search`,
+`extensions`, and `locks`) as required. Registered item-type folders are
+clone-optional because Git cannot preserve empty directories; missing type
+folders become warnings only with `strictDirectories: true` (CLI
+`--strict-directories`). A later item write recreates its type folder.
+
 ### Query execution
 
 Tracked by [pm-rjqr](../.agents/pm/features/pm-rjqr.toon) and the SDK boundary
@@ -1372,6 +1384,13 @@ derived-index page. Set `ListOptions.strictRead` (CLI `--strict-read`) when an
 automation must fail instead of accepting omissions.
 `full: true` when an integration requires complete item metadata; the overload
 then returns `ListFullResult` without an assertion or cast.
+
+CLI JSON consumers can add `--lean` to compact null and empty values. On
+item-list envelopes, lean output also removes request echoes (`filters`, `now`,
+`projection`, and `sorting`) and removes `next_cursor` when `has_more` is not
+true. The normal JSON envelope remains unchanged, and an actionable cursor is
+always retained. SDK query functions continue returning their full typed
+results; lean projection belongs to the CLI presentation boundary.
 
 Migration note: before this contract, `total` was present only when pagination
 omitted rows, a completed page omitted `next_cursor`, and verbose results
@@ -1989,6 +2008,23 @@ The optional structured result remains available to command-result hooks,
 telemetry, and embedded hosts, while the CLI writes no host-rendered output. The
 marker is structural rather than identity-based, so separately installed
 packages and custom SDK-built hosts can exchange it safely.
+
+Service overrides should return an explicit `ServiceOverrideDecision` when
+claiming or declining a payload:
+
+```ts
+api.registerService("output_format", (context) =>
+  context.command === "archive show"
+    ? { handled: true, result: JSON.stringify(context.payload) }
+    : { handled: false },
+);
+```
+
+For compatibility, `null` and `undefined` still decline `output_format`.
+Legacy overrides that return the exact `context.payload` object now also
+decline and emit a deprecation warning instead of accidentally claiming the
+payload. Migrate those callbacks to `{ handled: false }` (or the exported
+`declineServiceOverride()` helper) so intent does not depend on object identity.
 
 `registerItemFields` validates each declared field `type` against the canonical
 coercion kinds (`string`, `number`, `boolean`, `array`, `object`) at activation.
@@ -3032,7 +3068,10 @@ is not interpreted as a missing input.
 - After directly writing streaming, binary, or pre-rendered output, return
   `suppressHostOutput()` to make output ownership explicit and prevent duplicate
   CLI rendering.
-- Keep service, renderer, and preflight overrides narrow. For `output_format`, return `context.payload`, `null`, or `undefined` for unrelated commands; for renderers, return `null` when the payload should fall back to native rendering.
+- Keep service, renderer, and preflight overrides narrow. For `output_format`,
+  return `{ handled: false }` or `declineServiceOverride()` for unrelated
+  commands; for renderers, return `null` when the payload should fall back to
+  native rendering.
 - Declare only capabilities in use.
 - Set `pm_min_version` when the package requires SDK or runtime behavior added after older pm releases.
 - Include examples and failure hints in dynamic commands.

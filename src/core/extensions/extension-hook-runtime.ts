@@ -456,6 +456,19 @@ function resolveServiceOverrideValue(
   return { handled: true, result };
 }
 
+function isLegacyOutputPayloadEcho(
+  result: unknown,
+  context: ServiceOverrideContext,
+  serviceContext: ServiceOverrideContext,
+): boolean {
+  return (
+    context.service === "output_format" &&
+    typeof result === "object" &&
+    result !== null &&
+    result === serviceContext.payload
+  );
+}
+
 /** Implements run service override sync for the public runtime surface of this module. */
 export function runServiceOverrideSync(
   services: ExtensionServiceRegistry,
@@ -474,6 +487,12 @@ export function runServiceOverrideSync(
       if (result instanceof Promise) {
         warnings.push(
           `extension_service_override_async_unsupported:${matched.layer}:${matched.name}:${matched.service}`,
+        );
+        continue;
+      }
+      if (isLegacyOutputPayloadEcho(result, context, serviceContext)) {
+        warnings.push(
+          `extension_output_format_payload_echo_deprecated:${matched.layer}:${matched.name}`,
         );
         continue;
       }
@@ -514,6 +533,12 @@ export async function runServiceOverride(
     try {
       const serviceContext = buildServiceOverrideContext(context);
       const result = await Promise.resolve(matched.run(serviceContext));
+      if (isLegacyOutputPayloadEcho(result, context, serviceContext)) {
+        warnings.push(
+          `extension_output_format_payload_echo_deprecated:${matched.layer}:${matched.name}`,
+        );
+        continue;
+      }
       const decision = resolveServiceOverrideValue(result, context);
       if (!decision.handled) {
         continue;
@@ -605,10 +630,7 @@ function rendererOwnsContext(
   command: string,
   result: unknown,
 ): boolean {
-  if (
-    (entry.commands?.length ?? 0) > 0 &&
-    !entry.commands?.includes(command)
-  ) {
+  if ((entry.commands?.length ?? 0) > 0 && !entry.commands?.includes(command)) {
     return false;
   }
   if (entry.resultDiscriminator === undefined) {

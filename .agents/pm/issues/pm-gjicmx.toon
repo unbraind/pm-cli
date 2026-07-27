@@ -2,11 +2,12 @@ id: pm-gjicmx
 title: "The merge fence covers item documents but not tracked non-item JSON, so .managed-extensions.json line-conflicts between agents on different branches"
 description: "git check-attr over every tracked file under .agents/pm shows .agents/pm/extensions/.managed-extensions.json and .agents/pm/search/eval-queries.json resolve to merge: unspecified, so git falls back to line-level merge on pm-authored JSON state while settings.json and schema/*.json correctly get the pm-json driver."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:storage",durability,git,merge-safety,multi-agent
 created_at: "2026-07-26T18:25:40.116Z"
-updated_at: "2026-07-27T07:10:17.006Z"
+updated_at: "2026-07-27T23:32:09.144Z"
+closed_at: "2026-07-27T23:32:06.263Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "git check-attr merge reports a pm driver for every tracked file under .agents/pm, with zero unspecified rows; The .gitattributes fence generator derives its JSON entries from tracked non-item state so a newly tracked JSON file is fenced automatically; A regression test merges two branches that each install a different extension and asserts .managed-extensions.json reconciles without conflict markers"
@@ -18,8 +19,45 @@ why_now: "Multi-agent branch work is the workflow the merge fence exists to prot
 parent: pm-o2kc
 risk: medium
 confidence: high
-dependencies[3]{id,kind,created_at}:
-  pm-4020c5,related,"2026-07-26T18:29:13.960Z"
-  pm-9j2r3b,related,"2026-07-26T18:29:13.960Z"
-  pm-dj98,implements,"2026-07-27T07:10:16.760Z"
+resolution: "Implemented generalized tracked-JSON merge fencing, conservative additive-array reconciliation, portable installed-driver recognition, SDK documentation, and regression coverage."
+expected_result: "Concurrent branches can merge every tracked non-item JSON document and additive JSON arrays without losing independent additions, while semantic edits still conflict."
+actual_result: "The generated JSON fence now covers nested tracker JSON, three-way JSON merging unions only additive arrays, and a real two-branch managed-extension merge succeeds through the installed driver."
+dependencies[5]:
+  - id: pm-4020c5
+    kind: related
+    created_at: "2026-07-26T18:29:13.960Z"
+  - id: pm-9j2r3b
+    kind: related
+    created_at: "2026-07-26T18:29:13.960Z"
+  - id: pm-dj98
+    kind: implements
+    created_at: "2026-07-27T07:10:16.760Z"
+  - id: pm-w91mvg
+    kind: related
+    created_at: "2026-07-27T22:02:34.305Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+  - id: pm-xyuhh7
+    kind: related
+    created_at: "2026-07-27T22:02:34.305Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+comments[2]{created_at,author,text}:
+  "2026-07-27T22:02:59.480Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/780. Reused the all-status canonical non-item JSON merge-fence issue and claimed it for this broad implementation bundle."
+  "2026-07-27T23:31:44.775Z","harness:codex","Final verification evidence: lint, zero-warning static quality, TypeScript checking, contracts, docs/skills, context evaluation, secret scanning, and dependency audit passed. Full sandboxed coverage passed 380 files and 6,436 tests at exactly 100% statements (44,686/44,686), branches (31,786/31,786), functions (9,153/9,153), and lines (43,399/43,399). A packed tarball installed in a fresh unrelated consumer resolved its own CLI for npm/npx/bunx, completed init/create/claim/update/lean-output/health/validate/merge-install flows, and exercised the real Git merge driver across independent branches. Live repository health has zero warnings and authoritative history validation reports 0 missing, unreadable, hash-mismatch, or chain-mismatch streams."
+learnings[1]{created_at,author,text}:
+  "2026-07-27T23:31:52.335Z","harness:codex","Merge-driver portability should be established from exact package identity and bin ownership, not an immutable checkout path; additive JSON reconciliation is safe only when both sides preserve every base element."
+files[4]{path,scope,note}:
+  .gitattributes,project,Adopt generated fence rules
+  src/sdk/merge/install.ts,project,Extend authoritative JSON merge fence
+  src/sdk/merge/three-way.ts,project,Conservative additive JSON array merge
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,Two-branch JSON fence and bundle regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms3ud42u-jrvtum,test,passed,"2026-07-27T23:11:40.857Z","2026-07-27T23:11:54.342Z","2026-07-27T23:11:54.342Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned release history for the full context-integrity bundle
+  docs/MERGE_SAFETY.md,project,Document JSON fence coverage
+close_reason: "Completed and verified in the broad SDK/CLI context-integrity bundle: linked implementation, documentation, focused tests, exact 100% full coverage, live health/history integrity, and isolated packed-consumer npm/npx/bunx proof all passed."
 body: "## Problem\n\nThe .gitattributes merge fence is generated per item-type directory, so it\ncovers every tracked item document and both append-only streams. It does not\ncover tracked **JSON state that is not an item**, and two such files exist.\n\nVerified 2026-07-26 with git check-attr on every tracked file under .agents/pm:\n\n```\n.agents/pm/settings.json                        merge: pm-json      OK\n.agents/pm/schema/*.json                        merge: pm-json      OK\n.agents/pm/extensions/.managed-extensions.json  merge: unspecified  GAP\n.agents/pm/search/eval-queries.json             merge: unspecified  GAP\n```\n\nTracked-file census under .agents/pm: 2,109 .jsonl, 2,098 .toon, 7 .json.\nThe .toon and .jsonl populations are fully fenced. Two of the seven JSON files\nare not.\n\n## Why .managed-extensions.json is the sharp one\n\nIt is the *only* tracked file under .agents/pm/extensions, it is the\nauthoritative record of which extensions a workspace has installed, and it\nchanges often — `pnpm changelog:pm` regeneration touches it as a side effect,\nwhich is why the release runbook already tells maintainers to check it out\nbefore committing.\n\nIts payload is an `entries[]` array of per-extension objects. Under git's\ndefault line-level merge, two agents on two branches that each install a\ndifferent extension produce overlapping insertions into the same array region.\nThat is a textual conflict on a file that pm itself wrote and that no human is\nexpected to hand-resolve — and it lands in exactly the multi-agent,\nmulti-branch workflow the merge fence exists to protect. The pm-json driver\nalready performs key-level JSON merging and is already wired for settings.json\nand schema/*.json; the fence simply never lists this path.\n\n## Scope\n\n- No new merge driver is required; pm-json already exists and is registered by\n  `pm merge install`.\n- The fence generator has to enumerate tracked non-item JSON state, not just\n  item-type directories, or the same gap reappears the next time a subsystem\n  adds a tracked JSON file.\n- Untracked/derived directories (checkpoints, locks, runtime, search index\n  payloads) correctly need no driver — they carry 0 tracked files. Only\n  eval-queries.json inside .agents/pm/search is tracked.\n\n## Verification recipe\n\n```\nfor f in $(git ls-files .agents/pm | grep -E '\\.json$'); do\n  printf '%s ' \"$f\"; git check-attr merge -- \"$f\" | sed 's/.*merge: //'\ndone\n```\nAny `unspecified` row is a gap."

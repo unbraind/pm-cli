@@ -1,0 +1,38 @@
+id: pm-oi4zs3
+title: "GH-778: make lean structured reads omit caller echoes and inactive pagination metadata"
+description: Small JSON reads still spend more tokens on query echoes and derivable envelope metadata than on item payloads because lean mode only removes null or empty containers.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-07-27T22:01:53.024Z"
+updated_at: "2026-07-27T23:32:21.906Z"
+closed_at: "2026-07-27T23:32:19.062Z"
+author: "harness:codex"
+acceptance_criteria: Lean JSON omits caller-echoed filters sorting projection and now metadata; next_cursor is present only when continuation is possible; Full JSON remains contract-compatible and an explicit diagnostic projection retains query explanations; Measured isolated small-read output falls by at least 50 percent without losing actionable pagination state
+goal: project management = context management
+objective: Minimize repeated agent read overhead through an intentional SDK output projection
+value: More context budget remains available for actual project decisions
+parent: pm-5t33or
+risk: medium
+confidence: high
+resolution: Reduced lean structured envelopes to decision-relevant fields and preserved active pagination continuity with focused regression coverage.
+expected_result: Lean structured reads expose only actionable result data and include pagination metadata only when another page exists.
+actual_result: Lean envelopes omit caller filter/time/projection/sorting echoes and inactive cursors while retaining next_cursor when has_more is true.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-cfed,discovered_from,"2026-07-27T22:01:53.024Z","harness:codex","cli:create:dep"
+  pm-g3n00m,implements,"2026-07-27T22:01:53.024Z","harness:codex","cli:create:dep"
+  pm-srns,related,"2026-07-27T22:01:53.024Z","harness:codex","cli:create:dep"
+comments[3]{created_at,author,text}:
+  "2026-07-27T22:01:53.024Z","harness:codex","Duplicate check evidence: GH-435 and closed pm-cfed cover null and empty omission only; GH-778 uniquely targets nonempty caller echoes and inactive pagination metadata."
+  "2026-07-27T22:03:05.686Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/778. Claimed as the incremental lean-envelope contract beyond closed GH-435 scope."
+  "2026-07-27T23:31:46.229Z","harness:codex","Final verification evidence: lint, zero-warning static quality, TypeScript checking, contracts, docs/skills, context evaluation, secret scanning, and dependency audit passed. Full sandboxed coverage passed 380 files and 6,436 tests at exactly 100% statements (44,686/44,686), branches (31,786/31,786), functions (9,153/9,153), and lines (43,399/43,399). A packed tarball installed in a fresh unrelated consumer resolved its own CLI for npm/npx/bunx, completed init/create/claim/update/lean-output/health/validate/merge-install flows, and exercised the real Git merge driver across independent branches. Live repository health has zero warnings and authoritative history validation reports 0 missing, unreadable, hash-mismatch, or chain-mismatch streams."
+files[2]{path,scope,note}:
+  src/core/output/output.ts,project,Lean read-envelope projection
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,Lean envelope regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Document lean JSON contract
+close_reason: "Completed and verified in the broad SDK/CLI context-integrity bundle: linked implementation, documentation, focused tests, exact 100% full coverage, live health/history integrity, and isolated packed-consumer npm/npx/bunx proof all passed."
+body: ""

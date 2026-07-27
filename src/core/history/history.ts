@@ -29,6 +29,7 @@ import {
   removeHistoryEventIndexForHistoryPath,
   updateHistoryEventIndexAfterAppend,
 } from "./event-index.js";
+import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
 
 const EMPTY_LEGACY_HASH_DOCUMENT = {
   front_matter: {},
@@ -191,9 +192,7 @@ export function createHistoryEntry(params: {
     author: params.author,
     author_source:
       params.authorSource ?? resolveHistoryAuthorSource(params.author),
-    ...(agentIdentity.harness
-      ? { agent_harness: agentIdentity.harness }
-      : {}),
+    ...(agentIdentity.harness ? { agent_harness: agentIdentity.harness } : {}),
     ...(agentIdentity.model ? { agent_model: agentIdentity.model } : {}),
     ...(agentIdentity.model_source
       ? { agent_model_source: agentIdentity.model_source }
@@ -274,6 +273,7 @@ export async function appendHistoryEntry(
         serializeHistoryLine(override.result, entry),
       );
       await removeHistoryEventIndexForHistoryPath(historyPath);
+      await invalidateHistoryDriftCacheForPath(historyPath);
       return;
     }
     if (typeof override.result === "object" && override.result !== null) {
@@ -296,6 +296,7 @@ export async function appendHistoryEntry(
           serializeHistoryLine(record.line, entry),
         );
         await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
+        await invalidateHistoryDriftCacheForPath(nextHistoryPath);
         return;
       }
       await appendLineAtomic(
@@ -303,11 +304,13 @@ export async function appendHistoryEntry(
         serializeHistoryLine(record.entry ?? entry, entry),
       );
       await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
+      await invalidateHistoryDriftCacheForPath(nextHistoryPath);
       return;
     }
   }
   await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
   await updateHistoryEventIndexAfterAppend(historyPath, entry);
+  await invalidateHistoryDriftCacheForPath(historyPath);
 }
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */

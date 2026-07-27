@@ -39,7 +39,6 @@ import { resolveVectorStores } from "../../core/search/vector-stores.js";
 import {
   EXIT_CODE,
   PM_CORE_REQUIRED_SUBDIRS,
-  PM_OPTIONAL_TYPE_SUBDIRS,
 } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -609,9 +608,7 @@ async function buildIntegrityCheck(
       ? null
       : await auditMergeDriverConfiguration(gitWorkspaceRoot);
   const pendingMergeReceipts =
-    gitWorkspaceRoot === null
-      ? []
-      : await listMergeReceipts(gitWorkspaceRoot);
+    gitWorkspaceRoot === null ? [] : await listMergeReceipts(gitWorkspaceRoot);
 
   const warnings = [
     ...itemScan.unreadable.map((entry) => `integrity_item_unreadable:${entry}`),
@@ -2358,19 +2355,13 @@ function resolveHealthDirectoryLists(typeRegistry: HealthTypeRegistry): {
   optionalDirs: string[];
   optionalDirSet: Set<string>;
 } {
-  const optionalBuiltinDirs = new Set<string>(
-    PM_OPTIONAL_TYPE_SUBDIRS.filter((entry) => entry.length > 0),
-  );
   const requiredDirSet = new Set<string>(
     PM_CORE_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0),
   );
   const optionalDirSet = new Set<string>();
   for (const folder of typeRegistry.folders) {
-    if (optionalBuiltinDirs.has(folder)) {
-      optionalDirSet.add(folder);
-      continue;
-    }
-    requiredDirSet.add(folder);
+    requiredDirSet.delete(folder);
+    optionalDirSet.add(folder);
   }
   return {
     requiredDirs: [...requiredDirSet].sort((left, right) =>

@@ -1,0 +1,38 @@
+id: pm-xyuhh7
+title: "GH-775: make fresh-clone health distinguish material tracker loss from absent empty type folders"
+description: "Git cannot preserve empty item-type directories, so fresh clones report health failure even when tracked state is complete and the noise masks actionable merge-decision diagnostics."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-07-27T22:01:29.279Z"
+updated_at: "2026-07-27T23:32:34.141Z"
+closed_at: "2026-07-27T23:32:31.150Z"
+author: "harness:codex"
+acceptance_criteria: Health treats absent empty type folders as reconstructable layout rather than tracker corruption; Missing directories that imply lost tracked state still fail closed; Fresh-clone and pending-merge-decision tests prove material signals remain prominent; Public SDK health and CLI projections remain aligned
+goal: project management = context management
+objective: Make health verdicts portable across clones without weakening integrity
+value: Agents can trust health as a low-noise multi-agent safety gate
+parent: pm-o2kc
+risk: medium
+confidence: high
+resolution: Separated material tracker structure from optional empty type directories and preserved an explicit strict governance mode.
+expected_result: "Fresh clones pass default health when optional empty custom-type folders are absent, while strict directory governance remains available."
+actual_result: "Health requires structural tracker directories, treats registered type folders as optional by default, and enforces them under strictDirectories."
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-hl9y,discovered_from,"2026-07-27T22:01:29.279Z","harness:codex","cli:create:dep"
+  pm-oxrw,implements,"2026-07-27T22:01:29.279Z","harness:codex","cli:create:dep"
+  pm-yf31,related,"2026-07-27T22:01:29.279Z","harness:codex","cli:create:dep"
+comments[3]{created_at,author,text}:
+  "2026-07-27T22:01:29.279Z","harness:codex","Duplicate check evidence: closed pm-hl9y aligned init directories and closed pm-yf31 removed one legacy folder; neither covers Git-untrackable empty folders on fresh clones."
+  "2026-07-27T22:03:02.925Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/775. Claimed for fresh-clone SDK health and integrity semantics."
+  "2026-07-27T23:31:48.117Z","harness:codex","Final verification evidence: lint, zero-warning static quality, TypeScript checking, contracts, docs/skills, context evaluation, secret scanning, and dependency audit passed. Full sandboxed coverage passed 380 files and 6,436 tests at exactly 100% statements (44,686/44,686), branches (31,786/31,786), functions (9,153/9,153), and lines (43,399/43,399). A packed tarball installed in a fresh unrelated consumer resolved its own CLI for npm/npx/bunx, completed init/create/claim/update/lean-output/health/validate/merge-install flows, and exercised the real Git merge driver across independent branches. Live repository health has zero warnings and authoritative history validation reports 0 missing, unreadable, hash-mismatch, or chain-mismatch streams."
+files[2]{path,scope,note}:
+  src/sdk/governance/health.ts,project,Fresh clone directory semantics
+  tests/unit/commands/init-command.spec.ts,project,Fresh-clone optional directory acceptance
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Document optional type folders
+close_reason: "Completed and verified in the broad SDK/CLI context-integrity bundle: linked implementation, documentation, focused tests, exact 100% full coverage, live health/history integrity, and isolated packed-consumer npm/npx/bunx proof all passed."
+body: ""

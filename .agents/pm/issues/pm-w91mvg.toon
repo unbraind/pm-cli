@@ -1,0 +1,38 @@
+id: pm-w91mvg
+title: "GH-773: install portable merge drivers without permanent checkout-path drift"
+description: "Repositories installing pm from a devDependency persist checkout-specific dist paths in clone-local Git driver config, and health then reports permanent drift or recommends a reinstall loop that reduces portability."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-07-27T22:01:42.242Z"
+updated_at: "2026-07-27T23:32:40.213Z"
+closed_at: "2026-07-27T23:32:37.319Z"
+author: "harness:codex"
+acceptance_criteria: Merge-driver installation records a stable executable strategy appropriate to the package source; Health compares semantic driver identity without accepting stale or unsafe executables; DevDependency global install and packed-consumer clones pass portability tests; Remediation converges in one run
+goal: project management = context management
+objective: Make field-aware PM merges dependable across clones worktrees and package layouts
+value: Parallel agents retain semantic merge safety without host-specific configuration drift
+parent: pm-o2kc
+risk: high
+confidence: high
+resolution: "Implemented portable, package-identity-verified merge-driver recognition with defensive command parsing and unrelated-consumer proof."
+expected_result: A merge driver installed from a packed/global pm package remains healthy when the original checkout path changes.
+actual_result: Driver validation recognizes the exact installed @unbrained/pm-cli binary through its package manifest while rejecting lookalike commands and paths.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-bnmlsc,related,"2026-07-27T22:01:42.242Z","harness:codex","cli:create:dep"
+  pm-c0wthb,discovered_from,"2026-07-27T22:01:42.242Z","harness:codex","cli:create:dep"
+  pm-g5sx,implements,"2026-07-27T22:01:42.242Z","harness:codex","cli:create:dep"
+comments[3]{created_at,author,text}:
+  "2026-07-27T22:01:42.242Z","harness:codex","Duplicate check evidence: all-status search found closed merge-driver availability and permission items but no owner for semantic identity portability across devDependency installs."
+  "2026-07-27T22:03:04.315Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/773. Claimed for portable merge-driver installation and semantic health checks."
+  "2026-07-27T23:31:48.975Z","harness:codex","Final verification evidence: lint, zero-warning static quality, TypeScript checking, contracts, docs/skills, context evaluation, secret scanning, and dependency audit passed. Full sandboxed coverage passed 380 files and 6,436 tests at exactly 100% statements (44,686/44,686), branches (31,786/31,786), functions (9,153/9,153), and lines (43,399/43,399). A packed tarball installed in a fresh unrelated consumer resolved its own CLI for npm/npx/bunx, completed init/create/claim/update/lean-output/health/validate/merge-install flows, and exercised the real Git merge driver across independent branches. Live repository health has zero warnings and authoritative history validation reports 0 missing, unreadable, hash-mismatch, or chain-mismatch streams."
+files[2]{path,scope,note}:
+  src/sdk/merge/install.ts,project,Semantic portable driver audit
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,Portable driver semantic identity regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Portable identity security contract
+close_reason: "Completed and verified in the broad SDK/CLI context-integrity bundle: linked implementation, documentation, focused tests, exact 100% full coverage, live health/history integrity, and isolated packed-consumer npm/npx/bunx proof all passed."
+body: ""

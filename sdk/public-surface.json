@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1258,
+    "covered_symbols": 1259,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1259
+    "required_symbols": 1260
   },
   "breaking_acknowledgements": [
     {
@@ -9751,6 +9751,12 @@
           "signature": "export interface ServiceOverrideContext extends Partial<PortableWorkspaceContext> { service: ExtensionServiceName; command?: string; args?: string[]; options?: Record<string, unknown>; global?: GlobalOptions; pm_root?: string; payload: unknown; }"
         },
         {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ServiceOverrideDecision",
+          "signature": "export type ServiceOverrideDecision = { handled: true; result: unknown; } | { handled: false; };"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "setActiveCommandContext",
@@ -12293,6 +12299,12 @@
           "kind": "interface",
           "name": "ServiceOverrideContext",
           "signature": "export interface ServiceOverrideContext extends Partial<PortableWorkspaceContext> { service: ExtensionServiceName; command?: string; args?: string[]; options?: Record<string, unknown>; global?: GlobalOptions; pm_root?: string; payload: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ServiceOverrideDecision",
+          "signature": "export type ServiceOverrideDecision = { handled: true; result: unknown; } | { handled: false; };"
         },
         {
           "classification": "supported",

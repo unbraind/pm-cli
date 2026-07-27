@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -690,6 +690,13 @@ describe("history-repair --all (bulk drift repair)", () => {
     await withTempPmPath(async (context) => {
       const skippedId = createItem(context, "Bulk skipped clean");
       const failedId = createItem(context, "Bulk string failure");
+      const cachePath = path.join(
+        context.pmPath,
+        "runtime",
+        "history-drift-cache.json",
+      );
+      await mkdir(path.dirname(cachePath), { recursive: true });
+      await writeFile(cachePath, "{}\n", "utf8");
 
       const driftSpy = vi.spyOn(driftScanModule, "scanHistoryDrift").mockResolvedValue({
         missingStreams: [],
@@ -707,7 +714,7 @@ describe("history-repair --all (bulk drift repair)", () => {
       });
 
       try {
-        const result = await runHistoryRepairAll({ dryRun: true }, { path: context.pmPath });
+        const result = await runHistoryRepairAll({}, { path: context.pmPath });
         expect(result.totals).toEqual({ repaired: 0, skipped_clean: 1, failed: 1 });
         expect(result.streams).toEqual(
           expect.arrayContaining([
@@ -719,6 +726,7 @@ describe("history-repair --all (bulk drift repair)", () => {
             }),
           ]),
         );
+        await expect(access(cachePath)).rejects.toMatchObject({ code: "ENOENT" });
       } finally {
         driftSpy.mockRestore();
         readSpy.mockRestore();

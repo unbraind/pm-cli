@@ -165,6 +165,75 @@ function quoteGitAttributePattern(value: string): string {
   return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
+function readSingleQuotedArgument(
+  command: string,
+  offset: number,
+): { value: string; nextOffset: number } | null {
+  if (command[offset] !== "'") {
+    return null;
+  }
+  let value = "";
+  for (let index = offset + 1; index < command.length; index += 1) {
+    if (command.startsWith(`'"'"'`, index)) {
+      value += "'";
+      index += 4;
+      continue;
+    }
+    if (command[index] === "'") {
+      return { value, nextOffset: index + 1 };
+    }
+    value += command[index];
+  }
+  return null;
+}
+
+async function isPortableMergeDriverCommand(
+  configured: string,
+  expectedSuffix: string,
+): Promise<boolean> {
+  const nodeArgument = readSingleQuotedArgument(configured, 0);
+  if (nodeArgument === null || configured[nodeArgument.nextOffset] !== " ") {
+    return false;
+  }
+  const cliArgument = readSingleQuotedArgument(
+    configured,
+    nodeArgument.nextOffset + 1,
+  );
+  if (
+    cliArgument === null ||
+    configured.slice(cliArgument.nextOffset) !== expectedSuffix ||
+    !/^node(?:\.exe)?$/iu.test(path.basename(nodeArgument.value)) ||
+    path.basename(cliArgument.value) !== "cli.js" ||
+    path.basename(path.dirname(cliArgument.value)) !== "dist"
+  ) {
+    return false;
+  }
+  if (
+    !(await pathExists(nodeArgument.value)) ||
+    !(await pathExists(cliArgument.value))
+  ) {
+    return false;
+  }
+  try {
+    const packageRoot = path.dirname(path.dirname(cliArgument.value));
+    const manifest = JSON.parse(
+      await readFile(path.join(packageRoot, "package.json"), "utf8"),
+    ) as { name?: unknown; bin?: unknown };
+    const pmBin =
+      typeof manifest.bin === "object" &&
+      manifest.bin !== null &&
+      "pm" in manifest.bin
+        ? (manifest.bin as { pm?: unknown }).pm
+        : undefined;
+    return (
+      manifest.name === "@unbrained/pm-cli" &&
+      (manifest.bin === "dist/cli.js" || pmBin === "dist/cli.js")
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Build the complete fenced `.gitattributes` pattern list for a tracker rooted
  * at `trackerRelativeRoot` (git-root-relative POSIX path, empty when the
@@ -203,7 +272,7 @@ export function buildMergeAttributePatterns(
     `${quoteGitAttributePattern(`${prefix}settings.json`)} merge=pm-json`,
   );
   patterns.push(
-    `${quoteGitAttributePattern(`${prefix}schema/*.json`)} merge=pm-json`,
+    `${quoteGitAttributePattern(`${prefix}**/*.json`)} merge=pm-json`,
   );
   return patterns;
 }
@@ -351,7 +420,8 @@ export async function auditMergeDriverConfiguration(
   const driftedKeys: string[] = [];
   for (const definition of MERGE_DRIVER_DEFINITIONS) {
     const key = `merge.${definition.key}.driver`;
-    const expected = `${cliCommand} merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`;
+    const expectedSuffix = ` merge driver ${definition.artifact} "%O" "%A" "%B"${definition.itemPath === undefined ? "" : ` --item-path ${definition.itemPath}`}`;
+    const expected = `${cliCommand}${expectedSuffix}`;
     try {
       const { stdout } = await execFileAsync(
         "git",
@@ -363,7 +433,11 @@ export async function auditMergeDriverConfiguration(
           timeout: 10_000,
         },
       );
-      if (stdout.trim() !== expected) {
+      const configured = stdout.trim();
+      if (
+        configured !== expected &&
+        !(await isPortableMergeDriverCommand(configured, expectedSuffix))
+      ) {
         driftedKeys.push(key);
       }
     } catch {
