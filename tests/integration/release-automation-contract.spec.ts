@@ -461,8 +461,9 @@ describe("release automation contract", () => {
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
     );
     expect(workflow).toContain(
-      'export NPM_PACKAGE="$(node -p \'require("./package.json").name\')"',
+      'NPM_PACKAGE="$(node -p \'require("./package.json").name\')"',
     );
+    expect(workflow).toContain("export NPM_PACKAGE");
     expect(workflow).toContain('npm access set status=public "${NPM_PACKAGE}"');
     expect(workflow).toContain(
       "attempting access recovery before immutable publication",
