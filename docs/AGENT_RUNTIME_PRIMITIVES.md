@@ -153,9 +153,12 @@ Every extension command, parser, preflight hook, renderer, and service receives:
   contained there.
 
 Linked tests set `PM_SOURCE_WORKSPACE_ROOT` before replacing `PM_PATH` and
-`PM_GLOBAL_PATH`. Extensions can therefore inspect source VCS metadata without
-writing real tracker state. Package code should prefer `pm_root_rel` in output
-and persisted evidence to avoid leaking host-specific absolute paths.
+`PM_GLOBAL_PATH`, and protect `PM_SOURCE_PM_PATH` as the read-only source
+tracker coordinate for source-repository lifecycle commands such as
+`pm merge install`. Extensions can therefore inspect source VCS metadata
+without writing real tracker state. Package code should prefer `pm_root_rel`
+in output and persisted evidence to avoid leaking host-specific absolute
+paths.
 
 ## Strict extension flag descriptors
 

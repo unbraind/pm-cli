@@ -82,6 +82,7 @@ import {
   auditMergeAttributeFence,
   auditMergeDriverConfiguration,
   findGitWorkspaceRoot,
+  resolveProjectMergeTypeFolders,
 } from "../merge/install.js";
 import { listMergeReceipts } from "../merge/receipts.js";
 import { scanStorageIntegrity } from "./storage-integrity.js";
@@ -3279,9 +3280,10 @@ async function buildStorageIntegrityCheck(
       `validate_storage_tracked_runtime_cache_files:${trackedRuntimeCache.tracked_path_count}`,
     );
   }
-  const fenceAudit = await auditMergeAttributeFence(pmRoot, [
-    ...new Set(Object.values(typeToFolder)),
-  ]);
+  const fenceAudit = await auditMergeAttributeFence(
+    pmRoot,
+    resolveProjectMergeTypeFolders(settings),
+  );
   if (fenceAudit.status === "drift") {
     warnings.push(
       `validate_merge_fence_drift:${fenceAudit.missing_patterns.length + fenceAudit.stale_patterns.length}`,

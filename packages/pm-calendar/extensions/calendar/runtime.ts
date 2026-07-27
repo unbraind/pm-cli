@@ -3,78 +3,16 @@
  *
  * @module packages/pm-calendar/extensions/calendar/runtime
  */
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-import type {
-  CalendarOptions,
-  CalendarResult,
+import {
+  renderCalendarMarkdown,
+  renderCalendarToon,
+  resolveCalendarOutputFormat,
+  runCalendar,
+  type CalendarOptions,
+  type CalendarResult,
+  type GlobalOptions,
 } from "@unbrained/pm-cli/sdk/runtime";
-import type {
-  GlobalOptions,
-  ServiceOverrideContext,
-} from "@unbrained/pm-cli/sdk";
-
-const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
-
-interface CalendarCoreModule {
-  runCalendar: (
-    options: CalendarOptions,
-    global: GlobalOptions,
-  ) => Promise<CalendarResult>;
-  renderCalendarMarkdown: (result: CalendarResult) => string;
-  renderCalendarToon: (result: CalendarResult) => string;
-  resolveCalendarOutputFormat: (
-    options: CalendarOptions,
-    global: GlobalOptions,
-  ) => "markdown" | "toon" | "json";
-}
-
-let calendarCore: CalendarCoreModule | null = null;
-let calendarCoreLoadPromise: Promise<CalendarCoreModule> | null = null;
-
-async function ensureCalendarCoreModule(): Promise<CalendarCoreModule> {
-  if (calendarCore) {
-    return calendarCore;
-  }
-  if (!calendarCoreLoadPromise) {
-    calendarCoreLoadPromise = loadCalendarCoreModule();
-  }
-  calendarCore = await calendarCoreLoadPromise;
-  return calendarCore;
-}
-
-async function loadCalendarCoreModule(): Promise<CalendarCoreModule> {
-  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
-  if (typeof envRoot !== "string" || envRoot.trim().length === 0) {
-    throw new Error(
-      `builtin-calendar requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
-    );
-  }
-  const modulePath = path.join(
-    path.resolve(envRoot.trim()),
-    "dist",
-    "sdk",
-    "runtime.js",
-  );
-  try {
-    const loaded = (await import(
-      pathToFileURL(modulePath).href
-    )) as Partial<CalendarCoreModule>;
-    if (
-      typeof loaded.runCalendar === "function" &&
-      typeof loaded.renderCalendarMarkdown === "function" &&
-      typeof loaded.renderCalendarToon === "function" &&
-      typeof loaded.resolveCalendarOutputFormat === "function"
-    ) {
-      return loaded as CalendarCoreModule;
-    }
-  } catch {
-    // Fall through to deterministic failure message below.
-  }
-  throw new Error(
-    `builtin-calendar failed to load calendar SDK runtime exports from ${modulePath}.`,
-  );
-}
+import type { ServiceOverrideContext } from "@unbrained/pm-cli/sdk";
 
 function isCalendarResult(value: unknown): value is CalendarResult {
   return (
@@ -138,9 +76,8 @@ export async function runCalendarPackage(
   options: CalendarOptions,
   global: GlobalOptions,
 ): Promise<CalendarResult> {
-  const loaded = await ensureCalendarCoreModule();
-  loaded.resolveCalendarOutputFormat(options, global);
-  return loaded.runCalendar(options, global);
+  resolveCalendarOutputFormat(options, global);
+  return runCalendar(options, global);
 }
 
 /** Formats calendar package output data for the selected output mode. */
@@ -148,7 +85,7 @@ export function renderCalendarPackageOutput(
   context: ServiceOverrideContext,
 ): string | null {
   const result = readPayloadResult(context.payload);
-  if (!calendarCore || !isCalendarResult(result)) {
+  if (!isCalendarResult(result)) {
     return null;
   }
   const options =
@@ -156,12 +93,12 @@ export function renderCalendarPackageOutput(
       ? (context.options as CalendarOptions)
       : readPayloadCommandOptions(context.payload);
   const global = context.global ?? readPayloadGlobalOptions(context.payload);
-  const outputFormat = calendarCore.resolveCalendarOutputFormat(
+  const outputFormat = resolveCalendarOutputFormat(
     options,
     global,
   );
   if (outputFormat === "markdown") {
-    return `${calendarCore.renderCalendarMarkdown(result)}\n`;
+    return `${renderCalendarMarkdown(result)}\n`;
   }
   if (
     outputFormat === "json" ||
@@ -170,7 +107,7 @@ export function renderCalendarPackageOutput(
     return `${JSON.stringify(result, null, 2)}\n`;
   }
   if (outputFormat === "toon") {
-    const rendered = calendarCore.renderCalendarToon(result);
+    const rendered = renderCalendarToon(result);
     return rendered.endsWith("\n") ? rendered : `${rendered}\n`;
   }
   return null;

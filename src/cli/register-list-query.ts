@@ -28,6 +28,10 @@ import { runGraph } from "./commands/graph.js";
 import { runHistory } from "./commands/history.js";
 import { runList } from "./commands/list.js";
 import {
+  LIST_COMMAND_DEFAULT_PROJECTIONS,
+  type ListCommandName,
+} from "../sdk/query/list.js";
+import {
   renderNextMarkdown,
   runNext,
   resolveNextOutputFormat,
@@ -142,12 +146,12 @@ function resolveReadCommandOutputFormat(
   };
 }
 
-function applyDefaultBriefListMode(
+function applyDefaultListProjection(
   listOptions: ReturnType<typeof normalizeListOptions>,
-  defaultBrief: boolean | undefined,
+  commandName: ListCommandName,
 ): void {
   if (
-    defaultBrief === true &&
+    LIST_COMMAND_DEFAULT_PROJECTIONS[commandName] === "brief" &&
     listOptions.includeBody !== true &&
     listOptions.compact !== true &&
     listOptions.brief !== true &&
@@ -266,10 +270,9 @@ function renderRegisteredListResult(
 }
 
 async function runRegisteredListCommand(params: {
-  name: string;
+  name: ListCommandName;
   status?: ItemStatus;
   excludeTerminal?: boolean;
-  defaultBrief?: boolean;
   dependencyBlocked?: boolean;
   options: Record<string, unknown>;
   actionCommand: Command;
@@ -277,7 +280,10 @@ async function runRegisteredListCommand(params: {
   const globalOptions = getGlobalOptions(params.actionCommand);
   const startedAt = Date.now();
   const listOptions = normalizeListOptions(params.options);
-  applyDefaultBriefListMode(listOptions, params.defaultBrief);
+  applyDefaultListProjection(
+    listOptions,
+    params.name,
+  );
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
   listOptions.dependencyBlocked = params.dependencyBlocked;
   const output = resolveRegisteredListOutputContext(
@@ -298,12 +304,11 @@ async function runRegisteredListCommand(params: {
 }
 
 interface ListCommandDescriptor {
-  name: string;
+  name: ListCommandName;
   description: string;
   status?: ItemStatus;
   excludeTerminal?: boolean;
   allowStatusFilter?: boolean;
-  defaultBrief?: boolean;
   /** Select via the shared edge-aware blocked classification instead of a raw status filter (GH-578). */
   dependencyBlocked?: boolean;
 }
@@ -318,7 +323,6 @@ function registerListCommand(
     status,
     excludeTerminal,
     allowStatusFilter,
-    defaultBrief,
     dependencyBlocked,
   } = descriptor;
   const command = program.command(name).description(description);
@@ -441,7 +445,6 @@ function registerListCommand(
       name,
       status,
       excludeTerminal,
-      defaultBrief,
       dependencyBlocked,
       options,
       actionCommand,
@@ -823,7 +826,6 @@ export function registerListQueryCommands(
       description: "List active items with optional filters.",
       excludeTerminal: true,
       allowStatusFilter: true,
-      defaultBrief: true,
     },
     {
       name: "list-all",
@@ -842,7 +844,6 @@ export function registerListQueryCommands(
       status: "open",
       excludeTerminal: false,
       allowStatusFilter: false,
-      defaultBrief: true,
     },
     {
       name: "list-in-progress",
@@ -850,7 +851,6 @@ export function registerListQueryCommands(
       status: "in_progress",
       excludeTerminal: false,
       allowStatusFilter: false,
-      defaultBrief: true,
     },
     {
       name: "list-blocked",
@@ -859,7 +859,6 @@ export function registerListQueryCommands(
       dependencyBlocked: true,
       excludeTerminal: false,
       allowStatusFilter: false,
-      defaultBrief: true,
     },
     {
       name: "list-closed",

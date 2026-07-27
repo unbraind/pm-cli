@@ -217,7 +217,7 @@ const DOGFOOD_JSON_HANDLERS: Record<string, DogfoodPmHandler | undefined> = {
   init: handleInitCommand,
   create: (pmArgs) => handleCreateCommand(pmArgs),
   get: (pmArgs) => handleGetCommand(pmArgs),
-  "list-open": () => pmJson({ projection: { mode: "compact", fields: ["id", "status", "type", "title"] } }),
+  "list-open": () => pmJson({ projection: { mode: "brief", fields: ["id", "status", "type", "title"] } }),
   "search-advanced": () => pmJson({ mode: "keyword", query: "Dogfood package-first workflow" }),
   contracts: (pmArgs) => handleContractsCommand(pmArgs),
   install: (pmArgs) => handleInstallCommand(pmArgs),

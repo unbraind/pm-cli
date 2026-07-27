@@ -9,8 +9,10 @@ import type {
   ImportExportContext,
   ImportExportRegistrationOptions,
 } from "@unbrained/pm-cli/sdk";
-import type { BeadsImportOptions, BeadsImportResult } from "./runtime.ts";
-import { loadPackageRuntimeModule } from "./runtime-loader.ts";
+import {
+  runBeadsImport,
+  type BeadsImportOptions,
+} from "./runtime.ts";
 
 /** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
@@ -19,13 +21,6 @@ export const manifest = {
   entry: "./index.js",
   priority: 0,
   capabilities: ["commands", "schema", "importers"],
-};
-
-type RuntimeModule = {
-  runBeadsImport?: (
-    options: BeadsImportOptions,
-    global: GlobalOptions,
-  ) => Promise<BeadsImportResult>;
 };
 
 function asOptionalString(value: unknown): string | undefined {
@@ -48,19 +43,6 @@ function toBeadsImportOptions(
   };
 }
 
-async function runBeadsImportFromRuntime(
-  options: BeadsImportOptions,
-  global: GlobalOptions,
-): Promise<BeadsImportResult> {
-  const runtime = (await loadPackageRuntimeModule()) as RuntimeModule;
-  if (typeof runtime.runBeadsImport !== "function") {
-    throw new Error(
-      "Bundled beads runtime module is missing runBeadsImport().",
-    );
-  }
-  return runtime.runBeadsImport(options, global);
-}
-
 /** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   // First-party exemplar for the importers capability: registerImporter creates
@@ -69,7 +51,7 @@ export function activate(api: ExtensionApi): void {
   api.registerImporter(
     "beads",
     async (context: ImportExportContext) =>
-      runBeadsImportFromRuntime(
+      runBeadsImport(
         toBeadsImportOptions(context.options, context.global),
         context.global,
       ),

@@ -142,12 +142,6 @@ describe("GitHub workflow contract", () => {
       "name: Download dist artifact",
       "name: Dist artifact version smoke",
       "run: node dist/cli.js --version",
-      "name: Node 22 TypeScript extension loading smoke",
-      "if: matrix.os == 'ubuntu-latest' && matrix.node == 22",
-      "PM_CLI_PACKAGE_ROOT=\"${temp_root}\"",
-      "runtime-loader.ts",
-      "node22-ts-runtime",
-      "node --input-type=module -e",
       "run: pnpm build",
       "pnpm version:check",
       "pnpm security:scan",
@@ -213,12 +207,6 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.downloadArtifact,
       "name: Dist artifact version smoke",
       "run: node dist/cli.js --version",
-      "name: Node 22 TypeScript extension loading smoke",
-      "if: matrix.os == 'ubuntu-latest' && matrix.node == 22",
-      "PM_CLI_PACKAGE_ROOT=\"${temp_root}\"",
-      "runtime-loader.ts",
-      "node22-ts-runtime",
-      "node --input-type=module -e",
     ]);
     expect(runtimeSmokeJob).toMatch(
       /matrix:\n\s+include:\n\s+- os: ubuntu-latest\n\s+node: 22\n\s+- os: macos-latest\n\s+node: 24\n\s+- os: ubuntu-latest\n\s+node: 24/,
@@ -244,7 +232,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       "PM_RUN_TESTS_SKIP_BUILD: \"1\"",
-      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/runtime-loaders.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts",
+      "run: node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/unit/commands/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts",
       "run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"installs runtime dependencies for packed npm package extensions\"",
     ]);
     expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(3);

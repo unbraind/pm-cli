@@ -198,7 +198,7 @@ describe("runList", () => {
       ]),
     ).toEqual(["severity", "owner"]);
     expect(listInternals.parseProjectionConfig({ brief: true })).toEqual({
-      mode: "compact",
+      mode: "brief",
       fields: ["id", "status", "type", "title"],
     });
     expect(() =>
@@ -923,7 +923,7 @@ describe("runList", () => {
       expect(result.filters.ids).toBe(ids);
       expect(result.filters.status).toBe("open");
       expect(result.projection).toEqual({
-        mode: "compact",
+        mode: "brief",
         fields: ["id", "status", "type", "title"],
       });
     });
@@ -1631,7 +1631,10 @@ describe("runList", () => {
         { compact: true },
         { path: context.pmPath },
       );
-      expect((compact as Record<string, unknown>).projection).toBeUndefined();
+      expect(compact.projection).toEqual({
+        mode: "compact",
+        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
+      });
       expect((compact as Record<string, unknown>).sorting).toBeUndefined();
       expect((compact as Record<string, unknown>).now).toBeUndefined();
       const compactItem = compact.items[0] as unknown as Record<

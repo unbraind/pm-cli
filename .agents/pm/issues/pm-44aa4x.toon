@@ -1,0 +1,43 @@
+id: pm-44aa4x
+title: "GH-768: deduplicate public SDK provenance exports across core and root entrypoints"
+description: "CodeFactor reports a new duplicate block at merged commit b76167b between src/sdk/core.ts and src/sdk/index.ts. The same provenance and completeness export list is manually restated across public SDK tiers, creating drift risk in the architecture boundary. Establish one source-owned export manifest or narrower module boundary while preserving every documented subpath and exact public-surface snapshot."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:sdk",codefactor,contracts,duplication,"gh:768",public-surface
+created_at: "2026-07-27T09:09:18.456Z"
+updated_at: "2026-07-27T10:08:43.602Z"
+closed_at: "2026-07-27T10:08:40.452Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: The reported core.ts/index.ts clone is removed; public sdk and sdk/core entrypoint symbols remain compatible; public-surface and package-boundary gates pass; CodeFactor reports no new duplicate; GH-768 links this PM item.
+parent: pm-92if
+risk: low
+confidence: high
+severity: medium
+environment: main at b76167bf216fbe0905ca4f22ba20ccf2678ff8f0
+repro_steps: Compare src/sdk/core.ts lines 105-131 with src/sdk/index.ts lines 31-57 or run the CodeFactor duplicate-code analysis for GH-768.
+resolution: Introduced core-governance as the canonical re-export boundary and removed duplicate export declarations from core and index surfaces.
+expected_result: Public provenance and completeness contracts remain stable without duplicated SDK source blocks.
+actual_result: "CodeFactor/static checks and jscpd pass with zero clones, the public-surface manifest is current, and coverage is 100%."
+affected_version: 2026.7.27
+component: Public SDK entrypoints
+regression: true
+customer_impact: Extension authors can observe tier drift when additive SDK primitives are copied inconsistently.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-38bskj,discovered_from,"2026-07-27T09:09:18.456Z","harness:codex","cli:create:dep",detected
+  pm-ueuq,related,"2026-07-27T09:09:18.456Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-07-27T09:09:18.456Z","harness:codex","cli:create:dep",detected
+  pm-w7mqzt,related,"2026-07-27T09:09:18.456Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-27T09:09:18.456Z","harness:codex","Duplicate check evidence 2026-07-27: all-status searches for sdk core/index duplicate exports and public-surface barrel found closed pm-38bskj (tiering),closed pm-9x6e (private-core boundary),open pm-w7mqzt (extension authoring),and open pm-ueuq (flag-table clones),but no item owns this newly introduced b76167b cross-entrypoint clone. GH-768 is the canonical external report."
+  "2026-07-27T10:05:46.919Z","harness:codex","Evidence: implementation is complete; pnpm lint passed with zero jscpd clones, static/docstring/SDK compatibility gates passed, 375 files and 6,404 tests passed at 100/100/100/100 coverage, and an unrelated packed consumer resolved its local executable then passed install/doctor/create/list plus npx and bunx version smoke tests."
+files[4]{path,scope,note}:
+  sdk/public-surface.json,project,Shared public SDK governance export ownership and compatibility snapshot
+  src/sdk/core-governance.ts,project,Shared public SDK governance export ownership and compatibility snapshot
+  src/sdk/core.ts,project,Shared public SDK governance export ownership and compatibility snapshot
+  src/sdk/index.ts,project,Shared public SDK governance export ownership and compatibility snapshot
+tests[1]{command,scope,timeout_seconds,note}:
+  "pnpm test:coverage",project,300,Repo-wide 100/100/100/100 gate
+close_reason: SDK provenance and CLI-completeness exports now have one shared governance module.
+body: ""

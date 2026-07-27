@@ -11,7 +11,6 @@ import { readFile, realpath, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
@@ -109,6 +108,8 @@ export interface MergeInstallResult {
     path: string;
     changed: boolean;
     patterns: string[];
+    /** Stable schema source used to derive committed item-folder mappings. */
+    schema_scope: "project";
   };
   /** Local `git config` merge-driver definitions applied (or previewed). */
   git_config: Array<{ key: string; value: string }>;
@@ -257,6 +258,18 @@ export interface MergeFenceAuditResult {
   missing_patterns: string[];
   /** Committed fence lines no longer produced by the coverage contract (for example a removed type folder). */
   stale_patterns: string[];
+  /** Stable schema source used to derive the expected committed fence. */
+  schema_scope: "project";
+}
+
+/** Resolve merge-fence folders from built-ins plus persisted project schema only. */
+export function resolveProjectMergeTypeFolders(
+  settings: Awaited<ReturnType<typeof readSettings>>,
+): string[] {
+  const registry = resolveItemTypeRegistry(settings, null);
+  return [...new Set(Object.values(registry.type_to_folder))].sort(
+    (left, right) => left.localeCompare(right),
+  );
 }
 
 /**
@@ -298,6 +311,7 @@ export async function auditMergeAttributeFence(
       status: "not_installed",
       missing_patterns: [],
       stale_patterns: [],
+      schema_scope: "project",
     };
   }
   const fencePath = path.join(fenceDirectory, ".gitattributes");
@@ -324,6 +338,7 @@ export async function auditMergeAttributeFence(
     path: fencePath,
     missing_patterns: missing,
     stale_patterns: stale,
+    schema_scope: "project",
   };
 }
 
@@ -430,13 +445,7 @@ export async function refreshMergeAttributeFenceIfInstalled(
     // Re-read after acquiring the dedicated fence lock so every concurrent
     // refresher computes from the latest committed type registry.
     const settings = await readSettings(pmRoot);
-    const typeRegistry = resolveItemTypeRegistry(
-      settings,
-      getActiveExtensionRegistrations(),
-    );
-    const typeFolders = [
-      ...new Set(Object.values(typeRegistry.type_to_folder)),
-    ].sort((left, right) => left.localeCompare(right));
+    const typeFolders = resolveProjectMergeTypeFolders(settings);
     const outcome = await reconcileGitattributesBlock(
       workspaceRoot,
       buildMergeAttributePatterns(trackerRelativeRoot, typeFolders),
@@ -462,14 +471,27 @@ export async function runMergeInstall(
   options: MergeInstallOptions,
   global: GlobalOptions,
 ): Promise<MergeInstallResult> {
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const sourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT?.trim();
+  const sourcePmRoot = process.env.PM_SOURCE_PM_PATH?.trim();
+  const usesLinkedTestSourceContext =
+    sourceWorkspaceRoot !== undefined &&
+    sourceWorkspaceRoot.length > 0 &&
+    sourcePmRoot !== undefined &&
+    sourcePmRoot.length > 0;
+  const pmRoot = usesLinkedTestSourceContext
+    ? path.resolve(sourcePmRoot)
+    : resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
       `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
       EXIT_CODE.NOT_FOUND,
     );
   }
-  const workspaceRoot = await resolveGitWorkspaceRoot(process.cwd());
+  const workspaceRoot = await resolveGitWorkspaceRoot(
+    usesLinkedTestSourceContext
+      ? path.resolve(sourceWorkspaceRoot)
+      : process.cwd(),
+  );
   return installMergeFence({
     pmRoot,
     workspaceRoot,
@@ -526,13 +548,7 @@ export async function installMergeFence(options: {
   }
 
   const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(
-    settings,
-    getActiveExtensionRegistrations(),
-  );
-  const typeFolders = [
-    ...new Set(Object.values(typeRegistry.type_to_folder)),
-  ].sort((left, right) => left.localeCompare(right));
+  const typeFolders = resolveProjectMergeTypeFolders(settings);
   const patterns = buildMergeAttributePatterns(
     trackerRelativeRoot,
     typeFolders,
@@ -596,6 +612,7 @@ export async function installMergeFence(options: {
       path: gitattributes.path,
       changed: gitattributes.changed,
       patterns,
+      schema_scope: "project",
     },
     git_config: gitConfigEntries,
     guidance: [

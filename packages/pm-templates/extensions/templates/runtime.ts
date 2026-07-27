@@ -3,11 +3,13 @@
  *
  * @module packages/pm-templates/extensions/templates/runtime
  */
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-import type { GlobalOptions } from "@unbrained/pm-cli/sdk";
-
-const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+import {
+  loadCreateTemplateOptions as loadSdkCreateTemplateOptions,
+  runTemplatesList as runSdkTemplatesList,
+  runTemplatesSave as runSdkTemplatesSave,
+  runTemplatesShow as runSdkTemplatesShow,
+  type GlobalOptions,
+} from "@unbrained/pm-cli/sdk";
 
 type TemplateOptionValue = string | string[];
 /** Creates template options using the validated operation inputs. */
@@ -55,64 +57,12 @@ export interface TemplatesShowResult {
   options: CreateTemplateOptions;
 }
 
-interface TemplatesSdkModule {
-  loadCreateTemplateOptions: (
-    pmRoot: string,
-    rawTemplateName: string,
-  ) => Promise<CreateTemplateOptions>;
-  runTemplatesList: (global: GlobalOptions) => Promise<TemplatesListResult>;
-  runTemplatesSave: (
-    rawTemplateName: string,
-    options: Record<string, unknown>,
-    global: GlobalOptions,
-  ) => Promise<TemplatesSaveResult>;
-  runTemplatesShow: (
-    rawTemplateName: string,
-    global: GlobalOptions,
-  ) => Promise<TemplatesShowResult>;
-}
-
-const sdk = await loadTemplatesSdkModule();
-
-async function loadTemplatesSdkModule(): Promise<TemplatesSdkModule> {
-  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
-  if (typeof envRoot !== "string" || envRoot.trim().length === 0) {
-    throw new Error(
-      `builtin-templates requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
-    );
-  }
-  const modulePath = path.join(
-    path.resolve(envRoot.trim()),
-    "dist",
-    "sdk",
-    "index.js",
-  );
-  try {
-    const loaded = (await import(
-      pathToFileURL(modulePath).href
-    )) as Partial<TemplatesSdkModule>;
-    if (
-      typeof loaded.loadCreateTemplateOptions === "function" &&
-      typeof loaded.runTemplatesList === "function" &&
-      typeof loaded.runTemplatesSave === "function" &&
-      typeof loaded.runTemplatesShow === "function"
-    ) {
-      return loaded as TemplatesSdkModule;
-    }
-  } catch {
-    // Fall through to deterministic failure message below.
-  }
-  throw new Error(
-    `builtin-templates failed to load template runtime exports from ${modulePath}.`,
-  );
-}
-
 /** Loads and validates create template options from the configured source. */
 export async function loadCreateTemplateOptions(
   pmRoot: string,
   rawTemplateName: string,
 ): Promise<CreateTemplateOptions> {
-  return sdk.loadCreateTemplateOptions(pmRoot, rawTemplateName);
+  return loadSdkCreateTemplateOptions(pmRoot, rawTemplateName);
 }
 
 /** Executes the templates save operation through the package runtime. */
@@ -121,14 +71,14 @@ export async function runTemplatesSave(
   options: Record<string, unknown>,
   global: GlobalOptions,
 ): Promise<TemplatesSaveResult> {
-  return sdk.runTemplatesSave(rawTemplateName, options, global);
+  return runSdkTemplatesSave(rawTemplateName, options, global);
 }
 
 /** Executes the templates list operation through the package runtime. */
 export async function runTemplatesList(
   global: GlobalOptions,
 ): Promise<TemplatesListResult> {
-  return sdk.runTemplatesList(global);
+  return runSdkTemplatesList(global);
 }
 
 /** Executes the templates show operation through the package runtime. */
@@ -136,5 +86,5 @@ export async function runTemplatesShow(
   rawTemplateName: string,
   global: GlobalOptions,
 ): Promise<TemplatesShowResult> {
-  return sdk.runTemplatesShow(rawTemplateName, global);
+  return runSdkTemplatesShow(rawTemplateName, global);
 }

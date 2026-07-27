@@ -29,6 +29,8 @@ import type { LinkedTest, LinkScope } from "../../types/index.js";
 export const LINKED_TEST_PROTECTED_ENV_KEYS = new Set([
   "PM_PATH",
   "PM_GLOBAL_PATH",
+  "PM_SOURCE_PM_PATH",
+  "PM_SOURCE_WORKSPACE_ROOT",
   "FORCE_COLOR",
 ]);
 /** Public contract for linked test env name pattern, shared by SDK and presentation-layer consumers. */

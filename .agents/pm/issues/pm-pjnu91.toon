@@ -2,11 +2,12 @@ id: pm-pjnu91
 title: "The list family exposes three incompatible --json projections under one flag, so an agent filtering on an unprojected field silently reads absent instead of unset"
 description: "pm list --json returns four fields per row (id, status, title, type). pm list-all --json returns twenty-three. pm list-closed --json returns forty-eight. The same --json flag therefore means three different contracts depending on which sibling of the same command family is invoked, and nothing in the response distinguishes a field that is absent because the item does not set it from a field that is absent because this command does not project it. The failure is silent and directional: jq over pm list-all --json for a release value returns zero matches for the whole workspace, and the true count is 469. That exact mistake was made and recorded during a prior review, and the correction had to be derived from the .toon files instead. parent, release, closed_at, resolution, close_reason, files, docs, sprint and reviewer are all absent from list-all while present in list-closed. The projection is also not discoverable: --fields exists but there is no way to ask what the default projection contains, so an agent has to probe an item it already knows to learn what it is not being told."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts",output,projection,token-efficiency
 created_at: "2026-07-26T17:05:50.828Z"
-updated_at: "2026-07-26T17:05:50.828Z"
+updated_at: "2026-07-27T10:43:21.995Z"
+closed_at: "2026-07-27T10:43:19.171Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every read command declares its default projection in the contracts surface, and the declaration is machine-checkable against what the command actually emits; The response envelope names the active projection so a caller can tell that a field was not requested rather than not set; A caller can request the complete field set from any list-family command with one documented flag, and the flag behaves identically across the family; Divergences that remain are deliberate token-budget decisions recorded in the contract, not accidents of which code path built the row; A regression test asserts that a field present in one family member and absent in another is either justified in the contract or a build failure; Documentation states the rule that an absent key never implies an unset value"
@@ -19,15 +20,35 @@ why_now: "The list family is a consolidation target under the CLI grammar epic, 
 parent: pm-mpbb
 risk: medium
 confidence: high
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-5t33or,related,"2026-07-26T17:05:50.828Z",null,null
-  pm-cxr0jb,related,"2026-07-26T17:05:50.828Z",null,null
-  pm-fs8q9x,related,"2026-07-26T17:05:50.828Z",null,null
-  pm-m9xv,related,"2026-07-26T17:05:50.828Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:05:50.828Z",null,null
-  pm-n7rr,related,"2026-07-26T17:05:50.828Z",null,null
-  pm-srns,related,"2026-07-26T17:05:50.828Z",null,null
-  pm-wrss,discovered_from,"2026-07-26T17:05:50.828Z",null,null
-  pm-wt43zj,blocks,"2026-07-26T17:05:50.828Z",null,null
-  pm-x4nn3z,related,"2026-07-26T17:05:50.828Z",null,null
+resolution: "Added typed brief and compact projection metadata, per-command defaults, contracts output, and package-first acceptance that verifies the declared brief projection."
+expected_result: Agents and integrations can select and inspect bounded list projections without guessing command-specific defaults.
+actual_result: "Every compact, fields, and brief list result identifies its projection; contracts, focused dogfood, 88-command real dogfood, and 100% full coverage pass."
+dependencies[10]{id,kind,created_at}:
+  pm-5t33or,related,"2026-07-26T17:05:50.828Z"
+  pm-cxr0jb,related,"2026-07-26T17:05:50.828Z"
+  pm-fs8q9x,related,"2026-07-26T17:05:50.828Z"
+  pm-m9xv,related,"2026-07-26T17:05:50.828Z"
+  pm-mpbb,implements,"2026-07-26T17:05:50.828Z"
+  pm-n7rr,related,"2026-07-26T17:05:50.828Z"
+  pm-srns,related,"2026-07-26T17:05:50.828Z"
+  pm-wrss,discovered_from,"2026-07-26T17:05:50.828Z"
+  pm-wt43zj,blocks,"2026-07-26T17:05:50.828Z"
+  pm-x4nn3z,related,"2026-07-26T17:05:50.828Z"
+comments[2]{created_at,author,text}:
+  "2026-07-27T10:05:41.432Z","harness:codex","Evidence: implementation is complete; pnpm lint passed with zero jscpd clones, static/docstring/SDK compatibility gates passed, 375 files and 6,404 tests passed at 100/100/100/100 coverage, and an unrelated packed consumer resolved its local executable then passed install/doctor/create/list plus npx and bunx version smoke tests."
+  "2026-07-27T10:43:12.995Z","harness:codex","Final evidence: corrected package-first brief-projection acceptance and its script harness; focused 35-test suite passed, real 88-command dogfood passed, and aggregate coverage passed 375 files / 6,404 tests at exact 100/100/100/100. Release gates passed through npx pack and dogfood; hosted Greptile correctly deferred until a committed branch SHA exists."
+files[10]{path,scope,note}:
+  scripts/dogfood-package-first.mjs,project,Package-first acceptance for declared brief projection
+  src/cli/commands/contracts.ts,project,List projection defaults runtime envelope and contract parity
+  src/cli/register-list-query.ts,project,List projection defaults runtime envelope and contract parity
+  src/sdk/query/list.ts,project,List projection defaults runtime envelope and contract parity
+  tests/fixtures/contracts/full.json,project,List projection defaults runtime envelope and contract parity
+  tests/integration/cli.integration.spec.ts,project,List projection defaults runtime envelope and contract parity
+  tests/unit/cli/register-list-query.spec.ts,project,List projection defaults runtime envelope and contract parity
+  tests/unit/commands/contracts-command.spec.ts,project,List projection defaults runtime envelope and contract parity
+  tests/unit/commands/list-command.spec.ts,project,List projection defaults runtime envelope and contract parity
+  tests/unit/scripts/dogfood-package-first.spec.ts,project,Projection dogfood fixture parity
+tests[1]{command,scope,timeout_seconds,note}:
+  "pnpm test:coverage",project,300,Repo-wide 100/100/100/100 gate
+close_reason: List projection contracts and package-first acceptance now agree on explicit brief mode.
 body: ""

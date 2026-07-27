@@ -28,33 +28,7 @@ export {
   type HistoryAuthorAttributionScan,
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
-export {
-  AGENT_PROVENANCE_DIMENSIONS,
-  BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
-  detectAgentIdentity,
-  detectHarnessIdentity,
-  readAuthorEnvironment,
-  registerHarnessSignalDescriptors,
-  resolveAuthorIdentity,
-  runWithHarnessDetectionSignals,
-  runWithWorkspaceHarnessSignalDescriptors,
-  writeAuthorEnvironment,
-  type AgentClientInfo,
-  type AgentModelSource,
-  type AgentProvenance,
-  type AgentProvenanceObservation,
-  type AuthorSource,
-  type DetectedAgentIdentity,
-  type HarnessDetectionSignals,
-  type HarnessSignalDescriptor,
-  type ResolvedAuthorIdentity,
-} from "../core/shared/author.js";
-export {
-  analyzeAgentProvenanceDescriptorCoverage,
-  summarizeAgentModelProvenance,
-  type AgentModelProvenanceCoverage,
-  type AgentProvenanceDescriptorCoverage,
-} from "./provenance.js";
+export * from "./core-governance.js";
 export { createPmCliProgram } from "./cli-program.js";
 export { runSearchRefreshWorkerEntrypoint } from "./search-refresh-worker.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
@@ -108,6 +82,7 @@ export {
   findGitWorkspaceRoot,
   installMergeFence,
   refreshMergeAttributeFenceIfInstalled,
+  resolveProjectMergeTypeFolders,
   runMergeInstall,
   type MergeFenceAuditResult,
   type MergeFenceRefreshOutcome,

@@ -4085,7 +4085,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const listOpenBrief = context.runCli(["list-open", "--json", "--type", "Task", "--limit", "1"], { expectJson: true });
       expect(listOpenBrief.code).toBe(0);
       const listOpenBriefJson = listOpenBrief.json as { projection: { mode: string; fields: string[] } };
-      expect(listOpenBriefJson.projection).toEqual({ mode: "compact", fields: ["id", "status", "type", "title"] });
+      expect(listOpenBriefJson.projection).toEqual({ mode: "brief", fields: ["id", "status", "type", "title"] });
 
       const listOpen = context.runCli(["list-open", "--json", "--type", "Task", "--full"], { expectJson: true });
       expect(listOpen.code).toBe(0);
@@ -4112,7 +4112,10 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         now?: unknown;
         items: Array<Record<string, unknown>>;
       };
-      expect(listOpenCompactJson.projection).toBeUndefined();
+      expect(listOpenCompactJson.projection).toEqual({
+        mode: "compact",
+        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
+      });
       expect(listOpenCompactJson.sorting).toBeUndefined();
       expect(listOpenCompactJson.now).toBeUndefined();
       expect(listOpenCompactJson.filters).toEqual({
@@ -4199,7 +4202,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       };
       expect(listActiveJson.count).toBe(5);
       expect(listActiveJson.projection).toEqual({
-        mode: "compact",
+        mode: "brief",
         fields: ["id", "status", "type", "title"],
       });
       expect(Object.keys(listActiveJson.items[0] ?? {})).toEqual(["id", "status", "type", "title"]);

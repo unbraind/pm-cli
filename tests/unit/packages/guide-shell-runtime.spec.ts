@@ -1,549 +1,225 @@
-import { describe, expect, it } from "vitest";
-import type { GlobalOptions, ServiceOverrideContext } from "../../../src/sdk/index.js";
+import { describe, expect, it, vi } from "vitest";
+import * as sdk from "../../../src/sdk/index.js";
 import {
-  PM_PACKAGE_ROOT_ENV,
-  importRepoModule,
-  readGlobalCallLog,
-  resetGlobalCallLog,
-  setupPackageRuntimeSpec,
-  writeSdkRuntimeModule,
-} from "../../helpers/packageRuntime.js";
+  renderGuideShellPackageOutput,
+  runCompletionPackage,
+  runCompletionStatusesPackage,
+  runCompletionTagsPackage,
+  runCompletionTypesPackage,
+  runGuidePackage,
+} from "../../../packages/pm-guide-shell/extensions/guide-shell/runtime.ts";
 
-const PM_GLOBAL: GlobalOptions = { path: "/tmp/pm" };
-const MISSING_PM_GLOBAL: GlobalOptions = { path: "/tmp/missing" };
-
-const { createTempRoot } = setupPackageRuntimeSpec();
-
-describe("packages/pm-guide-shell runtime", () => {
-  it("covers guide-shell runtime wrappers, renderers, and deterministic failures", async () => {
-    delete process.env[PM_PACKAGE_ROOT_ENV];
-    const missingEnvRuntime = await importRepoModule<
-      typeof import("../../../packages/pm-guide-shell/extensions/guide-shell/runtime.ts")
-    >("packages/pm-guide-shell/extensions/guide-shell/runtime.ts", "guideMissingEnv");
-    await expect(missingEnvRuntime.runGuidePackage([], {}, {})).rejects.toThrow("requires PM_CLI_PACKAGE_ROOT");
-
-    const invalidRoot = await createTempRoot("pm-guide-runtime-invalid-");
-    process.env[PM_PACKAGE_ROOT_ENV] = invalidRoot;
-    await writeSdkRuntimeModule(invalidRoot, "export const runGuide = true;\n");
-    const invalidRuntime = await importRepoModule<
-      typeof import("../../../packages/pm-guide-shell/extensions/guide-shell/runtime.ts")
-    >("packages/pm-guide-shell/extensions/guide-shell/runtime.ts", "guideInvalidSdk");
-    await expect(invalidRuntime.runGuidePackage([], {}, {})).rejects.toThrow("failed to load guide/completion SDK runtime exports");
-
-    const root = await createTempRoot("pm-guide-runtime-success-");
-    process.env[PM_PACKAGE_ROOT_ENV] = root;
-    await writeSdkRuntimeModule(
-      root,
-      `const key = "__PM_GUIDE_CALLS";
-const calls = Array.isArray(globalThis[key]) ? globalThis[key] : [];
-globalThis[key] = calls;
-function readString(options, key, aliases = []) {
-  const candidates = [key, ...aliases];
-  for (const candidate of candidates) {
-    const value = options?.[candidate];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value.trim();
-    }
-  }
-  return undefined;
-}
-function readBoolean(options, key, aliases = []) {
-  const candidates = [key, ...aliases];
-  for (const candidate of candidates) {
-    const value = options?.[candidate];
-    if (value === true || value === false) return value;
-    if (typeof value === "string") {
-      const normalized = value.trim().toLowerCase();
-      if (["1", "true", "yes", "on"].includes(normalized)) return true;
-      if (["0", "false", "no", "off"].includes(normalized)) return false;
-    }
-  }
-  return undefined;
-}
-export async function runGuide(options, global) {
-  calls.push({ kind: "guide", options, global });
-  return { kind: "guide", topic: options?.topic ?? "none" };
-}
-export function resolveGuideOutputFormat(options, global) {
-  if (options?.format === "markdown") return "markdown";
-  if (options?.format === "json") return "json";
-  if (options?.format === "invalid") return "invalid";
-  if (global?.format === "json") return "json";
-  return "toon";
-}
-export function renderGuideMarkdown(result) {
-  return "# guide " + String(result?.topic ?? "none");
-}
-export function runCompletion(shell, itemTypes = [], tags = [], eagerTagExpansion = false, runtime) {
-  calls.push({ kind: "completion", shell, itemTypes, tags, eagerTagExpansion, runtime });
-  return {
-    shell,
-    script: "complete -F _pm pm",
-    setup_hint: "source <(pm completion)",
-    runtime,
-  };
-}
-export async function pathExists(targetPath) {
-  return !targetPath.includes("missing-settings.json");
-}
-export function getSettingsPath(pmRoot) {
-  if (pmRoot.includes("missing")) {
-    return pmRoot + "/missing-settings.json";
-  }
-  return pmRoot + "/settings.json";
-}
-export function resolvePmRoot(cwd, overridePath) {
-  return typeof overridePath === "string" && overridePath.length > 0 ? overridePath : cwd + "/pm";
-}
-export async function readSettings(pmRoot) {
-  return {
-    item_format: pmRoot.includes("json-markdown") ? "json_markdown" : "toon",
-    schema: {
-      statuses: ["open", "blocked"],
-    },
-  };
-}
-export function resolveItemTypeRegistry() {
-  return {
-    types: ["Task", "Issue", "Task"],
-    definitions: [
-      { name: "Task", folder: "tasks" },
-      { name: "Issue", folder: "issues" },
-    ],
-    type_to_folder: { Task: "tasks", Issue: "issues" },
-  };
-}
-export function resolveRuntimeStatusRegistry() {
-  return { definitions: [{ id: "open" }, { id: "blocked" }, { id: "open" }] };
-}
-export function resolveRuntimeFieldRegistry() {
-  const command_to_fields = new Map();
-  // Duplicate + distinct flags so dedupe collapses one pair AND the comparator
-  // runs over >=2 distinct flags (exercises the .sort callback).
-  command_to_fields.set("list", [{ cli_flag: "status" }, { cli_flag: "status" }, { cli_flag: "assignee" }]);
-  command_to_fields.set("create", [{ cli_flag: "item_type" }]);
-  return { command_to_fields };
-}
-export async function listAllItemMetadata() {
-  return [
-    { metadata: { tags: ["alpha", "beta", "alpha"] } },
-    { metadata: { tags: ["gamma", "beta"] } },
-    // Non-string and blank entries exercise the tag-type/length guard arms.
-    { metadata: { tags: [42, "  ", "delta"] } },
-    { metadata: {} },
-  ];
-}
-export function getActiveExtensionRegistrations() {
-  return {};
-}
-export function readStringOption(options, key, aliases = []) {
-  return readString(options, key, aliases);
-}
-export function readBooleanOption(options, key, aliases = []) {
-  return readBoolean(options, key, aliases);
-}
-export function readCsvListOption(options, key, aliases = []) {
-  const raw = readString(options, key, aliases);
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-}
-`,
+describe("guide-shell static SDK runtime", () => {
+  it("normalizes guide and completion inputs through public SDK functions", async () => {
+    const guide = vi.spyOn(sdk, "runGuide").mockResolvedValue({ topic: "sdk" } as never);
+    await runGuidePackage([" sdk "], { list: true, format: "json", depth: "deep" }, { path: "/tmp/pm" });
+    expect(guide).toHaveBeenCalledWith(
+      { topic: " sdk ", list: true, format: "json", depth: "deep" },
+      { path: "/tmp/pm" },
     );
-    resetGlobalCallLog("__PM_GUIDE_CALLS");
-    const runtime = await importRepoModule<typeof import("../../../packages/pm-guide-shell/extensions/guide-shell/runtime.ts")>(
-      "packages/pm-guide-shell/extensions/guide-shell/runtime.ts",
-      "guideRuntime",
+    await runGuidePackage([], { topic: "commands", list: false }, {});
+    expect(guide).toHaveBeenLastCalledWith(
+      { topic: "commands", list: undefined, format: undefined, depth: undefined },
+      {},
+    );
+    await runGuidePackage(["   "], {}, {});
+    expect(guide).toHaveBeenLastCalledWith(
+      { topic: undefined, list: undefined, format: undefined, depth: undefined },
+      {},
     );
 
-    const renderBeforeLoad = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "guide",
-      payload: { result: { topic: "before-load" } },
-    } satisfies ServiceOverrideContext);
-    expect(renderBeforeLoad).toBeNull();
+    vi.spyOn(sdk, "pathExists").mockResolvedValue(false);
+    const completion = vi.spyOn(sdk, "runCompletion").mockReturnValue({ script: "complete" } as never);
+    await runCompletionPackage([" zsh "], { itemTypes: "Task,Issue", tags: "one,two", eagerTags: true }, {});
+    expect(completion).toHaveBeenCalledWith("zsh", ["Task", "Issue"], ["one", "two"], true, {});
+    await runCompletionPackage([], { shell: "fish", item_types: "Feature", eager_tags: false }, {});
+    expect(completion).toHaveBeenLastCalledWith("fish", ["Feature"], [], false, {});
+    await runCompletionPackage([], {}, {});
+    expect(completion).toHaveBeenLastCalledWith("bash", [], [], false, {});
+    vi.restoreAllMocks();
+  });
 
-    const guideResult = await runtime.runGuidePackage(["workflows"], {}, PM_GLOBAL);
-    expect((guideResult as Record<string, unknown>).topic).toBe("workflows");
+  it("builds completion registries and list helpers across schema shapes", async () => {
+    vi.spyOn(sdk, "pathExists").mockResolvedValue(true);
+    vi.spyOn(sdk, "readSettings").mockResolvedValue({
+      item_format: "json_markdown",
+      schema: {},
+    } as never);
+    vi.spyOn(sdk, "getActiveExtensionRegistrations").mockReturnValue([] as never);
+    const typeRegistry = vi.spyOn(sdk, "resolveItemTypeRegistry").mockReturnValue({
+      types: ["Task", "Task", "", 3],
+      type_to_folder: { Task: "tasks" },
+    } as never);
+    vi.spyOn(sdk, "resolveRuntimeStatusRegistry").mockReturnValue({
+      definitions: [{ id: "open" }, { id: "" }, { id: 3 }, { id: "closed" }],
+    } as never);
+    vi.spyOn(sdk, "resolveRuntimeFieldRegistry").mockReturnValue({
+      command_to_fields: new Map([
+        ["list", [{ cli_flag: "customer_impact" }, { cli_flag: "assignee" }, { cli_flag: "customer_impact" }, { cli_flag: "" }, { cli_flag: 3 }]],
+      ]),
+    } as never);
+    const completion = vi.spyOn(sdk, "runCompletion").mockReturnValue({ script: "ok" } as never);
 
-    const completion = await runtime.runCompletionPackage(
-      ["zsh"],
+    await runCompletionPackage(["bash"], {}, { path: "/tmp/pm" });
+    expect(completion).toHaveBeenCalledWith(
+      "bash",
+      [],
+      [],
+      false,
       {
-        item_types: "Task,Issue",
-        tags: "alpha,beta",
-        eager_tags: true,
+        item_types: ["Task"],
+        statuses: ["closed", "open"],
+        command_flags: { list: ["--assignee", "--customer-impact"] },
       },
-      PM_GLOBAL,
     );
-    expect((completion as Record<string, unknown>).shell).toBe("zsh");
 
-    const tagsWhenMissingSettings = await runtime.runCompletionTagsPackage(MISSING_PM_GLOBAL);
-    expect(tagsWhenMissingSettings).toEqual({ tags: [], count: 0 });
+    vi.spyOn(sdk, "listAllItemMetadata").mockResolvedValue([
+      { tags: ["beta", " alpha ", "", 3] },
+      {},
+      { tags: ["beta"] },
+    ] as never);
+    await expect(runCompletionTagsPackage({ path: "/tmp/pm" })).resolves.toEqual({
+      tags: ["alpha", "beta"],
+      count: 2,
+    });
+    await expect(runCompletionStatusesPackage({ path: "/tmp/pm" })).resolves.toEqual({
+      statuses: ["closed", "open"],
+      count: 2,
+    });
+    await expect(runCompletionTypesPackage({ path: "/tmp/pm" })).resolves.toEqual({
+      types: ["Task"],
+      count: 1,
+    });
 
-    const tags = await runtime.runCompletionTagsPackage(PM_GLOBAL);
-    expect(tags).toEqual({ tags: ["alpha", "beta", "delta", "gamma"], count: 4 });
+    typeRegistry.mockReturnValue({
+      types: ["Issue"],
+      type_to_folder: { Issue: "issues" },
+    } as never);
+    await expect(runCompletionTypesPackage({ path: "/tmp/pm" })).resolves.toEqual({
+      types: ["Issue"],
+      count: 1,
+    });
+    await runCompletionTagsPackage({ path: "/tmp/pm" });
+    expect(sdk.listAllItemMetadata).toHaveBeenLastCalledWith(
+      "/tmp/pm",
+      "json_markdown",
+      { Issue: "issues" },
+      undefined,
+      {},
+    );
 
-    const statuses = await runtime.runCompletionStatusesPackage(PM_GLOBAL);
-    expect(statuses).toEqual({ statuses: ["blocked", "open", "open"], count: 3 });
+    typeRegistry.mockReturnValue({ types: [], type_to_folder: {} } as never);
+    vi.mocked(sdk.resolveRuntimeStatusRegistry).mockReturnValue({ definitions: [] } as never);
+    vi.mocked(sdk.resolveRuntimeFieldRegistry).mockReturnValue({
+      command_to_fields: new Map(),
+    } as never);
+    await runCompletionPackage([], {}, { path: "/tmp/pm" });
+    expect(completion).toHaveBeenLastCalledWith(
+      "bash",
+      [],
+      [],
+      false,
+      { item_types: undefined, statuses: undefined, command_flags: undefined },
+    );
+    await expect(runCompletionTypesPackage({ path: "/tmp/pm" })).resolves.toEqual({
+      types: [],
+      count: 0,
+    });
+    await runCompletionTagsPackage({ path: "/tmp/pm" });
 
-    const types = await runtime.runCompletionTypesPackage(PM_GLOBAL);
-    expect(types).toEqual({ types: ["Issue", "Task"], count: 2 });
-
-    const guideMarkdown = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "guide",
-      options: { format: "markdown" },
-      global: {},
-      payload: { result: { topic: "workflows" } },
-    } satisfies ServiceOverrideContext);
-    expect(guideMarkdown).toBe("# guide workflows\n");
-
-    const guideJson = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "guide",
-      options: { format: "json" },
-      global: {},
-      payload: { result: { topic: "json-guide" } },
-    } satisfies ServiceOverrideContext);
-    expect(guideJson).toContain('"topic": "json-guide"');
-
-    const guideInvalidFormat = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "guide",
-      options: { format: "invalid" },
-      global: {},
-      payload: { result: { topic: "ignored" } },
-    } satisfies ServiceOverrideContext);
-    expect(guideInvalidFormat).toBeNull();
-
-    const completionJson = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion",
-      payload: { format: "json", result: { script: "echo hi" } },
-    } satisfies ServiceOverrideContext);
-    expect(completionJson).toContain('"script": "echo hi"');
-
-    const completionScript = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion",
-      payload: { result: { script: "echo hi" } },
-    } satisfies ServiceOverrideContext);
-    expect(completionScript).toBe("echo hi\n");
-
-    const completionNoScript = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion",
-      payload: { result: { no_script: true } },
-    } satisfies ServiceOverrideContext);
-    expect(completionNoScript).toBeNull();
-
-    const renderedTags = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-tags",
-      payload: { result: { tags: ["alpha", 1, "beta"] } },
-    } satisfies ServiceOverrideContext);
-    expect(renderedTags).toBe("alpha beta\n");
-    const renderedTagsJson = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-tags",
-      payload: { format: "json", result: { tags: ["alpha"] } },
-    } satisfies ServiceOverrideContext);
-    expect(renderedTagsJson).toContain('"tags": [');
-
-    const renderedStatuses = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-statuses",
-      payload: { result: { statuses: ["open", "blocked"] } },
-    } satisfies ServiceOverrideContext);
-    expect(renderedStatuses).toBe("open blocked\n");
-    const renderedStatusesJson = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-statuses",
-      payload: { format: "json", result: { statuses: ["open"] } },
-    } satisfies ServiceOverrideContext);
-    expect(renderedStatusesJson).toContain('"statuses": [');
-
-    const renderedTypes = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-types",
-      payload: { result: { types: ["Task", "Issue"] } },
-    } satisfies ServiceOverrideContext);
-    expect(renderedTypes).toBe("Task Issue\n");
-    const renderedTypesJson = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-types",
-      payload: { format: "json", result: { types: ["Task"] } },
-    } satisfies ServiceOverrideContext);
-    expect(renderedTypesJson).toContain('"types": [');
-
-    const unknownCommandRender = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "unknown",
-      payload: { result: {} },
-    } satisfies ServiceOverrideContext);
-    expect(unknownCommandRender).toBeNull();
-
-    const calls = readGlobalCallLog<{ kind: string }>("__PM_GUIDE_CALLS");
-    expect(calls.some((entry) => entry.kind === "guide")).toBe(true);
-    expect(calls.some((entry) => entry.kind === "completion")).toBe(true);
+    vi.mocked(sdk.pathExists).mockResolvedValue(false);
+    await expect(runCompletionTagsPackage({ path: "/tmp/missing" })).resolves.toEqual({
+      tags: [],
+      count: 0,
+    });
+    vi.restoreAllMocks();
   });
 
-  it("covers guide-shell registry fallbacks, empty flags, missing settings, and render edge cases", async () => {
-    // A second SDK stub that returns DEFINITIONS-only registries (no `types`,
-    // no `type_to_folder`), no statuses, no command flags, and a json_markdown
-    // item format, driving every collect*/empty-array fallback branch.
-    const root = await createTempRoot("pm-guide-runtime-fallbacks-");
-    process.env[PM_PACKAGE_ROOT_ENV] = root;
-    await writeSdkRuntimeModule(
-      root,
-      `function readString(options, key, aliases = []) {
-  const candidates = [key, ...aliases];
-  for (const candidate of candidates) {
-    const value = options?.[candidate];
-    if (typeof value === "string" && value.trim().length > 0) return value.trim();
-  }
-  return undefined;
-}
-function readBoolean(options, key, aliases = []) {
-  const candidates = [key, ...aliases];
-  for (const candidate of candidates) {
-    const value = options?.[candidate];
-    if (value === true || value === false) return value;
-  }
-  return undefined;
-}
-export async function runGuide(options) { return { kind: "guide", topic: options?.topic ?? "none", list: options?.list, format: options?.format, depth: options?.depth }; }
-export function resolveGuideOutputFormat() { return "toon"; }
-export function renderGuideMarkdown(result) { return "# guide " + String(result?.topic ?? "none"); }
-export function runCompletion(shell, itemTypes, tags, eager, runtime) { return { shell, itemTypes, tags, eager, runtime }; }
-export async function pathExists(targetPath) { return !targetPath.includes("missing-settings.json"); }
-export function getSettingsPath(pmRoot) { return pmRoot.includes("missing") ? pmRoot + "/missing-settings.json" : pmRoot + "/settings.json"; }
-export function resolvePmRoot(cwd, overridePath) { return typeof overridePath === "string" && overridePath.length > 0 ? overridePath : cwd + "/pm"; }
-export async function readSettings(pmRoot) { return { item_format: "json_markdown", schema: {} }; }
-export function resolveItemTypeRegistry() {
-  // Definitions only, including a null entry and a folder-less entry, with no
-  // top-level types[] and no type_to_folder map.
-  return {
-    definitions: [null, { name: "Task", folder: "tasks" }, { name: "NoFolder" }],
-  };
-}
-export function resolveRuntimeStatusRegistry() { return { definitions: [] }; }
-export function resolveRuntimeFieldRegistry() {
-  const command_to_fields = new Map();
-  // No matching runtime commands -> command_to_fields.get(command) returns
-  // undefined for each, exercising the ?? [] fallback and empty flags branch.
-  return { command_to_fields };
-}
-export async function listAllItemMetadata() {
-  return [{ metadata: { tags: "not-an-array" } }, { metadata: {} }];
-}
-export function getActiveExtensionRegistrations() { return {}; }
-export function readStringOption(options, key, aliases = []) { return readString(options, key, aliases); }
-export function readBooleanOption(options, key, aliases = []) { return readBoolean(options, key, aliases); }
-export function readCsvListOption() { return []; }
-`,
-    );
-    const runtime = await importRepoModule<typeof import("../../../packages/pm-guide-shell/extensions/guide-shell/runtime.ts")>(
-      "packages/pm-guide-shell/extensions/guide-shell/runtime.ts",
-      "guideFallbacks",
-    );
+  it("renders guide, completion, and word-list result families", () => {
+    const renderGuide = vi.spyOn(sdk, "renderGuideMarkdown").mockReturnValue("# guide");
+    const format = vi.spyOn(sdk, "resolveGuideOutputFormat");
+    format.mockReturnValueOnce("markdown");
+    expect(
+      renderGuideShellPackageOutput({
+        command: "guide",
+        payload: { result: { topic: "sdk" } },
+      } as never),
+    ).toBe("# guide\n");
+    expect(renderGuide).toHaveBeenCalled();
 
-    // Guide topic resolved from positional args (readStringOption topic absent),
-    // with no --list flag (false arm of `=== true ? true : undefined`).
-    const guide = (await runtime.runGuidePackage(["workflows"], {}, PM_GLOBAL)) as Record<string, unknown>;
-    expect(guide.topic).toBe("workflows");
-    expect(guide.list).toBeUndefined();
+    format.mockReturnValueOnce("json");
+    expect(
+      renderGuideShellPackageOutput({
+        command: "guide",
+        payload: { result: { topic: "sdk" } },
+      } as never),
+    ).toContain('"topic": "sdk"');
+    format.mockReturnValueOnce("toon" as never);
+    expect(
+      renderGuideShellPackageOutput({
+        command: "guide",
+        payload: { format: "json", result: { topic: "sdk" } },
+      } as never),
+    ).toContain('"topic": "sdk"');
+    format.mockReturnValueOnce("toon" as never);
+    expect(renderGuideShellPackageOutput({ command: "guide", payload: {} } as never)).toBeNull();
 
-    // Guide with neither topic option nor positional arg -> topic undefined.
-    const guideNoTopic = (await runtime.runGuidePackage([], {}, PM_GLOBAL)) as Record<string, unknown>;
-    expect(guideNoTopic.topic).toBe("none");
+    expect(
+      renderGuideShellPackageOutput({
+        command: "completion",
+        payload: { result: { script: "complete" } },
+      } as never),
+    ).toBe("complete\n");
+    expect(
+      renderGuideShellPackageOutput({
+        command: "completion",
+        payload: { result: { script: "complete\n" } },
+      } as never),
+    ).toBe("complete\n");
+    expect(
+      renderGuideShellPackageOutput({
+        command: "completion",
+        payload: { result: {} },
+      } as never),
+    ).toBeNull();
+    expect(
+      renderGuideShellPackageOutput({
+        command: "completion",
+        payload: { format: "json", result: { script: "complete" } },
+      } as never),
+    ).toContain('"script": "complete"');
 
-    // --list true exercises the TRUE arm of the list ternary.
-    const guideList = (await runtime.runGuidePackage([], { list: true }, PM_GLOBAL)) as Record<string, unknown>;
-    expect(guideList.list).toBe(true);
-
-    // Completion shell from positional arg + definitions-only type registry +
-    // empty status/flag registries (config object collapses to {}).
-    const completion = (await runtime.runCompletionPackage(["fish"], {}, PM_GLOBAL)) as Record<string, unknown>;
-    expect(completion.shell).toBe("fish");
-    // item_types resolves from definitions; statuses/command_flags collapse to undefined.
-    expect((completion.runtime as Record<string, unknown>).item_types).toEqual(["NoFolder", "Task"]);
-    expect((completion.runtime as Record<string, unknown>).statuses).toBeUndefined();
-    expect((completion.runtime as Record<string, unknown>).command_flags).toBeUndefined();
-
-    // Completion shell default (no option, no arg) -> "bash".
-    const completionDefault = (await runtime.runCompletionPackage([], {}, PM_GLOBAL)) as Record<string, unknown>;
-    expect(completionDefault.shell).toBe("bash");
-
-    // buildCompletionRuntimeConfig early-return when settings file is absent.
-    const completionMissing = (await runtime.runCompletionPackage(["zsh"], {}, MISSING_PM_GLOBAL)) as Record<string, unknown>;
-    expect(completionMissing.runtime).toEqual({});
-
-    // Types from definitions only (null + folder-less entries tolerated).
-    const types = await runtime.runCompletionTypesPackage(PM_GLOBAL);
-    expect(types).toEqual({ types: ["NoFolder", "Task"], count: 2 });
-
-    // Statuses come straight from readSettings (no settings-file gate here).
-    const statuses = await runtime.runCompletionStatusesPackage(PM_GLOBAL);
-    expect(statuses).toEqual({ statuses: [], count: 0 });
-
-    // Tags: json_markdown item_format branch + non-array tags tolerated, plus
-    // the collectTypeToFolder definitions-derived path (folder-less entry skipped).
-    const tags = await runtime.runCompletionTagsPackage(PM_GLOBAL);
-    expect(tags).toEqual({ tags: [], count: 0 });
-
-    // Render edge cases against the loaded runtime:
-    // guide render with neither options nor global supplied.
-    const guideRenderBare = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "guide",
-      payload: { result: { topic: "bare" } },
-    } satisfies ServiceOverrideContext);
-    // resolveGuideOutputFormat stub returns "toon" -> not markdown/json -> null.
-    expect(guideRenderBare).toBeNull();
-
-    // outputFormat is "toon" but payload.format === "json" -> the second operand
-    // of the `outputFormat === "json" || readPayloadFormat === "json"` guard.
-    const guideRenderPayloadJson = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "guide",
-      options: {},
-      global: {},
-      payload: { format: "json", result: { topic: "payload-json" } },
-    } satisfies ServiceOverrideContext);
-    expect(guideRenderPayloadJson).toContain('"topic": "payload-json"');
-
-    // readPayloadResult: payload without a `result` key returns the payload itself.
-    const completionScriptNoNewline = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion",
-      payload: { script: "complete -F _pm pm" },
-    } satisfies ServiceOverrideContext);
-    expect(completionScriptNoNewline).toBe("complete -F _pm pm\n");
-
-    // Script already ending in newline is returned unchanged.
-    const completionScriptNewline = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion",
-      payload: { result: { script: "done\n" } },
-    } satisfies ServiceOverrideContext);
-    expect(completionScriptNewline).toBe("done\n");
-
-    // Non-array tags/statuses/types collapse to empty join.
-    const tagsNonArray = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-tags",
-      payload: { result: { tags: "nope" } },
-    } satisfies ServiceOverrideContext);
-    expect(tagsNonArray).toBe("\n");
-    const statusesNonArray = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-statuses",
-      payload: { result: { statuses: 5 } },
-    } satisfies ServiceOverrideContext);
-    expect(statusesNonArray).toBe("\n");
-    const typesNonArray = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-types",
-      payload: { result: null },
-    } satisfies ServiceOverrideContext);
-    expect(typesNonArray).toBe("\n");
-
-    // Non-object payload exercises the readPayloadFormat object-guard false arm
-    // (and readPayloadResult returns the payload itself).
-    const stringPayloadRender = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-tags",
-      payload: "raw-string-payload",
-    } satisfies ServiceOverrideContext);
-    expect(stringPayloadRender).toBe("\n");
-
-    const arrayPayloadRender = runtime.renderGuideShellPackageOutput({
-      service: "output_format",
-      command: "completion-tags",
-      payload: [{ result: { tags: ["array-should-not-be-record"] } }],
-    } satisfies ServiceOverrideContext);
-    expect(arrayPayloadRender).toBe("\n");
-  });
-
-  it("covers guide-shell empty type registry fallbacks (no types, no definitions)", async () => {
-    // A registry exposing NEITHER `types` nor `definitions` arrays forces the
-    // collectTypeNames `: []` arm, the collectTypeToFolder `(... ?? [])` arm, and
-    // the `itemTypes.length > 0 ? itemTypes : undefined` empty arm.
-    const root = await createTempRoot("pm-guide-runtime-empty-");
-    process.env[PM_PACKAGE_ROOT_ENV] = root;
-    await writeSdkRuntimeModule(
-      root,
-      `export async function runGuide(options) { return { topic: options?.topic ?? "none" }; }
-export function resolveGuideOutputFormat() { return "toon"; }
-export function renderGuideMarkdown() { return "# guide"; }
-export function runCompletion(shell, itemTypes, tags, eager, runtime) { return { shell, runtime }; }
-export async function pathExists() { return true; }
-export function getSettingsPath(pmRoot) { return pmRoot + "/settings.json"; }
-export function resolvePmRoot(cwd, overridePath) { return overridePath ?? cwd + "/pm"; }
-export async function readSettings() { return { schema: {} }; }
-export function resolveItemTypeRegistry() { return {}; }
-export function resolveRuntimeStatusRegistry() { return { definitions: [] }; }
-export function resolveRuntimeFieldRegistry() { return { command_to_fields: new Map() }; }
-export async function listAllItemMetadata() { return []; }
-export function getActiveExtensionRegistrations() { return {}; }
-export function readStringOption() { return undefined; }
-export function readBooleanOption() { return undefined; }
-export function readCsvListOption() { return []; }
-`,
-    );
-    const runtime = await importRepoModule<typeof import("../../../packages/pm-guide-shell/extensions/guide-shell/runtime.ts")>(
-      "packages/pm-guide-shell/extensions/guide-shell/runtime.ts",
-      "guideEmptyRegistry",
-    );
-
-    const completion = (await runtime.runCompletionPackage(["bash"], {}, PM_GLOBAL)) as Record<string, unknown>;
-    // No item_types/statuses/command_flags resolve -> runtime config is empty.
-    expect(completion.runtime).toEqual({});
-
-    const types = await runtime.runCompletionTypesPackage(PM_GLOBAL);
-    expect(types).toEqual({ types: [], count: 0 });
-
-    const tags = await runtime.runCompletionTagsPackage(PM_GLOBAL);
-    expect(tags).toEqual({ tags: [], count: 0 });
-  });
-
-  it("shares a single in-flight guide-shell runtime load across concurrent callers", async () => {
-    const root = await createTempRoot("pm-guide-runtime-concurrent-");
-    process.env[PM_PACKAGE_ROOT_ENV] = root;
-    await writeSdkRuntimeModule(
-      root,
-      `export async function runGuide(options) { return { topic: options?.topic ?? "none" }; }
-export function resolveGuideOutputFormat() { return "toon"; }
-export function renderGuideMarkdown() { return "# guide"; }
-export function runCompletion(shell, itemTypes, tags, eager, runtime) { return { shell, runtime }; }
-export async function pathExists() { return false; }
-export function getSettingsPath(pmRoot) { return pmRoot + "/settings.json"; }
-export function resolvePmRoot(cwd, overridePath) { return overridePath ?? cwd + "/pm"; }
-export async function readSettings() { return { schema: {} }; }
-export function resolveItemTypeRegistry() { return {}; }
-export function resolveRuntimeStatusRegistry() { return { definitions: [] }; }
-export function resolveRuntimeFieldRegistry() { return { command_to_fields: new Map() }; }
-export async function listAllItemMetadata() { return []; }
-export function getActiveExtensionRegistrations() { return {}; }
-export function readStringOption(options, key) { return typeof options?.[key] === "string" ? options[key] : undefined; }
-export function readBooleanOption() { return undefined; }
-export function readCsvListOption() { return []; }
-`,
-    );
-    const runtime = await importRepoModule<typeof import("../../../packages/pm-guide-shell/extensions/guide-shell/runtime.ts")>(
-      "packages/pm-guide-shell/extensions/guide-shell/runtime.ts",
-      "guideConcurrent",
-    );
-    // Two un-awaited calls race through ensureRuntimeBundle before the first
-    // load settles, so the second observes the in-flight promise branch.
-    const [guide, completion] = await Promise.all([
-      runtime.runGuidePackage(["topic"], { topic: "concurrent" }, PM_GLOBAL),
-      runtime.runCompletionPackage(["bash"], {}, PM_GLOBAL),
-    ]);
-    expect((guide as Record<string, unknown>).topic).toBe("concurrent");
-    expect((completion as Record<string, unknown>).shell).toBe("bash");
+    for (const [command, key] of [
+      ["completion-tags", "tags"],
+      ["completion-statuses", "statuses"],
+      ["completion-types", "types"],
+    ] as const) {
+      expect(
+        renderGuideShellPackageOutput({
+          command,
+          payload: { result: { [key]: ["a", 2, "b"] } },
+        } as never),
+      ).toBe("a b\n");
+      expect(
+        renderGuideShellPackageOutput({
+          command,
+          payload: { format: "json", result: { [key]: ["a"] } },
+        } as never),
+      ).toContain(`"${key}"`);
+    }
+    expect(
+      renderGuideShellPackageOutput({
+        command: "completion-tags",
+        payload: { result: null },
+      } as never),
+    ).toBe("\n");
+    expect(
+      renderGuideShellPackageOutput({
+        command: "completion-tags",
+        payload: { result: { tags: "not-an-array" } },
+      } as never),
+    ).toBe("\n");
+    expect(renderGuideShellPackageOutput({ command: "unknown", payload: null } as never)).toBeNull();
+    vi.restoreAllMocks();
   });
 });

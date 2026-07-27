@@ -2118,7 +2118,7 @@ describe("runTest", () => {
         id,
         {
           add: [
-            "command=node -e \"console.log(process.env.PM_PATH||'');console.log(process.env.PM_GLOBAL_PATH||'')\",scope=project,timeout_seconds=20",
+            "command=node -e \"console.log(process.env.PM_PATH||'');console.log(process.env.PM_GLOBAL_PATH||'');console.log(process.env.PM_SOURCE_PM_PATH||'');console.log(process.env.PM_SOURCE_WORKSPACE_ROOT||'')\",scope=project,timeout_seconds=20",
             'command=node -e "process.exit(3)",scope=project,timeout_seconds=20',
             'command=node -e "setTimeout(() => {}, 2000)",scope=project',
           ],
@@ -2148,10 +2148,11 @@ describe("runTest", () => {
       const passed = run.run_results.find((entry) => entry.status === "passed");
       expect(passed?.command).toContain("process.env.PM_PATH");
       expect(passed?.stdout ?? "").toContain("pm-linked-test-");
-      expect(passed?.stdout ?? "").not.toContain(context.pmPath);
       expect(passed?.stdout ?? "").not.toContain(
         context.env.PM_GLOBAL_PATH ?? "",
       );
+      expect(passed?.stdout ?? "").toContain(context.pmPath);
+      expect(passed?.stdout ?? "").toContain(context.tempRoot);
 
       const commandFailure = run.run_results.find((entry) =>
         entry.command?.includes("process.exit(3)"),
@@ -2281,9 +2282,16 @@ describe("runTest", () => {
           scope: "project",
           env_set: {
             PM_PATH: "/tmp/unsafe-pm-path",
+            PM_SOURCE_PM_PATH: "/tmp/unsafe-source-pm-path",
+            PM_SOURCE_WORKSPACE_ROOT: "/tmp/unsafe-source-workspace",
             SAFE_VAR: "ok",
           },
-          env_clear: ["PM_GLOBAL_PATH", "FORCE_COLOR"],
+          env_clear: [
+            "PM_GLOBAL_PATH",
+            "PM_SOURCE_PM_PATH",
+            "PM_SOURCE_WORKSPACE_ROOT",
+            "FORCE_COLOR",
+          ],
         },
       ]);
 
@@ -2299,6 +2307,8 @@ describe("runTest", () => {
       const stdout = run.run_results[0]?.stdout ?? "";
       expect(stdout).toContain("pm-linked-test-");
       expect(stdout).not.toContain("/tmp/unsafe-pm-path");
+      expect(stdout).not.toContain("/tmp/unsafe-source-pm-path");
+      expect(stdout).not.toContain("/tmp/unsafe-source-workspace");
       expect(stdout).toContain("|ok|0");
     });
   });

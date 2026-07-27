@@ -11,11 +11,9 @@ import type {
 } from "@unbrained/pm-cli/sdk";
 import type {
   TodosExportOptions,
-  TodosExportResult,
   TodosImportOptions,
-  TodosImportResult,
 } from "./runtime.ts";
-import { loadPackageRuntimeModule } from "./runtime-loader.ts";
+import { runTodosExport, runTodosImport } from "./runtime.ts";
 
 /** Declarative package manifest consumed by the extension loader. */
 export const manifest = {
@@ -24,17 +22,6 @@ export const manifest = {
   entry: "./index.js",
   priority: 0,
   capabilities: ["commands", "schema", "importers"],
-};
-
-type RuntimeModule = {
-  runTodosImport?: (
-    options: TodosImportOptions,
-    global: GlobalOptions,
-  ) => Promise<TodosImportResult>;
-  runTodosExport?: (
-    options: TodosExportOptions,
-    global: GlobalOptions,
-  ) => Promise<TodosExportResult>;
 };
 
 function asOptionalString(value: unknown): string | undefined {
@@ -58,32 +45,6 @@ function toExportOptions(options: Record<string, unknown>): TodosExportOptions {
   };
 }
 
-async function runTodosImportFromRuntime(
-  options: TodosImportOptions,
-  global: GlobalOptions,
-): Promise<TodosImportResult> {
-  const runtime = (await loadPackageRuntimeModule()) as RuntimeModule;
-  if (typeof runtime.runTodosImport !== "function") {
-    throw new Error(
-      "Bundled todos runtime module is missing runTodosImport().",
-    );
-  }
-  return runtime.runTodosImport(options, global);
-}
-
-async function runTodosExportFromRuntime(
-  options: TodosExportOptions,
-  global: GlobalOptions,
-): Promise<TodosExportResult> {
-  const runtime = (await loadPackageRuntimeModule()) as RuntimeModule;
-  if (typeof runtime.runTodosExport !== "function") {
-    throw new Error(
-      "Bundled todos runtime module is missing runTodosExport().",
-    );
-  }
-  return runtime.runTodosExport(options, global);
-}
-
 /** Registers this package's commands, actions, and runtime hooks with the host. */
 export function activate(api: ExtensionApi): void {
   // First-party exemplar for the importers capability: registerImporter/
@@ -93,7 +54,7 @@ export function activate(api: ExtensionApi): void {
   api.registerImporter(
     "todos",
     async (context: ImportExportContext) =>
-      runTodosImportFromRuntime(
+      runTodosImport(
         toImportOptions(context.options, context.global),
         context.global,
       ),
@@ -123,7 +84,7 @@ export function activate(api: ExtensionApi): void {
   api.registerExporter(
     "todos",
     async (context: ImportExportContext) =>
-      runTodosExportFromRuntime(
+      runTodosExport(
         toExportOptions(context.options),
         context.global,
       ),

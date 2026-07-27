@@ -61,7 +61,14 @@ describe("public merge-safety SDK primitives", () => {
     await Promise.all(
       workspaces
         .splice(0)
-        .map((workspace) => rm(workspace, { recursive: true, force: true })),
+        .map((workspace) =>
+          rm(workspace, {
+            recursive: true,
+            force: true,
+            maxRetries: 5,
+            retryDelay: 100,
+          }),
+        ),
     );
   });
 
@@ -1296,6 +1303,40 @@ describe("public merge-safety SDK primitives", () => {
         ).rejects.toThrow(/requires a git repository/);
       } finally {
         process.chdir(priorCwd);
+      }
+    });
+  });
+
+  it("installs from protected source coordinates while linked-test storage remains sandboxed", async () => {
+    await withTempPmPath(async (context) => {
+      execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
+      const sandboxRoot = await mkdtemp(path.join(os.tmpdir(), "pm-merge-linked-sandbox-"));
+      workspaces.push(sandboxRoot);
+      const previousSourcePmPath = process.env.PM_SOURCE_PM_PATH;
+      const previousSourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT;
+      process.env.PM_SOURCE_PM_PATH = context.pmPath;
+      process.env.PM_SOURCE_WORKSPACE_ROOT = context.tempRoot;
+      try {
+        const installed = await runMergeInstall(
+          { dryRun: true },
+          { path: path.join(sandboxRoot, ".agents", "pm") },
+        );
+        expect(installed.workspace_root).toBe(context.tempRoot);
+        expect(installed.gitattributes.schema_scope).toBe("project");
+        expect(installed.gitattributes.patterns).toContain(
+          '".agents/pm/tasks/*.toon" merge=pm-item-toon',
+        );
+      } finally {
+        if (previousSourcePmPath === undefined) {
+          delete process.env.PM_SOURCE_PM_PATH;
+        } else {
+          process.env.PM_SOURCE_PM_PATH = previousSourcePmPath;
+        }
+        if (previousSourceWorkspaceRoot === undefined) {
+          delete process.env.PM_SOURCE_WORKSPACE_ROOT;
+        } else {
+          process.env.PM_SOURCE_WORKSPACE_ROOT = previousSourceWorkspaceRoot;
+        }
       }
     });
   });

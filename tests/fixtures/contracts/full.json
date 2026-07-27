@@ -8928,6 +8928,160 @@
       "strict"
     ]
   },
+  "list_projections": [
+    {
+      "brief_fields": [
+        "id",
+        "status",
+        "type",
+        "title"
+      ],
+      "command": "list",
+      "compact_fields": [
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at"
+      ],
+      "default": "brief"
+    },
+    {
+      "brief_fields": [
+        "id",
+        "status",
+        "type",
+        "title"
+      ],
+      "command": "list-all",
+      "compact_fields": [
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at"
+      ],
+      "default": "full"
+    },
+    {
+      "brief_fields": [
+        "id",
+        "status",
+        "type",
+        "title"
+      ],
+      "command": "list-draft",
+      "compact_fields": [
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at"
+      ],
+      "default": "full"
+    },
+    {
+      "brief_fields": [
+        "id",
+        "status",
+        "type",
+        "title"
+      ],
+      "command": "list-open",
+      "compact_fields": [
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at"
+      ],
+      "default": "brief"
+    },
+    {
+      "brief_fields": [
+        "id",
+        "status",
+        "type",
+        "title"
+      ],
+      "command": "list-in-progress",
+      "compact_fields": [
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at"
+      ],
+      "default": "brief"
+    },
+    {
+      "brief_fields": [
+        "id",
+        "status",
+        "type",
+        "title"
+      ],
+      "command": "list-blocked",
+      "compact_fields": [
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at"
+      ],
+      "default": "brief"
+    },
+    {
+      "brief_fields": [
+        "id",
+        "status",
+        "type",
+        "title"
+      ],
+      "command": "list-closed",
+      "compact_fields": [
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at"
+      ],
+      "default": "full"
+    },
+    {
+      "brief_fields": [
+        "id",
+        "status",
+        "type",
+        "title"
+      ],
+      "command": "list-canceled",
+      "compact_fields": [
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at"
+      ],
+      "default": "full"
+    }
+  ],
   "mcp_tools": [
     {
       "description": "Append markdown text to a pm item body and write pm history. Useful for seeding evidence/log entries before close. Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",

@@ -2245,6 +2245,8 @@ function buildLinkedTestExecutionEnv(params: {
   executionEnv.PM_GLOBAL_PATH = params.executionContext.sandbox_global_pm_path;
   executionEnv.PM_SOURCE_WORKSPACE_ROOT =
     process.env.PM_SOURCE_WORKSPACE_ROOT ?? process.cwd();
+  executionEnv.PM_SOURCE_PM_PATH =
+    params.executionContext.source_project_pm_path;
   return executionEnv;
 }
 

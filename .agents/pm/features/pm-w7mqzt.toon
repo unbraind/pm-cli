@@ -2,24 +2,28 @@ id: pm-w7mqzt
 title: "Extension authors cannot consume the SDK's own flag, filter and loader contracts, so every first-party package hand-rewrites the baseline the CLI already declares"
 description: "The stated architecture is that the CLI delivers baseline primitives through the SDK so any package can reuse them. For the command-authoring surface that is not yet true: the primitives exist, they are exported, and they are shaped so that no extension can use them.\n\nFinding 1, the filter-flag baseline is unconsumable. src/sdk/cli-contracts/flag-contracts.ts exports LIST_FILTER_FLAG_CONTRACTS, the canonical 20-plus entry declaration of --status, --type, --tag, --priority, the deadline and updated and created windows, --ids, --assignee, --parent and the rest, complete with alias and cursor semantics, and it is public through the sdk/contracts subpath. api.registerCommand takes FlagDefinition, declared in src/core/extensions/extension-types.ts:759 with the fields long, short, value_name, description, required, enabled. CliFlagContract is a different shape entirely — flag, list, aliases. A repository-wide search finds no adapter in either direction. The canonical declaration is therefore visible to package authors and unusable by them.\n\nThe consequence is measurable. pm-calendar, pm-search-advanced and pm-governance-audit each hand-write their own --type, --tag, --priority, --status FlagDefinition blocks; jscpd at 12 lines / 60 tokens reports them as clones of one another (pm-calendar/index.ts:71 against pm-search-advanced/index.ts:164 and against pm-governance-audit/index.ts:129). They have already drifted: pm-search-advanced carries hand-added snake_case aliases such as --phrase_exact that no other package has, because there is nothing to inherit alias policy from. Every future filter flag the CLI adds has to be re-typed into each package or the package silently falls behind the baseline.\n\nFinding 2, the runtime loader is copied rather than provided. Ten of the fifteen first-party packages contain their own ensureRuntimeBundle / loadRuntimeBundle that reads PM_CLI_PACKAGE_ROOT, joins dist/sdk paths by hand, pathToFileURL-imports the result, and validates an allow-list of expected export names. pm-beads and pm-todos are clones of each other three times over; pm-guide-shell and pm-linked-test-adapters likewise. PM_CLI_PACKAGE_ROOT is documented as first-party-only, which is a correct boundary, but the effect is that the loader problem it solves is unsolved for everyone else and re-solved by hand ten times inside the repository. A related consequence worth stating plainly: only two of fifteen first-party packages import SDK values through the public export map, so the published subpaths are barely dogfooded by the packages best placed to dogfood them.\n\nFinding 3, the exemplar is not a kit. packages/pm-command-kit is described in its own manifest as an exemplar for the commands capability. It demonstrates registerCommand, registerFlags and registerParser; it exports nothing an author can build on. pm-kanban references it as a model to copy, not as a dependency.\n\nTaken together these are the difference between an SDK that documents how to write a package and an SDK that supplies what a package needs. Closing it removes duplication that already exists, prevents the divergence that has already started, and is a precondition for third-party packages matching first-party capability without reverse-engineering the repository.\n\nScope boundary. pm-9smp7j and pm-c5f0gh own scaffold generation quality; this is about what the scaffolded package can then import. pm-x6jf owns package and extension lifecycle promotion. pm-usfg owns the SDK-first inversion in general; this is its command-authoring slice, and it is the slice a package author meets first."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: "area:extensions","area:sdk",customization,dx,refactor
 created_at: "2026-07-25T21:40:27.254Z"
-updated_at: "2026-07-27T07:52:09.950Z"
+updated_at: "2026-07-27T10:08:04.020Z"
+closed_at: "2026-07-27T10:08:01.129Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "An extension can declare the standard filter-flag set by consuming an SDK export rather than by restating FlagDefinition objects, and adding a filter flag to the CLI baseline reaches consuming packages without per-package edits. The SDK provides the runtime-resolution helper that the ten first-party copies of ensureRuntimeBundle currently implement, so no package hand-joins dist paths; the first-party copies are replaced by it. Alias and cursor semantics attached to a baseline flag are inherited rather than re-declared, and pm-search-advanced's divergent aliases are either adopted into the baseline or dropped. At least one first-party package is migrated end to end as proof and its hand-written tables are deleted. A regression test asserts that a package built only against public SDK subpaths can register a command carrying the full baseline filter set."
 parent: pm-ugqx
 risk: medium
 confidence: high
+resolution: "Migrated beads, todos, calendar, guide-shell, linked-test-adapters, and templates to static public SDK imports; removed runtime loaders and generator indirection."
+expected_result: Package authors can build extension runtimes against one documented public SDK surface without checkout-root discovery or dynamic imports.
+actual_result: "All targeted packages use static SDK imports, boundary checks pass, and packed unrelated-consumer install, doctor, create, list, npx, and bunx smokes pass."
 dependencies[5]{id,kind,created_at}:
   pm-9rgaal,implements,"2026-07-25T21:40:27.254Z"
   pm-9smp7j,related,"2026-07-25T21:40:27.254Z"
   pm-c5f0gh,related,"2026-07-25T21:40:27.254Z"
   pm-usfg,related,"2026-07-25T21:40:27.254Z"
   pm-x6jf,related,"2026-07-25T21:40:27.254Z"
-comments[22]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-07-25T22:20:08.935Z","harness:codex","Start evidence: all-status inventory reviewed 2,043 items (1,766 closed, 265 open, 12 canceled) with zero pre-existing in-progress items. Selected one cohesive package-authoring lane spanning consumable SDK flag/runtime contracts, scaffold parity, prefix-safe naming, and dependency queue reconciliation. GitHub snapshot has zero open PRs; all 21 open issues contain canonical pm-item links; pnpm audit reports zero vulnerabilities."
   "2026-07-25T22:35:02.712Z","harness:codex","Implementation evidence: added public CLI-contract to extension-flag adapter, exported list/search baselines, migrated pm-search-advanced through the first-party runtime bridge, and passed 158 focused unit/integration tests plus targeted ESLint."
   "2026-07-25T22:38:02.233Z","harness:codex","Contract evidence: full CLI contract snapshot stayed current; SDK surface update classified eight additive exports across sdk, sdk/authoring, and sdk/runtime with no breaking or changed symbols."
@@ -42,12 +46,25 @@ comments[22]{created_at,author,text}:
   "2026-07-26T14:09:14.478Z","harness:codex","Exact-head hosted evidence: PR #744 commit b28d3cb736a32cbcd54266243cd3f6848372f6df passed the complete required GitHub check matrix with zero failed checks. Thread-aware inventory found zero inline threads. CodeRabbit completed the explicitly retriggered full-review request under its external fair-usage limit and emitted no finding; all new bot surfaces were reacted to and acknowledged. Local final evidence remains 374 files, 6,420 tests, exact 100/100/100/100 coverage, clean lint/static/contracts/changelog/health, and real-time telemetry drain."
   "2026-07-27T07:35:20.721Z","harness:codex","Start evidence 2026-07-27: selected after live all-status review of 2,129 items (1,807 closed, 309 open, 13 canceled; zero pre-existing in-progress), full canonical metadata/closed-lineage review, and GitHub/security/dependency inventory. This item is actively implemented in one cohesive public SDK/CLI integrity PR; unrelated backlog and container epics remain open and unclaimed."
   "2026-07-27T07:52:07.934Z","harness:codex","Scope correction 2026-07-27: live implementation showed the remaining runtime-loader convergence requires a dedicated public resolution primitive plus migration of package entrypoint topology and its packed-install matrix. This cohesive PR is already broad across five completed SDK/CLI integrity issues; no runtime-loader source change is being shipped here, so returning this item to open and releasing ownership rather than misrepresenting it as active."
+  "2026-07-27T10:05:38.737Z","harness:codex","Evidence: implementation is complete; pnpm lint passed with zero jscpd clones, static/docstring/SDK compatibility gates passed, 375 files and 6,404 tests passed at 100/100/100/100 coverage, and an unrelated packed consumer resolved its local executable then passed install/doctor/create/list plus npx and bunx version smoke tests."
 notes[1]{created_at,author,text}:
   "2026-07-26T11:33:06.917Z","harness:claude-code","Positive control on the scaffold path, run 2026-07-26 on the shipped 2026.7.26 build, recorded to bound this item's scope precisely.\n\nThree commands take a package from nothing to a working command, with no npm install and no build step:\n\n  pm package --init demo-tracker      -> 7 files (package.json, manifest.json, index.ts, index.test.ts, tsconfig.json, .gitignore, README.md)\n  pm install --project ./demo-tracker -> activation_status ok, activated true, registered_commands ['demo tracker ping'], registered_actions ['demo-tracker-ping'], health ok, 0 blocking failures\n  pm demo tracker ping                -> ok: true, message 'Starter extension scaffold is active.'\n\nThe native type-stripping loader means a .ts entry runs directly, so the scaffold's promise is real and the getting-started experience is genuinely three commands. The next_steps block returned by --init lists install, smoke test, typecheck, test, and doctor in the right order.\n\nThe consequence for this item: the gap is not onboarding, it is the second step. A package author who accepts the generated shape is well served; one who needs a real flag surface hits the missing adapter between LIST_FILTER_FLAG_CONTRACTS/CliFlagContract and registerCommand's FlagDefinition that this item owns. Framing the work as 'the scaffold stops one layer short of the contracts the CLI itself uses' is more accurate than 'authoring is hard', and it keeps the fix scoped to the adapter rather than to the generator.\n\nIncidental observation, not a defect claim: a hyphenated target produces a two-token command path (demo-tracker -> 'pm demo tracker'). That is consistent with the noun-verb grammar; the pm-prefixed variant of the same derivation is pm-c5f0gh's subject."
-files[17]{path,scope,note}:
+files[40]{path,scope,note}:
+  .github/workflows/ci.yml,project,Static public SDK package runtime migration and coverage
+  packages/pm-beads/extensions/beads/index.ts,project,Static public SDK package runtime migration and coverage
+  packages/pm-beads/extensions/beads/runtime-loader.ts,project,Static public SDK package runtime migration and coverage
+  packages/pm-beads/extensions/beads/runtime.ts,project,Static public SDK package runtime migration and coverage
+  packages/pm-calendar/extensions/calendar/runtime.ts,project,Static public SDK package runtime migration and coverage
   packages/pm-governance-audit/extensions/governance-audit/sdk.ts,project,Public static SDK runtime import migration
+  packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,Static public SDK package runtime migration and coverage
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.ts,project,Static public SDK package runtime migration and coverage
   packages/pm-search-advanced/extensions/search-advanced/index.ts,project,Migrated first-party registration consumer
   packages/pm-search-advanced/extensions/search-advanced/runtime.ts,project,Host runtime bridge for SDK-derived flag definitions
+  packages/pm-templates/extensions/templates/runtime.ts,project,Static public SDK package runtime migration and coverage
+  packages/pm-todos/extensions/todos/index.ts,project,Static public SDK package runtime migration and coverage
+  packages/pm-todos/extensions/todos/runtime-loader.ts,project,Static public SDK package runtime migration and coverage
+  packages/pm-todos/extensions/todos/runtime.ts,project,Static public SDK package runtime migration and coverage
+  scripts/gen-package-runtime-loaders.mjs,project,Static public SDK package runtime migration and coverage
   src/core/extensions/reserved-host-flags.ts,project,host baseline consumed by SDK contract projection
   src/sdk/cli-contracts/flag-contracts.ts,project,SDK global flag contract derived from host primitive
   src/sdk/extension-contracts.ts,project,Public adapter from canonical CLI flags to extension registration definitions
@@ -56,20 +73,42 @@ files[17]{path,scope,note}:
   src/sdk/package-runtime-options.ts,project,Normalizes canonical repeatable extension list flags for standalone package runtimes
   src/sdk/runtime.ts,project,First-party runtime export for canonical search flag definitions
   tests/fixtures/sdk/public-surface.json,project,Reviewed additive public SDK surface snapshot
+  tests/integration/ci-workflow-contract.spec.ts,project,Static public SDK package runtime migration and coverage
   tests/unit/core/search/search-advanced-runtime.spec.ts,project,Proves canonical repeated fields preserve package search projections
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,Static public SDK package runtime migration and coverage
   tests/unit/extensions/extension-install-security.spec.ts,project,Exact host SDK link proof
+  tests/unit/packages/beads-command.spec.ts,project,Static public SDK package runtime migration and coverage
+  tests/unit/packages/calendar-runtime.spec.ts,project,Static public SDK package runtime migration and coverage
   tests/unit/packages/governance-audit-runtime.spec.ts,project,Governance package runtime regression
+  tests/unit/packages/guide-shell-runtime.spec.ts,project,Static public SDK package runtime migration and coverage
+  tests/unit/packages/linked-test-adapters-runtime.spec.ts,project,Static public SDK package runtime migration and coverage
+  tests/unit/packages/package-manifest.spec.ts,project,Static public SDK package runtime migration and coverage
   tests/unit/packages/package-runtime-options.spec.ts,project,Covers scalar CSV and Commander accumulated list option shapes
+  tests/unit/packages/runtime-loaders.spec.ts,project,Static public SDK package runtime migration and coverage
   tests/unit/packages/search-advanced.spec.ts,project,Search package runtime regression
+  tests/unit/packages/templates-runtime.spec.ts,project,Static public SDK package runtime migration and coverage
+  tests/unit/packages/todos-extension.spec.ts,project,Static public SDK package runtime migration and coverage
+  tests/unit/scripts/gen-package-runtime-loaders.spec.ts,project,Static public SDK package runtime migration and coverage
   tests/unit/sdk/extension-authoring-contracts.spec.ts,project,Public adapter and scaffold parity acceptance coverage
-tests[3]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts tests/unit/packages/search-advanced.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts,project,300
-  node scripts/run-tests.mjs test -- tests/unit/sdk/extension-authoring-contracts.spec.ts tests/unit/packages/search-advanced.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,240
-  "pnpm release:gates",project,1200
+tests[4]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-install-security.spec.ts tests/unit/packages/search-advanced.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/extension-authoring-contracts.spec.ts tests/unit/packages/search-advanced.spec.ts tests/integration/extension-host-contracts.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: "pnpm release:gates"
+    scope: project
+    timeout_seconds: 1200
+  - command: "pnpm test:coverage"
+    scope: project
+    timeout_seconds: 300
+    note: Repo-wide 100/100/100/100 gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms109rnt-2g4adg,test,passed,"2026-07-25T23:33:44.353Z","2026-07-25T23:33:57.450Z","2026-07-25T23:33:57.450Z",1,0,0
 docs[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,Public package-author contract guidance
   docs/SDK.md,project,public extension flag and GlobalOptions contracts
   packages/pm-search-advanced/README.md,project,First-party migration documentation
+close_reason: Public package runtimes now consume the stable SDK surface directly.
 body: ""
