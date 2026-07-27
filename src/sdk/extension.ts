@@ -3540,7 +3540,7 @@ const prepareExploreManageState = async (
   return { state, fix };
 };
 
-/** Runtime-probe explore by default and manage only when explicitly requested. */
+/** Runtime-probe explore and manage so lifecycle status always reflects activation truth. */
 const probeExploreManageRuntime = async (
   ctx: ExtensionActionContext,
   settings: PmSettings,
@@ -3550,17 +3550,6 @@ const probeExploreManageRuntime = async (
   failures: ActivationFailureDiagnostic[] | undefined;
   summary: Record<string, unknown>;
 }> => {
-  const requested = [
-    ctx.action === "explore",
-    ctx.options.runtimeProbe === true,
-  ].includes(true);
-  if (!requested) {
-    return {
-      installed,
-      failures: undefined,
-      summary: { requested: false, executed: false },
-    };
-  }
   const loadResult = await loadExtensions({
     pmRoot: ctx.resolvedRoots.pm_root,
     settings,
@@ -3585,7 +3574,9 @@ const probeExploreManageRuntime = async (
       reason:
         ctx.action === "explore"
           ? "explore_defaults_to_runtime_probe"
-          : "runtime_probe_requested",
+          : ctx.options.runtimeProbe === true
+            ? "runtime_probe_requested"
+            : "manage_defaults_to_runtime_probe",
       load_failure_count: loadResult.failed.length,
       activation_failure_count: activationResult.failed.length,
       warning_count: [

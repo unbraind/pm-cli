@@ -10,9 +10,9 @@
       "summary_toon": 9880,
       "summary_json": 13777,
       "json": 13777,
-      "full": 783837
+      "full": 912734
     },
-    "mcp_tools_list": 42359,
+    "mcp_tools_list": 38311,
     "required_commands": [
       "activity",
       "aggregate",

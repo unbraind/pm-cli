@@ -7,7 +7,10 @@ import {
   GRAPH_SUBCOMMAND_VALUES,
   PM_TOOL_ACTIONS,
 } from "../sdk/cli-contracts/enum-contracts.js";
-import { COPY_FLAG_CONTRACTS } from "../sdk/cli-contracts/flag-contracts.js";
+import {
+  buildPmActionToolInputSchema,
+} from "../sdk/cli-contracts/tool-schema.js";
+import type { PmToolAction } from "../sdk/cli-contracts/enum-contracts.js";
 import { RUNTIME_STATUS_ROLE_VALUES } from "../types.js";
 
 /**
@@ -27,7 +30,8 @@ export interface ToolDefinition {
   inputSchema: Record<string, unknown>;
 }
 
-const TOOL_SCHEMA_BASE = {
+/** MCP transport parameters layered over every canonical action schema. */
+export const TOOL_SCHEMA_BASE = {
   type: "object",
   properties: {
     cwd: {
@@ -88,19 +92,6 @@ const SEARCH_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
   },
 };
 
-const COPY_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> =
-  Object.fromEntries(
-    COPY_FLAG_CONTRACTS.filter(({ flag }) => flag !== "--author").map(
-      ({ flag }) => [
-        flag.slice(2),
-        {
-          type: flag === "--allow-duplicate" ? "boolean" : "string",
-          description: `Alias for options.${flag.slice(2).replaceAll("-", "_")}.`,
-        },
-      ],
-    ),
-  );
-
 function objectSchema(
   properties: Record<string, unknown>,
   required: string[] = [],
@@ -115,8 +106,7 @@ function objectSchema(
   };
 }
 
-/** Public contract for tools, shared by SDK and presentation-layer consumers. */
-export const TOOLS: ToolDefinition[] = [
+const RAW_TOOLS: ToolDefinition[] = [
   {
     name: "pm_run",
     description:
@@ -125,6 +115,7 @@ export const TOOLS: ToolDefinition[] = [
       {
         action: {
           type: "string",
+          enum: [...PM_TOOL_ACTIONS],
           description: PM_RUN_ACTION_DESCRIPTION,
         },
         id: idSchema,
@@ -350,7 +341,6 @@ export const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         id: idSchema,
-        ...COPY_TOP_LEVEL_OPTION_PROPERTIES,
         fullChangedFields: {
           type: "boolean",
           description:
@@ -788,6 +778,57 @@ export const TOOLS: ToolDefinition[] = [
     }),
   },
 ];
+
+/** Canonical SDK action backing each dedicated MCP tool schema. */
+export const NARROW_TOOL_ACTIONS: Readonly<Record<string, PmToolAction>> = {
+  pm_append: "append",
+  pm_claim: "claim",
+  pm_close: "close",
+  pm_comments: "comments",
+  pm_config: "config",
+  pm_context: "context",
+  pm_contracts: "contracts",
+  pm_copy: "copy",
+  pm_create: "create",
+  pm_deps: "deps",
+  pm_docs: "docs",
+  pm_files: "files",
+  pm_focus: "focus",
+  pm_get: "get",
+  pm_graph: "graph",
+  pm_health: "health",
+  pm_learnings: "learnings",
+  pm_list: "list",
+  pm_next: "next",
+  pm_notes: "notes",
+  pm_plan: "plan",
+  pm_profile: "profile",
+  pm_release: "release",
+  pm_schema: "schema",
+  pm_search: "search",
+  pm_test: "test",
+  pm_update: "update",
+  pm_validate: "validate",
+};
+
+/**
+ * Public tool definitions. Narrow schemas are projected from canonical action
+ * contracts, with tool-specific descriptions and convenience aliases layered
+ * on top.
+ */
+export const TOOLS: ToolDefinition[] = RAW_TOOLS.map((tool) => {
+  const action = NARROW_TOOL_ACTIONS[tool.name];
+  if (!action) return tool;
+  const properties = tool.inputSchema.properties as Record<string, unknown>;
+  const required = (tool.inputSchema.required as unknown[]).map(String);
+  return {
+    ...tool,
+    inputSchema: buildPmActionToolInputSchema(action, {
+      properties,
+      required,
+    }),
+  };
+});
 
 /** Stable projection of one MCP tool definition for the contract golden file (pm-4os2): tool name, description, required top-level fields, and the full inputSchema shape. Any drift (typo'd property, dropped required field, changed TOOL_SCHEMA_BASE) shows up in `pnpm contracts:check`. */
 export interface McpToolContract {

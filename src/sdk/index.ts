@@ -4,6 +4,24 @@
  * Defines public SDK APIs and package-author helpers for Index.
  */
 export {
+  PM_COMMAND_VISIBILITY_CONTRACTS,
+  PM_MCP_PROMPT_CONTRACTS,
+  PM_MCP_RESOURCE_CONTRACTS,
+  PM_MCP_TOOL_COMMAND_CONTRACTS,
+  listPmCommandsForTier,
+  listPmMcpToolsForProfile,
+  renderPmCommandVisibilityMarkdown,
+  resolvePmCommandVisibilityTier,
+} from "./agent-capability-contracts.js";
+export type {
+  PmCommandVisibilityContract,
+  PmCommandVisibilityTier,
+  PmMcpPromptArgumentContract,
+  PmMcpPromptContract,
+  PmMcpResourceContract,
+  PmMcpToolProfile,
+} from "./agent-capability-contracts.js";
+export {
   isErrnoError,
   limitAnnotationEntries,
   parseAnnotationTextInput,
@@ -340,6 +358,7 @@ export {
   UPDATE_MANY_FLAG_CONTRACTS,
   UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
+  buildPmActionToolInputSchema,
   compactFlagAliasContracts,
   definePmCommandOutputBudget,
   estimatePmOutputTokens,
@@ -361,6 +380,7 @@ export type {
   CliFlagContract,
   OptionsFromContracts,
   PmActionSchemaContract,
+  PmActionToolInputSchemaOptions,
   PmBulkMutationControlOptions,
   PmBulkMutationFilterOptions,
   PmCloseActionOptions,
@@ -831,6 +851,8 @@ export {
   type ValidateResult,
   type WorkspaceContracts,
   type WorkspaceContractsOptions,
+  type WorkspaceExtensionCommandContract,
+  type WorkspaceFieldContract,
 } from "./runtime.js";
 export {
   CONTEXT_OUTPUT_VALUES,

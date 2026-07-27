@@ -4927,8 +4927,8 @@ describe("extension command runtime", () => {
             name: "sample-ext",
             active: true,
             enabled: true,
-            runtime_active: null,
-            activation_status: "unknown",
+            runtime_active: true,
+            activation_status: "ok",
             update_check_status: "skipped_non_github",
             update_check_reason: "managed_source_kind_local",
           }),
@@ -6905,7 +6905,7 @@ describe("extension command runtime", () => {
     });
   });
 
-  it("runs default explore and opt-in manage runtime probes without changing default manage semantics", async () => {
+  it("reports live activation truth from default explore and manage runtime probes", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "runtime-probe-source");
       await mkdir(sourceDir, { recursive: true });
@@ -6932,14 +6932,15 @@ describe("extension command runtime", () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: "runtime-probe-ext",
-            runtime_active: null,
-            activation_status: "unknown",
+            runtime_active: false,
+            activation_status: "failed",
           }),
         ]),
       );
       expect(manageDefault.details.runtime_probe).toMatchObject({
-        requested: false,
-        executed: false,
+        requested: true,
+        executed: true,
+        reason: "manage_defaults_to_runtime_probe",
       });
 
       const manageProbe = await runExtension(undefined, { manage: true, project: true, runtimeProbe: true }, { path: context.pmPath });

@@ -5,6 +5,8 @@
  * Runs the MCP server adapter that exposes pm actions and contracts to external agents.
  */
 import { realpathSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import {
@@ -31,6 +33,14 @@ import {
   type PmActionInput,
 } from "../sdk/runtime.js";
 import { TOOLS } from "./tool-definitions.js";
+import {
+  normalizeWorkspaceToolArguments,
+  resolveMcpToolSurface,
+} from "./runtime-capabilities.js";
+import {
+  PM_MCP_PROMPT_CONTRACTS,
+  PM_MCP_RESOURCE_CONTRACTS,
+} from "../sdk/agent-capability-contracts.js";
 import { commitItemMutations } from "../sdk/item-transaction.js";
 import { listMutationEvents } from "../sdk/mutation-events.js";
 import {
@@ -78,13 +88,17 @@ let activeMcpClientInfo: AgentClientInfo | undefined;
 // top-level property keys for each tool and, on every tools/call, warn (without
 // rejecting) when an unexpected top-level key appears. The warning is surfaced
 // to stderr and additively in structuredContent.warnings.
-const TOOL_DECLARED_KEYS: Map<string, string[]> = new Map(
-  TOOLS.map((tool) => {
+function declaredToolKeys(
+  tools = TOOLS,
+): Map<string, string[]> {
+  return new Map(
+    tools.map((tool) => {
     const schema = tool.inputSchema as { properties?: Record<string, unknown> };
     const properties = schema.properties ?? {};
     return [tool.name, Object.keys(properties)] as const;
   }),
-);
+  );
+}
 
 function nearestDeclaredKey(
   unexpected: string,
@@ -118,6 +132,7 @@ const UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS = new Set(["pm_run"]);
 function detectUnexpectedTopLevelKeys(
   toolName: string,
   args: Record<string, unknown>,
+  toolDeclaredKeys = declaredToolKeys(),
 ): string[] {
   if (typeof args !== "object" || args === null || Array.isArray(args)) {
     return [];
@@ -125,7 +140,7 @@ function detectUnexpectedTopLevelKeys(
   if (UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS.has(toolName)) {
     return [];
   }
-  const declared = TOOL_DECLARED_KEYS.get(toolName);
+  const declared = toolDeclaredKeys.get(toolName);
   if (declared === undefined) {
     return [];
   }
@@ -138,8 +153,8 @@ function detectUnexpectedTopLevelKeys(
     const suggestion = nearestDeclaredKey(key, declared);
     warnings.push(
       suggestion !== undefined
-        ? `Unexpected top-level argument "${key}" for ${toolName} (did you mean "${suggestion}"?). It was passed through unchanged; declared arguments are: ${declared.join(", ")}.`
-        : `Unexpected top-level argument "${key}" for ${toolName}. It was passed through unchanged; declared arguments are: ${declared.join(", ")}.`,
+        ? `Unexpected top-level argument "${key}" for ${toolName} (did you mean "${suggestion}"?). It is not declared and may be ignored; declared arguments are: ${declared.join(", ")}.`
+        : `Unexpected top-level argument "${key}" for ${toolName}. It is not declared and may be ignored; declared arguments are: ${declared.join(", ")}.`,
     );
   }
   return warnings;
@@ -417,14 +432,25 @@ async function handleToolCall(
       if (!handler) {
         throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
       }
+      const requestedArgs = decodeHtmlEntitiesInOptions(
+        asRecordClone(params.arguments),
+      );
+      const surface = await resolveMcpToolSurface(TOOLS, requestedArgs);
+      if (!surface.tools.some((tool) => tool.name === name)) {
+        throw new PmCliError(
+          `pm MCP tool "${name}" is unavailable in the ${surface.profile} profile.`,
+          64,
+        );
+      }
       // pm-ydkl: defensive HTML-entity decode for free-text fields. Claude / the
       // Anthropic MCP SDK HTML-encodes `<` / `>` (and friends) in tool arguments
       // before they reach pm-cli, which would otherwise leak `&lt;type&gt;` into
       // stored pm comments / notes / item bodies. Direct CLI calls are not
       // affected; decoding at the MCP boundary normalizes the agent path while
       // leaving normal text untouched.
-      const args = decodeHtmlEntitiesInOptions(
-        asRecordClone(params.arguments),
+      const args = await normalizeWorkspaceToolArguments(
+        name,
+        requestedArgs,
       );
       const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
       const pmRoot = resolvePmRoot(
@@ -442,7 +468,11 @@ async function handleToolCall(
           // pm-upi0 extends the same mechanism into the nested options object.
           const action = resolveInvokedAction(name, args);
           const warnings = [
-            ...detectUnexpectedTopLevelKeys(name, args),
+            ...detectUnexpectedTopLevelKeys(
+              name,
+              args,
+              declaredToolKeys(surface.tools),
+            ),
             ...detectUnexpectedOptionKeys(name, action, args),
             ...(await collectMutationGuardWarnings(name, action, args)),
           ];
@@ -459,6 +489,92 @@ async function handleToolCall(
   );
 }
 
+function requestWorkspaceArgs(
+  params: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  const paramsRecord = asRecordClone(params);
+  return asRecordClone(paramsRecord.arguments ?? paramsRecord);
+}
+
+async function readWorkspaceResource(
+  uri: string,
+  params: Record<string, unknown> | undefined,
+): Promise<Record<string, unknown>> {
+  const args = requestWorkspaceArgs(params);
+  const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
+  const contract = PM_MCP_RESOURCE_CONTRACTS.find(
+    (resource) => resource.uri === uri,
+  );
+  if (!contract) {
+    throw new PmCliError(`Unknown pm MCP resource: ${uri}`, 64);
+  }
+  let value: unknown;
+  if (uri === "pm://workspace/context") {
+    value = await runAction({ ...args, action: "context", limit: 10 });
+  } else if (uri === "pm://workspace/claims") {
+    value = await runAction({
+      ...args,
+      action: "list",
+      status: "in_progress",
+      limit: 20,
+    });
+  } else if (uri === "pm://workspace/focus") {
+    value = await runAction({ ...args, action: "focus", subcommand: "show" });
+  } else {
+    const guidePath = path.join(cwd, "AGENTS.md");
+    value = (await pathExists(guidePath))
+      ? (await readFile(guidePath, "utf8")).slice(0, 32_000)
+      : "No repository-local AGENTS.md was found.";
+  }
+  return {
+    contents: [
+      {
+        uri,
+        mimeType: contract.mimeType,
+        text:
+          typeof value === "string"
+            ? value
+            : JSON.stringify(value, null, 2),
+      },
+    ],
+  };
+}
+
+function renderWorkflowPrompt(
+  params: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  const paramsRecord = asRecordClone(params);
+  const name = readRequiredString(paramsRecord, "name");
+  const prompt = PM_MCP_PROMPT_CONTRACTS.find(
+    (candidate) => candidate.name === name,
+  );
+  if (!prompt) {
+    throw new PmCliError(`Unknown pm MCP prompt: ${name}`, 64);
+  }
+  const argumentsRecord = asRecordClone(paramsRecord.arguments);
+  let text = prompt.template;
+  for (const argument of prompt.arguments) {
+    const value = argumentsRecord[argument.name];
+    if (
+      argument.required &&
+      (typeof value !== "string" || value.trim().length === 0)
+    ) {
+      throw new PmCliError(
+        `Missing required prompt argument: ${argument.name}`,
+        64,
+      );
+    }
+    text = text.replaceAll(
+      `{{${argument.name}}}`,
+      typeof value === "string" ? value : "",
+    );
+  }
+  return {
+    description: prompt.description,
+    messages: [{ role: "user", content: { type: "text", text } }],
+  };
+}
+
 /** Implements handle request for the public runtime surface of this module. */
 export async function handleRequest(
   request: JsonRpcRequest,
@@ -473,7 +589,11 @@ export async function handleRequest(
     activeMcpClientInfo = readMcpClientInfo(request.params);
     return {
       protocolVersion: "2025-06-18",
-      capabilities: { tools: {} },
+      capabilities: {
+        tools: { listChanged: true },
+        resources: { listChanged: true },
+        prompts: { listChanged: true },
+      },
       serverInfo: { name: "pm-mcp", version: PM_MCP_SERVER_VERSION },
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
@@ -488,10 +608,38 @@ export async function handleRequest(
     };
   }
   if (request.method === "tools/list") {
-    return { tools: TOOLS };
+    return {
+      tools: (
+        await resolveMcpToolSurface(
+          TOOLS,
+          requestWorkspaceArgs(request.params),
+        )
+      ).tools,
+    };
   }
   if (request.method === "tools/call") {
     return handleToolCall(request.params);
+  }
+  if (request.method === "resources/list") {
+    return { resources: PM_MCP_RESOURCE_CONTRACTS };
+  }
+  if (request.method === "resources/read") {
+    return readWorkspaceResource(
+      readRequiredString(asRecordClone(request.params), "uri"),
+      request.params,
+    );
+  }
+  if (request.method === "prompts/list") {
+    return {
+      prompts: PM_MCP_PROMPT_CONTRACTS.map((prompt) => ({
+        name: prompt.name,
+        description: prompt.description,
+        arguments: prompt.arguments,
+      })),
+    };
+  }
+  if (request.method === "prompts/get") {
+    return renderWorkflowPrompt(request.params);
   }
   throw new PmCliError(
     `Unsupported MCP method: ${request.method ?? "(missing)"}`,

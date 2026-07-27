@@ -1,0 +1,43 @@
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import { main } from "../../../scripts/generate-agent-capability-surfaces.mjs";
+
+describe("generate agent capability surfaces", () => {
+  it("writes the generated contract and accepts an exact check", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "pm-agent-capability-surface-"),
+    );
+    await main(root, []);
+    const outputPath = path.join(
+      root,
+      "docs",
+      "generated",
+      "AGENT_COMMAND_SURFACE.md",
+    );
+    const generated = await readFile(outputPath, "utf8");
+    expect(generated).toContain("PM_COMMAND_VISIBILITY_CONTRACTS");
+    await expect(main(root, ["--check"])).resolves.toBeUndefined();
+  });
+
+  it("fails closed when the generated contract is missing or stale", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "pm-agent-capability-stale-"),
+    );
+    await expect(main(root, ["--check"])).rejects.toThrow(
+      "agent command surface is stale",
+    );
+    const outputPath = path.join(
+      root,
+      "docs",
+      "generated",
+      "AGENT_COMMAND_SURFACE.md",
+    );
+    await main(root, []);
+    await writeFile(outputPath, "stale\n", "utf8");
+    await expect(main(root, ["--check"])).rejects.toThrow(
+      "agent command surface is stale",
+    );
+  });
+});

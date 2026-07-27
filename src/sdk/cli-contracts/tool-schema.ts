@@ -1311,6 +1311,57 @@ function buildActionScopedToolSchema(
   return schema;
 }
 
+/** Options for projecting one strict action schema into a narrow MCP tool. */
+export interface PmActionToolInputSchemaOptions {
+  /** Additional or overriding top-level property definitions. */
+  properties?: Record<string, unknown>;
+  /** Required keys for the narrow tool; defaults to the action contract. */
+  required?: string[];
+  /** Whether provider-specific passthrough keys remain accepted. */
+  additionalProperties?: boolean;
+}
+
+/**
+ * Build a narrow MCP tool schema from the canonical action contract.
+ *
+ * The action selector is fixed by the narrow tool and therefore removed. The
+ * resulting flat camelCase properties remain the same definitions used by
+ * `PM_TOOL_PARAMETERS_SCHEMA`, eliminating a hand-maintained MCP schema table.
+ */
+export function buildPmActionToolInputSchema(
+  action: PmToolAction,
+  options: PmActionToolInputSchemaOptions = {},
+): Record<string, unknown> {
+  const actionSchema = buildActionScopedToolSchema(action);
+  const actionProperties = {
+    ...(actionSchema.properties as Record<string, unknown>),
+  };
+  delete actionProperties.action;
+  const required = (
+    options.required ??
+    (actionSchema.required as unknown[]).map(String)
+  ).filter((key) => key !== "action");
+  const schema: Record<string, unknown> = {
+    type: "object",
+    additionalProperties: options.additionalProperties ?? true,
+    properties: {
+      ...actionProperties,
+      options: {
+        type: "object",
+        additionalProperties: true,
+        description:
+          "Advanced command options forwarded to the selected pm action.",
+      },
+      ...options.properties,
+    },
+    required,
+  };
+  if (actionSchema.anyOf !== undefined) schema.anyOf = actionSchema.anyOf;
+  if (actionSchema.oneOf !== undefined) schema.oneOf = actionSchema.oneOf;
+  if (actionSchema.allOf !== undefined) schema.allOf = actionSchema.allOf;
+  return schema;
+}
+
 // Building the full MCP tool-parameter schemas (one variant per action) is only
 // needed by the MCP server, the `pm contracts` command, and SDK consumers — never
 // on the hot CLI path that imports this module for flag contracts. Wrap them in a

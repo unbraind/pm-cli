@@ -2,19 +2,36 @@ id: pm-xwah
 title: Derive ALL MCP tool inputSchemas from *_FLAG_CONTRACTS — eliminate hand-declared parallel schema tables (extend the pm_copy pattern)
 description: "Class fix behind pm-zx13 (schema/flag drift, closed) and pm-hno5 (pm_copy nested-options drift, closed via PR#545). Today only pm_copy imports COPY_FLAG_CONTRACTS; the other ~27 tools hand-declare schemas that the pm-4os2 golden file can only catch AFTER drift ships. Generating schemas from the single flag-contract source makes CLI/MCP input parity structural. Duplicate check: pm-srns owns OUTPUT envelope grammar; pm-0z7n owns CLI alias sweep; pm-9k90 owns tool TIERING; none owns input-schema derivation. Sequence freely; no blockers."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: "area:contracts","area:mcp",dx,simplification
 created_at: "2026-07-13T17:29:48.188Z"
-updated_at: "2026-07-26T05:59:25.893Z"
+updated_at: "2026-07-27T18:20:27.163Z"
+closed_at: "2026-07-27T18:19:26.326Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Every mutation/query MCP tool in src/mcp/tool-definitions.ts derives its flat camelCase inputSchema keys from the corresponding *_FLAG_CONTRACTS table (as pm_copy does from COPY_FLAG_CONTRACTS since PR#545) instead of a hand-declared parallel table; contracts:check snapshot regenerated once and stays byte-stable across a no-op rebuild; a unit spec asserts no tool schema key exists without a backing flag-contract entry (drift becomes structurally impossible, not just snapshot-caught); MCP integration suites stay warning-clean"
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-srns,related,"2026-07-13T17:29:48.188Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:55:59.163Z",null,null
-  pm-m4ikkz,implements,"2026-07-26T05:59:25.606Z",null,null
+resolution: implemented
+expected_result: MCP schema keys derive from canonical flag and action contracts with structural drift coverage.
+actual_result: "All dedicated tool schemas use buildPmActionToolInputSchema; conformance, snapshot, and MCP integration checks pass."
+dependencies[3]{id,kind,created_at}:
+  pm-srns,related,"2026-07-13T17:29:48.188Z"
+  pm-mpbb,implements,"2026-07-26T05:55:59.163Z"
+  pm-m4ikkz,implements,"2026-07-26T05:59:25.606Z"
+comments[2]{created_at,author,text}:
+  "2026-07-27T16:42:25.670Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
+  "2026-07-27T18:19:06.330Z","harness:codex","Evidence: all dedicated MCP schemas now project from canonical SDK action/flag contracts through buildPmActionToolInputSchema; the conformance test rejects any non-transport schema key without a canonical backing property. Contract snapshot/check and the 38-test MCP focused suite pass warning-clean."
+files[2]{path,scope,note}:
+  src/mcp/tool-definitions.ts,project,narrow MCP schemas derived from action contracts
+  src/sdk/cli-contracts/tool-schema.ts,project,canonical action schema projection
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms3jonyj-t2eatf,test,passed,"2026-07-27T18:12:43.784Z","2026-07-27T18:12:57.547Z","2026-07-27T18:12:57.547Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/MCP_CAPABILITY_SURFACES.md,project,canonical MCP schema and surface guidance
+close_reason: "Canonical contract-derived schemas, conformance test, stable snapshot, and warning-clean MCP integration are complete."
 body: ""
