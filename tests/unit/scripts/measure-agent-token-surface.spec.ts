@@ -294,6 +294,27 @@ describe("measure-agent-token-surface", () => {
       "commands.ls: missing baseline",
       "commands.retired_command: stale baseline surface",
     ]);
+
+    const cleanBaseline = module.buildBaseline(report, 1);
+    const incompleteBaseline = {
+      ...cleanBaseline,
+      surfaces: {
+        ...cleanBaseline.surfaces,
+        contracts: undefined,
+        commands: undefined,
+      },
+    } as unknown as TokenSurfaceBaseline;
+    const incompleteViolations = module.compareBaseline(
+      report,
+      incompleteBaseline,
+    );
+    expect(incompleteViolations).toHaveLength(6);
+    expect(incompleteViolations).toEqual(
+      expect.arrayContaining([
+        "contracts.summary_toon: missing baseline",
+        "commands.ls: missing baseline",
+      ]),
+    );
   });
 
   it("writes an intentional baseline update to an explicit path", async () => {
