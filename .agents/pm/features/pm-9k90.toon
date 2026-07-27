@@ -1,25 +1,50 @@
 id: pm-9k90
-title: "MCP tool profiles: core/standard/full/custom tiers with an allowlist override, so 28 tools are the maximum surface, not the default"
+title: "MCP tool profiles: core/standard/full/custom tiers with an allowlist override, so 31 tools are the maximum surface, not the default"
 description: "Tier the MCP tool surface: core (~10 tools: pm_next, pm_context, pm_search, pm_get, pm_create, pm_claim, pm_update, pm_close, pm_plan, pm_validate), standard (adds workflow+evidence: pm_append, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_health, pm_profile, pm_config), full (all narrow tools + pm_run), custom (env/config allowlist e.g. PM_MCP_TOOLS=pm_next,pm_context,...). pm_run stays a fallback for advanced/low-frequency operations, never the first tool an agent sees. Distinct new feature — does NOT reopen the dispositioned pm-mpbb DX lever list (a-d)."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agents,ergonomics,mcp,token-surface
 created_at: "2026-07-13T09:32:01.899Z"
-updated_at: "2026-07-26T05:59:26.886Z"
+updated_at: "2026-07-27T21:46:40.075Z"
+closed_at: "2026-07-27T21:46:34.913Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "Profile selection via MCP server config/env with core as a deliberate product decision for the default; tools/list payload for core measured via scripts/measure-agent-token-surface.mjs and published (baseline: 28 tools = 32979 B ~= 8.2k tokens per pm-a22j); custom allowlist validated against known tool names with clear errors; profiles documented in registry metadata and plugin docs; contract/drift gates cover per-profile tool sets; existing integration suites pass under every profile"
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: implemented
+expected_result: "MCP exposes validated core, standard, full, and custom profiles with a compact deliberate default."
+actual_result: "Core is the default at 13 tools and 34,828 bytes; standard/full expand deterministically to the current 31-tool maximum and custom validates exact allowlists."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-wjfa,related,"2026-07-13T09:32:01.899Z",null,null
   pm-xwah,related,"2026-07-16T05:45:15.759Z",null,null
   pm-1kxs,implements,"2026-07-25T06:28:05.419Z",null,null
   pm-m4ikkz,implements,"2026-07-26T05:59:26.632Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-07-27T16:42:33.856Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
+  "2026-07-27T18:19:07.707Z","harness:codex","Evidence: core/standard/full/custom profiles validate exact names and workspace extension actions. The default core payload is 34,828 bytes (13 tools), below the prior 42,359-byte budget; detailed schema descriptions are removed only from core input schemas while full remains lossless. Token-surface and profile tests pass."
+  "2026-07-27T21:46:28.797Z","harness:codex","Final verification evidence: the built full profile exposes the current canonical 31-tool maximum, while core remains the compact 13-tool default at 34,828 bytes and custom allowlists validate exact names. Operator docs now report 31 tools. Linked token-surface, runtime capability, and real Claude plugin smoke tests all pass; the smoke exercised all 31 tools and a full temporary workflow. The complete suite passed 379 files and 6,428 tests at 100/100/100/100 coverage."
 notes[3]{created_at,author,text}:
   "2026-07-13T09:32:19.589Z",maintainer-agent,"Rationale evidence: June 2026 tool-selection study (arxiv 2606.30317) found substantial accuracy degradation as available tool count grows (threshold varies by model); Task Master independently ships core/standard/full MCP tiers with explicit token budgets for the same reason. Pair with MCP resources+prompts (owned by pm-z3ez) so stable reference context does not need to be a tool. Selection quality is an agent-acquisition lever, not just a token saving — a smaller, sharper surface makes agents pick pm tools correctly more often."
   "2026-07-15T19:27:28.263Z",maintainer-agent,"Re-measurement 2026-07-15 (review pass #89, scripts/measure-agent-token-surface.mjs): MCP tools/list 33,314 B / 8,329 tokens / 28 tools — up from the pm-a22j baseline 32,979 B (2026-07-11). Every session with the MCP server attached pays ~8.3k tokens before the first call, and each new tool/flag grows it; the core/standard/full profile tiers this item owns are the structural fix. Companion figure: full-format single-item surface is 539,946 B (~135k tokens) vs summary_json 4,426 B — the 122x spread shows how much the profile/format choices matter for agent context budgets."
   "2026-07-18T05:42:19.706Z",maintainer-agent,"Surface re-measurement 2026-07-18 (scripts/measure-agent-token-surface.mjs, post-PR#580/#581): MCP tools/list now 29 tools / 34,975 B / ~8,744 tokens — up from the pm-a22j baseline of 28 tools / 32,979 B / ~8.2k tokens (pm_graph added; growth passed the token-budget gate deliberately). Every new first-class tool now costs every agent cold start ~+500 tokens, which strengthens the case for the profile tiers this item owns: a graph-heavy agent needs pm_graph but a triage agent never does. Use these numbers as the before-figure when profiles land."
+learnings[1]{created_at,author,text}:
+  "2026-07-27T18:19:08.471Z","harness:codex","Keep default MCP schemas structurally complete but description-compact; hosts already receive tool descriptions, and stripping nested descriptions reduced tools/list from 69,974 to 34,828 bytes without weakening validation."
+files[3]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,profile-aware token surface budget
+  src/mcp/runtime-capabilities.ts,project,validated core standard full custom MCP profiles
+  src/mcp/server.ts,project,profile filtered live tool discovery
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/measure-agent-token-surface.mjs --check,project,240
+  node scripts/run-tests.mjs test -- tests/unit/mcp/runtime-capabilities.spec.ts,project,240
+  node scripts/smoke-claude-plugin.mjs,project,180
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms3jqacn-3irxbv,test,passed,"2026-07-27T18:13:13.501Z","2026-07-27T18:14:13.223Z","2026-07-27T18:14:13.223Z",2,0,0
+  test-local-ms3pxe9q-jv3iyx,test,passed,"2026-07-27T21:06:26.291Z","2026-07-27T21:07:42.590Z","2026-07-27T21:07:42.590Z",3,0,0
+docs[2]{path,scope,note}:
+  docs/CLAUDE_CODE_PLUGIN.md,project,correct full MCP tool count in plugin operator guidance
+  docs/MCP_CAPABILITY_SURFACES.md,project,MCP profile configuration
+close_reason: "Delivered validated core, standard, full, and custom MCP profiles with compact core as the default, deterministic expansion to the current 31-tool maximum, exact custom allowlist errors, profile-aware token budgets, registry/operator documentation, contract coverage, and real 31-tool Claude plugin smoke verification."
 body: ""

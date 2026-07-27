@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1254,
+    "covered_symbols": 1258,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1255
+    "required_symbols": 1259
   },
   "breaking_acknowledgements": [
     {
@@ -179,6 +179,25 @@
       ],
       "package_version": "2026.7.27",
       "reason": "pm-gmdzaa makes unfiltered contracts summary-first and adds optional output policy metadata; full:true preserves the complete contract surface"
+    },
+    {
+      "changes": [
+        "signature ./sdk:WorkspaceContracts",
+        "signature ./sdk/runtime:WorkspaceContracts"
+      ],
+      "package_version": "2026.7.27",
+      "reason": "WorkspaceContracts gains optional additive runtime field and extension command discovery metadata"
+    },
+    {
+      "changes": [
+        "signature ./sdk:CommandDefinition",
+        "signature ./sdk:RegisteredExtensionCommandDefinition",
+        "signature ./sdk:WorkspaceExtensionCommandContract",
+        "signature ./sdk/authoring:CommandDefinition",
+        "signature ./sdk/runtime:WorkspaceExtensionCommandContract"
+      ],
+      "package_version": "2026.7.27",
+      "reason": "Additive optional workspace capability metadata and extension command visibility tier"
     }
   ],
   "entrypoints": {
@@ -990,6 +1009,12 @@
           "signature": "(trackerRelativeRoot: string, typeFolders: string[]) => string[] | calls: (trackerRelativeRoot: string, typeFolders: string[]) => string[]"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "buildPmActionToolInputSchema",
+          "signature": "(action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown> | calls: (action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown>"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "buildRelationshipContext",
@@ -1383,7 +1408,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandDefinition",
-          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; }"
+          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
         },
         {
           "classification": "contract_data",
@@ -5028,6 +5053,18 @@
           "signature": "export interface ListOptions extends SharedItemFilterOptions { ids?: string; assigneeFilter?: string; today?: boolean; recent?: boolean; limit?: string; offset?: string; after?: string; noTruncate?: boolean; includeBody?: boolean; compact?: boolean; brief?: boolean; full?: boolean; fields?: string; sort?: string; order?: string; tree?: boolean; treeDepth?: string; excludeTerminal?: boolean; strictRead?: boolean; dependencyBlocked?: boolean; filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listPmCommandsForTier",
+          "signature": "(tier: Exclude<PmCommandVisibilityTier, \"internal\">) => string[] | calls: (tier: Exclude<PmCommandVisibilityTier, \"internal\">) => string[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listPmMcpToolsForProfile",
+          "signature": "(availableTools: readonly string[], profile: Exclude<PmMcpToolProfile, \"custom\">) => string[] | calls: (availableTools: readonly string[], profile: Exclude<PmMcpToolProfile, \"custom\">) => string[]"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "listProfiles",
@@ -6180,6 +6217,12 @@
           "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_COMMAND_VISIBILITY_CONTRACTS",
+          "signature": "readonly PmCommandVisibilityContract[]"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
@@ -6244,6 +6287,24 @@
           "kind": "value",
           "name": "PM_GITIGNORE_START",
           "signature": "\"# pm-cli:runtime-cache:start\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_PROMPT_CONTRACTS",
+          "signature": "readonly PmMcpPromptContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_RESOURCE_CONTRACTS",
+          "signature": "readonly PmMcpResourceContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MCP_TOOL_COMMAND_CONTRACTS",
+          "signature": "Readonly<Record<string, string>>"
         },
         {
           "classification": "supported",
@@ -6343,6 +6404,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmActionToolInputSchemaOptions",
+          "signature": "export interface PmActionToolInputSchemaOptions { properties?: Record<string, unknown>; required?: string[]; additionalProperties?: boolean; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationControlOptions",
           "signature": "export type PmBulkMutationControlOptions = { dryRun?: boolean; rollback?: boolean; noCheckpoint?: boolean; };"
@@ -6432,6 +6499,18 @@
           "signature": "export interface PmCommandOutputBudgetContract { command: (typeof PM_CORE_COMMAND_NAMES)[number]; budget_class: PmOutputBudgetClass; default_max_estimated_tokens: number; degradation_ladder: readonly PmOutputDegradationStep[]; allows_unbounded_opt_out: boolean; token_estimate: \"ceil(utf8_bytes / 4)\"; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmCommandVisibilityContract",
+          "signature": "export interface PmCommandVisibilityContract { command: string; tier: PmCommandVisibilityTier; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmCommandVisibilityTier",
+          "signature": "export type PmCommandVisibilityTier = \"core\" | \"standard\" | \"full\" | \"internal\";"
+        },
+        {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
@@ -6472,6 +6551,30 @@
           "kind": "type",
           "name": "PmExtensionTrustModeContract",
           "signature": "export type PmExtensionTrustModeContract = (typeof PM_EXTENSION_TRUST_MODE_CONTRACTS)[number];"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpPromptArgumentContract",
+          "signature": "export interface PmMcpPromptArgumentContract { name: string; description: string; required: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpPromptContract",
+          "signature": "export interface PmMcpPromptContract { name: string; description: string; arguments: readonly PmMcpPromptArgumentContract[]; template: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmMcpResourceContract",
+          "signature": "export interface PmMcpResourceContract { uri: string; name: string; description: string; mimeType: \"application/json\" | \"text/markdown\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PmMcpToolProfile",
+          "signature": "export type PmMcpToolProfile = \"core\" | \"standard\" | \"full\" | \"custom\";"
         },
         {
           "classification": "contract_data",
@@ -7191,7 +7294,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "RegisteredExtensionCommandDefinition",
-          "signature": "export interface RegisteredExtensionCommandDefinition { layer: ExtensionLayer; name: string; source_package?: string; command: string; action: string; description?: string; intent?: string; examples: string[]; failure_hints: string[]; arguments: ExtensionCommandArgumentDefinition[]; }"
+          "signature": "export interface RegisteredExtensionCommandDefinition { layer: ExtensionLayer; name: string; source_package?: string; command: string; action: string; description?: string; intent?: string; examples: string[]; failure_hints: string[]; arguments: ExtensionCommandArgumentDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
         },
         {
           "classification": "supported",
@@ -7964,6 +8067,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "renderPmCommandVisibilityMarkdown",
+          "signature": "() => string | calls: () => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "renderRowsAsCsv",
           "signature": "(rows: TabularRow[]) => string | calls: (rows: TabularRow[]) => string"
         },
@@ -8188,6 +8297,12 @@
           "kind": "function",
           "name": "resolvePmCommandOutputBudget",
           "signature": "(command: string) => PmCommandOutputBudgetContract | null | calls: (command: string) => PmCommandOutputBudgetContract | null"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolvePmCommandVisibilityTier",
+          "signature": "(command: string, extensionTier?: PmCommandVisibilityTier) => PmCommandVisibilityTier | calls: (command: string, extensionTier?: PmCommandVisibilityTier) => PmCommandVisibilityTier"
         },
         {
           "classification": "advanced_export",
@@ -10701,13 +10816,25 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceContracts",
-          "signature": "export interface WorkspaceContracts { types: string[]; statuses: string[]; openStatus: string; closeStatus: string; canceledStatus: string; }"
+          "signature": "export interface WorkspaceContracts { types: string[]; statuses: string[]; openStatus: string; closeStatus: string; canceledStatus: string; fields?: WorkspaceFieldContract[]; extensionCommands?: WorkspaceExtensionCommandContract[]; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceContractsOptions",
           "signature": "export interface WorkspaceContractsOptions { extensionRegistrations?: ExtensionRegistrationRegistry | null; noExtensions?: boolean; cwd?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceExtensionCommandContract",
+          "signature": "export interface WorkspaceExtensionCommandContract { command: string; action: string; arguments: Array<{ name: string; required: boolean; variadic: boolean; description?: string; }>; description?: string; tier: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceFieldContract",
+          "signature": "export interface WorkspaceFieldContract { key: string; optionName: string; metadataKey: string; type: \"string\" | \"number\" | \"boolean\" | \"string_array\"; commands: string[]; repeatable: boolean; requiredOnCreate: boolean; description?: string; }"
         },
         {
           "classification": "supported",
@@ -10989,7 +11116,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandDefinition",
-          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; }"
+          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
         },
         {
           "classification": "supported",
@@ -12265,6 +12392,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "buildPmActionToolInputSchema",
+          "signature": "(action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown> | calls: (action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown>"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS",
           "signature": "CommanderOptionAliasContract[]"
@@ -12856,6 +12989,12 @@
           "kind": "interface",
           "name": "PmActionSchemaContract",
           "signature": "export interface PmActionSchemaContract { required?: string[]; optional?: string[]; anyOfRequired?: Array<string[]>; oneOfRequired?: Array<string[]>; dependentAnyOfRequired?: Array<{ property: string; anyOfRequired: Array<string[]>; }>; conditionalRequired?: Array<{ property: string; value: string; required: string[]; }>; mutuallyExclusive?: Array<string[]>; mutuallyExclusiveWhen?: Array<Array<{ property: string; schema: Record<string, unknown>; }>>; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmActionToolInputSchemaOptions",
+          "signature": "export interface PmActionToolInputSchemaOptions { properties?: Record<string, unknown>; required?: string[]; additionalProperties?: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -19365,13 +19504,25 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceContracts",
-          "signature": "export interface WorkspaceContracts { types: string[]; statuses: string[]; openStatus: string; closeStatus: string; canceledStatus: string; }"
+          "signature": "export interface WorkspaceContracts { types: string[]; statuses: string[]; openStatus: string; closeStatus: string; canceledStatus: string; fields?: WorkspaceFieldContract[]; extensionCommands?: WorkspaceExtensionCommandContract[]; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceContractsOptions",
           "signature": "export interface WorkspaceContractsOptions { extensionRegistrations?: ExtensionRegistrationRegistry | null; noExtensions?: boolean; cwd?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceExtensionCommandContract",
+          "signature": "export interface WorkspaceExtensionCommandContract { command: string; action: string; arguments: Array<{ name: string; required: boolean; variadic: boolean; description?: string; }>; description?: string; tier: \"core\" | \"standard\" | \"full\" | \"internal\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceFieldContract",
+          "signature": "export interface WorkspaceFieldContract { key: string; optionName: string; metadataKey: string; type: \"string\" | \"number\" | \"boolean\" | \"string_array\"; commands: string[]; repeatable: boolean; requiredOnCreate: boolean; description?: string; }"
         },
         {
           "classification": "advanced_export",

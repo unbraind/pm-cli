@@ -25,6 +25,8 @@ import {
   suggestKnownItemFieldType,
 } from "./item-field-types.js";
 import { snapshotExtensionModuleGraph } from "./module-graph-snapshot.js";
+import { captureExtensionActivationRollback } from "./activation-transaction.js";
+import { assertCommandDefinitionMetadataStrings } from "./command-visibility-tier.js";
 import {
   asRegistrationRecord,
   assertOptionalBooleanField,
@@ -2430,18 +2432,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
       );
     }
     try {
-      assertOptionalStringField(
-        "registerCommand definition.action",
-        definition.action,
-      );
-      assertOptionalStringField(
-        "registerCommand definition.description",
-        definition.description,
-      );
-      assertOptionalStringField(
-        "registerCommand definition.intent",
-        definition.intent,
-      );
+      assertCommandDefinitionMetadataStrings(definition);
       const action = resolveCommandDefinitionAction(
         normalizedCommand,
         definition.action,
@@ -2505,6 +2496,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
         examples,
         failure_hints: failureHints,
         arguments: argumentsDefinition,
+        tier: definition.tier,
       };
       if (description) {
         registration.description = description;
@@ -3541,6 +3533,11 @@ export async function activateExtensions(
       continue;
     }
 
+    const failedBeforeActivation = failed.length;
+    const rollbackPartialActivation = captureExtensionActivationRollback({
+      hooks, commands, parsers, preflight, services, renderers, registrations,
+    });
+
     try {
       await activatable.activate(
         createExtensionApi(
@@ -3557,7 +3554,14 @@ export async function activateExtensions(
           policy,
         ),
       );
+      if (failed.length > failedBeforeActivation) {
+        rollbackPartialActivation();
+        warnings.push(
+          `extension_activation_rolled_back:${extension.layer}:${extension.name}`,
+        );
+      }
     } catch (error: unknown) {
+      rollbackPartialActivation();
       warnings.push(
         `extension_activate_failed:${extension.layer}:${extension.name}`,
       );

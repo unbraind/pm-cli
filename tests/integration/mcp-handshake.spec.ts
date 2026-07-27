@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   _testOnly as mcpServerTestOnly,
   handleRequest,
@@ -73,6 +73,20 @@ const EXPECTED_TOOL_NAMES = [
 ];
 
 describe("MCP protocol handshake", () => {
+  const originalMcpProfile = process.env.PM_MCP_PROFILE;
+
+  beforeAll(() => {
+    process.env.PM_MCP_PROFILE = "full";
+  });
+
+  afterAll(() => {
+    if (originalMcpProfile === undefined) {
+      delete process.env.PM_MCP_PROFILE;
+    } else {
+      process.env.PM_MCP_PROFILE = originalMcpProfile;
+    }
+  });
+
   it("handles ping with an empty result payload", async () => {
     expect(mcpServerTestOnly.getMcpClientInfo()).toBeUndefined();
     await expect(
@@ -125,7 +139,11 @@ describe("MCP protocol handshake", () => {
       name: "handshake-test",
       version: "1.0.0",
     });
-    expect(result.capabilities).toMatchObject({ tools: {} });
+    expect(result.capabilities).toMatchObject({
+      tools: { listChanged: true },
+      resources: { listChanged: true },
+      prompts: { listChanged: true },
+    });
   });
 
   it("tools/list returns exactly the 31 expected tools including the new narrow tools", async () => {

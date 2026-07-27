@@ -81,6 +81,12 @@ export default defineConfig({
     ],
   },
   test: {
+    env: {
+      // Most legacy MCP integration tests exercise the complete historical
+      // tool surface. Profile-specific tests pass an explicit environment and
+      // separately prove that production configuration defaults to core.
+      PM_MCP_PROFILE: "full",
+    },
     include: ["tests/**/*.spec.ts"],
     testTimeout: 30_000,
     hookTimeout: 30_000,

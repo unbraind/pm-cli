@@ -1151,8 +1151,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
               managed: true,
               active: true,
               enabled: true,
-              runtime_active: null,
-              activation_status: "unknown",
+              runtime_active: true,
+              activation_status: "ok",
             }),
           ],
         },
@@ -1278,8 +1278,17 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         >
       );
       const manageDefaultEntry = manageDefaultExtensions.find((entry) => entry.name === "doctor-failing-ext");
-      expect(manageDefaultEntry?.runtime_active ?? null).toBeNull();
-      expect(manageDefaultEntry?.activation_status).toBe("unknown");
+      expect(manageDefaultEntry).toMatchObject({
+        runtime_active: false,
+        activation_status: "failed",
+      });
+      expect(
+        (
+          (manageDefault.json as {
+            details: { runtime_probe?: Record<string, unknown> };
+          }).details.runtime_probe ?? {}
+        ).reason,
+      ).toBe("manage_defaults_to_runtime_probe");
 
       const manageProbe = context.runCli(["extension", "--manage", "--project", "--runtime-probe", "--json"], { expectJson: true });
       expect(manageProbe.code).toBe(0);

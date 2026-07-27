@@ -728,6 +728,8 @@ export interface CommandDefinition {
   arguments?: ExtensionCommandArgumentDefinition[];
   /** Value that configures or reports flags for this contract. */
   flags?: FlagDefinition[];
+  /** Minimum agent surface tier that should advertise this command. */
+  tier?: "core" | "standard" | "full" | "internal";
 }
 
 /**
@@ -1284,6 +1286,8 @@ export interface RegisteredExtensionCommandDefinition {
   failure_hints: string[];
   /** Value that configures or reports arguments for this contract. */
   arguments: ExtensionCommandArgumentDefinition[];
+  /** Minimum agent surface tier that should advertise this command. */
+  tier?: "core" | "standard" | "full" | "internal";
 }
 
 /** Documents the registered extension schema field definitions payload exchanged by command, SDK, and package integrations. */

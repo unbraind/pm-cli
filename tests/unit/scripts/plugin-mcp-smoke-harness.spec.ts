@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
@@ -20,13 +21,14 @@ function mockSpawnedChild() {
     stderr,
     kill,
   });
-  vi.doMock("node:child_process", () => ({ spawn: vi.fn(() => child) }));
+  const spawn = vi.fn(() => child);
+  vi.doMock("node:child_process", () => ({ spawn }));
   vi.doMock("node:fs/promises", () => ({
     mkdtemp: vi.fn(async () => "/tmp/pm-mcp-harness"),
     rm: vi.fn(async () => undefined),
   }));
   vi.doMock("node:readline", () => ({ default: { createInterface }, createInterface }));
-  return { readlineEmitter, stdinWrite, stdinEnd, kill, stderr };
+  return { readlineEmitter, stdinWrite, stdinEnd, kill, stderr, spawn };
 }
 
 function lastId(stdinWrite: ReturnType<typeof vi.fn>): unknown {
@@ -44,6 +46,16 @@ describe("plugin-mcp-smoke-harness", () => {
       tmpPrefix: "pm-harness-",
       requestTimeoutMs: 50,
     });
+    expect(env.spawn).toHaveBeenCalledWith(
+      process.execPath,
+      ["/tmp/mock-plugin-server.mjs"],
+      expect.objectContaining({
+        env: expect.objectContaining({
+          PM_MCP_PROFILE: "full",
+          PM_PATH: path.join("/tmp/pm-mcp-harness", ".agents", "pm"),
+        }),
+      }),
+    );
 
     const initializePromise = session.request("initialize", { ping: true });
     env.readlineEmitter.emit(

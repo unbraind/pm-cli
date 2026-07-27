@@ -7,6 +7,7 @@ import {
   EXIT_CODE,
   PmCliError,
 } from "../../sdk/runtime-primitives.js";
+import { listPmCommandsForTier } from "../../sdk/agent-capability-contracts.js";
 import { SCAFFOLD_CAPABILITIES } from "./extension/scaffold.js";
 import {
   AGGREGATE_FLAG_CONTRACTS,
@@ -35,7 +36,6 @@ import {
   NEXT_FLAG_CONTRACTS,
   PACKAGE_FLAG_CONTRACTS,
   PLAN_FLAG_CONTRACTS,
-  PM_CORE_COMMAND_NAMES,
   SEARCH_FLAG_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
@@ -80,7 +80,7 @@ export interface CompletionRuntimeConfig {
   command_flags?: Partial<Record<CompletionFlagCommand, string[]>>;
 }
 
-const ALL_COMMANDS = [...PM_CORE_COMMAND_NAMES];
+const ALL_COMMANDS = listPmCommandsForTier("full");
 const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
 const AGGREGATE_FLAGS = toCompletionFlagString(AGGREGATE_FLAG_CONTRACTS);
 const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);

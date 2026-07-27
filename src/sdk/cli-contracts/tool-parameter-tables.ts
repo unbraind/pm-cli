@@ -643,6 +643,23 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   action: {
     description: "Tool action to execute.",
   },
+  pmExecutable: {
+    description:
+      "Override the pm executable used by actions that invoke or verify an external CLI process.",
+    examples: ["pm", "node dist/cli.js"],
+  },
+  force: {
+    description:
+      "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
+  },
+  limit: {
+    description: "Maximum number of rows returned by the selected action.",
+    examples: [10, "25"],
+  },
+  text: {
+    description:
+      "Text payload used by append, comment, note, or learning mutations.",
+  },
   path: {
     description: "Optional PM data root override for this invocation.",
     examples: [".agents/pm"],
@@ -1669,6 +1686,41 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  next: {
+    tag: {
+      description: "Only recommend items carrying this exact tag.",
+      examples: ["sdk", "release"],
+    },
+    tokenBudget: {
+      description:
+        "Maximum estimated output tokens for the recommendation context.",
+      examples: [600, "1200"],
+    },
+  },
+  claim: {
+    tag: {
+      description:
+        "When claiming the next item, only consider work carrying this exact tag.",
+      examples: ["sdk", "release"],
+    },
+    tokenBudget: {
+      description:
+        "Maximum estimated output tokens for the next-item context returned with the claim.",
+      examples: [600, "1200"],
+    },
+  },
+  close: {
+    text: {
+      description:
+        "Backward-compatible alias for the item close reason when reason is not provided.",
+    },
+  },
+  "close-task": {
+    text: {
+      description:
+        "Close reason used before releasing the item's active assignment.",
+    },
+  },
   schema: {
     name: {
       description:

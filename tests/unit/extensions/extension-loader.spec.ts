@@ -5435,7 +5435,7 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     ]);
   });
 
-  it("quarantines one malformed command definition without disabling healthy siblings", async () => {
+  it("atomically rolls back a command bundle containing one malformed definition", async () => {
     const loadResult = inMemoryLoadResult(
       {
         activate(api: ExtensionApi) {
@@ -5458,10 +5458,7 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     );
 
     const result = await activateExtensions(loadResult);
-    expect(result.commands.handlers.map((entry) => entry.command)).toEqual([
-      "bundle before",
-      "bundle after",
-    ]);
+    expect(result.commands.handlers).toEqual([]);
     expect(result.failed).toEqual([
       expect.objectContaining({
         name: "partial-command-bundle",
@@ -5474,6 +5471,9 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     ]);
     expect(result.warnings).toContain(
       "extension_command_quarantined:project:partial-command-bundle:bundle malformed",
+    );
+    expect(result.warnings).toContain(
+      "extension_activation_rolled_back:project:partial-command-bundle",
     );
   });
 

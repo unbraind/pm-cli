@@ -47,9 +47,24 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { createAsyncReadWriteGate } from "../core/shared/serial-queue.js";
-import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+} from "../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
+import type {
+  WorkspaceExtensionCommandContract,
+  WorkspaceFieldContract,
+} from "./workspace-contracts.js";
+import {
+  buildWorkspaceExtensionCommandContracts,
+  buildWorkspaceFieldContracts,
+} from "./workspace-contracts.js";
+export type {
+  WorkspaceExtensionCommandContract,
+  WorkspaceFieldContract,
+} from "./workspace-contracts.js";
 import {
   PM_TOOL_ACTIONS,
   type PmToolAction,
@@ -616,6 +631,10 @@ export interface WorkspaceContracts {
   closeStatus: string;
   /** Configured status id representing the canceled lifecycle state. */
   canceledStatus: string;
+  /** Runtime custom fields accepted by create and update actions. */
+  fields?: WorkspaceFieldContract[];
+  /** Activated extension commands available through generic action dispatch. */
+  extensionCommands?: WorkspaceExtensionCommandContract[];
 }
 
 /**
@@ -2418,6 +2437,7 @@ export async function getWorkspaceContracts(
     extensionRegistrations,
   );
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const fieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
 
   return {
     types: [...typeRegistry.types],
@@ -2425,6 +2445,10 @@ export async function getWorkspaceContracts(
     openStatus: statusRegistry.open_status,
     closeStatus: statusRegistry.close_status,
     canceledStatus: statusRegistry.canceled_status,
+    fields: buildWorkspaceFieldContracts(fieldRegistry.definitions),
+    extensionCommands: buildWorkspaceExtensionCommandContracts(
+      extensionRegistrations?.commands ?? [],
+    ),
   };
 }
 

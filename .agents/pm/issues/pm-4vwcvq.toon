@@ -2,11 +2,12 @@ id: pm-4vwcvq
 title: "GH-772: rejected extension command registration leaves silent partial activation and zero-exit command gaps"
 description: "When one extension command registration is rejected, earlier siblings remain active while the rejected and later commands disappear; invoking a dropped command yields misleading parent help or arity output with exit zero, and extension manage reports unknown activation state."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-27T14:04:33.678Z"
-updated_at: "2026-07-27T14:07:57.427Z"
+updated_at: "2026-07-27T18:20:32.200Z"
+closed_at: "2026-07-27T18:20:01.079Z"
 author: "harness:codex"
 acceptance_criteria: "Rejected command registration cannot leave an undisclosed partially active surface; manifest-declared unavailable commands return a stable nonzero diagnostic; extension manage and help expose exact runtime activation status; real packed-extension tests cover rejection before, within, and after sibling command registrations."
 goal: project management = context management
@@ -15,14 +16,29 @@ reporter: github-issue-772
 severity: high
 environment: pm 2026.7.27 with a command extension that collides with a host-owned global flag
 repro_steps: "Install pm-csv@2026.7.23 in a fresh workspace, inspect install diagnostics and extension manage, then invoke csv validate help and csv validate."
-expected_result: "Extension activation is atomic or every unavailable declared command fails nonzero with its activation cause, and manage reports the same runtime status as health."
-actual_result: "Earlier commands survive, the rejected and later siblings vanish, dropped command paths exit zero with misleading output, and manage reports runtime_active null and activation_status unknown."
+resolution: fixed
+expected_result: Activation is atomic; unavailable declared paths fail nonzero with the cause; manage reports live activation truth.
+actual_result: "Packed pm-csv@2026.7.23 proof returns exit 2 for both dropped paths with the flag-collision cause, and manage reports failed/false."
 component: "extensions:command-registration"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-185870,related,"2026-07-27T14:04:39.676Z","harness:codex","cli:update:dep",detected
   pm-usfg,implements,"2026-07-27T14:04:39.676Z","harness:codex","cli:update:dep",detected
   pm-yffj,discovered_from,"2026-07-27T14:04:39.676Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-27T14:04:33.678Z","harness:codex","Duplicate-check evidence: all-status searches for GH-772 and partial activation found the closed visibility owner pm-yffj and command-dispatch lineage but no item covering atomic registration,zero-exit dropped paths,or manage status parity."
   "2026-07-27T14:07:57.427Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/772. Canonical PM link was posted on the issue; this PR includes tracker-only triage and does not claim or implement the open report."
+  "2026-07-27T16:42:42.527Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
+  "2026-07-27T18:19:10.846Z","harness:codex","Evidence: activation is transactional across every registry. Real packed @unbrained/pm-cli consumer with pm-csv@2026.7.23 proved install exit 1, dropped help exit 2, dropped run exit 2, and both command diagnostics include pm-csv's rejected --json activation cause. Default extension manage reports runtime_active=false and activation_status=failed. Unit rollback tests cover failures before/within/after sibling registrations; CLI integration passes."
+learnings[1]{created_at,author,text}:
+  "2026-07-27T18:19:11.587Z","harness:codex","Rollback the complete registry set at the extension boundary, then reuse unknown-command recovery for stable nonzero diagnostics; default manage probing keeps lifecycle truth aligned with health and command recovery."
+files[3]{path,scope,note}:
+  src/core/extensions/activation-transaction.ts,project,atomic extension activation registry transaction
+  src/core/extensions/loader.ts,project,atomic activation rollback for partial failures
+  src/sdk/extension.ts,project,default manage runtime activation truth
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-activation-atomicity.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms3jrhgz-1dzmet,test,passed,"2026-07-27T18:14:37.864Z","2026-07-27T18:15:09.107Z","2026-07-27T18:15:09.107Z",2,0,0
+close_reason: "Atomic activation, nonzero unavailable-command recovery, default manage parity, and packed historical regression proof are complete."
 body: ""

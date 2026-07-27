@@ -185,6 +185,7 @@ export {
 } from "./cli-contracts/flag-contracts.js";
 export type { PmActionSchemaContract } from "./cli-contracts/tool-schema.js";
 export {
+  buildPmActionToolInputSchema,
   CLOSE_ACTION_OPTION_KEYS,
   PLAN_CREATE_METADATA_PARAMETER_KEYS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
@@ -195,6 +196,7 @@ export {
   PM_PROVIDER_TOOL_PARAMETERS_SCHEMA,
   _testOnlyCliContracts,
 } from "./cli-contracts/tool-schema.js";
+export type { PmActionToolInputSchemaOptions } from "./cli-contracts/tool-schema.js";
 export {
   analyzeSdkCliParameterCompleteness,
   type SdkCliActionParameterCoverage,

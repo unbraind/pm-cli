@@ -3,9 +3,10 @@
  *
  * Both scripts/smoke-claude-plugin.mjs and scripts/smoke-codex-plugin-mcp.mjs
  * spawn a stdio MCP server, speak JSON-RPC over stdin/stdout, list tools, and
- * drive an identical pm_run(init) → create → claim → update → comments → files →
- * docs → test → get → context workflow in a sandbox. This module owns the
- * spawn / JSON-RPC / readiness / cleanup plumbing they shared verbatim.
+ * drive an identical full-profile pm_run(init) → create → claim → update →
+ * comments → files → docs → test → get → context workflow in a sandbox. This
+ * module owns the spawn / JSON-RPC / readiness / cleanup plumbing they shared
+ * verbatim.
  *
  * NOTE: this helper lives under scripts/ and is imported only by the repo smoke
  * scripts (which run from the repo root). It is NOT shipped inside plugins/ and
@@ -44,6 +45,8 @@ export async function startPluginMcpSmoke({
       ...process.env,
       PM_AUTHOR: author,
       PM_GLOBAL_PATH: path.join(tmpRoot, ".pm-global"),
+      PM_MCP_PROFILE: "full",
+      PM_PATH: path.join(tmpRoot, ".agents", "pm"),
     },
     stdio: ["pipe", "pipe", "pipe"],
   });

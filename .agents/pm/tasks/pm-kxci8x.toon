@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-07-27T13:20:33.860Z"
+updated_at: "2026-07-27T18:20:05.754Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; A test asserts no surface maintains its own independent visibility list; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier through the same field, so extensions cannot bypass tiering"
@@ -31,6 +31,21 @@ dependencies[12]{id,kind,created_at}:
   pm-ka6d,related,"2026-07-25T12:35:12.677Z"
   pm-xp1xsw,related,"2026-07-25T12:35:12.677Z"
   pm-1kxs,implements,"2026-07-25T20:44:19.567Z"
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
+  "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
+  "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
+files[5]{path,scope,note}:
+  package.json,project,mandatory generated surface check
+  scripts/generate-agent-capability-surfaces.mjs,project,generated surface drift gate
+  src/cli/commands/completion.ts,project,completion commands derive from shared tier contracts
+  src/core/extensions/command-visibility-tier.ts,project,extension command tier validation
+  src/sdk/agent-capability-contracts.ts,project,single command visibility and MCP profile contract
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/mcp/runtime-capabilities.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms3jox6g-0ih7dn,test,passed,"2026-07-27T18:12:58.332Z","2026-07-27T18:13:09.496Z","2026-07-27T18:13:09.496Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/generated/AGENT_COMMAND_SURFACE.md,project,generated tier reference
+  docs/MCP_CAPABILITY_SURFACES.md,project,visibility tier guidance
 body: ""

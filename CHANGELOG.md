@@ -4,6 +4,9 @@
 
 ### Added
 
+- MCP tool profiles: core/standard/full/custom tiers with an allowlist override, so 31 tools are the maximum surface, not the default ([pm-9k90](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9k90.toon))
+- MCP resources and prompts surface: expose workspace context as addressable resources and canonical workflows as prompts, not only as tools ([pm-yf07b7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yf07b7.toon))
+- Project live workspace schema and extension commands into MCP discovery and mutations ([pm-m4ikkz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m4ikkz.toon))
 - Public SDK contracts and static runtimes let extension authors reuse the CLI baseline ([pm-w7mqzt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-w7mqzt.toon))
 
 ### Changed
@@ -12,6 +15,7 @@
 
 ### Fixed
 
+- GH-772: rejected extension command registration leaves silent partial activation and zero-exit command gaps ([pm-4vwcvq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4vwcvq.toon))
 - The surface-discovery contract costs 31k tokens in its brief form and still omits every flag, so the cheapest way to learn pm is the most expensive call it offers ([pm-gmdzaa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gmdzaa.toon))
 - Linked-test schema sandbox breaks package prepare hooks that install the PM merge driver ([pm-uawujr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uawujr.toon))
 - The list family exposes three incompatible --json projections under one flag, so an agent filtering on an unprojected field silently reads absent instead of unset ([pm-pjnu91](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pjnu91.toon))
@@ -31,6 +35,8 @@
 
 ### Other
 
+- Derive ALL MCP tool inputSchemas from \*\_FLAG_CONTRACTS — eliminate hand-declared parallel schema tables (extend the pm_copy pattern) ([pm-xwah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xwah.toon))
+- Generate shell completions, MCP tool registrations, and command reference docs from the contracts table (single source of truth) ([pm-mu8m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mu8m.toon))
 - The agent token-surface harness from pm-a22j is wired into nothing, so output-size regressions like the 33k-token health check land undetected ([pm-dpqa3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dpqa3h.toon))
 - Ecosystem review and deep-graph enrichment pass 2026-07-27: all-status census, CLI simplification + token-efficiency + long-term brainstorm, dedupe-checked gap filing ([pm-89qv6b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89qv6b.toon))
 - Evaluate @toon-format/toon 4 compatibility and item-format migration ([pm-5cgm2z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5cgm2z.toon))
