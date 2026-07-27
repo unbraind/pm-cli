@@ -1554,6 +1554,8 @@ describe("runUpdate", () => {
           kind: "blocks",
           created_at: "2026-03-01T00:00:00.000Z",
           author: "dep-owner",
+          source_kind: "cli:update:dep",
+          author_source: "asserted",
         },
         {
           id: "pm-dep-beta",
@@ -1561,12 +1563,15 @@ describe("runUpdate", () => {
           created_at: "2026-03-02T00:00:00.000Z",
           author: "dep-owner",
           source_kind: "imported",
+          author_source: "asserted",
         },
         {
           id: "pm-dep-blocker",
           kind: "blocked_by",
           created_at: "2026-03-02T12:00:00.000Z",
           author: "dep-owner",
+          source_kind: "cli:update:dep",
+          author_source: "asserted",
         },
         expect.objectContaining({
           id: "pm-dep-gamma",
@@ -1589,12 +1594,15 @@ describe("runUpdate", () => {
           created_at: "2026-03-02T00:00:00.000Z",
           author: "dep-owner",
           source_kind: "imported",
+          author_source: "asserted",
         },
         {
           id: "pm-dep-blocker",
           kind: "blocked_by",
           created_at: "2026-03-02T12:00:00.000Z",
           author: "dep-owner",
+          source_kind: "cli:update:dep",
+          author_source: "asserted",
         },
         expect.objectContaining({
           id: "pm-dep-gamma",
@@ -1721,6 +1729,9 @@ describe("runUpdate", () => {
           id: "pm-dep-gamma",
           kind: "related",
           created_at: "2026-03-03T00:00:00.000Z",
+          author: "test-author",
+          source_kind: "cli:update:dep",
+          author_source: "detected",
         },
       ]);
     });
@@ -2621,6 +2632,8 @@ describe("runUpdate", () => {
           kind: "related",
           author: "audit-owner",
           created_at: "2026-03-01T00:00:00.000Z",
+          source_kind: "cli:update:dep",
+          author_source: "asserted",
         },
       ]);
       expect(latestUpdateOperation(context, id)).toBe("update_ownership_bypass");

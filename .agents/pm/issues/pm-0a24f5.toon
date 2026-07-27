@@ -2,11 +2,12 @@ id: pm-0a24f5
 title: "GH-755: dependency edges are written with a null author, so the relationship graph is the only recorded collection with no provenance"
 description: "Dependency carries an author field, the update command accepts author as an explicit key on the dep value, and every other appended collection resolves the author automatically. The dep write path simply never applies the default. The proof is a same-item comparison: two blocked_by edges written seconds apart, one through update with a dep value and one through the blocked-by flag, land with author null and with the detected harness identity respectively, while a note written immediately after also carries the detected identity. Because the dep form is the only way to write any kind other than blocked_by, the practical effect is that the entire typed relationship graph is unattributed. That matters more here than it would in most trackers, because the graph is being used as a reasoning substrate: with tens of thousands of edges and a mandate that closed history be traversable, the questions of who asserted an edge, whether it came from a human, a harness, a backfill script or an importer, and whether an automated sweep may safely revise it, are all unanswerable. The source_kind column is likewise null on the same rows, so neither the principal nor the mechanism is recorded. Edge attribution is a precondition for changelog-safe automated graph maintenance, for the fleet analytics that attribute work to a harness and model, and for any policy that treats machine-asserted edges differently from human-asserted ones."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: "area:graph",attribution,gh-issue,graph,identity,relationships
 created_at: "2026-07-26T22:04:22.700Z"
-updated_at: "2026-07-26T22:04:22.700Z"
+updated_at: "2026-07-27T08:42:45.315Z"
+closed_at: "2026-07-27T08:18:06.020Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Dependency edges written through every surface, including the dep form on create and update, the blocked-by flag, update-many, copy, import and the SDK, resolve and record the same author identity that notes and comments record; source_kind is populated with the mechanism that created the edge so a backfill, an importer and an interactive write are distinguishable; an explicit author key on the dep value still overrides, and that override is marked asserted rather than detected; a check reports edges lacking attribution and the existing unattributed corpus is classified as legacy rather than silently backfilled, following the precedent for legacy history authors; regression coverage compares a dep-written edge and a flag-written edge on the same item and asserts identical attribution"
@@ -16,14 +17,33 @@ confidence: high
 reporter: github-issue-755
 severity: medium
 environment: "pm 2026.7.26, fresh pm init"
+resolution: "Create and update dependency writers now persist the effective author, asserted-versus-detected author source, and command mutation source while legacy and imported edges remain compatible."
 expected_result: "Every dependency edge records who asserted it and by what mechanism, exactly as notes, comments and learnings do."
 actual_result: "Edges written through the dep form carry author null and source_kind null, while the same edge kind written through the blocked-by flag is correctly attributed."
 component: dependencies
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-4020c5,related,"2026-07-26T22:04:22.700Z",null,null
-  pm-96h7,implements,"2026-07-26T22:04:22.700Z",null,null
-  pm-gw6uyq,related,"2026-07-26T22:04:22.700Z",null,null
-  pm-hnc9w7,blocks,"2026-07-26T22:04:22.700Z",null,null
-  pm-s5e04g,blocks,"2026-07-26T22:04:22.700Z",null,null
-  pm-u14c,implements,"2026-07-26T22:04:22.700Z",null,null
+dependencies[6]{id,kind,created_at}:
+  pm-4020c5,related,"2026-07-26T22:04:22.700Z"
+  pm-96h7,implements,"2026-07-26T22:04:22.700Z"
+  pm-gw6uyq,related,"2026-07-26T22:04:22.700Z"
+  pm-hnc9w7,blocks,"2026-07-26T22:04:22.700Z"
+  pm-s5e04g,blocks,"2026-07-26T22:04:22.700Z"
+  pm-u14c,implements,"2026-07-26T22:04:22.700Z"
+comments[3]{created_at,author,text}:
+  "2026-07-27T07:35:34.868Z","harness:codex","Start evidence 2026-07-27: selected after live all-status review of 2,129 items (1,807 closed, 309 open, 13 canceled; zero pre-existing in-progress), full canonical metadata/closed-lineage review, and GitHub/security/dependency inventory. This item is actively implemented in one cohesive public SDK/CLI integrity PR; unrelated backlog and container epics remain open and unclaimed."
+  "2026-07-27T08:17:34.012Z","harness:codex","Implementation evidence: create/update dependency edges now persist effective author, author_source asserted/detected, and mutation source_kind while preserving explicit external/import source kinds and legacy readability. Item serialization, SDK structured mutation transport, CLI and integration regressions are aligned. Full sandboxed coverage passed 377 files and 6,452 tests at exact 100/100/100/100."
+  "2026-07-27T08:41:47.745Z","harness:codex","Verification evidence: fresh unrelated packed consumer created a real dependency and read author_source=detected with source_kind=cli:create:dep; direct binary, npx --no-install, and bunx all returned 2026.7.27. Full 6452-test coverage remained 100/100/100/100."
+files[7]{path,scope,note}:
+  src/cli/commands/create.ts,project,Create edge attribution
+  src/cli/commands/update.ts,project,Update edge attribution
+  src/core/item/item-format.ts,project,Provenance persistence
+  src/sdk/structured-mutations.ts,project,Structured SDK dependency transport
+  src/types.ts,project,Dependency provenance contract
+  tests/unit/commands/create-command.spec.ts,project,Create provenance regression
+  tests/unit/commands/update-command.spec.ts,project,Update provenance regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/unit/commands/update-command.spec.ts,project,300
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Dependency provenance semantics
+close_reason: "Dependency mutations now persist effective author, author origin, and mutation source provenance while retaining legacy and external-source compatibility; exact coverage passes."
 body: ""

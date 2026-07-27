@@ -288,13 +288,45 @@ function inferMissingFieldsForRecovery(
   invocationArgv: string[],
   existingRecovery: PmCliErrorRecoveryPayload | undefined,
 ): string[] | undefined {
-  if (existingRecovery?.suggested_retry || rawMessage.includes("failed in extension handler (")) {
+  if (
+    existingRecovery?.suggested_retry ||
+    rawMessage.includes("failed in extension handler (") ||
+    !/\b(?:missing|required|requires)\b/i.test(rawMessage)
+  ) {
     return undefined;
   }
   const providedFields = extractProvidedOptionFlags(invocationArgv);
   const providedSet = new Set(providedFields.map((flag) => normalizeLongOptionFlag(flag) ?? flag));
   const rawInferred = inferMissingFieldsFromErrorMessage(rawMessage);
-  const trulyMissing = rawInferred?.filter((flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag));
+  const commandName = invocationArgv.find((token) =>
+    program.commands.some((candidate) => candidate.name() === token),
+  );
+  const command = commandName
+    ? program.commands.find((candidate) => candidate.name() === commandName)
+    : undefined;
+  const declaredFlags = new Set(
+    [...program.options, ...(command?.options ?? [])].flatMap((option) =>
+      option.flags
+        .split(/[ ,|]+/)
+        .map((flag) => normalizeLongOptionFlag(flag))
+        .filter((flag): flag is string => flag !== undefined),
+    ),
+  );
+  const trulyMissing = rawInferred?.filter((flag) => {
+    const normalized = normalizeLongOptionFlag(flag) ?? flag;
+    if (providedSet.has(normalized)) {
+      return false;
+    }
+    return (
+      declaredFlags.has(normalized) ||
+      extensionFlagTakesValueForInvocation(
+        invocationArgv,
+        commandName,
+        normalized,
+        activeRuntimeExtensionCommandDescriptors,
+      ) !== undefined
+    );
+  });
   return trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
 }
 
@@ -2560,7 +2592,12 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
   const pmRoot = resolvePmRoot(process.cwd(), context.bootstrapGlobal.path);
   const recoveryCommandDescriptors = await loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot);
   const failedExtensions = await loadExtensionRecoveryFailures(pmRoot);
-  const usageContext = await resolveCommanderUsageContext({ message: unknownMessage }, program, recoveryCommandDescriptors);
+  const usageContext = await resolveCommanderUsageContext(
+    { message: unknownMessage },
+    program,
+    recoveryCommandDescriptors,
+    { failedExtensions },
+  );
   const classification = classifyCommanderError(usageContext.message, usageContext.commandName, usageContext.allowedTypes, {
     unknownCommandExamples: usageContext.unknownCommandExamples,
     unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
@@ -2569,6 +2606,7 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     providedOptionFlags: usageContext.providedOptionFlags,
     unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
     suggestedRetryCommand: usageContext.suggestedRetryCommand,
+    failedExtensions,
   });
   const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
     command: unknownToken,
@@ -2592,8 +2630,19 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     source_context: activeTelemetryCommandContext?.source_context,
   });
   const baseRenderedUsage = context.jsonErrors
-    ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors, context.bootstrapGlobal.lean === true)
-    : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors);
+    ? await formatCommanderUsageJson(
+        { message: unknownMessage },
+        program,
+        recoveryCommandDescriptors,
+        context.bootstrapGlobal.lean === true,
+        { failedExtensions },
+      )
+    : await formatCommanderUsageMessage(
+        { message: unknownMessage },
+        program,
+        recoveryCommandDescriptors,
+        { failedExtensions },
+      );
   const renderedUsage = appendCommanderExtensionFailures(baseRenderedUsage, context.jsonErrors, failedExtensions);
   await finishRunPmCliFailure({
     errorMessage: unknownMessage,

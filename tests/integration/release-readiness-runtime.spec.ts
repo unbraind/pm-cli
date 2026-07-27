@@ -1802,6 +1802,7 @@ describe("release readiness runtime coverage", () => {
         "has_more",
         "truncated",
         "next_cursor",
+        "completeness",
         "filters",
         "projection",
         "sorting",

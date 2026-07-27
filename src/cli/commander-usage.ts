@@ -779,6 +779,7 @@ export async function resolveCommanderUsageContext(
   error: unknown,
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  guidanceOverrides: Partial<CommanderGuidanceContext> = {},
 ): Promise<CommanderUsageContext> {
   const rawMessage =
     typeof error === "object" && error !== null
@@ -819,6 +820,7 @@ export async function resolveCommanderUsageContext(
         : undefined,
     suggestedRetryCommand,
     ...unknownCommandGuidance,
+    ...guidanceOverrides,
   };
 }
 
@@ -827,11 +829,13 @@ export async function formatCommanderUsageMessage(
   error: unknown,
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  guidanceOverrides: Partial<CommanderGuidanceContext> = {},
 ): Promise<string> {
   const usageContext = await resolveCommanderUsageContext(
     error,
     rootProgram,
     extensionDescriptors,
+    guidanceOverrides,
   );
   const {
     message,
@@ -845,6 +849,7 @@ export async function formatCommanderUsageMessage(
     unknownOptionSuggestions,
     unknownOptionOtherCommands,
     suggestedRetryCommand,
+    failedExtensions,
   } = usageContext;
   const formatted = formatCommanderErrorForDisplay(
     message,
@@ -859,6 +864,7 @@ export async function formatCommanderUsageMessage(
       unknownOptionSuggestions,
       unknownOptionOtherCommands,
       suggestedRetryCommand,
+      failedExtensions,
     },
   );
   const serviceOverride = await runActiveServiceOverride("help_format", {
@@ -878,11 +884,13 @@ export async function formatCommanderUsageJson(
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
   lean = false,
+  guidanceOverrides: Partial<CommanderGuidanceContext> = {},
 ): Promise<string> {
   const usageContext = await resolveCommanderUsageContext(
     error,
     rootProgram,
     extensionDescriptors,
+    guidanceOverrides,
   );
   const envelope = formatCommanderErrorForJson(
     usageContext.message,
@@ -898,6 +906,7 @@ export async function formatCommanderUsageJson(
       unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
       unknownOptionOtherCommands: usageContext.unknownOptionOtherCommands,
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
+      failedExtensions: usageContext.failedExtensions,
     },
   );
   return JSON.stringify(

@@ -406,7 +406,7 @@ describe("CLI main error helpers", () => {
     });
   });
 
-  it("infers missing flags and retry commands from plain CLI errors", () => {
+  it("does not infer missing flags or retries from plain error prose", () => {
     const context = _testOnly.buildPmCliRecoveryContext(
       { code: "missing_required_option" },
       ["create", "--json", "--title", "Strict task"],
@@ -417,9 +417,9 @@ describe("CLI main error helpers", () => {
       attempted_command: 'pm create --json --title "Strict task"',
       normalized_args: ["create", "--json", "--title", "Strict task"],
       provided_fields: ["--json", "--title"],
-      missing: ["--description", "--type"],
-      suggested_retry: 'pm create --json --title "Strict task" --description "<value>"',
     });
+    expect(context.recovery?.missing).toBeUndefined();
+    expect(context.recovery?.suggested_retry).toBeUndefined();
   });
 
   it("uses extension flag arity when constructing suggested retries", () => {

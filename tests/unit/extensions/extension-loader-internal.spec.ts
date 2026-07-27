@@ -323,6 +323,7 @@ describe("extension loader internal helpers", () => {
       renderers,
       registrations,
       warnings,
+      [],
       policy,
     );
     const apiRecord = api as unknown as Record<string, unknown>;
@@ -373,6 +374,7 @@ describe("extension loader internal helpers", () => {
       createEmptyExtensionRendererRegistry(),
       blockedRegistrations,
       [],
+      [],
       blockedPolicy,
     );
     blockedApi.registerImporter(
@@ -400,6 +402,7 @@ describe("extension loader internal helpers", () => {
       createEmptyExtensionServiceRegistry(),
       createEmptyExtensionRendererRegistry(),
       allowedRegistrations,
+      [],
       [],
       policy,
     );
@@ -431,6 +434,7 @@ describe("extension loader internal helpers", () => {
       createEmptyExtensionServiceRegistry(),
       createEmptyExtensionRendererRegistry(),
       createEmptyExtensionRegistrationRegistry(),
+      [],
       [],
       policy,
     );

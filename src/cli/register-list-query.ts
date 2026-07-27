@@ -401,6 +401,10 @@ function registerListCommand(
     )
     .option("--include-body", "Include item body in each returned list row")
     .option(
+      "--strict-read",
+      "Fail closed if any item document or item directory cannot be read",
+    )
+    .option(
       "--compact",
       "Render compact list projection fields (mutually exclusive with --brief/--full/--fields)",
     )

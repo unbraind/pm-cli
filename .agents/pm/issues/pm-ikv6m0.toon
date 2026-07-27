@@ -2,24 +2,41 @@ id: pm-ikv6m0
 title: "Recovery bundle mines flag names from usage-error prose: scope errors like '--rebuild and --clear apply only to graph index' yield missing:--clear + suggested_retry appending the other invalid flag"
 description: "Observed with pm graph analyze --rebuild (2026-07-20 manual E2E): the usage error '--rebuild and --clear apply only to graph index.' produces recovery.missing: --clear and suggested_retry: 'pm graph analyze --rebuild --clear' — the exact opposite of the fix. The recovery generator extracts flag tokens from arbitrary error MESSAGE prose and treats them as missing required flags. Sibling of the arity lineage (pm-6y58/pm-9qcr fixed arity, not provenance): flags named in a scope/mutual-exclusion explanation are not missing inputs. Fix direction: only derive missing-flag suggestions from structured metadata (contract-declared required flags), never from message text; scope/exclusivity usage errors should suggest removing the offending flag or switching subcommand."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,cli,error-recovery
 created_at: "2026-07-20T03:19:23.954Z"
-updated_at: "2026-07-26T22:06:19.838Z"
+updated_at: "2026-07-27T08:42:47.554Z"
+closed_at: "2026-07-27T08:18:11.924Z"
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Scope/mutual-exclusion usage errors produce no missing-flag rows and no suggested_retry that adds another invalid flag; missing-flag derivation consults only structured contract metadata; regression covers the graph --rebuild/--clear and --save-baseline scope errors; GH-757 instance is covered: under governance-preset strict a close attempted through pm update --status closed must not emit a suggested_retry that appends --validate-close, a flag pm update does not accept, because an agent following the bundle programmatically loops forever. Flag derivation consults only flags declared on the command actually invoked, and when no flag on that command can resolve the failure the bundle names the correct command instead"
 parent: pm-mpbb
 risk: low
 confidence: 80
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-6y58,related,"2026-07-20T03:19:23.954Z",null,null
-  pm-9qcr,related,"2026-07-20T03:19:23.954Z",null,null
-  pm-ju83,discovered_from,"2026-07-20T03:19:23.954Z",null,null
-  pm-psy1,related,"2026-07-20T03:45:22.381Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:57:12.138Z",null,null
-comments[2]{created_at,author,text}:
+resolution: "Recovery inference is constrained to missing-value language plus invoked-command contracts, and strict close errors emit a direct structured close recovery command."
+expected_result: "Recovery suggestions use only structured error metadata and flags declared by the invoked command, with strict-close failures redirecting to a valid close command."
+actual_result: Generic prose token mining inferred unrelated global flags and strict-close missing fields could suggest invalid update flags.
+dependencies[5]{id,kind,created_at}:
+  pm-6y58,related,"2026-07-20T03:19:23.954Z"
+  pm-9qcr,related,"2026-07-20T03:19:23.954Z"
+  pm-ju83,discovered_from,"2026-07-20T03:19:23.954Z"
+  pm-psy1,related,"2026-07-20T03:45:22.381Z"
+  pm-mpbb,implements,"2026-07-26T05:57:12.138Z"
+comments[5]{created_at,author,text}:
   "2026-07-20T03:19:36.131Z",maintainer-agent,"Duplicate check 2026-07-20: searched 'recovery bundle suggested_retry misleading flag' across all statuses — pm-6y58 (GH-500, built-in flag arity) and pm-9qcr (GH-507, extension contract arity) both FIXED and cover arity only; no existing item covers missing-flag PROVENANCE (mining flag tokens from error prose). Filed from the pm-ju83/6x7o/7ob5 graph-platform lane manual E2E."
   "2026-07-26T22:06:12.498Z","harness:claude-code","GitHub issue 757 is an instance of this class rather than a new defect. Same generator, same root cause: the recovery bundle derives flag suggestions from error-message prose instead of from the invoked command's declared flag contract. The new dimension it adds is cross-command leakage — --validate-close is a real pm flag, just not one pm update accepts — and a case where the correct recovery is a command redirect (use pm close) rather than any flag at all. Fixing this item must cover both: reject undeclared flags, and emit a command-level suggestion when no flag on the invoked command can resolve the failure. Sibling pm-ulqu stays separate: it is about rendering an enum flag's allowed values and about blocker ordering on a command that does accept the flag."
+  "2026-07-27T07:35:29.070Z","harness:codex","Start evidence 2026-07-27: selected after live all-status review of 2,129 items (1,807 closed, 309 open, 13 canceled; zero pre-existing in-progress), full canonical metadata/closed-lineage review, and GitHub/security/dependency inventory. This item is actively implemented in one cohesive public SDK/CLI integrity PR; unrelated backlog and container epics remain open and unclaimed."
+  "2026-07-27T08:17:34.694Z","harness:codex","Implementation evidence: recovery inference now requires missing/required semantics and filters candidates through the invoked command's declared flags; graph scope errors no longer invent --clear/--rebuild/--save-baseline retries. Strict close failures carry structured missing fields and a direct pm close retry rather than leaking update-incompatible flags. Full sandboxed coverage passed 377 files and 6,452 tests at exact 100/100/100/100."
+  "2026-07-27T08:41:49.153Z","harness:codex","Verification evidence: full release gate reached the hosted-only boundary after 6452 tests at 100/100/100/100, packed npm smoke, and 88-command dogfood passed."
+files[3]{path,scope,note}:
+  src/cli/commands/close.ts,project,Structured close redirect recovery
+  src/cli/main.ts,project,Contract-scoped recovery derivation
+  tests/integration/help-runtime.spec.ts,project,Graph scope recovery regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,1200
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/governance-presets.integration.spec.ts,project,300
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Structured retry contract
+close_reason: Recovery suggestions now derive only from structured or invoked-command contracts; graph scope leakage and strict-close command redirects are covered at exact coverage.
 body: ""

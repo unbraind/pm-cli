@@ -760,6 +760,7 @@ function sortDependencies(
       created_at: value.created_at,
       author: value.author?.trim() || undefined,
       source_kind: value.source_kind?.trim() || undefined,
+      author_source: value.author_source,
     }))
     .sort((a, b) => {
       const byCreated = compareTimestampStrings(a.created_at, b.created_at);

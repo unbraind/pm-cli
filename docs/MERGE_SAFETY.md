@@ -24,6 +24,10 @@ git commit -m "chore(pm): install tracker merge drivers"
 The clone-local driver values record the absolute Node executable and bundled
 `dist/cli.js` path resolved by the installing SDK. Git therefore does not depend
 on a bare `pm` command or the caller's later `PATH` when it merges tracker data.
+The item-path placeholder is stored as bare `%P`: Git performs the required
+shell quoting when it expands the placeholder. Receipt ingestion also removes
+one legacy matching quote pair so receipts written by older clone-local drivers
+remain reconcilable.
 `pm validate --check-storage-integrity` and `pm health` also compare every
 clone-local driver definition with the installed SDK. A missing or stale
 definition is reported even when the committed attribute fence is correct.

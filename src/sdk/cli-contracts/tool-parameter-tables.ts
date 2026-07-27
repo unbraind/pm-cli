@@ -207,6 +207,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   highlight: { type: "boolean" },
   includeBody: { type: "boolean" },
   noTruncate: { type: "boolean" },
+  strictRead: { type: "boolean" },
   tag: { type: "string" },
   deadlineBefore: { type: "string" },
   deadlineAfter: { type: "string" },
@@ -1450,6 +1451,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   noTruncate: {
     description:
       "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+  },
+  strictRead: {
+    description:
+      "When true for list-family actions, fail if any source item or item directory cannot be read.",
   },
   compact: {
     description:

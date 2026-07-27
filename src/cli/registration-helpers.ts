@@ -809,6 +809,7 @@ export function normalizeListOptions(
     // Commander stores --no-truncate as truncate=false; --all is the positive alias.
     noTruncate: optionFalse(options, "truncate") ?? optionTrue(options, "all"),
     includeBody: optionTrue(options, "includeBody"),
+    strictRead: optionTrue(options, "strictRead"),
     compact: optionTrue(options, "compact"),
     brief: optionTrue(options, "brief"),
     full: optionTrue(options, "full"),

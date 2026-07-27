@@ -268,6 +268,8 @@ export interface Dependency {
   author?: string;
   /** Value that configures or reports source kind for this contract. */
   source_kind?: string;
+  /** Whether the recorded edge author was explicitly asserted or automatically detected. */
+  author_source?: "asserted" | "detected" | "legacy";
 }
 
 /** Documents the comment payload exchanged by command, SDK, and package integrations. */

@@ -252,6 +252,22 @@ describe("pm cli error guidance context plumbing", () => {
     expect(envelope.next_steps).toEqual(["Verify spelling and active extensions, then rerun."]);
   });
 
+  it("suppresses install advice when the matching installed extension failed activation", () => {
+    const envelope = formatCommanderErrorForJson(
+      "unknown command 'guide'",
+      "help",
+      "Task|Issue",
+      2,
+      { failedExtensions: [{ name: "guide-shell" }] },
+    );
+    expect(envelope.examples).not.toContain("pm install guide-shell");
+    expect(
+      envelope.next_steps?.some((step) =>
+        step.includes("pm install guide-shell"),
+      ),
+    ).toBe(false);
+  });
+
   it("normalizes commander required-option labels before building retry guidance", () => {
     const envelope = formatCommanderErrorForJson(
       "error: required option '--description, -d <value>' not specified",

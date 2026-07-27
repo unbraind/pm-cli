@@ -455,6 +455,9 @@ describe("runCreate", () => {
           id: "pm-dep-blocker",
           kind: "blocked_by",
           created_at: "2026-03-01T00:00:00.000Z",
+          author: "seed-author",
+          source_kind: "cli:create:dep",
+          author_source: "detected",
         },
       ]);
     });
@@ -908,6 +911,8 @@ describe("runCreate", () => {
           kind: "related",
           author: "dep-author",
           created_at: "2026-01-01T00:00:00.000Z",
+          source_kind: "cli:create:dep",
+          author_source: "asserted",
         },
       ]);
       expect(result.item.comments).toEqual(

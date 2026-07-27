@@ -778,6 +778,30 @@ describe("runClose", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+
+      const settings = await readSettings(context.pmPath);
+      settings.governance.require_close_reason = false;
+      await writeFile(
+        path.join(context.pmPath, "settings.json"),
+        `${JSON.stringify(settings, null, 2)}\n`,
+        "utf8",
+      );
+      const noReasonId = createTask(context, "close-validate-strict-no-reason");
+      await expect(
+        runClose(
+          noReasonId,
+          undefined,
+          { validateClose: "strict" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          recovery: {
+            suggested_retry: expect.stringContaining("<reason>"),
+          },
+        },
+      });
     });
   });
 

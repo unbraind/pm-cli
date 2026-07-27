@@ -26,6 +26,7 @@ import {
 } from "../../sdk/runtime-primitives.js";
 import { collectBlockedByIds } from "../../sdk/actionability.js";
 import type { ItemMetadata } from "../../types/index.js";
+import { renderPmCommand } from "../argv-utils.js";
 
 /** Documents the close command options payload exchanged by command, SDK, and package integrations. */
 export interface CloseCommandOptions {
@@ -509,15 +510,36 @@ function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
+  closeReason: string | undefined,
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
     const missingFields = findMissingCloseValidationFields(metadata);
     if (missingFields.length > 0) {
       if (validateCloseMode === "strict") {
+        const missingFlags = missingFields.map(
+          (field) => `--${field.replaceAll("_", "-")}`,
+        );
+        const retryTokens = [
+          "close",
+          metadata.id,
+          closeReason ?? "<reason>",
+          ...missingFlags.flatMap((flag) => [flag, "<value>"]),
+        ];
         throw new PmCliError(
           `Cannot close item ${metadata.id}: missing ${missingFields.join(", ")}. Populate fields or use --validate-close warn.`,
           EXIT_CODE.USAGE,
+          {
+            code: "close_validation_missing_fields",
+            recovery: {
+              missing: missingFlags,
+              suggested_retry: renderPmCommand(retryTokens),
+            },
+            nextSteps: [
+              "Use pm close with the missing closure fields populated.",
+              "Use --validate-close warn only when governance permits an evidenced exception.",
+            ],
+          },
         );
       }
       warnings.push(
@@ -636,6 +658,7 @@ function mutateCloseMetadata(
     metadata,
     context.validateCloseMode,
     context.activeChildIds,
+    context.closeReason,
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;
