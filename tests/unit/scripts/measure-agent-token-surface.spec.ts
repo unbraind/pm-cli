@@ -107,7 +107,7 @@ function configureSuccessfulMeasurement(): void {
 
 function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
-    version: 1,
+    version: 2,
     metric: "utf8_bytes",
     surfaces: {
       root_help: 1_000_000,
@@ -121,6 +121,7 @@ function permissiveBaseline(overrides: Record<string, unknown> = {}): string {
         full: 1_000_000,
       },
       commands: { ls: 1_000_000, get: 1_000_000 },
+      required_commands: ["get", "ls"],
     },
     ...overrides,
   });
@@ -147,6 +148,7 @@ interface TokenSurfaceBaseline {
     full_help_surface: number;
     contracts: Record<string, number>;
     mcp_tools_list: number;
+    required_commands: string[];
     commands: Record<string, number>;
   };
 }
@@ -272,7 +274,7 @@ describe("measure-agent-token-surface", () => {
     const baseline = module.buildBaseline(report, 1);
 
     expect(baseline).toMatchObject({
-      version: 1,
+      version: 2,
       metric: "utf8_bytes",
       headroom: 1,
       surfaces: {
@@ -288,6 +290,8 @@ describe("measure-agent-token-surface", () => {
     delete baseline.surfaces.commands.ls;
     baseline.surfaces.contracts.retired_projection = 100;
     baseline.surfaces.commands.retired_command = 100;
+    baseline.surfaces.required_commands.push("retired_command");
+    baseline.surfaces.commands.optional_extension = 100;
     expect(module.compareBaseline(report, baseline)).toEqual([
       `root_help: ${report.root_help.bytes} bytes exceeds 1`,
       "contracts.retired_projection: stale baseline surface",
@@ -340,7 +344,7 @@ describe("measure-agent-token-surface", () => {
       await harness.importModule(SCRIPT);
       expect(writeFileSync).toHaveBeenCalledWith(
         "/tmp/token-surface.json",
-        expect.stringContaining('"version": 1'),
+        expect.stringContaining('"version": 2'),
         "utf8",
       );
       expect(stdoutWrite).toHaveBeenCalledWith(
@@ -383,7 +387,7 @@ describe("measure-agent-token-surface", () => {
   });
 
   it.each([
-    ["version", permissiveBaseline({ version: 2 })],
+    ["version", permissiveBaseline({ version: 1 })],
     ["metric", permissiveBaseline({ metric: "tokens" })],
   ])(
     "rejects a checked baseline with an unsupported %s",

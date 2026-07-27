@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",ci-gate,observability,token-efficiency
 created_at: "2026-07-26T18:28:20.913Z"
-updated_at: "2026-07-27T15:08:18.190Z"
+updated_at: "2026-07-27T15:22:34.938Z"
 closed_at: "2026-07-27T14:00:45.668Z"
 author: "harness:claude-code"
 estimated_minutes: 300
@@ -28,13 +28,14 @@ dependencies[5]{id,kind,created_at}:
   pm-du93sr,verifies,"2026-07-26T18:29:21.789Z"
   pm-mfy1ux,verifies,"2026-07-26T18:29:21.789Z"
   pm-okgxwa,verifies,"2026-07-26T18:29:21.789Z"
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-27T14:00:38.252Z","harness:codex","Evidence: promoted the existing measurement into a versioned 95-surface UTF-8 byte ratchet with checked baseline/update modes; wired quality:token-surface into the context quality CI and release gate; expanded the representative command corpus from 14 to 17 with list-open, health summary, and validate counts. Verification: linked tests passed 2/2; context corpus scored 1.0 across NDCG, reciprocal rank, recall, continuity, and token adherence; full repository coverage passed 6,413 tests at 100/100/100/100; static quality and pnpm audit passed."
   "2026-07-27T14:07:53.993Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/774 at implementation head 8173f7f73. Exact-head hosted checks and bot review will follow after this PM evidence is committed."
   "2026-07-27T14:18:29.732Z","harness:codex","Hosted feedback correction for PR #774: the first smoke run proved the new ratchet incorrectly depended on a globally installed pm executable. The script now defaults to this checkout's built dist/cli.js through process.execPath while preserving explicit PM_BIN overrides. The exact context entitlement gate and focused tests pass locally."
   "2026-07-27T14:35:28.208Z","harness:codex","Final gate correction: pruning the obsolete DeepScan-identified suppression reduced the real checked-in ESLint suppression baseline from 133 to 132. Tightened the static-quality default, package gate, and both release contract mirrors to 132 so the removed suppression cannot silently return. Focused release contracts passed 51/51; ESLint, static quality, package boundary, 17-surface token gate, SDK snapshot, SDK entrypoint costs, and CLI transport floor all pass."
   "2026-07-27T14:59:24.681Z","harness:codex","Greptile review correction: aligned measurement tokens with the published ceil(bytes/4) SDK formula and made baseline comparison bidirectional, so removed/renamed/omitted command and contracts surfaces now fail as stale instead of shrinking aggregates unnoticed. Focused review regression tests and the real 95-surface ratchet pass."
   "2026-07-27T15:08:18.190Z","harness:codex","Coverage gate correction: added an incomplete-baseline case that exercises missing contracts and command maps through the real comparison primitive, proving fail-closed missing-surface diagnostics without ignore pragmas. Focused ratchet tests pass 12/12 and ESLint passes."
+  "2026-07-27T15:22:34.938Z","harness:codex","Hosted clean-runner correction: v1 treated locally installed extension commands as universally required, so a clean CI runner failed on 19 intentionally absent package surfaces. v2 records the canonical core-command intersection as required while still measuring and bounding active extension commands when present. Proof: project installation passes 95 surfaces; a fresh isolated PM_PATH/PM_GLOBAL_PATH with no project extensions passes 74 surfaces; focused tests and ESLint pass."
 files[10]{path,scope,note}:
   package.json,project,static quality and operator scripts
   scripts/agent-token-surface-baseline.json,project,committed all-surface regression ceilings

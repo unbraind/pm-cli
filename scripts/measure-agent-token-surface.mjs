@@ -10,6 +10,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { PM_CORE_COMMAND_NAMES } from "../dist/sdk/cli-contracts.js";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIGURED_PM_BIN = process.env.PM_BIN;
@@ -23,6 +24,7 @@ const DEFAULT_BASELINE = join(
   "scripts",
   "agent-token-surface-baseline.json",
 );
+const CORE_COMMAND_NAMES = new Set(PM_CORE_COMMAND_NAMES);
 
 function tokens(bytes) {
   return Math.ceil(bytes / 4);
@@ -32,7 +34,7 @@ function tokens(bytes) {
 export function buildBaseline(report, headroom = 1.1) {
   const budget = (measurement) => Math.ceil(measurement.bytes * headroom);
   return {
-    version: 1,
+    version: 2,
     metric: "utf8_bytes",
     headroom,
     surfaces: {
@@ -46,6 +48,10 @@ export function buildBaseline(report, headroom = 1.1) {
         ]),
       ),
       mcp_tools_list: budget(report.mcp_tools_list),
+      required_commands: report.commands
+        .map((entry) => entry.name)
+        .filter((name) => CORE_COMMAND_NAMES.has(name))
+        .sort((left, right) => left.localeCompare(right)),
       commands: Object.fromEntries(
         report.commands.map((entry) => [entry.name, budget(entry)]),
       ),
@@ -94,6 +100,9 @@ export function compareBaseline(report, baseline) {
   const reportCommandNames = new Set(
     report.commands.map((measurement) => measurement.name),
   );
+  const requiredCommandNames = new Set(
+    baseline.surfaces.required_commands,
+  );
   for (const measurement of report.commands) {
     compare(
       `commands.${measurement.name}`,
@@ -102,7 +111,7 @@ export function compareBaseline(report, baseline) {
     );
   }
   violations.push(
-    ...Object.keys(baseline.surfaces?.commands ?? {})
+    ...[...requiredCommandNames]
       .filter((name) => !reportCommandNames.has(name))
       .map((name) => `commands.${name}: stale baseline surface`),
   );
@@ -251,7 +260,7 @@ if (process.argv.includes("--update")) {
   );
 } else if (process.argv.includes("--check")) {
   const baseline = JSON.parse(readFileSync(baselinePath, "utf8"));
-  if (baseline.version !== 1 || baseline.metric !== "utf8_bytes") {
+  if (baseline.version !== 2 || baseline.metric !== "utf8_bytes") {
     throw new Error(
       `Unsupported agent token-surface baseline: ${baselinePath}`,
     );
