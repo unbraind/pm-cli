@@ -1,0 +1,19 @@
+id: pm-qw1uw6
+title: "Point-in-time reconstruction crashes with an unstructured runtime error when a history stream opens without a baseline entry, so the restore-any-version guarantee fails with no diagnosable condition"
+description: "The project's core durability promise is that every mutation is permanently recorded and any item can be restored to any version at any time. That promise is measurably false for at least one item today, and the failure mode is an uncaught runtime error rather than a diagnosable condition.\n\nEvidence, measured on this repository at 2026.7.28:\n\n- pm get pm-lty --at 1 writes nothing to stdout and prints \"Cannot read properties of undefined (reading 'map')\" to stderr, exiting 1. There is no error envelope: no code, no detail, no next_steps, no recovery. Every other pm failure path emits a structured envelope, so a caller cannot classify this one.\n- Cause: reconstruction assumes the stream opens with a document baseline. pm-lty's first recorded entry is op=update at 2026-02-17T23:16:52.972Z whose patch touches only /metadata/updated_at and /metadata/status. There is no create entry and no snapshot, so the base document is undefined and the replay maps over it.\n- Blast radius census over all 2,154 item streams: 42 streams (1.9 percent) do not open with a create entry. 41 of those open with history_compact_baseline and are FINE - that entry carries a full 21-patch snapshot of every field, and pm-0m2m, pm-3kk6 and pm-3u2x all reconstruct correctly at version 1 with reconstructed:true. The compaction feature is sound and is not implicated.\n- The residual is exactly one genuine case: pm-lty, an item that predates create-entry recording. It is reachable through pm get, it is a real canceled Epic, and it is one of the disconnected historical roots tracked by pm-1w6scp.\n\nWhy this is worth an item rather than a note: the population is small but the guarantee is absolute, and the observable behaviour is a crash that violates the error-envelope contract. A caller that scripts point-in-time reads cannot distinguish \"this item has no baseline\" from \"pm is broken\". The correct behaviour is a named, structured condition.\n\nThis is the defect class the reconstruction gate pm-wlqxg3 exists to catch, and it is a concrete negative-control fixture for that gate: today the property \"every item replays at every recorded version\" fails at version 1 for a real item in the flagship workspace."
+type: Issue
+status: open
+priority: 1
+tags[3]: core,durability,history
+created_at: "2026-07-28T02:50:59.686Z"
+updated_at: "2026-07-28T02:50:59.686Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Reading any item at any recorded version either returns the reconstructed item or a structured error envelope carrying a code and next steps, never a raw runtime message; A history stream whose first entry carries no document baseline is detected and named as its own condition instead of crashing the read; pm-lty reads successfully at version 1 and at every later recorded version, or returns a named non-crash condition explaining why version 1 has no baseline; Regression coverage includes a stream with no create entry and a stream whose baseline comes from history_compact_baseline; The exit code and envelope shape for a failed point-in-time read conform to the documented error-code contract"
+parent: pm-o2kc
+risk: medium
+confidence: 90
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-w7ccmv,implements,"2026-07-28T02:50:59.686Z","harness:claude-code","cli:create:dep",detected
+  pm-wlqxg3,discovered_from,"2026-07-28T02:50:59.686Z","harness:claude-code","cli:create:dep",detected
+body: ""

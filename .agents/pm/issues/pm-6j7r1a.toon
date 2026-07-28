@@ -1,0 +1,22 @@
+id: pm-6j7r1a
+title: "The runtime contract enumeration is not closed over the surface it can resolve: 14 rendered commands, including the list-open that AGENTS.md mandates, are contract-backed by name yet absent from every enumeration"
+description: "AGENTS.md instructs agents to learn the live surface from the runtime contract rather than from documentation, because packages and settings change what is available. The contract enumeration is not closed over the surface it describes, so the documented discovery path cannot find 14 of the commands the CLI actually renders - including one the same file tells agents to run.\n\nMeasured on this repository at 2026.7.28:\n\n- pm --help renders 89 top-level command spellings.\n- pm contracts --summary --json enumerates 75 in command_summaries.\n- The difference is 14, and the contract set is a strict subset: nothing is declared that help does not render.\n- The 14 undiscoverable commands are: list-all, list-blocked, list-canceled, list-closed, list-draft, list-in-progress, list-open, history-author-acknowledge, history-compact, history-redact, history-repair, extension, install, pm.\n- These commands are fully contract-backed when addressed BY NAME. pm contracts --command list-open --flags-only --json returns commands [\"list-open\"] and a complete command_flags entry with --status, --type, --tag and the rest. The data exists. Only the enumeration omits it.\n- Therefore discovery is impossible for exactly these 14: an agent can retrieve their contract only if it already knows the name, which is the one thing enumeration is for.\n- The AGENTS.md pm Workflow Quickstart mandates pm list-open --limit 20. An agent that follows the file's own instruction to verify flags through the contract surface will not find the command the same file told it to run.\n\nThis is a conformance gap against a closed item's own acceptance criterion. The summary-first discovery work shipped with the criterion that whatever the brief form omits is \"either unnecessary or reachable in one further bounded call\". These 14 are neither unnecessary nor reachable, because no bounded call enumerates them.\n\nScope is enumeration closure only: the set of commands the contract surface lists must equal the set it can resolve. If some of the 14 are intended as hidden compatibility aliases, the fix is to declare them as such with a tier marker so an enumerating caller can see that they exist and why they are de-emphasised, not to leave them invisible. The cost and shape of the discovery payload belong to the closed discovery item. Which tier a command occupies belongs to the surface-tiering owner. Folding the list-star family into a single command belongs to the consolidation owner and does not fix this, because the aliases will still be renderable and still need to be discoverable while they exist."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-experience,cli,core
+created_at: "2026-07-28T02:52:59.859Z"
+updated_at: "2026-07-28T02:52:59.859Z"
+author: "harness:claude-code"
+estimated_minutes: 210
+acceptance_criteria: "The set of commands the contract surface enumerates equals the set it can resolve by name, verified by a gate that diffs the two; Commands intentionally de-emphasised are enumerated with an explicit tier or alias marker rather than omitted, so an enumerating caller can see that they exist; An agent following the AGENTS.md quickstart can discover every command that quickstart instructs it to run, using only the documented contract discovery path; The rendered help surface and the enumerated contract surface are generated from one source so the two counts cannot diverge silently; A regression test asserts the help-versus-contract command-set difference is empty"
+parent: pm-mpbb
+risk: low
+confidence: 92
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e2bq,related,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
+  pm-gmdzaa,discovered_from,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
+  pm-kxci8x,blocked_by,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
+  pm-n7rr,related,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
+body: ""

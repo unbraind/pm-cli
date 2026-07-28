@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,attribution,identity,observability,provenance
 created_at: "2026-07-27T07:07:26.295Z"
-updated_at: "2026-07-27T12:58:23.867Z"
+updated_at: "2026-07-28T03:00:05.340Z"
 author: "harness:opencode"
 estimated_minutes: 240
 acceptance_criteria: "Every built-in agent descriptor either declares keys for topic, effort and role or carries a recorded no-signal note for the missing dimension; detection tests prove each declared key flows into history provenance; fleet attribution (pm-gw6uyq) can group recorded history by topic and effort for the harnesses that expose them; no agent is ever required to set PM_AUTHOR or an identity flag"
@@ -22,4 +22,6 @@ dependencies[7]{id,kind,created_at}:
   pm-oskdmu,related,"2026-07-27T07:07:43.021Z"
   pm-qwuber,related,"2026-07-27T07:07:43.021Z"
   pm-szv11n,implements,"2026-07-27T07:07:43.021Z"
+notes[1]{created_at,author,text}:
+  "2026-07-28T03:00:05.340Z","harness:claude-code","Re-measured 2026-07-28 over 40,353 entries: zero carry any session topic, session role, or task-shape descriptor. Searching every entry key across the corpus, the complete set is ts, author, op, patch, before_hash, after_hash, message, author_source, agent_harness, agent_instance, agent_provenance and context. There is no session_topic, no agent_role, and no session key of any kind.\n\nWhat this item can now treat as settled rather than open:\n\n- The effort dimension SHIPPED and works. agent_provenance.effort reads {value: \"xhigh\", source: \"environment\"} on this session's entries, resolved from CLAUDE_EFFORT. So the claim that effort is wired for only two harnesses should be re-checked against the new agent_provenance shape rather than the old three-key descriptor, and the schema-extensibility objection is answered - a fourth dimension was added and populates.\n- Sub-agent lineage signals ARE present in the environment and unused: CLAUDE_CODE_BRIDGE_SESSION_ID and CLAUDE_CODE_CHILD_SESSION=1 are both set alongside CLAUDE_CODE_SESSION_ID, so a parent-child agent relationship is observable today and is recorded nowhere.\n- Session TOPIC and ROLE remain the genuinely hard half, and the environment confirms why: nothing in the harness environment describes what the session is FOR. The full claude-code key set is CLAUDECODE, CLAUDE_CODE_BRIDGE_SESSION_ID, CLAUDE_CODE_CHILD_SESSION, CLAUDE_CODE_ENTRYPOINT, CLAUDE_CODE_EXECPATH, CLAUDE_CODE_SESSION_ID, CLAUDE_EFFORT, CLAUDE_PID. Topic and role are therefore not detectable in principle from this signal source and must be SUPPLIED, which is consistent with the disposition already recorded elsewhere that role has no signal source anywhere.\n\nThe useful reframing for this item: three of the four dimensions it asks for split cleanly by source. Harness and instance and effort are DETECTED and now work. Model is absent from the environment entirely and needs a non-environment source. Topic and role are semantic and can only be supplied by the caller or inferred from the work itself, for example from the items an agent touches during a session, which is the one option that keeps the automatic-identity mandate intact."
 body: ""
