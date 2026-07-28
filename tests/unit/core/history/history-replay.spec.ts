@@ -82,13 +82,19 @@ describe("history replay helpers", () => {
   });
 
   it("falls back to a deterministic structural hash for un-canonicalizable replay states", () => {
-    // A malformed partial document still needs a stable replay hash even when one
-    // of its legacy type-option values cannot be canonicalized as a string.
-    const partial: ReplayDocument = {
+    const missingTags: ReplayDocument = {
+      metadata: { status: "open" },
+      body: "x",
+    };
+    expect(replayHash(missingTags)).toBe(
+      replayHash({ metadata: { status: "open" }, body: "x" }),
+    );
+
+    const malformedField: ReplayDocument = {
       metadata: { status: "open", type_options: { legacy: null } },
       body: "x",
     };
-    const first = replayHash(partial);
+    const first = replayHash(malformedField);
     const second = replayHash({
       metadata: { status: "open", type_options: { legacy: null } },
       body: "x",
