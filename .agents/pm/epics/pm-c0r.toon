@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:01:11.006Z"
-updated_at: "2026-07-26T22:16:36.301Z"
+updated_at: "2026-07-28T22:28:30.041Z"
 deadline: "2026-02-27T23:01:11.006Z"
 assignee: steve
 author: steve
@@ -20,6 +20,7 @@ value: Improves future change velocity by making Milestone 2 - History + Restore
 impact: Reduces ambiguity and handoff risk for future work touching Milestone 2 - History + Restore.
 outcome: This record can be used as canonical context when modifying Milestone 2 - History + Restore.
 why_now: Historical decisions for Milestone 2 - History + Restore need durable context for future maintenance and audits.
+parent: pm-j7a
 reviewer: maintainer-review
 risk: high
 confidence: high
@@ -40,12 +41,24 @@ fixed_version: archive-2026q2
 component: project-management/milestone-2-history-restore
 regression: false
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 2 - History + Restore.
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-j7a,child,"2026-02-17T23:01:11.006Z",steve,null
-  pm-u9r,blocks,"2026-02-17T23:01:11.006Z",steve,null
-  pm-doxj,blocks,"2026-07-26T22:16:36.078Z",null,null
-  pm-j7a,implements,"2026-07-26T22:16:36.078Z",null,null
-  pm-murz,implements,"2026-07-26T22:16:36.078Z",null,null
+dependencies[5]:
+  - id: pm-j7a
+    kind: child
+    created_at: "2026-02-17T23:01:11.006Z"
+    author: steve
+  - id: pm-u9r
+    kind: blocks
+    created_at: "2026-02-17T23:01:11.006Z"
+    author: steve
+  - id: pm-doxj
+    kind: blocks
+    created_at: "2026-07-26T22:16:36.078Z"
+  - id: pm-j7a
+    kind: implements
+    created_at: "2026-07-26T22:16:36.078Z"
+  - id: pm-murz
+    kind: implements
+    created_at: "2026-07-26T22:16:36.078Z"
 comments[3]{created_at,author,text}:
   "2026-02-17T23:01:11.006Z",steve,Milestone 2 ensures every mutation is auditable and restorable.
   "2026-03-04T14:55:37.646Z",unknown,"Planned closure pass: validate Milestone 2 completion against PRD + linked child tasks, then run linked sandbox coverage and regression sweeps (test-all in_progress + closed) before closing with evidence."

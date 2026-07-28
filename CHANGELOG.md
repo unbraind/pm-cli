@@ -2526,16 +2526,16 @@
 
 ### Other
 
+- Milestone 6 - Hardening + Release Readiness ([pm-jiw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-jiw.toon))
+- Milestone 5 - Extension System + Built-ins ([pm-b1w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-b1w.toon))
+- Milestone 4 - Search ([pm-f45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-f45.toon))
+- Milestone 3 - Query + Operations ([pm-54d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-54d.toon))
+- Milestone 2 - History + Restore ([pm-c0r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-c0r.toon))
+- Milestone 1 - Core Item CRUD + Locking ([pm-u9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-u9r.toon))
+- Milestone 0 - Foundations ([pm-2xl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-2xl.toon))
 - Release-readiness maintenance loop 2026-03-08 run 1 ([pm-vz16](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-vz16.toon))
 - Release-readiness maintenance loop 2026-03-07 run 2 ([pm-phpq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-phpq.toon))
 - Build pm-cli v1 ([pm-j7a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-j7a.toon))
-- Milestone 5 - Extension System + Built-ins ([pm-b1w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-b1w.toon))
-- Milestone 0 - Foundations ([pm-2xl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-2xl.toon))
-- Milestone 1 - Core Item CRUD + Locking ([pm-u9r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-u9r.toon))
-- Milestone 2 - History + Restore ([pm-c0r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-c0r.toon))
-- Milestone 3 - Query + Operations ([pm-54d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-54d.toon))
-- Milestone 4 - Search ([pm-f45](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-f45.toon))
-- Milestone 6 - Hardening + Release Readiness ([pm-jiw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-jiw.toon))
 - Preserve confidence in todos import mapping ([pm-zoyg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zoyg.toon))
 - M4: Mutation-triggered search cache invalidation ([pm-zgkk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zgkk.toon))
 - M3: stats health and gc commands ([pm-zau](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zau.toon))

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: ci,durability,history,integrity,provable-history,testing
 created_at: "2026-07-25T12:32:18.439Z"
-updated_at: "2026-07-28T15:14:25.489Z"
+updated_at: "2026-07-28T22:30:33.522Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "For every item and every recorded version in the test corpus, replay from the history stream alone reproduces the point-in-time projection exactly; The current item file is used only as an independent third comparison, never as an input to the replay, asserted by the test's construction; The corpus includes items that were renamed, retyped, reparented, redacted, compacted, restored, merged from divergent branches, and closed and reopened; Compacted streams are covered explicitly: every version the compaction claims to retain still replays exactly, and versions it dropped are reported as intentionally unavailable rather than silently wrong; Redacted streams replay to a state that omits the redacted content while keeping every other field and the chain verifiable; A mismatch fails the gate with the item, version, and diverging field named, so the failure is diagnosable without rerunning by hand"
@@ -18,24 +18,64 @@ outcome: Any recorded state of any item is provably reachable from immutable his
 parent: pm-o2kc
 risk: medium
 confidence: 75
-dependencies[17]{id,kind,created_at}:
-  pm-3z0k,related,"2026-07-25T12:32:18.439Z"
-  pm-4a7m,related,"2026-07-25T12:32:18.439Z"
-  pm-9yfo,related,"2026-07-25T12:32:18.439Z"
-  pm-hib1,related,"2026-07-25T12:32:18.439Z"
-  pm-o2kc,related,"2026-07-25T12:32:18.439Z"
-  pm-w7ccmv,related,"2026-07-25T12:32:18.439Z"
-  pm-4jk8kx,related,"2026-07-25T12:35:43.591Z"
-  pm-9c7h9x,related,"2026-07-25T12:35:43.591Z"
-  pm-e5yupa,related,"2026-07-25T12:35:43.591Z"
-  pm-k6t4yb,related,"2026-07-25T12:35:43.591Z"
-  pm-o79o,related,"2026-07-25T12:35:43.591Z"
-  pm-tqel,related,"2026-07-25T12:35:43.591Z"
-  pm-w7ccmv,verifies,"2026-07-25T20:44:52.001Z"
-  pm-9j2r3b,blocked_by,"2026-07-25T20:45:46.068Z"
-  pm-u14c,implements,"2026-07-26T05:49:36.600Z"
-  pm-o2kc,verifies,"2026-07-26T05:50:13.418Z"
-  pm-10l1vm,related,"2026-07-26T10:52:30.239Z"
+dependencies[18]:
+  - id: pm-3z0k
+    kind: related
+    created_at: "2026-07-25T12:32:18.439Z"
+  - id: pm-4a7m
+    kind: related
+    created_at: "2026-07-25T12:32:18.439Z"
+  - id: pm-9yfo
+    kind: related
+    created_at: "2026-07-25T12:32:18.439Z"
+  - id: pm-hib1
+    kind: related
+    created_at: "2026-07-25T12:32:18.439Z"
+  - id: pm-o2kc
+    kind: related
+    created_at: "2026-07-25T12:32:18.439Z"
+  - id: pm-w7ccmv
+    kind: related
+    created_at: "2026-07-25T12:32:18.439Z"
+  - id: pm-4jk8kx
+    kind: related
+    created_at: "2026-07-25T12:35:43.591Z"
+  - id: pm-9c7h9x
+    kind: related
+    created_at: "2026-07-25T12:35:43.591Z"
+  - id: pm-e5yupa
+    kind: related
+    created_at: "2026-07-25T12:35:43.591Z"
+  - id: pm-k6t4yb
+    kind: related
+    created_at: "2026-07-25T12:35:43.591Z"
+  - id: pm-o79o
+    kind: related
+    created_at: "2026-07-25T12:35:43.591Z"
+  - id: pm-tqel
+    kind: related
+    created_at: "2026-07-25T12:35:43.591Z"
+  - id: pm-w7ccmv
+    kind: verifies
+    created_at: "2026-07-25T20:44:52.001Z"
+  - id: pm-9j2r3b
+    kind: blocked_by
+    created_at: "2026-07-25T20:45:46.068Z"
+  - id: pm-u14c
+    kind: implements
+    created_at: "2026-07-26T05:49:36.600Z"
+  - id: pm-o2kc
+    kind: verifies
+    created_at: "2026-07-26T05:50:13.418Z"
+  - id: pm-10l1vm
+    kind: related
+    created_at: "2026-07-26T10:52:30.239Z"
+  - id: pm-e3gn0z
+    kind: blocked_by
+    created_at: "2026-07-28T22:30:33.289Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-07-26T17:18:23.106Z","harness:claude-code","Reconstruction verified end to end on 2026-07-26 against a doubly-mutated item, which is a stronger test than a single-write fixture because it proves the replay composes.\n\npm-j1fj is a closed item from the v2026.6.30 window. Today it received two independent mutations from two different lanes: a release attribution stamp and a set of evidence-derived relationship edges. Reading it at a timestamp before those writes returns release absent, updated_at 2026-06-30T05:34:40.038Z, and 2 dependencies. Reading it now returns release v2026.6.30, updated_at 2026-07-26T17:17:07.733Z, and 5 dependencies. The historical projection is not a stale cache — it is reconstructed from the stream, and it correctly excludes both of today's writes while preserving the pre-existing edges.\n\nWhat this does and does not prove, for the record this item keeps: it demonstrates single-item point-in-time projection over a multi-write day, which is the pm-hib1 capability that already shipped. It does not demonstrate workspace-level projection (pm-5gf0xf) and it does not constitute the reconstruction gate this item owns, because nothing asserts it in CI. It is a positive control worth pinning as a fixture: an item with a create-era baseline, a long quiet period, and two same-day writes from different lanes is exactly the shape a naive implementation gets wrong.\n"
   "2026-07-28T15:14:25.489Z","harness:claude-code","Reconstruction spot-check on a freshly authored stream, 2026-07-28: pm-jkbqt8 with 7 entries replays correctly at every probed version — --at 1 returns the create state with 0 dependencies and the estimate already set, --at 3 returns 10 dependencies after the wiring mutation, --at 7 matches head, and all three report reconstructed true. pm history --verify reports ok true over 7 entries with current_matches_latest true and an empty error list. One reading caveat for whoever builds this gate: the reconstructed projection reports no comments at any version, which is NOT a replay gap — pm get --json omits the comments collection entirely, exactly as it omits notes, so the same item reports 0 through get and 2 through pm comments. A gate that asserts collection equality by diffing pm get output will therefore pass vacuously on comments and notes; it has to read them through their own commands."

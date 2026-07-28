@@ -6,19 +6,39 @@ status: open
 priority: 3
 tags: []
 created_at: "2026-07-25T20:41:21.338Z"
-updated_at: "2026-07-25T20:50:36.365Z"
+updated_at: "2026-07-28T22:39:26.116Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A read of a tombstoned id reports the tombstone as structured state - that the id existed, that it was deleted, and when - rather than an undifferentiated not-found, in both human and JSON output; The error names the recovery path with a runnable command, at minimum pm get --at and pm restore for the highest recorded version, following the recovery-bundle contract already used elsewhere; A not-found for an id with no history stream stays distinct from a tombstone hit, so the two cases are never conflated; The distinction is available through the SDK read primitives, not only rendered in the CLI, so MCP and other hosts inherit it; Disclosure respects the diagnostic output budget and adds no cost to the common not-found path where no stream exists"
 parent: pm-mpbb
 risk: low
 confidence: 90
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-9j2r3b,related,"2026-07-25T20:41:21.338Z",null,null
-  pm-cha95z,related,"2026-07-25T20:41:21.338Z",null,null
-  pm-qljv,related,"2026-07-25T20:41:21.338Z",null,null
-  pm-tmhs,related,"2026-07-25T20:41:21.338Z",null,null
-  pm-ulqu,related,"2026-07-25T20:41:21.338Z",null,null
-  pm-wdrkfr,discovered_from,"2026-07-25T20:41:21.338Z",null,null
-  pm-szv11n,implements,"2026-07-25T20:50:36.028Z",null,null
+dependencies[8]:
+  - id: pm-9j2r3b
+    kind: related
+    created_at: "2026-07-25T20:41:21.338Z"
+  - id: pm-cha95z
+    kind: related
+    created_at: "2026-07-25T20:41:21.338Z"
+  - id: pm-qljv
+    kind: related
+    created_at: "2026-07-25T20:41:21.338Z"
+  - id: pm-tmhs
+    kind: related
+    created_at: "2026-07-25T20:41:21.338Z"
+  - id: pm-ulqu
+    kind: related
+    created_at: "2026-07-25T20:41:21.338Z"
+  - id: pm-wdrkfr
+    kind: discovered_from
+    created_at: "2026-07-25T20:41:21.338Z"
+  - id: pm-szv11n
+    kind: implements
+    created_at: "2026-07-25T20:50:36.028Z"
+  - id: pm-e3gn0z
+    kind: related
+    created_at: "2026-07-28T22:39:25.902Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

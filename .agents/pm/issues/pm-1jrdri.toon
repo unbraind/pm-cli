@@ -1,0 +1,21 @@
+id: pm-1jrdri
+title: "The rendered command surface is not a subset of the contracted surface: pm workspace ships in help, runs, and exits 2 on its own contract lookup, and no gate compares the two sets"
+description: "The command surface an agent can SEE is not a subset of the command surface the contract system can DESCRIBE, and nothing gates the difference. A command family can therefore ship into rendered help, run correctly, and be permanently undocumentable through the discovery path the product's own error messages tell agents to use.\n\nLive census on 2026.7.28 at HEAD:\n\n  rendered top-level spellings in pm --help        85\n  command_summaries in pm contracts --summary      70\n  in help and absent from the enumeration          15\n\nOf those 15, thirteen still resolve when asked for by name (extension, install, the seven list-* status variants, the four history-* maintenance verbs, history-author-acknowledge). Two do not:\n\n  pm contracts --command pm        -> unknown_command, exit 2   (the recursive self-name, expected)\n  pm contracts --command workspace -> unknown_command, exit 2   (a real, shipped, working command family)\n\npm workspace is rendered in help at line 81 as \"Manage portable workspace-level SDK primitives\", it runs (pm workspace snapshot list returns a structured result), and it is the CLI entry point for the snapshot and restore primitives delivered by pm-dkrmzv. The string workspace appears exactly once in the whole of pm contracts --json, in unrelated prose. So an agent that follows the error's own remediation, \"Use a command path listed by pm contracts --flags-only --json\", can never reach this command's flags, actions, or output shape. The same is true for every future command that lands the same way, because no check compares the rendered set against the contracted set.\n\nThis is the third distinct member of a family and must not be folded into either sibling. pm-6j7r1a owns enumerated-versus-resolvable and its title asserts the missing commands are \"contract-backed by name yet absent from every enumeration\" - a claim this measurement falsifies for one member, since workspace is neither enumerated nor resolvable. pm-kxci8x owns one tier field driving four surfaces, which presumes every command already has contract data to carry a tier. pm-wt43zj owns whether a command's noun and verb conform to the target grammar, which presumes the command is in the table at all. What is missing here is prior to all three: a coverage invariant that the rendered surface is a subset of the contracted surface, enforced where the contracts drift check already runs."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ergonomics,cli,contracts,discovery,gate
+created_at: "2026-07-28T22:30:34.396Z"
+updated_at: "2026-07-28T22:30:34.396Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "A CI check computes the rendered top-level command set and the contracted command set and fails when the rendered set is not a subset of the contracted set, naming every offending spelling; The check runs in the same job as the existing contracts drift check and cannot be satisfied by regenerating artifacts alone; pm workspace and every one of its actions gain contract entries covering flags, actions, and result shape, verified by pm contracts --command workspace resolving instead of exiting 2; Package-contributed and extension-contributed commands are held to the same invariant, so an install cannot introduce an uncontracted rendered command; The self-referential pm spelling is either contracted or explicitly declared as an exempt alias in contract data, so the exemption is machine-readable rather than a known quirk; A negative-control fixture registers a rendered command with no contract entry and proves the gate fails on it"
+parent: pm-mpbb
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6j7r1a,discovered_from,"2026-07-28T22:30:34.396Z","harness:claude-code","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-07-28T22:30:34.396Z","harness:claude-code","cli:create:dep",detected
+  pm-kxci8x,related,"2026-07-28T22:30:34.396Z","harness:claude-code","cli:create:dep",detected
+  pm-wt43zj,related,"2026-07-28T22:30:34.396Z","harness:claude-code","cli:create:dep",detected
+body: ""

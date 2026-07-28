@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: bugfix,metadata,observability,regression,search,sentry
 created_at: "2026-07-28T04:37:06.710Z"
-updated_at: "2026-07-28T05:05:32.390Z"
+updated_at: "2026-07-28T22:43:28.781Z"
 closed_at: "2026-07-28T05:05:29.269Z"
 author: "harness:codex"
 acceptance_criteria: A failing regression test proves absent tags no longer throw; canonical normalization emits an empty sorted tag array; search/read integration remains green; full coverage and release reliability gates pass; Sentry is resolved only after exact fix evidence.
@@ -20,9 +20,11 @@ affected_version: 2026.7.28
 fixed_version: unreleased
 component: core/item-format
 regression: true
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-d7us,related,"2026-07-28T04:37:06.710Z","harness:codex","cli:create:dep",detected
   pm-vnk7ob,related,"2026-07-28T04:37:06.710Z","harness:codex","cli:create:dep",detected
+  pm-5oj5,implements,"2026-07-28T22:43:28.510Z","harness:claude-code","cli:update:dep",detected
+  pm-d7us,supersedes,"2026-07-28T22:43:28.510Z","harness:claude-code","cli:update:dep",detected
 comments[6]{created_at,author,text}:
   "2026-07-28T04:37:06.710Z","harness:codex","Duplicate-check evidence: all-status searches for PM-CLI-2N, undefined tags map, and normalizeItemMetadata found no PM-CLI-2N item. Closed pm-d7us covers a different tags.join scorer crash and is linked as related rather than reopened."
   "2026-07-28T04:38:33.732Z","harness:codex","TDD evidence: the new direct-normalization regression test failed at src/core/item/item-format.ts tags.map with the same TypeError as Sentry PM-CLI-2N. After guarding the runtime collection and filtering non-string legacy entries, the focused 9-test suite passes and canonical output supplies [] or normalized string tags."

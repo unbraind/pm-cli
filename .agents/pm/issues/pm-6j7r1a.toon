@@ -6,17 +6,20 @@ status: open
 priority: 2
 tags[3]: agent-experience,cli,core
 created_at: "2026-07-28T02:52:59.859Z"
-updated_at: "2026-07-28T02:52:59.859Z"
+updated_at: "2026-07-28T22:39:24.066Z"
 author: "harness:claude-code"
 estimated_minutes: 210
 acceptance_criteria: "The set of commands the contract surface enumerates equals the set it can resolve by name, verified by a gate that diffs the two; Commands intentionally de-emphasised are enumerated with an explicit tier or alias marker rather than omitted, so an enumerating caller can see that they exist; An agent following the AGENTS.md quickstart can discover every command that quickstart instructs it to run, using only the documented contract discovery path; The rendered help surface and the enumerated contract surface are generated from one source so the two counts cannot diverge silently; A regression test asserts the help-versus-contract command-set difference is empty"
 parent: pm-mpbb
 risk: low
 confidence: 92
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-e2bq,related,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-gmdzaa,discovered_from,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-kxci8x,blocked_by,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-n7rr,related,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
+  pm-1jrdri,related,"2026-07-28T22:39:23.775Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-28T22:39:22.901Z","harness:claude-code","Measurement sharpened 2026-07-28, and it partly falsifies this item's own scope. Live census at HEAD: 85 rendered top-level spellings, 70 command summaries in pm contracts --summary, 15 rendered and unenumerated. The item's title asserts those commands are \"contract-backed by name yet absent from every enumeration\". Thirteen of the fifteen are - extension, install, the seven list-* status variants, history-redact, history-repair, history-compact, history-author-acknowledge all resolve when asked for by name. Two do not:\n\n  pm contracts --command pm        -> unknown_command, exit 2\n  pm contracts --command workspace -> unknown_command, exit 2\n\nSo the enumerated set is a strict subset of the resolvable set, which is this item, AND the resolvable set is a strict subset of the rendered set, which is not. The second gap is filed separately as pm-1jrdri, because the invariant is different: this item needs enumerated to equal resolvable, and pm-1jrdri needs rendered to be contained in contracted. Fixing this one does not fix that one - a gate that diffs the enumeration against the resolver would still pass with pm workspace rendered and uncontracted. The fourth acceptance criterion here, that help and the enumeration are generated from one source, is the shared prerequisite.\n"
 body: ""
