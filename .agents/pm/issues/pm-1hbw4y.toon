@@ -1,0 +1,26 @@
+id: pm-1hbw4y
+title: Nightly static quality fails closed in shallow workflow checkouts because CodeFactor parity cannot resolve a committed base
+description: "The workflow-dispatch nightly checks out a single commit, while the CodeFactor parity gate requires origin/default or a local base ref to identify committed changed files. The Node 24 Ubuntu leg therefore fails before evaluating complexity even though the same gate passes in a full local checkout. Provision full Git history in validation workflows so the fail-closed gate measures the intended diff rather than treating checkout topology as a product failure."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-07-28T12:09:34.208Z"
+updated_at: "2026-07-28T12:14:58.057Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#45aa267ce86ee33cac29f976"
+author: "harness:codex"
+acceptance_criteria: "Nightly checkout exposes the repository default-branch history needed by the CodeFactor parity gate; pnpm quality:static passes in workflow_dispatch on the feature branch; the gate remains fail-closed when neither a committed base nor worktree diff exists"
+parent: pm-92if
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-92if,implements,"2026-07-28T12:09:56.651Z","harness:codex","cli:update:dep",detected
+  pm-ihmfs6,discovered_from,"2026-07-28T12:09:56.651Z","harness:codex","cli:update:dep",detected
+  pm-j668gl,related,"2026-07-28T12:09:56.651Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-28T12:09:34.208Z","harness:codex","Duplicate check: searched all-status PM text for CodeFactor static quality shallow checkout, origin main merge base, nightly checkout, and fetch depth. No existing item owns this checkout-topology defect; pm-92if is the canonical parent and pm-ihmfs6 is the discovery run."
+  "2026-07-28T12:14:58.057Z","harness:codex","Nightly run 30356894804 reproduced the defect on Ubuntu Node 24: CodeFactor parity could not resolve origin/default in the one-commit checkout. The workflow now fetches full history; the unchanged fail-closed unit contract remains covered by 66 static-gate tests."
+files[1]{path,scope,note}:
+  .github/workflows/nightly.yml,project,Full-history checkout for fail-closed CodeFactor parity
+tests[1]{command,scope,timeout_seconds}:
+  "pnpm quality:static",project,240
+body: ""

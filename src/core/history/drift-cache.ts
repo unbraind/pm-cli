@@ -11,13 +11,21 @@ const DRIFT_CACHE_RELATIVE_PATH = path.join(
   "runtime",
   "history-drift-cache.json",
 );
+const DRIFT_CACHE_ERROR_CODES: Readonly<Record<string, string>> = {
+  EINVAL: "invalid_cache_path",
+  EISDIR: "cache_path_is_directory",
+  ENOENT: "invalid_cache_path",
+  ENOTDIR: "invalid_cache_path",
+  ERR_FS_EISDIR: "cache_path_is_directory",
+};
 
 /** Remove the derived drift cache after a history mutation; a missing or concurrently removed cache is already invalidated. */
 export async function invalidateHistoryDriftCache(
   pmRoot: string,
 ): Promise<void> {
+  const cachePath = path.join(pmRoot, DRIFT_CACHE_RELATIVE_PATH);
   try {
-    await fs.rm(path.join(pmRoot, DRIFT_CACHE_RELATIVE_PATH), { force: true });
+    await fs.rm(cachePath, { force: true });
   } catch (error) {
     if (
       typeof error === "object" &&
@@ -34,16 +42,19 @@ export async function invalidateHistoryDriftCache(
       typeof error.code === "string"
         ? error.code
         : undefined;
+    let pmRootIsDirectory = false;
+    try {
+      pmRootIsDirectory = (await fs.stat(pmRoot)).isDirectory();
+    } catch {
+      // The semantic classification below treats an invalid tracker root
+      // independently from platform-specific filesystem error codes.
+    }
     const code =
       errorCode === undefined
         ? "unknown"
-        : errorCode === "ENOTDIR" ||
-            errorCode === "ENOENT" ||
-            errorCode === "EINVAL"
+        : !pmRootIsDirectory
           ? "invalid_cache_path"
-          : errorCode === "EISDIR" || errorCode === "ERR_FS_EISDIR"
-            ? "cache_path_is_directory"
-            : "filesystem_error";
+          : (DRIFT_CACHE_ERROR_CODES[errorCode] ?? "filesystem_error");
     writeStderr(
       `[pm] warning: history_drift_cache_invalidation_failed:${code}\n`,
     );

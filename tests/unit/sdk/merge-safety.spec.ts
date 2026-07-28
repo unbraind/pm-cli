@@ -3,6 +3,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  realpath,
   rm,
   symlink,
   writeFile,
@@ -660,165 +661,179 @@ describe("public merge-safety SDK primitives", () => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
       const priorCwd = process.cwd();
       process.chdir(context.tempRoot);
-      const preview = await runMergeInstall(
-        { dryRun: true },
-        { path: context.pmPath },
-      );
-      expect(preview.dry_run).toBe(true);
-      expect(preview.gitattributes.changed).toBe(true);
-      expect(preview.gitattributes.patterns).toContain(
-        '".agents/pm/tasks/*.toon" merge=pm-item-toon',
-      );
+      try {
+        const preview = await runMergeInstall(
+          { dryRun: true },
+          { path: context.pmPath },
+        );
+        expect(preview.dry_run).toBe(true);
+        expect(preview.gitattributes.changed).toBe(true);
+        expect(preview.gitattributes.patterns).toContain(
+          '".agents/pm/tasks/*.toon" merge=pm-item-toon',
+        );
 
-      const gitConfigLock = path.join(context.tempRoot, ".git", "config.lock");
-      await writeFile(gitConfigLock, "held by merge-safety test\n", "utf8");
-      await expect(
-        runMergeInstall({}, { path: context.pmPath }),
-      ).rejects.toMatchObject({
-        name: "PmCliError",
-        exitCode: 5,
-        context: {
-          code: "merge_git_config_unwritable",
-          nextSteps: expect.arrayContaining([expect.stringMatching(/dry-run/)]),
-        },
-      });
-      await expect(
-        readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
-      ).rejects.toMatchObject({ code: "ENOENT" });
-      await rm(gitConfigLock);
+        const gitConfigLock = path.join(
+          context.tempRoot,
+          ".git",
+          "config.lock",
+        );
+        await writeFile(gitConfigLock, "held by merge-safety test\n", "utf8");
+        await expect(
+          runMergeInstall({}, { path: context.pmPath }),
+        ).rejects.toMatchObject({
+          name: "PmCliError",
+          exitCode: 5,
+          context: {
+            code: "merge_git_config_unwritable",
+            nextSteps: expect.arrayContaining([
+              expect.stringMatching(/dry-run/),
+            ]),
+          },
+        });
+        await expect(
+          readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
+        ).rejects.toMatchObject({ code: "ENOENT" });
+        await rm(gitConfigLock);
 
-      const installed = await runMergeInstall({}, { path: context.pmPath });
-      expect(installed.git_config).toHaveLength(10);
-      expect(
-        installed.git_config.find(
-          (entry) => entry.key === "merge.pm-relationship.driver",
-        )?.value,
-      ).toMatch(
-        /^'.+' '.+\/dist\/cli\.js' merge driver relationship "%O" "%A" "%B"$/,
-      );
-      expect(installed.gitattributes.patterns).toContain(
-        '".agents/pm/**/*.jsonl" merge=pm-relationship',
-      );
-      expect(
-        installed.git_config.find(
-          (entry) => entry.key === "merge.pm-item-toon.driver",
-        )?.value,
-      ).toMatch(
-        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path %P$/,
-      );
-      expect(
-        installed.git_config.find(
-          (entry) => entry.key === "merge.pm-item-markdown.driver",
-        )?.value,
-      ).toMatch(
-        /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path %P$/,
-      );
-      expect(
-        installed.git_config
-          .filter((entry) => entry.key.endsWith(".driver"))
-          .filter((entry) => !entry.key.includes("pm-item"))
-          .every((entry) => !entry.value.includes("%P")),
-      ).toBe(true);
-      expect(
-        (await auditMergeDriverConfiguration(context.tempRoot)).status,
-      ).toBe("ok");
-      execFileSync(
-        "git",
-        ["config", "--local", "--unset", "merge.pm-history.driver"],
-        { cwd: context.tempRoot },
-      );
-      expect(
-        await auditMergeDriverConfiguration(context.tempRoot),
-      ).toMatchObject({
-        status: "missing",
-        missing_keys: ["merge.pm-history.driver"],
-      });
-      await runMergeInstall({}, { path: context.pmPath });
-      execFileSync(
-        "git",
-        [
-          "config",
-          "--local",
-          "merge.pm-history.driver",
-          "node stale-driver.js",
-        ],
-        { cwd: context.tempRoot },
-      );
-      expect(
-        await auditMergeDriverConfiguration(context.tempRoot),
-      ).toMatchObject({
-        status: "drift",
-        drifted_keys: ["merge.pm-history.driver"],
-      });
-      await runMergeInstall({}, { path: context.pmPath });
-      expect(
-        await readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
-      ).toContain("# pm-cli:merge-drivers:start");
-      expect(
-        (await runMergeInstall({}, { path: context.pmPath })).gitattributes
-          .changed,
-      ).toBe(false);
-      await writeFile(
-        path.join(context.tempRoot, ".gitattributes"),
-        "*.bin binary\n# pm-cli:merge-drivers:start\n.agents/pm/tasks/*.toon merge=pm-item-toon\n",
-        "utf8",
-      );
-      await runMergeInstall({}, { path: context.pmPath });
-      const repairedAttributes = await readFile(
-        path.join(context.tempRoot, ".gitattributes"),
-        "utf8",
-      );
-      expect(
-        repairedAttributes.match(/# pm-cli:merge-drivers:start/g),
-      ).toHaveLength(1);
-      expect(repairedAttributes).toContain("*.bin binary");
-
-      await writeFile(
-        path.join(context.tempRoot, "settings.json"),
-        await readFile(path.join(context.pmPath, "settings.json"), "utf8"),
-        "utf8",
-      );
-      await writeFile(
-        path.join(context.tempRoot, ".gitattributes"),
-        "*.bin binary\n",
-        "utf8",
-      );
-      expect(
-        (await runMergeInstall({ dryRun: true }, { path: context.tempRoot }))
-          .gitattributes.patterns,
-      ).toContain('"tasks/*.toon" merge=pm-item-toon');
-      const spacedRoot = path.join(context.tempRoot, "Project Docs", "pm");
-      await mkdir(spacedRoot, { recursive: true });
-      await writeFile(
-        path.join(spacedRoot, "settings.json"),
-        await readFile(path.join(context.pmPath, "settings.json"), "utf8"),
-        "utf8",
-      );
-      expect(
-        (await runMergeInstall({ dryRun: true }, { path: spacedRoot }))
-          .gitattributes.patterns,
-      ).toContain('"Project Docs/pm/tasks/*.toon" merge=pm-item-toon');
-      await runMergeInstall({}, { path: spacedRoot });
-      expect(
+        const installed = await runMergeInstall({}, { path: context.pmPath });
+        expect(installed.git_config).toHaveLength(10);
+        expect(
+          installed.git_config.find(
+            (entry) => entry.key === "merge.pm-relationship.driver",
+          )?.value,
+        ).toMatch(
+          /^'.+' '.+\/dist\/cli\.js' merge driver relationship "%O" "%A" "%B"$/,
+        );
+        expect(installed.gitattributes.patterns).toContain(
+          '".agents/pm/**/*.jsonl" merge=pm-relationship',
+        );
+        expect(
+          installed.git_config.find(
+            (entry) => entry.key === "merge.pm-item-toon.driver",
+          )?.value,
+        ).toMatch(
+          /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path %P$/,
+        );
+        expect(
+          installed.git_config.find(
+            (entry) => entry.key === "merge.pm-item-markdown.driver",
+          )?.value,
+        ).toMatch(
+          /^'.+' '.+\/dist\/cli\.js' merge driver item "%O" "%A" "%B" --item-path %P$/,
+        );
+        expect(
+          installed.git_config
+            .filter((entry) => entry.key.endsWith(".driver"))
+            .filter((entry) => !entry.key.includes("pm-item"))
+            .every((entry) => !entry.value.includes("%P")),
+        ).toBe(true);
+        expect(
+          (await auditMergeDriverConfiguration(context.tempRoot)).status,
+        ).toBe("ok");
         execFileSync(
           "git",
-          ["check-attr", "merge", "--", "Project Docs/pm/tasks/pm-space.toon"],
-          { cwd: context.tempRoot, encoding: "utf8" },
-        ),
-      ).toContain("merge: pm-item-toon");
+          ["config", "--local", "--unset", "merge.pm-history.driver"],
+          { cwd: context.tempRoot },
+        );
+        expect(
+          await auditMergeDriverConfiguration(context.tempRoot),
+        ).toMatchObject({
+          status: "missing",
+          missing_keys: ["merge.pm-history.driver"],
+        });
+        await runMergeInstall({}, { path: context.pmPath });
+        execFileSync(
+          "git",
+          [
+            "config",
+            "--local",
+            "merge.pm-history.driver",
+            "node stale-driver.js",
+          ],
+          { cwd: context.tempRoot },
+        );
+        expect(
+          await auditMergeDriverConfiguration(context.tempRoot),
+        ).toMatchObject({
+          status: "drift",
+          drifted_keys: ["merge.pm-history.driver"],
+        });
+        await runMergeInstall({}, { path: context.pmPath });
+        expect(
+          await readFile(path.join(context.tempRoot, ".gitattributes"), "utf8"),
+        ).toContain("# pm-cli:merge-drivers:start");
+        expect(
+          (await runMergeInstall({}, { path: context.pmPath })).gitattributes
+            .changed,
+        ).toBe(false);
+        await writeFile(
+          path.join(context.tempRoot, ".gitattributes"),
+          "*.bin binary\n# pm-cli:merge-drivers:start\n.agents/pm/tasks/*.toon merge=pm-item-toon\n",
+          "utf8",
+        );
+        await runMergeInstall({}, { path: context.pmPath });
+        const repairedAttributes = await readFile(
+          path.join(context.tempRoot, ".gitattributes"),
+          "utf8",
+        );
+        expect(
+          repairedAttributes.match(/# pm-cli:merge-drivers:start/g),
+        ).toHaveLength(1);
+        expect(repairedAttributes).toContain("*.bin binary");
 
-      const dotDotNamedRoot = path.join(context.tempRoot, "..pm");
-      await mkdir(dotDotNamedRoot, { recursive: true });
-      await writeFile(
-        path.join(dotDotNamedRoot, "settings.json"),
-        await readFile(path.join(context.pmPath, "settings.json"), "utf8"),
-        "utf8",
-      );
-      expect(
-        (await runMergeInstall({ dryRun: true }, { path: dotDotNamedRoot }))
-          .gitattributes.patterns,
-      ).toContain('"..pm/tasks/*.toon" merge=pm-item-toon');
-      process.chdir(priorCwd);
+        await writeFile(
+          path.join(context.tempRoot, "settings.json"),
+          await readFile(path.join(context.pmPath, "settings.json"), "utf8"),
+          "utf8",
+        );
+        await writeFile(
+          path.join(context.tempRoot, ".gitattributes"),
+          "*.bin binary\n",
+          "utf8",
+        );
+        expect(
+          (await runMergeInstall({ dryRun: true }, { path: context.tempRoot }))
+            .gitattributes.patterns,
+        ).toContain('"tasks/*.toon" merge=pm-item-toon');
+        const spacedRoot = path.join(context.tempRoot, "Project Docs", "pm");
+        await mkdir(spacedRoot, { recursive: true });
+        await writeFile(
+          path.join(spacedRoot, "settings.json"),
+          await readFile(path.join(context.pmPath, "settings.json"), "utf8"),
+          "utf8",
+        );
+        expect(
+          (await runMergeInstall({ dryRun: true }, { path: spacedRoot }))
+            .gitattributes.patterns,
+        ).toContain('"Project Docs/pm/tasks/*.toon" merge=pm-item-toon');
+        await runMergeInstall({}, { path: spacedRoot });
+        expect(
+          execFileSync(
+            "git",
+            [
+              "check-attr",
+              "merge",
+              "--",
+              "Project Docs/pm/tasks/pm-space.toon",
+            ],
+            { cwd: context.tempRoot, encoding: "utf8" },
+          ),
+        ).toContain("merge: pm-item-toon");
+
+        const dotDotNamedRoot = path.join(context.tempRoot, "..pm");
+        await mkdir(dotDotNamedRoot, { recursive: true });
+        await writeFile(
+          path.join(dotDotNamedRoot, "settings.json"),
+          await readFile(path.join(context.pmPath, "settings.json"), "utf8"),
+          "utf8",
+        );
+        expect(
+          (await runMergeInstall({ dryRun: true }, { path: dotDotNamedRoot }))
+            .gitattributes.patterns,
+        ).toContain('"..pm/tasks/*.toon" merge=pm-item-toon');
+      } finally {
+        process.chdir(priorCwd);
+      }
 
       const cliPreview = await context.runCliInProcess(
         ["--profile", "merge", "install", "--dry-run", "--json"],
@@ -1321,6 +1336,7 @@ describe("public merge-safety SDK primitives", () => {
         path.join(os.tmpdir(), "pm-merge-linked-sandbox-"),
       );
       workspaces.push(sandboxRoot);
+      const canonicalSandboxRoot = await realpath(sandboxRoot);
       execFileSync("git", ["init", "-q"], { cwd: sandboxRoot });
       const sandboxPmRoot = path.join(sandboxRoot, ".agents", "pm");
       await mkdir(sandboxPmRoot, { recursive: true });
@@ -1356,7 +1372,10 @@ describe("public merge-safety SDK primitives", () => {
           { dryRun: true },
           { path: sandboxPmRoot },
         );
-        expect(explicitInstalled.workspace_root).toBe(sandboxRoot);
+        expect(explicitInstalled.workspace_root).toBe(canonicalSandboxRoot);
+        expect(explicitInstalled.pm_root).toBe(
+          path.join(canonicalSandboxRoot, ".agents", "pm"),
+        );
         expect(explicitInstalled.gitattributes.patterns).toContain(
           '".agents/pm/tasks/*.toon" merge=pm-item-toon',
         );
