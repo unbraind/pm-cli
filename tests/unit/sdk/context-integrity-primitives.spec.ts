@@ -327,6 +327,29 @@ describe("SDK and CLI context-integrity primitives", () => {
         ),
       );
 
+      const realpathSpy = vi.spyOn(fs, "realpath");
+      realpathSpy.mockRejectedValueOnce(
+        Object.assign(new Error("permission denied"), { code: "EACCES" }),
+      );
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:filesystem_error",
+        ),
+      );
+
+      realpathSpy.mockRejectedValueOnce("non-error prevalidation failure");
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:unknown",
+        ),
+      );
+
       rmSpy.mockRejectedValueOnce(
         Object.assign(new Error("concurrent removal"), { code: "ENOENT" }),
       );

@@ -19,36 +19,44 @@ const DRIFT_CACHE_ERROR_CODES: Readonly<Record<string, string>> = {
   ERR_FS_EISDIR: "cache_path_is_directory",
 };
 
+/** Extract a stable Node.js filesystem error code without assuming an Error instance. */
+function getFilesystemErrorCode(error: unknown): string | undefined {
+  return typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+    ? error.code
+    : undefined;
+}
+
 /** Remove the derived drift cache after a history mutation; a missing or concurrently removed cache is already invalidated. */
 export async function invalidateHistoryDriftCache(
   pmRoot: string,
 ): Promise<void> {
   const cachePath = path.join(pmRoot, DRIFT_CACHE_RELATIVE_PATH);
   let pmRootIsDirectory = false;
+  let rootFailureCode = "invalid_cache_path";
   try {
     pmRootIsDirectory = (
       await fs.stat(await fs.realpath(pmRoot))
     ).isDirectory();
-  } catch {
-    // The semantic classification below treats an invalid tracker root
-    // independently from platform-specific filesystem error codes.
+  } catch (error) {
+    const errorCode = getFilesystemErrorCode(error);
+    rootFailureCode =
+      errorCode === undefined
+        ? "unknown"
+        : (DRIFT_CACHE_ERROR_CODES[errorCode] ?? "filesystem_error");
   }
   if (!pmRootIsDirectory) {
     writeStderr(
-      "[pm] warning: history_drift_cache_invalidation_failed:invalid_cache_path\n",
+      `[pm] warning: history_drift_cache_invalidation_failed:${rootFailureCode}\n`,
     );
     return;
   }
   try {
     await fs.rm(cachePath, { force: true });
   } catch (error) {
-    const errorCode =
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      typeof error.code === "string"
-        ? error.code
-        : undefined;
+    const errorCode = getFilesystemErrorCode(error);
     if (errorCode === "ENOENT") {
       return;
     }

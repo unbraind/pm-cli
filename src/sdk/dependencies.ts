@@ -847,6 +847,71 @@ function includesContextMissingReference(params: {
   );
 }
 
+/**
+ * Settle a token count embedded in the payload whose rendered size it
+ * describes. The mapping can only change when the decimal digit width changes,
+ * so repeatedly embedding the measured value reaches a stable fixed point.
+ */
+function settleRenderedTokenCount(
+  result: DepsResult,
+  outputFormat: "json" | "toon",
+  assign: (tokens: number) => void,
+): number {
+  let embeddedTokens: number | undefined;
+  for (;;) {
+    const measuredTokens = estimatePmOutputTokens(
+      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
+        .byteLength,
+    );
+    if (measuredTokens === embeddedTokens) return measuredTokens;
+    assign(measuredTokens);
+    embeddedTokens = measuredTokens;
+  }
+}
+
+/** Identify the context packer's controlled signal that no smaller packet fits. */
+function isContextBudgetFloorError(error: unknown): error is TypeError {
+  return (
+    error instanceof TypeError &&
+    error.message.startsWith("Relationship context tokenBudget cannot fit ")
+  );
+}
+
+/**
+ * Build one progressively smaller context packet, returning the last rendered
+ * result when the context packer reports that no smaller structural packet fits.
+ */
+function buildContextAtRenderedBudget(params: {
+  assembly: WorkspaceRelationshipAssembly;
+  canonicalId: string;
+  contextOptions: RelationshipContextOptions;
+  internalTokenBudget: number | undefined;
+  rootEvidence: readonly string[];
+  smallestResult: DepsResult | undefined;
+}): RelationshipContextResult | DepsResult {
+  try {
+    return buildContextFromAssembly(
+      params.assembly,
+      params.canonicalId,
+      {
+        ...params.contextOptions,
+        ...(params.internalTokenBudget === undefined
+          ? {}
+          : { tokenBudget: params.internalTokenBudget }),
+      },
+      params.rootEvidence,
+    );
+  } catch (error) {
+    if (
+      params.smallestResult !== undefined &&
+      isContextBudgetFloorError(error)
+    ) {
+      return params.smallestResult;
+    }
+    throw error;
+  }
+}
+
 function enforceContextRenderedTokenBudget(params: {
   assembly: WorkspaceRelationshipAssembly;
   canonicalId: string;
@@ -871,18 +936,18 @@ function enforceContextRenderedTokenBudget(params: {
   let emittedReferenceLimit = referenceLimit;
   let internalTokenBudget = contextOptions.tokenBudget;
   let requestedTokenBudget: number | undefined;
+  let smallestResult: DepsResult | undefined;
   for (;;) {
-    const context = buildContextFromAssembly(
+    const contextOrFloor = buildContextAtRenderedBudget({
       assembly,
       canonicalId,
-      {
-        ...contextOptions,
-        ...(internalTokenBudget === undefined
-          ? {}
-          : { tokenBudget: internalTokenBudget }),
-      },
+      contextOptions,
+      internalTokenBudget,
       rootEvidence,
-    );
+      smallestResult,
+    });
+    if ("format" in contextOrFloor) return contextOrFloor;
+    const context = contextOrFloor;
     requestedTokenBudget ??= context.meta.tokenBudget;
     internalTokenBudget ??= requestedTokenBudget;
     const result = createContextDepsResult({
@@ -893,15 +958,15 @@ function enforceContextRenderedTokenBudget(params: {
       referenceLimit: emittedReferenceLimit,
       summaryOnly,
     });
+    smallestResult = result;
     if (summaryOnly) return result;
     context.meta.tokenBudget = requestedTokenBudget;
-    context.meta.usedTokens = estimatePmOutputTokens(
-      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
-        .byteLength,
-    );
-    context.meta.usedTokens = estimatePmOutputTokens(
-      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
-        .byteLength,
+    context.meta.usedTokens = settleRenderedTokenCount(
+      result,
+      outputFormat,
+      (tokens) => {
+        context.meta.usedTokens = tokens;
+      },
     );
     if (context.meta.usedTokens <= requestedTokenBudget) return result;
     if (emittedReferenceLimit > 0) {
@@ -911,11 +976,10 @@ function enforceContextRenderedTokenBudget(params: {
     const currentInternalBudget = internalTokenBudget;
     const scaledInternalBudget =
       (currentInternalBudget * requestedTokenBudget) / context.meta.usedTokens;
-    const nextInternalBudget = Math.max(
-      1,
-      Math.floor(scaledInternalBudget * 0.9),
+    internalTokenBudget = Math.min(
+      currentInternalBudget - 1,
+      Math.max(1, Math.floor(scaledInternalBudget * 0.9)),
     );
-    internalTokenBudget = nextInternalBudget;
   }
 }
 
@@ -1076,20 +1140,15 @@ function buildTreeOrGraphDepsResult(
     };
     result =
       format === "tree" ? { ...baseResult, tree } : { ...baseResult, graph };
-    const renderedTokens = estimatePmOutputTokens(
-      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
-        .byteLength,
-    );
-    if (result.truncation) {
-      result.truncation.estimated_tokens = renderedTokens;
-    }
-    const settledTokens = estimatePmOutputTokens(
-      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
-        .byteLength,
-    );
-    if (result.truncation) {
-      result.truncation.estimated_tokens = settledTokens;
-    }
+    const settledTokens =
+      result.truncation === undefined
+        ? estimatePmOutputTokens(
+            new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
+              .byteLength,
+          )
+        : settleRenderedTokenCount(result, outputFormat, (tokens) => {
+            result.truncation!.estimated_tokens = tokens;
+          });
     if (settledTokens <= tokenBudget) {
       return result;
     }

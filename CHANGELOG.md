@@ -14,6 +14,10 @@
 - pm-governance-audit dedupe-audit rejects --status all, breaking explicit all-lifecycle duplicate sweeps ([pm-mp49](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mp49.toon))
 - GH-781: managed built-in extensions redeclare public SDK contracts locally, and the mirrors already disagree with the authoritative declarations in shipped packages ([pm-vnk7ob](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vnk7ob.toon))
 
+### Security
+
+- PR \#795 exact-head review hardening: dependency budget progress, rendered fixed points, nightly credential isolation, and drift-cache diagnostics ([pm-jd3m6p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jd3m6p.toon))
+
 ### Other
 
 - Token-budget gate corpus is unrepresentative in both scale and coverage: budgets are set on a seeded micro-workspace and the largest agent-facing payloads are not measured at all ([pm-z71aoy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z71aoy.toon))

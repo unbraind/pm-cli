@@ -865,6 +865,41 @@ describe("runDeps", () => {
         ),
       );
       expect(linkedResult.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
+
+      await expect(
+        runDeps(
+          linkedRootId,
+          {
+            format: "context",
+            nodeLimit: 1,
+            edgeLimit: 1,
+            tokenBudget: 1,
+          },
+          { path: context.pmPath, json: true },
+        ),
+      ).rejects.toThrow(
+        "Relationship context tokenBudget cannot fit root and evidence",
+      );
+
+      const minimumResult = await runDeps(
+        linkedRootId,
+        {
+          format: "context",
+          nodeLimit: 1,
+          edgeLimit: 1,
+          tokenBudget: 300,
+        },
+        { path: context.pmPath, json: true },
+      );
+      expect(minimumResult.missing_references).toEqual([]);
+      expect(minimumResult.context?.nodes).toHaveLength(1);
+      expect(minimumResult.context?.meta.tokenBudget).toBe(300);
+      expect(minimumResult.context?.meta.usedTokens).toBe(
+        Math.ceil(
+          Buffer.byteLength(formatBuiltInOutput(minimumResult, "json")) / 4,
+        ),
+      );
+      expect(minimumResult.context!.meta.usedTokens).toBeGreaterThan(300);
     });
   });
 
