@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:storage",durability,git,merge-safety,multi-agent
 created_at: "2026-07-26T18:25:40.116Z"
-updated_at: "2026-07-28T00:11:59.921Z"
+updated_at: "2026-07-28T10:03:22.128Z"
 closed_at: "2026-07-28T00:11:56.768Z"
 author: "harness:claude-code"
 estimated_minutes: 240
@@ -22,7 +22,7 @@ confidence: high
 resolution: "Implemented generalized tracked-JSON merge fencing, conservative additive-array reconciliation, portable installed-driver recognition, SDK documentation, and regression coverage."
 expected_result: "Concurrent branches can merge every tracked non-item JSON document and additive JSON arrays without losing independent additions, while semantic edits still conflict."
 actual_result: "The generated JSON fence now covers nested tracker JSON, three-way JSON merging unions only additive arrays, and a real two-branch managed-extension merge succeeds through the installed driver."
-dependencies[5]:
+dependencies[10]:
   - id: pm-4020c5
     kind: related
     created_at: "2026-07-26T18:29:13.960Z"
@@ -42,6 +42,36 @@ dependencies[5]:
     created_at: "2026-07-27T22:02:34.305Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
+  - id: pm-i4fx
+    kind: related
+    created_at: "2026-07-28T10:03:21.917Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-iwsj
+    kind: discovered_from
+    created_at: "2026-07-28T10:03:21.917Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-pdr8t1
+    kind: related
+    created_at: "2026-07-28T10:03:21.917Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-szv11n
+    kind: implements
+    created_at: "2026-07-28T10:03:21.917Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-w7ccmv
+    kind: implements
+    created_at: "2026-07-28T10:03:21.917Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[4]{created_at,author,text}:
   "2026-07-27T22:02:59.480Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/780. Reused the all-status canonical non-item JSON merge-fence issue and claimed it for this broad implementation bundle."
   "2026-07-27T23:31:44.775Z","harness:codex","Final verification evidence: lint, zero-warning static quality, TypeScript checking, contracts, docs/skills, context evaluation, secret scanning, and dependency audit passed. Full sandboxed coverage passed 380 files and 6,436 tests at exactly 100% statements (44,686/44,686), branches (31,786/31,786), functions (9,153/9,153), and lines (43,399/43,399). A packed tarball installed in a fresh unrelated consumer resolved its own CLI for npm/npx/bunx, completed init/create/claim/update/lean-output/health/validate/merge-install flows, and exercised the real Git merge driver across independent branches. Live repository health has zero warnings and authoritative history validation reports 0 missing, unreadable, hash-mismatch, or chain-mismatch streams."

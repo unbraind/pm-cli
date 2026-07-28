@@ -1,12 +1,12 @@
 id: pm-5t33or
 title: "Contract-declared output token budgets: every command declares a default ceiling and degrades deterministically instead of emitting unbounded output"
-description: ""
+description: "Every command already declares a default output ceiling in the contracts table, and the declaration binds nothing. It is not enforced at runtime, and it is not the oracle of either gate that carries the word token in its name. The result is a surface where the published number and the delivered number are unrelated.\n\nConformance census, measured at HEAD build 2026.7.28 against this repository's tracker of 2,154 items and 40,446 history entries, using the contract's own metric of ceil(utf8_bytes / 4):\n\n  command      declared   measured     ratio\n  activity        4,000  1,591,219    397.8x\n  deps            4,000     46,498     11.6x\n  health          6,000     33,178      5.5x\n  list            4,000     14,234      3.6x\n  duplicates      4,000      9,552      2.4x\n  events          4,000      9,199      2.3x\n  validate        6,000      5,962      1.0x\n  contracts       3,000      2,245      0.7x\n  next            4,000      2,201      0.6x\n  context         4,000      2,016      0.5x\n  get             4,000      1,400      0.3x\n  graph           4,000        403      0.1x\n  aggregate       4,000        114      0.0x\n  stats           6,000        110      0.0x\n\nSeven of eighteen sampled surfaces exceed their declared ceiling; one sits exactly at it. The distribution is the important part: the overruns are not uniform overhead, they are the surfaces whose output size is a function of workspace scale and whose bound is missing rather than loose. A ceiling that a command exceeds by 397.8x on a mid-sized workspace is not a ceiling that grows too slowly, it is a command with no bound at all.\n\nTwo consequences shape what this feature has to deliver.\n\nThe declared number cannot stay advisory metadata. An agent reading default_max_estimated_tokens today is reading a value that predicts nothing about what the call will cost, which is worse than the value being absent, because absence would at least prompt a bounded call.\n\nEnforcement and measurement have to move together. The corpus gate this feature extends is currently measured against a three-item fixture with self-recorded byte budgets, so it cannot observe a scale-dependent overrun at all; that blindness is owned by pm-9sui7t and is the negative control this feature's fourth criterion needs in order to mean anything.\n\nIndividual overruns retain their own owners and are not absorbed here: pm-z2j1qt owns activity, pm-t2t709 owns deps, pm-du93sr owns health, pm-mfy1ux owns graph impact. This item owns the general contract -- that a declared ceiling is binding, that exceeding it degrades deterministically down the published ladder, that the envelope discloses what was dropped, and that an unbounded result must be asked for by name."
 type: Feature
 status: open
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",context-management,contracts,output-contract,token-efficiency
 created_at: "2026-07-24T23:45:26.200Z"
-updated_at: "2026-07-27T14:07:53.284Z"
+updated_at: "2026-07-28T10:03:51.963Z"
 author: maintainer-agent
 estimated_minutes: 1800
 acceptance_criteria: "The contract table declares a default output token budget per command and per output format, generated rather than hand-maintained; Commands exceeding their budget apply the shared degradation ladder (projection narrowing, then bounded truncation) and disclose what was dropped in the envelope; A budget override flag and a no-budget escape hatch exist for human and pipeline use, and are documented as non-default; The token-cost corpus gate is extended to assert every command against its declared budget, failing on regression; Degradation never changes machine-readable field names or breaks the scripting contract"
@@ -19,24 +19,70 @@ why_now: "The token-cost regression gate and the context packer both shipped, so
 parent: pm-n7rr
 risk: medium
 confidence: medium
-dependencies[17]{id,kind,created_at}:
-  pm-4k6b,related,"2026-07-24T23:45:26.200Z"
-  pm-55ra,related,"2026-07-24T23:45:26.200Z"
-  pm-8pnj,related,"2026-07-24T23:45:26.200Z"
-  pm-9k90,related,"2026-07-24T23:45:26.200Z"
-  pm-cu1i,related,"2026-07-24T23:45:26.200Z"
-  pm-g2zz,related,"2026-07-24T23:45:26.200Z"
-  pm-j82fd3,related,"2026-07-24T23:45:26.200Z"
-  pm-mu8m,related,"2026-07-24T23:45:26.200Z"
-  pm-o87av6,related,"2026-07-24T23:45:26.200Z"
-  pm-psy1,related,"2026-07-24T23:45:26.200Z"
-  pm-srns,related,"2026-07-24T23:45:26.200Z"
-  pm-z436,related,"2026-07-24T23:45:26.200Z"
-  pm-cha95z,related,"2026-07-25T12:40:20.571Z"
-  pm-cxr0jb,related,"2026-07-25T12:40:20.571Z"
-  pm-g3n00m,related,"2026-07-25T12:40:20.571Z"
-  pm-kvxqp1,related,"2026-07-25T12:40:20.571Z"
-  pm-g3n00m,implements,"2026-07-25T20:44:23.285Z"
+dependencies[19]:
+  - id: pm-4k6b
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-55ra
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-8pnj
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-9k90
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-cu1i
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-g2zz
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-j82fd3
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-mu8m
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-o87av6
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-psy1
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-srns
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-z436
+    kind: related
+    created_at: "2026-07-24T23:45:26.200Z"
+  - id: pm-cha95z
+    kind: related
+    created_at: "2026-07-25T12:40:20.571Z"
+  - id: pm-cxr0jb
+    kind: related
+    created_at: "2026-07-25T12:40:20.571Z"
+  - id: pm-g3n00m
+    kind: related
+    created_at: "2026-07-25T12:40:20.571Z"
+  - id: pm-kvxqp1
+    kind: related
+    created_at: "2026-07-25T12:40:20.571Z"
+  - id: pm-g3n00m
+    kind: implements
+    created_at: "2026-07-25T20:44:23.285Z"
+  - id: pm-9sui7t
+    kind: related
+    created_at: "2026-07-28T10:03:51.742Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-z2j1qt
+    kind: related
+    created_at: "2026-07-28T10:03:51.742Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[2]{created_at,author,text}:
   "2026-07-27T14:00:55.774Z","harness:codex","Progress tranche: added public SDK output-budget contracts for every built-in command, deterministic degradation ladders, output classes, override resolution, token estimation, runtime discovery policy, and a public surface snapshot. The 95-surface and 17-command ratchets now enforce declared ceilings. This does not yet satisfy the full item: runtime enforcement across every command/format, disclosed dropped-field envelopes, and universal override/no-budget flags remain. Returning the item to open so only actively edited work is in progress."
   "2026-07-27T14:07:53.283Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/774 at implementation head 8173f7f73. This PR ships the public SDK declaration and enforcement-baseline tranche; the item remains open for universal runtime degradation and disclosure."

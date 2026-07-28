@@ -6,14 +6,14 @@ status: open
 priority: 3
 tags[6]: "area:storage",determinism,reproducibility,rl,storage,testing
 created_at: "2026-07-26T22:04:50.255Z"
-updated_at: "2026-07-28T04:21:02.105Z"
+updated_at: "2026-07-28T10:06:40.274Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "A workspace can be constructed from a declared recipe consisting of a seed, a clock and an operation sequence, and two constructions from the same recipe are byte-identical including identifiers, timestamps and history hashes; determinism is opt-in and the default behaviour of real workspaces is unchanged; the recipe is a first-class artifact that can be stored, shared and re-executed by a different machine and a different pm build within the supported format window; the benchmark and token-budget corpora are generated from recipes rather than committed fixtures; the deterministic path is exercised in CI, and a deliberate nondeterminism regression fails it; the clock injection is total, so no code path reads wall-clock time directly when a clock is supplied"
 parent: pm-o2kc
 risk: medium
 confidence: medium
-dependencies[7]:
+dependencies[8]:
   - id: pm-9rxu
     kind: related
     created_at: "2026-07-26T22:04:50.255Z"
@@ -36,6 +36,12 @@ dependencies[7]:
     kind: related
     created_at: "2026-07-28T04:21:00.959Z"
     author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-nfrhf0
+    kind: implements
+    created_at: "2026-07-28T10:02:35.558Z"
+    author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[1]{created_at,author,text}:

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:contracts","area:extensions",governance-audit
 created_at: "2026-07-13T21:36:43.027Z"
-updated_at: "2026-07-28T04:23:33.424Z"
+updated_at: "2026-07-28T10:03:22.988Z"
 closed_at: "2026-07-28T04:15:16.664Z"
 author: codex-root
 estimated_minutes: 90
@@ -22,7 +22,7 @@ expected_result: pm dedupe-audit --status all succeeds and considers the same it
 actual_result: Parser and list execution accept all; unit and packed installed-consumer tests prove explicit and omitted all-status parity.
 component: pm-governance-audit/dedupe-audit
 customer_impact: Agents cannot express the repository-required all-status duplicate sweep through the audit command and must know that omitting the filter has undocumented broader semantics.
-dependencies[4]:
+dependencies[5]:
   - id: pm-i02t
     kind: related
     created_at: "2026-07-13T21:36:43.027Z"
@@ -38,6 +38,12 @@ dependencies[4]:
     kind: verifies
     created_at: "2026-07-28T03:16:15.086Z"
     author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-v657
+    kind: related
+    created_at: "2026-07-28T10:03:22.781Z"
+    author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[4]{created_at,author,text}:

@@ -6,18 +6,36 @@ status: open
 priority: 2
 tags[6]: acceptance-criteria,"area:governance",governance,lifecycle,rl,verification
 created_at: "2026-07-26T22:04:40.610Z"
-updated_at: "2026-07-26T22:04:40.610Z"
+updated_at: "2026-07-28T10:06:41.297Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "A criterion may declare a check of at least the linked-test, workspace-query, artifact-predicate and human-signoff kinds, and criteria without a check remain valid; running the checks for an item produces a per-criterion verdict recording pass, fail or not-evaluated, with timestamp, author and the evidence, and the verdicts are stored on the item and appended to history; close validation can be configured to require passing verdicts for every criterion, and the default is unchanged so existing workspaces are unaffected; the verdict set is readable as a bounded projection cheap enough for an agent loop and reachable through the SDK; a criterion's check is re-runnable at any later point and re-running is idempotent; the existing prose criteria corpus is untouched and no migration is required"
 parent: pm-33cw
 risk: medium
 confidence: medium
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-33cw,implements,"2026-07-26T22:04:40.610Z",null,null
-  pm-htbetn,related,"2026-07-26T22:04:40.610Z",null,null
-  pm-mj42og,related,"2026-07-26T22:04:40.610Z",null,null
-  pm-pww8ax,related,"2026-07-26T22:04:40.610Z",null,null
-  pm-wenq,blocks,"2026-07-26T22:04:40.610Z",null,null
-  pm-xgcp18,related,"2026-07-26T22:04:40.610Z",null,null
+dependencies[7]:
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-07-26T22:04:40.610Z"
+  - id: pm-htbetn
+    kind: related
+    created_at: "2026-07-26T22:04:40.610Z"
+  - id: pm-mj42og
+    kind: related
+    created_at: "2026-07-26T22:04:40.610Z"
+  - id: pm-pww8ax
+    kind: related
+    created_at: "2026-07-26T22:04:40.610Z"
+  - id: pm-wenq
+    kind: blocks
+    created_at: "2026-07-26T22:04:40.610Z"
+  - id: pm-xgcp18
+    kind: related
+    created_at: "2026-07-26T22:04:40.610Z"
+  - id: pm-nfrhf0
+    kind: implements
+    created_at: "2026-07-28T10:02:37.105Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

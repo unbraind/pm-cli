@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",context-management,customization,token-efficiency
 created_at: "2026-07-25T12:28:05.242Z"
-updated_at: "2026-07-27T13:21:06.415Z"
+updated_at: "2026-07-28T10:02:38.506Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Read surfaces accept a declared intent, and each intent names its exact field set in contract data rather than in code; Omitting the intent preserves today's default projection byte-for-byte, proven by a snapshot test; Intents are discoverable through the contracts surface and extensible by workspace configuration and packages, so a non-project-management domain can declare its own; A measured token delta per intent versus the default projection is published as evidence, per command and per result size; Requesting an intent that a workspace has not declared fails with the one canonical unknown-value error and a nearest-match suggestion; Intent selection composes with the token budget and the relevance engine without any of the three overriding the others, proven by a test that exercises all three together"
@@ -18,21 +18,61 @@ outcome: Common agent loops read materially fewer tokens per item without losing
 parent: pm-mpbb
 risk: medium
 confidence: 65
-dependencies[14]{id,kind,created_at}:
-  pm-4k6b,related,"2026-07-25T12:28:05.242Z"
-  pm-5t33or,related,"2026-07-25T12:28:05.242Z"
-  pm-801d,related,"2026-07-25T12:28:05.242Z"
-  pm-kvxqp1,related,"2026-07-25T12:28:05.242Z"
-  pm-srns,related,"2026-07-25T12:28:05.242Z"
-  pm-tuadp2,related,"2026-07-25T12:28:05.242Z"
-  pm-cha95z,related,"2026-07-25T12:35:07.682Z"
-  pm-j82fd3,related,"2026-07-25T12:35:07.682Z"
-  pm-kxci8x,related,"2026-07-25T12:35:07.682Z"
-  pm-o87av6,related,"2026-07-25T12:35:07.682Z"
-  pm-plwm,related,"2026-07-25T12:35:07.682Z"
-  pm-t5dt4z,related,"2026-07-25T12:35:07.682Z"
-  pm-g3n00m,related,"2026-07-25T12:40:14.936Z"
-  pm-g3n00m,implements,"2026-07-25T20:44:25.814Z"
+dependencies[16]:
+  - id: pm-4k6b
+    kind: related
+    created_at: "2026-07-25T12:28:05.242Z"
+  - id: pm-5t33or
+    kind: related
+    created_at: "2026-07-25T12:28:05.242Z"
+  - id: pm-801d
+    kind: related
+    created_at: "2026-07-25T12:28:05.242Z"
+  - id: pm-kvxqp1
+    kind: related
+    created_at: "2026-07-25T12:28:05.242Z"
+  - id: pm-srns
+    kind: related
+    created_at: "2026-07-25T12:28:05.242Z"
+  - id: pm-tuadp2
+    kind: related
+    created_at: "2026-07-25T12:28:05.242Z"
+  - id: pm-cha95z
+    kind: related
+    created_at: "2026-07-25T12:35:07.682Z"
+  - id: pm-j82fd3
+    kind: related
+    created_at: "2026-07-25T12:35:07.682Z"
+  - id: pm-kxci8x
+    kind: related
+    created_at: "2026-07-25T12:35:07.682Z"
+  - id: pm-o87av6
+    kind: related
+    created_at: "2026-07-25T12:35:07.682Z"
+  - id: pm-plwm
+    kind: related
+    created_at: "2026-07-25T12:35:07.682Z"
+  - id: pm-t5dt4z
+    kind: related
+    created_at: "2026-07-25T12:35:07.682Z"
+  - id: pm-g3n00m
+    kind: related
+    created_at: "2026-07-25T12:40:14.936Z"
+  - id: pm-g3n00m
+    kind: implements
+    created_at: "2026-07-25T20:44:25.814Z"
+  - id: pm-li2fj5
+    kind: related
+    created_at: "2026-07-28T10:02:38.276Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-nfrhf0
+    kind: related
+    created_at: "2026-07-28T10:02:38.276Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-07-27T13:21:04.596Z","harness:codex","Scope decision: this bundle will publish reusable intent and budget contract primitives and fix discovery costs, but it will not yet alter get/list/context/next field projections; returning the read-projection feature to open so its byte-stability acceptance is not overstated."
 notes[1]{created_at,author,text}:
