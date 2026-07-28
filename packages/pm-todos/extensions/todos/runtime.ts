@@ -8,17 +8,11 @@ import type { Dirent } from "node:fs";
 import path from "node:path";
 import * as pmSdk from "@unbrained/pm-cli/sdk";
 import type {
-  CommitImportedItemParams,
-  CommitImportedItemResult,
-  Dependency,
-  ExtensionRegistrationRegistry,
   GlobalOptions,
-  ItemDocument,
   ItemMetadata,
   ItemStatus,
   ItemType,
   PmSettings,
-  ToImportLinkedArtifactsOptions,
   ToImportLinkedTestsOptions,
   ToImportLogEntriesOptions,
 } from "@unbrained/pm-cli/sdk";
@@ -72,10 +66,6 @@ export interface TodosExportResult {
 }
 
 type PriorityValue = 0 | 1 | 2 | 3 | 4;
-type ConfidenceTextValue = Extract<
-  NonNullable<ItemMetadata["confidence"]>,
-  string
->;
 
 interface ParsedTodoCandidate {
   entryName: string;
@@ -98,114 +88,7 @@ type ImportCandidateResult =
   | { id: string; writeWarnings: string[] }
   | { warning: string };
 
-interface ItemTypeRegistry {
-  types: string[];
-  type_to_folder: Record<string, string>;
-}
-
-interface LocatedItem {
-  id: string;
-  type: ItemType;
-  itemPath: string;
-  item_format: PmSettings["item_format"];
-}
-
-interface TodosSdkModule {
-  CONFIDENCE_TEXT_VALUES: readonly ConfidenceTextValue[];
-  DEPENDENCY_KIND_VALUES: readonly Dependency["kind"][];
-  EXIT_CODE: {
-    NOT_FOUND: number;
-  };
-  ISSUE_SEVERITY_VALUES: readonly string[];
-  PmCliError: new (message: string, exitCode: number) => Error;
-  RISK_VALUES: readonly string[];
-  canonicalDocument: (document: ItemDocument) => ItemDocument;
-  commitImportedItem: (
-    params: CommitImportedItemParams,
-  ) => Promise<CommitImportedItemResult>;
-  ensureTrackerInitialized: (pmRoot: string) => Promise<void>;
-  generateItemId: (pmRoot: string, prefix: string) => Promise<string>;
-  getActiveExtensionRegistrations: () => ExtensionRegistrationRegistry | null;
-  getItemPath: (
-    pmRoot: string,
-    type: ItemType,
-    id: string,
-    itemFormat: "toon",
-    typeToFolder: Record<string, string>,
-  ) => string;
-  listAllItemMetadata: (
-    pmRoot: string,
-    itemFormat: PmSettings["item_format"],
-    typeToFolder: Record<string, string>,
-  ) => Promise<ItemMetadata[]>;
-  locateItem: (
-    pmRoot: string,
-    id: string,
-    prefix: string,
-    itemFormat: PmSettings["item_format"],
-    typeToFolder: Record<string, string>,
-  ) => Promise<LocatedItem | null>;
-  normalizeItemMetadata: (itemMetadata: ItemMetadata) => ItemMetadata;
-  normalizeItemId: (id: string, prefix: string) => string;
-  nowIso: () => string;
-  readLocatedItem: (
-    located: LocatedItem,
-  ) => Promise<{ raw: string; document: ItemDocument }>;
-  readSettings: (pmRoot: string) => Promise<PmSettings>;
-  resolveItemTypeRegistry: (
-    settings: PmSettings,
-    registrations: ExtensionRegistrationRegistry | null,
-  ) => ItemTypeRegistry;
-  resolvePmRoot: (cwd: string, overridePath?: string) => string;
-  runActiveOnReadHooks: (context: {
-    path: string;
-    scope: "project" | "global";
-  }) => Promise<string[]>;
-  runActiveOnWriteHooks: (context: {
-    path: string;
-    scope: "project" | "global";
-    op: string;
-  }) => Promise<string[]>;
-  selectImportAuthor: (
-    explicitAuthor: string | undefined,
-    settingsAuthor: string,
-  ) => string;
-  splitFrontMatter: (content: string) => { frontMatter: string; body: string };
-  toEstimatedMinutesValue: (value: unknown) => number | undefined;
-  toImportBoolean: (value: unknown) => boolean | undefined;
-  toImportConfidence: (
-    value: unknown,
-    allowedTextValues: readonly ConfidenceTextValue[],
-  ) => ItemMetadata["confidence"];
-  toImportInteger: (value: unknown) => number | undefined;
-  toImportLinkedDocs: (
-    value: unknown,
-    options?: ToImportLinkedArtifactsOptions,
-  ) => ItemMetadata["docs"];
-  toImportLinkedFiles: (
-    value: unknown,
-    options?: ToImportLinkedArtifactsOptions,
-  ) => ItemMetadata["files"];
-  toImportLinkedTests: (
-    value: unknown,
-    options?: ToImportLinkedTestsOptions,
-  ) => ItemMetadata["tests"];
-  toImportLogEntries: (
-    value: unknown,
-    options: ToImportLogEntriesOptions,
-  ) => ItemMetadata["comments"];
-  toImportNormalizedEnum: <T extends readonly string[]>(
-    value: unknown,
-    allowed: T,
-  ) => T[number] | undefined;
-  toImportPriority: (value: unknown) => 0 | 1 | 2 | 3 | 4;
-  toImportStatus: (value: unknown) => ItemStatus;
-  toImportTags: (value: unknown) => string[];
-  toNonEmptyImportString: (value: unknown) => string | undefined;
-  writeFileAtomic: (targetPath: string, content: string) => Promise<void>;
-}
-
-const todosSdk: TodosSdkModule = pmSdk;
+const todosSdk = pmSdk;
 const {
   CONFIDENCE_TEXT_VALUES,
   DEPENDENCY_KIND_VALUES,

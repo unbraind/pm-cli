@@ -119,7 +119,7 @@
     "lint:complexity:baseline": "eslint . --suppress-rule complexity --suppress-rule sonarjs/cognitive-complexity",
     "lint:duplicates": "jscpd --config .jscpd.json",
     "lint:codefactor": "pnpm quality:static",
-    "quality:static": "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 132 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
+    "quality:static": "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 131 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/token-budget-gate.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
     "quality:token-budget": "node scripts/release/token-budget-gate.mjs",
     "quality:token-surface": "node scripts/measure-agent-token-surface.mjs --check",
     "quality:token-surface:update": "pnpm build && node scripts/measure-agent-token-surface.mjs --update",

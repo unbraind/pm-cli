@@ -1,6 +1,6 @@
 # pm-governance-audit
 
-Tracker: [pm-vjk3](../../.agents/pm/features/pm-vjk3.toon)
+Trackers: [pm-vjk3](../../.agents/pm/features/pm-vjk3.toon), [pm-mp49](../../.agents/pm/issues/pm-mp49.toon), [pm-v657](../../.agents/pm/issues/pm-v657.toon)
 
 First-party package that restores optional governance audit surfaces in bare-core `pm`.
 
@@ -60,8 +60,14 @@ pm install audit --project
 ## Verify
 
 ```bash
-pm dedupe-audit --mode parent_scope --limit 20 --json
+pm dedupe-audit --mode parent_scope --status all --limit 20 --json
 pm dedupe-merge --keep pm-canonical --close pm-duplicate --dry-run --json
-pm comments-audit --latest 3 --limit-items 20 --json
+pm comments-audit --latest 3 --limit-items 20 --limit-rows 50 --json
 pm normalize --dry-run --json
 ```
+
+`dedupe-audit --status all` explicitly selects every status and is equivalent
+to omitting the filter. For `comments-audit`, `--limit-items` caps item
+scanning while `--limit-rows` caps emitted comment rows across the whole
+result. The older `--limit` spelling remains a deprecated alias for
+`--limit-rows`; do not combine the two row-limit spellings.

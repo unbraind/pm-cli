@@ -495,7 +495,7 @@ describe("runComments", () => {
       expect(auditOpen.items.some((entry) => entry.id === closedId)).toBe(false);
       expect(auditOpen.items.find((entry) => entry.id === openId)?.comments.map((entry) => entry.text)).toEqual(["open-second"]);
 
-      const auditClosed = await runCommentsAudit({ status: "closed", latest: "3", limit: "1" }, { path: context.pmPath });
+      const auditClosed = await runCommentsAudit({ status: "closed", latest: "3", limitItems: "1" }, { path: context.pmPath });
       expect(auditClosed.count).toBe(1);
       expect(auditClosed.items[0]?.id).toBe(closedId);
       expect(auditClosed.items[0]?.comments.map((entry) => entry.text)).toEqual(["closed-only"]);
@@ -604,6 +604,74 @@ describe("runComments", () => {
           items_with_comments_percent: 100,
         },
       });
+    });
+  });
+
+  it("bounds full-history rows independently from scanned items", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "comments-audit-row-limit-first");
+      const secondId = createTask(context, "comments-audit-row-limit-second");
+      await runComments(
+        firstId,
+        { add: "first-a", author: "audit-a" },
+        { path: context.pmPath },
+      );
+      await runComments(
+        firstId,
+        { add: "first-b", author: "audit-b" },
+        { path: context.pmPath },
+      );
+      await runComments(
+        secondId,
+        { add: "second-a", author: "audit-c" },
+        { path: context.pmPath },
+      );
+
+      const bounded = await runCommentsAudit(
+        {
+          status: "open",
+          limitItems: "2",
+          limitRows: "2",
+          fullHistory: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(bounded.count).toBe(2);
+      expect(bounded.filters).toMatchObject({
+        limit_items: 2,
+        limit_rows: 2,
+      });
+      expect(bounded.export).toEqual({
+        mode: "full_history",
+        row_count: 2,
+        total_row_count: 3,
+        truncated: true,
+      });
+      expect(bounded.rows).toHaveLength(2);
+      expect(
+        bounded.items.reduce(
+          (total, item) => total + item.comments.length,
+          0,
+        ),
+      ).toBe(2);
+      expect(bounded.summary.totals).toMatchObject({
+        items_scanned: 2,
+        comments_total: 3,
+        comments_exported: 2,
+      });
+
+      const legacyAlias = await runCommentsAudit(
+        {
+          status: "open",
+          limitItems: "2",
+          limit: "2",
+          fullHistory: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(legacyAlias.rows).toHaveLength(2);
+      expect(legacyAlias.filters.limit_rows).toBe(2);
     });
   });
 
@@ -773,10 +841,10 @@ describe("runComments", () => {
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
-        runCommentsAudit({ limitItems: "3", limit: "1" }, { path: context.pmPath }),
+        runCommentsAudit({ limitRows: "3", limit: "1" }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-        message: "--limit and --limit-items must match when both are provided",
+        message: "--limit and --limit-rows conflict; use --limit-rows as the canonical row-output cap",
       });
       await expect(runCommentsAudit({ fullHistory: true, latest: "1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,

@@ -110,6 +110,7 @@ describe("guide-shell static SDK runtime", () => {
             { cli_flag: 3 },
           ],
         ],
+        ["close_many", [{ cli_flag: "close_reason" }]],
       ]),
     } as never);
     const completion = vi
@@ -120,7 +121,10 @@ describe("guide-shell static SDK runtime", () => {
     expect(completion).toHaveBeenCalledWith("bash", [], [], false, {
       item_types: ["Task"],
       statuses: ["closed", "open"],
-      command_flags: { list: ["--assignee", "--customer-impact"] },
+      command_flags: {
+        "close-many": ["--close-reason"],
+        list: ["--assignee", "--customer-impact"],
+      },
     });
 
     vi.spyOn(sdk, "listAllItemMetadata").mockResolvedValue([

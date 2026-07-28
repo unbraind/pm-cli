@@ -5168,6 +5168,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LocatedItem",
+          "signature": "export interface LocatedItem { id: string; type: ItemType; itemPath: string; item_format: ItemFormat; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "locateItem",
           "signature": "(pmRoot: string, rawId: string, idPrefix?: string, preferredFormat?: ItemFormat, typeToFolder?: Record<string, string>) => Promise<LocatedItem | null> | calls: (pmRoot: string, rawId: string, idPrefix?: string, preferredFormat?: ItemFormat, typeToFolder?: Record<string, string>) => Promise<LocatedItem | null>"

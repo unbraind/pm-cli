@@ -1,5 +1,7 @@
 # pm-guide-shell
 
+Trackers: [pm-cb8qq2](../../.agents/pm/issues/pm-cb8qq2.toon), [pm-w7mqzt](../../.agents/pm/tasks/pm-w7mqzt.toon)
+
 First-party package that restores optional guide and shell-completion UX in bare-core `pm`.
 
 ## Commands
@@ -9,6 +11,11 @@ First-party package that restores optional guide and shell-completion UX in bare
 - `pm completion-tags`
 - `pm completion-statuses`
 - `pm completion-types`
+
+Runtime command fields accept the same hyphenated, underscored, or
+whitespace-separated spelling as CLI commands. Multi-word commands such as
+`close-many`, `close_many`, and `close many` therefore resolve to the same
+contract without package-owned special cases.
 
 ## Install
 

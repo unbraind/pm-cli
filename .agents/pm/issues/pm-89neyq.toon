@@ -1,0 +1,44 @@
+id: pm-89neyq
+title: "Sentry PM-CLI-2N: malformed missing tags crash normalizeItemMetadata before search can report the item"
+description: "Release 2026.7.28 emitted two handled high-severity search failures because normalizeItemMetadata assumes tags is always an array and calls tags.map before malformed legacy or extension-authored item metadata can be normalized or diagnosed. This is distinct from closed pm-d7us, which guarded the later search scorer tags.join path."
+type: Issue
+status: closed
+priority: 1
+tags[6]: bugfix,metadata,observability,regression,search,sentry
+created_at: "2026-07-28T04:37:06.710Z"
+updated_at: "2026-07-28T05:05:32.390Z"
+closed_at: "2026-07-28T05:05:29.269Z"
+author: "harness:codex"
+acceptance_criteria: A failing regression test proves absent tags no longer throw; canonical normalization emits an empty sorted tag array; search/read integration remains green; full coverage and release reliability gates pass; Sentry is resolved only after exact fix evidence.
+parent: pm-rnpb
+severity: high
+environment: production
+resolution: "Runtime normalization safely defaults absent/non-array tags and filters non-string entries, while history replay explicitly preserves legacy structural hash semantics for non-empty states without tag arrays and canonical empty-document hashes."
+expected_result: Search and all SDK read paths normalize absent tags safely without emitting a raw TypeError.
+actual_result: "The Sentry reproduction is fixed, pm-lty and all 2,154 history streams retain their recorded hashes, and focused/full/static/type gates pass."
+affected_version: 2026.7.28
+fixed_version: unreleased
+component: core/item-format
+regression: true
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-d7us,related,"2026-07-28T04:37:06.710Z","harness:codex","cli:create:dep",detected
+  pm-vnk7ob,related,"2026-07-28T04:37:06.710Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-07-28T04:37:06.710Z","harness:codex","Duplicate-check evidence: all-status searches for PM-CLI-2N, undefined tags map, and normalizeItemMetadata found no PM-CLI-2N item. Closed pm-d7us covers a different tags.join scorer crash and is linked as related rather than reopened."
+  "2026-07-28T04:38:33.732Z","harness:codex","TDD evidence: the new direct-normalization regression test failed at src/core/item/item-format.ts tags.map with the same TypeError as Sentry PM-CLI-2N. After guarding the runtime collection and filtering non-string legacy entries, the focused 9-test suite passes and canonical output supplies [] or normalized string tags."
+  "2026-07-28T04:50:04.195Z","harness:codex","Verification evidence: both linked suites passed through isolated PM contexts; the full 381-file suite passed 6,447 tests with literal 100% statements (44,751/44,751), branches (31,849/31,849), functions (9,160/9,160), and lines (43,468/43,468). ESLint, zero-clone jscpd, 100% docstring/static quality, package boundary, SDK parity, token budgets, SDK surface/import costs, CLI transport floor, and all TypeScript project checks passed."
+  "2026-07-28T04:51:19.158Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/788 at implementation head 70762416c. The PR body links this canonical item and its regenerated changelog entry; the final review pass will run after the PM evidence commit."
+  "2026-07-28T04:56:20.846Z","harness:codex","CI discovery: final-head static validation found pm-lty chain drift because the missing-tags runtime fix made a pre-create replay state canonicalizable and changed its historical after_hash. The fix must retain structural fallback hashing for replay metadata without an array-valued tags field while keeping SDK normalization safe."
+  "2026-07-28T05:05:22.580Z","harness:codex","Final compatibility evidence: replayHash now retains canonical hashing for the truly empty document, preserves structural fallback hashing for non-empty legacy states without an array-valued tags field, and retains catch fallback for other malformed values. The exact CI validate command passed after a fresh derived-cache scan with 2,154 histories, zero chain/hash drift, and clean storage; pm-lty verifies. Full coverage passed 44,752/44,752 statements, 31,853/31,853 branches, 9,160/9,160 functions, and 43,469/43,469 lines; lint/static/type gates passed."
+files[4]{path,scope,note}:
+  src/core/history/replay.ts,project,Preserve structural hashes for legacy replay states without a tag array
+  src/core/item/item-format.ts,project,Guard canonical metadata normalization against absent or malformed runtime tags
+  tests/unit/core/history/history-replay.spec.ts,project,Keep deterministic replay-hash fallback coverage after missing tags become normalizable
+  tests/unit/core/item/item-format-internal.spec.ts,project,TDD regression coverage for missing and malformed tag collections
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/history-replay.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-internal.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms46frdq-32njh0,test,passed,"2026-07-28T04:49:37.371Z","2026-07-28T04:49:53.246Z","2026-07-28T04:49:53.246Z",2,0,0
+close_reason: "Fixed Sentry PM-CLI-2N without changing immutable history semantics: runtime tags are safe, legacy replay hashes verify across all 2,154 streams, and the full 100/100/100/100 suite plus static/type gates passes."
+body: ""

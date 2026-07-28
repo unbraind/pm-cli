@@ -43,6 +43,8 @@ export interface CommentsAuditOptions {
   assigneeFilter?: string;
   /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Maximum exported comment rows, independent of the scanned-item cap. */
+  limitRows?: string;
   /** Value that configures or reports limit items for this contract. */
   limitItems?: string;
   /** Value that configures or reports latest for this contract. */
@@ -91,6 +93,7 @@ export interface CommentsAuditResult {
     assignee: string | null;
     assignee_filter: string | null;
     limit_items: number | null;
+    limit_rows: number | null;
     latest: number | null;
     full_history: boolean;
   };
@@ -98,6 +101,8 @@ export interface CommentsAuditResult {
   export: {
     mode: "latest" | "full_history";
     row_count: number;
+    total_row_count: number;
+    truncated: boolean;
   };
   /** Value that configures or reports rows for this contract. */
   rows?: CommentsAuditHistoryRow[];
@@ -343,8 +348,9 @@ const resolveCommentsAuditLimits = (
   fullHistory: boolean;
   latest: number | undefined;
   limitItems: number | undefined;
+  limitRows: number | undefined;
 } => {
-  /** Reconcile history and item-limit aliases into one validated selection. */
+  /** Resolve independent item-scan and row-output budgets plus the legacy row alias. */
   const fullHistory = options.fullHistory === true;
   const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
   if ([fullHistory, latestParsed !== undefined].every(Boolean)) {
@@ -357,15 +363,19 @@ const resolveCommentsAuditLimits = (
     options.limitItems,
     "--limit-items",
   );
-  const limitItemsAlias = parseNonNegativeInteger(options.limit, "--limit");
-  const distinctItemLimits = new Set(
-    [limitItemsPrimary, limitItemsAlias].filter(
+  const limitRowsPrimary = parseNonNegativeInteger(
+    options.limitRows,
+    "--limit-rows",
+  );
+  const limitRowsAlias = parseNonNegativeInteger(options.limit, "--limit");
+  const distinctRowLimits = new Set(
+    [limitRowsPrimary, limitRowsAlias].filter(
       (value): value is number => value !== undefined,
     ),
   );
-  if (distinctItemLimits.size > 1) {
+  if (distinctRowLimits.size > 1) {
     throw new PmCliError(
-      "--limit and --limit-items must match when both are provided",
+      "--limit and --limit-rows conflict; use --limit-rows as the canonical row-output cap",
       EXIT_CODE.USAGE,
     );
   }
@@ -374,7 +384,8 @@ const resolveCommentsAuditLimits = (
   return {
     fullHistory,
     latest,
-    limitItems: distinctItemLimits.values().next().value,
+    limitItems: limitItemsPrimary,
+    limitRows: distinctRowLimits.values().next().value,
   };
 };
 
@@ -400,6 +411,7 @@ const buildCommentsAuditFilters = (
   options: CommentsAuditOptions,
   status: ItemStatus | undefined,
   limitItems: number | undefined,
+  limitRows: number | undefined,
   latest: number | undefined,
   fullHistory: boolean,
 ): CommentsAuditResult["filters"] => {
@@ -417,6 +429,7 @@ const buildCommentsAuditFilters = (
     assignee: toNullable(options.assignee),
     assignee_filter: toNullable(options.assigneeFilter),
     limit_items: toNullable(limitItems),
+    limit_rows: toNullable(limitRows),
     latest: toNullable(latest),
     full_history: fullHistory,
   };
@@ -431,7 +444,7 @@ export const runCommentsAudit = async (
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const status = parseStatus(options.status, statusRegistry);
-  const { fullHistory, latest, limitItems } =
+  const { fullHistory, latest, limitItems, limitRows } =
     resolveCommentsAuditLimits(options);
 
   const listed = await runList(
@@ -451,7 +464,22 @@ export const runCommentsAudit = async (
     global,
   );
 
-  const items = listed.items.map((item) => toCommentsAuditEntry(item, latest));
+  const unboundedItems = listed.items.map((item) =>
+    toCommentsAuditEntry(item, latest),
+  );
+  const totalRowCount = unboundedItems.reduce(
+    (sum, entry) => sum + entry.comments.length,
+    0,
+  );
+  let items = unboundedItems;
+  if (limitRows !== undefined) {
+    let remainingRows = limitRows;
+    items = unboundedItems.map((item) => {
+          const comments = item.comments.slice(0, remainingRows);
+          remainingRows = Math.max(0, remainingRows - comments.length);
+          return { ...item, comments };
+        });
+  }
   const latestRowCount = items.reduce(
     (sum, entry) => sum + entry.comments.length,
     0,
@@ -464,19 +492,27 @@ export const runCommentsAudit = async (
       options,
       status,
       limitItems,
+      limitRows,
       latest,
       fullHistory,
     ),
     export: {
       mode: "latest",
       row_count: latestRowCount,
+      total_row_count: totalRowCount,
+      truncated: latestRowCount < totalRowCount,
     },
     now: listed.now ?? nowIso(),
   };
   if (fullHistory) {
     const rows = toHistoryRows(items);
     result.rows = rows;
-    result.export = { mode: "full_history", row_count: rows.length };
+    result.export = {
+      mode: "full_history",
+      row_count: rows.length,
+      total_row_count: totalRowCount,
+      truncated: rows.length < totalRowCount,
+    };
   }
   if (listed.warnings?.length) result.warnings = listed.warnings;
   return result;

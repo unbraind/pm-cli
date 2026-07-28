@@ -76,6 +76,8 @@ export async function runCalendarPackage(
   options: CalendarOptions,
   global: GlobalOptions,
 ): Promise<CalendarResult> {
+  // This standalone resolution is intentionally throw-only: reject an invalid
+  // package output contract before calendar execution performs tracker reads.
   resolveCalendarOutputFormat(options, global);
   return runCalendar(options, global);
 }

@@ -351,6 +351,27 @@ describe("item-format internal normalization helpers", () => {
     expect(warnings).toEqual(["item_unknown_schema_fields:unknown_runtime_field"]);
   });
 
+  it("normalizes absent tags from legacy metadata to an empty array", () => {
+    const normalized = normalizeItemMetadata({
+      id: "pm-legacy-missing-tags",
+      title: "Legacy missing tags",
+      description: "Legacy metadata can predate the required tags field.",
+      status: "open",
+      priority: 1,
+      type: "Task",
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+    } as never);
+
+    expect(normalized.tags).toEqual([]);
+    expect(
+      normalizeItemMetadata({
+        ...normalized,
+        tags: [undefined, " Beta ", 7],
+      } as never).tags,
+    ).toEqual(["beta"]);
+  });
+
   it("warns for canonical unknown schema fields in warn mode", () => {
     const warnings: string[] = [];
     const metadata = {

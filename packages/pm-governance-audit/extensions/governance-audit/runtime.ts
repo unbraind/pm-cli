@@ -78,6 +78,7 @@ function normalizeCommentsAuditOptions(
       "assignee_filter",
     ]),
     limit: readStringOption(raw, "limit"),
+    limitRows: readStringOption(raw, "limitRows", ["limit_rows"]),
     limitItems: readStringOption(raw, "limitItems", ["limit_items"]),
     latest: readStringOption(raw, "latest"),
     fullHistory:

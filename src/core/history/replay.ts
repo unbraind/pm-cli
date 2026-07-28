@@ -49,23 +49,26 @@ export function cloneEmptyReplayDocument(): ReplayDocument {
 
 /** Implements replay hash for the public runtime surface of this module. */
 export function replayHash(document: ReplayDocument): string {
-  try {
-    return hashDocument(replayToItemDocument(document));
-  } catch {
-    // Legacy/malformed replay states (for example a stream whose first entry never
-    // established a full `create` document, so the canonicalizer cannot normalize it)
-    // cannot be canonically hashed. Fall back to a deterministic structural hash so
-    // re-anchor and verification stay internally consistent for these streams. Fully
-    // formed documents always take the canonical path above, so valid streams are
-    // unaffected.
-    return sha256Hex(
-      stableStringify({
-        replay_fallback: true,
-        metadata: document.metadata,
-        body: document.body,
-      }),
-    );
+  if (
+    Object.keys(document.metadata).length === 0 ||
+    Array.isArray(document.metadata.tags)
+  ) {
+    try {
+      return hashDocument(replayToItemDocument(document));
+    } catch {
+      // Fall through when another malformed legacy field cannot be canonicalized.
+    }
   }
+  // Preserve the structural hashes recorded before missing tags became safe to
+  // normalize. Pre-create/legacy replay states and other malformed metadata cannot
+  // switch hash algorithms without invalidating immutable history chains.
+  return sha256Hex(
+    stableStringify({
+      replay_fallback: true,
+      metadata: document.metadata,
+      body: document.body,
+    }),
+  );
 }
 
 /** Implements replay to item document for the public runtime surface of this module. */

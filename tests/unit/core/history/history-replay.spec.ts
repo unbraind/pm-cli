@@ -82,14 +82,31 @@ describe("history replay helpers", () => {
   });
 
   it("falls back to a deterministic structural hash for un-canonicalizable replay states", () => {
-    // A partial metadata document (no tags array) cannot be canonicalized; replayHash
-    // must still return a stable hash rather than throwing.
-    const partial: ReplayDocument = { metadata: { status: "open" }, body: "x" };
-    const first = replayHash(partial);
-    const second = replayHash({ metadata: { status: "open" }, body: "x" });
+    const missingTags: ReplayDocument = {
+      metadata: { status: "open" },
+      body: "x",
+    };
+    expect(replayHash(missingTags)).toBe(
+      replayHash({ metadata: { status: "open" }, body: "x" }),
+    );
+
+    const malformedField: ReplayDocument = {
+      metadata: { status: "open", type_options: { legacy: null } },
+      body: "x",
+    };
+    const first = replayHash(malformedField);
+    const second = replayHash({
+      metadata: { status: "open", type_options: { legacy: null } },
+      body: "x",
+    });
     expect(typeof first).toBe("string");
     expect(first).toBe(second);
-    expect(first).not.toBe(replayHash({ metadata: { status: "closed" }, body: "x" }));
+    expect(first).not.toBe(
+      replayHash({
+        metadata: { status: "closed", type_options: { legacy: null } },
+        body: "x",
+      }),
+    );
   });
 
   it("maps front_matter patch paths to metadata", () => {

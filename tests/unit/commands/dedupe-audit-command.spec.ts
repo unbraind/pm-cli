@@ -57,6 +57,7 @@ describe("dedupe-audit helpers", () => {
     expect(dedupeInternals.parseMode(undefined)).toBe("title_exact");
     expect(dedupeInternals.parseMode(" PARENT_SCOPE ")).toBe("parent_scope");
     expect(dedupeInternals.parseStatus(undefined)).toBeUndefined();
+    expect(dedupeInternals.parseStatus("all")).toBe("all");
     expect(dedupeInternals.parseStatus("in-progress")).toBe("in_progress");
     expect(dedupeInternals.parseThreshold(undefined)).toBeUndefined();
     expect(dedupeInternals.parseThreshold("0")).toBe(0);
@@ -246,6 +247,31 @@ describe("runDedupeAudit", () => {
       expect(result.totals.items_considered).toBe(3);
       expect(result.totals.duplicate_candidates).toBe(2);
       expect(result.totals.merge_suggestions).toBe(1);
+    });
+  });
+
+  it("treats --status all as an explicit all-lifecycle sentinel", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, { title: "All lifecycle duplicate", status: "open" });
+      createItem(context, {
+        title: "All lifecycle duplicate",
+        status: "closed",
+      });
+
+      const explicitAll = await runDedupeAudit(
+        { mode: "title_exact", status: "all" },
+        { path: context.pmPath },
+      );
+      const omitted = await runDedupeAudit(
+        { mode: "title_exact" },
+        { path: context.pmPath },
+      );
+
+      expect(explicitAll.filters.status).toBe("all");
+      expect(explicitAll.totals.items_considered).toBe(
+        omitted.totals.items_considered,
+      );
+      expect(explicitAll.clusters).toEqual(omitted.clusters);
     });
   });
 

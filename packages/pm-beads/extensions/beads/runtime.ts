@@ -7,13 +7,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import * as pmSdk from "@unbrained/pm-cli/sdk";
 import type {
-  CommitImportedItemParams,
-  CommitImportedItemResult,
   Dependency,
-  ExtensionRegistrationRegistry,
   GlobalOptions,
-  ItemDocument,
-  ItemMetadata,
   ItemStatus,
   ItemType,
   PmSettings,
@@ -94,23 +89,11 @@ interface BeadsRecord extends Record<string, unknown> {
   docs?: unknown;
 }
 
-interface ItemTypeRegistry {
-  types: string[];
-  type_to_folder: Record<string, string>;
-}
-
-interface LocatedItem {
-  id: string;
-  type: ItemType;
-  itemPath: string;
-  item_format: PmSettings["item_format"];
-}
-
 interface BeadsImportRuntime {
-  sdk: BeadsSdkModule;
+  sdk: typeof pmSdk;
   pmRoot: string;
   settings: PmSettings;
-  typeRegistry: ItemTypeRegistry;
+  typeRegistry: ReturnType<typeof pmSdk.resolveItemTypeRegistry>;
   preserveSourceIds: boolean;
   author: string;
   message: string;
@@ -121,78 +104,7 @@ type BeadsImportLineResult =
   | { warning: string };
 type ParsedBeadsLine = { record: BeadsRecord } | { warning: string } | null;
 
-interface BeadsSdkModule {
-  DEPENDENCY_KIND_VALUES: readonly Dependency["kind"][];
-  EXIT_CODE: {
-    NOT_FOUND: number;
-    USAGE: number;
-  };
-  PmCliError: new (message: string, exitCode: number) => Error;
-  canonicalDocument: (document: ItemDocument) => ItemDocument;
-  commitImportedItem: (
-    params: CommitImportedItemParams,
-  ) => Promise<CommitImportedItemResult>;
-  ensureTrackerInitialized: (pmRoot: string) => Promise<void>;
-  generateItemId: (pmRoot: string, prefix: string) => Promise<string>;
-  getActiveExtensionRegistrations: () => ExtensionRegistrationRegistry | null;
-  getItemPath: (
-    pmRoot: string,
-    type: ItemType,
-    id: string,
-    itemFormat: "toon",
-    typeToFolder: Record<string, string>,
-  ) => string;
-  isTimestampLiteral: (value: string) => boolean;
-  locateItem: (
-    pmRoot: string,
-    id: string,
-    prefix: string,
-    itemFormat: PmSettings["item_format"],
-    typeToFolder: Record<string, string>,
-  ) => Promise<LocatedItem | null>;
-  normalizeItemMetadata: (itemMetadata: ItemMetadata) => ItemMetadata;
-  normalizeItemId: (id: string, prefix: string) => string;
-  normalizeRawItemId: (id: string) => string;
-  nowIso: () => string;
-  pathExists: (targetPath: string) => Promise<boolean>;
-  readSettings: (pmRoot: string) => Promise<PmSettings>;
-  resolveItemTypeRegistry: (
-    settings: PmSettings,
-    registrations: ExtensionRegistrationRegistry | null,
-  ) => ItemTypeRegistry;
-  resolvePmRoot: (cwd: string, overridePath?: string) => string;
-  runActiveOnReadHooks: (context: {
-    path: string;
-    scope: "project" | "global";
-  }) => Promise<string[]>;
-  selectImportAuthor: (
-    explicitAuthor: string | undefined,
-    settingsAuthor: string,
-  ) => string;
-  toEstimatedMinutesValue: (value: unknown) => number | undefined;
-  toImportLinkedDocs: (
-    value: unknown,
-    options?: ToImportLinkedArtifactsOptions,
-  ) => ItemMetadata["docs"];
-  toImportLinkedFiles: (
-    value: unknown,
-    options?: ToImportLinkedArtifactsOptions,
-  ) => ItemMetadata["files"];
-  toImportLinkedTests: (
-    value: unknown,
-    options?: ToImportLinkedTestsOptions,
-  ) => ItemMetadata["tests"];
-  toImportLogEntries: (
-    value: unknown,
-    options: ToImportLogEntriesOptions,
-  ) => ItemMetadata["comments"];
-  toImportPriority: (value: unknown) => 0 | 1 | 2 | 3 | 4;
-  toImportStatus: (value: unknown) => ItemStatus;
-  toImportTags: (value: unknown) => string[];
-  toNonEmptyImportString: (value: unknown) => string | undefined;
-}
-
-const beadsSdk: BeadsSdkModule = pmSdk;
+const beadsSdk = pmSdk;
 
 const {
   DEPENDENCY_KIND_VALUES,

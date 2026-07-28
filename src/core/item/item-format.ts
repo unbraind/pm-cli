@@ -1556,7 +1556,10 @@ export function normalizeItemMetadata(
     itemMetadata.status;
   const tags = Array.from(
     new Set(
-      itemMetadata.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean),
+      (Array.isArray(itemMetadata.tags) ? itemMetadata.tags : [])
+        .filter((tag): tag is string => typeof tag === "string")
+        .map((tag) => tag.trim().toLowerCase())
+        .filter(Boolean),
     ),
   ).sort((a, b) => a.localeCompare(b));
   const normalized: ItemMetadata = {
