@@ -5,6 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { writeStderr } from "../output/output.js";
 
 const DRIFT_CACHE_RELATIVE_PATH = path.join(
   "runtime",
@@ -17,7 +18,25 @@ export async function invalidateHistoryDriftCache(
 ): Promise<void> {
   try {
     await fs.rm(path.join(pmRoot, DRIFT_CACHE_RELATIVE_PATH), { force: true });
-  } catch {
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return;
+    }
+    const code =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof error.code === "string"
+        ? error.code
+        : "unknown";
+    writeStderr(
+      `[pm] warning: history_drift_cache_invalidation_failed:${code}\n`,
+    );
     // Derived cache invalidation is best effort and must never roll back a
     // successfully committed history mutation.
   }

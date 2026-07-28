@@ -60,21 +60,17 @@ describe("merge reconcile command", () => {
         ]).code,
       ).toBe(0);
 
-      const historyPath = path.join(
-        context.pmPath,
-        "history",
-        `${id!}.jsonl`,
-      );
+      const historyPath = path.join(context.pmPath, "history", `${id!}.jsonl`);
       const tampered = await tamperHistoryChain(historyPath);
 
       const preview = context.runCli(
         ["merge", "reconcile", "--dry-run", "--json"],
         { expectJson: true },
       );
-      expect(preview.code).toBe(0);
+      expect(preview.code).not.toBe(0);
       const previewResult = preview.json as MergeReconcileResult;
       expect(previewResult).toMatchObject({
-        ok: true,
+        ok: false,
         dry_run: true,
         repair: { drifted_streams: 1, totals: { failed: 0 } },
       });
@@ -104,9 +100,7 @@ describe("merge reconcile command", () => {
         validation: { ok: true, has_warnings: false },
       });
       expect(
-        appliedResult.validation.checks.every(
-          (check) => check.status === "ok",
-        ),
+        appliedResult.validation.checks.every((check) => check.status === "ok"),
       ).toBe(true);
 
       const cleanPreview = context.runCli(
@@ -162,11 +156,7 @@ describe("merge reconcile command", () => {
       };
       const id = createdPayload.id ?? createdPayload.item?.id;
       expect(id).toBeTypeOf("string");
-      const historyPath = path.join(
-        context.pmPath,
-        "history",
-        `${id!}.jsonl`,
-      );
+      const historyPath = path.join(context.pmPath, "history", `${id!}.jsonl`);
       expect(
         context.runCli([
           "update",
@@ -203,10 +193,9 @@ describe("merge reconcile command", () => {
         "utf8",
       );
 
-      const result = context.runCli(
-        ["merge", "reconcile", "--json"],
-        { expectJson: true },
-      );
+      const result = context.runCli(["merge", "reconcile", "--json"], {
+        expectJson: true,
+      });
       expect(result.code).not.toBe(0);
       expect(JSON.parse(result.stdout) as MergeReconcileResult).toMatchObject({
         ok: false,
@@ -265,10 +254,24 @@ describe("merge reconcile command", () => {
       });
       expect(receipt).not.toBeNull();
 
-      const reconciled = context.runCli(
-        ["merge", "reconcile", "--json"],
+      const preview = context.runCli(
+        ["merge", "reconcile", "--dry-run", "--json"],
         { expectJson: true, cwd: context.tempRoot },
       );
+      expect(preview.code).not.toBe(0);
+      expect(preview.json as MergeReconcileResult).toMatchObject({
+        ok: false,
+        dry_run: true,
+        receipts: { pending_before: 1, reconciled: 0 },
+        validation: {
+          warnings: ["validate_merge_decisions_unreviewed:1"],
+        },
+      });
+
+      const reconciled = context.runCli(["merge", "reconcile", "--json"], {
+        expectJson: true,
+        cwd: context.tempRoot,
+      });
       expect(
         reconciled.code,
         `${reconciled.stdout}\n${reconciled.stderr}`,
@@ -279,11 +282,7 @@ describe("merge reconcile command", () => {
       });
       const entries = (
         await readFile(
-          path.join(
-            context.pmPath,
-            "history",
-            `${id!}.jsonl`,
-          ),
+          path.join(context.pmPath, "history", `${id!}.jsonl`),
           "utf8",
         )
       )
@@ -311,9 +310,7 @@ describe("merge reconcile command", () => {
       expect(JSON.stringify(entries.at(-1))).not.toContain(
         '"theirs":"discarded"',
       );
-      expect(JSON.stringify(entries.at(-1))).not.toContain(
-        '"ours":"retained"',
-      );
+      expect(JSON.stringify(entries.at(-1))).not.toContain('"ours":"retained"');
     });
   });
 });

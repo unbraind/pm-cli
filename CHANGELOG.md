@@ -16,12 +16,12 @@
 ### Fixed
 
 - GH-770: pending merge receipts remain invisible to validation and CI before reconciliation ([pm-ysqb6n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ysqb6n.toon))
-- GH-773: install portable merge drivers without permanent checkout-path drift ([pm-w91mvg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w91mvg.toon))
 - GH-775: make fresh-clone health distinguish material tracker loss from absent empty type folders ([pm-xyuhh7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xyuhh7.toon))
-- GH-776: preserve output override compatibility and export the public decision contract ([pm-u2tqn6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u2tqn6.toon))
-- GH-778: make lean structured reads omit caller echoes and inactive pagination metadata ([pm-oi4zs3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oi4zs3.toon))
 - GH-779: invalidate history drift cache after item and repair mutations ([pm-ajaskl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ajaskl.toon))
 - The merge fence covers item documents but not tracked non-item JSON, so .managed-extensions.json line-conflicts between agents on different branches ([pm-gjicmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gjicmx.toon))
+- GH-773: install portable merge drivers without permanent checkout-path drift ([pm-w91mvg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w91mvg.toon))
+- GH-776: preserve output override compatibility and export the public decision contract ([pm-u2tqn6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u2tqn6.toon))
+- GH-778: make lean structured reads omit caller echoes and inactive pagination metadata ([pm-oi4zs3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oi4zs3.toon))
 - GH-772: rejected extension command registration leaves silent partial activation and zero-exit command gaps ([pm-4vwcvq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4vwcvq.toon))
 - The surface-discovery contract costs 31k tokens in its brief form and still omits every flag, so the cheapest way to learn pm is the most expensive call it offers ([pm-gmdzaa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gmdzaa.toon))
 - Linked-test schema sandbox breaks package prepare hooks that install the PM merge driver ([pm-uawujr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uawujr.toon))

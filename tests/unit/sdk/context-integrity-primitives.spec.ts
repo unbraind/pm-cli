@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import fs, { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -50,9 +50,7 @@ describe("SDK and CLI context-integrity primitives", () => {
 
   it("fences current and future authoritative nested JSON documents", () => {
     const patterns = buildMergeAttributePatterns(".agents/pm", ["tasks"]);
-    expect(patterns).toContain(
-      '".agents/pm/**/*.json" merge=pm-json',
-    );
+    expect(patterns).toContain('".agents/pm/**/*.json" merge=pm-json');
   });
 
   it("composes additive JSON arrays and preserves conflicts for removals", () => {
@@ -86,6 +84,41 @@ describe("SDK and CLI context-integrity primitives", () => {
     );
     expect(removal.conflict_paths).toEqual(["entries"]);
     expect(JSON.parse(removal.merged)).toEqual({ entries: [] });
+
+    const theirsRemoval = mergeJsonDocuments(
+      '{"entries":[{"name":"base"}]}',
+      '{"entries":[{"name":"base"},{"name":"alpha"}]}',
+      '{"entries":[]}',
+    );
+    expect(theirsRemoval.conflict_paths).toEqual(["entries"]);
+    expect(JSON.parse(theirsRemoval.merged)).toEqual({
+      entries: [{ name: "base" }, { name: "alpha" }],
+    });
+
+    const duplicateRemoval = mergeJsonDocuments(
+      '{"entries":[{"name":"base"},{"name":"base"}]}',
+      '{"entries":[{"name":"base"}]}',
+      '{"entries":[{"name":"base"},{"name":"base"},{"name":"beta"}]}',
+    );
+    expect(duplicateRemoval.conflict_paths).toEqual(["entries"]);
+    expect(JSON.parse(duplicateRemoval.merged)).toEqual({
+      entries: [{ name: "base" }],
+    });
+
+    const duplicateAddition = mergeJsonDocuments(
+      '{"entries":[{"name":"base"}]}',
+      '{"entries":[{"name":"base"},{"name":"alpha"}]}',
+      '{"entries":[{"name":"base"},{"name":"beta"},{"name":"beta"}]}',
+    );
+    expect(duplicateAddition.conflict_paths).toEqual([]);
+    expect(JSON.parse(duplicateAddition.merged)).toEqual({
+      entries: [
+        { name: "base" },
+        { name: "alpha" },
+        { name: "beta" },
+        { name: "beta" },
+      ],
+    });
   });
 
   it("composes independent managed-extension installs across branches", async () => {
@@ -128,18 +161,16 @@ describe("SDK and CLI context-integrity primitives", () => {
       runGit(tempRoot, ["commit", "-m", "Install beta"]);
       runGit(tempRoot, ["merge", "--no-edit", "agent-alpha"]);
 
-      const merged = JSON.parse(
-        await readFile(managedStatePath, "utf8"),
-      ) as {
+      const merged = JSON.parse(await readFile(managedStatePath, "utf8")) as {
         entries: Array<{ name: string }>;
       };
       expect(merged.entries.map((entry) => entry.name).sort()).toEqual([
         "alpha",
         "beta",
       ]);
-      expect(
-        runGit(tempRoot, ["diff", "--name-only", "--diff-filter=U"]),
-      ).toBe("");
+      expect(runGit(tempRoot, ["diff", "--name-only", "--diff-filter=U"])).toBe(
+        "",
+      );
     });
   });
 
@@ -254,11 +285,60 @@ describe("SDK and CLI context-integrity primitives", () => {
       );
       await expect(access(cachePath)).rejects.toMatchObject({ code: "ENOENT" });
 
+      const stderrWrite = vi
+        .spyOn(process.stderr, "write")
+        .mockImplementation(() => true);
       await mkdir(cachePath, { recursive: true });
       await expect(
         invalidateHistoryDriftCache(pmPath),
       ).resolves.toBeUndefined();
       await expect(access(cachePath)).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:ERR_FS_EISDIR",
+        ),
+      );
+
+      const invalidRoot = path.join(pmPath, "not-a-directory");
+      await writeFile(invalidRoot, "file\n", "utf8");
+      await expect(
+        invalidateHistoryDriftCache(path.join(invalidRoot, "nested")),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:ENOTDIR",
+        ),
+      );
+
+      const rmSpy = vi.spyOn(fs, "rm");
+      rmSpy.mockRejectedValueOnce(
+        Object.assign(new Error("concurrent removal"), { code: "ENOENT" }),
+      );
+      const warningCount = stderrWrite.mock.calls.length;
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenCalledTimes(warningCount);
+
+      rmSpy.mockRejectedValueOnce("non-error failure");
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:unknown",
+        ),
+      );
+
+      rmSpy.mockRejectedValueOnce({ code: 500 });
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:unknown",
+        ),
+      );
     });
   });
 
@@ -297,6 +377,30 @@ describe("SDK and CLI context-integrity primitives", () => {
         details: {
           missing: ["tasks"],
           strict_directories: true,
+        },
+      });
+
+      await writeFile(
+        path.join(pmPath, "schema", "types.json"),
+        `${JSON.stringify({
+          definitions: [{ name: "HistoryAlias", folder: "history" }],
+        })}\n`,
+        "utf8",
+      );
+      await rm(path.join(pmPath, "history"), { recursive: true });
+      const structuralCollision = await runHealth(
+        { path: pmPath, noExtensions: true },
+        { noRefresh: true, skipDrift: true, skipVectors: true },
+      );
+      expect(
+        structuralCollision.checks.find(
+          (check) => check.name === "directories",
+        ),
+      ).toMatchObject({
+        status: "warn",
+        details: {
+          missing_required: ["history"],
+          missing_optional: ["tasks"],
         },
       });
     });

@@ -272,8 +272,8 @@ export async function appendHistoryEntry(
         historyPath,
         serializeHistoryLine(override.result, entry),
       );
-      await removeHistoryEventIndexForHistoryPath(historyPath);
       await invalidateHistoryDriftCacheForPath(historyPath);
+      await removeHistoryEventIndexForHistoryPath(historyPath);
       return;
     }
     if (typeof override.result === "object" && override.result !== null) {
@@ -295,22 +295,22 @@ export async function appendHistoryEntry(
           nextHistoryPath,
           serializeHistoryLine(record.line, entry),
         );
-        await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
         await invalidateHistoryDriftCacheForPath(nextHistoryPath);
+        await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
         return;
       }
       await appendLineAtomic(
         nextHistoryPath,
         serializeHistoryLine(record.entry ?? entry, entry),
       );
-      await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
       await invalidateHistoryDriftCacheForPath(nextHistoryPath);
+      await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
       return;
     }
   }
   await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
-  await updateHistoryEventIndexAfterAppend(historyPath, entry);
   await invalidateHistoryDriftCacheForPath(historyPath);
+  await updateHistoryEventIndexAfterAppend(historyPath, entry);
 }
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */

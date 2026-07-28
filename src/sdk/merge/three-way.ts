@@ -73,7 +73,11 @@ function parseHistoryJsonl(raw: string, label: string): HistoryEntry[] {
     }
     try {
       const parsed = JSON.parse(line) as unknown;
-      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
         throw new TypeError("history entry must be an object");
       }
       entries.push(parsed as HistoryEntry);
@@ -181,7 +185,9 @@ export function mergeHistoryStreams(
     if (leftFromOurs !== rightFromOurs) {
       return Number(rightFromOurs) - Number(leftFromOurs);
     }
-    return historyEntryIdentity(left).localeCompare(historyEntryIdentity(right));
+    return historyEntryIdentity(left).localeCompare(
+      historyEntryIdentity(right),
+    );
   });
   const reanchored = reanchorHistoryEntries([
     ...ours.slice(0, shared),
@@ -449,7 +455,9 @@ function unionCollection(
 ): unknown[] {
   const toEntries = (value: unknown): unknown[] =>
     Array.isArray(value) ? value : [];
-  const baseIds = new Set(toEntries(base).map((entry) => stableStringify(entry)));
+  const baseIds = new Set(
+    toEntries(base).map((entry) => stableStringify(entry)),
+  );
   const oursEntries = toEntries(ours);
   const oursIds = new Set(oursEntries.map((entry) => stableStringify(entry)));
   const theirsEntries = toEntries(theirs);
@@ -642,8 +650,7 @@ export function mergeItemDocuments(
     fieldsFromTheirs,
     unionFields,
     conflictDecisions,
-  } =
-    mergeItemMetadataRecords(baseRecord, oursRecord, theirsRecord, preferred);
+  } = mergeItemMetadataRecords(baseRecord, oursRecord, theirsRecord, preferred);
 
   const bodyOutcome = mergeScalarThreeWay(
     hasBase ? base.body : "",
@@ -695,11 +702,7 @@ export interface JsonDocumentMergeResult {
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function parseJsonSide(raw: string, label: string): unknown {
@@ -731,22 +734,36 @@ function mergeAdditiveJsonArrays(
   if (!Array.isArray(base) || !Array.isArray(ours) || !Array.isArray(theirs)) {
     return null;
   }
-  const baseIdentities = new Set(base.map((entry) => stableStringify(entry)));
-  const oursIdentities = new Set(ours.map((entry) => stableStringify(entry)));
-  const theirsIdentities = new Set(
-    theirs.map((entry) => stableStringify(entry)),
-  );
-  if (
-    [...baseIdentities].some(
-      (identity) =>
-        !oursIdentities.has(identity) || !theirsIdentities.has(identity),
-    )
-  ) {
-    return null;
+  const countEntries = (entries: unknown[]): Map<string, number> => {
+    const counts = new Map<string, number>();
+    for (const entry of entries) {
+      const identity = stableStringify(entry);
+      counts.set(identity, (counts.get(identity) ?? 0) + 1);
+    }
+    return counts;
+  };
+  const baseCounts = countEntries(base);
+  const oursCounts = countEntries(ours);
+  const theirsCounts = countEntries(theirs);
+  for (const [identity, baseCount] of baseCounts) {
+    if (
+      (oursCounts.get(identity) ?? 0) < baseCount ||
+      (theirsCounts.get(identity) ?? 0) < baseCount
+    ) {
+      return null;
+    }
   }
-  const additionsFromTheirs = theirs.filter(
-    (entry) => !oursIdentities.has(stableStringify(entry)),
-  );
+  const unmatchedOursCounts = new Map(oursCounts);
+  const additionsFromTheirs: unknown[] = [];
+  for (const entry of theirs) {
+    const identity = stableStringify(entry);
+    const unmatchedOursCount = unmatchedOursCounts.get(identity) ?? 0;
+    if (unmatchedOursCount > 0) {
+      unmatchedOursCounts.set(identity, unmatchedOursCount - 1);
+    } else {
+      additionsFromTheirs.push(entry);
+    }
+  }
   return {
     merged: [...ours, ...additionsFromTheirs],
     acceptedTheirs: additionsFromTheirs.length > 0,

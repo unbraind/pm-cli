@@ -59,7 +59,7 @@ pm merge install --dry-run --json
 | Item `.toon` / `.md`                                             | `pm-item-toon` / `pm-item-markdown` | Three-way field merge; format-specific drivers avoid passing the repository path through Git's shell command, append-like collections use set union, `updated_at` uses latest timestamp, and canonical serialization recomputes TOON counts.            |
 | `history/*.jsonl`                                                | `pm-history`                        | Preserves the common prefix and both divergent suffixes, orders deterministically, then re-anchors the resulting hash chain.                                                                                                                            |
 | tracker `**/*.jsonl` except the later `history/*.jsonl` override | `pm-relationship`                   | Covers default and package-owned custom relationship event paths, unions divergent suffixes by `eventId` (timestamp-ordered, ours-first on ties), and renumbers `sequence` consecutively so the strict-sequence store loader accepts the merged stream. |
-| root `settings.json` and nested `**/*.json`                     | `pm-json`                           | Recursively merges objects per key. Arrays compose when both branches preserve the base and add distinct entries, so independent extension installs and evaluation additions merge without weakening edit/removal conflict detection.                   |
+| root `settings.json` and nested `**/*.json`                      | `pm-json`                           | Recursively merges objects per key. Arrays compose when both branches preserve the base and add distinct entries, so independent extension installs and evaluation additions merge without weakening edit/removal conflict detection.                   |
 
 When both sides change the same scalar or JSON leaf differently, the driver writes a parseable preferred-side result but exits nonzero. Git keeps the path conflicted so a human or coordinating agent must review the losing value and explicitly `git add` the resolution. Use `--prefer theirs` only when that is the intended resolution policy.
 
@@ -98,6 +98,8 @@ pm merge reconcile --message "Reconcile merged tracker histories" --json
 ```
 
 The preview reports every drifted stream and pending receipt without mutation.
+It exits nonzero while either merge-critical validation check is non-green, so
+CI and explicit post-merge hooks cannot approve unresolved receipts or drift.
 The apply pass uses the audited history rewrite boundary to append a
 `merge_reconcile` event whose patch reproduces the merged item exactly. The
 event includes privacy-safe receipt provenance; a clean receipt-bearing stream

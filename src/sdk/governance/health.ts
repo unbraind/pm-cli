@@ -39,6 +39,7 @@ import { resolveVectorStores } from "../../core/search/vector-stores.js";
 import {
   EXIT_CODE,
   PM_CORE_REQUIRED_SUBDIRS,
+  TYPE_TO_FOLDER,
 } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -2359,7 +2360,11 @@ function resolveHealthDirectoryLists(typeRegistry: HealthTypeRegistry): {
     PM_CORE_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0),
   );
   const optionalDirSet = new Set<string>();
+  const builtinItemFolderSet = new Set<string>(Object.values(TYPE_TO_FOLDER));
   for (const folder of typeRegistry.folders) {
+    if (requiredDirSet.has(folder) && !builtinItemFolderSet.has(folder)) {
+      continue;
+    }
     requiredDirSet.delete(folder);
     optionalDirSet.add(folder);
   }

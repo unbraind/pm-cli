@@ -38,7 +38,7 @@ describe("merge reconciliation SDK", () => {
     mocks.runHistoryRepair.mockReset();
   });
 
-  it("previews with default attribution and tolerates validation warnings", async () => {
+  it("previews with default attribution and fails closed on validation warnings", async () => {
     mocks.runHistoryRepairAll.mockResolvedValue({
       streams: [{ id: "already-represented" }],
       totals: { repaired: 0, skipped_clean: 0, failed: 0 },
@@ -66,7 +66,7 @@ describe("merge reconciliation SDK", () => {
       globalOptions,
     );
     expect(result).toMatchObject({
-      ok: true,
+      ok: false,
       dry_run: true,
       generated_at: "2026-07-21T00:00:00.000Z",
     });
@@ -236,6 +236,7 @@ describe("merge reconciliation SDK", () => {
       },
     ]);
     expect(result.repair.totals.skipped_clean).toBe(1);
+    expect(result.ok).toBe(false);
     expect(mocks.markMergeReceiptReconciled).not.toHaveBeenCalled();
   });
 });
