@@ -2,18 +2,39 @@ id: pm-cb8qq2
 title: "GH-782: guide-shell special-cases one multi-word command name and duplicates its status derivation, and calendar's throw-only validation call is unexplained, inside package-managed built-ins consumers cannot patch"
 description: "GH-782.\n\nThree runtime-maintainability gaps in the managed calendar and guide-shell built-ins, reported against published 2026.7.27. They are individually small, but the files are package-managed, so a downstream repository cannot sustainably patch them and each one is a latent behaviour-drift site.\n\nReported findings:\n\n- guide-shell maps update-many to update_many with a one-command special case. Registry lookup should normalize every multi-word command name consistently, for example by translating hyphens and whitespace to underscores, before falling back to an empty definition. As written, the second multi-word command to arrive silently resolves to an empty definition instead of its registry entry, and the failure is a missing capability rather than an error.\n- guide-shell derives the filtered, locale-sorted status-ID list twice, once during initialization and once during completion-status execution. Two copies of one derivation is the standard precondition for the two diverging under later edits.\n- calendar calls resolveCalendarOutputFormat standalone purely so that it throws on an invalid format before runCalendar, but nothing records that the call is throw-only, so it reads as a dead result and invites removal.\n\nThe unifying point is that a special case, a duplicated derivation and an unexplained throw-only call are each a place where the next edit can change behaviour without any gate noticing, inside artifacts that consumers cannot repair."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[2]: extensions,maintainability
 created_at: "2026-07-28T02:54:39.018Z"
-updated_at: "2026-07-28T02:54:39.018Z"
+updated_at: "2026-07-28T04:15:49.926Z"
+closed_at: "2026-07-28T04:15:10.278Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "guide-shell normalizes every multi-word command name through one generic rule rather than a per-command special case, covered by a test that adds a second multi-word command; The filtered locale-sorted status-ID derivation exists once in guide-shell and both call sites use it; The throw-only purpose of the standalone resolveCalendarOutputFormat call in calendar is recorded so the call cannot be removed as dead code; GH-782 is closed with evidence that the normalizer handles a command name it was not written for"
 parent: pm-ugqx
 risk: low
 confidence: 92
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Managed guide-shell and calendar runtimes now remove three latent behavior-drift sites.
+expected_result: "Every multi-word registry command normalizes generically, status derivation has one implementation, and calendar throw-only validation intent is explicit."
+actual_result: "A second multi-word command test passes through generic normalization, both status call sites share one helper, and calendar records the validation-only call purpose."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-92if,related,"2026-07-28T02:54:39.018Z","harness:claude-code","cli:create:dep",detected
   pm-vnk7ob,related,"2026-07-28T02:54:39.018Z","harness:claude-code","cli:create:dep",detected
+  pm-9rgaal,implements,"2026-07-28T03:16:13.644Z","harness:codex","cli:update:dep",detected
+  pm-w7mqzt,verifies,"2026-07-28T03:16:13.644Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-28T03:16:18.338Z","harness:codex","Start evidence 2026-07-28: bundled with the authoritative SDK-type, governance lifecycle-filter, and pagination-contract items because all four repair managed package contracts that downstream consumers cannot patch."
+  "2026-07-28T04:14:08.861Z","harness:codex","Implementation evidence: guide-shell now applies one hyphen/whitespace-to-underscore normalization rule to every runtime command name, including a second hypothetical multi-word registry command in tests; both status surfaces share one filtered locale-sorted derivation; and calendar documents its intentional throw-only validation call. The linked package suite passed and the packed consumer generated completion successfully."
+learnings[1]{created_at,author,text}:
+  "2026-07-28T04:14:09.701Z","harness:codex",Normalize registry keys at the boundary and widen the read-only lookup view to runtime strings; this preserves today type-safe registry while remaining forward-compatible with future multi-word commands.
+files[2]{path,scope,note}:
+  packages/pm-calendar/extensions/calendar/runtime.ts,project,document throw-only resolver contract
+  packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,generic multi-word command normalization and status reuse
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/packages/calendar-runtime.spec.ts,project,300,guide-shell normalization and calendar resolver coverage
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms454lky-q5k149,test,passed,"2026-07-28T04:13:00.827Z","2026-07-28T04:13:12.898Z","2026-07-28T04:13:12.898Z",1,0,0
+docs[1]{path,scope,note}:
+  packages/pm-guide-shell/README.md,project,document normalized command fields
+close_reason: "Closed with generic multi-word registry normalization, shared status derivation, calendar intent documentation, focused tests, and packed completion proof."
 body: ""

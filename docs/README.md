@@ -40,6 +40,7 @@ pm guide release --json
 - [Security Governance](SECURITY_GOVERNANCE.md) - vulnerability reporting, review discipline, property fuzzing, and OpenSSF limitations.
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
 - [SDK Primitive Inventory](SDK_PRIMITIVE_INVENTORY.md) - SDK-first migration map and private-import ratchet for CLI/MCP layering.
+- [Package SDK Contract Conformance](PACKAGE_SDK_CONTRACT_CONFORMANCE.md) - authoritative public types, `typeof` module derivation, and the first-party parity gate.
 - [Context Relevance and Packing](CONTEXT_RELEVANCE.md) - shared CLI/SDK signals, derived-store provenance, ranking explanations, and token budgets.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.
 - [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.

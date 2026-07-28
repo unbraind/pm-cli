@@ -319,6 +319,7 @@ const REQUIRED_COMMENTS_AUDIT_FLAGS = [
   "--type",
   "--assignee",
   "--limit-items",
+  "--limit-rows",
   "--limit",
   "--full-history",
   "--latest",
@@ -1146,6 +1147,19 @@ describe("release readiness runtime coverage", () => {
       expect(commentsAuditHelp.stderr).toContain(
         "Unknown command comments-audit",
       );
+      const installGovernanceAudit = context.runCli(
+        ["install", "governance-audit", "--project", "--json"],
+        { expectJson: true },
+      );
+      expect(installGovernanceAudit.code).toBe(0);
+      const packagedCommentsAuditHelp = context.runCli([
+        "comments-audit",
+        "--help",
+      ]);
+      expect(packagedCommentsAuditHelp.code).toBe(0);
+      for (const flag of REQUIRED_COMMENTS_AUDIT_FLAGS) {
+        expect(packagedCommentsAuditHelp.stdout).toContain(flag);
+      }
 
       const notesHelp = context.runCli(["notes", "--help"]);
       expect(notesHelp.code).toBe(0);
@@ -2579,7 +2593,7 @@ describe("release readiness runtime coverage", () => {
       "node scripts/release-version.mjs next",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 132 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/token-budget-gate.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
+      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 131 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/token-budget-gate.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",
@@ -2770,6 +2784,7 @@ describe("release readiness runtime coverage", () => {
       "scripts/release-version.mjs",
       "scripts/release/compatibility-check.mjs",
       "scripts/release/docs-skills-gate.mjs",
+      "scripts/release/package-sdk-contract-parity.mjs",
       "scripts/release/static-quality-gate.mts",
       "scripts/release/sentry-telemetry-gate.mjs",
       "scripts/release/run-gates.mjs",

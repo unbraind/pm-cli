@@ -84,6 +84,15 @@ function collectTypeToFolder(
   return typeRegistry.type_to_folder;
 }
 
+function collectStatusNames(
+  statusRegistry: ReturnType<typeof resolveRuntimeStatusRegistry>,
+): string[] {
+  return statusRegistry.definitions
+    .map((definition) => definition.id)
+    .filter((status) => typeof status === "string" && status.trim().length > 0)
+    .sort((left, right) => left.localeCompare(right));
+}
+
 async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<{
   item_types?: string[];
   statuses?: string[];
@@ -93,6 +102,7 @@ async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<{
       | "create"
       | "update"
       | "update-many"
+      | "close-many"
       | "search"
       | "calendar"
       | "context",
@@ -108,16 +118,16 @@ async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<{
   const registrations = getActiveExtensionRegistrations();
   const typeRegistry = resolveItemTypeRegistry(settings, registrations);
   const itemTypes = collectTypeNames(typeRegistry);
-  const statuses = resolveRuntimeStatusRegistry(settings.schema)
-    .definitions.map((definition) => definition.id)
-    .filter((status) => typeof status === "string" && status.trim().length > 0)
-    .sort((left, right) => left.localeCompare(right));
+  const statuses = collectStatusNames(
+    resolveRuntimeStatusRegistry(settings.schema),
+  );
   const fieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
   const runtimeCommands = [
     "list",
     "create",
     "update",
     "update-many",
+    "close-many",
     "search",
     "calendar",
     "context",
@@ -125,10 +135,15 @@ async function buildCompletionRuntimeConfig(global: GlobalOptions): Promise<{
   const commandFlags: Partial<
     Record<(typeof runtimeCommands)[number], string[]>
   > = {};
+  const commandDefinitionsByName = new Map(
+    [...fieldRegistry.command_to_fields].map(
+      ([command, definitions]) => [String(command), definitions] as const,
+    ),
+  );
   for (const command of runtimeCommands) {
     const definitions =
-      fieldRegistry.command_to_fields.get(
-        command === "update-many" ? "update_many" : command,
+      commandDefinitionsByName.get(
+        command.trim().replace(/[-\s]+/gu, "_"),
       ) ?? [];
     const flags = [
       ...new Set(
@@ -308,10 +323,9 @@ export async function runCompletionStatusesPackage(
     return { statuses: [], count: 0 };
   }
   const settings = await readSettings(pmRoot);
-  const statuses = resolveRuntimeStatusRegistry(settings.schema)
-    .definitions.map((definition) => definition.id)
-    .filter((status) => typeof status === "string" && status.trim().length > 0)
-    .sort((left, right) => left.localeCompare(right));
+  const statuses = collectStatusNames(
+    resolveRuntimeStatusRegistry(settings.schema),
+  );
   return {
     statuses,
     count: statuses.length,

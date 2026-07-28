@@ -2,11 +2,12 @@ id: pm-v657
 title: pm-governance-audit comments-audit limit contract contradicts runtime alias semantics
 description: "Reconcile comments-audit pagination controls so agents can independently bound scanned items and emitted full-history rows, while preserving old spellings through an explicit compatibility policy."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[5]: agent-ux,"area:contracts","area:extensions",governance-audit,token-efficiency
 created_at: "2026-07-13T21:36:43.602Z"
-updated_at: "2026-07-26T05:56:28.588Z"
+updated_at: "2026-07-28T04:15:25.993Z"
+closed_at: "2026-07-28T04:15:22.972Z"
 author: codex-root
 estimated_minutes: 90
 acceptance_criteria: "Runtime, help, package contracts, completions, and docs define one truthful pagination grammar; --limit-items remains the scanned-item cap; a canonical row-output cap bounds full-history rows without lowering scan coverage; legacy --limit behavior remains available as a documented hidden/deprecated alias or a migration hint; conflicting legacy/canonical values return a targeted structured recovery; focused tests cover independent caps and compatibility"
@@ -16,15 +17,49 @@ confidence: high
 severity: low
 environment: Installed pm-governance-audit with pm 2026.7.13
 repro_steps: Run pm comments-audit --limit-items 10000 --full-history --limit 100000 --json.
-expected_result: "The documented scanned-item and output-row limits apply independently, allowing complete item coverage with a bounded row payload."
-actual_result: "The command exits because --limit and --limit-items must match, revealing that runtime treats them as aliases despite help describing different scopes."
+resolution: Comments audit now has independent item-scan and global emitted-row budgets with an explicit compatibility alias.
+expected_result: limit-items caps scanned items while limit-rows caps emitted comments globally and result metadata exposes truncation and total rows.
+actual_result: "Canonical limit-rows, deprecated limit alias, conflict guidance, emitted/total counts, unit integration and packed-consumer verification all pass."
 component: pm-governance-audit/comments-audit
 customer_impact: "Large-workspace audits cannot independently control scan completeness and token/output size, and agents waste a retry discovering the hidden alias rule."
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-srns,related,"2026-07-13T21:36:43.602Z",codex-root,null
-  pm-vjk3,related,"2026-07-13T21:36:43.602Z",codex-root,null
-  pm-w1j3,related,"2026-07-13T21:36:43.602Z",codex-root,null
-  pm-ugqx,implements,"2026-07-26T05:56:28.350Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[5]:
+  - id: pm-srns
+    kind: related
+    created_at: "2026-07-13T21:36:43.602Z"
+    author: codex-root
+  - id: pm-vjk3
+    kind: related
+    created_at: "2026-07-13T21:36:43.602Z"
+    author: codex-root
+  - id: pm-w1j3
+    kind: related
+    created_at: "2026-07-13T21:36:43.602Z"
+    author: codex-root
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-07-26T05:56:28.350Z"
+  - id: pm-vjk3
+    kind: verifies
+    created_at: "2026-07-28T03:16:16.323Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[3]{created_at,author,text}:
   "2026-07-13T21:36:43.602Z",codex-root,"Duplicate check evidence: all-status searches for comments-audit limit semantics found closed implementation item pm-w1j3 and broad output-contract item pm-srns,but no active issue for the live package help/runtime contradiction. Reproduced during the full 6,546-comment-row audit."
+  "2026-07-28T03:16:20.391Z","harness:codex","Start evidence 2026-07-28: implementing independent scan and row-output budgets with compatibility recovery in the same managed SDK/package contract tranche; only this exact bundle is in progress."
+  "2026-07-28T04:14:12.443Z","harness:codex","Implementation evidence: comments-audit now separates --limit-items scanning from the global --limit-rows export budget, retains --limit as a deprecated row alias with a targeted conflict error, and reports emitted versus total rows plus truncation. Unit/runtime/release-contract tests passed; a packed installed governance package proved two scanned items, two emitted rows, three total rows, and truncation without exposing temporary data."
+learnings[1]{created_at,author,text}:
+  "2026-07-28T04:14:13.485Z","harness:codex","Pagination semantics need named units. Item caps and row caps must be parsed independently, applied at their respective layers, and reported with both emitted and total counts so agents can distinguish bounded context from missing data."
+files[4]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/comments-audit.ts,project,separate item scan and global row budgets
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,declare canonical row-limit contract and legacy alias
+  packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,normalize row-limit runtime field
+  tests/integration/release-readiness-runtime.spec.ts,project,installed governance package help contract for row limit
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/comments-command.spec.ts tests/unit/packages/governance-audit-runtime.spec.ts,project,300,independent item and row limit coverage
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms45598x-sm9t05,test,passed,"2026-07-28T04:13:29.507Z","2026-07-28T04:13:43.569Z","2026-07-28T04:13:43.569Z",1,0,0
+docs[1]{path,scope,note}:
+  packages/pm-governance-audit/README.md,project,document item and row limit semantics
+close_reason: "Closed with independent item/row budgets, compatibility alias, truncation metadata, installed-package contract coverage, and packed consumer proof."
 body: ""

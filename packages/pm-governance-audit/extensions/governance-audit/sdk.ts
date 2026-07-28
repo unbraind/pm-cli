@@ -36,11 +36,6 @@ export const {
 /** Preserve the host SDK list overloads across the dynamic runtime boundary. */
 export const runList: typeof runtime.runList = runtime.runList;
 
-/** Runtime status registry inferred from the host SDK's schema resolver. */
-export type RuntimeStatusRegistry = ReturnType<
-  typeof resolveRuntimeStatusRegistry
->;
-
 export type {
   GlobalOptions,
   ItemMetadata,
@@ -49,3 +44,4 @@ export type {
   ListOptions,
   UpdateCommandOptions,
 } from "@unbrained/pm-cli/sdk/runtime";
+export type { RuntimeStatusRegistry } from "@unbrained/pm-cli/sdk";

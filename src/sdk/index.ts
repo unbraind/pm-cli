@@ -213,6 +213,7 @@ export {
 } from "./profile.js";
 export * from "./extension-contracts.js";
 export { RESERVED_ITEM_FIELD_NAMES } from "../core/extensions/item-fields.js";
+export type { LocatedItem } from "../core/store/item-store.js";
 export {
   PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS,
   PM_PACKAGE_RESOURCE_KINDS,

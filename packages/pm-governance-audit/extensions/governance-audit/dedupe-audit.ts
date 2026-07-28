@@ -156,7 +156,7 @@ export interface DedupeAuditResult {
   /** Value that configures or reports filters for this contract. */
   filters: {
     mode: DedupeAuditMode;
-    status: ItemStatus | null;
+    status: ItemStatus | "all" | null;
     type: string | null;
     tag: string | null;
     priority: string | null;
@@ -199,15 +199,20 @@ let dedupeAllowedStatuses = new Set<string>([
 let dedupeTerminalStatuses = new Set<string>(["closed", "canceled"]);
 let dedupeStatusRegistry: RuntimeStatusRegistry | null = null;
 
-const parseStatus = (raw: string | undefined): ItemStatus | undefined => {
+const parseStatus = (
+  raw: string | undefined,
+): ItemStatus | "all" | undefined => {
   /** Normalize an optional status token against the active audit registry. */
   if (raw === undefined) {
     return undefined;
   }
   const normalized = raw.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "all") {
+    return "all";
+  }
   if (!dedupeAllowedStatuses.has(normalized)) {
     throw new PmCliError(
-      `Status filter must be one of ${[...dedupeAllowedStatuses].join("|")}`,
+      `Status filter must be one of all|${[...dedupeAllowedStatuses].join("|")}`,
       EXIT_CODE.USAGE,
     );
   }
@@ -535,7 +540,7 @@ const toNullable = <Value>(value: Value | undefined): Value | null =>
 
 const buildDedupeAuditFilters = (params: {
   mode: DedupeAuditMode;
-  status: ItemStatus | undefined;
+  status: ItemStatus | "all" | undefined;
   options: DedupeAuditOptions;
   limit: number | undefined;
   fuzzyThreshold: number;
@@ -579,7 +584,7 @@ export const runDedupeAudit = async (
   const fuzzyThreshold = threshold ?? 0.8;
 
   const listed = await runList(
-    status,
+    status === "all" ? undefined : status,
     { ...buildListQueryFilters(options), full: true as const },
     global,
   );

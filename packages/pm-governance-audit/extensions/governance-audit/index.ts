@@ -172,7 +172,14 @@ const commentsAuditFlags = [
     long: "--limit",
     value_name: "n",
     value_type: "string",
-    description: "Limit output rows.",
+    description: "Deprecated alias for --limit-rows.",
+  },
+  {
+    long: "--limit-rows",
+    value_name: "n",
+    value_type: "string",
+    description:
+      "Limit exported comment rows without reducing scanned item coverage.",
   },
   {
     long: "--limit-items",

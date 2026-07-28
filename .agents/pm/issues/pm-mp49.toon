@@ -2,11 +2,12 @@ id: pm-mp49
 title: "pm-governance-audit dedupe-audit rejects --status all, breaking explicit all-lifecycle duplicate sweeps"
 description: Make the package-owned dedupe-audit command honor the same lifecycle-status filter contract as core list/search so agents can request duplicate analysis across every terminal and active status explicitly.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:contracts","area:extensions",governance-audit
 created_at: "2026-07-13T21:36:43.027Z"
-updated_at: "2026-07-26T05:56:27.325Z"
+updated_at: "2026-07-28T04:15:19.611Z"
+closed_at: "2026-07-28T04:15:16.664Z"
 author: codex-root
 estimated_minutes: 90
 acceptance_criteria: "dedupe-audit accepts --status all as an explicit no-restriction sentinel; output echoes filters.status=all; configured custom statuses still validate; omission and --status all return the same all-item candidate set; help, package contracts, completions, docs, and focused tests stay aligned"
@@ -16,14 +17,43 @@ confidence: high
 severity: medium
 environment: Installed pm-governance-audit with pm 2026.7.13
 repro_steps: Run pm dedupe-audit --mode title_exact --status all --limit 10000 --json.
-expected_result: "The audit considers every lifecycle status, matching pm list/search --status all."
-actual_result: The command exits invalid_argument_value because its status domain excludes the all sentinel.
+resolution: Governance dedupe audit now treats explicit all as the unfiltered lifecycle selection.
+expected_result: pm dedupe-audit --status all succeeds and considers the same items as an omitted status filter.
+actual_result: Parser and list execution accept all; unit and packed installed-consumer tests prove explicit and omitted all-status parity.
 component: pm-governance-audit/dedupe-audit
 customer_impact: Agents cannot express the repository-required all-status duplicate sweep through the audit command and must know that omitting the filter has undocumented broader semantics.
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-i02t,related,"2026-07-13T21:36:43.027Z",codex-root,null
-  pm-vjk3,related,"2026-07-13T21:36:43.027Z",codex-root,null
-  pm-ugqx,implements,"2026-07-26T05:56:27.002Z",null,null
-comments[1]{created_at,author,text}:
+dependencies[4]:
+  - id: pm-i02t
+    kind: related
+    created_at: "2026-07-13T21:36:43.027Z"
+    author: codex-root
+  - id: pm-vjk3
+    kind: related
+    created_at: "2026-07-13T21:36:43.027Z"
+    author: codex-root
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-07-26T05:56:27.002Z"
+  - id: pm-vjk3
+    kind: verifies
+    created_at: "2026-07-28T03:16:15.086Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[3]{created_at,author,text}:
   "2026-07-13T21:36:43.027Z",codex-root,"Duplicate check evidence: all-status searches for dedupe-audit status-all and governance audit contract parity found closed core parity item pm-i02t plus closed extraction lineage pm-vjk3/pm-79fr,but no active package-owned issue for the live pm 2026.7.13 rejection. Reproduced during the 1,784-item all-status audit."
+  "2026-07-28T03:16:19.243Z","harness:codex","Start evidence 2026-07-28: reproducing and fixing package-owned --status all parity in the same managed SDK/package contract tranche; canonical extraction lineage is linked with a verifies edge."
+  "2026-07-28T04:14:10.642Z","harness:codex","Implementation evidence: dedupe-audit accepts explicit --status all and treats it identically to an omitted lifecycle filter while retaining all in the result filter metadata. Unit tests cover parsing and end-to-end explicit/omitted parity; a packed installed governance package considered open and closed temporary items under --status all."
+learnings[1]{created_at,author,text}:
+  "2026-07-28T04:14:11.545Z","harness:codex",All-status is a filter control token rather than a lifecycle status. Preserve it in result metadata for explainability but omit it from the underlying list filter.
+files[2]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,accept explicit all-status filter
+  packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,normalize package filter options
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/dedupe-audit-command.spec.ts,project,300,explicit and omitted all-status parity
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms454xrr-jhpr9b,test,passed,"2026-07-28T04:13:13.738Z","2026-07-28T04:13:28.695Z","2026-07-28T04:13:28.695Z",1,0,0
+docs[1]{path,scope,note}:
+  packages/pm-governance-audit/README.md,project,document all-status semantics
+close_reason: "Closed with explicit all-status parity across parser, result metadata, list execution, unit tests, and installed package proof."
 body: ""
