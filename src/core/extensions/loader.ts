@@ -35,7 +35,10 @@ import {
   assertOptionalStringField,
   normalizeOptionalStringArrayField,
 } from "./registration-validation.js";
-import { RESERVED_EXTENSION_HOST_FLAG_NAMES } from "./reserved-host-flags.js";
+import {
+  describeExtensionLongFlagFailure,
+  findExtensionFlagTokenFailure,
+} from "./flag-definition-validation.js";
 import {
   compareComparableVersions,
   evaluatePmMaxVersionBound,
@@ -1694,24 +1697,6 @@ function normalizeCommandDefinitionArguments(
   return normalized;
 }
 
-/** Reject any extension flag spelling already owned by the global host. */
-function assertExtensionFlagOwnership(
-  index: number,
-  long: unknown,
-  short: unknown,
-): void {
-  const reservedFlag = [long, short].find(
-    (flag) =>
-      typeof flag === "string" &&
-      RESERVED_EXTENSION_HOST_FLAG_NAMES.has(flag.trim()),
-  );
-  if (typeof reservedFlag === "string") {
-    throw new TypeError(
-      `registerFlags flags[${index}] cannot shadow host-owned global flag "${reservedFlag.trim()}"; read it from context.global instead`,
-    );
-  }
-}
-
 function validateFlagDefinitions(flags: unknown): void {
   if (!Array.isArray(flags)) {
     throw new TypeError(
@@ -1737,7 +1722,12 @@ function validateFlagDefinitions(flags: unknown): void {
     }
     assertOptionalStringField(`registerFlags flags[${index}].long`, long);
     assertOptionalStringField(`registerFlags flags[${index}].short`, short);
-    assertExtensionFlagOwnership(index, long, short);
+    const tokenFinding = findExtensionFlagTokenFailure(long, short);
+    if (tokenFinding !== null) {
+      throw new TypeError(
+        `registerFlags flags[${index}] ${describeExtensionLongFlagFailure(tokenFinding.token, tokenFinding.failure)}`,
+      );
+    }
     assertOptionalStringField(
       `registerFlags flags[${index}].value_name`,
       record.value_name,

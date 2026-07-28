@@ -7,6 +7,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import { pathExists } from "../fs/fs-utils.js";
+import { nextReproducibleToken } from "../reproducibility/context.js";
 
 /** Implements normalize prefix for the public runtime surface of this module. */
 export function normalizePrefix(input: string | undefined): string {
@@ -35,6 +36,10 @@ export function normalizeItemId(input: string, prefix: string): string {
 }
 
 function randomToken(length: number): string {
+  const reproducibleToken = nextReproducibleToken(length);
+  if (reproducibleToken !== undefined) {
+    return reproducibleToken;
+  }
   let token = "";
   for (let index = 0; index < length; index += 1) {
     token += crypto.randomInt(0, 36).toString(36);

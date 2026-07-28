@@ -806,8 +806,8 @@ export function normalizeListOptions(
     release: readListOptionString(options, "release"),
     limit: readListOptionString(options, "limit"),
     offset: readListOptionString(options, "offset"),
-    // Commander stores --no-truncate as truncate=false; --all is the positive alias.
-    noTruncate: optionFalse(options, "truncate") ?? optionTrue(options, "all"),
+    // Commander stores --no-truncate as truncate=false.
+    noTruncate: optionFalse(options, "truncate"),
     includeBody: optionTrue(options, "includeBody"),
     strictRead: optionTrue(options, "strictRead"),
     compact: optionTrue(options, "compact"),

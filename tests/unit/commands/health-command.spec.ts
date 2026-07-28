@@ -1780,7 +1780,6 @@ describe("runHealth", () => {
       expect(health.ok).toBe(false);
       expect(health.warnings).toEqual([
         "missing_directory:history",
-        "missing_directory:search",
         "settings:id_prefix_empty",
         "settings:locks_ttl_non_positive",
       ]);
@@ -1790,7 +1789,7 @@ describe("runHealth", () => {
       );
       expect(directoriesCheck?.status).toBe("warn");
       expect(directoriesCheck?.details).toMatchObject({
-        missing: ["history", "search"],
+        missing: ["history"],
       });
 
       const settingValuesCheck = health.checks.find(

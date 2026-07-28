@@ -46,6 +46,7 @@ pm guide release --json
 - [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.
 - [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md) - durable mutation events, bounded duplicate governance, and scale-safe package primitives.
 - [SDK Context Integrity Primitives](SDK_CONTEXT_INTEGRITY_PRIMITIVES.md) - batch duplicate discovery, structured errors, Plan evidence/lifecycle, sparse settings, tombstones, linked-test output, relocation diagnostics, and scoped output services.
+- [Reproducible Workspaces and Snapshots](REPRODUCIBLE_WORKSPACES.md) - deterministic SDK recipes and content-addressed authoritative tracker restore points.
 - [Agent UX Contracts](AGENT_UX_CONTRACTS.md) - ordering-cycle advisories, graph count units, collision safety, compact context, ownership wording, and recovery behavior.
 - [Packages and Extensions](EXTENSIONS.md) - package install workflows, runtime extension lifecycle, and API reference.
 - [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md) - the stability guarantees and contract surface package authors build against.

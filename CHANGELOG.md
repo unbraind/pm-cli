@@ -2,8 +2,18 @@
 
 ## Unreleased
 
+### Added
+
+- GH-787: workspace snapshot and restore primitives for cheap reproducible evaluation episodes ([pm-dkrmzv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-dkrmzv.toon))
+- Reproducible workspace instances: seeded identifiers, injectable clock, and byte-identical construction from a declared recipe ([pm-rbcvt2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rbcvt2.toon))
+
 ### Fixed
 
+- GH-784: SDK blueprint preflight misses host-owned flag collisions and malformed long-flag tokens ([pm-huolbk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-huolbk.toon))
+- GH-785: align pm health ok with warn-only exit semantics on fresh clones ([pm-83ov2i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-83ov2i.toon))
+- GH-792: fresh-clone health must not require ignored runtime and empty extension directories ([pm-0k4o8t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k4o8t.toon))
+- GH-793: remove or disambiguate list --all so filtered output cannot claim workspace completeness ([pm-q7qojt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q7qojt.toon))
+- GH-794: make copied identity output_format overrides decline instead of exposing the host envelope ([pm-wi301j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wi301j.toon))
 - Nightly static quality fails closed in shallow workflow checkouts because CodeFactor parity cannot resolve a committed base ([pm-1hbw4y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1hbw4y.toon))
 - GH-790/GH-791: pm merge install reports workspace_root in a different canonical form depending on which channel resolved it, so the same repository has two non-equal spellings on macOS and Windows ([pm-ihmfs6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ihmfs6.toon))
 - The dependency token budget is enforced against a different representation than the one emitted, so a command that reports staying inside 16k tokens delivers about 45k ([pm-t2t709](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t2t709.toon))

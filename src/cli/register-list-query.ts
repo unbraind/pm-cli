@@ -277,6 +277,19 @@ async function runRegisteredListCommand(params: {
 }): Promise<void> {
   const globalOptions = getGlobalOptions(params.actionCommand);
   const startedAt = Date.now();
+  if (params.options.all === true) {
+    throw new PmCliError(
+      "List --all was ambiguous and is no longer an alias for --no-truncate. Use `pm list --status all --no-truncate` for every status, or `pm list-all --no-truncate` for the dedicated all-status command.",
+      EXIT_CODE.USAGE,
+      {
+        code: "ambiguous_list_all",
+        examples: [
+          "pm list --status all --no-truncate",
+          "pm list-all --no-truncate",
+        ],
+      },
+    );
+  }
   const listOptions = normalizeListOptions(params.options);
   applyDefaultListProjection(listOptions, params.name);
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
@@ -396,7 +409,7 @@ function registerListCommand(
     )
     .option(
       "--no-truncate",
-      "Return every matched row, overriding any --limit (alias: --all)",
+      "Return every matched row after the explicit status and field filters",
     )
     .option("--include-body", "Include item body in each returned list row")
     .option(
@@ -445,8 +458,6 @@ function registerListCommand(
       actionCommand,
     });
   });
-  // Positive alias for --no-truncate (Commander stores the negation as truncate=false).
-  addHiddenOption(command, "--all", "Alias for --no-truncate");
   // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
   addHiddenOption(command, "--tags <value>", "Alias for --tag");
   addHiddenOption(
@@ -455,6 +466,11 @@ function registerListCommand(
     "Alias for --assignee-filter",
   );
   addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
+  addHiddenOption(
+    command,
+    "--all",
+    "Removed ambiguous alias; emits migration guidance",
+  );
   // Singular alias so `--filter-estimate-missing` works (matches update-many spelling).
   addHiddenOption(
     command,

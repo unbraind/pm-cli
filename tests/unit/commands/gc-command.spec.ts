@@ -1,4 +1,4 @@
-import fs, { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import fs, { mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -192,6 +192,106 @@ describe("runGc", () => {
         "search/pending-refresh.json",
         "search/pending-refresh.gate.lock",
       ]);
+    });
+  });
+
+  it("removes stale snapshot publish debris while retaining active temporary entries", async () => {
+    await withTempPmPath(async (context) => {
+      const objects = path.join(
+        context.pmPath,
+        "runtime",
+        "workspace-snapshots",
+        "objects",
+      );
+      const refs = path.join(
+        context.pmPath,
+        "runtime",
+        "workspace-snapshots",
+        "refs",
+      );
+      const staleObject = path.join(objects, ".create-stale");
+      const activeObject = path.join(objects, ".create-active");
+      const staleRef = path.join(refs, ".ref-stale");
+      await mkdir(staleObject, { recursive: true });
+      await mkdir(activeObject, { recursive: true });
+      await mkdir(refs, { recursive: true });
+      await writeFile(staleRef, "temporary\n", "utf8");
+      await writeFile(path.join(objects, "not-temporary"), "retained\n", "utf8");
+      const staleTime = new Date(Date.now() - 2 * 24 * 60 * 60 * 1_000);
+      await utimes(staleObject, staleTime, staleTime);
+      await utimes(staleRef, staleTime, staleTime);
+
+      const preview = await runGc(
+        { path: context.pmPath },
+        { scope: ["runtime"], dryRun: true },
+      );
+      expect(preview.removed).toEqual([
+        "runtime/workspace-snapshots/objects/.create-stale",
+        "runtime/workspace-snapshots/refs/.ref-stale",
+      ]);
+      expect(preview.retained).toContain(
+        "runtime/workspace-snapshots/objects/.create-active",
+      );
+      await expect(fs.stat(staleObject)).resolves.toBeTruthy();
+      await expect(fs.stat(staleRef)).resolves.toBeTruthy();
+
+      const result = await runGc(
+        { path: context.pmPath },
+        { scope: ["runtime"] },
+      );
+      expect(result.removed).toEqual(preview.removed);
+      expect(result.retained).toContain(
+        "runtime/workspace-snapshots/objects/.create-active",
+      );
+      await expect(fs.stat(staleObject)).rejects.toBeTruthy();
+      await expect(fs.stat(staleRef)).rejects.toBeTruthy();
+      await expect(fs.stat(activeObject)).resolves.toBeTruthy();
+    });
+  });
+
+  it("tolerates snapshot debris disappearing during stat and propagates unexpected stat failures", async () => {
+    await withTempPmPath(async (context) => {
+      const racedPath = path.join(
+        context.pmPath,
+        "runtime",
+        "workspace-snapshots",
+        "objects",
+        ".create-raced",
+      );
+      await mkdir(racedPath, { recursive: true });
+      const actualStat = fs.stat.bind(fs);
+      let statFailure: "missing" | "unexpected" = "missing";
+      const statSpy = vi.spyOn(fs, "stat").mockImplementation(async (target) => {
+        if (target === racedPath) {
+          if (statFailure === "missing") {
+            throw Object.assign(new Error("snapshot debris disappeared"), {
+              code: "ENOENT",
+            });
+          }
+          throw new Error("snapshot stat failure");
+        }
+        return actualStat(target);
+      });
+
+      try {
+        const result = await runGc(
+          { path: context.pmPath },
+          { scope: ["runtime"] },
+        );
+        expect(result.removed).not.toContain(
+          "runtime/workspace-snapshots/objects/.create-raced",
+        );
+        expect(result.retained).not.toContain(
+          "runtime/workspace-snapshots/objects/.create-raced",
+        );
+
+        statFailure = "unexpected";
+        await expect(
+          runGc({ path: context.pmPath }, { scope: ["runtime"] }),
+        ).rejects.toThrow("snapshot stat failure");
+      } finally {
+        statSpy.mockRestore();
+      }
     });
   });
 

@@ -3141,9 +3141,6 @@
           "flag": "--after"
         },
         {
-          "aliases": [
-            "--all"
-          ],
           "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
@@ -3364,9 +3361,6 @@
           "flag": "--after"
         },
         {
-          "aliases": [
-            "--all"
-          ],
           "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
@@ -3587,9 +3581,6 @@
           "flag": "--after"
         },
         {
-          "aliases": [
-            "--all"
-          ],
           "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
@@ -3810,9 +3801,6 @@
           "flag": "--after"
         },
         {
-          "aliases": [
-            "--all"
-          ],
           "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
@@ -4033,9 +4021,6 @@
           "flag": "--after"
         },
         {
-          "aliases": [
-            "--all"
-          ],
           "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
@@ -4256,9 +4241,6 @@
           "flag": "--after"
         },
         {
-          "aliases": [
-            "--all"
-          ],
           "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
@@ -4479,9 +4461,6 @@
           "flag": "--after"
         },
         {
-          "aliases": [
-            "--all"
-          ],
           "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },
@@ -4702,9 +4681,6 @@
           "flag": "--after"
         },
         {
-          "aliases": [
-            "--all"
-          ],
           "cursor_semantics": "presentation",
           "flag": "--no-truncate"
         },

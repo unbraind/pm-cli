@@ -2,11 +2,12 @@ id: pm-q7qojt
 title: "GH-793: remove or disambiguate list --all so filtered output cannot claim workspace completeness"
 description: "The list --all alias controls pagination while the command defaults to open statuses, causing an intuitive all-workspace query to return only active rows and label the filtered result complete. Make scope and completeness explicit and token-safe."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-28T11:30:12.179Z"
-updated_at: "2026-07-28T15:01:31.702Z"
+updated_at: "2026-07-28T16:31:02.531Z"
+closed_at: "2026-07-28T16:27:55.507Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Bare --all cannot silently mean only no-truncate; callers receive either a clear error suggesting --status all or an unambiguous replacement; completeness distinguishes full workspace scope from post-filter pagination; total semantics are documented and tested across JSON and TOON; aliases and runtime contracts remain aligned
@@ -16,10 +17,30 @@ value: All-status project context becomes explicit and trustworthy
 parent: pm-n7rr
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: All-status scope and pagination completeness are explicit and unambiguous.
+actual_result: Deprecated --all now errors with exact --status all and --no-truncate migration commands.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-6j7r1a,related,"2026-07-28T11:30:12.179Z","harness:codex","cli:create:dep",detected
   pm-pfqi,blocks,"2026-07-28T11:30:12.179Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-28T11:30:12.179Z","harness:codex","Duplicate check evidence: all-status search found open pm-pfqi for list-family consolidation and pm-6j7r1a for enumeration closure, but no item owns the --all pagination/status collision and false completeness reported by GH-793."
   "2026-07-28T11:30:12.179Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/793"
+  "2026-07-28T16:27:20.481Z","harness:codex","Implementation evidence: list --all is no longer normalized to --no-truncate, is absent from the public flag contract, and the hidden parse-only migration path returns actionable all-status and no-truncate commands. Focused PM-linked runs passed 64 list tests plus 90 registered/in-process tests; full coverage passed 6,468 tests at 100/100/100/100."
+files[7]{path,scope,note}:
+  src/cli/register-list-query.ts,project,explicit ambiguous alias migration error
+  src/cli/registration-helpers.ts,project,remove all-to-no-truncate normalization
+  src/sdk/cli-contracts/flag-contracts.ts,project,truthful public flag vocabulary
+  tests/integration/workspace-snapshot-cli.integration.spec.ts,project,in-process list migration acceptance
+  tests/unit/cli/registration-helpers.spec.ts,project,normalization regression coverage
+  tests/unit/commands/list-command.spec.ts,project,list behavior coverage
+  tests/unit/commands/register-commands.spec.ts,project,registered migration error coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts tests/unit/commands/list-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms4v99i5-idzehm,test,passed,"2026-07-28T16:24:13.146Z","2026-07-28T16:24:40.541Z","2026-07-28T16:24:40.541Z",2,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,package-generated release note
+close_reason: Ambiguous list --all removed from public contracts with actionable migration guidance and complete CLI regression coverage.
 body: ""

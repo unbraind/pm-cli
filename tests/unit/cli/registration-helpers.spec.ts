@@ -846,9 +846,9 @@ describe("registration helpers", () => {
       custom: "kept",
     });
 
-    // Commander stores --no-truncate as truncate=false; --all is the positive alias.
+    // Commander stores --no-truncate as truncate=false; removed --all has no semantics.
     expect(normalizeListOptions({ truncate: false }).noTruncate).toBe(true);
-    expect(normalizeListOptions({ all: true }).noTruncate).toBe(true);
+    expect(normalizeListOptions({ all: true }).noTruncate).toBeUndefined();
     expect(normalizeListOptions({ truncate: true }).noTruncate).toBeUndefined();
 
     expect(

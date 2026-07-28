@@ -6,6 +6,7 @@
 import { PmCliError } from "./errors.js";
 import { evictOldestMemoEntries } from "./memo.js";
 import { EXIT_CODE } from "./constants.js";
+import { nextReproducibleTimestamp } from "../reproducibility/context.js";
 
 const RELATIVE_DEADLINE = /^([+-]?)(\d+)([hdwm])$/i;
 const COMPOUND_RELATIVE_DEADLINE = /^[+-]?\d+[hdwm](?:[+-]\d+[hdwm])+$/i;
@@ -19,7 +20,7 @@ const COMPACT_TIME =
 
 /** Implements now iso for the public runtime surface of this module. */
 export function nowIso(): string {
-  return new Date().toISOString();
+  return nextReproducibleTimestamp() ?? new Date().toISOString();
 }
 
 /** Implements check whether timestamp literal for the public runtime surface of this module. */
