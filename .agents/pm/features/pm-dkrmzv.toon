@@ -6,11 +6,13 @@ status: open
 priority: 3
 tags[7]: "area:storage",context-management,evaluation,rl,sdk,snapshot,workspace
 created_at: "2026-07-28T04:20:29.597Z"
-updated_at: "2026-07-28T10:07:07.943Z"
+updated_at: "2026-07-28T15:15:41.257Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "The authoritative workspace snapshot boundary is explicitly versioned and documented, including item files, histories, schemas, extension state, derived indexes, locks, caches, and machine-local state; public SDK and CLI primitives create, inspect, list, restore, and delete named or content-addressed snapshots atomically; restore invalidates or rebuilds derived state and never revives stale locks; unchanged snapshots deduplicate content; repeated evaluation episodes restore faster than full re-seeding at realistic scale; crash safety, cross-version compatibility, multi-branch behavior, security boundaries, and packed installed-consumer tests pass"
 parent: pm-o2kc
+risk: medium
+confidence: 80
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-klo8,related,"2026-07-28T04:20:29.597Z","harness:codex","cli:create:dep",detected
   pm-rbcvt2,related,"2026-07-28T04:20:29.597Z","harness:codex","cli:create:dep",detected

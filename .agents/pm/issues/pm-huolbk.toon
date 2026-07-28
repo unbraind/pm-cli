@@ -6,11 +6,13 @@ status: open
 priority: 1
 tags[5]: "area:extensions","area:sdk",author-ergonomics,contracts,github-report
 created_at: "2026-07-28T04:20:05.459Z"
-updated_at: "2026-07-28T04:20:05.459Z"
+updated_at: "2026-07-28T15:15:23.840Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: lintExtensionBlueprint emits an error-severity host-owned flag collision finding for primary and alias tokens in SUBCOMMAND_GLOBAL_FLAG_CONTRACTS; assertExtensionPreflight surfaces the same failure and remediation as runtime activation; FlagDefinition.long rejects tokens outside the canonical double-dash grammar at author-time and activation boundaries; valid custom flags remain accepted; SDK types docs fixtures property tests and installed-extension acceptance tests stay aligned
 parent: pm-ugqx
+risk: medium
+confidence: 85
 reporter: github-issue-784
 severity: high
 environment: Published @unbrained/pm-cli 2026.7.28 in a clean installed consumer

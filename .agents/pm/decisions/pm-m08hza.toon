@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: adr,context-management,evidence-gated,long-term,portfolio-governance,roadmap
 created_at: "2026-07-22T18:24:13.924Z"
-updated_at: "2026-07-26T06:04:15.956Z"
+updated_at: "2026-07-28T15:15:36.776Z"
 author: codex-root
 estimated_minutes: 180
 acceptance_criteria: "The policy defines Current, Emerging, Expansion, and Exploratory horizons by evidence and dependency readiness rather than dates; Every horizon entry references an existing canonical item or passes an all-status duplicate check before creation; Promotion requires explicit acceptance evidence, predecessor state, scale or quality proof where applicable, and an append-only decision comment; Demotion, splitting, merging, rejection, and supersedence preserve prior rationale in immutable history; Cross-cutting quality, security, documentation, SDK parity, graph completeness, and token-efficiency gates apply to every horizon; The living milestone can render a bounded horizon summary without replacing detailed item metadata or creating parallel backlogs"
@@ -17,14 +17,36 @@ impact: "Reduces duplicate roadmap items, premature implementation, hidden prere
 outcome: "A living outcome-based horizon map links canonical initiatives, promotion evidence, dependencies, risks, and review triggers from current foundations through long-term universal-platform research"
 why_now: "The ecosystem now spans command simplification, SDK-first architecture, million-item context, graph analytics, immutable history, multi-agent safety, CI, VCS, digital twins, federation, signatures, and policy; the existing initiatives need one explicit promotion model."
 parent: pm-m2u1
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-33cw,related,"2026-07-22T18:24:13.924Z",codex-root,null
-  pm-9rxu,related,"2026-07-22T18:24:13.924Z",codex-root,null
-  pm-doxj,related,"2026-07-22T18:24:13.924Z",codex-root,null
-  pm-n7rr,related,"2026-07-22T18:24:13.924Z",codex-root,null
-  pm-u9d0,related,"2026-07-22T18:24:13.924Z",codex-root,null
-  pm-usfg,related,"2026-07-22T18:24:13.924Z",codex-root,null
-  pm-xp1xsw,implements,"2026-07-26T05:49:25.544Z",null,null
+risk: low
+confidence: 75
+dependencies[7]:
+  - id: pm-33cw
+    kind: related
+    created_at: "2026-07-22T18:24:13.924Z"
+    author: codex-root
+  - id: pm-9rxu
+    kind: related
+    created_at: "2026-07-22T18:24:13.924Z"
+    author: codex-root
+  - id: pm-doxj
+    kind: related
+    created_at: "2026-07-22T18:24:13.924Z"
+    author: codex-root
+  - id: pm-n7rr
+    kind: related
+    created_at: "2026-07-22T18:24:13.924Z"
+    author: codex-root
+  - id: pm-u9d0
+    kind: related
+    created_at: "2026-07-22T18:24:13.924Z"
+    author: codex-root
+  - id: pm-usfg
+    kind: related
+    created_at: "2026-07-22T18:24:13.924Z"
+    author: codex-root
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-07-26T05:49:25.544Z"
 comments[4]{created_at,author,text}:
   "2026-07-22T18:24:13.924Z",codex-root,"Duplicate check: all-status searches for roadmap horizon, portfolio sequencing, now-next-later, exploratory planning, and promotion policy found the living milestone pm-doxj and initiative-specific notes but no decision governing evidence-based movement across the portfolio. This item defines governance only; it does not duplicate any delivery feature, epic, or prior point-in-time review."
   "2026-07-22T18:26:36.084Z",codex-root,"Baseline evidence: root help currently exposes 75 top-level names while contracts summary exposes 63 compact command summaries. The established pm-n7rr partition already assigns every spelling to a canonical noun family, hidden alias, internal helper, extension-owned surface, or generated discovery path. Promotion policy therefore treats simplification as delivery against existing canonical items, never as feature removal or a fresh command taxonomy."

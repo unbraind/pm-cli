@@ -6,18 +6,20 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:37.256Z"
-updated_at: "2026-07-26T05:57:28.595Z"
+updated_at: "2026-07-28T15:15:38.548Z"
 author: unknown
 estimated_minutes: 480
 acceptance_criteria: "Items carry a completed_at (actual completion) field distinct from closed_at (tracker mutation time), settable at close and correctable through a governed update; Time-window reports, flow metrics, and changelog bucketing read the actual-completion field when present and fall back to closed_at otherwise, with the fallback disclosed; A lossless migration backfills completed_at for existing closed items from history evidence or leaves it explicitly absent, never guessed; CLI, SDK, and MCP expose the field with typed contracts and the history stream records every correction"
 parent: pm-usfg
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related_to,"2026-07-25T02:06:37.256Z",null,null
-  pm-5qmm,related,"2026-07-25T06:27:14.903Z",null,null
-  pm-e9zh,related,"2026-07-25T06:27:14.903Z",null,null
-  pm-pee5,related,"2026-07-25T06:27:14.903Z",null,null
-  pm-wrbe,related,"2026-07-25T06:27:14.903Z",null,null
-  pm-usfg,implements,"2026-07-26T05:57:28.391Z",null,null
+risk: medium
+confidence: 85
+dependencies[6]{id,kind,created_at}:
+  pm-4k6b,related_to,"2026-07-25T02:06:37.256Z"
+  pm-5qmm,related,"2026-07-25T06:27:14.903Z"
+  pm-e9zh,related,"2026-07-25T06:27:14.903Z"
+  pm-pee5,related,"2026-07-25T06:27:14.903Z"
+  pm-wrbe,related,"2026-07-25T06:27:14.903Z"
+  pm-usfg,implements,"2026-07-26T05:57:28.391Z"
 comments[1]{created_at,author,text}:
   "2026-07-25T02:06:37.256Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
 body: ""

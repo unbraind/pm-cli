@@ -6,17 +6,19 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-26T01:00:17.799Z"
-updated_at: "2026-07-26T10:56:04.669Z"
+updated_at: "2026-07-28T15:15:26.301Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "config help, contracts, and completion advertise canonical mutation-guard keys and allowed value domains; Legacy underscore keys remain compatible and normalize to the canonical settings leaves; Config list and export expose effective guard posture without leaking protected content; CLI, SDK, MCP, documentation, and temporary-project acceptance pass full gates"
 parent: pm-mpbb
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-e2bq,related,"2026-07-26T01:00:17.799Z",null,null
-  pm-h4zb,related,"2026-07-26T01:00:17.799Z",null,null
-  pm-mf4j,related,"2026-07-26T01:00:17.799Z",null,null
-  pm-33cw,implements,"2026-07-26T05:59:19.546Z",null,null
-  pm-pim7,discovered_from,"2026-07-26T10:56:04.444Z",null,null
+risk: low
+confidence: 90
+dependencies[5]{id,kind,created_at}:
+  pm-e2bq,related,"2026-07-26T01:00:17.799Z"
+  pm-h4zb,related,"2026-07-26T01:00:17.799Z"
+  pm-mf4j,related,"2026-07-26T01:00:17.799Z"
+  pm-33cw,implements,"2026-07-26T05:59:19.546Z"
+  pm-pim7,discovered_from,"2026-07-26T10:56:04.444Z"
 comments[2]{created_at,author,text}:
   "2026-07-26T01:00:17.799Z","harness:codex","Duplicate check: searched all statuses for secret-guard config help,mutation-guard policy discoverability,canonical dashed keys,and block-mode configuration. Closed pm-pim7 owns write-time detection and pm-mf4j owns positional config UX,but neither exposes the mutation_guard group in current contracts; this issue is the distinct discoverability gap."
   "2026-07-26T01:00:29.015Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/715"

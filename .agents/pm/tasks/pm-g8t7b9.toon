@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: algorithms,"area:context","area:sdk",context-management,governance,roadmap,token-efficiency
 created_at: "2026-07-22T18:25:57.017Z"
-updated_at: "2026-07-28T15:06:05.582Z"
+updated_at: "2026-07-28T15:15:30.146Z"
 author: codex-root
 estimated_minutes: 480
 acceptance_criteria: "Inventory every named mechanism in pm-4k6b and pm-vvib by stable descriptive slug rather than audit-run or document numbering; For each mechanism record proposal state, owning canonical item, decision gate, SDK surface, required data sources, scale behavior, privacy and safety risks, evaluation scenarios, and delivery evidence; Create an individual implementation, research, decision, or rejection item only when no canonical owner exists and the applicable ADR permits it; every creation includes an all-status duplicate check; Shared substrate work is linked without pretending one item independently delivers multiple user-visible mechanisms; independent acceptance surfaces receive independent items; Rejected, deferred, superseded, and merged ideas retain rationale and relationships in immutable history; The registry supports bounded token-efficient queries and remains valid from tiny workspaces through million-item multi-decade workspaces; pm-atfm or its successor links a judgment scenario and regression threshold for every mechanism promoted toward delivery; The registry publishes an ordinal-to-slug resolution map covering every entry number ever used in the pm-4k6b ledger, and explicitly resolves the three ordinals that collided on 2026-07-26 — (20), (23) and (24), each of which names two distinct mechanisms — to two slugs apiece, so existing by-number cross-references including the pm-h3no/pm-3hps/pm-55ra/pm-uwfs ownership map stay resolvable; historical notes are never renumbered or rewritten, matching the immutability rule applied to history streams and closed items; new catalog entries are admitted by slug only, so a duplicate slug surfaces a genuine duplicate proposal instead of silently allocating a colliding ordinal"
@@ -17,6 +17,8 @@ impact: "Prevents hidden scope, duplicate algorithm work, premature implementati
 outcome: "A machine-queryable registry maps every named mechanism to one canonical pm item, decision state, dependencies, scale regime, evaluation scenario, and evidence trail"
 why_now: "The canonical context and cognitive-memory items contain a mature multi-mechanism catalog, but several mechanisms are intentionally note-only pending ADR acceptance or mapped across shared delivery items; explicit portfolio governance is now necessary."
 parent: pm-4k6b
+risk: low
+confidence: 95
 dependencies[11]:
   - id: pm-3hps
     kind: related

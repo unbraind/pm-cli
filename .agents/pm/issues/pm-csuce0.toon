@@ -6,11 +6,13 @@ status: open
 priority: 1
 tags[6]: gh-issue,npm,packages,release,sdk,semver
 created_at: "2026-07-25T00:15:27.200Z"
-updated_at: "2026-07-27T12:56:15.814Z"
+updated_at: "2026-07-28T15:15:25.025Z"
 author: codex-root
 estimated_minutes: 240
 acceptance_criteria: "npm latest for @unbrained/pm-cli always resolves to a version that satisfies ordinary stable peer ranges used by first-party packages; Release tooling fails the publish when the calendar ordinal about to be tagged latest would violate the documented peer contract; Package scaffolds and SDK authoring docs state the supported peer range shape for date-based versions; A regression check installs the published latest against a first-party package peer range and fails on incompatibility; A same-day replacement version sorts strictly above the version it replaces and is selected by an ordinary range, so a range resolver never returns the artifact the replacement was cut to supersede, with the published 2026.7.24 and 2026.7.24-3 pair as the regression fixture"
 parent: pm-u9d0
+risk: high
+confidence: 90
 dependencies[8]:
   - id: pm-4s24d2
     kind: related

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:cli","area:testing",context-integrity,developer-experience,sandbox
 created_at: "2026-07-28T14:04:06.683Z"
-updated_at: "2026-07-28T15:01:30.125Z"
+updated_at: "2026-07-28T15:15:34.204Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Direct and pm-linked executions of node scripts/run-tests.mjs coverage produce the same test and coverage result; No unit or integration test reads or writes the real repository .agents/pm tracker; Schema and tracker linked-test modes retain their documented semantics for genuine pm commands
@@ -17,6 +17,8 @@ impact: Prevents false coverage failures and lets broad gates be recorded as exe
 outcome: "run-tests.mjs derives repository fixtures from the checkout while every test PM read/write remains sandboxed, and a nested pm test regression proves parity"
 why_now: PR #795 exact-head verification produced repeatable direct-green/linked-red evidence in both schema and tracker modes
 parent: pm-92if
+risk: high
+confidence: 85
 severity: medium
 expected_result: Package-owned coverage remains 100/100/100/100 under a linked PM run without repository-root fixture drift
 actual_result: Direct coverage is green; schema and tracker linked contexts alter PM_PATH-derived ownership and path scans and fail otherwise-green tests
