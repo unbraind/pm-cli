@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"area:contracts","area:extensions",governance-audit
 created_at: "2026-07-13T21:36:43.027Z"
-updated_at: "2026-07-28T04:15:19.611Z"
+updated_at: "2026-07-28T04:23:33.424Z"
 closed_at: "2026-07-28T04:15:16.664Z"
 author: codex-root
 estimated_minutes: 90
@@ -40,10 +40,11 @@ dependencies[4]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-13T21:36:43.027Z",codex-root,"Duplicate check evidence: all-status searches for dedupe-audit status-all and governance audit contract parity found closed core parity item pm-i02t plus closed extraction lineage pm-vjk3/pm-79fr,but no active package-owned issue for the live pm 2026.7.13 rejection. Reproduced during the 1,784-item all-status audit."
   "2026-07-28T03:16:19.243Z","harness:codex","Start evidence 2026-07-28: reproducing and fixing package-owned --status all parity in the same managed SDK/package contract tranche; canonical extraction lineage is linked with a verifies edge."
   "2026-07-28T04:14:10.642Z","harness:codex","Implementation evidence: dedupe-audit accepts explicit --status all and treats it identically to an omitted lifecycle filter while retaining all in the result filter metadata. Unit tests cover parsing and end-to-end explicit/omitted parity; a packed installed governance package considered open and closed temporary items under --status all."
+  "2026-07-28T04:23:33.424Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/788 at initial implementation head 452f21fa1. The PR description links this canonical item and records the full local gate and packed-consumer evidence."
 learnings[1]{created_at,author,text}:
   "2026-07-28T04:14:11.545Z","harness:codex",All-status is a filter control token rather than a lifecycle status. Preserve it in result metadata for explainability but omit it from the underlying list filter.
 files[2]{path,scope,note}:
