@@ -1,0 +1,26 @@
+id: pm-83cz0o
+title: "GH-796: no reopen transition for terminal items, so recurrence is recorded as a duplicate instead of a reopening"
+description: "A closed defect can recur, and the tracker has no way to say so. The lifecycle verbs cover start, pause and close; there is no reopen. pm reopen on a closed id exits with Unknown command, and the only available path is pm update --status open, which moves the state and communicates nothing: no recurrence reason is required, no policy is consulted, and the transition is indistinguishable in the record from an ordinary status edit.\n\nThe consequence is the duplicate the project spends effort avoiding. When the strongest match for new work is a closed item, an agent has no primitive that says this happened again, so it files a second item and the lineage of the recurrence is lost. Reopening the canonical item is the correct move and is currently the harder one.\n\nTwo existing pieces already constrain the design. pm-g8jp closed by making update clear close_reason when a terminal item returns to an active status, so the field-clearing half exists and must not be re-implemented. The immutable record means reopening cannot erase the prior closure: the earlier close entry, its reason and its resolution stay in the stream, and the reopen appends rather than rewrites, which is what makes a recurrence count auditable at all.\n\nRequested behaviour from the report: accept only terminal items unless forced, default to open with an option for in_progress, clear the terminal lifecycle fields that must not survive while retaining the closure evidence, record the reason as structured lifecycle and history evidence, respect claim and validation governance, and surface itself when a duplicate search lands on a closed item. Idempotent or a clear actionable error when the item is already active.\n\nSpelling is deliberately not decided here. The surface is already too large for agents to enumerate and pm-n7rr owns shrinking it, so this must land as a lifecycle transition under whatever noun-verb placement pm-pbyu accepts rather than as another top-level command competing for the one-screen surface. The capability is the deliverable; the token it is typed as belongs to that decision."
+type: Feature
+status: open
+priority: 2
+tags[2]: agent-ux,lifecycle
+created_at: "2026-07-28T14:56:19.121Z"
+updated_at: "2026-07-28T14:56:44.768Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A terminal item can return to an active status through a lifecycle transition that requires a recurrence reason and refuses an already-active item with an actionable error; The reopen appends to the history stream and the prior closure entry, reason and resolution remain readable after the transition; Terminal lifecycle fields that must not survive are cleared by the existing update path rather than a second implementation, and a test proves the two agree; Duplicate search surfaces the reopen transition when the strongest match is terminal, so an agent is offered the canonical item before creating a new one; The spelling is whatever the noun-verb decision accepts and the top-level command count does not grow without that decision being recorded"
+parent: pm-mpbb
+risk: medium
+confidence: 90
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4ri6,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+  pm-e9zh,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+  pm-h6wmtc,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,implements,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+  pm-jkbqt8,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+  pm-mpbb,implements,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+  pm-pbyu,blocked_by,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+  pm-wenq,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+body: ""

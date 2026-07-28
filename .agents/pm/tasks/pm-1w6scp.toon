@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:graph",backfill,context-management,history,relationships,timeline
 created_at: "2026-07-26T17:06:25.188Z"
-updated_at: "2026-07-26T22:22:15.387Z"
+updated_at: "2026-07-28T14:57:44.966Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The duplicated milestone encoding is dispositioned explicitly as either two views of one programme or two distinct programmes, and the disposition is recorded on the items rather than inferred; The original milestones carry their delivery order as typed edges so a traversal can reconstruct the sequence without parsing titles; The v1 programme is joined to the post-v0.1 roadmap by a typed edge whose direction states which era succeeded which; Every parentless terminal item either gains a programme lineage or appears on a recorded residual list with the reason it has none; No item is retyped, renamed, or merged to achieve the join, and every edge added cites the durable evidence it came from; A graph query from the newest outcome milestone reaches the oldest v1 milestone, and the path is reported as evidence"
@@ -19,17 +19,57 @@ why_now: "The terminal relationship backfill has just made every other closed it
 parent: pm-96h7
 risk: medium
 confidence: medium
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-3j6it6,discovered_from,"2026-07-26T17:06:25.188Z",null,null
-  pm-4ri6,related,"2026-07-26T17:06:25.188Z",null,null
-  pm-5qmm,related,"2026-07-26T17:06:25.188Z",null,null
-  pm-6x7o,related,"2026-07-26T17:06:25.188Z",null,null
-  pm-96h7,implements,"2026-07-26T17:06:25.188Z",null,null
-  pm-bzmeaa,related,"2026-07-26T17:06:25.188Z",null,null
-  pm-doxj,related,"2026-07-26T17:06:25.188Z",null,null
-  pm-hnc9w7,related,"2026-07-26T17:06:25.188Z",null,null
-  pm-lnrk,related,"2026-07-26T17:06:25.188Z",null,null
-  pm-s5e04g,related,"2026-07-26T17:06:25.188Z",null,null
+dependencies[13]:
+  - id: pm-3j6it6
+    kind: discovered_from
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-4ri6
+    kind: related
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-5qmm
+    kind: related
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-6x7o
+    kind: related
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-96h7
+    kind: implements
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-bzmeaa
+    kind: related
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-doxj
+    kind: related
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-hnc9w7
+    kind: related
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-lnrk
+    kind: related
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-s5e04g
+    kind: related
+    created_at: "2026-07-26T17:06:25.188Z"
+  - id: pm-4020c5
+    kind: blocked_by
+    created_at: "2026-07-28T14:57:44.767Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-nwuzaq
+    kind: related
+    created_at: "2026-07-28T14:57:44.767Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-qudvto
+    kind: discovered_from
+    created_at: "2026-07-28T14:57:44.767Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-07-28T14:57:43.917Z","harness:claude-code","Spine status re-measured 2026-07-28. Two of the six acceptance criteria are now satisfied in data, one is proved NOT satisfied, and the residual census is executed below.\n\nSatisfied: the era join. All fourteen v1-era roots declare an edge of kind blocks against pm-doxj, and a traversal from the newest outcome milestone reaches the oldest v1 milestone: pm-xp1xsw to pm-doxj to pm-2xl, length 2, kinds related then blocks, five distinct paths reported. The edges arrived with the pm-qudvto terminal tranche executed the same day this item was filed, so the description's premise that these roots have no edge to each other or to the successor programme is now historical.\n\nSatisfied: the duplicate disposition, and it is recorded in the data rather than inferred. Each delivery milestone declares implements against its PRD twin — pm-2xl implements pm-6hhn, pm-u9r implements pm-zetb, pm-c0r implements pm-murz, pm-54d implements pm-met4, pm-f45 implements pm-xtfo, pm-b1w implements pm-gyfn, pm-jiw implements pm-defw. The encoding is therefore two views of one programme, requirement side and delivery side, not two programmes. The seven delivery epics were created 2026-02-17 and the seven PRD twins 2026-03-06, which is consistent with a requirements document written against work already under way. Note that the description lists only six delivery ids: Milestone 5 is pm-b1w and belongs in the set, making fourteen roots in total with pm-lty.\n\nNOT satisfied: the delivery order. The ordering edges exist and they encode the sequence backwards. The convention was established by control in an isolated sandbox: an item X declaring kind blocks against Y makes X the predecessor of Y, confirmed by pm graph predecessors and successors on a two-item workspace. Applying that convention to the corpus, pm-u9r, which is Milestone 1, declares blocks against pm-2xl, which is Milestone 0, so Milestone 1 precedes Milestone 0. The whole delivery chain runs pm-jiw to pm-b1w to pm-f45 to pm-54d to pm-c0r to pm-u9r to pm-2xl, that is Milestone 6 first and Milestone 0 last, and the PRD chain is inverted identically: pm-defw to pm-gyfn to pm-xtfo to pm-met4 to pm-murz to pm-zetb to pm-6hhn. Twelve rows in total.\n\nThe proof is internal and does not depend on reading titles. The same items use the same kind in two opposite senses: correctly toward pm-doxj, where the v1 milestone precedes the roadmap, and invertedly toward the sibling milestone. One of the two readings must be wrong and the doxj direction is the one corroborated by the release field, v2026.3.9 on all fourteen.\n\nObservable consequence: pm graph predecessors pm-2xl returns 34 ids and they include pm-u9r, pm-c0r, pm-54d, pm-f45, pm-b1w and pm-jiw. The first milestone of the project reports the last six as its predecessors, so a topological reconstruction of the first epoch yields the reverse of what happened. This group is inside the eight legacy_ordering_cycle findings that pm graph audit reports at severity info over 49 subjects, which is why predecessor and successor sets overlap for these nodes.\n\nDeliberately not repaired this pass. Flipping twelve rows is a direction-canonicalization decision that pm-4020c5 owns, the equivalent ambiguity on the pm-phpq chain is retained on purpose, and the holders are terminal so a bulk retype reorders changelog rows under pm-nwuzaq. This item is now blocked_by pm-4020c5 so the sequence is recorded rather than remembered.\n\nResidual census for the fourth criterion, executed over every tracked item file. Of 2,172 items, 185 carry no parent scalar, and 175 of those carry no hierarchy dependency row either, making them true roots: 163 closed, 11 canceled, 1 open, and 174 terminal. By type: Epic 59, Issue 57, Task 24, Chore 15, Feature 10, Plan 8, Decision 1, Milestone 1.\n\nThe reason they have no lineage falls into two classes. The 59 root Epics are per-session containers with the date in the title — 2026-04-26, 2026-04-28, 2026-04-30, 2026-05-01, three on 2026-05-02, two on 2026-05-03, 2026-06-07, 2026-07-02 and others — created as top-level epochs at a time when no programme node existed to hold them. The 57 root Issues are standalone defect reports filed before the capability-epic layer existed, many of them GH-numbered and closed. Neither class is missing a parent by accident and neither can be parented without inventing a container.\n\nExplicit refusal, so it is not re-attempted blindly: no chronological ordering edges were minted across the dated session containers this pass. Sequencing roughly thirty session epochs by their own titles is defensible evidence, but it would add thirty more rows in exactly the direction convention that is currently proved inconsistent. That work is worth doing after pm-4020c5 settles the direction, and worthless before it."
 notes[1]{created_at,author,text}:
   "2026-07-26T22:22:15.386Z","harness:claude-code","Resolved in substance 2026-07-27 by the epoch-lineage tranche recorded on pm-lnrk. The specific gap this item describes is closed: the thirteen duplicated v1 milestone Epics and the archived v1 build epic are no longer disconnected roots.\n\nWhat was written for this item's scope specifically. The seven delivery Milestone epics now carry implements to their PRD counterparts, so the two encodings of the same programme are joined rather than parallel. All seven also carry implements to the canonical v1 build epic, giving the first epoch an internal hierarchy it never had. The canonical v1 build epic supersedes the archived duplicate, which was the one relationship the titles stated and the data did not. Every epoch root, including all fourteen named in this item's description, now carries blocks to the index root, so a traversal from today's roadmap reaches the project's origin.\n\nVerified after the write: the workspace is a single connected component of 2,116 nodes with zero orphans, and every one of the 1,805 terminal items reaches the index root, against 820 before.\n\nWhat is not closed by that tranche and should keep this item open or become its successor: the ordering between epochs is still derived at query time from creation timestamps rather than declared, so an epoch is not yet a first-class object with a start, an end and a stated successor. The description's framing of 184 parentless terminal items is also now stale — the count was 66 Epics plus 118 other types, and all 184 have lineage, but 70 of the 118 have only the weak precedes-the-index-root edge because no evidence supported a specific epoch. Those 70 are the honest residue."
 body: ""

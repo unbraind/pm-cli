@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-28T11:30:12.179Z"
-updated_at: "2026-07-28T11:30:12.179Z"
+updated_at: "2026-07-28T15:01:31.702Z"
 author: "harness:codex"
+estimated_minutes: 120
 acceptance_criteria: Bare --all cannot silently mean only no-truncate; callers receive either a clear error suggesting --status all or an unambiguous replacement; completeness distinguishes full workspace scope from post-filter pagination; total semantics are documented and tested across JSON and TOON; aliases and runtime contracts remain aligned
 goal: project management = context management
 objective: Prevent agents from confidently treating a filtered list as the complete project timeline

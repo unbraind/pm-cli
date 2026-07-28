@@ -6,18 +6,20 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-25T20:40:06.211Z"
-updated_at: "2026-07-25T20:40:06.211Z"
+updated_at: "2026-07-28T14:59:26.329Z"
 author: "harness:claude-code"
 estimated_minutes: 210
 acceptance_criteria: "The declared dependency-kind domain names exactly one canonical spelling per relation, and every current spelling remains accepted as a hidden alias, proven by a test over the full pre-change spelling set; Write-time canonicalization is uniform: any accepted alias is stored as its canonical kind, extending the single depends_on to blocked_by case shipped under pm-fl0c to the whole domain, so no new alias row can be created; Item type words are no longer accepted as relationship kinds, or the decision to keep them is recorded with the relation each one denotes; pm graph audit and the deps surfaces disclose alias rows still present in stored data as a named legacy count rather than folding them silently into the canonical bucket; The declared canonical set and its alias map are readable from the contracts surface, so a grep or jq pipeline can be written against a documented vocabulary instead of an observed one; Existing alias rows on terminal items are left unmutated; their remediation stays with pm-hnc9w7"
 parent: pm-96h7
 risk: medium
 confidence: 85
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-4jqm,related,"2026-07-25T20:40:06.211Z",null,null
-  pm-fs8q9x,related,"2026-07-25T20:40:06.211Z",null,null
-  pm-hnc9w7,related,"2026-07-25T20:40:06.211Z",null,null
-  pm-m9xv,implements,"2026-07-25T20:40:06.211Z",null,null
-  pm-p9a4,related,"2026-07-25T20:40:06.211Z",null,null
-  pm-rggtvd,related,"2026-07-25T20:40:06.211Z",null,null
+dependencies[6]{id,kind,created_at}:
+  pm-4jqm,related,"2026-07-25T20:40:06.211Z"
+  pm-fs8q9x,related,"2026-07-25T20:40:06.211Z"
+  pm-hnc9w7,related,"2026-07-25T20:40:06.211Z"
+  pm-m9xv,implements,"2026-07-25T20:40:06.211Z"
+  pm-p9a4,related,"2026-07-25T20:40:06.211Z"
+  pm-rggtvd,related,"2026-07-25T20:40:06.211Z"
+comments[1]{created_at,author,text}:
+  "2026-07-28T14:58:18.971Z","harness:claude-code","Direction evidence for the lexicon decision, measured 2026-07-28.\n\nControl established in an isolated sandbox: an item X declaring a dependency row of kind blocks against Y makes X the predecessor of Y — pm graph predecessors Y returns X, pm graph successors X returns Y. The mirrored spelling, Y declaring blocked_by against X, produces the same ordering for the graph engine and additionally reaches the scheduler. Neither write stores a mirror row on the other endpoint, so the two spellings are stored asymmetrically and resolved asymmetrically.\n\nTwo consequences for this item's scope, both now filed or recorded rather than remembered.\n\nFirst, the read side is not merely alias-blind, it is consumer-inconsistent. The graph engine honours blocks; blocker resolution in src/core/item/actionability.ts matches the single literal blocked_by and cannot see it. 219 blocks rows against 127 declared blocked_by rows means the spelling the scheduler ignores is the more common of the two. Owner filed as pm-jkbqt8, blocked on this item because canonicalization is the upstream fix.\n\nSecond, the corpus already contains the same kind used in two opposite senses within one item. Every v1-era root declares blocks against pm-doxj, meaning the v1 milestone precedes the roadmap, which is correct. The same items also declare blocks against their own predecessor milestone, meaning Milestone 1 precedes Milestone 0, which is inverted. Twelve such rows across the delivery and PRD chains. This is the concrete instance the direction decision has to rule on, and it is checkable without interpreting prose because the two readings contradict each other inside the same item. Full evidence on pm-1w6scp.\n\nWhatever this item decides, the acceptance test is now available for free: a paired write of both spellings must produce identical predecessor, successor and readiness results, and the twelve inverted legacy rows must land on a stated disposition rather than being silently canonicalized on read while staying wrong on disk."
 body: ""

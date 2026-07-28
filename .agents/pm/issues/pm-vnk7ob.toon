@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: core,extensions,sdk
 created_at: "2026-07-28T02:54:12.099Z"
-updated_at: "2026-07-28T04:29:27.084Z"
+updated_at: "2026-07-28T15:03:27.529Z"
 closed_at: "2026-07-28T04:15:03.518Z"
 author: "harness:claude-code"
 estimated_minutes: 240
@@ -29,7 +29,7 @@ comments[4]{created_at,author,text}:
   "2026-07-28T04:29:27.084Z","harness:codex","Review-loop evidence for PR #788: exact-head GitHub checks found the new conformance doc pointed at pm-w7mqzt under tasks instead of its canonical features path. Corrected the link and reproduced the failed CI command locally; pnpm quality:docs-links now passes."
 learnings[1]{created_at,author,text}:
   "2026-07-28T04:14:08.093Z","harness:codex",Package typechecking cannot prevent a locally copied interface from drifting when both sides compile independently. Public-surface AST conformance makes the SDK the single contract source while typeof preserves complete module shapes without handwritten signatures.
-files[10]{path,scope,note}:
+files[11]{path,scope,note}:
   eslint-suppressions.json,project,prune obsolete package-mirror suppression
   package.json,project,run parity gate in mandatory static quality suite
   packages/pm-beads/extensions/beads/runtime.ts,project,derive package runtime from public SDK
@@ -40,6 +40,7 @@ files[10]{path,scope,note}:
   scripts/release/static-quality-gate.mts,project,lower strict suppression ratchet to 131
   sdk/public-surface.json,project,record LocatedItem public SDK surface
   src/sdk/index.ts,project,export authoritative LocatedItem contract
+  tests/unit/scripts/release/package-sdk-contract-parity.spec.ts,project,Covering spec for the package SDK contract mirror gate this item shipped; linked to clear a validate orphaned-path warning
 tests[3]{command,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,project,900,repo-wide 100 percent statements branches functions and lines
   node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300,release and installed-package contract wiring

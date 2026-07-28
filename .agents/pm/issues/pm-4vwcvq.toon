@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-27T14:04:33.678Z"
-updated_at: "2026-07-27T18:20:32.200Z"
+updated_at: "2026-07-28T15:03:26.789Z"
 closed_at: "2026-07-27T18:20:01.079Z"
 author: "harness:codex"
 acceptance_criteria: "Rejected command registration cannot leave an undisclosed partially active surface; manifest-declared unavailable commands return a stable nonzero diagnostic; extension manage and help expose exact runtime activation status; real packed-extension tests cover rejection before, within, and after sibling command registrations."
@@ -31,10 +31,11 @@ comments[4]{created_at,author,text}:
   "2026-07-27T18:19:10.846Z","harness:codex","Evidence: activation is transactional across every registry. Real packed @unbrained/pm-cli consumer with pm-csv@2026.7.23 proved install exit 1, dropped help exit 2, dropped run exit 2, and both command diagnostics include pm-csv's rejected --json activation cause. Default extension manage reports runtime_active=false and activation_status=failed. Unit rollback tests cover failures before/within/after sibling registrations; CLI integration passes."
 learnings[1]{created_at,author,text}:
   "2026-07-27T18:19:11.587Z","harness:codex","Rollback the complete registry set at the extension boundary, then reuse unknown-command recovery for stable nonzero diagnostics; default manage probing keeps lifecycle truth aligned with health and command recovery."
-files[3]{path,scope,note}:
+files[4]{path,scope,note}:
   src/core/extensions/activation-transaction.ts,project,atomic extension activation registry transaction
   src/core/extensions/loader.ts,project,atomic activation rollback for partial failures
   src/sdk/extension.ts,project,default manage runtime activation truth
+  tests/unit/extensions/extension-activation-atomicity.spec.ts,project,Covering spec for the activation rollback this item fixed; linked to clear a validate orphaned-path warning
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-activation-atomicity.spec.ts,project,240

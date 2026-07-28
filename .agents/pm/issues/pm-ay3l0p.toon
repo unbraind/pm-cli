@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[5]: "area:cli","area:testing",context-integrity,developer-experience,sandbox
 created_at: "2026-07-28T14:04:06.683Z"
-updated_at: "2026-07-28T14:04:06.683Z"
+updated_at: "2026-07-28T15:01:30.125Z"
 author: "harness:codex"
+estimated_minutes: 180
 acceptance_criteria: Direct and pm-linked executions of node scripts/run-tests.mjs coverage produce the same test and coverage result; No unit or integration test reads or writes the real repository .agents/pm tracker; Schema and tracker linked-test modes retain their documented semantics for genuine pm commands
 goal: project management = context management
 objective: Make package-owned test runners compositionally isolated when invoked through pm linked-test sandboxes
