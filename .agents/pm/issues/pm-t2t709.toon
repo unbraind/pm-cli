@@ -2,11 +2,12 @@ id: pm-t2t709
 title: "The dependency token budget is enforced against a different representation than the one emitted, so a command that reports staying inside 16k tokens delivers about 45k"
 description: "pm deps enforces a 16,000-token budget, reports that it stopped because it hit that budget, and then emits output that is roughly 2.8 times the budget it just enforced. Measured on three separate hub items on 2026-07-26: pm-96h7 emits 177,608 bytes against estimated_tokens 16,011; pm-doxj emits 181,745 against 16,015; pm-mpbb emits 179,441 against 15,991. Every one of them reports truncation with reasons max_depth and token_budget, so the ceiling is being applied — it is simply applied to something other than what is printed. Applying the estimator's own heuristic to the bytes it actually emitted gives 44,402, 45,436 and 44,860 tokens respectively, so the disagreement is internal and needs no external tokenizer to demonstrate. The ratio is stable at 11.1 to 11.4 emitted bytes per budgeted token where the estimator assumes 4, which points at a systematic accounting error rather than a per-item outlier. The mechanism is visible in the estimator itself: estimateTokens in src/sdk/relationship-context.ts:175 measures JSON.stringify of an individual node or edge object, while the rendered tree carries the full item payload for every retained node. The budget is therefore computed over a different representation than the one delivered to the caller. The consequence is that the entire budget contract is unfalsifiable as specified: a corpus gate that asserts commands against their declared budgets, which is the enforcement mechanism pm-5t33or plans, would pass on all three of these calls while the caller pays nearly three times the declared ceiling."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:graph","area:sdk",measurement,output,token-efficiency
 created_at: "2026-07-26T17:14:58.548Z"
-updated_at: "2026-07-26T17:14:58.548Z"
+updated_at: "2026-07-28T11:57:06.885Z"
+closed_at: "2026-07-28T11:53:44.414Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The enforced estimate is computed over the representation that is actually emitted, per output format, rather than over an intermediate node or edge object; A test asserts that emitted output size and the reported estimate agree within a declared tolerance for every budgeted command and every format; Where an exact tokenizer is impractical, the declared tolerance is stated in the contract so callers know the error bound instead of assuming none; Truncation disclosure reports the real retained cost, so a caller reading the envelope can size a follow-up request correctly; The fix covers tree, graph and context formats, since each renders a different amount per retained node; Existing default budgets are re-derived after the accounting is corrected, so correcting the measurement does not silently shrink every answer"
@@ -19,15 +20,33 @@ why_now: "The terminal graph backfill has substantially increased edge density, 
 parent: pm-96h7
 risk: medium
 confidence: high
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-1w6scp,related,"2026-07-26T17:14:58.548Z",null,null
-  pm-5t33or,blocks,"2026-07-26T17:14:58.548Z",null,null
-  pm-8kch,related,"2026-07-26T17:14:58.548Z",null,null
-  pm-96h7,implements,"2026-07-26T17:14:58.548Z",null,null
-  pm-cha95z,related,"2026-07-26T17:14:58.548Z",null,null
-  pm-g3n00m,related,"2026-07-26T17:14:58.548Z",null,null
-  pm-mfy1ux,related,"2026-07-26T17:14:58.548Z",null,null
-  pm-okgxwa,related,"2026-07-26T17:14:58.548Z",null,null
-  pm-t5dt4z,related,"2026-07-26T17:14:58.548Z",null,null
-  pm-z71aoy,related,"2026-07-26T17:14:58.548Z",null,null
+resolution: "Dependency tree, graph, and context budgets now measure and prune the exact emitted JSON or TOON representation and report exact retained cost."
+expected_result: The enforced and disclosed dependency cost must describe the representation callers actually receive for every supported transport.
+actual_result: "The old estimator counted intermediate node and edge objects while rendering fuller item payloads, underreporting observed output by roughly 2.8x."
+dependencies[10]{id,kind,created_at}:
+  pm-1w6scp,related,"2026-07-26T17:14:58.548Z"
+  pm-5t33or,blocks,"2026-07-26T17:14:58.548Z"
+  pm-8kch,related,"2026-07-26T17:14:58.548Z"
+  pm-96h7,implements,"2026-07-26T17:14:58.548Z"
+  pm-cha95z,related,"2026-07-26T17:14:58.548Z"
+  pm-g3n00m,related,"2026-07-26T17:14:58.548Z"
+  pm-mfy1ux,related,"2026-07-26T17:14:58.548Z"
+  pm-okgxwa,related,"2026-07-26T17:14:58.548Z"
+  pm-t5dt4z,related,"2026-07-26T17:14:58.548Z"
+  pm-z71aoy,related,"2026-07-26T17:14:58.548Z"
+comments[2]{created_at,author,text}:
+  "2026-07-28T11:53:12.029Z","harness:codex","Evidence: tree, graph, and context budgets now account for the exact rendered JSON or TOON transport using the shared formatter, prune deterministically to the ceiling, and report the retained emitted cost. Tests cover structural overhead, exact-prune branches, missing references, real-node degradation, and both formats. Full coverage is exactly 100% statements/branches/functions/lines and final static/contract/token gates pass."
+  "2026-07-28T11:57:06.884Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generated release narrative
+  src/core/output/output.ts,project,Exact emitted JSON and TOON dependency accounting
+  src/sdk/dependencies.ts,project,Exact emitted JSON and TOON dependency accounting
+  tests/unit/commands/deps-command.spec.ts,project,Exact emitted JSON and TOON dependency accounting
+  tests/unit/core/output/output.spec.ts,project,Exact emitted JSON and TOON dependency accounting
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts tests/unit/core/output/output.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,Exact dependency transport accounting
+  docs/SDK.md,project,Exact dependency transport accounting
+close_reason: "Implemented exact emitted JSON/TOON accounting and deterministic ceiling pruning for dependency tree, graph, and context with retained-cost disclosure and exhaustive coverage."
 body: ""

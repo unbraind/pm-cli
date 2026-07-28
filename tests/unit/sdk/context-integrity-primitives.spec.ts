@@ -295,22 +295,61 @@ describe("SDK and CLI context-integrity primitives", () => {
       await expect(access(cachePath)).resolves.toBeUndefined();
       expect(stderrWrite).toHaveBeenCalledWith(
         expect.stringContaining(
-          "history_drift_cache_invalidation_failed:ERR_FS_EISDIR",
+          "history_drift_cache_invalidation_failed:cache_path_is_directory",
+        ),
+      );
+      const rmSpy = vi.spyOn(fs, "rm");
+      rmSpy.mockRejectedValueOnce(
+        Object.assign(new Error("directory target"), {
+          code: "ERR_FS_EISDIR",
+        }),
+      );
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:cache_path_is_directory",
         ),
       );
 
       const invalidRoot = path.join(pmPath, "not-a-directory");
       await writeFile(invalidRoot, "file\n", "utf8");
       await expect(
+        invalidateHistoryDriftCache(invalidRoot),
+      ).resolves.toBeUndefined();
+      await expect(
         invalidateHistoryDriftCache(path.join(invalidRoot, "nested")),
       ).resolves.toBeUndefined();
       expect(stderrWrite).toHaveBeenCalledWith(
         expect.stringContaining(
-          "history_drift_cache_invalidation_failed:ENOTDIR",
+          "history_drift_cache_invalidation_failed:invalid_cache_path",
         ),
       );
 
-      const rmSpy = vi.spyOn(fs, "rm");
+      const realpathSpy = vi.spyOn(fs, "realpath");
+      realpathSpy.mockRejectedValueOnce(
+        Object.assign(new Error("permission denied"), { code: "EACCES" }),
+      );
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:filesystem_error",
+        ),
+      );
+
+      realpathSpy.mockRejectedValueOnce("non-error prevalidation failure");
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:unknown",
+        ),
+      );
+
       rmSpy.mockRejectedValueOnce(
         Object.assign(new Error("concurrent removal"), { code: "ENOENT" }),
       );
@@ -337,6 +376,18 @@ describe("SDK and CLI context-integrity primitives", () => {
       expect(stderrWrite).toHaveBeenLastCalledWith(
         expect.stringContaining(
           "history_drift_cache_invalidation_failed:unknown",
+        ),
+      );
+
+      rmSpy.mockRejectedValueOnce(
+        Object.assign(new Error("permission denied"), { code: "EACCES" }),
+      );
+      await expect(
+        invalidateHistoryDriftCache(pmPath),
+      ).resolves.toBeUndefined();
+      expect(stderrWrite).toHaveBeenLastCalledWith(
+        expect.stringContaining(
+          "history_drift_cache_invalidation_failed:filesystem_error",
         ),
       );
     });

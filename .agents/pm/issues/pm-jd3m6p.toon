@@ -1,0 +1,55 @@
+id: pm-jd3m6p
+title: "PR #795 exact-head review hardening: dependency budget progress, rendered fixed points, nightly credential isolation, and drift-cache diagnostics"
+description: "Exact-head bot review of PR #795 found that a context dependency request whose rendered envelope cannot fit even the minimum internal budget can repeat forever, rendered token metadata is settled with only two ad hoc passes, nightly checkout persists a credential it does not consume, and drift-cache root prevalidation maps permission or symlink failures to invalid_cache_path. The smoke gate also correctly caught the intentional activity help growth, so its versioned token-surface baseline must be remeasured rather than bypassed."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:ci","area:graph","area:sdk",review-finding,security,token-efficiency
+created_at: "2026-07-28T13:20:28.829Z"
+updated_at: "2026-07-28T14:05:31.154Z"
+closed_at: "2026-07-28T14:05:09.445Z"
+author: "harness:codex"
+acceptance_criteria: "A token budget smaller than the minimum context envelope terminates and returns the smallest disclosed result; Tree, graph, and context embedded rendered-token values reach a stable fixed point rather than relying on a fixed number of passes; Nightly checkout uses persist-credentials false and workflow contracts remain green; Drift-cache prevalidation distinguishes invalid paths from filesystem and unknown failures with tests; The activity token-surface baseline is intentionally regenerated and the smoke gate passes"
+goal: project management = context management
+objective: "Make the broad SDK/CLI delivery terminate deterministically, report exact rendered cost, and run scheduled verification with least privilege and stable diagnostics"
+value: "A declared budget remains safe even when no representation can fit, while CI and diagnostics preserve their security and machine-readable contracts"
+impact: Prevents an agent invocation from hanging indefinitely and closes exact-head review findings before merge
+outcome: Unsatisfiable dependency budgets return the smallest disclosed result; rendered estimates settle to a fixed point; nightly checkout does not persist credentials; prevalidation failures retain stable categories; the intentional activity surface baseline is ratcheted
+why_now: "These findings were produced by the required exact-head review round for PR #795 and block a green, trustworthy merge"
+parent: pm-5t33or
+severity: high
+resolution: "Exact-head review findings resolved: dependency budgets now make strictly decreasing progress and return the smallest exact rendered packet at the structural floor; rendered token fields settle to a fixed point; nightly checkout does not persist credentials; drift-cache prevalidation preserves stable failure categories; the activity discovery ratchet reflects the intentional contract."
+expected_result: "Every exact-head finding is fixed, regression-tested, linked to its source lineage, and verified by the full mandatory gate set"
+actual_result: "The first exact-head review found a non-progressing budget loop, two-pass self-referential estimates, overbroad cache-path classification, retained checkout credentials, and an outdated intentional surface baseline"
+component: SDK dependency rendering and CI hardening
+regression: true
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-003j,implements,"2026-07-28T13:20:28.829Z","harness:codex","cli:create:dep",detected
+  pm-1hbw4y,verifies,"2026-07-28T13:20:28.829Z","harness:codex","cli:create:dep",detected
+  pm-9k90,related,"2026-07-28T13:20:28.829Z","harness:codex","cli:create:dep",detected
+  pm-9sui7t,verifies,"2026-07-28T13:20:28.829Z","harness:codex","cli:create:dep",detected
+  pm-t2t709,discovered_from,"2026-07-28T13:20:28.829Z","harness:codex","cli:create:dep",detected
+  pm-z2j1qt,verifies,"2026-07-28T13:20:28.829Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-07-28T13:20:28.829Z","harness:codex","Duplicate check: searched all statuses for unsatisfiable dependency budget progress guards,rendered fixed points,nightly persisted checkout credentials,drift-cache prevalidation categories,and activity token-surface baselines. Existing items own the shipped primitives or broader programs; none owns this exact-head regression bundle,so this item links back to each canonical lineage."
+  "2026-07-28T13:57:19.002Z","harness:codex","Verification note: first linked replay run test-local-mmb37rte-vjhq8l correctly recorded two harness-definition failures. Full coverage was invoked under the outer empty-schema PM sandbox, so repository ownership fixtures saw no canonical links even though the same package-owned coverage command had just passed 100/100/100/100 directly; the token surface link also named a nonexistent script. These are linked-test metadata defects, not product failures. Correcting the links to repository-context package-owned runners before rerun."
+  "2026-07-28T14:02:27.581Z","harness:codex","Verification note: tracker-mode replay confirmed that a copied tracker also changes repository-root ownership expectations; the package-wide coverage command is therefore not a valid item-level linked test under the documented outer PM sandbox contract and has been removed from linked metadata. Direct package-owned execution remains authoritative and passed all 381 files / 6,451 tests at exact 100/100/100/100. The focused sandbox-safe linked suite passed. Searching all statuses for the broader nested-sandbox isolation gap before recording separate follow-up ownership."
+  "2026-07-28T14:05:01.490Z","harness:codex","Evidence: exact-head remediation now guarantees strictly decreasing internal context budgets, returns the last exact rendered packet when the structural packer reaches its floor, and settles self-referential tree/graph/context token metadata to a decimal-width fixed point. Nightly checkout no longer persists credentials. Drift-cache root prevalidation preserves invalid-path, filesystem, and unknown categories. Focused sandbox-safe linked tests passed; token-surface linked gate passed 90 measured surfaces. Direct full coverage passed 381 files / 6,451 tests at exactly 44,859 statements, 31,950 branches, 9,174 functions, and 43,571 lines (100/100/100/100). pnpm lint, typecheck, quality:static, token budget negative control, SDK/package parity, SDK surface, entrypoint and transport gates passed. Security secret scan and pnpm high-severity audit are clean. Package-first acceptance exercised 88 commands; packed npx passed; an unrelated temporary npm/Bun consumer imported runDeps and PmClient from the SDK and executed the packed CLI through npm exec and bunx at version 2026.7.28, then the temporary root was removed."
+learnings[1]{created_at,author,text}:
+  "2026-07-28T14:05:02.451Z","harness:codex","A rendered budget loop must make progress structurally, not depend on a defensive branch: cap the next internal budget below the current budget and treat the packer's controlled structural-floor error as the terminal smallest packet. Exact self-referential size metadata should converge by decimal digit width rather than assume two render passes. Broad package coverage is not currently composition-safe as a pm-linked test because outer PM_PATH substitution changes repository-root ownership fixtures; pm-ay3l0p owns that separate nested-sandbox defect."
+files[6]{path,scope,note}:
+  .github/workflows/nightly.yml,project,Least-privilege checkout credential isolation
+  scripts/agent-token-surface-baseline.json,project,Intentional activity help contract ratchet
+  src/core/history/drift-cache.ts,project,Stable root prevalidation failure classification
+  src/sdk/dependencies.ts,project,Deterministic minimum-envelope progress and fixed-point rendered token accounting
+  tests/unit/commands/deps-command.spec.ts,project,Unsatisfiable budget and exact rendered accounting regressions
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,Filesystem and unknown prevalidation classification regressions
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/deps-command.spec.ts tests/unit/sdk/context-integrity-primitives.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,240
+  "pnpm quality:token-surface",project,240
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms4pz9e3-atij8l,test,failed,"2026-07-28T13:52:25.427Z","2026-07-28T13:56:55.755Z","2026-07-28T13:56:55.755Z",1,2,0
+  test-local-ms4q53db-84nqgr,test,failed,"2026-07-28T13:57:37.973Z","2026-07-28T14:01:27.887Z","2026-07-28T14:01:27.887Z",0,1,0
+  test-local-ms4q7t5k-9mv6j9,test,passed,"2026-07-28T14:02:38.474Z","2026-07-28T14:03:34.616Z","2026-07-28T14:03:34.616Z",1,0,0
+close_reason: "Resolved all exact-head PR #795 findings with deterministic dependency-budget progress and fixed-point accounting, least-privilege nightly checkout, stable drift-cache diagnostics, intentional activity token ratchet, exhaustive regression tests, exact 100% coverage, strict quality/security gates, and isolated npm/Bun consumer proof."
+body: ""

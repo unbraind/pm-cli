@@ -536,7 +536,11 @@ typed missing edges, alongside structured dependencies. Tree and graph payloads
 apply shared depth/node/edge/token bounds and expose deterministic truncation
 reasons, effective limits, full totals, and omitted counts; summary mode obtains
 the same unique-node/edge census without materializing the tree. All formats
-therefore share the same relationship-integrity view.
+therefore share the same relationship-integrity view. Token accounting renders
+the selected transport first, so JSON, TOON, tree, graph, and context enforce
+their ceilings against emitted UTF-8 bytes rather than an internal-object
+approximation. Context packets report that exact transport cost in
+`context.meta.usedTokens`.
 
 `pm validate --check-lifecycle` uses the same classification. Its
 `dependency_references` check warns only when
@@ -584,6 +588,21 @@ const measured = estimatePmOutputTokens(
   new TextEncoder().encode(JSON.stringify(result)).byteLength,
 );
 ```
+
+`pm activity` applies a compact 20-row default bound; direct SDK calls default
+to five full rows. Results disclose `total_count`, `omitted_count`, `has_more`,
+and `applied_bound`. An explicit `limit` remains authoritative, while
+`unbounded: true` (CLI: `--unbounded`) is an intentional opt-out and cannot be
+combined with a limit. The activity flag and tool schemas publish the same
+option for extension and transport consumers.
+
+The required `quality:token-budget` gate keeps discovery and answer cost
+separate. Help and contract discovery surfaces use ratcheted baselines;
+representative medium-workspace answers use the live
+`default_max_estimated_tokens` returned by
+`pm contracts --command ... --summary`. A full, unbounded activity read is the
+negative control: the gate fails unless that deliberately unsafe request
+exceeds the default contract.
 
 Unfiltered `pm contracts` now selects the summary projection by default. It
 returns canonical commands, terse intents, the most useful flags for the core

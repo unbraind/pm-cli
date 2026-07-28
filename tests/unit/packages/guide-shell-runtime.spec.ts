@@ -1,3 +1,4 @@
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as sdk from "../../../src/sdk/index.js";
 import {
@@ -163,7 +164,7 @@ describe("guide-shell static SDK runtime", () => {
     });
     await runCompletionTagsPackage({ path: "/tmp/pm" });
     expect(sdk.listAllItemMetadata).toHaveBeenLastCalledWith(
-      "/tmp/pm",
+      path.resolve("/tmp/pm"),
       "json_markdown",
       { Issue: "issues" },
       undefined,

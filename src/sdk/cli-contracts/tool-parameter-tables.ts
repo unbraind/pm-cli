@@ -43,16 +43,16 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   filterDocsMissing: { type: "boolean" },
   matchMode: { type: "string", enum: ["all", "any", "phrase"] },
   minScore: {
-    anyOf: [{ type: "number" }, { type: "string", pattern: "^\\d+(\\.\\d+)?$" }],
+    anyOf: [
+      { type: "number" },
+      { type: "string", pattern: "^\\d+(\\.\\d+)?$" },
+    ],
   },
   rank: {
     anyOf: [{ type: "number" }, { type: "string", pattern: "^-?\\d+$" }],
   },
   exemptIsolateType: {
-    anyOf: [
-      { type: "string" },
-      { type: "array", items: { type: "string" } },
-    ],
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
   },
   saveBaseline: { type: "boolean" },
   rebuild: { type: "boolean" },
@@ -406,19 +406,13 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   cursor: { type: "string" },
   direction: { type: "string", enum: ["outgoing", "incoming", "both"] },
   kind: {
-    anyOf: [
-      { type: "string" },
-      { type: "array", items: { type: "string" } },
-    ],
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
   },
   after: { type: "string" },
   maxPaths: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
   sample: { anyOf: [{ type: "string" }, { type: "integer", minimum: 1 }] },
   exemptIsolate: {
-    anyOf: [
-      { type: "string" },
-      { type: "array", items: { type: "string" } },
-    ],
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
   },
   collapse: { type: "string", enum: ["none", "repeated"] },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
@@ -487,6 +481,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   groupBy: { type: "string" },
   completion: { type: "boolean" },
   format: { type: "string" },
+  unbounded: { type: "boolean" },
   depth: { type: "string", enum: ["brief", "standard", "deep", "full"] },
   section: {
     type: "array",
@@ -937,8 +932,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     examples: ["2026-01-01T00:00:00.000Z"],
   },
   threshold: {
-    description:
-      "Minimum duplicate similarity score from zero through one.",
+    description: "Minimum duplicate similarity score from zero through one.",
     examples: [0.85],
   },
   priority: {
@@ -1554,7 +1548,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     examples: [600, "1200"],
   },
   cursor: {
-    description: "Opaque continuation cursor returned by deps --format context.",
+    description:
+      "Opaque continuation cursor returned by deps --format context.",
   },
   direction: {
     description:
@@ -1576,8 +1571,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     examples: [5, "10"],
   },
   sample: {
-    description:
-      "Maximum evidence sample entries per graph audit finding.",
+    description: "Maximum evidence sample entries per graph audit finding.",
     examples: [10, "25"],
   },
   exemptIsolate: {

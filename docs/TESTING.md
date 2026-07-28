@@ -201,6 +201,35 @@ Do not update the baseline merely to make CI green. Change judgments and
 rationales in the corpus when product intent changes, and commit the corpus,
 baseline, scorer tests, and SDK documentation together.
 
+## Agent Output Token Budgets
+
+Run the required PR gate locally:
+
+```bash
+pnpm build
+pnpm quality:token-budget
+```
+
+The isolated fixture contains a medium-scale linked workspace. Discovery
+surfaces (`--help` and contract projections) use reviewable ratcheted byte
+baselines. Answer surfaces including activity, deps, graph, duplicates, events,
+health, list, get, context, next, search, and validate are measured against
+their live SDK command contracts. A deliberately full, unbounded activity query
+must exceed the default contract, proving the gate can fail when a default
+becomes accidentally unbounded.
+
+Refresh `scripts/release/token-budgets.json` only for an intentional discovery
+surface change:
+
+```bash
+node scripts/release/token-budget-gate.mjs --update
+pnpm quality:token-budget
+```
+
+The manifest records baseline bytes and estimated tokens for visible review
+deltas. Updating it cannot raise answer ceilings, which remain owned by
+`PM_COMMAND_OUTPUT_BUDGET_CONTRACTS`.
+
 ## Linked Tests
 
 Add tests to the item that owns the work:

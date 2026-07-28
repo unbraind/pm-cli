@@ -11,29 +11,59 @@ const DRIFT_CACHE_RELATIVE_PATH = path.join(
   "runtime",
   "history-drift-cache.json",
 );
+const DRIFT_CACHE_ERROR_CODES: Readonly<Record<string, string>> = {
+  EINVAL: "invalid_cache_path",
+  EISDIR: "cache_path_is_directory",
+  ENOENT: "invalid_cache_path",
+  ENOTDIR: "invalid_cache_path",
+  ERR_FS_EISDIR: "cache_path_is_directory",
+};
+
+/** Extract a stable Node.js filesystem error code without assuming an Error instance. */
+function getFilesystemErrorCode(error: unknown): string | undefined {
+  return typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+    ? error.code
+    : undefined;
+}
 
 /** Remove the derived drift cache after a history mutation; a missing or concurrently removed cache is already invalidated. */
 export async function invalidateHistoryDriftCache(
   pmRoot: string,
 ): Promise<void> {
+  const cachePath = path.join(pmRoot, DRIFT_CACHE_RELATIVE_PATH);
+  let pmRootIsDirectory = false;
+  let rootFailureCode = "invalid_cache_path";
   try {
-    await fs.rm(path.join(pmRoot, DRIFT_CACHE_RELATIVE_PATH), { force: true });
+    pmRootIsDirectory = (
+      await fs.stat(await fs.realpath(pmRoot))
+    ).isDirectory();
   } catch (error) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "ENOENT"
-    ) {
+    const errorCode = getFilesystemErrorCode(error);
+    rootFailureCode =
+      errorCode === undefined
+        ? "unknown"
+        : (DRIFT_CACHE_ERROR_CODES[errorCode] ?? "filesystem_error");
+  }
+  if (!pmRootIsDirectory) {
+    writeStderr(
+      `[pm] warning: history_drift_cache_invalidation_failed:${rootFailureCode}\n`,
+    );
+    return;
+  }
+  try {
+    await fs.rm(cachePath, { force: true });
+  } catch (error) {
+    const errorCode = getFilesystemErrorCode(error);
+    if (errorCode === "ENOENT") {
       return;
     }
     const code =
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      typeof error.code === "string"
-        ? error.code
-        : "unknown";
+      errorCode === undefined
+        ? "unknown"
+        : (DRIFT_CACHE_ERROR_CODES[errorCode] ?? "filesystem_error");
     writeStderr(
       `[pm] warning: history_drift_cache_invalidation_failed:${code}\n`,
     );

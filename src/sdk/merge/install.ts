@@ -101,8 +101,10 @@ export interface MergeInstallResult {
   ok: boolean;
   /** Whether this run was a preview only. */
   dry_run: boolean;
-  /** Repository root the merge configuration was installed into. */
+  /** Canonical filesystem identity of the repository root the merge configuration was installed into. */
   workspace_root: string;
+  /** Canonical filesystem identity of the tracker root covered by the merge configuration. */
+  pm_root?: string;
   /** `.gitattributes` reconciliation outcome. */
   gitattributes: {
     path: string;
@@ -628,7 +630,7 @@ export async function installMergeFence(options: {
     );
   }
 
-  const settings = await readSettings(pmRoot);
+  const settings = await readSettings(canonicalPmRoot);
   const typeFolders = resolveProjectMergeTypeFolders(settings);
   const patterns = buildMergeAttributePatterns(
     trackerRelativeRoot,
@@ -653,7 +655,7 @@ export async function installMergeFence(options: {
           "git",
           ["config", "--local", entry.key, entry.value],
           {
-            cwd: workspaceRoot,
+            cwd: canonicalWorkspaceRoot,
             encoding: "utf8",
             windowsHide: true,
             timeout: 10_000,
@@ -662,7 +664,7 @@ export async function installMergeFence(options: {
       }
     } catch {
       throw new PmCliError(
-        `Cannot install repository-local merge drivers in ${workspaceRoot}. Ensure the repository Git config is writable and no other Git process holds its lock, then retry.`,
+        `Cannot install repository-local merge drivers in ${canonicalWorkspaceRoot}. Ensure the repository Git config is writable and no other Git process holds its lock, then retry.`,
         EXIT_CODE.DEPENDENCY_FAILED,
         {
           code: "merge_git_config_unwritable",
@@ -680,7 +682,7 @@ export async function installMergeFence(options: {
   // usable. A read-only or locked Git config therefore cannot leave a newly
   // activated fence pointing at drivers that this clone has not installed.
   const gitattributes = await reconcileGitattributesBlock(
-    workspaceRoot,
+    canonicalWorkspaceRoot,
     patterns,
     dryRun,
   );
@@ -688,7 +690,8 @@ export async function installMergeFence(options: {
   return {
     ok: true,
     dry_run: dryRun,
-    workspace_root: workspaceRoot,
+    workspace_root: canonicalWorkspaceRoot,
+    pm_root: canonicalPmRoot,
     gitattributes: {
       path: gitattributes.path,
       changed: gitattributes.changed,

@@ -1049,6 +1049,7 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
   to?: string;
   limit?: string;
   compact?: boolean;
+  unbounded?: boolean;
 } {
   const readActivityString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
@@ -1067,6 +1068,7 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
     limit: readActivityString("limit"),
     compact:
       options.full === true ? false : options.compact === false ? false : true,
+    unbounded: optionTrue(options, "unbounded"),
   };
 }
 

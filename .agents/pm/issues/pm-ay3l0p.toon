@@ -1,0 +1,31 @@
+id: pm-ay3l0p
+title: Nested pm test coverage changes repository-root fixtures because outer PM_PATH sandboxing leaks into package-owned run-tests
+description: "Running node scripts/run-tests.mjs coverage directly from the checkout passes all 381 files and 6,451 tests at 100/100/100/100. Linking the identical command through pm test fails 11 validate ownership/path-classification cases under schema context and the same cases plus merge-receipt context under tracker context. The outer linked-test runner replaces PM_PATH with a temporary schema or tracker copy; repository-root validation fixtures then derive ownership and path candidates from the copied tracker rather than the checkout, despite run-tests.mjs providing its own inner test sandboxes. This makes the documented package-owned sandbox runner unsafe to compose as a broad linked test and produces false product failures."
+type: Issue
+status: open
+priority: 2
+tags[5]: "area:cli","area:testing",context-integrity,developer-experience,sandbox
+created_at: "2026-07-28T14:04:06.683Z"
+updated_at: "2026-07-28T14:04:06.683Z"
+author: "harness:codex"
+acceptance_criteria: Direct and pm-linked executions of node scripts/run-tests.mjs coverage produce the same test and coverage result; No unit or integration test reads or writes the real repository .agents/pm tracker; Schema and tracker linked-test modes retain their documented semantics for genuine pm commands
+goal: project management = context management
+objective: Make package-owned test runners compositionally isolated when invoked through pm linked-test sandboxes
+value: The same authoritative coverage command should have one result whether run directly or through PM evidence orchestration
+impact: Prevents false coverage failures and lets broad gates be recorded as executable PM evidence without exposing the real tracker
+outcome: "run-tests.mjs derives repository fixtures from the checkout while every test PM read/write remains sandboxed, and a nested pm test regression proves parity"
+why_now: PR #795 exact-head verification produced repeatable direct-green/linked-red evidence in both schema and tracker modes
+parent: pm-92if
+severity: medium
+expected_result: Package-owned coverage remains 100/100/100/100 under a linked PM run without repository-root fixture drift
+actual_result: Direct coverage is green; schema and tracker linked contexts alter PM_PATH-derived ownership and path scans and fail otherwise-green tests
+component: linked test sandbox composition
+regression: false
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7rlp,related,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
+  pm-jd3m6p,discovered_from,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
+  pm-w13j,verifies,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
+  pm-wo8,implements,"2026-07-28T14:04:06.683Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-28T14:04:06.683Z","harness:codex","Duplicate check: searched all statuses for linked-test coverage outer PM_PATH repository ownership fixtures and run-tests coverage tracker isolation. Results covered general coverage and CI lineage but no item owned this reproducible nested-sandbox parity gap."
+body: ""

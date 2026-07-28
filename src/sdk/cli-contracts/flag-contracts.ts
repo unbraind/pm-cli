@@ -1432,6 +1432,7 @@ export const ACTIVITY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--from" },
   { flag: "--to" },
   { flag: "--limit" },
+  { flag: "--unbounded" },
   { flag: "--compact" },
   { flag: "--full" },
   { flag: "--stream" },

@@ -296,6 +296,24 @@ function projectLeanJsonValue(value: unknown): unknown {
   return projected;
 }
 
+/**
+ * Render a result with pm's built-in JSON or TOON formatter without invoking
+ * extension overrides. SDK budget accounting uses this exact representation
+ * so reported token cost describes the bytes the host emits by default.
+ */
+export function formatBuiltInOutput(
+  result: unknown,
+  format: "json" | "toon",
+): string {
+  if (format === "json") {
+    return `${JSON.stringify(result, null, 2)}\n`;
+  }
+  const compactedToon = compactToonValue(result);
+  return compactedToon === undefined
+    ? "{}\n"
+    : `${renderToonValue(compactedToon, 0)}\n`;
+}
+
 /** Formats a command result after command-level output ownership is resolved. */
 function formatEffectiveOutput(
   effectiveResult: unknown,
@@ -348,13 +366,9 @@ function formatEffectiveOutput(
   if (format === "json") {
     const jsonResult =
       options.lean === true ? projectLeanJsonValue(outputResult) : outputResult;
-    return `${JSON.stringify(jsonResult, null, 2)}\n`;
+    return formatBuiltInOutput(jsonResult, "json");
   }
-  const compactedToon = compactToonValue(outputResult);
-  if (compactedToon === undefined) {
-    return "{}\n";
-  }
-  return `${renderToonValue(compactedToon, 0)}\n`;
+  return formatBuiltInOutput(outputResult, "toon");
 }
 
 /** Implements format output for the public runtime surface of this module. */

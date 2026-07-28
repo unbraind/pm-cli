@@ -191,6 +191,10 @@ jobs:
           pnpm lint
           npm pack --dry-run
 
+      - name: Enforce discovery and answer token budgets
+        if: matrix.gate == 'static'
+        run: pnpm quality:token-budget
+
       # Merge-safety gates for the tracked .agents/pm workspace
       # (pm-iwsj/pm-pdr8t1): validation walks every history stream for drift;
       # the per-item command remains an explicitly named command smoke.
