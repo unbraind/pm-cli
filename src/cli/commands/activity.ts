@@ -26,6 +26,9 @@ import { readHistoryEntries } from "./history.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { HistoryEntry } from "../../types/index.js";
 
+const DEFAULT_COMPACT_ACTIVITY_LIMIT = 20;
+const DEFAULT_FULL_ACTIVITY_LIMIT = 5;
+
 /** Documents the activity command options payload exchanged by command, SDK, and package integrations. */
 export interface ActivityCommandOptions {
   /** Stable identifier used to reference this record across commands and storage. */
@@ -42,6 +45,8 @@ export interface ActivityCommandOptions {
   limit?: string;
   /** Value that configures or reports compact for this contract. */
   compact?: boolean;
+  /** Explicitly disables the default activity bound. */
+  unbounded?: boolean;
 }
 
 /** Documents the activity entry payload exchanged by command, SDK, and package integrations. */
@@ -74,8 +79,20 @@ export interface ActivityResult {
   compact: boolean;
   /** Value that configures or reports count for this contract. */
   count: number;
+  /** Total matching rows before the applied bound. */
+  total_count: number;
   /** Value that configures or reports limit for this contract. */
   limit: number | null;
+  /** Number of matching rows withheld by the applied bound. */
+  omitted_count: number;
+  /** Whether matching rows remain available through a larger or unbounded request. */
+  has_more: boolean;
+  /** Describes whether the effective bound came from a default, caller input, or an explicit opt-out. */
+  applied_bound: {
+    kind: "limit" | "unbounded";
+    source: "default" | "explicit";
+    value: number | null;
+  };
 }
 
 interface ActivityFilters {
@@ -85,6 +102,7 @@ interface ActivityFilters {
   from: string | undefined;
   to: string | undefined;
   limit: number | undefined;
+  limitSource: "default" | "explicit";
 }
 
 interface ActivityRuntimeContext {
@@ -198,13 +216,30 @@ function resolveActivityFilters(
       EXIT_CODE.USAGE,
     );
   }
+  const explicitLimit = parseLimit(options.limit);
+  if (options.unbounded === true && explicitLimit !== undefined) {
+    throw new PmCliError(
+      "Activity --unbounded cannot be combined with --limit",
+      EXIT_CODE.USAGE,
+    );
+  }
   return {
     id: parseNonEmptyFilter(options.id, "Activity --id"),
     op: parseNonEmptyFilter(options.op, "Activity --op"),
     author: parseNonEmptyFilter(options.author, "Activity --author"),
     from,
     to,
-    limit: parseLimit(options.limit),
+    limit:
+      options.unbounded === true
+        ? undefined
+        : (explicitLimit ??
+          (options.compact === true
+            ? DEFAULT_COMPACT_ACTIVITY_LIMIT
+            : DEFAULT_FULL_ACTIVITY_LIMIT)),
+    limitSource:
+      options.unbounded === true || explicitLimit !== undefined
+        ? "explicit"
+        : "default",
   };
 }
 
@@ -323,17 +358,26 @@ export async function runActivity(
   const context = await resolveActivityRuntimeContext(global);
   const filters = resolveActivityFilters(options);
   const historyDir = await prepareActivityHistoryRead(context);
-  const activity = limitEntries(
-    sortActivity(await collectActivityEntries(historyDir, filters)),
-    filters.limit,
+  const matchingActivity = sortActivity(
+    await collectActivityEntries(historyDir, filters),
   );
+  const activity = limitEntries(matchingActivity, filters.limit);
   const compact = options.compact === true;
   const compactActivity = compact ? formatCompactActivity(activity) : undefined;
+  const omittedCount = matchingActivity.length - activity.length;
   return {
     activity: compact ? [] : activity,
     compact_activity: compactActivity,
     compact,
     count: activity.length,
+    total_count: matchingActivity.length,
     limit: filters.limit ?? null,
+    omitted_count: omittedCount,
+    has_more: omittedCount > 0,
+    applied_bound: {
+      kind: filters.limit === undefined ? "unbounded" : "limit",
+      source: filters.limitSource,
+      value: filters.limit ?? null,
+    },
   };
 }

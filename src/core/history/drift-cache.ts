@@ -27,13 +27,23 @@ export async function invalidateHistoryDriftCache(
     ) {
       return;
     }
-    const code =
+    const errorCode =
       typeof error === "object" &&
       error !== null &&
       "code" in error &&
       typeof error.code === "string"
         ? error.code
-        : "unknown";
+        : undefined;
+    const code =
+      errorCode === undefined
+        ? "unknown"
+        : errorCode === "ENOTDIR" ||
+            errorCode === "ENOENT" ||
+            errorCode === "EINVAL"
+          ? "invalid_cache_path"
+          : errorCode === "EISDIR" || errorCode === "ERR_FS_EISDIR"
+            ? "cache_path_is_directory"
+            : "filesystem_error";
     writeStderr(
       `[pm] warning: history_drift_cache_invalidation_failed:${code}\n`,
     );

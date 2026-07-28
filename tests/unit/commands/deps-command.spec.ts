@@ -9,10 +9,22 @@ import type { GraphAuditResult } from "../../../src/sdk/graph/run.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { locateItem, readLocatedItem } from "../../../src/core/store/item-store.js";
-import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
+import { formatBuiltInOutput } from "../../../src/core/output/output.js";
+import { estimatePmOutputTokens } from "../../../src/sdk/cli-contracts/agent-output-contracts.js";
+import {
+  locateItem,
+  readLocatedItem,
+} from "../../../src/core/store/item-store.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../helpers/withTempPmPath.js";
 
-function createTask(context: TempPmContext, title: string, deps: string[] = ["none"]): string {
+function createTask(
+  context: TempPmContext,
+  title: string,
+  deps: string[] = ["none"],
+): string {
   const args = [
     "create",
     "--json",
@@ -81,7 +93,12 @@ describe("runDeps", () => {
           ],
         },
         { id: "pm-parent", title: "Parent", status: "open" },
-        { id: "pm-orphan", title: "Orphan", status: "open", parent: "pm-missing-parent" },
+        {
+          id: "pm-orphan",
+          title: "Orphan",
+          status: "open",
+          parent: "pm-missing-parent",
+        },
       ] as unknown as ItemMetadata[],
       {},
     );
@@ -91,21 +108,24 @@ describe("runDeps", () => {
       "pm-missing-related",
       "pm-parent",
     ]);
-    expect(context.nodes.filter(({ status }) => status === "missing").map(({ id }) => id)).toEqual([
-      "pm-missing-blocker",
-      "pm-missing-related",
-    ]);
+    expect(
+      context.nodes
+        .filter(({ status }) => status === "missing")
+        .map(({ id }) => id),
+    ).toEqual(["pm-missing-blocker", "pm-missing-related"]);
 
     const sentinel = buildDepsRelationshipContext(
       "pm-sentinel",
-      [{
-        id: "pm-sentinel",
-        title: "Sentinel",
-        status: "open",
-        parent: "no-active-blocker",
-        blocked_by: "no-active-blocker",
-        dependencies: [{ id: "no-active-blocker", kind: "related" }],
-      }] as ItemMetadata[],
+      [
+        {
+          id: "pm-sentinel",
+          title: "Sentinel",
+          status: "open",
+          parent: "no-active-blocker",
+          blocked_by: "no-active-blocker",
+          dependencies: [{ id: "no-active-blocker", kind: "related" }],
+        },
+      ] as ItemMetadata[],
       {},
     );
     expect(sentinel.nodes).toEqual([]);
@@ -113,14 +133,22 @@ describe("runDeps", () => {
 
     const malformed = buildDepsRelationshipContext(
       "pm-malformed",
-      [{
-        id: "pm-malformed",
-        title: "Malformed",
-        status: "open",
-        parent: 42,
-        blocked_by: false,
-        dependencies: [null, true, { id: true }, { id: "none" }, { id: "pm-missing-default" }],
-      }] as unknown as ItemMetadata[],
+      [
+        {
+          id: "pm-malformed",
+          title: "Malformed",
+          status: "open",
+          parent: 42,
+          blocked_by: false,
+          dependencies: [
+            null,
+            true,
+            { id: true },
+            { id: "none" },
+            { id: "pm-missing-default" },
+          ],
+        },
+      ] as unknown as ItemMetadata[],
       {},
     );
     expect(malformed.nodes).toEqual([
@@ -214,7 +242,9 @@ describe("runDeps", () => {
           { id: true, kind: "related" },
           { id: "pm-missing-default-kind" },
         ],
-      } as unknown as Parameters<typeof collectDanglingDependencyReferences>[0][number],
+      } as unknown as Parameters<
+        typeof collectDanglingDependencyReferences
+      >[0][number],
     ]);
     expect(malformedRuntimeTargets.active).toEqual([
       expect.objectContaining({
@@ -226,25 +256,35 @@ describe("runDeps", () => {
   });
 
   it("fails when tracker is not initialized", async () => {
-    await expect(runDeps("pm-missing", {}, { path: "/tmp/pm-deps-missing-root" })).rejects.toMatchObject<PmCliError>({
+    await expect(
+      runDeps("pm-missing", {}, { path: "/tmp/pm-deps-missing-root" }),
+    ).rejects.toMatchObject<PmCliError>({
       exitCode: EXIT_CODE.NOT_FOUND,
     });
   });
 
   it("validates format and item existence", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runDeps("pm-does-not-exist", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runDeps("pm-does-not-exist", {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
 
       const id = createTask(context, "deps-invalid-format");
-      await expect(runDeps(id, { format: "diagram" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runDeps(id, { format: "diagram" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runDeps(id, { maxDepth: "-1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runDeps(id, { maxDepth: "-1" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
-      await expect(runDeps(id, { collapse: "all" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      await expect(
+        runDeps(id, { collapse: "all" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -266,27 +306,39 @@ describe("runDeps", () => {
       const { raw } = await readLocatedItem(located);
       await writeFile(
         located.itemPath,
-        raw.replace("pm-missing-dependency,related", "pm-missing-dependency,RELATED"),
+        raw.replace(
+          "pm-missing-dependency,related",
+          "pm-missing-dependency,RELATED",
+        ),
         "utf8",
       );
 
-      const result = await runDeps(rootId, { format: "tree" }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        { format: "tree" },
+        { path: context.pmPath },
+      );
       expect(result.format).toBe("tree");
       expect(result.node_count).toBe(4);
       expect(result.edge_count).toBe(3);
       expect(result.missing_count).toBe(1);
       expect(result.tree?.id).toBe(rootId);
       expect(result.tree?.missing).toBe(false);
-      expect(result.tree?.dependencies.map((entry) => `${entry.via}:${entry.id}`)).toEqual([
-        `blocks:${middleId}`,
-        "related:pm-missing-dependency",
-      ]);
+      expect(
+        result.tree?.dependencies.map((entry) => `${entry.via}:${entry.id}`),
+      ).toEqual([`blocks:${middleId}`, "related:pm-missing-dependency"]);
       const middleNode = result.tree?.dependencies[0];
-      expect(middleNode?.dependencies.map((entry) => `${entry.via}:${entry.id}`)).toEqual([`blocks:${leafId}`]);
+      expect(
+        middleNode?.dependencies.map((entry) => `${entry.via}:${entry.id}`),
+      ).toEqual([`blocks:${leafId}`]);
       const missingNode = result.tree?.dependencies[1];
       expect(missingNode?.missing).toBe(true);
 
-      const caseInsensitiveResult = await runDeps(rootId.toUpperCase(), { format: "tree" }, { path: context.pmPath });
+      const caseInsensitiveResult = await runDeps(
+        rootId.toUpperCase(),
+        { format: "tree" },
+        { path: context.pmPath },
+      );
       expect(caseInsensitiveResult.tree?.id).toBe(rootId);
       expect(caseInsensitiveResult.node_count).toBe(4);
     });
@@ -296,7 +348,15 @@ describe("runDeps", () => {
     await withTempPmPath(async (context) => {
       const parentId = createTask(context, "deps-parent-to-delete");
       const child = context.runCli(
-        ["create", "deps-child", "--type", "Task", "--parent", parentId, "--json"],
+        [
+          "create",
+          "deps-child",
+          "--type",
+          "Task",
+          "--parent",
+          parentId,
+          "--json",
+        ],
         { expectJson: true },
       );
       const childId = (child.json as { item: { id: string } }).item.id;
@@ -306,7 +366,11 @@ describe("runDeps", () => {
         }).code,
       ).toBe(0);
 
-      const result = await runDeps(childId, { format: "tree" }, { path: context.pmPath });
+      const result = await runDeps(
+        childId,
+        { format: "tree" },
+        { path: context.pmPath },
+      );
       expect(result).toMatchObject({ missing_count: 1 });
       expect(result.tree?.dependencies).toEqual([
         expect.objectContaining({ id: parentId, via: "parent", missing: true }),
@@ -324,7 +388,11 @@ describe("runDeps", () => {
         `id=${middleId},kind=blocks,author=test-author,created_at=now`,
       ]);
 
-      const result = await runDeps(rootId, { format: "tree", maxDepth: "1" }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        { format: "tree", maxDepth: "1" },
+        { path: context.pmPath },
+      );
       expect(result.format).toBe("tree");
       expect(result.tree?.id).toBe(rootId);
       expect(result.tree?.dependencies).toHaveLength(1);
@@ -339,16 +407,28 @@ describe("runDeps", () => {
   it("collapses repeated subtrees when collapse mode is enabled", async () => {
     await withTempPmPath(async (context) => {
       const sharedLeafId = createTask(context, "deps-shared-leaf");
-      const leftId = createTask(context, "deps-left", [`id=${sharedLeafId},kind=related,author=test-author,created_at=now`]);
-      const rightId = createTask(context, "deps-right", [`id=${sharedLeafId},kind=related,author=test-author,created_at=now`]);
+      const leftId = createTask(context, "deps-left", [
+        `id=${sharedLeafId},kind=related,author=test-author,created_at=now`,
+      ]);
+      const rightId = createTask(context, "deps-right", [
+        `id=${sharedLeafId},kind=related,author=test-author,created_at=now`,
+      ]);
       const rootId = createTask(context, "deps-repeat-root", [
         `id=${leftId},kind=blocks,author=test-author,created_at=now`,
         `id=${rightId},kind=blocks,author=test-author,created_at=now`,
       ]);
 
-      const result = await runDeps(rootId, { format: "tree", collapse: "repeated" }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        { format: "tree", collapse: "repeated" },
+        { path: context.pmPath },
+      );
       const seenSharedLeafNodes: Array<{ collapsed?: boolean }> = [];
-      type VisitNode = { id: string; collapsed?: boolean; dependencies: VisitNode[] };
+      type VisitNode = {
+        id: string;
+        collapsed?: boolean;
+        dependencies: VisitNode[];
+      };
       const visit = (node: VisitNode): void => {
         if (node.id === sharedLeafId) {
           seenSharedLeafNodes.push({ collapsed: node.collapsed });
@@ -361,14 +441,20 @@ describe("runDeps", () => {
         visit(result.tree as VisitNode);
       }
       expect(seenSharedLeafNodes).toHaveLength(2);
-      expect(seenSharedLeafNodes.filter((entry) => entry.collapsed === true)).toHaveLength(1);
+      expect(
+        seenSharedLeafNodes.filter((entry) => entry.collapsed === true),
+      ).toHaveLength(1);
     });
   });
 
   it("supports summary mode without full tree/graph payloads", async () => {
     await withTempPmPath(async (context) => {
       const rootId = createTask(context, "deps-summary-root");
-      const result = await runDeps(rootId, { format: "tree", summary: true }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        { format: "tree", summary: true },
+        { path: context.pmPath },
+      );
       expect(result.node_count).toBe(1);
       expect(result.edge_count).toBe(0);
       expect(result.missing_count).toBe(0);
@@ -393,13 +479,29 @@ describe("runDeps", () => {
         `id=${rightId},kind=blocks,author=test-author,created_at=now`,
       ]);
 
-      const full = await runDeps(rootId, { format: "graph", summary: true }, { path: context.pmPath });
-      expect(full).toMatchObject({ node_count: 5, edge_count: 5, missing_count: 1 });
+      const full = await runDeps(
+        rootId,
+        { format: "graph", summary: true },
+        { path: context.pmPath },
+      );
+      expect(full).toMatchObject({
+        node_count: 5,
+        edge_count: 5,
+        missing_count: 1,
+      });
       expect(full.tree).toBeUndefined();
       expect(full.graph).toBeUndefined();
 
-      const bounded = await runDeps(rootId, { summary: true, maxDepth: 1 }, { path: context.pmPath });
-      expect(bounded).toMatchObject({ node_count: 3, edge_count: 2, missing_count: 0 });
+      const bounded = await runDeps(
+        rootId,
+        { summary: true, maxDepth: 1 },
+        { path: context.pmPath },
+      );
+      expect(bounded).toMatchObject({
+        node_count: 3,
+        edge_count: 2,
+        missing_count: 0,
+      });
     });
   });
 
@@ -425,12 +527,18 @@ describe("runDeps", () => {
       );
       expect(update.code).toBe(0);
 
-      const result = await runDeps(rootId, { format: "graph" }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        { format: "graph" },
+        { path: context.pmPath },
+      );
       expect(result.format).toBe("graph");
       expect(result.node_count).toBe(2);
       expect(result.edge_count).toBe(2);
       expect(result.missing_count).toBe(0);
-      expect(result.graph?.nodes.map((node) => node.id)).toEqual([rootId, upstreamId].sort((left, right) => left.localeCompare(right)));
+      expect(result.graph?.nodes.map((node) => node.id)).toEqual(
+        [rootId, upstreamId].sort((left, right) => left.localeCompare(right)),
+      );
       const expectedEdges = [
         { from: rootId, to: upstreamId, kind: "blocks" },
         { from: upstreamId, to: rootId, kind: "related" },
@@ -484,6 +592,26 @@ describe("runDeps", () => {
           omitted_edge_count: 3,
         },
       });
+      expect(result.truncation?.estimated_tokens).toBe(
+        Math.ceil(Buffer.byteLength(formatBuiltInOutput(result, "toon")) / 4),
+      );
+
+      const contextResult = await runDeps(
+        rootId,
+        {
+          format: "context",
+          nodeLimit: 10,
+          edgeLimit: 10,
+          tokenBudget: 1_200,
+        },
+        { path: context.pmPath, json: true },
+      );
+      expect(contextResult.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
+      expect(contextResult.context?.meta.usedTokens).toBe(
+        Math.ceil(
+          Buffer.byteLength(formatBuiltInOutput(contextResult, "json")) / 4,
+        ),
+      );
     });
   });
 
@@ -514,17 +642,54 @@ describe("runDeps", () => {
 
       const rootTokens = tokenBounded.truncation?.estimated_tokens;
       expect(rootTokens).toBeTypeOf("number");
+      const internalEdgeBudget =
+        estimatePmOutputTokens(
+          Buffer.byteLength(
+            JSON.stringify({
+              id: rootId,
+              title: "deps-edge-root",
+              type: "Task",
+              status: "open",
+              missing: false,
+              cycle: false,
+            }),
+          ),
+        ) +
+        Math.max(
+          1,
+          Math.ceil(
+            JSON.stringify({
+              from: rootId,
+              to: leftId,
+              kind: "related",
+            }).length / 3,
+          ),
+        );
       const edgeTokenBounded = await runDeps(
         rootId,
         {
           edgeLimit: 10,
           nodeLimit: 10,
-          tokenBudget: (rootTokens ?? 0) + 1,
+          tokenBudget: internalEdgeBudget,
         },
         { path: context.pmPath },
       );
       expect(edgeTokenBounded.truncation?.reasons).toEqual(["token_budget"]);
       expect(edgeTokenBounded.tree?.dependencies).toEqual([]);
+
+      const exactRenderedBounded = await runDeps(
+        rootId,
+        {
+          edgeLimit: 10,
+          nodeLimit: 10,
+          tokenBudget: internalEdgeBudget + 1,
+        },
+        { path: context.pmPath },
+      );
+      expect(exactRenderedBounded.truncation?.reasons).toEqual([
+        "token_budget",
+      ]);
+      expect(exactRenderedBounded.tree?.dependencies).toEqual([]);
     });
   });
 
@@ -534,40 +699,172 @@ describe("runDeps", () => {
       const rootId = createTask(context, "context-root", [
         `id=${prerequisiteId},kind=blocked_by,author=test-author,created_at=now`,
       ]);
-      const result = await runDeps(rootId, {
-        format: "context",
-        maxDepth: 2,
-        nodeLimit: "5",
-        edgeLimit: "5",
-        tokenBudget: "500",
-      }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        {
+          format: "context",
+          maxDepth: 2,
+          nodeLimit: "5",
+          edgeLimit: "5",
+          tokenBudget: "500",
+        },
+        { path: context.pmPath },
+      );
 
-      expect(result).toMatchObject({ id: rootId, format: "context", node_count: 2, edge_count: 1, missing_count: 0 });
+      expect(result).toMatchObject({
+        id: rootId,
+        format: "context",
+        node_count: 2,
+        edge_count: 1,
+        missing_count: 0,
+      });
       expect(result.context).toMatchObject({
         root: { id: rootId, title: "context-root", status: "open" },
         nodes: [{ id: prerequisiteId, reasons: ["prerequisite"] }],
-        meta: { exact: true, truncated: false, nodeLimit: 5, edgeLimit: 5, tokenBudget: 500 },
+        meta: {
+          exact: true,
+          truncated: false,
+          nodeLimit: 5,
+          edgeLimit: 5,
+          tokenBudget: 500,
+        },
       });
 
-      const defaults = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
-      expect(defaults.context?.meta).toMatchObject({ nodeLimit: 20, edgeLimit: 40, tokenBudget: 1200 });
+      const defaults = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
+      expect(defaults.context?.meta).toMatchObject({
+        nodeLimit: 20,
+        edgeLimit: 40,
+        tokenBudget: 1200,
+      });
+      expect(defaults.context?.meta.usedTokens).toBe(
+        Math.ceil(Buffer.byteLength(formatBuiltInOutput(defaults, "toon")) / 4),
+      );
+      const defaultsJson = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath, json: true },
+      );
+      expect(defaultsJson.context?.meta.usedTokens).toBe(
+        Math.ceil(
+          Buffer.byteLength(formatBuiltInOutput(defaultsJson, "json")) / 4,
+        ),
+      );
       createTask(context, "context-dependent", [
         `id=${rootId},kind=blocked_by,author=test-author,created_at=now`,
       ]);
-      const oneNode = await runDeps(rootId, { format: "context", nodeLimit: 1, maxDepth: 2 }, { path: context.pmPath });
+      const oneNode = await runDeps(
+        rootId,
+        { format: "context", nodeLimit: 1, maxDepth: 2 },
+        { path: context.pmPath },
+      );
       expect(oneNode.context?.meta.nextCursor).toEqual(expect.any(String));
-      const continued = await runDeps(rootId, { format: "context", nodeLimit: 1, maxDepth: 2, cursor: oneNode.context!.meta.nextCursor, summary: true }, { path: context.pmPath });
+      const continued = await runDeps(
+        rootId,
+        {
+          format: "context",
+          nodeLimit: 1,
+          maxDepth: 2,
+          cursor: oneNode.context!.meta.nextCursor,
+          summary: true,
+        },
+        { path: context.pmPath },
+      );
       expect(continued.context).toBeUndefined();
-      await expect(runDeps(rootId, { format: "context", nodeLimit: 0 }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runDeps(
+          rootId,
+          { format: "context", nodeLimit: 0 },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
 
       const danglingId = createTask(context, "context-dangling", [
         "id=pm-missing-prerequisite,kind=blocked_by,author=test-author,created_at=now",
       ]);
-      const dangling = await runDeps(danglingId, { format: "context" }, { path: context.pmPath });
-      expect(dangling).toMatchObject({ missing_count: 1, node_count: 2, edge_count: 1 });
+      const dangling = await runDeps(
+        danglingId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
+      expect(dangling).toMatchObject({
+        missing_count: 1,
+        node_count: 2,
+        edge_count: 1,
+      });
       expect(dangling.context?.nodes).toEqual([
-        expect.objectContaining({ id: "pm-missing-prerequisite", status: "missing", reasons: ["prerequisite"] }),
+        expect.objectContaining({
+          id: "pm-missing-prerequisite",
+          status: "missing",
+          reasons: ["prerequisite"],
+        }),
       ]);
+    });
+  });
+
+  it("degrades context rows and missing-reference evidence to the exact rendered budget", async () => {
+    await withTempPmPath(async (context) => {
+      const rootId = createTask(
+        context,
+        "context-rendered-budget-root",
+        Array.from(
+          { length: 25 },
+          (_, index) =>
+            `id=pm-context-rendered-missing-${index},kind=related,author=test-author,created_at=now`,
+        ),
+      );
+
+      const result = await runDeps(
+        rootId,
+        {
+          format: "context",
+          nodeLimit: 30,
+          edgeLimit: 30,
+          tokenBudget: 1_200,
+        },
+        { path: context.pmPath, json: true },
+      );
+
+      expect(result.missing_reference_count).toBe(25);
+      expect(result.missing_references?.length).toBeLessThan(25);
+      expect(result.context?.meta.usedTokens).toBe(
+        Math.ceil(Buffer.byteLength(formatBuiltInOutput(result, "json")) / 4),
+      );
+      expect(result.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
+
+      const leaves = Array.from({ length: 16 }, (_, index) =>
+        createTask(
+          context,
+          `context-rendered-budget-leaf-${index}-${"detail-".repeat(8)}`,
+        ),
+      );
+      const linkedRootId = createTask(
+        context,
+        "context-rendered-budget-linked-root",
+        leaves.map(
+          (id) => `id=${id},kind=related,author=test-author,created_at=now`,
+        ),
+      );
+      const linkedResult = await runDeps(
+        linkedRootId,
+        {
+          format: "context",
+          nodeLimit: 20,
+          edgeLimit: 20,
+          tokenBudget: 1_200,
+        },
+        { path: context.pmPath, json: true },
+      );
+      expect(linkedResult.context?.nodes.length).toBeLessThan(leaves.length);
+      expect(linkedResult.context?.meta.usedTokens).toBe(
+        Math.ceil(
+          Buffer.byteLength(formatBuiltInOutput(linkedResult, "json")) / 4,
+        ),
+      );
+      expect(linkedResult.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
     });
   });
 
@@ -604,12 +901,24 @@ describe("runDeps", () => {
         `id=${rootId},kind=blocked_by,author=test-author,created_at=now`,
       ]);
       const child = context.runCli(
-        ["create", "ctxdir-child", "--type", "Task", "--parent", rootId, "--json"],
+        [
+          "create",
+          "ctxdir-child",
+          "--type",
+          "Task",
+          "--parent",
+          rootId,
+          "--json",
+        ],
         { expectJson: true },
       );
       const childId = (child.json as { item: { id: string } }).item.id;
 
-      const both = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      const both = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
       expect(both.context?.summary).toMatchObject({
         rootId,
         rootStatus: "open",
@@ -624,7 +933,9 @@ describe("runDeps", () => {
         directTotal: 3,
         hasMore: false,
       });
-      expect(both.context?.nodes.map(({ id, role }) => `${id}:${role}`).sort()).toEqual(
+      expect(
+        both.context?.nodes.map(({ id, role }) => `${id}:${role}`).sort(),
+      ).toEqual(
         [
           `${prerequisiteId}:prerequisite`,
           `${dependentId}:dependent`,
@@ -637,7 +948,9 @@ describe("runDeps", () => {
         { format: "context", direction: "outgoing" },
         { path: context.pmPath },
       );
-      expect(outgoing.context?.nodes.map(({ id }) => id)).toEqual([prerequisiteId]);
+      expect(outgoing.context?.nodes.map(({ id }) => id)).toEqual([
+        prerequisiteId,
+      ]);
 
       const incoming = await runDeps(
         rootId,
@@ -672,10 +985,18 @@ describe("runDeps", () => {
       expect(blankKinds.context?.nodes).toHaveLength(3);
 
       await expect(
-        runDeps(rootId, { format: "context", direction: "sideways" }, { path: context.pmPath }),
+        runDeps(
+          rootId,
+          { format: "context", direction: "sideways" },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
-        runDeps(rootId, { format: "context", kind: "ownz" }, { path: context.pmPath }),
+        runDeps(
+          rootId,
+          { format: "context", kind: "ownz" },
+          { path: context.pmPath },
+        ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
     });
   });
@@ -699,12 +1020,19 @@ describe("runDeps", () => {
         }).code,
       ).toBe(0);
       expect(
-        context.runCli(["comments", rootId, "--add", "evidence trail", "--json"], {
-          expectJson: true,
-        }).code,
+        context.runCli(
+          ["comments", rootId, "--add", "evidence trail", "--json"],
+          {
+            expectJson: true,
+          },
+        ).code,
       ).toBe(0);
 
-      const result = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
       expect(result.context?.evidence).toEqual([
         "linked:files=1,tests=1,docs=1,comments=1,notes=0,learnings=0",
         "file:src/example.ts",
@@ -714,7 +1042,11 @@ describe("runDeps", () => {
       expect(result.context?.summary.evidenceCount).toBe(4);
 
       const bareId = createTask(context, "ctxev-bare");
-      const bare = await runDeps(bareId, { format: "context" }, { path: context.pmPath });
+      const bare = await runDeps(
+        bareId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
       expect(bare.context?.evidence).toEqual([]);
 
       // Legacy stores can hold linked tests with a path but no command, or
@@ -731,8 +1063,14 @@ describe("runDeps", () => {
         ),
         "utf8",
       );
-      const pathOnly = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
-      expect(pathOnly.context?.evidence).toContain("test:tests/example.spec.ts");
+      const pathOnly = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
+      expect(pathOnly.context?.evidence).toContain(
+        "test:tests/example.spec.ts",
+      );
       await writeFile(
         located.itemPath,
         raw.replace(
@@ -741,7 +1079,11 @@ describe("runDeps", () => {
         ),
         "utf8",
       );
-      const pointerless = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      const pointerless = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
       expect(pointerless.context?.evidence).toEqual([
         "linked:files=1,tests=1,docs=1,comments=1,notes=0,learnings=0",
         "file:src/example.ts",
@@ -764,7 +1106,11 @@ describe("runDeps", () => {
         "id=pm-ctxmiss-lost,kind=related,author=test-author,created_at=now",
       ]);
 
-      const result = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
       expect(result).toMatchObject({
         missing_count: 2,
         missing_scope: "traversal",
@@ -786,7 +1132,11 @@ describe("runDeps", () => {
         }),
       ]);
 
-      const tree = await runDeps(rootId, { format: "tree" }, { path: context.pmPath });
+      const tree = await runDeps(
+        rootId,
+        { format: "tree" },
+        { path: context.pmPath },
+      );
       expect(tree.missing_count).toBe(result.missing_count);
 
       const bounded = await runDeps(
@@ -816,7 +1166,10 @@ describe("runDeps", () => {
         missing_reference_count: 1,
       });
       expect(incomingOnly.missing_references).toEqual([
-        expect.objectContaining({ target_id: "pm-ctxmiss-lost", kind: "related" }),
+        expect.objectContaining({
+          target_id: "pm-ctxmiss-lost",
+          kind: "related",
+        }),
       ]);
 
       const summaryOnly = await runDeps(
@@ -901,12 +1254,21 @@ describe("runDeps", () => {
       ]);
       expect(
         context.runCli(
-          ["close", holderId, "verified legacy classification fixture", "--json"],
+          [
+            "close",
+            holderId,
+            "verified legacy classification fixture",
+            "--json",
+          ],
           { expectJson: true },
         ).code,
       ).toBe(0);
 
-      const result = await runDeps(rootId, { format: "context" }, { path: context.pmPath });
+      const result = await runDeps(
+        rootId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
       expect(result.missing_references).toEqual([
         expect.objectContaining({
           holder_id: holderId,
@@ -930,7 +1292,11 @@ describe("runDeps", () => {
         raw.replace("pm-no-active-blocker", "no-active-blocker"),
         "utf8",
       );
-      const sentinel = await runDeps(sentinelId, { format: "context" }, { path: context.pmPath });
+      const sentinel = await runDeps(
+        sentinelId,
+        { format: "context" },
+        { path: context.pmPath },
+      );
       expect(sentinel).toMatchObject({
         missing_count: 0,
         missing_reference_count: 0,
@@ -951,12 +1317,27 @@ describe("runDeps", () => {
       expect(located).not.toBeNull();
       if (!located) return;
       const { raw } = await readLocatedItem(located);
-      await writeFile(located.itemPath, raw.replace(targetId, targetId.toUpperCase()), "utf8");
+      await writeFile(
+        located.itemPath,
+        raw.replace(targetId, targetId.toUpperCase()),
+        "utf8",
+      );
 
-      const tree = await runDeps(rootId, { format: "tree", maxDepth: 1 as unknown as string }, { path: context.pmPath });
-      expect(tree.tree?.dependencies.map((entry) => entry.via)).toEqual(["blocks", "related"]);
+      const tree = await runDeps(
+        rootId,
+        { format: "tree", maxDepth: 1 as unknown as string },
+        { path: context.pmPath },
+      );
+      expect(tree.tree?.dependencies.map((entry) => entry.via)).toEqual([
+        "blocks",
+        "related",
+      ]);
 
-      const graph = await runDeps(rootId, { format: "graph" }, { path: context.pmPath });
+      const graph = await runDeps(
+        rootId,
+        { format: "graph" },
+        { path: context.pmPath },
+      );
       const edgeKinds = (graph.graph?.edges ?? [])
         .filter((edge) => edge.from === rootId && edge.to === targetId)
         .map((edge) => edge.kind);

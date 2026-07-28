@@ -215,9 +215,7 @@ function resolveRegisteredListOutputContext(
   const listFormat = parseListFormat(options.format);
   const tabular = listFormat === "csv" || listFormat === "table";
   const effectiveGlobal =
-    listFormat === "json" ||
-    listFormat === "ndjson" ||
-    listFormat === "toon"
+    listFormat === "json" || listFormat === "ndjson" || listFormat === "toon"
       ? resolveReadCommandOutputFormat(
           "List",
           options.format,
@@ -280,10 +278,7 @@ async function runRegisteredListCommand(params: {
   const globalOptions = getGlobalOptions(params.actionCommand);
   const startedAt = Date.now();
   const listOptions = normalizeListOptions(params.options);
-  applyDefaultListProjection(
-    listOptions,
-    params.name,
-  );
+  applyDefaultListProjection(listOptions, params.name);
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
   listOptions.dependencyBlocked = params.dependencyBlocked;
   const output = resolveRegisteredListOutputContext(
@@ -659,8 +654,7 @@ async function runHistoryAction(
     );
   }
   const field = typeof options.field === "string" ? options.field : undefined;
-  const strictExit =
-    Boolean(options.strictExit) || Boolean(options.failOnWarn);
+  const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
   if (strictExit && !options.verify) {
     throw new PmCliError(
       "--strict-exit requires --verify (it gates on the verification result).",
@@ -700,9 +694,7 @@ async function runEventsAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const limit =
-    typeof options.limit === "string"
-      ? Number(options.limit)
-      : undefined;
+    typeof options.limit === "string" ? Number(options.limit) : undefined;
   const eventOptions = {
     pmRoot: globalOptions.path,
     since: typeof options.since === "string" ? options.since : undefined,
@@ -785,13 +777,17 @@ async function runGraphAction(
     id,
     target,
     {
-      ...(Array.isArray(options.kind) ? { kind: options.kind as string[] } : {}),
-      maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,
+      ...(Array.isArray(options.kind)
+        ? { kind: options.kind as string[] }
+        : {}),
+      maxDepth:
+        typeof options.maxDepth === "string" ? options.maxDepth : undefined,
       limit: typeof options.limit === "string" ? options.limit : undefined,
       after: typeof options.after === "string" ? options.after : undefined,
       direction:
         typeof options.direction === "string" ? options.direction : undefined,
-      maxPaths: typeof options.maxPaths === "string" ? options.maxPaths : undefined,
+      maxPaths:
+        typeof options.maxPaths === "string" ? options.maxPaths : undefined,
       sample: typeof options.sample === "string" ? options.sample : undefined,
       ...(Array.isArray(options.exemptIsolate)
         ? { exemptIsolate: options.exemptIsolate as string[] }
@@ -1014,7 +1010,11 @@ export function registerListQueryCommands(
       "--explain_ranking",
       "Alias for --explain-ranking",
     );
-    addHiddenOption(contextCommand, "--token_budget <n>", "Alias for --token-budget");
+    addHiddenOption(
+      contextCommand,
+      "--token_budget <n>",
+      "Alias for --token-budget",
+    );
     contextCommand.action(runContextAction);
   }
 
@@ -1079,7 +1079,11 @@ export function registerListQueryCommands(
       "--explain_ranking",
       "Alias for --explain-ranking",
     );
-    addHiddenOption(nextCommand, "--token_budget <n>", "Alias for --token-budget");
+    addHiddenOption(
+      nextCommand,
+      "--token_budget <n>",
+      "Alias for --token-budget",
+    );
     nextCommand.action(runNextAction);
   }
 
@@ -1331,6 +1335,10 @@ export function registerListQueryCommands(
       )
       .option("--limit <n>", "Return only the latest n activity entries")
       .option(
+        "--unbounded",
+        "Explicitly return every matching activity entry (disables the default bound)",
+      )
+      .option(
         "--compact",
         "Condensed output: show only id, op, ts, author, msg per entry",
       )
@@ -1350,7 +1358,10 @@ export function registerListQueryCommands(
         "<subcommand>",
         "Graph query (ancestors, descendants, predecessors, successors, paths, impact, analyze, audit, communities, redundancy, dominators, slack, centrality, articulation, plan, index)",
       )
-      .argument("[id]", "Root item id (traversals, paths, impact, and dominators)")
+      .argument(
+        "[id]",
+        "Root item id (traversals, paths, impact, and dominators)",
+      )
       .argument("[target]", "Target item id (paths only)")
       .option(
         "--kind <value>",
@@ -1394,7 +1405,10 @@ export function registerListQueryCommands(
         "Rebuild and warm the durable graph index (index only)",
       )
       .option("--clear", "Delete the durable graph index (index only)")
-      .option("--summary", "Return counts-first envelopes without row collections")
+      .option(
+        "--summary",
+        "Return counts-first envelopes without row collections",
+      )
       .description(
         "Bounded workspace relationship-graph queries, analytics, and governance audit.",
       )

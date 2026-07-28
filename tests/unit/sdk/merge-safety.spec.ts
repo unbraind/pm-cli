@@ -879,7 +879,10 @@ describe("public merge-safety SDK primitives", () => {
         dryRun: true,
       });
 
-      expect(result.workspace_root).toBe(workspaceAlias);
+      expect(result).toMatchObject({
+        workspace_root: context.tempRoot,
+        pm_root: context.pmPath,
+      });
       expect(result.gitattributes.patterns).toContain(
         '".agents/pm/tasks/*.toon" merge=pm-item-toon',
       );

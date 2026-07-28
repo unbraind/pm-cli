@@ -2140,7 +2140,11 @@ describe("release readiness runtime coverage", () => {
         "compact_activity",
         "compact",
         "count",
+        "total_count",
         "limit",
+        "omitted_count",
+        "has_more",
+        "applied_bound",
       ]);
 
       const statsResult = context.runCli(["stats", "--json"], {

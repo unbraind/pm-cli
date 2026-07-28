@@ -2,31 +2,46 @@ id: pm-z71aoy
 title: "Token-budget gate corpus is unrepresentative in both scale and coverage: budgets are set on a seeded micro-workspace and the largest agent-facing payloads are not measured at all"
 description: "The shipped token-budget gate (scripts/release/token-budget-gate.mjs over token-budgets.json, delivered under the closed pm-cu1i) passes 14 surfaces green, but its corpus cannot detect the growth it exists to prevent.\n\nScale. Budgets are measured against an isolated PM_PATH with deterministic seeded items, as the fixture field in token-budgets.json states. Real output on the repository tracker (2,028 items, 2026.7.25) exceeds those ceilings by an order of magnitude:\n\n  next --limit 5      declared max 1,043 B   measured 11,099 B  (~2,774 tokens)\n  context --limit 10  declared max 1,098 B   measured  7,214 B  (~1,803 tokens)\n  list --status open --limit 20                measured  3,988 B\n  get pm-doxj                                  measured 20,290 B (~5,072 tokens)\n\nThe ceilings therefore bound a fixture, not a product. A change that doubles per-row cost at real scale keeps the gate green.\n\nCoverage. The two largest agent-facing payloads are absent from the corpus entirely:\n\n  MCP tools/list handshake   38,496 B  ~9,624 tokens  (31 tools)\n  aggregate per-command help 187,363 B ~46,841 tokens (76 commands)\n  root help                   12,281 B  ~3,070 tokens\n\nThe handshake is the largest unavoidable fixed cost: every MCP-connected agent pays it once per session before any work. It has demonstrably grown while the gate stayed green - the pm-a22j baseline recorded 28 tools at 32,979 B (~8.2k tokens) and it is now 31 tools at 38,496 B (~9,624 tokens), a 17 percent increase with no gate that fires. scripts/measure-agent-token-surface.mjs already produces every one of these numbers; nothing consumes them as a ratchet.\n\nTwo consequences follow. The gate reports a guarantee it does not provide, and the surface-growth ratchets that pm-wt43zj and pm-kxci8x depend on have no measured cost axis to enforce. pm-5t33or replaces hand-maintained ceilings with contract-declared per-command budgets and is the destination for the declarations; this item owns making the corpus and its fixtures representative so any declaration is enforced against numbers agents actually pay. pm-8pnj measures tokens per completed task end to end and consumes this as its per-surface floor."
 type: Task
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-25T20:41:01.555Z"
-updated_at: "2026-07-26T11:30:03.696Z"
+updated_at: "2026-07-28T11:54:35.872Z"
+closed_at: "2026-07-28T11:53:37.396Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Budgets are measured against fixtures at declared scale tiers including at least one workspace of repository size or larger, and each budget records the tier it was measured at, so a ceiling can no longer be set on a micro-workspace and read as a product guarantee; The corpus covers the MCP tools/list handshake payload and the aggregate per-command help surface, sourced from the same measurement the gate uses, so both have ceilings that fail on growth; The gate consumes scripts/measure-agent-token-surface.mjs rather than duplicating measurement, and a single command reproduces every published figure; A coverage assertion fails when a command, MCP tool, or output format exists with no budget entry, so new surfaces cannot be added outside the corpus; The gate reports the delta against the recorded baseline, not only pass or fail, so a change that consumes headroom without breaching is visible in review; The current 31-tool handshake and 76-command help surface are recorded as the new baseline with their measurement method, superseding the stale pm-a22j 28-tool figure wherever it is cited"
 parent: pm-u9d0
 risk: medium
 confidence: 85
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-5t33or,related,"2026-07-25T20:41:01.555Z",null,null
-  pm-8pnj,related,"2026-07-25T20:41:01.555Z",null,null
-  pm-9k90,related,"2026-07-25T20:41:01.555Z",null,null
-  pm-g3n00m,implements,"2026-07-25T20:41:01.555Z",null,null
-  pm-j82fd3,verifies,"2026-07-25T20:41:01.555Z",null,null
-  pm-k6t4yb,related,"2026-07-25T20:41:01.555Z",null,null
-  pm-kxci8x,related,"2026-07-25T20:41:01.555Z",null,null
-  pm-wt43zj,related,"2026-07-25T20:41:01.555Z",null,null
-  pm-5t33or,verifies,"2026-07-26T05:50:21.528Z",null,null
-  pm-cha95z,verifies,"2026-07-26T05:59:43.114Z",null,null
-comments[1]{created_at,author,text}:
+resolution: "The manifest and gate now publish scale tiers, discovery and answer baselines, contract-owned ceilings, deltas, coverage enforcement, and reproducible measurements."
+expected_result: Token-cost guarantees should cover scaled answer surfaces and aggregate discovery costs with visible baselines and fail when a surface lacks coverage.
+actual_result: "The old corpus used three items, omitted the largest recurring surfaces, and reported fixture observations as if they bounded real workspaces."
+dependencies[10]{id,kind,created_at}:
+  pm-5t33or,related,"2026-07-25T20:41:01.555Z"
+  pm-8pnj,related,"2026-07-25T20:41:01.555Z"
+  pm-9k90,related,"2026-07-25T20:41:01.555Z"
+  pm-g3n00m,implements,"2026-07-25T20:41:01.555Z"
+  pm-j82fd3,verifies,"2026-07-25T20:41:01.555Z"
+  pm-k6t4yb,related,"2026-07-25T20:41:01.555Z"
+  pm-kxci8x,related,"2026-07-25T20:41:01.555Z"
+  pm-wt43zj,related,"2026-07-25T20:41:01.555Z"
+  pm-5t33or,verifies,"2026-07-26T05:50:21.528Z"
+  pm-cha95z,verifies,"2026-07-26T05:59:43.114Z"
+comments[2]{created_at,author,text}:
   "2026-07-26T10:31:20.386Z","harness:opencode","Corpus-gap evidence 2026-07-26 (audit plan pm-t9e3bc): in this extension-loaded dogfood workspace the agent-facing payloads exceed every gated fixture budget — pm --help renders 13,398 bytes vs the 11,688-byte fixture budget (7 loaded extensions contribute 21 command handlers the fixture never sees), and contracts --flags-only measures 117,070 bytes vs the 116,189-byte fixture budget. Both gates are green because the fixture is extension-free and micro-scale; the real workspace an agent actually reads is already over budget on both surfaces. Confirms this item's thesis from the agent side: the largest payloads (extension-loaded help/contracts) are the unmeasured ones."
+  "2026-07-28T11:53:10.531Z","harness:codex","Evidence: token-budget manifest v2 records scale tiers plus measured byte/token baselines, separates discovery baselines from answer costs, and dynamically resolves answer ceilings from pm contracts. The reproducible gate covers 23 surfaces across list/get/context/next/activity/deps tree/deps graph/duplicates/events/health/validate/search in TOON and JSON where applicable, exposes headroom deltas, and rejects missing or stale surfaces. Final gate and static quality pass."
 notes[2]{created_at,author,text}:
   "2026-07-26T10:54:58.693Z","harness:claude-code","Corpus evidence 2026-07-26: the largest agent-facing payload in the CLI is pm context --explain-ranking at 131,187 bytes TOON / 161,179 JSON for a two-row request on a 280-item workspace, and it is absent from the token-gate corpus. It also scales with workspace size rather than with the request, so measuring it on the seeded micro-workspace understates it by the ratio of workspace sizes rather than by a constant. Owned as a defect by pm-okgxwa; this note records why the corpus must include it regardless of how the defect is fixed."
   "2026-07-26T11:30:03.695Z","harness:claude-code","Corpus coverage recheck 2026-07-26 on the shipped 2026.7.26 build, adding the two payloads that are larger than anything currently in scope.\n\nThe gate's 14 budgets are all help, contracts, list, get, context, next, and search. Measured against the real tracker (2,076 items), the two largest agent-facing command payloads are absent:\n\n  pm graph impact pm-doxj   230,452 B   ~57,613 tokens   1,824 rows, no default bound\n  pm health                 132,584 B   ~33,146 tokens   every check reporting ok\n\nBoth exceed the MCP tools/list handshake (38,496 B) that this item already names as its largest known omission, and both are recurring per-invocation costs rather than a once-per-session fixed cost.\n\nAlso worth folding into the fixture argument: pm context --limit 5 is budgeted at 275 tokens on the seeded fixture and measures 1,524 tokens here, a 5.5x understatement on the same command this item already cites at 1,803 tokens for --limit 10. The ratio is stable across limits, which is the cleanest available demonstration that the fixture scales the ceiling rather than the product.\n\nBoth new payloads have owners for the defect itself — pm-mfy1ux for the unbounded graph impact default, pm-du93sr for pm health --check-only being inert against a 233x cheaper --summary — so this item's remaining share is only that neither surface is in the measured corpus, and that a fix landing on either would have no ratchet holding it."
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generated release narrative
+  scripts/release/token-budget-gate.mjs,project,Representative medium-scale corpus and visible baselines
+  scripts/release/token-budgets.json,project,Representative medium-scale corpus and visible baselines
+  tests/unit/scripts/release/token-budget-gate.spec.ts,project,Representative medium-scale corpus and visible baselines
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/token-budget-gate.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Representative corpus and negative-control workflow
+close_reason: "Implemented representative scale-tier token corpus, visible baseline deltas, dynamic contract ceiling resolution, coverage failures for missing surfaces, and reproducible discovery/answer measurements; all gates pass."
 body: ""

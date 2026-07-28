@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,cross-platform,nightly,test-quality,windows
 created_at: "2026-07-28T10:29:33.965Z"
-updated_at: "2026-07-28T10:35:59.848Z"
+updated_at: "2026-07-28T11:53:54.929Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: No test asserts on a hardcoded POSIX absolute path or a raw platform errno string; a red Windows nightly leg names only product defects
@@ -17,4 +17,13 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2kkl,related,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
   pm-e70zh5,related,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
   pm-ihmfs6,discovered_from,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-28T11:53:13.607Z","harness:codex","Progress tranche evidence: canonical/native path expectations were fixed in merge safety, guide-shell runtime, and context-integrity tests, and drift-cache filesystem failures now expose stable diagnostic codes instead of raw errno text. The full repo-wide removal of all hardcoded POSIX paths and raw errno assertions remains, so this broader chore returns to open after the cross-platform nightly evidence is captured on pm-ihmfs6."
+files[4]{path,scope,note}:
+  src/core/history/drift-cache.ts,project,Stable cross-platform diagnostics and native path expectations
+  tests/unit/packages/guide-shell-runtime.spec.ts,project,Stable cross-platform diagnostics and native path expectations
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,Stable cross-platform diagnostics and native path expectations
+  tests/unit/sdk/merge-safety.spec.ts,project,Stable cross-platform diagnostics and native path expectations
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/packages/guide-shell-runtime.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,240
 body: ""

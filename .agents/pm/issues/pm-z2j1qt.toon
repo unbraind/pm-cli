@@ -2,17 +2,21 @@ id: pm-z2j1qt
 title: "pm activity has no default bound: a bare invocation returns all 40,446 history entries at 1.59M tokens, 397x the ceiling its own contract declares"
 description: "The command that reads the immutable record has no default bound at all. Measured at HEAD (2026.7.28) against this repository's tracker:\n\n  pm activity            6,364,876 bytes / 178,613 lines\n  estimated tokens       1,591,219 (contract metric: ceil(utf8_bytes / 4))\n  declared ceiling       4,000 (contracts default_max_estimated_tokens for activity)\n  overrun                397.8x\n\nThe JSON envelope explains the mechanism: count is 40,446, compact is true, and limit is null. There is no default limit, no default window, and no default degradation. A bare pm activity returns every history entry in the workspace -- the complete 40,446-entry immutable record across 2,165 streams -- as one payload. The compact encoding is already applied, so the 397.8x is what the cheapest available encoding costs; the full encoding is larger.\n\nWhy this matters more than the raw number: pm activity is the read surface for the immutable-history guarantee. An agent asking what recently happened has no cheap correct call. The neighbouring surfaces all default to a bound -- list applies a limit, context applies a token budget, next applies both, graph traversals apply a row bound -- so an agent that has learned the CLI's conventions has every reason to expect activity to behave the same way and no signal that it does not until the payload has already been produced and paid for.\n\nThe failure is silent in both directions. Nothing in the envelope reports that the output exceeded the declared ceiling, and nothing reports that no bound was applied: limit is null, which reads as \"no limit requested\" rather than \"no limit exists\". A caller cannot distinguish a deliberate unbounded request from the absence of a default.\n\nScope note. This is the default-bound defect only. The separate decoy-key defect on the same command -- an empty activity array emitted alongside the populated compact_activity -- is owned by pm-p3x4 and was reproduced again here (activity length 0, compact_activity length 40,446) without being re-filed. Whether the declared ceiling is enforced anywhere at all is a surface-wide question owned by its own item. Whether activity should remain a top-level spelling at all is owned by pm-tqel. This item is only: the command has no default bound, and the one it declares is exceeded by two orders of magnitude.\n\nThe correct behaviour follows the conventions the rest of the surface already established: a default limit or default time window, the shared degradation ladder when the bound is hit, and an envelope field that names the applied bound and what was withheld, so an explicit unbounded request stays possible and stays explicit."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",context-management,history,output-contract,token-efficiency
 created_at: "2026-07-28T09:55:44.652Z"
-updated_at: "2026-07-28T09:55:44.652Z"
+updated_at: "2026-07-28T11:54:36.730Z"
+closed_at: "2026-07-28T11:53:40.874Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A bare pm activity applies a documented default bound (row limit or time window) and never returns the entire history stream by default; The envelope names the applied bound and reports what was withheld, so limit:null can no longer mean both no-limit-requested and no-limit-exists; Exceeding the declared ceiling triggers the shared degradation ladder rather than unbounded emission; An explicit unbounded request remains available and must be asked for by name; A regression test measures bare pm activity against a workspace large enough to exceed the ceiling and fails on unbounded output"
 parent: pm-mpbb
 risk: medium
 confidence: 95
+resolution: Bare activity is bounded and disclosed by default; callers can explicitly request --unbounded and cannot combine it with --limit.
+expected_result: A default activity query must remain within its declared ceiling and report the applied bound and withheld count.
+actual_result: "Bare activity previously emitted every history event, with limit null and no disclosure, reaching roughly 1.59 million estimated tokens."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-07-28T09:55:44.652Z","harness:claude-code","cli:create:dep",detected
   pm-du93sr,related,"2026-07-28T09:55:44.652Z","harness:claude-code","cli:create:dep",detected
@@ -21,4 +25,26 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-p3x4,related,"2026-07-28T09:55:44.652Z","harness:claude-code","cli:create:dep",detected
   pm-t2t709,related,"2026-07-28T09:55:44.652Z","harness:claude-code","cli:create:dep",detected
   pm-tqel,related,"2026-07-28T09:55:44.652Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-28T11:20:39.259Z","harness:codex","Verification note: the first full 6,447-test coverage run found one expected key-order contract that still listed the pre-disclosure activity envelope. Updated that acceptance expectation; product output was correct and all other 6,446 tests passed."
+  "2026-07-28T11:53:11.297Z","harness:codex","Evidence: bare CLI activity now defaults to 20 rows and direct SDK activity to 5, while --unbounded is explicit and conflicts with --limit. The envelope discloses total_count, omitted_count, has_more, and applied_bound; contract tables and snapshots publish the opt-out. Large-corpus negative control is 18,864 tokens while the default stays within 4,000. Unit, integration, full 6,451-test coverage, manual packed npm/Bun consumers, and final gates pass."
+files[11]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generated release narrative
+  sdk/public-surface.json,project,Activity CLI registration and published contract snapshots
+  src/cli/commands/activity.ts,project,Default activity bounds disclosure and explicit opt-out
+  src/cli/register-list-query.ts,project,Activity CLI registration and published contract snapshots
+  src/cli/registration-helpers.ts,project,Activity CLI registration and published contract snapshots
+  src/sdk/cli-contracts/flag-contracts.ts,project,Default activity bounds disclosure and explicit opt-out
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,Default activity bounds disclosure and explicit opt-out
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Default activity bounds disclosure and explicit opt-out
+  tests/fixtures/contracts/full.json,project,Activity CLI registration and published contract snapshots
+  tests/integration/release-readiness-runtime.spec.ts,project,Stable activity disclosure key-order acceptance contract
+  tests/unit/commands/history-activity-command.spec.ts,project,Default activity bounds disclosure and explicit opt-out
+tests[2]{command,scope,timeout_seconds}:
+  "node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t \"keeps runtime JSON output object key ordering deterministic\"",project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/history-activity-command.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,Activity bound and unbounded opt-out contract
+  docs/SDK.md,project,Activity bound and unbounded opt-out contract
+close_reason: "Implemented bounded bare activity defaults, explicit --unbounded opt-out, withheld-row disclosure, published SDK/CLI contracts, and large-corpus regression coverage; isolated npm/Bun consumers and full suite pass."
 body: ""

@@ -13,6 +13,10 @@ type TokenBudgetMeasurement = {
   args: string[];
   bytes: number;
   estimated_tokens: number;
+  kind?: "discovery" | "answer";
+  scale_tier?: string;
+  command?: string;
+  contract_max_estimated_tokens?: number;
 };
 
 type TokenBudgetManifest = {
@@ -23,25 +27,42 @@ type TokenBudgetManifest = {
   budgets: Array<{
     id: string;
     args: string[];
-    max_bytes: number;
-    max_estimated_tokens: number;
+    kind: "discovery" | "answer";
+    scale_tier: string;
+    baseline_bytes: number;
+    baseline_estimated_tokens: number;
+    command?: string;
+    contract_max_estimated_tokens?: number;
+    max_bytes?: number;
+    max_estimated_tokens?: number;
   }>;
 };
 
 type TokenBudgetGateModule = {
-  measureOutput: (stdout: string) => { bytes: number; estimated_tokens: number };
+  measureOutput: (stdout: string) => {
+    bytes: number;
+    estimated_tokens: number;
+  };
   budgetForMeasurement: (
     measurement: TokenBudgetMeasurement,
     multiplier: number,
   ) => TokenBudgetManifest["budgets"][number];
-  buildManifest: (measurements: TokenBudgetMeasurement[], multiplier: number) => TokenBudgetManifest;
-  compareBudgets: (measurements: TokenBudgetMeasurement[], manifest: TokenBudgetManifest) => string[];
+  buildManifest: (
+    measurements: TokenBudgetMeasurement[],
+    multiplier: number,
+  ) => TokenBudgetManifest;
+  compareBudgets: (
+    measurements: TokenBudgetMeasurement[],
+    manifest: TokenBudgetManifest,
+  ) => string[];
   mutationId: (result: unknown, label: string) => string;
   main: () => void;
 };
 
 async function loadModule(): Promise<TokenBudgetGateModule> {
-  return harness.importModule<TokenBudgetGateModule>("scripts/release/token-budget-gate.mjs");
+  return harness.importModule<TokenBudgetGateModule>(
+    "scripts/release/token-budget-gate.mjs",
+  );
 }
 
 const CORPUS_IDS = [
@@ -58,24 +79,57 @@ const CORPUS_IDS = [
   "get-json-compact-fields",
   "context-default",
   "next-default",
-  "health-summary",
+  "activity-default",
+  "deps-tree-default",
+  "deps-tree-json",
+  "graph-audit-summary",
+  "duplicates-default",
+  "events-default",
+  "health-default",
   "validate-counts",
   "search-inline-default",
   "search-inline-json",
 ];
 
 function manifestForBudget(maxBytes: number): string {
+  const answerCommands = new Map<string, string>([
+    ["list-default", "list"],
+    ["list-open-default", "list"],
+    ["list-json", "list"],
+    ["get-default", "get"],
+    ["get-json-compact-fields", "get"],
+    ["context-default", "context"],
+    ["next-default", "next"],
+    ["activity-default", "activity"],
+    ["deps-tree-default", "deps"],
+    ["deps-tree-json", "deps"],
+    ["graph-audit-summary", "graph"],
+    ["duplicates-default", "duplicates"],
+    ["events-default", "events"],
+    ["health-default", "health"],
+    ["validate-counts", "validate"],
+    ["search-inline-default", "search"],
+    ["search-inline-json", "search"],
+  ]);
   return JSON.stringify({
-    version: 1,
+    version: 2,
     metric: "utf8_bytes",
     token_estimate: "ceil(bytes / 4)",
     fixture: "test",
-    budgets: CORPUS_IDS.map((id) => ({
-      id,
-      args: [id],
-      max_bytes: maxBytes,
-      max_estimated_tokens: maxBytes,
-    })),
+    budgets: CORPUS_IDS.map((id) => {
+      const command = answerCommands.get(id);
+      return {
+        id,
+        args: [id],
+        kind: command ? "answer" : "discovery",
+        scale_tier: command ? "medium" : "static",
+        baseline_bytes: 1,
+        baseline_estimated_tokens: 1,
+        ...(command
+          ? { command, contract_max_estimated_tokens: 4_000 }
+          : { max_bytes: maxBytes, max_estimated_tokens: maxBytes }),
+      };
+    }),
   });
 }
 
@@ -90,33 +144,49 @@ function commandStdout(args: string[]): string {
   if (joined.includes("Alpha implementation task")) {
     return JSON.stringify({ item: { id: "pm-child" } });
   }
+  if (joined.includes("Scale fixture")) {
+    return JSON.stringify({ id: "pm-scale" });
+  }
   if (joined.includes("comments pm-child")) {
     return JSON.stringify({ id: "pm-child" });
   }
   if (joined.includes("init --defaults --json")) {
     return JSON.stringify({ ok: true });
   }
+  if (joined.includes("contracts --command")) {
+    return JSON.stringify({
+      command_summaries: [{ default_max_estimated_tokens: 4_000 }],
+    });
+  }
+  if (joined.includes("activity --json --full --unbounded")) {
+    return "x".repeat(20_000);
+  }
   return `output for ${joined}`;
 }
 
-function mockRuntime(options: {
-  exists?: (targetPath: string) => boolean;
-  manifestText?: string;
-  stdout?: (args: string[]) => string;
-} = {}): {
+function mockRuntime(
+  options: {
+    exists?: (targetPath: string) => boolean;
+    manifestText?: string;
+    stdout?: (args: string[]) => string;
+  } = {},
+): {
   readFileSync: ReturnType<typeof vi.fn>;
   writeFileSync: ReturnType<typeof vi.fn>;
   cleanupTempRoot: ReturnType<typeof vi.fn>;
   runCommand: ReturnType<typeof vi.fn>;
 } {
-  const readFileSync = vi.fn(() => options.manifestText ?? manifestForBudget(10_000));
+  const readFileSync = vi.fn(
+    () => options.manifestText ?? manifestForBudget(10_000),
+  );
   const writeFileSync = vi.fn();
   const cleanupTempRoot = vi.fn();
   vi.doMock("node:fs", async () => {
     const actual = await vi.importActual<typeof fs>("node:fs");
     return {
       ...actual,
-      existsSync: (targetPath: string) => (options.exists ? options.exists(targetPath) : true),
+      existsSync: (targetPath: string) =>
+        options.exists ? options.exists(targetPath) : true,
       mkdtempSync: () => "/tmp/pm-token-budget-test",
       readFileSync,
       writeFileSync,
@@ -128,7 +198,9 @@ function mockRuntime(options: {
     stderr: "",
   }));
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
-    const actual = await vi.importActual<Record<string, unknown>>("../../../../scripts/release/utils.mjs");
+    const actual = await vi.importActual<Record<string, unknown>>(
+      "../../../../scripts/release/utils.mjs",
+    );
     return {
       ...actual,
       repoRoot: "/repo",
@@ -138,7 +210,9 @@ function mockRuntime(options: {
       },
     };
   });
-  vi.doMock("../../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot }));
+  vi.doMock("../../../../scripts/smoke-cleanup.mjs", () => ({
+    cleanupTempRoot,
+  }));
   return { readFileSync, writeFileSync, cleanupTempRoot, runCommand };
 }
 
@@ -160,8 +234,14 @@ describe("scripts/release/token-budget-gate", () => {
   it("measures UTF-8 bytes and conservative token estimates", async () => {
     const mod = await loadModule();
 
-    expect(mod.measureOutput("abcd")).toEqual({ bytes: 4, estimated_tokens: 1 });
-    expect(mod.measureOutput("abcde")).toEqual({ bytes: 5, estimated_tokens: 2 });
+    expect(mod.measureOutput("abcd")).toEqual({
+      bytes: 4,
+      estimated_tokens: 1,
+    });
+    expect(mod.measureOutput("abcde")).toEqual({
+      bytes: 5,
+      estimated_tokens: 2,
+    });
     expect(mod.measureOutput("é")).toEqual({ bytes: 2, estimated_tokens: 1 });
   });
 
@@ -177,8 +257,34 @@ describe("scripts/release/token-budget-gate", () => {
     expect(mod.budgetForMeasurement(measurement, 1.1)).toEqual({
       id: "context-default",
       args: ["context", "--limit", "5"],
+      kind: "discovery",
+      scale_tier: "static",
+      baseline_bytes: 101,
+      baseline_estimated_tokens: 26,
       max_bytes: 112,
       max_estimated_tokens: 29,
+    });
+
+    expect(
+      mod.budgetForMeasurement(
+        {
+          ...measurement,
+          kind: "answer",
+          scale_tier: "medium",
+          command: "context",
+          contract_max_estimated_tokens: 4_000,
+        },
+        1.1,
+      ),
+    ).toEqual({
+      id: "context-default",
+      args: ["context", "--limit", "5"],
+      kind: "answer",
+      scale_tier: "medium",
+      baseline_bytes: 101,
+      baseline_estimated_tokens: 26,
+      command: "context",
+      contract_max_estimated_tokens: 4_000,
     });
   });
 
@@ -187,7 +293,9 @@ describe("scripts/release/token-budget-gate", () => {
     const mod = await loadModule();
 
     expect(mod.mutationId({ id: "pm-compact" }, "compact")).toBe("pm-compact");
-    expect(mod.mutationId({ item: { id: "pm-legacy" } }, "legacy")).toBe("pm-legacy");
+    expect(mod.mutationId({ item: { id: "pm-legacy" } }, "legacy")).toBe(
+      "pm-legacy",
+    );
     expect(() => mod.mutationId({}, "missing")).toThrow(
       "Token budget fixture missing mutation did not return an item id",
     );
@@ -211,7 +319,7 @@ describe("scripts/release/token-budget-gate", () => {
     );
 
     expect(manifest).toMatchObject({
-      version: 1,
+      version: 2,
       metric: "utf8_bytes",
       token_estimate: "ceil(bytes / 4)",
       budgets: [
@@ -227,7 +335,7 @@ describe("scripts/release/token-budget-gate", () => {
   it("reports missing and exceeded budget entries", async () => {
     const mod = await loadModule();
     const manifest: TokenBudgetManifest = {
-      version: 1,
+      version: 2,
       metric: "utf8_bytes",
       token_estimate: "ceil(bytes / 4)",
       fixture: "test",
@@ -235,6 +343,10 @@ describe("scripts/release/token-budget-gate", () => {
         {
           id: "root-help",
           args: ["--help"],
+          kind: "discovery",
+          scale_tier: "static",
+          baseline_bytes: 9,
+          baseline_estimated_tokens: 3,
           max_bytes: 10,
           max_estimated_tokens: 3,
         },
@@ -246,12 +358,14 @@ describe("scripts/release/token-budget-gate", () => {
         {
           id: "root-help",
           args: ["--help"],
+          kind: "discovery",
           bytes: 12,
           estimated_tokens: 3,
         },
         {
           id: "context-default",
           args: ["context"],
+          kind: "discovery",
           bytes: 4,
           estimated_tokens: 1,
         },
@@ -263,19 +377,65 @@ describe("scripts/release/token-budget-gate", () => {
       "root-help: 12 bytes exceeds budget 10 bytes (--help)",
       "context-default: missing budget entry",
     ]);
+
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "context-answer",
+            args: ["context"],
+            kind: "answer",
+            command: "context",
+            contract_max_estimated_tokens: 4,
+            bytes: 20,
+            estimated_tokens: 5,
+          },
+        ],
+        {
+          ...manifest,
+          budgets: [
+            {
+              id: "context-answer",
+              args: ["context"],
+              kind: "answer",
+              scale_tier: "medium",
+              baseline_bytes: 16,
+              baseline_estimated_tokens: 4,
+              command: "context",
+              contract_max_estimated_tokens: 4,
+            },
+          ],
+        },
+      ),
+    ).toEqual([
+      "context-answer: 5 estimated tokens exceeds context contract 4 tokens (context)",
+    ]);
   });
 
   it("runs direct update mode against a deterministic fixture corpus", async () => {
     const runtime = mockRuntime();
-    const scriptPath = path.join(process.cwd(), "scripts/release/token-budget-gate.mjs");
-    process.argv = ["node", scriptPath, "--update", "--manifest", "/repo/budgets.json"];
+    const scriptPath = path.join(
+      process.cwd(),
+      "scripts/release/token-budget-gate.mjs",
+    );
+    process.argv = [
+      "node",
+      scriptPath,
+      "--update",
+      "--manifest",
+      "/repo/budgets.json",
+    ];
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
     process.env.PM_TOKEN_BUDGET_SENTINEL = "kept";
 
-    await harness.importModule<TokenBudgetGateModule>("scripts/release/token-budget-gate.mjs");
+    await harness.importModule<TokenBudgetGateModule>(
+      "scripts/release/token-budget-gate.mjs",
+    );
 
-    expect(runtime.runCommand).toHaveBeenCalledTimes(22);
-    const runOptions = runtime.runCommand.mock.calls[0]?.[2] as { env?: Record<string, string | undefined> } | undefined;
+    expect(runtime.runCommand).toHaveBeenCalledTimes(65);
+    const runOptions = runtime.runCommand.mock.calls[0]?.[2] as
+      | { env?: Record<string, string | undefined> }
+      | undefined;
     expect(runOptions?.env).toMatchObject({
       PM_AUTHOR: "token-budget-gate",
       PM_GLOBAL_PATH: path.join("/tmp/pm-token-budget-test", ".global-pm"),
@@ -283,10 +443,16 @@ describe("scripts/release/token-budget-gate", () => {
       PM_TOKEN_BUDGET_SENTINEL: "kept",
     });
     expect(runtime.writeFileSync).toHaveBeenCalledTimes(1);
-    const written = JSON.parse(String(runtime.writeFileSync.mock.calls[0]?.[1])) as TokenBudgetManifest;
+    const written = JSON.parse(
+      String(runtime.writeFileSync.mock.calls[0]?.[1]),
+    ) as TokenBudgetManifest;
     expect(written.budgets.map((entry) => entry.id)).toEqual(CORPUS_IDS);
-    expect(runtime.cleanupTempRoot).toHaveBeenCalledWith("/tmp/pm-token-budget-test");
-    expect(log).toHaveBeenCalledWith("Updated token budget manifest: budgets.json");
+    expect(runtime.cleanupTempRoot).toHaveBeenCalledWith(
+      "/tmp/pm-token-budget-test",
+    );
+    expect(log).toHaveBeenCalledWith(
+      "Updated token budget manifest: budgets.json",
+    );
   });
 
   it("passes budget check mode with a checked manifest", async () => {
@@ -297,7 +463,9 @@ describe("scripts/release/token-budget-gate", () => {
 
     mod.main();
 
-    expect(log).toHaveBeenCalledWith("Token budget gate passed (17 surfaces checked).");
+    expect(log).toHaveBeenCalledWith(
+      "Token budget gate passed (23 surfaces checked; unbounded negative control 5000 tokens).",
+    );
   });
 
   it("uses the default manifest path for a bare manifest flag", async () => {
@@ -308,33 +476,49 @@ describe("scripts/release/token-budget-gate", () => {
 
     mod.main();
 
-    expect(runtime.readFileSync.mock.calls[0]?.[0]).toBe(path.join("/repo", "scripts", "release", "token-budgets.json"));
-    expect(log).toHaveBeenCalledWith("Token budget gate passed (17 surfaces checked).");
+    expect(runtime.readFileSync.mock.calls[0]?.[0]).toBe(
+      path.join("/repo", "scripts", "release", "token-budgets.json"),
+    );
+    expect(log).toHaveBeenCalledWith(
+      "Token budget gate passed (23 surfaces checked; unbounded negative control 5000 tokens).",
+    );
   });
 
   it("fails for invalid headroom", async () => {
     mockRuntime();
     process.argv = ["node", "vitest", "--headroom", "0"];
-    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow("FAIL:1:--headroom must be a finite number >= 1");
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "FAIL:1:--headroom must be a finite number >= 1",
+    );
   });
 
   it("fails when the built CLI is missing", async () => {
-    mockRuntime({ exists: (targetPath) => path.basename(targetPath) !== "cli.js" });
+    mockRuntime({
+      exists: (targetPath) => path.basename(targetPath) !== "cli.js",
+    });
     process.argv = ["node", "vitest"];
-    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow("Built CLI not found");
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Built CLI not found",
+    );
   });
 
   it("fails when the token budget manifest is missing", async () => {
-    const runtime = mockRuntime({ exists: (targetPath) => !targetPath.endsWith("budgets.json") });
+    const runtime = mockRuntime({
+      exists: (targetPath) => !targetPath.endsWith("budgets.json"),
+    });
     process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
-    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow("Token budget manifest missing");
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget manifest missing",
+    );
     expect(runtime.runCommand).not.toHaveBeenCalled();
   });
 
   it("fails when a measured surface exceeds its budget", async () => {
     mockRuntime({ manifestText: manifestForBudget(1) });
     process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
-    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow("Token budget gate failed");
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget gate failed",
+    );
   });
 
   it("fails when the token budget manifest shape is malformed", async () => {
@@ -346,16 +530,69 @@ describe("scripts/release/token-budget-gate", () => {
   });
 
   it("fails when a token budget entry is malformed", async () => {
-    mockRuntime({ manifestText: JSON.stringify({ budgets: [{ id: "", max_bytes: -1 }] }) });
+    mockRuntime({
+      manifestText: JSON.stringify({ budgets: [{ id: "", max_bytes: -1 }] }),
+    });
     process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
-      "Token budget manifest is malformed: each budget entry requires a string id and non-negative max_bytes",
+      "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
+    );
+  });
+
+  it("fails closed for malformed answer contract manifest entries", async () => {
+    mockRuntime({
+      manifestText: JSON.stringify({
+        budgets: [
+          {
+            id: "answer",
+            kind: "answer",
+            command: 1,
+            contract_max_estimated_tokens: "none",
+          },
+        ],
+      }),
+    });
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget manifest is malformed: each entry requires an id, kind, and its discovery or answer ceiling",
+    );
+  });
+
+  it("fails when the unbounded negative control no longer exceeds the default contract", async () => {
+    mockRuntime({
+      manifestText: manifestForBudget(10_000),
+      stdout: (args) =>
+        args.join(" ").includes("activity --json --full --unbounded")
+          ? "bounded"
+          : commandStdout(args),
+    });
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "negative-control: explicit unbounded activity",
+    );
+  });
+
+  it("fails when an answer command has no declared contract ceiling", async () => {
+    mockRuntime({
+      manifestText: manifestForBudget(10_000),
+      stdout: (args) =>
+        args.join(" ").includes("contracts --command")
+          ? JSON.stringify({
+              command_summaries: [{ default_max_estimated_tokens: null }],
+            })
+          : commandStdout(args),
+    });
+    process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "Token budget contract missing for answer command",
     );
   });
 
   it("fails when a fixture command expected to be JSON returns malformed output", async () => {
     mockRuntime({
-      stdout: (args) => (args.join(" ").includes("Alpha planning context") ? "not json" : commandStdout(args)),
+      stdout: (args) =>
+        args.join(" ").includes("Alpha planning context")
+          ? "not json"
+          : commandStdout(args),
     });
     process.argv = ["node", "vitest", "--manifest", "/repo/budgets.json"];
 

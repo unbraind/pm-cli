@@ -988,6 +988,9 @@
           "flag": "--limit"
         },
         {
+          "flag": "--unbounded"
+        },
+        {
           "flag": "--compact"
         },
         {
@@ -27249,6 +27252,10 @@
           "to": {
             "description": "To.",
             "type": "string"
+          },
+          "unbounded": {
+            "description": "Unbounded.",
+            "type": "boolean"
           }
         },
         "required": [

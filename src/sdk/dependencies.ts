@@ -11,6 +11,7 @@ import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { formatBuiltInOutput } from "../core/output/output.js";
 import {
   listAllItemMetadataLight,
   locateItem,
@@ -24,6 +25,7 @@ import type {
   ItemStatus,
   ItemType,
 } from "../types/index.js";
+import { estimatePmOutputTokens } from "./cli-contracts/agent-output-contracts.js";
 import {
   assembleWorkspaceRelationshipGraph,
   collectDanglingDependencyReferences,
@@ -188,9 +190,7 @@ export interface DepsResult {
   /** Explicit bounded-projection metadata when tree or graph rows were omitted. */
   truncation?: {
     /** Stable reasons explaining which bounds stopped expansion. */
-    reasons: Array<
-      "max_depth" | "node_limit" | "edge_limit" | "token_budget"
-    >;
+    reasons: Array<"max_depth" | "node_limit" | "edge_limit" | "token_budget">;
     /** Effective bounds applied to this projection. */
     limits: {
       max_depth: number;
@@ -229,16 +229,24 @@ function parseFormat(raw: string | undefined): DepsFormat {
 }
 
 /** Parse one positive-integer graph bound, failing fast with the offending flag name. */
-export function parsePositiveInteger(raw: string | number | undefined, flag: string): number | undefined {
+export function parsePositiveInteger(
+  raw: string | number | undefined,
+  flag: string,
+): number | undefined {
   if (raw === undefined) return undefined;
   const value = typeof raw === "number" ? raw : Number(raw.trim());
   if (!Number.isInteger(value) || value < 1)
-    throw new PmCliError(`Invalid --${flag} value "${raw}". Use a positive integer.`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Invalid --${flag} value "${raw}". Use a positive integer.`,
+      EXIT_CODE.USAGE,
+    );
   return value;
 }
 
 /** Parse the shared non-negative --max-depth traversal bound. */
-export function parseMaxDepth(raw: string | number | undefined): number | undefined {
+export function parseMaxDepth(
+  raw: string | number | undefined,
+): number | undefined {
   if (raw === undefined) {
     return undefined;
   }
@@ -314,14 +322,16 @@ function normalizeDependencies(
   if (!dependencies || dependencies.length === 0) {
     return [];
   }
-  const sorted = dependencies.map(({ id, kind }) => ({
-    id: id.trim(),
-    kind: kind.trim().toLowerCase(),
-  })).sort((left, right) => {
-    const byKind = left.kind.localeCompare(right.kind);
-    if (byKind !== 0) return byKind;
-    return left.id.localeCompare(right.id);
-  });
+  const sorted = dependencies
+    .map(({ id, kind }) => ({
+      id: id.trim(),
+      kind: kind.trim().toLowerCase(),
+    }))
+    .sort((left, right) => {
+      const byKind = left.kind.localeCompare(right.kind);
+      if (byKind !== 0) return byKind;
+      return left.id.localeCompare(right.id);
+    });
   const deduped = new Map<string, IndexedDependency>();
   for (const dependency of sorted) {
     const key = `${dependency.kind.toLowerCase()}::${dependency.id.toLowerCase()}`;
@@ -353,9 +363,10 @@ interface DepsTreeBudget {
 }
 
 function estimateTreeNodeTokens(node: DepsTreeNode): number {
-  return Math.max(
-    1,
-    Math.ceil(JSON.stringify({ ...node, dependencies: undefined }).length / 3),
+  return estimatePmOutputTokens(
+    new TextEncoder().encode(
+      JSON.stringify({ ...node, dependencies: undefined }),
+    ).byteLength,
   );
 }
 
@@ -756,15 +767,156 @@ async function collectRootEvidence(
   const evidence = [
     `linked:${counts.map(([key, count]) => `${key}=${count}`).join(",")}`,
   ];
-  appendEvidencePointers(evidence, "file", files.map((file) => file.path), 3);
+  appendEvidencePointers(
+    evidence,
+    "file",
+    files.map((file) => file.path),
+    3,
+  );
   appendEvidencePointers(
     evidence,
     "test",
     tests.map((test) => test.command ?? test.path),
     2,
   );
-  appendEvidencePointers(evidence, "doc", docs.map((doc) => doc.path), 2);
+  appendEvidencePointers(
+    evidence,
+    "doc",
+    docs.map((doc) => doc.path),
+    2,
+  );
   return evidence;
+}
+
+function createContextDepsResult(params: {
+  canonicalId: string;
+  context: RelationshipContextResult;
+  missingCount: number;
+  missingReferences: DanglingDependencyReference[];
+  referenceLimit: number;
+  summaryOnly: boolean;
+}): DepsResult {
+  const {
+    canonicalId,
+    context,
+    missingCount,
+    missingReferences,
+    referenceLimit,
+    summaryOnly,
+  } = params;
+  return {
+    id: canonicalId,
+    format: "context",
+    node_count: context.nodes.length + 1,
+    edge_count: context.edges.length,
+    missing_count: missingCount,
+    missing_scope: "traversal",
+    missing_reference_count: missingReferences.length,
+    ...(summaryOnly
+      ? {}
+      : {
+          missing_references: missingReferences.slice(0, referenceLimit),
+          context,
+        }),
+  };
+}
+
+function includesContextMissingReference(params: {
+  row: DanglingDependencyReference;
+  missingReachableSet: ReadonlySet<string>;
+  packetIds: ReadonlySet<string>;
+  filteredKinds: ReadonlySet<string> | undefined;
+  registry: RelationshipKindRegistry;
+}): boolean {
+  const { row, missingReachableSet, packetIds, filteredKinds, registry } =
+    params;
+  if (
+    row.no_active_blocker_sentinel ||
+    !missingReachableSet.has(row.target_id.trim().toLowerCase()) ||
+    !packetIds.has(row.holder_id)
+  ) {
+    return false;
+  }
+  if (filteredKinds === undefined) return true;
+  const definition = registry.resolve(row.kind);
+  return (
+    definition !== undefined &&
+    (filteredKinds.has(definition.kind) ||
+      (definition.inverse !== undefined &&
+        filteredKinds.has(definition.inverse)))
+  );
+}
+
+function enforceContextRenderedTokenBudget(params: {
+  assembly: WorkspaceRelationshipAssembly;
+  canonicalId: string;
+  contextOptions: RelationshipContextOptions;
+  rootEvidence: readonly string[];
+  summaryOnly: boolean;
+  outputFormat: "json" | "toon";
+  missingCount: number;
+  missingReferences: DanglingDependencyReference[];
+}): DepsResult {
+  const {
+    assembly,
+    canonicalId,
+    contextOptions,
+    rootEvidence,
+    summaryOnly,
+    outputFormat,
+    missingCount,
+    missingReferences,
+  } = params;
+  const referenceLimit = contextOptions.edgeLimit ?? 40;
+  let emittedReferenceLimit = referenceLimit;
+  let internalTokenBudget = contextOptions.tokenBudget;
+  let requestedTokenBudget: number | undefined;
+  for (;;) {
+    const context = buildContextFromAssembly(
+      assembly,
+      canonicalId,
+      {
+        ...contextOptions,
+        ...(internalTokenBudget === undefined
+          ? {}
+          : { tokenBudget: internalTokenBudget }),
+      },
+      rootEvidence,
+    );
+    requestedTokenBudget ??= context.meta.tokenBudget;
+    internalTokenBudget ??= requestedTokenBudget;
+    const result = createContextDepsResult({
+      canonicalId,
+      context,
+      missingCount,
+      missingReferences,
+      referenceLimit: emittedReferenceLimit,
+      summaryOnly,
+    });
+    if (summaryOnly) return result;
+    context.meta.tokenBudget = requestedTokenBudget;
+    context.meta.usedTokens = estimatePmOutputTokens(
+      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
+        .byteLength,
+    );
+    context.meta.usedTokens = estimatePmOutputTokens(
+      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
+        .byteLength,
+    );
+    if (context.meta.usedTokens <= requestedTokenBudget) return result;
+    if (emittedReferenceLimit > 0) {
+      emittedReferenceLimit -= 1;
+      continue;
+    }
+    const currentInternalBudget = internalTokenBudget;
+    const scaledInternalBudget =
+      (currentInternalBudget * requestedTokenBudget) / context.meta.usedTokens;
+    const nextInternalBudget = Math.max(
+      1,
+      Math.floor(scaledInternalBudget * 0.9),
+    );
+    internalTokenBudget = nextInternalBudget;
+  }
 }
 
 /** Assemble the context-format deps result with traversal-scoped missing enumeration. */
@@ -774,17 +926,19 @@ function buildContextDepsResult(params: {
   options: DepsCommandOptions;
   rootEvidence: readonly string[];
   summaryOnly: boolean;
+  outputFormat: "json" | "toon";
 }): DepsResult {
-  const { assembly, canonicalId, options, rootEvidence, summaryOnly } = params;
+  const {
+    assembly,
+    canonicalId,
+    options,
+    rootEvidence,
+    summaryOnly,
+    outputFormat,
+  } = params;
   const contextOptions = parseDepsContextOptions(
     options,
     assembly.graph.registry(),
-  );
-  const context = buildContextFromAssembly(
-    assembly,
-    canonicalId,
-    contextOptions,
-    rootEvidence,
   );
   const reachable = assembly.graph.closure(canonicalId, {
     direction: contextOptions.direction,
@@ -811,38 +965,41 @@ function buildContextDepsResult(params: {
   const missingReferences = [
     ...assembly.dangling.active,
     ...assembly.dangling.legacy_terminal,
-  ].filter((row) => {
-    if (
-      row.no_active_blocker_sentinel ||
-      !missingReachableSet.has(row.target_id.trim().toLowerCase()) ||
-      !packetIds.has(row.holder_id)
-    )
-      return false;
-    if (filteredKinds === undefined) return true;
-    const definition = relationshipRegistry.resolve(row.kind);
-    return (
-      definition !== undefined &&
-      (filteredKinds.has(definition.kind) ||
-        (definition.inverse !== undefined &&
-          filteredKinds.has(definition.inverse)))
-    );
+  ].filter((row) =>
+    includesContextMissingReference({
+      row,
+      missingReachableSet,
+      packetIds,
+      filteredKinds,
+      registry: relationshipRegistry,
+    }),
+  );
+  return enforceContextRenderedTokenBudget({
+    assembly,
+    canonicalId,
+    contextOptions,
+    rootEvidence,
+    summaryOnly,
+    outputFormat,
+    missingCount: missingReachable.length,
+    missingReferences,
   });
-  const referenceLimit = contextOptions.edgeLimit ?? 40;
-  return {
-    id: canonicalId,
-    format: "context",
-    node_count: context.nodes.length + 1,
-    edge_count: context.edges.length,
-    missing_count: missingReachable.length,
-    missing_scope: "traversal",
-    missing_reference_count: missingReferences.length,
-    ...(summaryOnly
-      ? {}
-      : {
-          missing_references: missingReferences.slice(0, referenceLimit),
-          context,
-        }),
-  };
+}
+
+function trimDeepestDependency(tree: DepsTreeNode): boolean {
+  const pending = [tree];
+  let parentToTrim: DepsTreeNode | undefined;
+  while (pending.length > 0) {
+    const current = pending.pop()!;
+    if (current.dependencies.length > 0) {
+      parentToTrim = current;
+      pending.push(...current.dependencies);
+    }
+  }
+  if (!parentToTrim) return false;
+  parentToTrim.dependencies.pop();
+  parentToTrim.truncated = true;
+  return true;
 }
 
 function buildTreeOrGraphDepsResult(
@@ -852,6 +1009,7 @@ function buildTreeOrGraphDepsResult(
   index: Map<string, IndexedItem>,
   maxDepth: number | undefined,
   collapse: DepsCollapseMode,
+  outputFormat: "json" | "toon",
 ): DepsResult {
   const effectiveMaxDepth = maxDepth ?? DEFAULT_DEPS_TREE_MAX_DEPTH;
   const nodeLimit =
@@ -881,42 +1039,66 @@ function buildTreeOrGraphDepsResult(
     new Set<string>(),
     budget,
   );
-  const graph = toGraph(tree);
   const totals = countDependencyGraph(id, index, undefined);
-  const truncation =
-    budget.reasons.size === 0
-      ? undefined
-      : {
-          reasons: [...budget.reasons].sort(),
-          limits: {
-            max_depth: effectiveMaxDepth,
-            node_limit: nodeLimit,
-            edge_limit: edgeLimit,
-            token_budget: tokenBudget,
-          },
-          estimated_tokens: budget.estimatedTokens,
-          total_node_count: totals.node_count,
-          total_edge_count: totals.edge_count,
-          omitted_node_count: Math.max(
-            0,
-            totals.node_count - graph.nodes.length,
-          ),
-          omitted_edge_count: Math.max(
-            0,
-            totals.edge_count - graph.edges.length,
-          ),
-        };
-  const baseResult = {
-    id,
-    format,
-    node_count: graph.nodes.length,
-    edge_count: graph.edges.length,
-    missing_count: graph.missing_ids.length,
-    ...(truncation ? { truncation } : {}),
-  };
-  return format === "tree"
-    ? { ...baseResult, tree }
-    : { ...baseResult, graph };
+  let result: DepsResult;
+  for (;;) {
+    const graph = toGraph(tree);
+    const truncation =
+      budget.reasons.size === 0
+        ? undefined
+        : {
+            reasons: [...budget.reasons].sort(),
+            limits: {
+              max_depth: effectiveMaxDepth,
+              node_limit: nodeLimit,
+              edge_limit: edgeLimit,
+              token_budget: tokenBudget,
+            },
+            estimated_tokens: 0,
+            total_node_count: totals.node_count,
+            total_edge_count: totals.edge_count,
+            omitted_node_count: Math.max(
+              0,
+              totals.node_count - graph.nodes.length,
+            ),
+            omitted_edge_count: Math.max(
+              0,
+              totals.edge_count - graph.edges.length,
+            ),
+          };
+    const baseResult = {
+      id,
+      format,
+      node_count: graph.nodes.length,
+      edge_count: graph.edges.length,
+      missing_count: graph.missing_ids.length,
+      ...(truncation ? { truncation } : {}),
+    };
+    result =
+      format === "tree" ? { ...baseResult, tree } : { ...baseResult, graph };
+    const renderedTokens = estimatePmOutputTokens(
+      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
+        .byteLength,
+    );
+    if (result.truncation) {
+      result.truncation.estimated_tokens = renderedTokens;
+    }
+    const settledTokens = estimatePmOutputTokens(
+      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
+        .byteLength,
+    );
+    if (result.truncation) {
+      result.truncation.estimated_tokens = settledTokens;
+    }
+    if (settledTokens <= tokenBudget) {
+      return result;
+    }
+    if (!trimDeepestDependency(tree)) {
+      budget.reasons.add("token_budget");
+      return result;
+    }
+    budget.reasons.add("token_budget");
+  }
 }
 
 /** Implements run deps for the public runtime surface of this module. */
@@ -952,9 +1134,8 @@ export async function runDeps(
   const index = new Map(
     items.map((item) => [item.id.trim().toLowerCase(), toIndexedItem(item)]),
   );
-  const dangling = collectDanglingDependencyReferences(
-    items,
-    (status) => isTerminalStatus(status, statusRegistry),
+  const dangling = collectDanglingDependencyReferences(items, (status) =>
+    isTerminalStatus(status, statusRegistry),
   );
   for (const reference of [...dangling.active, ...dangling.legacy_terminal]) {
     const holder = index.get(reference.holder_id.trim().toLowerCase());
@@ -963,11 +1144,15 @@ export async function runDeps(
       holder &&
       !holder.dependencies.some(
         (dependency) =>
-          dependency.id.trim().toLowerCase() === reference.target_id.trim().toLowerCase() &&
+          dependency.id.trim().toLowerCase() ===
+            reference.target_id.trim().toLowerCase() &&
           dependency.kind === referenceKind,
       )
     ) {
-      holder.dependencies.push({ id: reference.target_id, kind: referenceKind });
+      holder.dependencies.push({
+        id: reference.target_id,
+        kind: referenceKind,
+      });
     }
   }
   if (!index.has(id.trim().toLowerCase())) {
@@ -1005,6 +1190,7 @@ export async function runDeps(
       options,
       rootEvidence,
       summaryOnly,
+      outputFormat: global.json === true ? "json" : "toon",
     });
   }
 
@@ -1023,5 +1209,6 @@ export async function runDeps(
     index,
     maxDepth,
     collapse,
+    global.json === true ? "json" : "toon",
   );
 }

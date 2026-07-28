@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- The dependency token budget is enforced against a different representation than the one emitted, so a command that reports staying inside 16k tokens delivers about 45k ([pm-t2t709](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t2t709.toon))
+- pm activity has no default bound: a bare invocation returns all 40,446 history entries at 1.59M tokens, 397x the ceiling its own contract declares ([pm-z2j1qt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z2j1qt.toon))
+- Both token gates are structurally unable to fail: one measures only help payloads, the other measures command output against a three-item fixture, so no check anywhere compares real output to the ceiling the contract declares ([pm-9sui7t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9sui7t.toon))
 - Sentry PM-CLI-2N: malformed missing tags crash normalizeItemMetadata before search can report the item ([pm-89neyq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-89neyq.toon))
 - pm-governance-audit comments-audit limit contract contradicts runtime alias semantics ([pm-v657](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v657.toon))
 - pm-governance-audit dedupe-audit rejects --status all, breaking explicit all-lifecycle duplicate sweeps ([pm-mp49](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mp49.toon))
@@ -11,6 +14,7 @@
 
 ### Other
 
+- Token-budget gate corpus is unrepresentative in both scale and coverage: budgets are set on a seeded micro-workspace and the largest agent-facing payloads are not measured at all ([pm-z71aoy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z71aoy.toon))
 - GH-782: guide-shell special-cases one multi-word command name and duplicates its status derivation, and calendar's throw-only validation call is unexplained, inside package-managed built-ins consumers cannot patch ([pm-cb8qq2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cb8qq2.toon))
 
 ## 2026.7.28 - 2026-07-28

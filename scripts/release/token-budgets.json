@@ -1,167 +1,245 @@
 {
-  "version": 1,
+  "version": 2,
   "metric": "utf8_bytes",
   "token_estimate": "ceil(bytes / 4)",
-  "fixture": "isolated PM_PATH and PM_GLOBAL_PATH with deterministic seeded items",
+  "fixture": "isolated PM_PATH and PM_GLOBAL_PATH with 27 deterministic linked items",
+  "policy": "discovery surfaces use ratcheted byte ceilings; answer surfaces use live command contracts",
   "budgets": [
     {
       "id": "root-help",
-      "args": [
-        "--help"
-      ],
+      "args": ["--help"],
+      "kind": "discovery",
+      "scale_tier": "static",
+      "baseline_bytes": 11090,
+      "baseline_estimated_tokens": 2773,
       "max_bytes": 12200,
       "max_estimated_tokens": 3051
     },
     {
       "id": "search-help",
-      "args": [
-        "search",
-        "--help"
-      ],
+      "args": ["search", "--help"],
+      "kind": "discovery",
+      "scale_tier": "static",
+      "baseline_bytes": 6117,
+      "baseline_estimated_tokens": 1530,
       "max_bytes": 6729,
       "max_estimated_tokens": 1684
     },
     {
       "id": "create-help",
-      "args": [
-        "create",
-        "--help"
-      ],
+      "args": ["create", "--help"],
+      "kind": "discovery",
+      "scale_tier": "static",
+      "baseline_bytes": 7768,
+      "baseline_estimated_tokens": 1942,
       "max_bytes": 8545,
       "max_estimated_tokens": 2137
     },
     {
       "id": "update-help",
-      "args": [
-        "update",
-        "--help"
-      ],
+      "args": ["update", "--help"],
+      "kind": "discovery",
+      "scale_tier": "static",
+      "baseline_bytes": 7972,
+      "baseline_estimated_tokens": 1993,
       "max_bytes": 8770,
       "max_estimated_tokens": 2193
     },
     {
       "id": "contracts-summary-json",
-      "args": [
-        "contracts",
-        "--summary",
-        "--json"
-      ],
+      "args": ["contracts", "--summary", "--json"],
+      "kind": "discovery",
+      "scale_tier": "static",
+      "baseline_bytes": 9753,
+      "baseline_estimated_tokens": 2439,
       "max_bytes": 10729,
       "max_estimated_tokens": 2683
     },
     {
       "id": "contracts-flags-json",
-      "args": [
-        "contracts",
-        "--flags-only",
-        "--json"
-      ],
-      "max_bytes": 130241,
-      "max_estimated_tokens": 32561
+      "args": ["contracts", "--flags-only", "--json"],
+      "kind": "discovery",
+      "scale_tier": "static",
+      "baseline_bytes": 118453,
+      "baseline_estimated_tokens": 29614,
+      "max_bytes": 130299,
+      "max_estimated_tokens": 32576
     },
     {
       "id": "list-default",
-      "args": [
-        "list"
-      ],
-      "max_bytes": 649,
-      "max_estimated_tokens": 163
+      "args": ["list"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 3198,
+      "baseline_estimated_tokens": 800,
+      "command": "list",
+      "contract_max_estimated_tokens": 4000
     },
     {
       "id": "list-open-default",
-      "args": [
-        "list-open"
-      ],
-      "max_bytes": 568,
-      "max_estimated_tokens": 142
+      "args": ["list-open"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 2468,
+      "baseline_estimated_tokens": 617,
+      "command": "list",
+      "contract_max_estimated_tokens": 4000
     },
     {
       "id": "list-json",
-      "args": [
-        "list",
-        "--json"
-      ],
-      "max_bytes": 956,
-      "max_estimated_tokens": 240
+      "args": ["list", "--json"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 4245,
+      "baseline_estimated_tokens": 1062,
+      "command": "list",
+      "contract_max_estimated_tokens": 4000
     },
     {
       "id": "get-default",
-      "args": [
-        "get",
-        "pm-18bq"
-      ],
-      "max_bytes": 711,
-      "max_estimated_tokens": 179
+      "args": ["get", "pm-yo5x"],
+      "kind": "answer",
+      "scale_tier": "linked",
+      "baseline_bytes": 646,
+      "baseline_estimated_tokens": 162,
+      "command": "get",
+      "contract_max_estimated_tokens": 4000
     },
     {
       "id": "get-json-compact-fields",
       "args": [
         "get",
-        "pm-18bq",
+        "pm-yo5x",
         "--json",
         "--fields",
         "id,title,status,type,priority,tags,dependencies"
       ],
-      "max_bytes": 504,
-      "max_estimated_tokens": 127
+      "kind": "answer",
+      "scale_tier": "linked",
+      "baseline_bytes": 458,
+      "baseline_estimated_tokens": 115,
+      "command": "get",
+      "contract_max_estimated_tokens": 4000
     },
     {
       "id": "context-default",
-      "args": [
-        "context",
-        "--limit",
-        "5"
-      ],
-      "max_bytes": 1120,
-      "max_estimated_tokens": 281
+      "args": ["context"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 3134,
+      "baseline_estimated_tokens": 784,
+      "command": "context",
+      "contract_max_estimated_tokens": 4000
     },
     {
       "id": "next-default",
-      "args": [
-        "next",
-        "--limit",
-        "5"
-      ],
-      "max_bytes": 1065,
-      "max_estimated_tokens": 267
+      "args": ["next"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 3092,
+      "baseline_estimated_tokens": 773,
+      "command": "next",
+      "contract_max_estimated_tokens": 4000
     },
     {
-      "id": "health-summary",
-      "args": [
-        "health",
-        "--check-only",
-        "--summary"
-      ],
-      "max_bytes": 578,
-      "max_estimated_tokens": 146
+      "id": "activity-default",
+      "args": ["activity", "--json"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 2929,
+      "baseline_estimated_tokens": 733,
+      "command": "activity",
+      "contract_max_estimated_tokens": 4000
+    },
+    {
+      "id": "deps-tree-default",
+      "args": ["deps", "pm-5qpl"],
+      "kind": "answer",
+      "scale_tier": "linked",
+      "baseline_bytes": 197,
+      "baseline_estimated_tokens": 50,
+      "command": "deps",
+      "contract_max_estimated_tokens": 4000
+    },
+    {
+      "id": "deps-tree-json",
+      "args": ["deps", "pm-5qpl", "--json"],
+      "kind": "answer",
+      "scale_tier": "linked",
+      "baseline_bytes": 289,
+      "baseline_estimated_tokens": 73,
+      "command": "deps",
+      "contract_max_estimated_tokens": 4000
+    },
+    {
+      "id": "graph-audit-summary",
+      "args": ["graph", "audit", "--summary", "--json"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 872,
+      "baseline_estimated_tokens": 218,
+      "command": "graph",
+      "contract_max_estimated_tokens": 4000
+    },
+    {
+      "id": "duplicates-default",
+      "args": ["duplicates", "--limit", "20", "--json"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 314,
+      "baseline_estimated_tokens": 79,
+      "command": "duplicates",
+      "contract_max_estimated_tokens": 4000
+    },
+    {
+      "id": "events-default",
+      "args": ["events", "--limit", "20"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 6411,
+      "baseline_estimated_tokens": 1603,
+      "command": "events",
+      "contract_max_estimated_tokens": 4000
+    },
+    {
+      "id": "health-default",
+      "args": ["health", "--check-only"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 7604,
+      "baseline_estimated_tokens": 1901,
+      "command": "health",
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "validate-counts",
-      "args": [
-        "validate",
-        "--counts"
-      ],
-      "max_bytes": 5663,
-      "max_estimated_tokens": 1416
+      "args": ["validate", "--counts"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 5241,
+      "baseline_estimated_tokens": 1311,
+      "command": "validate",
+      "contract_max_estimated_tokens": 6000
     },
     {
       "id": "search-inline-default",
-      "args": [
-        "search",
-        "status:all Alpha"
-      ],
-      "max_bytes": 552,
-      "max_estimated_tokens": 139
+      "args": ["search", "status:all Alpha"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 501,
+      "baseline_estimated_tokens": 126,
+      "command": "search",
+      "contract_max_estimated_tokens": 4000
     },
     {
       "id": "search-inline-json",
-      "args": [
-        "search",
-        "status:all Alpha",
-        "--json"
-      ],
-      "max_bytes": 741,
-      "max_estimated_tokens": 186
+      "args": ["search", "status:all Alpha", "--json"],
+      "kind": "answer",
+      "scale_tier": "medium",
+      "baseline_bytes": 673,
+      "baseline_estimated_tokens": 169,
+      "command": "search",
+      "contract_max_estimated_tokens": 4000
     }
   ]
 }

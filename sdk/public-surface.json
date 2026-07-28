@@ -198,6 +198,14 @@
       ],
       "package_version": "2026.7.27",
       "reason": "Additive optional workspace capability metadata and extension command visibility tier"
+    },
+    {
+      "changes": [
+        "signature ./sdk:MergeInstallResult",
+        "signature ./sdk/merge:MergeInstallResult"
+      ],
+      "package_version": "2026.7.28",
+      "reason": "Add optional canonical pm_root metadata to merge-install results while preserving existing fields"
     }
   ],
   "entrypoints": {
@@ -5314,7 +5322,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeInstallResult",
-          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; pm_root?: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -16066,7 +16074,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeInstallResult",
-          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; pm_root?: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
