@@ -24,6 +24,21 @@ export async function invalidateHistoryDriftCache(
   pmRoot: string,
 ): Promise<void> {
   const cachePath = path.join(pmRoot, DRIFT_CACHE_RELATIVE_PATH);
+  let pmRootIsDirectory = false;
+  try {
+    pmRootIsDirectory = (
+      await fs.stat(await fs.realpath(pmRoot))
+    ).isDirectory();
+  } catch {
+    // The semantic classification below treats an invalid tracker root
+    // independently from platform-specific filesystem error codes.
+  }
+  if (!pmRootIsDirectory) {
+    writeStderr(
+      "[pm] warning: history_drift_cache_invalidation_failed:invalid_cache_path\n",
+    );
+    return;
+  }
   try {
     await fs.rm(cachePath, { force: true });
   } catch (error) {
@@ -34,24 +49,13 @@ export async function invalidateHistoryDriftCache(
       typeof error.code === "string"
         ? error.code
         : undefined;
-    let pmRootIsDirectory = false;
-    try {
-      pmRootIsDirectory = (
-        await fs.stat(await fs.realpath(pmRoot))
-      ).isDirectory();
-    } catch {
-      // The semantic classification below treats an invalid tracker root
-      // independently from platform-specific filesystem error codes.
-    }
-    if (errorCode === "ENOENT" && pmRootIsDirectory) {
+    if (errorCode === "ENOENT") {
       return;
     }
     const code =
       errorCode === undefined
         ? "unknown"
-        : !pmRootIsDirectory
-          ? "invalid_cache_path"
-          : (DRIFT_CACHE_ERROR_CODES[errorCode] ?? "filesystem_error");
+        : (DRIFT_CACHE_ERROR_CODES[errorCode] ?? "filesystem_error");
     writeStderr(
       `[pm] warning: history_drift_cache_invalidation_failed:${code}\n`,
     );

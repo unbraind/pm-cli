@@ -316,6 +316,9 @@ describe("SDK and CLI context-integrity primitives", () => {
       const invalidRoot = path.join(pmPath, "not-a-directory");
       await writeFile(invalidRoot, "file\n", "utf8");
       await expect(
+        invalidateHistoryDriftCache(invalidRoot),
+      ).resolves.toBeUndefined();
+      await expect(
         invalidateHistoryDriftCache(path.join(invalidRoot, "nested")),
       ).resolves.toBeUndefined();
       expect(stderrWrite).toHaveBeenCalledWith(
