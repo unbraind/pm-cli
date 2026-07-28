@@ -5,7 +5,10 @@
  */
 import { BUILTIN_ITEM_TYPE_VALUES } from "../../types/index.js";
 import type { ItemTypeDefinition } from "../../types/index.js";
-import { toDefaultFolder } from "../item/type-registry.js";
+import {
+  normalizeItemTypeFolder,
+  toDefaultFolder,
+} from "../item/type-registry.js";
 
 export type { ItemTypeDefinition } from "../../types/index.js";
 
@@ -131,7 +134,11 @@ export function normalizeAddTypeInput(
   }
   const description = raw.description?.trim();
   const defaultStatus = raw.defaultStatus?.trim();
-  const folder = raw.folder?.trim();
+  const rawFolder = raw.folder?.trim();
+  const folder =
+    rawFolder && rawFolder.length > 0
+      ? normalizeItemTypeFolder(rawFolder)
+      : undefined;
   const aliases = dedupeAliases(raw.aliases ?? []);
   for (const alias of aliases) {
     assertValidTypeToken(alias, "Alias");
@@ -148,7 +155,7 @@ export function normalizeAddTypeInput(
       description && description.length > 0 ? description : undefined,
     defaultStatus:
       defaultStatus && defaultStatus.length > 0 ? defaultStatus : undefined,
-    folder: folder && folder.length > 0 ? folder : undefined,
+    folder,
     aliases,
   };
 }
@@ -197,7 +204,7 @@ export function assertAliasesAvailable(
 /** Resolves the storage folder a definition would use: an explicit non-empty `folder` wins, otherwise the deterministic slug derived from the name (the same derivation the runtime registry applies, single-sourced from type-registry.toDefaultFolder). */
 function resolveDefinitionFolder(name: string, folder: unknown): string {
   if (typeof folder === "string" && folder.trim().length > 0) {
-    return folder.trim().toLowerCase();
+    return normalizeItemTypeFolder(folder).toLowerCase();
   }
   return toDefaultFolder(name).toLowerCase();
 }
