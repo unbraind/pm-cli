@@ -446,6 +446,21 @@ After changing any of these, run `pm reindex --mode hybrid` so the vector index 
 
 Custom item types can be defined in settings and by extensions. Runtime type resolution affects create/update validation, list/search/calendar filters, completions, and storage folders.
 
+Prefer `pm schema add-type` for project definitions:
+
+```bash
+pm schema add-type Review --folder reviews
+pm schema add-type Research --folder research/records
+```
+
+Custom storage folders are portable paths relative to the pm tracker root.
+Leading `/` and Windows separators are canonicalized to that tracker-relative
+form. A folder that resolves outside the tracker, uses a Windows drive prefix,
+is empty, or contains a NUL byte is rejected. Runtime registry resolution
+applies the same guard to existing project settings and extension registrations
+before item or history paths are written. This containment contract is tracked
+by [pm-d30cmk](../.agents/pm/issues/pm-d30cmk.toon).
+
 Use runtime contracts for exact active types:
 
 ```bash

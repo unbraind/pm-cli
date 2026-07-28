@@ -26,6 +26,7 @@
 
 ### Security
 
+- GH-799: confine custom item-type storage folders to the tracker root ([pm-d30cmk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d30cmk.toon))
 - PR \#795 exact-head review hardening: dependency budget progress, rendered fixed points, nightly credential isolation, and drift-cache diagnostics ([pm-jd3m6p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jd3m6p.toon))
 
 ### Other

@@ -3,6 +3,7 @@
  *
  * Defines item parsing, formatting, and lifecycle helpers for Type Registry.
  */
+import path from "node:path";
 import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import type { ExtensionRegistrationRegistry } from "../extensions/loader.js";
 import type {
@@ -378,6 +379,33 @@ export function toDefaultFolder(name: string): string {
   return normalized.endsWith("s") ? normalized : `${normalized}s`;
 }
 
+/**
+ * Canonicalizes a custom item-type folder as a portable tracker-relative path.
+ *
+ * Leading separators retain the historical CLI meaning of "relative to the pm
+ * tracker", while Windows separators are normalized so definitions behave
+ * identically on every host. Traversal, drive-prefixed, empty, and NUL-bearing
+ * values fail closed before callers can resolve an item or history path.
+ */
+export function normalizeItemTypeFolder(folder: string): string {
+  const trimmed = folder.trim();
+  const portable = trimmed.replaceAll("\\", "/");
+  const trackerRelative = portable.replace(/^\/+/, "");
+  const normalized = path.posix.normalize(trackerRelative);
+  if (
+    trimmed.includes("\0") ||
+    /^[A-Za-z]:/.test(normalized) ||
+    normalized === "." ||
+    normalized === ".." ||
+    normalized.startsWith("../")
+  ) {
+    throw new Error(
+      `Item type folder "${folder}" must stay inside the pm tracker root.`,
+    );
+  }
+  return normalized;
+}
+
 function toSlugToken(value: string): string {
   const trimmed = value.trim().toLowerCase();
   let slug = "";
@@ -588,12 +616,14 @@ function buildResolvedTypeDefinition(
   const description = normalizedDefinition.description ?? existing?.description;
   const defaultStatus =
     normalizedDefinition.default_status ?? existing?.default_status;
-  const resolvedDefinition: ResolvedItemTypeDefinition = {
-    name: keepName,
-    folder:
-      normalizedDefinition.folder ??
+  const folder = normalizeItemTypeFolder(
+    normalizedDefinition.folder ??
       existing?.folder ??
       toDefaultFolder(keepName),
+  );
+  const resolvedDefinition: ResolvedItemTypeDefinition = {
+    name: keepName,
+    folder,
     aliases: normalizeItemTypeStringList([
       ...(existing?.aliases ?? []),
       ...(normalizedDefinition.aliases ?? []),

@@ -60,6 +60,7 @@ import {
   resolveRuntimeStatusRegistry,
 } from "../core/schema/runtime-schema.js";
 import {
+  normalizeItemTypeFolder,
   resolveItemTypeRegistry,
   toDefaultFolder,
   type ResolvedItemTypeDefinition,
@@ -1032,7 +1033,9 @@ export async function ensureTypeFolderScaffold(
   op: string,
 ): Promise<void> {
   for (const definition of definitions) {
-    const folder = definition.folder ?? toDefaultFolder(definition.name);
+    const folder = normalizeItemTypeFolder(
+      definition.folder ?? toDefaultFolder(definition.name),
+    );
     const target = path.join(pmRoot, folder);
     if (await pathExists(target)) {
       continue;
