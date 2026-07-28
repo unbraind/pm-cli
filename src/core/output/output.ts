@@ -273,6 +273,29 @@ function resolveOutputFormat(options: OutputOptions): "json" | "toon" {
     : "toon";
 }
 
+const LEAN_READ_ENVELOPE_ECHO_KEYS = new Set([
+  "filters",
+  "now",
+  "projection",
+  "sorting",
+]);
+
+function projectLeanJsonValue(value: unknown): unknown {
+  const compacted = compactToonValue(value);
+  if (!isPlainObject(compacted) || !Array.isArray(compacted.items)) {
+    return compacted ?? null;
+  }
+  const projected = Object.fromEntries(
+    Object.entries(compacted).filter(
+      ([key]) => !LEAN_READ_ENVELOPE_ECHO_KEYS.has(key),
+    ),
+  );
+  if (projected.has_more !== true) {
+    delete projected.next_cursor;
+  }
+  return projected;
+}
+
 /** Formats a command result after command-level output ownership is resolved. */
 function formatEffectiveOutput(
   effectiveResult: unknown,
@@ -281,7 +304,7 @@ function formatEffectiveOutput(
 ): string {
   const format = resolveOutputFormat(options);
   const serviceOverride = nativeOutput
-    ? { handled: false, result: effectiveResult }
+    ? { handled: false, result: effectiveResult, warnings: [] }
     : runActiveServiceOverrideSync("output_format", {
         command: options.command,
         args: options.commandArgs,
@@ -292,6 +315,14 @@ function formatEffectiveOutput(
         options: { ...options },
         result: effectiveResult,
       });
+  const legacyPayloadEchoWarning = serviceOverride.warnings.find((warning) =>
+    warning.startsWith("extension_output_format_payload_echo_deprecated:"),
+  );
+  if (legacyPayloadEchoWarning !== undefined) {
+    writeStderr(
+      `Warning: ${legacyPayloadEchoWarning}. Returning context.payload now declines safely for compatibility; migrate the override to declineServiceOverride() or { handled: false }.\n`,
+    );
+  }
   if (serviceOverride.handled && typeof serviceOverride.result === "string") {
     return serviceOverride.result.endsWith("\n")
       ? serviceOverride.result
@@ -316,9 +347,7 @@ function formatEffectiveOutput(
   }
   if (format === "json") {
     const jsonResult =
-      options.lean === true
-        ? (compactToonValue(outputResult) ?? null)
-        : outputResult;
+      options.lean === true ? projectLeanJsonValue(outputResult) : outputResult;
     return `${JSON.stringify(jsonResult, null, 2)}\n`;
   }
   const compactedToon = compactToonValue(outputResult);

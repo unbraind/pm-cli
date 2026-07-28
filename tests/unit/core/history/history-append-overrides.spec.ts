@@ -2,8 +2,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
-import { appendHistoryEntry, createHistoryEntry } from "../../../../src/core/history/history.js";
-import { clearActiveExtensionHooks, setActiveExtensionServices } from "../../../../src/core/extensions/index.js";
+import {
+  appendHistoryEntry,
+  createHistoryEntry,
+} from "../../../../src/core/history/history.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionServices,
+} from "../../../../src/core/extensions/index.js";
 import type { ItemDocument } from "../../../../src/types/index.js";
 
 const FIXED_TS = "2026-02-20T00:00:00.000Z";
@@ -74,7 +80,10 @@ describe("createHistoryEntry empty-metadata patch branch", () => {
 
   it("normalizes missing body values to empty strings when building patch documents", () => {
     const before = fullDoc({ id: "pm-history-missing-body" });
-    const after = fullDoc({ id: "pm-history-missing-body", title: "after title" });
+    const after = fullDoc({
+      id: "pm-history-missing-body",
+      title: "after title",
+    });
     delete (before as { body?: string }).body;
     delete (after as { body?: string }).body;
 
@@ -91,7 +100,10 @@ describe("createHistoryEntry empty-metadata patch branch", () => {
   });
 
   it("normalizes tombstone documents with neither metadata nor body", () => {
-    const before = fullDoc({ id: "pm-history-tombstone-missing-body" }, "before body");
+    const before = fullDoc(
+      { id: "pm-history-tombstone-missing-body" },
+      "before body",
+    );
     const after = {} as unknown as ItemDocument;
 
     const entry = createHistoryEntry({
@@ -109,7 +121,9 @@ describe("createHistoryEntry empty-metadata patch branch", () => {
 
 describe("appendHistoryEntry object service override", () => {
   it("honours an object result that skips the write", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
     try {
       const historyPath = path.join(dir, "pm-skip.jsonl");
       setActiveExtensionServices({
@@ -133,7 +147,9 @@ describe("appendHistoryEntry object service override", () => {
 
       await appendHistoryEntry(historyPath, entry);
       // skip:true → nothing written.
-      await expect(fs.access(historyPath)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fs.access(historyPath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
     } finally {
       clearActiveExtensionHooks();
       await fs.rm(dir, { recursive: true, force: true });
@@ -141,7 +157,9 @@ describe("appendHistoryEntry object service override", () => {
   });
 
   it("ignores a non-object handled result and writes the serialized entry", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
     try {
       const historyPath = path.join(dir, "fallthrough.jsonl");
       setActiveExtensionServices({
@@ -168,7 +186,10 @@ describe("appendHistoryEntry object service override", () => {
       await appendHistoryEntry(historyPath, entry);
       const written = await fs.readFile(historyPath, "utf8");
       expect(written.trim().length).toBeGreaterThan(0);
-      expect(JSON.parse(written.trim())).toMatchObject({ op: "update", author: "test-agent" });
+      expect(JSON.parse(written.trim())).toMatchObject({
+        op: "update",
+        author: "test-agent",
+      });
     } finally {
       clearActiveExtensionHooks();
       await fs.rm(dir, { recursive: true, force: true });
@@ -176,7 +197,9 @@ describe("appendHistoryEntry object service override", () => {
   });
 
   it("redirects the write to an object-supplied history path and line", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
     try {
       const requestedPath = path.join(dir, "requested.jsonl");
       const redirectedPath = path.join(dir, "redirected.jsonl");
@@ -200,7 +223,9 @@ describe("appendHistoryEntry object service override", () => {
       });
 
       await appendHistoryEntry(requestedPath, entry);
-      await expect(fs.access(requestedPath)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fs.access(requestedPath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
       const written = await fs.readFile(redirectedPath, "utf8");
       expect(written.trim()).toBe("custom-line");
     } finally {
@@ -210,7 +235,9 @@ describe("appendHistoryEntry object service override", () => {
   });
 
   it("writes object-supplied entry payloads when no explicit line is provided", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
     try {
       const requestedPath = path.join(dir, "requested-entry.jsonl");
       const redirectedPath = path.join(dir, "redirected-entry.jsonl");
@@ -237,9 +264,15 @@ describe("appendHistoryEntry object service override", () => {
       });
 
       await appendHistoryEntry(requestedPath, entry);
-      await expect(fs.access(requestedPath)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fs.access(requestedPath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
       const written = await fs.readFile(redirectedPath, "utf8");
-      expect(JSON.parse(written.trim())).toEqual({ ts: FIXED_TS, op: "override", marker: "custom-entry" });
+      expect(JSON.parse(written.trim())).toEqual({
+        ts: FIXED_TS,
+        op: "override",
+        marker: "custom-entry",
+      });
     } finally {
       clearActiveExtensionHooks();
       await fs.rm(dir, { recursive: true, force: true });
@@ -247,7 +280,9 @@ describe("appendHistoryEntry object service override", () => {
   });
 
   it("falls back to the current time when an override entry and fallback entry both omit timestamps", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
     try {
       const historyPath = path.join(dir, "fallback-now-entry.jsonl");
       setActiveExtensionServices({
@@ -256,7 +291,9 @@ describe("appendHistoryEntry object service override", () => {
             layer: "project",
             name: "history-fallback-now-entry",
             service: "history_append",
-            run: () => ({ entry: { op: "fallback-now", marker: "custom-entry" } }),
+            run: () => ({
+              entry: { op: "fallback-now", marker: "custom-entry" },
+            }),
           },
         ],
       });
@@ -272,8 +309,15 @@ describe("appendHistoryEntry object service override", () => {
 
       await appendHistoryEntry(historyPath, entry);
       const written = await fs.readFile(historyPath, "utf8");
-      const parsed = JSON.parse(written.trim()) as { ts?: string; op?: string; marker?: string };
-      expect(parsed).toMatchObject({ op: "fallback-now", marker: "custom-entry" });
+      const parsed = JSON.parse(written.trim()) as {
+        ts?: string;
+        op?: string;
+        marker?: string;
+      };
+      expect(parsed).toMatchObject({
+        op: "fallback-now",
+        marker: "custom-entry",
+      });
       expect(typeof parsed.ts).toBe("string");
       expect(parsed.ts).not.toBe("");
       expect(Number.isNaN(Date.parse(parsed.ts ?? ""))).toBe(false);
@@ -284,7 +328,9 @@ describe("appendHistoryEntry object service override", () => {
   });
 
   it("adds a timestamp to JSON line override payloads that omit one", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
     try {
       const historyPath = path.join(dir, "line-entry.jsonl");
       setActiveExtensionServices({
@@ -293,7 +339,12 @@ describe("appendHistoryEntry object service override", () => {
             layer: "project",
             name: "history-line-entry",
             service: "history_append",
-            run: () => JSON.stringify({ ts: "   ", op: "line-override", marker: "custom-line-entry" }),
+            run: () =>
+              JSON.stringify({
+                ts: "   ",
+                op: "line-override",
+                marker: "custom-line-entry",
+              }),
           },
         ],
       });
@@ -320,7 +371,9 @@ describe("appendHistoryEntry object service override", () => {
   });
 
   it("serializes primitive object override entry payloads defensively", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-history-override-"));
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
     try {
       const historyPath = path.join(dir, "primitive-entry.jsonl");
       setActiveExtensionServices({
@@ -345,6 +398,66 @@ describe("appendHistoryEntry object service override", () => {
       await appendHistoryEntry(historyPath, entry);
       const written = await fs.readFile(historyPath, "utf8");
       expect(JSON.parse(written.trim())).toBe(42);
+    } finally {
+      clearActiveExtensionHooks();
+      await fs.rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("invalidates drift state before a post-append event-index cleanup fails", async () => {
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "pm-history-override-"),
+    );
+    try {
+      const pmRoot = path.join(dir, ".agents", "pm");
+      const historyPath = path.join(
+        pmRoot,
+        "history",
+        "pm-index-failure.jsonl",
+      );
+      const runtimePath = path.join(pmRoot, "runtime");
+      const driftCachePath = path.join(runtimePath, "history-drift-cache.json");
+      const eventIndexPath = path.join(
+        runtimePath,
+        "history-event-index.sqlite",
+      );
+      await fs.mkdir(eventIndexPath, { recursive: true });
+      await fs.writeFile(
+        path.join(eventIndexPath, "blocker"),
+        "file\n",
+        "utf8",
+      );
+      await fs.writeFile(driftCachePath, "{}\n", "utf8");
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "history-index-failure",
+            service: "history_append",
+            run: () => JSON.stringify({ op: "override" }),
+          },
+        ],
+      });
+
+      const entry = createHistoryEntry({
+        nowIso: FIXED_TS,
+        author: "test-agent",
+        op: "update",
+        before: fullDoc({ id: "pm-index-failure", title: "a" }),
+        after: fullDoc({ id: "pm-index-failure", title: "b" }),
+      });
+
+      await expect(
+        appendHistoryEntry(historyPath, entry),
+      ).rejects.toMatchObject({
+        code: "ERR_FS_EISDIR",
+      });
+      await expect(fs.readFile(historyPath, "utf8")).resolves.toContain(
+        '"op":"override"',
+      );
+      await expect(fs.access(driftCachePath)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
     } finally {
       clearActiveExtensionHooks();
       await fs.rm(dir, { recursive: true, force: true });

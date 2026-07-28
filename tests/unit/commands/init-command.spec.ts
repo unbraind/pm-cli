@@ -968,7 +968,9 @@ describe("runInit", () => {
       const beforeDirectories = before.checks.find(
         (check) => check.name === "directories",
       );
-      expect(beforeDirectories?.details.missing_required).toEqual([
+      expect(beforeDirectories).toMatchObject({ status: "ok" });
+      expect(beforeDirectories?.details.missing_required).toEqual([]);
+      expect(beforeDirectories?.details.missing_optional).toEqual([
         "showtypes",
         "types",
       ]);
@@ -988,6 +990,7 @@ describe("runInit", () => {
         (check) => check.name === "directories",
       );
       expect(afterDirectories?.details.missing_required).toEqual([]);
+      expect(afterDirectories?.details.missing_optional).toEqual([]);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

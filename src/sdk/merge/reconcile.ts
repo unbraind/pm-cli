@@ -10,10 +10,7 @@ import {
   runHistoryRepairAll,
   type HistoryRepairAllResult,
 } from "../history-repair.js";
-import {
-  runValidate,
-  type ValidateResult,
-} from "../governance/validate.js";
+import { runValidate, type ValidateResult } from "../governance/validate.js";
 import {
   listMergeReceipts,
   markMergeReceiptReconciled,
@@ -36,9 +33,9 @@ export interface MergeReconcileOptions {
 /** Structured post-merge reconciliation and verification result. */
 export interface MergeReconcileResult {
   /**
-   * Whether reconciliation completed without errors. In dry-run mode this
-   * reports preview success, not workspace cleanliness; inspect `repair` and
-   * `validation.checks` before deciding whether an apply pass is required.
+   * Whether reconciliation completed without repair failures or non-green
+   * merge-critical validation. Dry-run previews therefore fail closed while
+   * drift or pending merge decisions still require an apply pass.
    */
   ok: boolean;
   /** Whether this invocation only previewed repairs. */
@@ -131,8 +128,7 @@ export async function runMergeReconcile(
         outcome,
         entries_rehashed: settled.value.history.entries_rehashed,
         entries_patch_repaired: settled.value.history.entries_patch_repaired,
-        reconciled_with_item:
-          settled.value.history.reconciled_with_item,
+        reconciled_with_item: settled.value.history.reconciled_with_item,
         warnings: settled.value.warnings,
       });
       repair.totals[outcome] += 1;
@@ -164,7 +160,7 @@ export async function runMergeReconcile(
   const mergeChecksGreen = validation.checks.every(
     (check) => check.status === "ok",
   );
-  const ok = repair.totals.failed === 0 && (dryRun || mergeChecksGreen);
+  const ok = repair.totals.failed === 0 && mergeChecksGreen;
   const guidance = dryRun
     ? [
         "Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.",

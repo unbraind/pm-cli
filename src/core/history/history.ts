@@ -29,6 +29,7 @@ import {
   removeHistoryEventIndexForHistoryPath,
   updateHistoryEventIndexAfterAppend,
 } from "./event-index.js";
+import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
 
 const EMPTY_LEGACY_HASH_DOCUMENT = {
   front_matter: {},
@@ -191,9 +192,7 @@ export function createHistoryEntry(params: {
     author: params.author,
     author_source:
       params.authorSource ?? resolveHistoryAuthorSource(params.author),
-    ...(agentIdentity.harness
-      ? { agent_harness: agentIdentity.harness }
-      : {}),
+    ...(agentIdentity.harness ? { agent_harness: agentIdentity.harness } : {}),
     ...(agentIdentity.model ? { agent_model: agentIdentity.model } : {}),
     ...(agentIdentity.model_source
       ? { agent_model_source: agentIdentity.model_source }
@@ -273,6 +272,7 @@ export async function appendHistoryEntry(
         historyPath,
         serializeHistoryLine(override.result, entry),
       );
+      await invalidateHistoryDriftCacheForPath(historyPath);
       await removeHistoryEventIndexForHistoryPath(historyPath);
       return;
     }
@@ -295,6 +295,7 @@ export async function appendHistoryEntry(
           nextHistoryPath,
           serializeHistoryLine(record.line, entry),
         );
+        await invalidateHistoryDriftCacheForPath(nextHistoryPath);
         await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
         return;
       }
@@ -302,11 +303,13 @@ export async function appendHistoryEntry(
         nextHistoryPath,
         serializeHistoryLine(record.entry ?? entry, entry),
       );
+      await invalidateHistoryDriftCacheForPath(nextHistoryPath);
       await removeHistoryEventIndexForHistoryPath(nextHistoryPath);
       return;
     }
   }
   await appendLineAtomic(historyPath, serializeHistoryLine(entry, entry));
+  await invalidateHistoryDriftCacheForPath(historyPath);
   await updateHistoryEventIndexAfterAppend(historyPath, entry);
 }
 

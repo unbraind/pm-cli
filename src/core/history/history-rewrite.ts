@@ -12,6 +12,7 @@ import { PmCliError } from "../shared/errors.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { resolveGovernanceKnobs } from "../store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
+import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
 
 type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>>;
 type HistoryRawWriter = (filePath: string, content: string) => Promise<void>;
@@ -166,6 +167,7 @@ export async function writeHistoryRawWithRollback(params: {
   const writeHistoryRaw = params.writeHistoryRaw ?? writeFileAtomic;
   try {
     await writeHistoryRaw(params.historyPath, params.nextHistoryRaw);
+    await invalidateHistoryDriftCacheForPath(params.historyPath);
   } catch (error) {
     try {
       if (params.historyRawUnderLock === null) {
@@ -173,6 +175,7 @@ export async function writeHistoryRawWithRollback(params: {
       } else {
         await writeHistoryRaw(params.historyPath, params.historyRawUnderLock);
       }
+      await invalidateHistoryDriftCacheForPath(params.historyPath);
     } catch (rollbackError) {
       throw new AggregateError(
         [error, rollbackError],

@@ -20,6 +20,7 @@ import {
   type ReplayDocument,
 } from "../core/history/replay.js";
 import { scanHistoryDrift } from "../core/history/drift-scan.js";
+import { invalidateHistoryDriftCache } from "../core/history/drift-cache.js";
 import { readHistoryEntries } from "../core/history/read.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
@@ -690,6 +691,7 @@ export async function runHistoryRepairAll(
     typeRegistry.type_to_folder,
     itemReadWarnings,
     settings.schema,
+    { forceSourceScan: true },
   );
   const drift = await scanHistoryDrift(
     pmRoot,
@@ -736,6 +738,9 @@ export async function runHistoryRepairAll(
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  }
+  if (!options.dryRun) {
+    await invalidateHistoryDriftCache(pmRoot);
   }
 
   return {

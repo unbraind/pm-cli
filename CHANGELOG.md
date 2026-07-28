@@ -15,6 +15,13 @@
 
 ### Fixed
 
+- GH-770: pending merge receipts remain invisible to validation and CI before reconciliation ([pm-ysqb6n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ysqb6n.toon))
+- GH-775: make fresh-clone health distinguish material tracker loss from absent empty type folders ([pm-xyuhh7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xyuhh7.toon))
+- GH-779: invalidate history drift cache after item and repair mutations ([pm-ajaskl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ajaskl.toon))
+- The merge fence covers item documents but not tracked non-item JSON, so .managed-extensions.json line-conflicts between agents on different branches ([pm-gjicmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gjicmx.toon))
+- GH-773: install portable merge drivers without permanent checkout-path drift ([pm-w91mvg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w91mvg.toon))
+- GH-776: preserve output override compatibility and export the public decision contract ([pm-u2tqn6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u2tqn6.toon))
+- GH-778: make lean structured reads omit caller echoes and inactive pagination metadata ([pm-oi4zs3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oi4zs3.toon))
 - GH-772: rejected extension command registration leaves silent partial activation and zero-exit command gaps ([pm-4vwcvq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4vwcvq.toon))
 - The surface-discovery contract costs 31k tokens in its brief form and still omits every flag, so the cheapest way to learn pm is the most expensive call it offers ([pm-gmdzaa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gmdzaa.toon))
 - Linked-test schema sandbox breaks package prepare hooks that install the PM merge driver ([pm-uawujr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uawujr.toon))
@@ -35,6 +42,7 @@
 
 ### Other
 
+- Evaluate Sentry 10.68.0 compatibility and retain 10.67.0 ([pm-r31390](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r31390.toon))
 - Derive ALL MCP tool inputSchemas from \*\_FLAG_CONTRACTS — eliminate hand-declared parallel schema tables (extend the pm_copy pattern) ([pm-xwah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xwah.toon))
 - Generate shell completions, MCP tool registrations, and command reference docs from the contracts table (single source of truth) ([pm-mu8m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mu8m.toon))
 - The agent token-surface harness from pm-a22j is wired into nothing, so output-size regressions like the 33k-token health check land undetected ([pm-dpqa3h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-dpqa3h.toon))

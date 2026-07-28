@@ -160,6 +160,7 @@ export type {
   SearchProviderQueryResult,
   ServiceOverride,
   ServiceOverrideContext,
+  ServiceOverrideDecision,
   VectorStoreAdapterDefinition,
   VectorStoreDeleteContext,
   VectorStoreQueryContext,

@@ -73,7 +73,11 @@ function parseHistoryJsonl(raw: string, label: string): HistoryEntry[] {
     }
     try {
       const parsed = JSON.parse(line) as unknown;
-      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
         throw new TypeError("history entry must be an object");
       }
       entries.push(parsed as HistoryEntry);
@@ -181,7 +185,9 @@ export function mergeHistoryStreams(
     if (leftFromOurs !== rightFromOurs) {
       return Number(rightFromOurs) - Number(leftFromOurs);
     }
-    return historyEntryIdentity(left).localeCompare(historyEntryIdentity(right));
+    return historyEntryIdentity(left).localeCompare(
+      historyEntryIdentity(right),
+    );
   });
   const reanchored = reanchorHistoryEntries([
     ...ours.slice(0, shared),
@@ -449,7 +455,9 @@ function unionCollection(
 ): unknown[] {
   const toEntries = (value: unknown): unknown[] =>
     Array.isArray(value) ? value : [];
-  const baseIds = new Set(toEntries(base).map((entry) => stableStringify(entry)));
+  const baseIds = new Set(
+    toEntries(base).map((entry) => stableStringify(entry)),
+  );
   const oursEntries = toEntries(ours);
   const oursIds = new Set(oursEntries.map((entry) => stableStringify(entry)));
   const theirsEntries = toEntries(theirs);
@@ -642,8 +650,7 @@ export function mergeItemDocuments(
     fieldsFromTheirs,
     unionFields,
     conflictDecisions,
-  } =
-    mergeItemMetadataRecords(baseRecord, oursRecord, theirsRecord, preferred);
+  } = mergeItemMetadataRecords(baseRecord, oursRecord, theirsRecord, preferred);
 
   const bodyOutcome = mergeScalarThreeWay(
     hasBase ? base.body : "",
@@ -695,11 +702,7 @@ export interface JsonDocumentMergeResult {
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function parseJsonSide(raw: string, label: string): unknown {
@@ -723,6 +726,86 @@ function parseJsonSide(raw: string, label: string): unknown {
   }
 }
 
+function mergeAdditiveJsonArrays(
+  base: unknown,
+  ours: unknown,
+  theirs: unknown,
+): { merged: unknown[]; acceptedTheirs: boolean } | null {
+  if (!Array.isArray(base) || !Array.isArray(ours) || !Array.isArray(theirs)) {
+    return null;
+  }
+  const countEntries = (entries: unknown[]): Map<string, number> => {
+    const counts = new Map<string, number>();
+    for (const entry of entries) {
+      const identity = stableStringify(entry);
+      counts.set(identity, (counts.get(identity) ?? 0) + 1);
+    }
+    return counts;
+  };
+  const baseCounts = countEntries(base);
+  const oursCounts = countEntries(ours);
+  const theirsCounts = countEntries(theirs);
+  for (const [identity, baseCount] of baseCounts) {
+    if (
+      (oursCounts.get(identity) ?? 0) < baseCount ||
+      (theirsCounts.get(identity) ?? 0) < baseCount
+    ) {
+      return null;
+    }
+  }
+  const unmatchedOursCounts = new Map(oursCounts);
+  const additionsFromTheirs: unknown[] = [];
+  for (const entry of theirs) {
+    const identity = stableStringify(entry);
+    const unmatchedOursCount = unmatchedOursCounts.get(identity) ?? 0;
+    if (unmatchedOursCount > 0) {
+      unmatchedOursCounts.set(identity, unmatchedOursCount - 1);
+    } else {
+      additionsFromTheirs.push(entry);
+    }
+  }
+  return {
+    merged: [...ours, ...additionsFromTheirs],
+    acceptedTheirs: additionsFromTheirs.length > 0,
+  };
+}
+
+function mergeJsonObjects(
+  base: unknown,
+  ours: unknown,
+  theirs: unknown,
+  preferred: MergePreferredSide,
+  pathPrefix: string,
+  conflictPaths: string[],
+  pathsFromTheirs: string[],
+): Record<string, unknown> | null {
+  if (!isPlainObject(ours) || !isPlainObject(theirs)) {
+    return null;
+  }
+  const baseObject = isPlainObject(base) ? base : {};
+  const merged: Record<string, unknown> = {};
+  const keys = [
+    ...new Set([...Object.keys(ours), ...Object.keys(theirs)]),
+  ].sort((left, right) => left.localeCompare(right));
+  for (const key of keys) {
+    const childPath = pathPrefix.length > 0 ? `${pathPrefix}.${key}` : key;
+    const child = mergeJsonKey(
+      baseObject,
+      ours,
+      theirs,
+      key,
+      preferred,
+      childPath,
+      conflictPaths,
+      pathsFromTheirs,
+    );
+    if (child !== undefined) {
+      merged[key] = child;
+    }
+  }
+  return merged;
+}
+
 function mergeJsonValue(
   base: unknown,
   ours: unknown,
@@ -735,29 +818,24 @@ function mergeJsonValue(
   if (jsonEquals(ours, theirs)) {
     return ours;
   }
-  if (isPlainObject(ours) && isPlainObject(theirs)) {
-    const baseObject = isPlainObject(base) ? base : {};
-    const merged: Record<string, unknown> = {};
-    const keys = [
-      ...new Set([...Object.keys(ours), ...Object.keys(theirs)]),
-    ].sort((left, right) => left.localeCompare(right));
-    for (const key of keys) {
-      const childPath = pathPrefix.length > 0 ? `${pathPrefix}.${key}` : key;
-      const child = mergeJsonKey(
-        baseObject,
-        ours,
-        theirs,
-        key,
-        preferred,
-        childPath,
-        conflictPaths,
-        pathsFromTheirs,
-      );
-      if (child !== undefined) {
-        merged[key] = child;
-      }
+  const additiveArrayMerge = mergeAdditiveJsonArrays(base, ours, theirs);
+  if (additiveArrayMerge !== null) {
+    if (additiveArrayMerge.acceptedTheirs) {
+      pathsFromTheirs.push(pathPrefix);
     }
-    return merged;
+    return additiveArrayMerge.merged;
+  }
+  const mergedObject = mergeJsonObjects(
+    base,
+    ours,
+    theirs,
+    preferred,
+    pathPrefix,
+    conflictPaths,
+    pathsFromTheirs,
+  );
+  if (mergedObject !== null) {
+    return mergedObject;
   }
   const outcome = mergeScalarThreeWay(base, ours, theirs, preferred);
   if (outcome.conflict) {
@@ -818,13 +896,12 @@ function mergeJsonKey(
 }
 
 /**
- * Key-level three-way merge for the tracker's single-file JSON configuration
- * artifacts (`settings.json`, `schema/*.json`). Nested objects merge
- * recursively per key so two branches editing disjoint settings never
- * conflict; both-sides-changed leaf values resolve toward the preferred side
- * and are reported in `conflict_paths`. The output is always valid JSON, so a
- * merged configuration can never regress into the silent-defaults fallback
- * that raw conflict markers cause.
+ * Key-level three-way merge for the tracker's JSON configuration artifacts.
+ * Nested objects merge recursively per key, while arrays compose only when
+ * both branches preserve every base element and contribute additive entries.
+ * Removals or edits retain scalar three-way conflict semantics. The output is
+ * always valid JSON, so merged configuration cannot regress into the
+ * silent-defaults fallback that raw conflict markers cause.
  */
 export function mergeJsonDocuments(
   baseRaw: string,
