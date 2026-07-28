@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Sentry PM-CLI-2N: malformed missing tags crash normalizeItemMetadata before search can report the item ([pm-89neyq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-89neyq.toon))
 - pm-governance-audit comments-audit limit contract contradicts runtime alias semantics ([pm-v657](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-v657.toon))
 - pm-governance-audit dedupe-audit rejects --status all, breaking explicit all-lifecycle duplicate sweeps ([pm-mp49](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mp49.toon))
 - GH-781: managed built-in extensions redeclare public SDK contracts locally, and the mirrors already disagree with the authoritative declarations in shipped packages ([pm-vnk7ob](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vnk7ob.toon))

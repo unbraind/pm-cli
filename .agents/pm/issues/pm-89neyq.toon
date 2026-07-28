@@ -1,0 +1,40 @@
+id: pm-89neyq
+title: "Sentry PM-CLI-2N: malformed missing tags crash normalizeItemMetadata before search can report the item"
+description: "Release 2026.7.28 emitted two handled high-severity search failures because normalizeItemMetadata assumes tags is always an array and calls tags.map before malformed legacy or extension-authored item metadata can be normalized or diagnosed. This is distinct from closed pm-d7us, which guarded the later search scorer tags.join path."
+type: Issue
+status: closed
+priority: 1
+tags[6]: bugfix,metadata,observability,regression,search,sentry
+created_at: "2026-07-28T04:37:06.710Z"
+updated_at: "2026-07-28T04:50:15.100Z"
+closed_at: "2026-07-28T04:50:11.553Z"
+author: "harness:codex"
+acceptance_criteria: A failing regression test proves absent tags no longer throw; canonical normalization emits an empty sorted tag array; search/read integration remains green; full coverage and release reliability gates pass; Sentry is resolved only after exact fix evidence.
+parent: pm-rnpb
+severity: high
+environment: production
+resolution: Canonical metadata normalization now treats absent/non-array runtime tags as an empty collection and filters malformed non-string legacy entries before trim/lowercase normalization; replay fallback coverage was moved to a genuinely uncanonicalizable legacy value.
+expected_result: Search and all SDK read paths normalize absent tags safely without emitting a raw TypeError.
+actual_result: "The exact failing regression now returns [] for absent tags and normalized string-only output for malformed arrays; focused, linked, full-coverage, static-quality, and type gates pass."
+affected_version: 2026.7.28
+fixed_version: unreleased
+component: core/item-format
+regression: true
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-d7us,related,"2026-07-28T04:37:06.710Z","harness:codex","cli:create:dep",detected
+  pm-vnk7ob,related,"2026-07-28T04:37:06.710Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-07-28T04:37:06.710Z","harness:codex","Duplicate-check evidence: all-status searches for PM-CLI-2N, undefined tags map, and normalizeItemMetadata found no PM-CLI-2N item. Closed pm-d7us covers a different tags.join scorer crash and is linked as related rather than reopened."
+  "2026-07-28T04:38:33.732Z","harness:codex","TDD evidence: the new direct-normalization regression test failed at src/core/item/item-format.ts tags.map with the same TypeError as Sentry PM-CLI-2N. After guarding the runtime collection and filtering non-string legacy entries, the focused 9-test suite passes and canonical output supplies [] or normalized string tags."
+  "2026-07-28T04:50:04.195Z","harness:codex","Verification evidence: both linked suites passed through isolated PM contexts; the full 381-file suite passed 6,447 tests with literal 100% statements (44,751/44,751), branches (31,849/31,849), functions (9,160/9,160), and lines (43,468/43,468). ESLint, zero-clone jscpd, 100% docstring/static quality, package boundary, SDK parity, token budgets, SDK surface/import costs, CLI transport floor, and all TypeScript project checks passed."
+files[3]{path,scope,note}:
+  src/core/item/item-format.ts,project,Guard canonical metadata normalization against absent or malformed runtime tags
+  tests/unit/core/history/history-replay.spec.ts,project,Keep deterministic replay-hash fallback coverage after missing tags become normalizable
+  tests/unit/core/item/item-format-internal.spec.ts,project,TDD regression coverage for missing and malformed tag collections
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/history-replay.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-internal.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms46frdq-32njh0,test,passed,"2026-07-28T04:49:37.371Z","2026-07-28T04:49:53.246Z","2026-07-28T04:49:53.246Z",2,0,0
+close_reason: "Fixed Sentry PM-CLI-2N with a TDD runtime-boundary guard, preserved deterministic malformed-history hashing coverage, and passed the full 100/100/100/100 quality suite plus linked tests."
+body: ""
