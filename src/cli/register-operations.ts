@@ -522,15 +522,34 @@ async function runWorkspaceSnapshotAction(
   const globalOptions = getGlobalOptions(command);
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
   const normalizedAction = action.trim().toLowerCase();
+  if (
+    !["create", "list", "inspect", "restore", "delete"].includes(
+      normalizedAction,
+    )
+  ) {
+    throw new PmCliError(
+      `Unknown workspace snapshot action "${action}". Use create, list, inspect, restore, or delete.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "unknown_subcommand",
+        examples: [
+          "pm workspace snapshot create before-migration",
+          "pm workspace snapshot list",
+          "pm workspace snapshot restore before-migration",
+        ],
+      },
+    );
+  }
   if (normalizedAction === "list") {
     printResult(await listWorkspaceSnapshots(pmRoot), globalOptions);
     return;
   }
   if (normalizedAction === "create") {
     printResult(
-      await createWorkspaceSnapshot(pmRoot, {
-        ...(target === undefined ? {} : { name: target }),
-      }),
+      await createWorkspaceSnapshot(
+        pmRoot,
+        target === undefined ? {} : { name: target },
+      ),
       globalOptions,
     );
     return;
@@ -549,22 +568,7 @@ async function runWorkspaceSnapshotAction(
     printResult(await restoreWorkspaceSnapshot(pmRoot, target), globalOptions);
     return;
   }
-  if (normalizedAction === "delete") {
-    printResult(await deleteWorkspaceSnapshot(pmRoot, target), globalOptions);
-    return;
-  }
-  throw new PmCliError(
-    `Unknown workspace snapshot action "${action}". Use create, list, inspect, restore, or delete.`,
-    EXIT_CODE.USAGE,
-    {
-      code: "unknown_subcommand",
-      examples: [
-        "pm workspace snapshot create before-migration",
-        "pm workspace snapshot list",
-        "pm workspace snapshot restore before-migration",
-      ],
-    },
-  );
+  printResult(await deleteWorkspaceSnapshot(pmRoot, target), globalOptions);
 }
 
 async function runContractsAction(

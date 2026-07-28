@@ -6,8 +6,8 @@ status: closed
 priority: 3
 tags[7]: "area:storage",context-management,evaluation,rl,sdk,snapshot,workspace
 created_at: "2026-07-28T04:20:29.597Z"
-updated_at: "2026-07-28T16:31:06.902Z"
-closed_at: "2026-07-28T16:28:25.669Z"
+updated_at: "2026-07-28T17:23:27.947Z"
+closed_at: "2026-07-28T17:23:24.974Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "The authoritative workspace snapshot boundary is explicitly versioned and documented, including item files, histories, schemas, extension state, derived indexes, locks, caches, and machine-local state; public SDK and CLI primitives create, inspect, list, restore, and delete named or content-addressed snapshots atomically; restore invalidates or rebuilds derived state and never revives stale locks; unchanged snapshots deduplicate content; repeated evaluation episodes restore faster than full re-seeding at realistic scale; crash safety, cross-version compatibility, multi-branch behavior, security boundaries, and packed installed-consumer tests pass"
@@ -16,33 +16,40 @@ risk: medium
 confidence: 80
 resolution: implemented
 expected_result: "SDK and CLI consumers can safely snapshot, reset, inspect, and deduplicate authoritative workspace state without stale runtime artifacts."
-actual_result: "Versioned content-addressed objects and named refs now restore through staged swaps while excluding caches, locks, journals, and checkpoints."
+actual_result: "Versioned content-addressed objects and unambiguous named refs restore through activation-only rollback, report domain errors, and clean stale interrupted publications safely."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-klo8,related,"2026-07-28T04:20:29.597Z","harness:codex","cli:create:dep",detected
   pm-rbcvt2,related,"2026-07-28T04:20:29.597Z","harness:codex","cli:create:dep",detected
   pm-wlqxg3,related,"2026-07-28T04:20:29.597Z","harness:codex","cli:create:dep",detected
   pm-nfrhf0,implements,"2026-07-28T10:07:07.713Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-28T04:20:29.597Z","harness:codex","Duplicate-check evidence 2026-07-28: all-status searches for workspace-level snapshot, episodic reset, content-addressed restore, checkpoint, and replay found item-level restore/history owners plus reproducible construction feature pm-rbcvt2 and evaluation story pm-nfrhf0, but no workspace snapshot/reset owner. Created as the canonical open GH-787 feature under storage durability; not claimed or implemented in the current PR."
   "2026-07-28T16:27:24.049Z","harness:codex","Implementation evidence: added SHA-256 content-addressed authoritative workspace snapshots with named references, deduplication, create/list/inspect/restore/delete SDK and CLI operations, clone-local state exclusions, symlink/special-entry rejection, concurrent publish handling, staged atomic swap with rollback, and stale-cache/lock removal. PM-linked unit/integration runs passed 97 lifecycle tests; isolated manual create-mutate-restore verified byte-identical settings; full coverage passed 6,468 tests at 100/100/100/100. Token-surface baseline records workspace help at 90 tokens."
-files[9]{path,scope,note}:
+  "2026-07-28T17:06:19.711Z","harness:codex","Review implementation note: restore rollback now covers activation only, missing targets use domain errors, 64-hex reference names are rejected, the schema constant is public, and runtime GC safely removes snapshot publication debris older than 24 hours while retaining active entries."
+  "2026-07-28T17:21:31.228Z","harness:codex","Final local review evidence: snapshot CLI/SDK/GC corrections pass focused tests and the full 6,473-test coverage run at exact 100/100/100/100. An isolated fresh-directory manual create-snapshot-mutate-restore verified the original title, exported schema, 64-byte hex identity, and runtime GC dry-run. Static/docstring/token/context/security gates pass."
+files[12]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,verified latest pm-changelog activation state
   scripts/agent-token-surface-baseline.json,project,fail-closed workspace help token baseline
   sdk/public-surface.json,project,public snapshot exports
   src/cli/register-operations.ts,project,workspace snapshot CLI
+  src/sdk/governance/gc.ts,project,stale interrupted snapshot publication cleanup
   src/sdk/index.ts,project,public SDK exports
   src/sdk/workspace-snapshot.ts,project,content-addressed snapshot lifecycle
+  tests/fixtures/contracts/full.json,project,generated exact CLI contract snapshot
   tests/integration/workspace-snapshot-cli.integration.spec.ts,project,complete CLI lifecycle acceptance
+  tests/unit/commands/gc-command.spec.ts,project,active and stale snapshot temp GC coverage
   tests/unit/commands/register-commands.spec.ts,project,registered snapshot action coverage
   tests/unit/sdk/workspace-snapshot.spec.ts,project,dedupe restore exclusion deletion coverage
-tests[2]{command,scope,timeout_seconds}:
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/gc-command.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts tests/integration/workspace-snapshot-cli.integration.spec.ts tests/unit/commands/register-commands.spec.ts,project,240
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms4vb6w5-xcxln2,test,passed,"2026-07-28T16:25:40.487Z","2026-07-28T16:26:10.470Z","2026-07-28T16:26:10.470Z",2,0,0
+  test-local-ms4xc2oi-i6yk2a,test,passed,"2026-07-28T17:22:17.875Z","2026-07-28T17:22:50.898Z","2026-07-28T17:22:50.898Z",3,0,0
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,package-generated release note
   docs/README.md,project,documentation index
   docs/REPRODUCIBLE_WORKSPACES.md,project,snapshot lifecycle and safety contract
-close_reason: "Content-addressed SDK and CLI workspace snapshots now support safe deduplicated lifecycle, atomic rollback, and transient-state exclusion."
+close_reason: "Workspace snapshots now have hardened atomic restore, domain errors, schema export, stale-temp GC, manual proof, and exact coverage."
 body: ""

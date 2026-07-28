@@ -215,6 +215,14 @@
       ],
       "package_version": "2026.7.28",
       "reason": "Extension blueprint lint now rejects host-owned and malformed long flags before activation; exhaustive lint-code consumers should handle host_owned_flag_collision and malformed_long_flag."
+    },
+    {
+      "changes": [
+        "signature ./sdk:defineWorkspaceRecipe",
+        "signature ./sdk:WorkspaceRecipeOperation"
+      ],
+      "package_version": "2026.7.28",
+      "reason": "Export snapshot schema and strengthen workspace recipe JSON/exact-key contracts"
     }
   ],
   "entrypoints": {
@@ -2427,7 +2435,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "defineWorkspaceRecipe",
-          "signature": "(recipe: WorkspaceRecipe) => Readonly<WorkspaceRecipe> | calls: (recipe: WorkspaceRecipe) => Readonly<WorkspaceRecipe>"
+          "signature": "<const TRecipe extends WorkspaceRecipe>(recipe: ExactWorkspaceRecipe<TRecipe>) => Readonly<TRecipe> | calls: <const TRecipe extends WorkspaceRecipe>(recipe: ExactWorkspaceRecipe<TRecipe>) => Readonly<TRecipe>"
         },
         {
           "classification": "contract_data",
@@ -9985,6 +9993,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "value",
+          "name": "SNAPSHOT_SCHEMA",
+          "signature": "\"https://schema.unbrained.dev/pm/workspace-snapshot/v1\""
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "sortLinkedArtifacts",
           "signature": "(artifacts: LinkedArtifact[]) => LinkedArtifact[] | calls: (artifacts: LinkedArtifact[]) => LinkedArtifact[]"
@@ -10999,9 +11013,15 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "WorkspaceRecipeJsonValue",
+          "signature": "export type WorkspaceRecipeJsonValue = null | boolean | number | string | readonly WorkspaceRecipeJsonValue[] | { readonly [key: string]: WorkspaceRecipeJsonValue; };"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceRecipeOperation",
-          "signature": "export interface WorkspaceRecipeOperation { action: string; input: Readonly<Record<string, unknown>>; }"
+          "signature": "export interface WorkspaceRecipeOperation { action: string; input: Readonly<Record<string, WorkspaceRecipeJsonValue>>; }"
         },
         {
           "classification": "supported",

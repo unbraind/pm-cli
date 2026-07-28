@@ -9,6 +9,7 @@ import { createServer } from "node:net";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  SNAPSHOT_SCHEMA,
   createWorkspaceSnapshot,
   deleteWorkspaceSnapshot,
   inspectWorkspaceSnapshot,
@@ -72,6 +73,7 @@ describe("workspace snapshots", () => {
       const second = await createWorkspaceSnapshot(pmPath);
 
       expect(second.manifest.fingerprint).toBe(first.manifest.fingerprint);
+      expect(first.manifest.schema).toBe(SNAPSHOT_SCHEMA);
       expect(second.deduplicated).toBe(true);
       expect(first.manifest.files).not.toContain("search/index.json");
       expect(await inspectWorkspaceSnapshot(pmPath, "baseline")).toEqual(
@@ -122,6 +124,42 @@ describe("workspace snapshots", () => {
       await expect(createWorkspaceSnapshot(pmPath, { name: "../escape" })).rejects.toThrow(
         "must use lowercase",
       );
+      await expect(
+        createWorkspaceSnapshot(pmPath, { name: "a".repeat(64) }),
+      ).rejects.toThrow("must not be 64-character");
+      await expect(inspectWorkspaceSnapshot(pmPath, "missing")).rejects.toThrow(
+        "Unknown workspace snapshot: missing",
+      );
+      await expect(
+        inspectWorkspaceSnapshot(pmPath, "c".repeat(64)),
+      ).rejects.toThrow(`Unknown workspace snapshot: ${"c".repeat(64)}`);
+      await expect(deleteWorkspaceSnapshot(pmPath, "missing")).rejects.toThrow(
+        "Unknown workspace snapshot: missing",
+      );
+      await expect(
+        deleteWorkspaceSnapshot(pmPath, "b".repeat(64)),
+      ).rejects.toThrow(`Unknown workspace snapshot: ${"b".repeat(64)}`);
+      const malformedRef = path.join(
+        pmPath,
+        "runtime",
+        "workspace-snapshots",
+        "refs",
+        "malformed.json",
+      );
+      await mkdir(path.dirname(malformedRef), { recursive: true });
+      await writeFile(malformedRef, "{", "utf8");
+      await expect(inspectWorkspaceSnapshot(pmPath, "malformed")).rejects.toThrow(
+        SyntaxError,
+      );
+      const directoryRef = path.join(
+        pmPath,
+        "runtime",
+        "workspace-snapshots",
+        "refs",
+        "directory.json",
+      );
+      await mkdir(directoryRef);
+      await expect(deleteWorkspaceSnapshot(pmPath, "directory")).rejects.toThrow();
     });
   });
 
@@ -212,6 +250,24 @@ describe("workspace snapshots", () => {
       "staging->root",
       "backup->root",
       "remove:staging",
+    ]);
+
+    const cleanupCalls: string[] = [];
+    await expect(
+      swapWorkspaceSnapshotRoot("staging", "root", "backup", {
+        renameEntry: async (source, target) => {
+          cleanupCalls.push(`${source}->${target}`);
+        },
+        removeEntry: async (target) => {
+          cleanupCalls.push(`remove:${target}`);
+          throw new Error("injected cleanup failure");
+        },
+      }),
+    ).rejects.toThrow("injected cleanup failure");
+    expect(cleanupCalls).toEqual([
+      "root->backup",
+      "staging->root",
+      "remove:backup",
     ]);
   });
 });

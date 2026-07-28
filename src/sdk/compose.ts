@@ -65,7 +65,7 @@ import { normalizeCommandName } from "../core/extensions/extension-runtime-helpe
 import { RESERVED_ITEM_FIELD_NAMES } from "../core/extensions/item-fields.js";
 import {
   describeExtensionLongFlagFailure,
-  validateExtensionLongFlagToken,
+  findExtensionFlagTokenFailure,
 } from "../core/extensions/flag-definition-validation.js";
 import {
   evaluatePmMaxVersionBound,
@@ -1188,11 +1188,14 @@ function collectBlueprintFlagFindings(
     if (typeof definition?.long !== "string") {
       return [];
     }
-    const token = definition.long.trim();
-    const failure = validateExtensionLongFlagToken(token);
-    if (failure === null) {
+    const finding = findExtensionFlagTokenFailure(
+      definition.long,
+      definition.short,
+    );
+    if (finding === null) {
       return [];
     }
+    const { token, failure } = finding;
     return [
       {
         code: failure,

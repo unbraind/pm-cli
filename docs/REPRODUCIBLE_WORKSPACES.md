@@ -40,6 +40,11 @@ concurrent recipes do not share counters. Outside `runWithWorkspaceRecipe` or
 `executeWorkspaceRecipe`, the CLI continues using the system clock and
 cryptographic randomness.
 
+`defineWorkspaceRecipe` validates the clock, seed, tick, schema, exact top-level
+shape, and recursively JSON-compatible operation inputs immediately. Its
+returned recipe is detached and deeply frozen, so later caller mutations cannot
+change a queued replay.
+
 Store recipes in source control only when their inputs are safe to publish.
 Seeds are reproducibility inputs, not secrets. A replay is byte-identical only
 when it begins from equivalent authoritative state and invokes the same ordered
@@ -54,6 +59,7 @@ The SDK exports:
 - `listWorkspaceSnapshots`
 - `restoreWorkspaceSnapshot`
 - `deleteWorkspaceSnapshot`
+- `SNAPSHOT_SCHEMA`
 
 The matching CLI surface is:
 
@@ -68,7 +74,9 @@ pm workspace snapshot delete before-migration
 Each object is identified by a SHA-256 fingerprint over sorted
 tracker-relative paths, file sizes, and bytes. Repeated captures of identical
 state deduplicate. Optional names are mutable references to immutable objects;
-delete a reference before deleting the object it protects.
+delete a reference before deleting the object it protects. Names cannot use the
+64-character lowercase hexadecimal fingerprint shape, keeping reference and
+object addressing unambiguous.
 
 Snapshots include authoritative tracker files, including item documents,
 history, schema, settings, and installed project extension state. They exclude:
@@ -84,7 +92,9 @@ into place with directory renames, preserves the snapshot object store, and
 discards stale caches and locks. Symbolic links are rejected so a snapshot
 cannot escape the tracker root. Snapshot storage is clone-local under
 `.agents/pm/runtime/workspace-snapshots`; it must not be committed or treated as
-a backup of credentials.
+a backup of credentials. `pm gc --scope runtime` removes interrupted
+`.create-*` and `.ref-*` publications after 24 hours while retaining newer
+entries that may still belong to active operations.
 
 Use snapshots as short-lived migration, reproduction, and package-development
 checkpoints. Git plus immutable pm history remains the durable collaboration

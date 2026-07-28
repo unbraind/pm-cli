@@ -17,7 +17,8 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 
-const SNAPSHOT_SCHEMA =
+/** Current content-addressed workspace snapshot manifest schema identifier. */
+export const SNAPSHOT_SCHEMA =
   "https://schema.unbrained.dev/pm/workspace-snapshot/v1";
 const SNAPSHOT_RUNTIME_PATH = path.join("runtime", "workspace-snapshots");
 const EXCLUDED_ROOT_NAMES = new Set([
@@ -147,8 +148,47 @@ function validateSnapshotTarget(target: string): void {
   }
 }
 
+function isErrno(error: unknown, code: string): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === code
+  );
+}
+
 function snapshotStore(pmRoot: string): string {
   return path.join(pmRoot, SNAPSHOT_RUNTIME_PATH);
+}
+
+async function readSnapshotJson<T>(file: string, target: string): Promise<T> {
+  try {
+    return JSON.parse(await readFile(file, "utf8")) as T;
+  } catch (error: unknown) {
+    if (isErrno(error, "ENOENT")) {
+      throw new Error(`Unknown workspace snapshot: ${target}`, {
+        cause: error,
+      });
+    }
+    throw error;
+  }
+}
+
+async function removeSnapshotEntry(
+  entry: string,
+  target: string,
+  recursive: boolean,
+): Promise<void> {
+  try {
+    await rm(entry, { recursive });
+  } catch (error: unknown) {
+    if (isErrno(error, "ENOENT")) {
+      throw new Error(`Unknown workspace snapshot: ${target}`, {
+        cause: error,
+      });
+    }
+    throw error;
+  }
 }
 
 /**
@@ -188,12 +228,12 @@ export async function swapWorkspaceSnapshotRoot(
   await operations.renameEntry(pmRoot, backup);
   try {
     await operations.renameEntry(staging, pmRoot);
-    await operations.removeEntry(backup);
   } catch (error: unknown) {
     await operations.renameEntry(backup, pmRoot);
     await operations.removeEntry(staging);
     throw error;
   }
+  await operations.removeEntry(backup);
 }
 
 async function resolveSnapshotFingerprint(
@@ -204,9 +244,10 @@ async function resolveSnapshotFingerprint(
   if (/^[a-f0-9]{64}$/.test(target)) {
     return target;
   }
-  const reference = JSON.parse(
-    await readFile(path.join(snapshotStore(pmRoot), "refs", `${target}.json`), "utf8"),
-  ) as WorkspaceSnapshotReference;
+  const reference = await readSnapshotJson<WorkspaceSnapshotReference>(
+    path.join(snapshotStore(pmRoot), "refs", `${target}.json`),
+    target,
+  );
   return reference.fingerprint;
 }
 
@@ -217,6 +258,11 @@ export async function createWorkspaceSnapshot(
 ): Promise<CreateWorkspaceSnapshotResult> {
   if (options.name !== undefined) {
     validateSnapshotTarget(options.name);
+    if (/^[a-f0-9]{64}$/.test(options.name)) {
+      throw new Error(
+        "Snapshot names must not be 64-character lowercase hexadecimal fingerprints",
+      );
+    }
   }
   const { manifest, contents } = await buildManifest(pmRoot);
   const store = snapshotStore(pmRoot);
@@ -280,12 +326,10 @@ export async function inspectWorkspaceSnapshot(
   target: string,
 ): Promise<WorkspaceSnapshotManifest> {
   const fingerprint = await resolveSnapshotFingerprint(pmRoot, target);
-  const manifest = JSON.parse(
-    await readFile(
-      path.join(snapshotStore(pmRoot), "objects", fingerprint, "manifest.json"),
-      "utf8",
-    ),
-  ) as WorkspaceSnapshotManifest;
+  const manifest = await readSnapshotJson<WorkspaceSnapshotManifest>(
+    path.join(snapshotStore(pmRoot), "objects", fingerprint, "manifest.json"),
+    target,
+  );
   if (
     manifest.schema !== SNAPSHOT_SCHEMA ||
     manifest.fingerprint !== fingerprint
@@ -371,13 +415,17 @@ export async function deleteWorkspaceSnapshot(
   validateSnapshotTarget(target);
   const store = snapshotStore(pmRoot);
   if (!/^[a-f0-9]{64}$/.test(target)) {
-    await rm(path.join(store, "refs", `${target}.json`));
+    await removeSnapshotEntry(
+      path.join(store, "refs", `${target}.json`),
+      target,
+      false,
+    );
     return { deleted: "reference", target };
   }
   const { references } = await listWorkspaceSnapshots(pmRoot);
   if (references.some((reference) => reference.fingerprint === target)) {
     throw new Error(`Snapshot object ${target} is still referenced`);
   }
-  await rm(path.join(store, "objects", target), { recursive: true });
+  await removeSnapshotEntry(path.join(store, "objects", target), target, true);
   return { deleted: "object", target };
 }

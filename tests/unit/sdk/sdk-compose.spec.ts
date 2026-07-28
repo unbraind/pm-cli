@@ -657,6 +657,7 @@ describe("sdk lintExtensionBlueprint", () => {
       flags: {
         list: [
           { long: "--json" },
+          { long: "--valid-long", short: "--path" },
           { long: "missing-prefix" },
           { long: "--valid-extension-flag" },
           { long: undefined as never },
@@ -691,6 +692,11 @@ describe("sdk lintExtensionBlueprint", () => {
           code: "malformed_long_flag",
           severity: "error",
           field: "missing-prefix",
+        }),
+        expect.objectContaining({
+          code: "host_owned_flag_collision",
+          severity: "error",
+          field: "--path",
         }),
       ]),
     );

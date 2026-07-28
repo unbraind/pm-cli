@@ -55,9 +55,11 @@ export {
   executeWorkspaceRecipe,
   runWithWorkspaceRecipe,
   type WorkspaceRecipe,
+  type WorkspaceRecipeJsonValue,
   type WorkspaceRecipeOperation,
 } from "./workspace-recipe.js";
 export {
+  SNAPSHOT_SCHEMA,
   createWorkspaceSnapshot,
   deleteWorkspaceSnapshot,
   inspectWorkspaceSnapshot,

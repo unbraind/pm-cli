@@ -23,12 +23,12 @@ interface ReproducibleExecutionState extends ReproducibleExecutionSettings {
 }
 
 const executionStorage = new AsyncLocalStorage<ReproducibleExecutionState>();
+const MAX_REPRODUCIBLE_TOKEN_LENGTH = 1_024;
 
-/** Run an isolated async operation with deterministic clock and entropy state. */
-export async function runWithReproducibleExecution<T>(
+/** Validate and normalize deterministic execution settings before work starts. */
+export function validateReproducibleExecutionSettings(
   settings: ReproducibleExecutionSettings,
-  operation: () => Promise<T>,
-): Promise<T> {
+): ReproducibleExecutionSettings {
   const clockMs = Date.parse(settings.clock);
   if (!Number.isFinite(clockMs)) {
     throw new Error(`Invalid reproducible workspace clock: ${settings.clock}`);
@@ -39,10 +39,21 @@ export async function runWithReproducibleExecution<T>(
   if (settings.seed.length === 0) {
     throw new Error("Reproducible workspace seed must not be empty");
   }
+  return {
+    ...settings,
+    clock: new Date(clockMs).toISOString(),
+  };
+}
+
+/** Run an isolated async operation with deterministic clock and entropy state. */
+export async function runWithReproducibleExecution<T>(
+  settings: ReproducibleExecutionSettings,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const normalized = validateReproducibleExecutionSettings(settings);
   return executionStorage.run(
     {
-      ...settings,
-      clock: new Date(clockMs).toISOString(),
+      ...normalized,
       clockReads: 0,
       tokenReads: 0,
     },
@@ -68,6 +79,15 @@ export function nextReproducibleToken(length: number): string | undefined {
   const state = executionStorage.getStore();
   if (state === undefined) {
     return undefined;
+  }
+  if (
+    !Number.isSafeInteger(length) ||
+    length < 0 ||
+    length > MAX_REPRODUCIBLE_TOKEN_LENGTH
+  ) {
+    throw new Error(
+      `Reproducible token length must be an integer between 0 and ${MAX_REPRODUCIBLE_TOKEN_LENGTH}`,
+    );
   }
   let token = "";
   while (token.length < length) {

@@ -30,6 +30,7 @@ const GC_SCOPE_VALUES = [
   "transactions",
 ] as const;
 type GcScope = (typeof GC_SCOPE_VALUES)[number];
+const WORKSPACE_SNAPSHOT_TEMP_RETENTION_MS = 24 * 60 * 60 * 1_000;
 
 interface GcTarget {
   scope: GcScope;
@@ -218,6 +219,62 @@ async function removeCacheFile(
   }
 }
 
+async function sweepWorkspaceSnapshotTemps(
+  pmRoot: string,
+  dryRun: boolean,
+): Promise<{ removed: string[]; retained: string[]; warnings: string[] }> {
+  const roots = [
+    {
+      relativePath: "runtime/workspace-snapshots/objects",
+      prefix: ".create-",
+    },
+    {
+      relativePath: "runtime/workspace-snapshots/refs",
+      prefix: ".ref-",
+    },
+  ] as const;
+  const removed: string[] = [];
+  const retained: string[] = [];
+  const warnings: string[] = [];
+  const staleBefore = Date.now() - WORKSPACE_SNAPSHOT_TEMP_RETENTION_MS;
+  for (const root of roots) {
+    const absoluteRoot = path.join(pmRoot, root.relativePath);
+    if (!(await pathExists(absoluteRoot))) {
+      continue;
+    }
+    const names = (await fs.readdir(absoluteRoot))
+      .filter((name) => name.startsWith(root.prefix))
+      .sort();
+    for (const name of names) {
+      const relativePath = path.posix.join(root.relativePath, name);
+      const absolutePath = path.join(absoluteRoot, name);
+      warnings.push(
+        ...(await runActiveOnReadHooks({
+          path: absolutePath,
+          scope: "project",
+        })),
+      );
+      if ((await fs.stat(absolutePath)).mtimeMs > staleBefore) {
+        retained.push(relativePath);
+        continue;
+      }
+      removed.push(relativePath);
+      if (dryRun) {
+        continue;
+      }
+      await fs.rm(absolutePath, { recursive: true, force: true });
+      warnings.push(
+        ...(await runActiveOnWriteHooks({
+          path: absolutePath,
+          scope: "project",
+          op: "gc:workspace_snapshot_temp_remove",
+        })),
+      );
+    }
+  }
+  return { removed, retained, warnings };
+}
+
 function parseScopes(raw: string[] | undefined): GcScope[] {
   if (!raw || raw.length === 0) {
     return [...GC_SCOPE_VALUES];
@@ -326,6 +383,13 @@ export async function runGc(
       retained.push(target.relativePath);
     }
     warnings.push(...result.warnings);
+  }
+
+  if (scopes.includes("runtime")) {
+    const snapshotTempResult = await sweepWorkspaceSnapshotTemps(pmRoot, dryRun);
+    removed.push(...snapshotTempResult.removed);
+    retained.push(...snapshotTempResult.retained);
+    warnings.push(...snapshotTempResult.warnings);
   }
 
   // The locks scope is not a path-based GC_TARGET: it sweeps the locks/ directory

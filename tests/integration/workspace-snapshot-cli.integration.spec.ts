@@ -81,6 +81,16 @@ describe("workspace snapshot CLI integration", () => {
       ]);
       expect(unknown.code).not.toBe(0);
       expect(unknown.stderr).toContain("Unknown workspace snapshot action");
+
+      const unknownWithoutTarget = await context.runCliInProcess([
+        "workspace",
+        "snapshot",
+        "unknown",
+      ]);
+      expect(unknownWithoutTarget.code).not.toBe(0);
+      expect(unknownWithoutTarget.stderr).toContain(
+        "Unknown workspace snapshot action",
+      );
     });
   });
 });
