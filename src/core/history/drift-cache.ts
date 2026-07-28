@@ -36,7 +36,9 @@ export async function invalidateHistoryDriftCache(
         : undefined;
     let pmRootIsDirectory = false;
     try {
-      pmRootIsDirectory = (await fs.stat(pmRoot)).isDirectory();
+      pmRootIsDirectory = (
+        await fs.stat(await fs.realpath(pmRoot))
+      ).isDirectory();
     } catch {
       // The semantic classification below treats an invalid tracker root
       // independently from platform-specific filesystem error codes.
