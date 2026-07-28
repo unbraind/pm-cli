@@ -6,17 +6,17 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-26T05:56:13.916Z"
+updated_at: "2026-07-28T10:37:05.608Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs."
 parent: pm-33cw
 risk: medium
 confidence: medium
-dependencies[2]{id,kind,created_at,author,source_kind}:
-  pm-kb5h,related,"2026-07-14T17:05:10.148Z",null,null
-  pm-33cw,implements,"2026-07-26T05:56:13.587Z",null,null
-comments[16]:
+dependencies[2]{id,kind,created_at}:
+  pm-kb5h,related,"2026-07-14T17:05:10.148Z"
+  pm-33cw,implements,"2026-07-26T05:56:13.587Z"
+comments[17]:
   - created_at: "2026-06-25T05:01:11.314Z"
     author: codex-ecosystem-auditor
     text: "Duplicate check: searched all statuses for linked-file validation, orphaned paths, missing linked paths, and stale linked artifacts. Prior canonical items (for example pm-xz1p and pm-0v2m) are closed; this item tracks the current 2026-06-25 audit finding under pm-57vh."
@@ -66,6 +66,9 @@ comments[16]:
   - created_at: "2026-07-16T18:02:00.933Z"
     author: maintainer-agent
     text: "Files baseline moved 168 -> 172 on 2026-07-16 (pass #93): PR#573 SDK execution/diagnostics promotion relocated command internals; split now 121 moved (+3) + 51 deleted (+1), orphaned=0. Moved rows remain mechanical relink; the +1 deleted row needs judgment at burn-down."
+  - created_at: "2026-07-28T10:37:05.607Z"
+    author: "harness:claude-code"
+    text: "Ledger movement (2026-07-28 measurement): `missing` 168 → **179**, `orphaned` 0 → **2**.\n\nThe orphaned pair is the notable half, because orphaned had been driven to zero and is supposed to stay there — these are tracked test files that no item links:\n\n```\ntests/unit/extensions/extension-activation-atomicity.spec.ts\ntests/unit/scripts/release/package-sdk-contract-parity.spec.ts\n```\n\nBoth are recent arrivals (the SDK contract-parity gate and the activation-atomicity suite), so this is the same leak shape as the earlier orphaned excursions: a PR adds a spec and closes its item without a `pm test`/`pm files` link. Mechanical to repair — link each to the item whose work introduced it.\n\n`missing` continues to be dominated by the moved-vs-deleted split this item owns; the +11 since the pass-#88 count of 168 is consistent with continued `packages/pm-*` relocation churn (the sample is heavy with `packages/pm-*/extensions/*/index.js` and `runtime-loader.js` paths that no longer exist under those names). Worth re-running the moved/deleted classification before the next mechanical relink so the two classes do not drift back together.\n"
 notes[6]{created_at,author,text}:
   "2026-07-06T08:22:48.232Z",maintainer-agent,"2026-07-06 audit #8 recount — pm validate now reports validate_files_missing_linked_paths 146 and validate_files_orphaned_paths 131 (workspace-wide, 2545 linked commands scanned). Counts unchanged in character since filing; still the single tracked owner of both warning classes."
   "2026-07-10T12:16:07.271Z",maintainer-agent,"2026-07-10 review pass: validate_files_missing_linked_paths rose 147 -> 154 (+7); orphaned_paths steady at 124. Likely cause: commits 21a7d884 (untracked vendored pm-changelog extension dist) and b573ef14 (contracts-snapshot gate rework) relocated/removed files still referenced by item linked paths. Worklist ids via pm validate --json .details.*_item_ids when picking this up."
