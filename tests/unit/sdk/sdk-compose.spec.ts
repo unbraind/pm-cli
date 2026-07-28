@@ -658,6 +658,7 @@ describe("sdk lintExtensionBlueprint", () => {
         list: [
           { long: "--json" },
           { long: "--valid-long", short: "--path" },
+          { short: "--path" },
           { long: "missing-prefix" },
           { long: "--valid-extension-flag" },
           { long: undefined as never },

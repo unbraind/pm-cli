@@ -1185,7 +1185,10 @@ function collectBlueprintFlagFindings(
     ),
   ];
   return definitions.flatMap((definition) => {
-    if (typeof definition?.long !== "string") {
+    if (
+      typeof definition?.long !== "string" &&
+      typeof definition?.short !== "string"
+    ) {
       return [];
     }
     const finding = findExtensionFlagTokenFailure(
