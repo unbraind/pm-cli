@@ -1,6 +1,6 @@
 # Package SDK Contract Conformance
 
-Trackers: [pm-vnk7ob](../.agents/pm/issues/pm-vnk7ob.toon), [pm-w7mqzt](../.agents/pm/tasks/pm-w7mqzt.toon)
+Trackers: [pm-vnk7ob](../.agents/pm/issues/pm-vnk7ob.toon), [pm-w7mqzt](../.agents/pm/features/pm-w7mqzt.toon)
 
 ## Agent Quick Context
 
