@@ -254,7 +254,16 @@ async function sweepWorkspaceSnapshotTemps(
           scope: "project",
         })),
       );
-      if ((await fs.stat(absolutePath)).mtimeMs > staleBefore) {
+      const stats = await fs.stat(absolutePath).catch((error: unknown) => {
+        if (isErrno(error, "ENOENT")) {
+          return undefined;
+        }
+        throw error;
+      });
+      if (!stats) {
+        continue;
+      }
+      if (stats.mtimeMs > staleBefore) {
         retained.push(relativePath);
         continue;
       }

@@ -98,7 +98,7 @@ describe("workspace recipes", () => {
     expect(Object.isFrozen(defined.operations[0]?.input)).toBe(true);
     expect(
       Object.isFrozen(
-        (defined.operations[0]?.input.values as readonly unknown[])[4],
+        (defined.operations[0]!.input.values as readonly unknown[])[4],
       ),
     ).toBe(true);
 

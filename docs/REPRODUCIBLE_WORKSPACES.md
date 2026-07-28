@@ -40,10 +40,11 @@ concurrent recipes do not share counters. Outside `runWithWorkspaceRecipe` or
 `executeWorkspaceRecipe`, the CLI continues using the system clock and
 cryptographic randomness.
 
-`defineWorkspaceRecipe` validates the clock, seed, tick, schema, exact top-level
-shape, and recursively JSON-compatible operation inputs immediately. Its
-returned recipe is detached and deeply frozen, so later caller mutations cannot
-change a queued replay.
+`defineWorkspaceRecipe` immediately validates the clock, seed, tick, schema,
+operation actions, and recursively JSON-compatible inputs. Its TypeScript
+contract additionally rejects undeclared top-level recipe keys at compile time.
+The returned recipe is detached and deeply frozen, so later caller mutations
+cannot change a queued replay.
 
 Store recipes in source control only when their inputs are safe to publish.
 Seeds are reproducibility inputs, not secrets. A replay is byte-identical only

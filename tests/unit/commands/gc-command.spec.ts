@@ -249,6 +249,52 @@ describe("runGc", () => {
     });
   });
 
+  it("tolerates snapshot debris disappearing during stat and propagates unexpected stat failures", async () => {
+    await withTempPmPath(async (context) => {
+      const racedPath = path.join(
+        context.pmPath,
+        "runtime",
+        "workspace-snapshots",
+        "objects",
+        ".create-raced",
+      );
+      await mkdir(racedPath, { recursive: true });
+      const actualStat = fs.stat.bind(fs);
+      let statFailure: "missing" | "unexpected" = "missing";
+      const statSpy = vi.spyOn(fs, "stat").mockImplementation(async (target) => {
+        if (target === racedPath) {
+          if (statFailure === "missing") {
+            throw Object.assign(new Error("snapshot debris disappeared"), {
+              code: "ENOENT",
+            });
+          }
+          throw new Error("snapshot stat failure");
+        }
+        return actualStat(target);
+      });
+
+      try {
+        const result = await runGc(
+          { path: context.pmPath },
+          { scope: ["runtime"] },
+        );
+        expect(result.removed).not.toContain(
+          "runtime/workspace-snapshots/objects/.create-raced",
+        );
+        expect(result.retained).not.toContain(
+          "runtime/workspace-snapshots/objects/.create-raced",
+        );
+
+        statFailure = "unexpected";
+        await expect(
+          runGc({ path: context.pmPath }, { scope: ["runtime"] }),
+        ).rejects.toThrow("snapshot stat failure");
+      } finally {
+        statSpy.mockRestore();
+      }
+    });
+  });
+
   it("sweeps expired lock debris under the locks scope and retains active locks", async () => {
     await withTempPmPath(async (context) => {
       const locksDir = path.join(context.pmPath, "locks");
