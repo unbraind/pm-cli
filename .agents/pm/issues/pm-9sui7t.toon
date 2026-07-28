@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:contracts",ci,negative-control,output-contract,token-efficiency
 created_at: "2026-07-28T09:56:44.723Z"
-updated_at: "2026-07-28T11:54:34.978Z"
+updated_at: "2026-07-28T11:57:03.635Z"
 closed_at: "2026-07-28T11:53:34.199Z"
 author: "harness:claude-code"
 estimated_minutes: 240
@@ -26,8 +26,9 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-j82fd3,implements,"2026-07-28T09:56:44.723Z","harness:claude-code","cli:create:dep",detected
   pm-lpqln4,related,"2026-07-28T09:56:44.723Z","harness:claude-code","cli:create:dep",detected
   pm-z2j1qt,related,"2026-07-28T09:56:44.723Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-28T11:53:09.807Z","harness:codex","Evidence: replaced the self-recorded micro-fixture gate with a PR-required, contract-owned answer-cost gate covering 23 surfaces on a 24-item scaled corpus. The full unbounded activity negative control measures 18,864 tokens against the 4,000-token default, and 18 focused gate tests prove contract lookup, coverage, malformed-baseline, over-budget, and negative-control failures. Final lint, contracts, SDK surface, static quality, and token gate all pass."
+  "2026-07-28T11:57:03.635Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
 learnings[1]{created_at,author,text}:
   "2026-07-28T10:09:25.121Z","harness:claude-code","A gate that has never failed is a hypothesis, not a guarantee, and the cheapest way to test it is to ask what workspace it measures.\n\nBoth gates this project named after token cost pass on every run and always have. Neither can fail. One measures a three-item fixture, where no surface can exceed a budget derived from that same fixture; the other measures help text, which does not vary with workspace size at all. The property both were built to protect -- that command output stays bounded as a workspace grows -- is precisely the property neither observes, because both were built at a scale where it cannot be violated.\n\nThe generalizable test: for any gate, name the input that would make it fail, then check that the input is reachable in the corpus the gate actually runs against. If it is not, the gate is measuring something else. This is the same shape as pm-lpqln4, where the only Bun coverage passes with an arbitrary token in the executable position, and the same shape as pm-ki67py, where a same-day release guard is correct only because no out-of-order tag happens to exist yet. Three instances in one project is a pattern, and the shared remedy is a negative control: a gate should ship with a proof that it fails when its property is violated.\n\nThe corollary for measurement generally: fixtures are for correctness, not for cost. Anything whose value scales with the data must be measured against data that has scale, or the number is about the fixture."
 files[5]{path,scope,note}:

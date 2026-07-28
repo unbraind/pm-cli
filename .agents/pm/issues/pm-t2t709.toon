@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:graph","area:sdk",measurement,output,token-efficiency
 created_at: "2026-07-26T17:14:58.548Z"
-updated_at: "2026-07-28T11:54:37.533Z"
+updated_at: "2026-07-28T11:57:06.885Z"
 closed_at: "2026-07-28T11:53:44.414Z"
 author: "harness:claude-code"
 estimated_minutes: 240
@@ -34,8 +34,9 @@ dependencies[10]{id,kind,created_at}:
   pm-okgxwa,related,"2026-07-26T17:14:58.548Z"
   pm-t5dt4z,related,"2026-07-26T17:14:58.548Z"
   pm-z71aoy,related,"2026-07-26T17:14:58.548Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-28T11:53:12.029Z","harness:codex","Evidence: tree, graph, and context budgets now account for the exact rendered JSON or TOON transport using the shared formatter, prune deterministically to the ceiling, and report the retained emitted cost. Tests cover structural overhead, exact-prune branches, missing references, real-node degradation, and both formats. Full coverage is exactly 100% statements/branches/functions/lines and final static/contract/token gates pass."
+  "2026-07-28T11:57:06.884Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
 files[5]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated release narrative
   src/core/output/output.ts,project,Exact emitted JSON and TOON dependency accounting

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",context-management,history,output-contract,token-efficiency
 created_at: "2026-07-28T09:55:44.652Z"
-updated_at: "2026-07-28T11:54:36.730Z"
+updated_at: "2026-07-28T11:57:05.749Z"
 closed_at: "2026-07-28T11:53:40.874Z"
 author: "harness:claude-code"
 estimated_minutes: 120
@@ -25,9 +25,10 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-p3x4,related,"2026-07-28T09:55:44.652Z","harness:claude-code","cli:create:dep",detected
   pm-t2t709,related,"2026-07-28T09:55:44.652Z","harness:claude-code","cli:create:dep",detected
   pm-tqel,related,"2026-07-28T09:55:44.652Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-28T11:20:39.259Z","harness:codex","Verification note: the first full 6,447-test coverage run found one expected key-order contract that still listed the pre-disclosure activity envelope. Updated that acceptance expectation; product output was correct and all other 6,446 tests passed."
   "2026-07-28T11:53:11.297Z","harness:codex","Evidence: bare CLI activity now defaults to 20 rows and direct SDK activity to 5, while --unbounded is explicit and conflicts with --limit. The envelope discloses total_count, omitted_count, has_more, and applied_bound; contract tables and snapshots publish the opt-out. Large-corpus negative control is 18,864 tokens while the default stays within 4,000. Unit, integration, full 6,451-test coverage, manual packed npm/Bun consumers, and final gates pass."
+  "2026-07-28T11:57:05.749Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
 files[11]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated release narrative
   sdk/public-surface.json,project,Activity CLI registration and published contract snapshots
