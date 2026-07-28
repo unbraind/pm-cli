@@ -2,11 +2,12 @@ id: pm-0k4o8t
 title: "GH-792: fresh-clone health must not require ignored runtime and empty extension directories"
 description: "pm init ignores search and locks, and extension storage may be absent until first install, yet default health reports all three as required. Align default health with reproducible clone state while preserving strict structural integrity and pending-merge diagnostics."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-28T11:30:00.319Z"
-updated_at: "2026-07-28T15:01:28.451Z"
+updated_at: "2026-07-28T16:31:03.357Z"
+closed_at: "2026-07-28T16:28:02.857Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: A normal clone produced from pm init passes directory health without recreating ignored caches; history and schema remain fail-closed structural requirements; strict directory policy remains available; health remediation never loops through pm init; fresh-clone SDK and CLI regressions cover the distinction
@@ -16,10 +17,25 @@ value: Agents can use health as a required CI context-integrity gate
 parent: pm-o2kc
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: Fresh clones pass default health without materializing ignored runtime directories.
+actual_result: "Clone-optional extensions, locks, and search no longer block default health; strict mode still reports them."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-83ov2i,related,"2026-07-28T11:30:00.319Z","harness:codex","cli:create:dep",detected
   pm-xyuhh7,discovered_from,"2026-07-28T11:30:00.319Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-28T11:30:00.319Z","harness:codex","Duplicate check evidence: all-status search and full live reads found closed pm-xyuhh7 covers absent empty item-type folders and open pm-83ov2i covers warn-only ok semantics; neither covers ignored search/locks plus empty extensions reported by GH-792."
   "2026-07-28T11:30:00.319Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/792"
+  "2026-07-28T16:27:21.378Z","harness:codex","Implementation evidence: default health now treats extensions, locks, and search as clone-optional while history and schema remain required; strict directory policy still reports optional omissions. Focused PM-linked health run passed 56 tests; fresh temporary-clone manual acceptance passed; full coverage passed 6,468 tests at 100/100/100/100."
+files[2]{path,scope,note}:
+  src/sdk/governance/health.ts,project,clone-optional directory contract
+  tests/unit/commands/health-command.spec.ts,project,fresh-clone health regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms4v9rmo-xrrc6w,test,passed,"2026-07-28T16:24:41.317Z","2026-07-28T16:25:04.033Z","2026-07-28T16:25:04.033Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,package-generated release note
+  docs/SDK.md,project,fresh clone directory semantics
+close_reason: Fresh-clone health now distinguishes clone-optional runtime directories from required authoritative structure; strict behavior remains available.
 body: ""

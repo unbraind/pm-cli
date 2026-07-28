@@ -215,7 +215,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
       { flag: "--limit" },
       { flag: "--offset" },
       { flag: "--after" },
-      { flag: "--no-truncate", aliases: ["--all"] },
+      { flag: "--no-truncate" },
       { flag: "--compact" },
       { flag: "--brief" },
       { flag: "--full" },

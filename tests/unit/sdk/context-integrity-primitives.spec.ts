@@ -266,6 +266,36 @@ describe("SDK and CLI context-integrity primitives", () => {
     );
   });
 
+  it("declines semantically copied legacy payload echoes while honoring explicit decisions", async () => {
+    const payload = { nested: { id: "pm-alpha" }, rows: ["one"] };
+    const copiedEcho: ExtensionServiceRegistry = {
+      overrides: [
+        {
+          layer: "project",
+          name: "copied-echo",
+          service: "output_format",
+          run: (context) => structuredClone(context.payload),
+        },
+      ],
+    };
+    expect(runServiceOverrideSync(copiedEcho, outputContext(payload))).toEqual({
+      handled: false,
+      result: payload,
+      warnings: [
+        "extension_output_format_payload_echo_deprecated:project:copied-echo",
+      ],
+    });
+    copiedEcho.overrides[0]!.run = () => ({
+      handled: true,
+      result: structuredClone(payload),
+    });
+    expect(runServiceOverrideSync(copiedEcho, outputContext(payload))).toEqual({
+      handled: true,
+      result: payload,
+      warnings: [],
+    });
+  });
+
   it("invalidates derived drift state after conventional history writes", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const cachePath = path.join(

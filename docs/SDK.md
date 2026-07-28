@@ -23,7 +23,12 @@ service-override compatibility, and mutation-aware drift-cache invalidation are
 tracked by [pm-oi4zs3](../.agents/pm/issues/pm-oi4zs3.toon),
 [pm-u2tqn6](../.agents/pm/issues/pm-u2tqn6.toon), and
 [pm-ajaskl](../.agents/pm/issues/pm-ajaskl.toon). Fresh-clone directory
-semantics are tracked by [pm-xyuhh7](../.agents/pm/issues/pm-xyuhh7.toon).
+semantics are tracked by [pm-xyuhh7](../.agents/pm/issues/pm-xyuhh7.toon) and
+[pm-0k4o8t](../.agents/pm/issues/pm-0k4o8t.toon). Reproducible recipes and
+content-addressed snapshots are tracked by
+[pm-rbcvt2](../.agents/pm/features/pm-rbcvt2.toon) and
+[pm-dkrmzv](../.agents/pm/features/pm-dkrmzv.toon); see
+[Reproducible Workspaces and Snapshots](REPRODUCIBLE_WORKSPACES.md).
 
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
@@ -190,6 +195,10 @@ Common authoring exports:
 - `composeExtensionPackage` (author-once capstone: returns both the module and its synthesized manifest)
 - `synthesizeExtensionManifest` (generate a complete least-privilege manifest from a blueprint)
 - `describeExtensionBlueprint` (static surface map of a blueprint) / `lintExtensionBlueprint` (author-time preflight)
+- Blueprint lint treats host-owned global long flags and malformed long syntax as
+  blocking errors. Exhaustive `ExtensionBlueprintLintCode` consumers must
+  handle `host_owned_flag_collision` and `malformed_long_flag`; both include
+  the same remediation used by runtime activation.
 - `renderExtensionSurfaceMarkdown` (render a describe summary to a drift-free Markdown reference doc for a package README)
 - `checkExtensionManifestCompatibility` (author-time `pm_min_version`/`pm_max_version` check against a target pm version)
 - `preflightExtension` (one-call capstone: lint + manifest synthesis + version-compat in a single consolidated report)
@@ -1353,11 +1362,13 @@ the same bounded maintenance engine as the CLI. Prefer these typed calls over
 shelling out when building CI, editor integrations, or long-running agent
 runtimes.
 
-Health treats structural tracker directories (`schema`, `history`, `search`,
-`extensions`, and `locks`) as required. Registered item-type folders are
-clone-optional because Git cannot preserve empty directories; missing type
-folders become warnings only with `strictDirectories: true` (CLI
-`--strict-directories`). A later item write recreates its type folder.
+Health treats committed structural tracker directories (`schema` and
+`history`) as required. Clone-local `search` and `locks`, plus an empty
+`extensions` directory, are clone-optional because Git cannot preserve empty
+directories and runtime caches are rebuilt locally. Registered item-type
+folders follow the same rule; missing optional directories become warnings
+only with `strictDirectories: true` (CLI `--strict-directories`). A later item
+write or runtime operation recreates its directory.
 
 ### Query execution
 

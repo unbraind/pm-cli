@@ -206,6 +206,15 @@
       ],
       "package_version": "2026.7.28",
       "reason": "Add optional canonical pm_root metadata to merge-install results while preserving existing fields"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionBlueprintLintCode",
+        "signature ./sdk/authoring:ExtensionBlueprintLintCode",
+        "signature ./sdk/testing:ExtensionBlueprintLintCode"
+      ],
+      "package_version": "2026.7.28",
+      "reason": "Extension blueprint lint now rejects host-owned and malformed long flags before activation; exhaustive lint-code consumers should handle host_owned_flag_collision and malformed_long_flag."
     }
   ],
   "entrypoints": {
@@ -2163,6 +2172,18 @@
           "signature": "export type CreateTemplateOptions = Record<string, TemplateOptionValue>;"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "createWorkspaceSnapshot",
+          "signature": "(pmRoot: string, options?: { name?: string; }) => Promise<CreateWorkspaceSnapshotResult> | calls: (pmRoot: string, options?: { name?: string; }) => Promise<CreateWorkspaceSnapshotResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CreateWorkspaceSnapshotResult",
+          "signature": "export interface CreateWorkspaceSnapshotResult { manifest: WorkspaceSnapshotManifest; name?: string; deduplicated: boolean; }"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
@@ -2403,6 +2424,12 @@
           "signature": "<TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter | calls: <TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "defineWorkspaceRecipe",
+          "signature": "(recipe: WorkspaceRecipe) => Readonly<WorkspaceRecipe> | calls: (recipe: WorkspaceRecipe) => Readonly<WorkspaceRecipe>"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "DELETE_FLAG_CONTRACTS",
@@ -2419,6 +2446,12 @@
           "kind": "interface",
           "name": "DeleteResult",
           "signature": "export interface DeleteResult { item: Record<string, unknown>; changed_fields: string[]; dry_run: boolean; deleted: boolean; outcome: \"deleted\" | \"would_delete\"; previous_status: string; target_path?: string; history_retained: string; tombstone_retention: \"retain_append_only\"; warnings: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "deleteWorkspaceSnapshot",
+          "signature": "(pmRoot: string, target: string) => Promise<{ deleted: \"object\" | \"reference\"; target: string; }> | calls: (pmRoot: string, target: string) => Promise<{ deleted: \"reference\" | \"object\"; target: string; }>"
         },
         {
           "classification": "supported",
@@ -2907,6 +2940,12 @@
           "signature": "(store: VectorStoreConfig, records: VectorRecord[], options?: ExecuteVectorRequestOptions) => Promise<VectorUpsertResult> | calls: (store: VectorStoreConfig, records: VectorRecord[], options?: ExecuteVectorRequestOptions) => Promise<VectorUpsertResult>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "executeWorkspaceRecipe",
+          "signature": "<T>(recipe: WorkspaceRecipe, execute: (operation: WorkspaceRecipeOperation, index: number) => Promise<T>) => Promise<T[]> | calls: <T>(recipe: WorkspaceRecipe, execute: (operation: WorkspaceRecipeOperation, index: number) => Promise<T>) => Promise<T[]>"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "EXIT_CODE",
@@ -3126,7 +3165,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "ExtensionBlueprintLintCode",
-          "signature": "export type ExtensionBlueprintLintCode = \"capability_undeclared\" | \"capability_unused\" | \"duplicate_command\" | \"command_override_conflict\" | \"empty_surface\" | \"reserved_item_field\" | \"manifest_capabilities_absent\";"
+          "signature": "export type ExtensionBlueprintLintCode = \"capability_undeclared\" | \"capability_unused\" | \"duplicate_command\" | \"command_override_conflict\" | \"empty_surface\" | \"host_owned_flag_collision\" | \"malformed_long_flag\" | \"reserved_item_field\" | \"manifest_capabilities_absent\";"
         },
         {
           "classification": "supported",
@@ -4527,6 +4566,12 @@
           "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "inspectWorkspaceSnapshot",
+          "signature": "(pmRoot: string, target: string) => Promise<WorkspaceSnapshotManifest> | calls: (pmRoot: string, target: string) => Promise<WorkspaceSnapshotManifest>"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "INSTALL_FLAG_CONTRACTS",
@@ -5137,6 +5182,12 @@
           "kind": "interface",
           "name": "ListVerboseResult",
           "signature": "export interface ListVerboseResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: ListProjectionMode; fields: string[] | null; }; sorting: { sort: ListSortField | \"default\"; order: ListSortOrder; }; now: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listWorkspaceSnapshots",
+          "signature": "(pmRoot: string) => Promise<{ objects: WorkspaceSnapshotManifest[]; references: WorkspaceSnapshotReference[]; }> | calls: (pmRoot: string) => Promise<{ objects: WorkspaceSnapshotManifest[]; references: WorkspaceSnapshotReference[]; }>"
         },
         {
           "classification": "advanced_export",
@@ -6391,6 +6442,12 @@
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
           "signature": "\"4.2.0\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_WORKSPACE_RECIPE_SCHEMA",
+          "signature": "\"https://schema.unbrained.dev/pm/workspace-recipe/v1\""
         },
         {
           "classification": "supported",
@@ -8493,6 +8550,12 @@
           "signature": "export interface RestoreResult { item: ItemMetadata; restored_from: { kind: \"version\" | \"timestamp\"; target: string; history_index: number; entry_ts: string; entry_op: string; }; changed_fields: string[]; warnings: string[]; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "restoreWorkspaceSnapshot",
+          "signature": "(pmRoot: string, target: string) => Promise<WorkspaceSnapshotManifest> | calls: (pmRoot: string, target: string) => Promise<WorkspaceSnapshotManifest>"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "ResurrectedItemRow",
@@ -9097,6 +9160,12 @@
           "kind": "function",
           "name": "runWithWorkspaceHarnessSignalDescriptors",
           "signature": "<T>(descriptors: readonly HarnessSignalDescriptor[], callback: () => T) => T | calls: <T>(descriptors: readonly HarnessSignalDescriptor[], callback: () => T) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runWithWorkspaceRecipe",
+          "signature": "<T>(recipe: WorkspaceRecipe, operation: () => Promise<T>) => Promise<T> | calls: <T>(recipe: WorkspaceRecipe, operation: () => Promise<T>) => Promise<T>"
         },
         {
           "classification": "advanced_export",
@@ -10923,6 +10992,18 @@
           "signature": "export interface WorkspaceMemorySnapshot { format_version: number; source_cursor: string; source_item_count: number; generated_at: string; rollups: WorkspaceMemoryRollup[]; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceRecipe",
+          "signature": "export interface WorkspaceRecipe extends ReproducibleExecutionSettings { schema: typeof PM_WORKSPACE_RECIPE_SCHEMA; operations: readonly WorkspaceRecipeOperation[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceRecipeOperation",
+          "signature": "export interface WorkspaceRecipeOperation { action: string; input: Readonly<Record<string, unknown>>; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceRelationshipAssembly",
@@ -10939,6 +11020,18 @@
           "kind": "interface",
           "name": "WorkspaceRelationshipNodeDetails",
           "signature": "export interface WorkspaceRelationshipNodeDetails { id: string; title: string; status: string; type?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceSnapshotManifest",
+          "signature": "export interface WorkspaceSnapshotManifest { schema: typeof SNAPSHOT_SCHEMA; fingerprint: string; files: readonly string[]; bytes: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceSnapshotReference",
+          "signature": "export interface WorkspaceSnapshotReference { name: string; fingerprint: string; }"
         },
         {
           "classification": "advanced_export",
@@ -11448,7 +11541,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "ExtensionBlueprintLintCode",
-          "signature": "export type ExtensionBlueprintLintCode = \"capability_undeclared\" | \"capability_unused\" | \"duplicate_command\" | \"command_override_conflict\" | \"empty_surface\" | \"reserved_item_field\" | \"manifest_capabilities_absent\";"
+          "signature": "export type ExtensionBlueprintLintCode = \"capability_undeclared\" | \"capability_unused\" | \"duplicate_command\" | \"command_override_conflict\" | \"empty_surface\" | \"host_owned_flag_collision\" | \"malformed_long_flag\" | \"reserved_item_field\" | \"manifest_capabilities_absent\";"
         },
         {
           "classification": "supported",
@@ -19776,7 +19869,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "ExtensionBlueprintLintCode",
-          "signature": "export type ExtensionBlueprintLintCode = \"capability_undeclared\" | \"capability_unused\" | \"duplicate_command\" | \"command_override_conflict\" | \"empty_surface\" | \"reserved_item_field\" | \"manifest_capabilities_absent\";"
+          "signature": "export type ExtensionBlueprintLintCode = \"capability_undeclared\" | \"capability_unused\" | \"duplicate_command\" | \"command_override_conflict\" | \"empty_surface\" | \"host_owned_flag_collision\" | \"malformed_long_flag\" | \"reserved_item_field\" | \"manifest_capabilities_absent\";"
         },
         {
           "classification": "supported",

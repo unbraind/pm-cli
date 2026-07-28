@@ -2351,6 +2351,12 @@ interface HealthSkipPolicy {
   skipVectors: boolean;
 }
 
+const HEALTH_CLONE_OPTIONAL_DIRECTORIES = new Set([
+  "extensions",
+  "locks",
+  "search",
+]);
+
 function resolveHealthDirectoryLists(typeRegistry: HealthTypeRegistry): {
   requiredDirs: string[];
   optionalDirs: string[];
@@ -2365,6 +2371,10 @@ function resolveHealthDirectoryLists(typeRegistry: HealthTypeRegistry): {
     if (requiredDirSet.has(folder) && !builtinItemFolderSet.has(folder)) {
       continue;
     }
+    requiredDirSet.delete(folder);
+    optionalDirSet.add(folder);
+  }
+  for (const folder of HEALTH_CLONE_OPTIONAL_DIRECTORIES) {
     requiredDirSet.delete(folder);
     optionalDirSet.add(folder);
   }

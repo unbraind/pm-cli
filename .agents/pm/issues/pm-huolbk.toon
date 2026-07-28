@@ -2,11 +2,12 @@ id: pm-huolbk
 title: "GH-784: SDK blueprint preflight misses host-owned flag collisions and malformed long-flag tokens"
 description: "Align author-time extension lint and preflight with loader enforcement. lintExtensionBlueprint and assertExtensionPreflight currently return clean reports for a blueprint whose --json declaration is rejected at activation, and neither validator rejects malformed long tokens such as verbose or -v. Add one shared host-owned flag collision rule and explicit long-token grammar so static preflight cannot approve a blueprint the runtime quarantines."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:extensions","area:sdk",author-ergonomics,contracts,github-report
 created_at: "2026-07-28T04:20:05.459Z"
-updated_at: "2026-07-28T15:15:23.840Z"
+updated_at: "2026-07-28T16:31:00.436Z"
+closed_at: "2026-07-28T16:27:39.953Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: lintExtensionBlueprint emits an error-severity host-owned flag collision finding for primary and alias tokens in SUBCOMMAND_GLOBAL_FLAG_CONTRACTS; assertExtensionPreflight surfaces the same failure and remediation as runtime activation; FlagDefinition.long rejects tokens outside the canonical double-dash grammar at author-time and activation boundaries; valid custom flags remain accepted; SDK types docs fixtures property tests and installed-extension acceptance tests stay aligned
@@ -17,6 +18,7 @@ reporter: github-issue-784
 severity: high
 environment: Published @unbrained/pm-cli 2026.7.28 in a clean installed consumer
 repro_steps: "Lint and preflight an extension blueprint declaring --json, verbose, or -v as FlagDefinition.long, then compare activation behavior."
+resolution: fixed
 expected_result: Static preflight rejects every loader-invalid host-owned or malformed long flag with the same actionable remediation.
 actual_result: "Static lint/preflight report no findings for --json while activation rejects it, and malformed long tokens are accepted and stored verbatim."
 component: "sdk:extension-blueprint-preflight"
@@ -26,6 +28,24 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gnowgi,discovered_from,"2026-07-28T04:20:05.459Z","harness:codex","cli:create:dep",detected
   pm-ill9gv,related,"2026-07-28T04:20:05.459Z","harness:codex","cli:create:dep",detected
   pm-w7mqzt,verifies,"2026-07-28T04:20:05.459Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-28T04:20:05.459Z","harness:codex","Duplicate-check evidence 2026-07-28: all-status searches for blueprint lint host-owned flag collision, assertExtensionPreflight, GH-719, and GH-764 found closed author-time lint feature pm-9ect and closed runtime collision owners pm-ill9gv/pm-gnowgi, but no active owner for the static-preflight parity and malformed long-token gaps reported in GH-784. Created as the canonical open follow-up; not claimed or implemented in the current PR."
+  "2026-07-28T16:27:18.802Z","harness:codex","Implementation evidence: one shared flag-token validator now drives blueprint lint/preflight and runtime activation, rejects host-owned and malformed long declarations with the same remediation, and preserves Commander-compatible value placeholders and legacy underscore aliases. Focused PM-linked run passed 186 tests; full coverage passed 6,468 tests at 100/100/100/100. SDK surface change is explicitly acknowledged and documented in docs/SDK.md."
+files[8]{path,scope,note}:
+  sdk/public-surface.json,project,acknowledged lint union contract
+  src/core/extensions/flag-definition-validation.ts,project,shared author/runtime flag validation
+  src/core/extensions/loader.ts,project,runtime activation validation
+  src/sdk/compose.ts,project,blueprint preflight lint
+  tests/integration/cli.integration.spec.ts,project,installed extension grammar compatibility
+  tests/unit/core/extension-flag-definition-validation.spec.ts,project,shared validator branch coverage
+  tests/unit/extensions/extension-loader.spec.ts,project,runtime regression coverage
+  tests/unit/sdk/sdk-compose.spec.ts,project,author-time regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-compose.spec.ts tests/unit/extensions/extension-loader.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms4v8epq-sn33mm,test,passed,"2026-07-28T16:23:47.204Z","2026-07-28T16:24:00.639Z","2026-07-28T16:24:00.639Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,package-generated release note
+  docs/SDK.md,project,flag lint migration contract
+close_reason: "Shared author/runtime flag validation delivered with aligned diagnostics, docs, installed compatibility coverage, and 100% full-suite coverage."
 body: ""

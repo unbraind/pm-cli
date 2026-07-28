@@ -652,6 +652,50 @@ describe("sdk lintExtensionBlueprint", () => {
     expect(() => lintExtensionBlueprint({ itemFields: [{ name: null }] } as never)).not.toThrow();
   });
 
+  it("rejects host-owned and malformed long flags before package activation", () => {
+    const result = lintExtensionBlueprint({
+      flags: {
+        list: [
+          { long: "--json" },
+          { long: "missing-prefix" },
+          { long: "--valid-extension-flag" },
+          { long: undefined as never },
+        ],
+      },
+      importers: [
+        { name: "without-options", importer: () => ({ imported: 0 }) },
+        {
+          name: "with-valid-flag",
+          importer: () => ({ imported: 0 }),
+          options: { flags: [{ long: "--import-mode" }] },
+        },
+      ],
+      exporters: [
+        { name: "without-options", exporter: () => ({ exported: 0 }) },
+        {
+          name: "with-valid-flag",
+          exporter: () => ({ exported: 0 }),
+          options: { flags: [{ long: "--export-mode" }] },
+        },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "host_owned_flag_collision",
+          severity: "error",
+          field: "--json",
+        }),
+        expect.objectContaining({
+          code: "malformed_long_flag",
+          severity: "error",
+          field: "missing-prefix",
+        }),
+      ]),
+    );
+  });
+
   it("flags a command path declared more than once", () => {
     const result = lintExtensionBlueprint(
       {

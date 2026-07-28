@@ -49,6 +49,24 @@ export {
 export * from "./core-governance.js";
 export { createPmCliProgram } from "./cli-program.js";
 export { runSearchRefreshWorkerEntrypoint } from "./search-refresh-worker.js";
+export {
+  PM_WORKSPACE_RECIPE_SCHEMA,
+  defineWorkspaceRecipe,
+  executeWorkspaceRecipe,
+  runWithWorkspaceRecipe,
+  type WorkspaceRecipe,
+  type WorkspaceRecipeOperation,
+} from "./workspace-recipe.js";
+export {
+  createWorkspaceSnapshot,
+  deleteWorkspaceSnapshot,
+  inspectWorkspaceSnapshot,
+  listWorkspaceSnapshots,
+  restoreWorkspaceSnapshot,
+  type CreateWorkspaceSnapshotResult,
+  type WorkspaceSnapshotManifest,
+  type WorkspaceSnapshotReference,
+} from "./workspace-snapshot.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
 export {
   EXECUTABLE_COMMAND_ALIASES,

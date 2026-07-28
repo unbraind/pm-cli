@@ -2,11 +2,12 @@ id: pm-83ov2i
 title: "GH-785: align pm health ok with warn-only exit semantics on fresh clones"
 description: "Fresh clones legitimately omit empty item-type directories; health classifies that condition as warn and exits 0 but still emits ok:false, giving agents and CI contradictory top-level gating signals."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-28T05:16:20.390Z"
-updated_at: "2026-07-28T15:15:22.611Z"
+updated_at: "2026-07-28T16:31:04.241Z"
+closed_at: "2026-07-28T16:28:10.556Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Warn-only health results have one documented non-contradictory blocking verdict across SDK, CLI JSON, human output, explain output, and exit code; fresh-clone and strict-directory behavior remain covered."
@@ -15,6 +16,7 @@ risk: medium
 confidence: 90
 severity: medium
 environment: fresh clone
+resolution: fixed
 expected_result: "The top-level health verdict and process exit code agree on whether a warn-only fresh-clone result is blocking, while warnings remain visible."
 actual_result: "A missing optional empty type folder produces ok:false with exit code 0."
 affected_version: 2026.7.28
@@ -23,7 +25,18 @@ regression: true
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-1nht,related,"2026-07-28T05:16:20.390Z","harness:codex","cli:create:dep",detected
   pm-xyuhh7,discovered_from,"2026-07-28T05:16:20.390Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-28T05:16:20.390Z","harness:codex","Duplicate-check evidence: all-status searches for warn-only, missing_directory epics/extensions, GH-775, and the exact fresh-clone wording found closed pm-xyuhh7 as the shipped predecessor and closed pm-1nht as analogous validate behavior; neither tracks the health top-level ok/exit disagreement reported in GH-785."
   "2026-07-28T05:16:38.058Z","harness:codex","GitHub intake linkage: https://github.com/unbraind/pm-cli/issues/785. This remains open and unclaimed for a future implementation pass; the completed GH-775 predecessor pm-xyuhh7 is preserved as shipped history."
+  "2026-07-28T16:27:22.281Z","harness:codex","Implementation evidence: warn-only clone-optional directory findings preserve a truthful non-blocking health verdict and zero exit semantics, while strict policy remains advisory and structural failures remain blocking. Focused PM-linked health run passed 56 tests; full coverage passed 6,468 tests at 100/100/100/100."
+files[2]{path,scope,note}:
+  src/sdk/governance/health.ts,project,truthful blocking versus advisory health result
+  tests/unit/commands/health-command.spec.ts,project,health result and warning coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/health-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms4va8q8-skaw4p,test,passed,"2026-07-28T16:25:04.840Z","2026-07-28T16:25:26.193Z","2026-07-28T16:25:26.193Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,package-generated release note
+close_reason: Health verdict and exit semantics now agree for advisory fresh-clone findings with focused and full-suite proof.
 body: ""

@@ -37,6 +37,7 @@ import type {
   RendererOverrideContext,
   RendererOverrideResult,
 } from "./extension-types.js";
+import { stableValueEquals } from "../shared/serialization.js";
 
 type HookName = keyof ExtensionHookRegistry;
 
@@ -465,7 +466,7 @@ function isLegacyOutputPayloadEcho(
     context.service === "output_format" &&
     typeof result === "object" &&
     result !== null &&
-    result === serviceContext.payload
+    stableValueEquals(result, serviceContext.payload)
   );
 }
 

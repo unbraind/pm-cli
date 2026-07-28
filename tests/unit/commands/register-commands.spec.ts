@@ -587,6 +587,24 @@ describe("operation command actions", () => {
     expect(requireClaimTarget("pm-a", false)).toBeUndefined();
   });
 
+  it("routes list migration errors and every workspace snapshot action", async () => {
+    await expect(runCli("list", "--all")).rejects.toThrow(
+      "List --all was ambiguous",
+    );
+    await runCli("workspace", "snapshot", "list");
+    await runCli("workspace", "snapshot", "create");
+    await runCli("workspace", "snapshot", "create", "registration");
+    await runCli("workspace", "snapshot", "inspect", "registration");
+    await runCli("workspace", "snapshot", "restore", "registration");
+    await runCli("workspace", "snapshot", "delete", "registration");
+    await expect(
+      runCli("workspace", "snapshot", "inspect"),
+    ).rejects.toThrow("requires a snapshot name");
+    await expect(
+      runCli("workspace", "snapshot", "unknown", "registration"),
+    ).rejects.toThrow("Unknown workspace snapshot action");
+  });
+
   it("routes claim --next through ranked atomic selection", async () => {
     vi.mocked(runClaimNext).mockResolvedValueOnce({ id: "pm-next" } as never);
     await runCli(

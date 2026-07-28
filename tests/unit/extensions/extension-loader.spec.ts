@@ -5525,6 +5525,9 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
         makeLoaded("invalid-register-flags-host-global", (api) => {
           api.registerFlags("sync flags", [{ long: "--author" }]);
         }),
+        makeLoaded("invalid-register-flags-long-syntax", (api) => {
+          api.registerFlags("sync flags", [{ long: "missing-prefix" }]);
+        }),
         makeLoaded("invalid-item-fields-list", (api) => {
           api.registerItemFields({ name: "field", type: "string" } as never);
         }),
@@ -5603,6 +5606,7 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
       "invalid-command-flags",
       "invalid-register-flags-default",
       "invalid-register-flags-host-global",
+      "invalid-register-flags-long-syntax",
       "invalid-item-fields-list",
       "invalid-item-fields-empty",
       "invalid-item-types-list",
@@ -5635,6 +5639,9 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
       expect.stringContaining("default must be a string, number, or boolean"),
       expect.stringContaining(
         'cannot shadow host-owned global flag "--author"; read it from context.global instead',
+      ),
+      expect.stringContaining(
+        'must start with a double-dash name such as "--my-flag"',
       ),
       expect.stringContaining("fields requires an array"),
       expect.stringContaining("requires at least one field definition"),

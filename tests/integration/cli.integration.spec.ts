@@ -5107,7 +5107,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
-  it("surfaces registerFlags metadata and rejects unsupported dynamic command flags", async () => {
+  it("surfaces valid registerFlags metadata and rejects unsupported dynamic command flags", async () => {
     await withTempPmPath(async (context) => {
       const extensionDir = path.join(context.pmPath, "extensions", "acme-sync-flag-help-ext");
       await mkdir(extensionDir, { recursive: true });
@@ -5137,8 +5137,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "      { long: '--limit', value_name: 'count' },",
           "      { long: '--required-flag', required: true },",
           "      { long: '--disabled-flag', enabled: false },",
-          "      { long: '--hidden-flag', visible: false, description: 'Hidden by policy' },",
-          "      { long: 'invalid-long', description: 'Ignored invalid long flag' }",
+          "      { long: '--hidden-flag', visible: false, description: 'Hidden by policy' }",
           "    ]);",
           "    api.registerCommand({",
           "      name: 'acme sync',",
@@ -5165,7 +5164,6 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(normalizedHelp).toContain("--required-flag <value> Extension-provided option. [required]");
       expect(normalizedHelp).toContain("--disabled-flag Extension-provided option. [disabled]");
       expect(helpResult.stdout).not.toContain("--hidden-flag");
-      expect(helpResult.stdout).not.toContain("Ignored invalid long flag");
       const dispatched = context.runCli(["acme", "sync", "--json", "--dry-run", "--limit", "2", "--required-flag", "ok", "artifact-Z"], {
         expectJson: true,
       });

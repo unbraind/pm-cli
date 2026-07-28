@@ -1,0 +1,32 @@
+id: pm-bex0ui
+title: "GH-797: rank read/show/view recovery by executable intent and bounded contracts guidance"
+description: "Align unknown-command recovery for read-shaped intents so pm read does not surface alphabetical command noise while show/view consistently resolve to get, and replace the oversized root-help fallback with the bounded contracts summary surface."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-experience,"area:cli",context-efficiency,github-report,recovery
+created_at: "2026-07-28T16:30:32.604Z"
+updated_at: "2026-07-28T16:31:07.704Z"
+author: "harness:codex"
+acceptance_criteria: "pm read, show, and view recover to executable read semantics with deterministic ranking; unknown-command recovery recommends bounded contracts summary guidance instead of root help; token and executable-alias regressions cover human and structured modes"
+goal: project management = context management
+objective: Make mistaken read intents recover with minimal context cost
+value: Agents reach the correct item read command without consuming the full help surface
+parent: pm-n7rr
+risk: medium
+confidence: high
+reporter: github-issue-797
+severity: medium
+environment: Published CLI recovery path
+repro_steps: "Run pm read, pm show, and pm view for an item-shaped intent and compare suggestions and recovery guidance."
+expected_result: Read-shaped aliases and mistakes converge on pm get with a bounded discovery fallback.
+actual_result: "pm read receives alphabetical noise while show/view resolve to get, and fallback guidance sends agents to the full root help payload."
+component: "cli:unknown-command-recovery"
+customer_impact: A common read intent spends unnecessary tokens and can route automation toward unrelated commands.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-185870,related,"2026-07-28T16:30:32.604Z","harness:codex","cli:create:dep",detected
+  pm-i35t,discovered_from,"2026-07-28T16:30:32.604Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-28T16:30:32.604Z","harness:codex","Duplicate-check evidence: all-status searches for GH-797, pm read/show/view, recovery bundle, and contracts summary found closed executable-alias predecessor pm-i35t, open cross-family recovery owner pm-185870, and parent grammar epic pm-n7rr, but no item owns this ranking plus bounded-guidance gap. Created as the canonical GitHub follow-up; it is intentionally open and unclaimed in this delivery."
+  "2026-07-28T16:31:07.704Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/797 with owner comment linking this canonical item."
+body: ""

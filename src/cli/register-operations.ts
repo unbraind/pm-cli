@@ -13,6 +13,13 @@ import {
   readSettings,
 } from "../sdk/runtime-primitives.js";
 import { resolveStartTaskInProgressStatus } from "../sdk/start-task-status.js";
+import {
+  createWorkspaceSnapshot,
+  deleteWorkspaceSnapshot,
+  inspectWorkspaceSnapshot,
+  listWorkspaceSnapshots,
+  restoreWorkspaceSnapshot,
+} from "../sdk/workspace-snapshot.js";
 import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
 import { runClose } from "./commands/close.js";
 import { runContracts } from "./commands/contracts.js";
@@ -504,6 +511,60 @@ async function runGcAction(
   if (globalOptions.profile) {
     printError(`profile:command=gc took_ms=${Date.now() - startedAt}`);
   }
+}
+
+async function runWorkspaceSnapshotAction(
+  action: string,
+  target: string | undefined,
+  _options: Record<string, unknown>,
+  command: Command,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const normalizedAction = action.trim().toLowerCase();
+  if (normalizedAction === "list") {
+    printResult(await listWorkspaceSnapshots(pmRoot), globalOptions);
+    return;
+  }
+  if (normalizedAction === "create") {
+    printResult(
+      await createWorkspaceSnapshot(pmRoot, {
+        ...(target === undefined ? {} : { name: target }),
+      }),
+      globalOptions,
+    );
+    return;
+  }
+  if (target === undefined) {
+    throw new PmCliError(
+      `pm workspace snapshot ${normalizedAction} requires a snapshot name or fingerprint`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (normalizedAction === "inspect") {
+    printResult(await inspectWorkspaceSnapshot(pmRoot, target), globalOptions);
+    return;
+  }
+  if (normalizedAction === "restore") {
+    printResult(await restoreWorkspaceSnapshot(pmRoot, target), globalOptions);
+    return;
+  }
+  if (normalizedAction === "delete") {
+    printResult(await deleteWorkspaceSnapshot(pmRoot, target), globalOptions);
+    return;
+  }
+  throw new PmCliError(
+    `Unknown workspace snapshot action "${action}". Use create, list, inspect, restore, or delete.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "unknown_subcommand",
+      examples: [
+        "pm workspace snapshot create before-migration",
+        "pm workspace snapshot list",
+        "pm workspace snapshot restore before-migration",
+      ],
+    },
+  );
 }
 
 async function runContractsAction(
@@ -1057,6 +1118,17 @@ export function registerOperationCommands(program: Command): void {
       "Delete optional cache artifacts by default (including expired lock debris) and show a summary.",
     )
     .action(runGcAction);
+
+  program
+    .command("workspace")
+    .description("Manage portable workspace-level SDK primitives.")
+    .command("snapshot")
+    .argument("<action>", "Snapshot action: create, list, inspect, restore, delete")
+    .argument("[target]", "Optional name for create; name or fingerprint otherwise")
+    .description(
+      "Create, inspect, list, restore, or delete content-addressed tracker snapshots.",
+    )
+    .action(runWorkspaceSnapshotAction);
 
   program
     .command("contracts")

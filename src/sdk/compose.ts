@@ -64,6 +64,10 @@ import {
 import { normalizeCommandName } from "../core/extensions/extension-runtime-helpers.js";
 import { RESERVED_ITEM_FIELD_NAMES } from "../core/extensions/item-fields.js";
 import {
+  describeExtensionLongFlagFailure,
+  validateExtensionLongFlagToken,
+} from "../core/extensions/flag-definition-validation.js";
+import {
   evaluatePmMaxVersionBound,
   evaluatePmMinVersionBound,
   type PmVersionBoundEvaluation,
@@ -1127,6 +1131,8 @@ export type ExtensionBlueprintLintCode =
   | "duplicate_command"
   | "command_override_conflict"
   | "empty_surface"
+  | "host_owned_flag_collision"
+  | "malformed_long_flag"
   | "reserved_item_field"
   | "manifest_capabilities_absent";
 
@@ -1163,6 +1169,39 @@ function collectReservedItemFieldFindings(
       message: `Item field "${field.name}" collides with reserved item metadata; rename it with an extension-specific prefix before publishing.`,
       field: field.name,
     }));
+}
+
+function collectBlueprintFlagFindings(
+  blueprint: ExtensionBlueprint,
+): ExtensionBlueprintLintFinding[] {
+  const definitions = [
+    ...Object.values(blueprint.flags ?? {}).flat(),
+    ...(blueprint.commands ?? []).flatMap((command) => command.flags ?? []),
+    ...(blueprint.importers ?? []).flatMap(
+      (entry) => entry.options?.flags ?? [],
+    ),
+    ...(blueprint.exporters ?? []).flatMap(
+      (entry) => entry.options?.flags ?? [],
+    ),
+  ];
+  return definitions.flatMap((definition) => {
+    if (typeof definition?.long !== "string") {
+      return [];
+    }
+    const token = definition.long.trim();
+    const failure = validateExtensionLongFlagToken(token);
+    if (failure === null) {
+      return [];
+    }
+    return [
+      {
+        code: failure,
+        severity: "error",
+        message: `Flag "${token}" ${describeExtensionLongFlagFailure(token, failure)}.`,
+        field: token,
+      },
+    ];
+  });
 }
 
 /**
@@ -1368,6 +1407,7 @@ export function lintExtensionBlueprint(
   const findings: ExtensionBlueprintLintFinding[] = [
     ...collectBlueprintCapabilityFindings(used, declared),
     ...collectBlueprintCommandFindings(blueprint),
+    ...collectBlueprintFlagFindings(blueprint),
     ...collectReservedItemFieldFindings(blueprint),
     ...collectBlueprintEmptySurfaceFindings(blueprint),
   ];
