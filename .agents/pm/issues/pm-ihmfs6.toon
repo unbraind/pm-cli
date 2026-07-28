@@ -2,30 +2,34 @@ id: pm-ihmfs6
 title: "GH-790/GH-791: pm merge install reports workspace_root in a different canonical form depending on which channel resolved it, so the same repository has two non-equal spellings on macOS and Windows"
 description: "Nightly Validation is red on macos-latest/Node 24 (GH-790) and windows-latest/Node 24 (GH-791) at commit d885d5a0. Both legs fail tests/unit/sdk/merge-safety.spec.ts:1356 'uses protected source coordinates as a fallback while explicit tracker paths win', and the assertion diff names the defect exactly:\n\n  macOS   expected /var/folders/8j/.../pm-merge-linked-sandbox-UQBR2y\n          received /private/var/folders/8j/.../pm-merge-linked-sandbox-UQBR2y\n  Windows expected C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\pm-merge-linked-sandbox-HaDoa0\n          received C:\\Users\\runneradmin\\AppData\\Local\\Temp\\pm-merge-linked-sandbox-HaDoa0\n\nThe result field is not stable across resolution channels. When PM_SOURCE_WORKSPACE_ROOT supplies the root, or when cwd discovery does, workspace_root is returned as given. When an explicit tracker path is passed, the root is derived through findGitWorkspaceRoot (src/sdk/merge/install.ts:139-142), which runs git rev-parse --show-toplevel and then realpath()s the result - so that channel alone returns the canonical spelling. On Linux the two spellings coincide and the divergence is invisible; on macOS (/var symlinked to /private/var) and Windows (8.3 short names vs long names) they do not.\n\nThis is a product defect, not a spec defect, and it must not be repaired by normalizing the expectation in the spec. The same reasoning applied to pm-0fhw: a caller that passes a tracker path and then compares the returned workspace_root against its own path gets a false negative on two of three supported platforms. installMergeSafety already canonicalizes internally at src/sdk/merge/install.ts:604-605 for the containment check, with a comment explaining precisely this Windows short-path hazard - so the containment logic is correct and only the reported coordinate leaks the inconsistency. The fix is to decide one canonical form for the reported coordinates and apply it on every channel, then state it in the MergeInstallResult docstring so SDK consumers can compare safely.\n\nSame class as pm-0fhw (realpath fallback asymmetry in extension-install copy), different production site."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[6]: "area:merge","area:sdk",ci,cross-platform,nightly,path-identity
 created_at: "2026-07-28T10:28:34.015Z"
-updated_at: "2026-07-28T12:32:51.599Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#45aa267ce86ee33cac29f976"
+updated_at: "2026-07-28T13:04:51.592Z"
+closed_at: "2026-07-28T13:04:08.110Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "workspace_root and pm_root in the MergeInstallResult carry one documented canonical form for every resolution channel (explicit tracker path, PM_SOURCE_* env, cwd discovery), and the macOS and Windows nightly legs pass tests/unit/sdk/merge-safety.spec.ts without per-platform normalization in the spec"
 parent: pm-ugqx
 risk: medium
 confidence: high
+resolution: Canonicalized merge-install result coordinates across every SDK resolution channel and hardened native-path diagnostics/tests.
+expected_result: "All merge-install resolution channels return one documented canonical workspace_root and pm_root identity on Linux, macOS, and Windows."
+actual_result: "All resolution channels canonicalize both coordinates; focused merge/context tests, exact local coverage, and the full five-leg nightly matrix pass."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-0fhw,discovered_from,"2026-07-28T10:31:18.862Z","harness:claude-code","cli:update:dep",detected
   pm-e70zh5,related,"2026-07-28T10:31:18.862Z","harness:claude-code","cli:update:dep",detected
   pm-g5sx,related,"2026-07-28T10:31:18.862Z","harness:claude-code","cli:update:dep",detected
   pm-j668gl,related,"2026-07-28T10:31:18.862Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-28T11:57:08.286Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
   "2026-07-28T12:14:59.039Z","harness:codex","Cross-platform evidence from nightly run 30356894804: macOS exposed /var versus /private/var and Windows exposed 8.3 versus long-name spellings in one missed assertion. The spec now compares the explicit tracker result to filesystem realpath and asserts canonical pm_root too; the idempotent install test restores cwd in finally to prevent Windows EBUSY cleanup masking."
   "2026-07-28T12:30:37.236Z","harness:codex","Nightly evidence: run 30358494567 proved canonical merge-root behavior on macOS and all Ubuntu variants. Windows Node 24 reached the full test suite and identified platform-specific assertion/ENOENT classification gaps now being corrected; the item remains active until the complete matrix is green."
   "2026-07-28T12:32:51.598Z","harness:codex","Focused correction evidence: 27 context-integrity and merge-safety tests pass, followed by typecheck and the complete strict static-quality suite (100% docstrings, package boundary, SDK parity/surface, token budget, entrypoint cost, transport floor)."
-files[4]{path,scope,note}:
+  "2026-07-28T13:03:58.480Z","harness:codex","Acceptance evidence: Nightly Validation run 30361026722 is green at head 1c6e871d2 on Ubuntu Node 22/24/25, macOS Node 24, and Windows Node 24. MergeInstallResult now reports canonical workspace_root and pm_root across explicit tracker, protected source-coordinate, and cwd channels; native macOS/Windows identity comparisons pass without platform-specific product normalization."
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,Generated release history for canonical merge path fix
   src/core/history/drift-cache.ts,project,Cross-platform semantic cache invalidation diagnostics
   src/sdk/merge/install.ts,project,Canonical merge-install workspace and tracker roots
   tests/unit/sdk/context-integrity-primitives.spec.ts,project,Invalid-root regression coverage
@@ -33,4 +37,5 @@ files[4]{path,scope,note}:
 tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240
+close_reason: Canonical merge coordinates and native path diagnostics are verified by green Nightly Validation run 30361026722 on all five supported matrix legs.
 body: ""

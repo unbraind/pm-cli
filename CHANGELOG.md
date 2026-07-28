@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Nightly static quality fails closed in shallow workflow checkouts because CodeFactor parity cannot resolve a committed base ([pm-1hbw4y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1hbw4y.toon))
+- GH-790/GH-791: pm merge install reports workspace_root in a different canonical form depending on which channel resolved it, so the same repository has two non-equal spellings on macOS and Windows ([pm-ihmfs6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ihmfs6.toon))
 - The dependency token budget is enforced against a different representation than the one emitted, so a command that reports staying inside 16k tokens delivers about 45k ([pm-t2t709](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t2t709.toon))
 - pm activity has no default bound: a bare invocation returns all 40,446 history entries at 1.59M tokens, 397x the ceiling its own contract declares ([pm-z2j1qt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z2j1qt.toon))
 - Both token gates are structurally unable to fail: one measures only help payloads, the other measures command output against a three-item fixture, so no check anywhere compares real output to the ceiling the contract declares ([pm-9sui7t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9sui7t.toon))
