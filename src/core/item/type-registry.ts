@@ -394,7 +394,7 @@ export function normalizeItemTypeFolder(folder: string): string {
   const normalized = path.posix.normalize(trackerRelative);
   if (
     trimmed.includes("\0") ||
-    /^[A-Za-z]:/.test(portable) ||
+    /^[A-Za-z]:/.test(normalized) ||
     normalized === "." ||
     normalized === ".." ||
     normalized.startsWith("../")

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:schema","area:security",github-report,path-safety,storage-boundary
 created_at: "2026-07-28T18:19:50.185Z"
-updated_at: "2026-07-28T18:43:06.270Z"
+updated_at: "2026-07-28T18:57:13.827Z"
 closed_at: "2026-07-28T18:38:22.832Z"
 author: "harness:codex"
 acceptance_criteria: schema add-type rejects every relative traversal that resolves outside the tracker root before writing schema/types.json; valid nested folders and established contained absolute-looking values remain supported; create cannot consume a legacy malicious persisted definition to write outside the tracker; POSIX and Windows path semantics have direct negative controls; CLI SDK contracts docs and exact 100% coverage remain green; isolated installed-package reproduction proves no artifact is created outside the tracker
@@ -27,16 +27,18 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-e1va,discovered_from,"2026-07-28T18:19:50.185Z","harness:codex","cli:create:dep",detected
   pm-feecbs,verifies,"2026-07-28T18:19:50.185Z","harness:codex","cli:create:dep",detected
   pm-qt5d,related,"2026-07-28T18:19:50.185Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-28T18:19:50.185Z","harness:codex","Duplicate-check evidence 2026-07-28: all-status searches for GH-799,schema folder containment,path traversal,and workspace-boundary writes found the shipped custom-type owner pm-e1va,prior add-type validation owner pm-3l0f,and path-scoped write precedent pm-qt5d,but no item owns custom type folder containment. Created this privacy-safe canonical security follow-up without reproducing public exploit topology."
   "2026-07-28T18:25:03.380Z","harness:codex","TDD evidence: both focused files failed before implementation (14/14 failures: escaping schema authoring and legacy runtime create were accepted). After adding the shared portable tracker-relative folder normalizer at schema-authoring and runtime-registry boundaries, all 14 tests pass; the runtime negative control confirms neither the escaped item directory nor a new history stream is created."
   "2026-07-28T18:38:15.636Z","harness:codex","Verification evidence: focused unit/integration 14/14 passed; repository coverage passed 387 files and 6,488 tests with statements 45,167/45,167, branches 32,128/32,128, functions 9,223/9,223, and lines 43,878/43,878. Typecheck, ESLint, jscpd zero clones, 100% docstring/static gate, package boundary, SDK contract parity, token budget, SDK surface, import cost, CLI transport floor, docs/skills, contracts, secret scan, and pm-changelog 2026.7.28 check all passed. The earlier failed aggregate test_run is preserved: it resulted from an accidental concurrent coverage-artifact collision; the duplicate process was terminated and the sequential full run above passed."
   "2026-07-28T18:38:16.369Z","harness:codex","Installed-package acceptance: packed @unbrained/pm-cli 2026.7.28 into a fresh unrelated /tmp consumer, initialized an isolated tracker, confirmed schema add-type with an escaping folder exited 2 with the containment diagnostic and created no outside artifact, then registered /custom/../nested-items and created exactly one TOON item under the tracker-relative nested-items directory. The isolated proof workspace was removed afterward."
   "2026-07-28T18:42:53.542Z","harness:codex","Correction to linked-run evidence: the repository-wide coverage command is intentionally not retained as a PM-linked test because pm test executes it under a seeded schema PM_PATH; that outer context changes validate-command fixture discovery and produces 11 deterministic assertion failures even though the same package-owned coverage runner passes in its intended checkout environment at exact 100/100/100/100. The first overlap was removed, but the sequential linked retry confirmed this context mismatch rather than a product or coverage regression. The focused linked containment command remains sandbox-safe and authoritative for this item; full checkout coverage remains recorded as direct release-gate evidence."
-files[5]{path,scope,note}:
+  "2026-07-28T18:57:13.827Z","harness:codex","PR #800 review round 1: accepted CodeRabbit's leading-drive-prefix finding and Greptile's extension-scaffold bypass finding. The drive check now runs on the fully normalized tracker-relative path, covering /C:/escape, /C:\\escape, and normalized variants. ensureTypeFolderScaffold now invokes the same confinement primitive before path.join/mkdir, so extension install, schema, preset, inference, and profile scaffolding fail before outside directory creation. New TDD controls failed 4/18 before the fix and pass 18/18 afterward; refreshed full coverage passes 387 files, 6,492 tests, exact 100/100/100/100."
+files[6]{path,scope,note}:
   CHANGELOG.md,project,Generated pm-changelog release record for the security fix
   src/core/item/type-registry.ts,project,Runtime registry confinement and portable folder canonicalization
   src/core/schema/item-types-file.ts,project,Schema authoring and legacy collision validation boundary
+  src/sdk/schema.ts,project,Shared scaffold boundary now normalizes extension and profile type folders before mkdir
   tests/integration/schema-folder-containment.integration.spec.ts,project,CLI acceptance proof for authoring runtime and no-write behavior
   tests/unit/core/item/item-type-folder-containment.spec.ts,project,Unit regression matrix for safe and escaping folder forms
 tests[1]{command,scope,timeout_seconds,note}:
