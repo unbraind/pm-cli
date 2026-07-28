@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[6]: "area:merge","area:sdk",ci,cross-platform,nightly,path-identity
 created_at: "2026-07-28T10:28:34.015Z"
-updated_at: "2026-07-28T12:14:59.039Z"
+updated_at: "2026-07-28T12:32:51.599Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#45aa267ce86ee33cac29f976"
 author: "harness:claude-code"
@@ -20,12 +20,17 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-e70zh5,related,"2026-07-28T10:31:18.862Z","harness:claude-code","cli:update:dep",detected
   pm-g5sx,related,"2026-07-28T10:31:18.862Z","harness:claude-code","cli:update:dep",detected
   pm-j668gl,related,"2026-07-28T10:31:18.862Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-28T11:57:08.286Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
   "2026-07-28T12:14:59.039Z","harness:codex","Cross-platform evidence from nightly run 30356894804: macOS exposed /var versus /private/var and Windows exposed 8.3 versus long-name spellings in one missed assertion. The spec now compares the explicit tracker result to filesystem realpath and asserts canonical pm_root too; the idempotent install test restores cwd in finally to prevent Windows EBUSY cleanup masking."
-files[2]{path,scope,note}:
+  "2026-07-28T12:30:37.236Z","harness:codex","Nightly evidence: run 30358494567 proved canonical merge-root behavior on macOS and all Ubuntu variants. Windows Node 24 reached the full test suite and identified platform-specific assertion/ENOENT classification gaps now being corrected; the item remains active until the complete matrix is green."
+  "2026-07-28T12:32:51.598Z","harness:codex","Focused correction evidence: 27 context-integrity and merge-safety tests pass, followed by typecheck and the complete strict static-quality suite (100% docstrings, package boundary, SDK parity/surface, token budget, entrypoint cost, transport floor)."
+files[4]{path,scope,note}:
+  src/core/history/drift-cache.ts,project,Cross-platform semantic cache invalidation diagnostics
   src/sdk/merge/install.ts,project,Canonical merge-install workspace and tracker roots
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,Invalid-root regression coverage
   tests/unit/sdk/merge-safety.spec.ts,project,Canonical merge-install workspace and tracker roots
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240
 body: ""

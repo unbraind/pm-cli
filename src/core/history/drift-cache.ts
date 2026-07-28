@@ -27,14 +27,6 @@ export async function invalidateHistoryDriftCache(
   try {
     await fs.rm(cachePath, { force: true });
   } catch (error) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "ENOENT"
-    ) {
-      return;
-    }
     const errorCode =
       typeof error === "object" &&
       error !== null &&
@@ -48,6 +40,9 @@ export async function invalidateHistoryDriftCache(
     } catch {
       // The semantic classification below treats an invalid tracker root
       // independently from platform-specific filesystem error codes.
+    }
+    if (errorCode === "ENOENT" && pmRootIsDirectory) {
+      return;
     }
     const code =
       errorCode === undefined
