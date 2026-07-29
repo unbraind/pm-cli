@@ -80,14 +80,78 @@ describe("output projection omission contracts", () => {
     for (const malformed of [
       {
         projection: {
+          mode: "summary",
           declared_field_groups: [{ name: "missing_restore" }],
           included_field_groups: [],
         },
       },
       {
         projection: {
+          mode: "summary",
+          declared_field_groups: [{ restore_with: "--full" }],
+          included_field_groups: [],
+        },
+      },
+      {
+        projection: {
+          mode: "summary",
+          declared_field_groups: [{ name: " ", restore_with: "--full" }],
+          included_field_groups: [],
+        },
+      },
+      {
+        projection: {
+          mode: "summary",
+          declared_field_groups: [{ name: "rows", restore_with: " " }],
+          included_field_groups: [],
+        },
+      },
+      {
+        projection: {
+          mode: "summary",
           declared_field_groups: [],
           included_field_groups: [42],
+        },
+      },
+      {
+        projection: {
+          declared_field_groups: [],
+          included_field_groups: [],
+        },
+      },
+      {
+        projection: {
+          mode: " ",
+          declared_field_groups: [],
+          included_field_groups: [],
+        },
+      },
+      {
+        projection: {
+          mode: "summary",
+          declared_field_groups: [
+            { name: "rows", restore_with: "--full" },
+            { name: "rows", restore_with: "--full" },
+          ],
+          included_field_groups: [],
+        },
+      },
+      {
+        projection: {
+          mode: "summary",
+          declared_field_groups: [
+            { name: "rows", restore_with: "--full" },
+          ],
+          included_field_groups: ["rows", "rows"],
+        },
+      },
+      {
+        projection: {
+          mode: "summary",
+          declared_field_groups: [
+            { name: "rows", restore_with: "--full" },
+          ],
+          included_field_groups: ["undeclared"],
         },
       },
     ]) {

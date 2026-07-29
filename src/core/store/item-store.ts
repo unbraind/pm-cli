@@ -137,6 +137,19 @@ async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
         },
       );
     }
+    if (isErrno(error, "ENOTDIR")) {
+      throw new PmCliError(
+        `Tracker root is not a directory at ${pmRoot}.`,
+        EXIT_CODE.USAGE,
+        {
+          code: "tracker_root_not_directory",
+          reason: "not_a_directory",
+          nextSteps: [
+            "Pass the tracker directory itself, usually <workspace>/.agents/pm.",
+          ],
+        },
+      );
+    }
     throw error;
   }
   if (!stats.isDirectory()) {

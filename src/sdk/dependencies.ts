@@ -28,6 +28,7 @@ import type {
 import { estimatePmOutputTokens } from "./cli-contracts/agent-output-contracts.js";
 import {
   assertProjectionModeChoice,
+  attachOutputOmissionReceipt,
   type OutputProjectionDeclaration,
 } from "./output-projection.js";
 import {
@@ -863,15 +864,19 @@ function includesContextMissingReference(params: {
  * so repeatedly embedding the measured value reaches a stable fixed point.
  */
 function settleRenderedTokenCount(
-  result: UnprojectedDepsResult,
+  result: DepsResult,
   outputFormat: "json" | "toon",
   assign: (tokens: number) => void,
 ): number {
   let embeddedTokens: number | undefined;
   for (;;) {
     const measuredTokens = estimatePmOutputTokens(
-      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
-        .byteLength,
+      new TextEncoder().encode(
+        formatBuiltInOutput(
+          attachOutputOmissionReceipt("deps", result),
+          outputFormat,
+        ),
+      ).byteLength,
     );
     if (measuredTokens === embeddedTokens) return measuredTokens;
     assign(measuredTokens);
@@ -1155,7 +1160,10 @@ function buildTreeOrGraphDepsResult(
         ? estimatePmOutputTokens(
             new TextEncoder().encode(
               formatBuiltInOutput(
-                attachDepsProjection(result, false),
+                attachOutputOmissionReceipt(
+                  "deps",
+                  attachDepsProjection(result, false),
+                ),
                 outputFormat,
               ),
             ).byteLength,

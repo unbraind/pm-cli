@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Workspace snapshot heartbeat races atomic root activation and loses its writer lock ([pm-ifuysd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ifuysd.toon))
 - GH-815: optional missing merge drivers must be advisory in default health verdicts ([pm-r8u2g6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r8u2g6.toon))
 - GH-814: SDK metadata reads must distinguish missing and invalid tracker roots from an empty tracker ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - Sentry gate misclassifies handled snapshot identifier validation as a blocking runtime error ([pm-k785lu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k785lu.toon))

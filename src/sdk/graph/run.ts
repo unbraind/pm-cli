@@ -1336,6 +1336,11 @@ export async function runGraph(
   global: GlobalOptions,
 ): Promise<ProjectedGraphResult> {
   const subcommand = parseGraphSubcommand(subcommandRaw, id, target);
+  assertProjectionModeChoice(
+    options.summary === true,
+    options.full === true,
+    "--summary",
+  );
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
@@ -1359,11 +1364,6 @@ export async function runGraph(
   const isTerminal = (status: string): boolean =>
     isTerminalStatus(status, statusRegistry);
   assertGraphFlagScope(subcommand, options);
-  assertProjectionModeChoice(
-    options.summary === true,
-    options.full === true,
-    "--summary",
-  );
   const relationshipRegistry = resolveWorkspaceRelationshipKindRegistry();
   const kinds = parseKinds(options.kind, relationshipRegistry);
   const lookup = workspaceGraphCache().lookup(

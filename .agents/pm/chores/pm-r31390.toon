@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: dependencies,sentry,telemetry
 created_at: "2026-07-27T22:16:02.821Z"
-updated_at: "2026-07-29T22:24:51.802Z"
+updated_at: "2026-07-29T22:44:16.810Z"
 closed_at: "2026-07-27T22:23:25.676Z"
 author: "harness:codex"
 acceptance_criteria: "Evaluate @sentry/node 10.68.0 against build, coverage, security, telemetry, and packed-consumer gates; adopt only if every mandatory boundary passes; retain the prior compatible version and record evidence otherwise; keep incompatible major updates linked to their canonical open deferral items."
@@ -19,12 +19,13 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-ksr40d,related,"2026-07-27T22:16:02.821Z","harness:codex","cli:create:dep"
   pm-tll8,discovered_from,"2026-07-27T22:16:02.821Z","harness:codex","cli:create:dep"
   pm-u2tqn6,related,"2026-07-27T22:16:02.821Z","harness:codex","cli:create:dep"
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-27T22:16:02.821Z","harness:codex","Duplicate-check evidence: all-status searches for Sentry 10.68.0 and dependency refreshes found historical refresh items and the canonical npm-package-arg 14 / TypeScript 7 deferrals, but no active owner for this compatible Sentry patch."
   "2026-07-27T22:17:57.447Z","harness:codex","Dependency disposition: @sentry/node 10.68.0 is compatible with the current Node floor and adopted. npm-package-arg 14 remains owned by pm-ksr40d because its engines exclude Node 22.18; TypeScript 7 remains owned by pm-do5b pending typescript-eslint/compiler-API compatibility."
   "2026-07-27T22:23:19.891Z","harness:codex","Verification finding: full coverage exercised the package-manifest packed-consumer guard, which documents that @sentry/node 10.68.0 exposes transitive meriyah declaration references that fail the supported packed TypeScript consumer. The attempted patch was reverted; 10.67.0 remains the latest compatible release. npm-package-arg 14 and TypeScript 7 remain separately deferred in pm-ksr40d and pm-do5b."
   "2026-07-27T23:35:11.255Z","harness:codex","Metadata correction: the title, description, and acceptance criteria now describe the verified evaluation outcome rather than the initially attempted upgrade, so the generated changelog does not misstate 10.68.0 as shipped."
   "2026-07-29T22:24:51.802Z","harness:codex","Live dependency refresh 2026-07-30: pnpm outdated still reports @sentry/node 10.68.0 while the repository remains on 10.67.0. The canonical packed-declaration incompatibility recorded on this item remains the current disposition; pnpm audit reports no known vulnerabilities, so no unsafe upgrade is being forced into the context-truth bundle."
+  "2026-07-29T22:44:16.810Z","harness:codex","Date convention clarification: the preceding dependency refresh was executed on 2026-07-30 in the configured Europe/Vienna project timezone; its append-only history event is correctly timestamped 2026-07-29T22:24:51Z in UTC."
 files[2]{path,scope,note}:
   package.json,project,Sentry runtime version
   pnpm-lock.yaml,project,Resolved Sentry dependency graph

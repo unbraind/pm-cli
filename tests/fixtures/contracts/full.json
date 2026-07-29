@@ -11173,6 +11173,10 @@
             "description": "Format.",
             "type": "string"
           },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
@@ -11987,6 +11991,10 @@
               ]
             ]
           },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
@@ -12243,6 +12251,10 @@
           },
           "refreshVectors": {
             "description": "For health action, explicitly refresh stale vectors.",
+            "type": "boolean"
+          },
+          "requireMergeDrivers": {
+            "description": "Treat never-installed clone-local semantic merge drivers as required health failures.",
             "type": "boolean"
           },
           "skipDrift": {
@@ -16062,6 +16074,10 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
           },
           "includePmInternals": {
             "description": "Include PM storage internals in tracked-all candidate scans.",
@@ -30976,6 +30992,10 @@
             "description": "Format.",
             "type": "string"
           },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
@@ -31178,6 +31198,10 @@
                 "Event"
               ]
             ]
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
           },
           "id": {
             "description": "Root item id for traversal, paths, impact, and dominators graph queries.",
@@ -32018,6 +32042,10 @@
             "description": "For health action, explicitly refresh stale vectors.",
             "type": "boolean"
           },
+          "requireMergeDrivers": {
+            "description": "Treat never-installed clone-local semantic merge drivers as required health failures.",
+            "type": "boolean"
+          },
           "skipDrift": {
             "description": "For health action, skip history drift hash checks for a faster diagnostic run.",
             "type": "boolean"
@@ -32161,6 +32189,10 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
           },
           "includePmInternals": {
             "description": "Include PM storage internals in tracked-all candidate scans.",

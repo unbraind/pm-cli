@@ -195,6 +195,18 @@ describe("runGraph", () => {
         "analyze",
         undefined,
         undefined,
+        { summary: true, full: true },
+        { path: "/tmp/pm-graph-uninitialized-root" },
+      ),
+    ).rejects.toMatchObject<Partial<PmCliError>>({
+      exitCode: EXIT_CODE.USAGE,
+      message: "--summary cannot be combined with --full",
+    });
+    await expect(
+      runGraph(
+        "analyze",
+        undefined,
+        undefined,
         {},
         { path: "/tmp/pm-graph-uninitialized-root" },
       ),

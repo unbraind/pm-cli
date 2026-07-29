@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:sdk","area:storage",context-integrity,error-contract
 created_at: "2026-07-29T21:43:32.888Z"
-updated_at: "2026-07-29T22:29:52.730Z"
+updated_at: "2026-07-29T22:44:18.383Z"
 closed_at: "2026-07-29T22:19:58.359Z"
 completed_at: "2026-07-29T22:19:58.359Z"
 author: "harness:codex"
@@ -29,10 +29,11 @@ regression: true
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-ju83,related,"2026-07-29T21:43:32.888Z","harness:codex","cli:create:dep",detected
   pm-oxrw,related,"2026-07-29T21:43:32.888Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-29T21:43:32.888Z","harness:codex","Duplicate check evidence 2026-07-29: searched all 2,197 live items across every status for GH-814, listAllItemMetadata, missing metadata root, nonexistent pm root, regular-file tracker root, empty graph, and SDK reader semantics. No item owns this failure mode. Closed SDK-first and graph primitives establish the affected lineage but do not distinguish invalid roots from an empty valid tracker. GitHub: https://github.com/unbraind/pm-cli/issues/814"
   "2026-07-29T22:19:19.094Z","harness:codex","Implementation evidence: all public metadata enumeration variants now accept an existing empty directory but throw stable typed diagnostics for missing and non-directory roots, while preserving unrelated filesystem errors. Focused tests pass 3/3 and full coverage passes 6540/6540 at 100/100/100/100. A packed SDK consumer proved empty returns [] and missing reports tracker_root_missing with reason missing."
   "2026-07-29T22:29:52.730Z","harness:codex","Delivery review: PR #818 https://github.com/unbraind/pm-cli/pull/818 carries typed empty/missing/non-directory tracker-root semantics, SDK documentation, focused tests, full coverage, and isolated packed-consumer proof. GitHub issue #814 is configured to close on merge."
+  "2026-07-29T22:44:18.382Z","harness:codex","Review-loop finding: CodeRabbit correctly identified ENOTDIR when a metadata root traverses beneath a regular file. The typed tracker_root_not_directory mapping and regression coverage now include both a direct file root and file/child traversal."
 learnings[1]{created_at,author,text}:
   "2026-07-29T22:19:19.795Z","harness:codex",An empty item array is project truth only after the SDK proves the supplied tracker root is an existing directory; filesystem discovery failures must remain distinguishable and non-ENOENT errors must retain their original identity.
 files[2]{path,scope,note}:

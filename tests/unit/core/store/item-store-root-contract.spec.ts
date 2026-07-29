@@ -57,6 +57,16 @@ describe("item metadata tracker-root contract", () => {
         reason: "not_a_directory",
       },
     });
+    await expect(
+      listAllItemMetadata(path.join(fileRoot, "child")),
+    ).rejects.toMatchObject({
+      name: "PmCliError",
+      exitCode: EXIT_CODE.USAGE,
+      code: "tracker_root_not_directory",
+      context: {
+        reason: "not_a_directory",
+      },
+    });
   });
 
   it("preserves non-missing filesystem failures from the root probe", async () => {

@@ -150,6 +150,12 @@ function resolveDeclaredProjectionReceipt(
   result: Record<string, unknown>,
 ): OutputOmissionReceipt | undefined {
   if (!isRecord(result.projection)) return undefined;
+  if (
+    typeof result.projection.mode !== "string" ||
+    result.projection.mode.trim().length === 0
+  ) {
+    return undefined;
+  }
   const declared = result.projection.declared_field_groups;
   const included = result.projection.included_field_groups;
   if (!Array.isArray(declared) || !Array.isArray(included)) return undefined;
@@ -157,7 +163,9 @@ function resolveDeclaredProjectionReceipt(
     (entry): entry is OutputProjectionFieldGroup =>
       isRecord(entry) &&
       typeof entry.name === "string" &&
-      typeof entry.restore_with === "string",
+      entry.name.trim().length > 0 &&
+      typeof entry.restore_with === "string" &&
+      entry.restore_with.trim().length > 0,
   );
   const includedNames = included.filter(
     (entry): entry is string => typeof entry === "string",
@@ -165,6 +173,14 @@ function resolveDeclaredProjectionReceipt(
   if (
     declaredGroups.length !== declared.length ||
     includedNames.length !== included.length
+  ) {
+    return undefined;
+  }
+  const declaredNames = new Set(declaredGroups.map((group) => group.name));
+  if (
+    declaredNames.size !== declaredGroups.length ||
+    new Set(includedNames).size !== includedNames.length ||
+    includedNames.some((name) => !declaredNames.has(name))
   ) {
     return undefined;
   }

@@ -11,6 +11,7 @@ import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { formatBuiltInOutput } from "../../../src/core/output/output.js";
 import { estimatePmOutputTokens } from "../../../src/sdk/cli-contracts/agent-output-contracts.js";
+import { attachOutputOmissionReceipt } from "../../../src/sdk/output-projection.js";
 import {
   locateItem,
   readLocatedItem,
@@ -19,6 +20,17 @@ import {
   withTempPmPath,
   type TempPmContext,
 } from "../../helpers/withTempPmPath.js";
+
+/** Render the disclosed dependency envelope used by CLI and SDK consumers. */
+function formatDepsOutput(
+  result: unknown,
+  format: "json" | "toon",
+): string {
+  return formatBuiltInOutput(
+    attachOutputOmissionReceipt("deps", result),
+    format,
+  );
+}
 
 function createTask(
   context: TempPmContext,
@@ -609,7 +621,7 @@ describe("runDeps", () => {
         },
       });
       expect(result.truncation?.estimated_tokens).toBe(
-        Math.ceil(Buffer.byteLength(formatBuiltInOutput(result, "toon")) / 4),
+        Math.ceil(Buffer.byteLength(formatDepsOutput(result, "toon")) / 4),
       );
 
       const contextResult = await runDeps(
@@ -625,7 +637,7 @@ describe("runDeps", () => {
       expect(contextResult.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
       expect(contextResult.context?.meta.usedTokens).toBe(
         Math.ceil(
-          Buffer.byteLength(formatBuiltInOutput(contextResult, "json")) / 4,
+          Buffer.byteLength(formatDepsOutput(contextResult, "json")) / 4,
         ),
       );
     });
@@ -757,7 +769,7 @@ describe("runDeps", () => {
         tokenBudget: 1200,
       });
       expect(defaults.context?.meta.usedTokens).toBe(
-        Math.ceil(Buffer.byteLength(formatBuiltInOutput(defaults, "toon")) / 4),
+        Math.ceil(Buffer.byteLength(formatDepsOutput(defaults, "toon")) / 4),
       );
       const defaultsJson = await runDeps(
         rootId,
@@ -766,7 +778,7 @@ describe("runDeps", () => {
       );
       expect(defaultsJson.context?.meta.usedTokens).toBe(
         Math.ceil(
-          Buffer.byteLength(formatBuiltInOutput(defaultsJson, "json")) / 4,
+          Buffer.byteLength(formatDepsOutput(defaultsJson, "json")) / 4,
         ),
       );
       createTask(context, "context-dependent", [
@@ -847,7 +859,7 @@ describe("runDeps", () => {
       expect(result.missing_reference_count).toBe(25);
       expect(result.missing_references?.length).toBeLessThan(25);
       expect(result.context?.meta.usedTokens).toBe(
-        Math.ceil(Buffer.byteLength(formatBuiltInOutput(result, "json")) / 4),
+        Math.ceil(Buffer.byteLength(formatDepsOutput(result, "json")) / 4),
       );
       expect(result.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
 
@@ -877,7 +889,7 @@ describe("runDeps", () => {
       expect(linkedResult.context?.nodes.length).toBeLessThan(leaves.length);
       expect(linkedResult.context?.meta.usedTokens).toBe(
         Math.ceil(
-          Buffer.byteLength(formatBuiltInOutput(linkedResult, "json")) / 4,
+          Buffer.byteLength(formatDepsOutput(linkedResult, "json")) / 4,
         ),
       );
       expect(linkedResult.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
@@ -912,7 +924,7 @@ describe("runDeps", () => {
       expect(minimumResult.context?.meta.tokenBudget).toBe(300);
       expect(minimumResult.context?.meta.usedTokens).toBe(
         Math.ceil(
-          Buffer.byteLength(formatBuiltInOutput(minimumResult, "json")) / 4,
+          Buffer.byteLength(formatDepsOutput(minimumResult, "json")) / 4,
         ),
       );
       expect(minimumResult.context!.meta.usedTokens).toBeGreaterThan(300);
