@@ -1,12 +1,12 @@
 id: pm-hnc9w7
 title: "Graph wave: changelog-safe legacy edge hygiene batch — retire the no-active-blocker sentinel, duplicate spellings, terminal ordering cycles, and dangling terminal references"
-description: ""
+description: "Execute a dedicated changelog-safe cleanup of legacy graph sentinels, duplicate relationship spellings, terminal ordering cycles, and dangling terminal references."
 type: Task
 status: open
 priority: 2
 tags[7]: batch,changelog-safe,cleanup,governance,graph,legacy,relationships
 created_at: "2026-07-24T23:48:07.339Z"
-updated_at: "2026-07-26T10:04:53.215Z"
+updated_at: "2026-07-29T21:22:32.435Z"
 author: maintainer-agent
 estimated_minutes: 900
 acceptance_criteria: "The no-active-blocker sentinel references are removed from all holders; blocker state derives from real edges only; Duplicated parent and child spellings between terminal endpoints collapse to the canonical single spelling; Terminal-only ordering cycles are broken by dropping the single lowest-evidence edge per cycle, with the choice recorded; Dangling terminal references to absent items are resolved or removed with the rationale recorded on the holder; The changelog effect is measured before and after; regeneration runs as the last step and any bucket movement is stated explicitly in the batch record; pm graph audit reports zero findings for all four legacy codes after the batch"
@@ -19,16 +19,16 @@ why_now: "The audit itself names the remediation as a dedicated changelog-safe c
 parent: pm-a8zm
 risk: medium
 confidence: medium
-dependencies[9]{id,kind,created_at,author,source_kind}:
-  pm-2ler,related,"2026-07-24T23:48:07.339Z",null,null
-  pm-33cw,related,"2026-07-24T23:48:07.339Z",null,null
-  pm-6irg,related,"2026-07-24T23:48:07.339Z",null,null
-  pm-6x7o,related,"2026-07-24T23:48:07.339Z",null,null
-  pm-bzmeaa,related,"2026-07-24T23:48:07.339Z",null,null
-  pm-lnrk,related,"2026-07-24T23:48:07.339Z",null,null
-  pm-p9a4,blocked_by,"2026-07-24T23:48:07.339Z",null,null
-  pm-4020c5,blocked_by,"2026-07-25T20:45:44.706Z",null,null
-  pm-a8zm,implements,"2026-07-26T05:55:32.470Z",null,null
+dependencies[9]{id,kind,created_at}:
+  pm-2ler,related,"2026-07-24T23:48:07.339Z"
+  pm-33cw,related,"2026-07-24T23:48:07.339Z"
+  pm-6irg,related,"2026-07-24T23:48:07.339Z"
+  pm-6x7o,related,"2026-07-24T23:48:07.339Z"
+  pm-bzmeaa,related,"2026-07-24T23:48:07.339Z"
+  pm-lnrk,related,"2026-07-24T23:48:07.339Z"
+  pm-p9a4,blocked_by,"2026-07-24T23:48:07.339Z"
+  pm-4020c5,blocked_by,"2026-07-25T20:45:44.706Z"
+  pm-a8zm,implements,"2026-07-26T05:55:32.470Z"
 comments[1]{created_at,author,text}:
   "2026-07-26T10:04:53.215Z","harness:opencode","Candidate edge for the changelog-safe batch (found 2026-07-26): pm-cu1i (closed, token-budget ratchet) -> related pm-a22j (closed, token baseline). The ratchet's body states it turns the a22j one-time baseline into a permanent CI ratchet; the edge is semantically true but touches two terminal items, so it belongs to this wave, not an ad-hoc pass."
 body: "## Scope, from the live audit\nFour legacy codes on terminal items only: ninety-eight retired no-active-blocker sentinel references; eight duplicated relationship spellings between terminal endpoints; eight terminal-only ordering cycles spanning forty-nine items, the largest across twenty-three closed milestone items; three dangling references to absent targets.\n\n## Why this needs to be a batch and not opportunistic cleanup\nTouching a closed item updates its timestamp, and the changelog buckets by that timestamp — so ad hoc repair silently drags years-old closed work into the current release notes. Doing all of it at once, deliberately, with the changelog effect measured and regenerated as the final step, is the only safe shape.\n\n## Method\nRead-only classification first, producing the full edge list per code. Then a single mutation batch. Then changelog regeneration and an explicit statement of which buckets moved and why. Never mutate a closed item outside this batch.\n\n## Boundary\nRemoval of meaningless edges only. This wave adds no new relationships — enrichment is the separate active and terminal backfill waves."

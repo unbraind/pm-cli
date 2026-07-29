@@ -1,12 +1,12 @@
 id: pm-t4d7nz
 title: "Outcome milestone: universal domain platform — non-PM systems are buildable on pm SDK primitives alone"
-description: ""
+description: "Outcome milestone proving pm is a universal event-sourced context substrate by building non-project-management systems entirely from public SDK, schema, policy, graph, and federation primitives."
 type: Milestone
 status: open
 priority: 3
 tags[7]: digital-twin,extensibility,"horizon:far",milestone,outcome,sdk,universal-tool
 created_at: "2026-07-24T23:44:02.049Z"
-updated_at: "2026-07-27T07:15:23.588Z"
+updated_at: "2026-07-29T21:24:22.687Z"
 deadline: "2028-06-30T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 12000
@@ -20,27 +20,74 @@ why_now: The first two exemplars (a git-like VCS and a temporal digital twin) al
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[22]{id,kind,created_at}:
-  pm-8jdc,related,"2026-07-24T23:44:02.049Z"
-  pm-dijg,related,"2026-07-24T23:44:02.049Z"
-  pm-is1a,related,"2026-07-24T23:44:02.049Z"
-  pm-m08hza,related,"2026-07-24T23:44:02.049Z"
-  pm-ugqx,related,"2026-07-24T23:44:02.049Z"
-  pm-xc68,related,"2026-07-24T23:44:02.049Z"
-  pm-z5nb,related,"2026-07-24T23:44:02.049Z"
-  pm-9rgaal,blocked_by,"2026-07-24T23:44:33.478Z"
-  pm-o87av6,related,"2026-07-24T23:44:33.478Z"
-  pm-w7ccmv,blocked_by,"2026-07-24T23:44:33.478Z"
-  pm-xp1xsw,related,"2026-07-24T23:44:33.478Z"
-  pm-4jk8kx,related,"2026-07-25T12:36:25.347Z"
-  pm-brxdct,related,"2026-07-25T12:36:25.347Z"
-  pm-e5yupa,related,"2026-07-25T12:36:25.347Z"
-  pm-g608fc,related,"2026-07-25T12:36:25.347Z"
-  pm-iiv1gl,related,"2026-07-25T12:36:25.347Z"
-  pm-odohgb,related,"2026-07-25T12:36:25.347Z"
-  pm-mj42og,related,"2026-07-25T12:40:07.642Z"
-  pm-doxj,implements,"2026-07-26T05:57:44.974Z"
-  pm-e9yevx,related,"2026-07-26T09:59:02.493Z"
-  pm-o87av6,blocked_by,"2026-07-27T07:15:23.343Z"
-  pm-xp1xsw,blocked_by,"2026-07-27T07:15:23.343Z"
+dependencies[22]:
+  - id: pm-dijg
+    kind: related
+    created_at: "2026-07-24T23:44:02.049Z"
+  - id: pm-is1a
+    kind: related
+    created_at: "2026-07-24T23:44:02.049Z"
+  - id: pm-m08hza
+    kind: related
+    created_at: "2026-07-24T23:44:02.049Z"
+  - id: pm-ugqx
+    kind: related
+    created_at: "2026-07-24T23:44:02.049Z"
+  - id: pm-xc68
+    kind: related
+    created_at: "2026-07-24T23:44:02.049Z"
+  - id: pm-z5nb
+    kind: related
+    created_at: "2026-07-24T23:44:02.049Z"
+  - id: pm-9rgaal
+    kind: blocked_by
+    created_at: "2026-07-24T23:44:33.478Z"
+  - id: pm-o87av6
+    kind: related
+    created_at: "2026-07-24T23:44:33.478Z"
+  - id: pm-w7ccmv
+    kind: blocked_by
+    created_at: "2026-07-24T23:44:33.478Z"
+  - id: pm-xp1xsw
+    kind: related
+    created_at: "2026-07-24T23:44:33.478Z"
+  - id: pm-4jk8kx
+    kind: related
+    created_at: "2026-07-25T12:36:25.347Z"
+  - id: pm-brxdct
+    kind: related
+    created_at: "2026-07-25T12:36:25.347Z"
+  - id: pm-e5yupa
+    kind: related
+    created_at: "2026-07-25T12:36:25.347Z"
+  - id: pm-g608fc
+    kind: related
+    created_at: "2026-07-25T12:36:25.347Z"
+  - id: pm-iiv1gl
+    kind: related
+    created_at: "2026-07-25T12:36:25.347Z"
+  - id: pm-odohgb
+    kind: related
+    created_at: "2026-07-25T12:36:25.347Z"
+  - id: pm-mj42og
+    kind: related
+    created_at: "2026-07-25T12:40:07.642Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T05:57:44.974Z"
+  - id: pm-e9yevx
+    kind: related
+    created_at: "2026-07-26T09:59:02.493Z"
+  - id: pm-o87av6
+    kind: blocked_by
+    created_at: "2026-07-27T07:15:23.343Z"
+  - id: pm-xp1xsw
+    kind: blocked_by
+    created_at: "2026-07-27T07:15:23.343Z"
+  - id: pm-8jdc
+    kind: blocked_by
+    created_at: "2026-07-29T21:24:21.636Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: "## Outcome\npm SDK primitives — typed items, custom status graphs, a relationship registry, immutable event history, point-in-time reconstruction, transactional multi-item commits, and bounded graph queries — are sufficient to model domains that have nothing to do with software backlogs.\n\n## Evidence already recorded\nTwo exemplars landed and closed: a git-like version-control extension and a temporal digital-twin phase-2 exemplar. Their gap reports named the missing primitives; the transaction waiver has since been retired. This milestone tracks the remaining distance.\n\n## Delivery chain\npm-8jdc schema/config completion (incl. pm-z5nb, pm-dijg migrations) -> pm-xc68 policy roles -> pm-is1a federation -> a third foreign-domain exemplar with an empty gap ledger. Depends on the SDK-complete milestone being reached first.\n\n## Explicit non-goals\nNo domain-specific policy in core. Exemplars are conformance vehicles, not products."

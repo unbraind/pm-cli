@@ -1,12 +1,12 @@
 id: pm-o87av6
 title: "Outcome milestone: proven scale — sub-second bounded-token context at a million items with thousands of concurrent agents"
-description: ""
+description: "Outcome milestone proving proportional context cost from tiny scratch workspaces through million-item, thousand-agent deployments, including bounded tokens, latency, memory, and history growth."
 type: Milestone
 status: open
 priority: 2
 tags[7]: concurrency,context-management,"horizon:long",milestone,outcome,performance,scale
 created_at: "2026-07-24T23:43:41.928Z"
-updated_at: "2026-07-26T05:57:47.694Z"
+updated_at: "2026-07-29T21:24:16.967Z"
 deadline: "2027-09-30T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 9600
@@ -20,25 +20,68 @@ why_now: The read path still scans item files; every capability added before the
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[20]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-801d,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-9rxu,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-g2zz,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-lvyd,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-m08hza,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-o79o,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-plwm,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-z436,related,"2026-07-24T23:43:41.928Z",null,null
-  pm-9rgaal,blocked_by,"2026-07-24T23:44:34.545Z",null,null
-  pm-w7ccmv,related,"2026-07-24T23:44:34.545Z",null,null
-  pm-xp1xsw,related,"2026-07-24T23:44:34.545Z",null,null
-  pm-cxr0jb,related,"2026-07-25T12:36:21.083Z",null,null
-  pm-gw6uyq,related,"2026-07-25T12:36:21.083Z",null,null
-  pm-kvxqp1,related,"2026-07-25T12:36:21.083Z",null,null
-  pm-odohgb,related,"2026-07-25T12:36:21.083Z",null,null
-  pm-szv11n,related,"2026-07-25T12:36:21.083Z",null,null
-  pm-t5dt4z,related,"2026-07-25T12:36:21.083Z",null,null
-  pm-g3n00m,related,"2026-07-25T12:40:11.447Z",null,null
-  pm-doxj,implements,"2026-07-26T05:57:47.430Z",null,null
+dependencies[20]:
+  - id: pm-4k6b
+    kind: related
+    created_at: "2026-07-24T23:43:41.928Z"
+  - id: pm-801d
+    kind: related
+    created_at: "2026-07-24T23:43:41.928Z"
+  - id: pm-g2zz
+    kind: related
+    created_at: "2026-07-24T23:43:41.928Z"
+  - id: pm-lvyd
+    kind: related
+    created_at: "2026-07-24T23:43:41.928Z"
+  - id: pm-m08hza
+    kind: related
+    created_at: "2026-07-24T23:43:41.928Z"
+  - id: pm-o79o
+    kind: related
+    created_at: "2026-07-24T23:43:41.928Z"
+  - id: pm-plwm
+    kind: related
+    created_at: "2026-07-24T23:43:41.928Z"
+  - id: pm-z436
+    kind: related
+    created_at: "2026-07-24T23:43:41.928Z"
+  - id: pm-9rgaal
+    kind: blocked_by
+    created_at: "2026-07-24T23:44:34.545Z"
+  - id: pm-w7ccmv
+    kind: related
+    created_at: "2026-07-24T23:44:34.545Z"
+  - id: pm-xp1xsw
+    kind: related
+    created_at: "2026-07-24T23:44:34.545Z"
+  - id: pm-cxr0jb
+    kind: related
+    created_at: "2026-07-25T12:36:21.083Z"
+  - id: pm-gw6uyq
+    kind: related
+    created_at: "2026-07-25T12:36:21.083Z"
+  - id: pm-kvxqp1
+    kind: related
+    created_at: "2026-07-25T12:36:21.083Z"
+  - id: pm-odohgb
+    kind: related
+    created_at: "2026-07-25T12:36:21.083Z"
+  - id: pm-szv11n
+    kind: related
+    created_at: "2026-07-25T12:36:21.083Z"
+  - id: pm-t5dt4z
+    kind: related
+    created_at: "2026-07-25T12:36:21.083Z"
+  - id: pm-g3n00m
+    kind: related
+    created_at: "2026-07-25T12:40:11.447Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T05:57:47.430Z"
+  - id: pm-9rxu
+    kind: blocked_by
+    created_at: "2026-07-29T21:24:15.730Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: "## Outcome\nCost is a function of the answer, not the archive. The same binary serves a three-item scratch project created minutes ago and a million-item workspace spanning decades, with no special mode the agent has to know about.\n\n## Why this is a milestone, not an epic\npm-9rxu is the living execution epic. This milestone is the outcome gate: it declares the scale claims the GA contract is allowed to publish.\n\n## Delivery chain\npm-801d persistent derived read index -> pm-plwm index-backed --where predicates -> pm-0qg5 item-directory fan-out -> pm-lvyd claim throughput -> pm-o79o growth policy -> pm-5qmm memory tiers for decades-old epochs. Spectrum stories pm-g2zz (large) and pm-z436 (small) are the acceptance narratives.\n\n## Explicit non-goals\nNo daemon (ADR pm-i7i4). No external database requirement for the base install. No scale mode the agent has to opt into."

@@ -1,12 +1,12 @@
 id: pm-w7ccmv
 title: "Outcome milestone: provable history — every mutation immutably recorded, independently verifiable, restorable to any version"
-description: ""
+description: "Outcome milestone for independently verifiable history: every item and workspace mutation is append-only, hash-verifiable, attributable, portable, and restorable to any version."
 type: Milestone
 status: open
 priority: 1
 tags[7]: audit,history,"horizon:mid",immutability,integrity,milestone,outcome
 created_at: "2026-07-24T23:43:21.135Z"
-updated_at: "2026-07-26T05:57:41.329Z"
+updated_at: "2026-07-29T21:27:59.810Z"
 deadline: "2027-03-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 5400
@@ -20,22 +20,61 @@ why_now: "Workspace-scoped mutations (schema, config, profile, init) still leave
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[17]{id,kind,created_at,author,source_kind}:
-  pm-33cw,related,"2026-07-24T23:43:21.135Z",null,null
-  pm-3z0k,related,"2026-07-24T23:43:21.135Z",null,null
-  pm-9yfo,related,"2026-07-24T23:43:21.135Z",null,null
-  pm-klo8,related,"2026-07-24T23:43:21.135Z",null,null
-  pm-m08hza,related,"2026-07-24T23:43:21.135Z",null,null
-  pm-o2kc,related,"2026-07-24T23:43:21.135Z",null,null
-  pm-u14c,related,"2026-07-24T23:43:21.135Z",null,null
-  pm-9rgaal,related,"2026-07-24T23:44:35.637Z",null,null
-  pm-j82fd3,related,"2026-07-24T23:44:35.637Z",null,null
-  pm-03pq3o,related,"2026-07-25T12:36:19.267Z",null,null
-  pm-4jk8kx,related,"2026-07-25T12:36:19.267Z",null,null
-  pm-6uxhe0,related,"2026-07-25T12:36:19.267Z",null,null
-  pm-9c7h9x,related,"2026-07-25T12:36:19.267Z",null,null
-  pm-gw6uyq,related,"2026-07-25T12:36:19.267Z",null,null
-  pm-qwuber,related,"2026-07-25T12:36:19.267Z",null,null
-  pm-wlqxg3,related,"2026-07-25T12:36:19.267Z",null,null
-  pm-doxj,implements,"2026-07-26T05:57:41.060Z",null,null
+dependencies[17]:
+  - id: pm-33cw
+    kind: related
+    created_at: "2026-07-24T23:43:21.135Z"
+  - id: pm-3z0k
+    kind: related
+    created_at: "2026-07-24T23:43:21.135Z"
+  - id: pm-klo8
+    kind: related
+    created_at: "2026-07-24T23:43:21.135Z"
+  - id: pm-m08hza
+    kind: related
+    created_at: "2026-07-24T23:43:21.135Z"
+  - id: pm-o2kc
+    kind: related
+    created_at: "2026-07-24T23:43:21.135Z"
+  - id: pm-u14c
+    kind: related
+    created_at: "2026-07-24T23:43:21.135Z"
+  - id: pm-9rgaal
+    kind: related
+    created_at: "2026-07-24T23:44:35.637Z"
+  - id: pm-j82fd3
+    kind: related
+    created_at: "2026-07-24T23:44:35.637Z"
+  - id: pm-03pq3o
+    kind: related
+    created_at: "2026-07-25T12:36:19.267Z"
+  - id: pm-4jk8kx
+    kind: related
+    created_at: "2026-07-25T12:36:19.267Z"
+  - id: pm-6uxhe0
+    kind: related
+    created_at: "2026-07-25T12:36:19.267Z"
+  - id: pm-9c7h9x
+    kind: related
+    created_at: "2026-07-25T12:36:19.267Z"
+  - id: pm-gw6uyq
+    kind: related
+    created_at: "2026-07-25T12:36:19.267Z"
+  - id: pm-qwuber
+    kind: related
+    created_at: "2026-07-25T12:36:19.267Z"
+  - id: pm-wlqxg3
+    kind: related
+    created_at: "2026-07-25T12:36:19.267Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T05:57:41.060Z"
+  - id: pm-9yfo
+    kind: blocked_by
+    created_at: "2026-07-29T21:24:24.292Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+notes[1]{created_at,author,text,edited_at}:
+  "2026-07-29T21:26:14.833Z","harness:codex","Provable-history architecture\n\nAuthoritative history is an append-only event system covering item state, workspace configuration/schema/profile state, relationship changes, package activation, release attribution, and audited maintenance. Every event records schema version, operation contract id, actor provenance, timestamp source, causal/base version, patch or domain payload, before/after hashes, and chain algorithm identifier.\n\nIntegrity is layered: per-stream hash chains detect local alteration; workspace manifests commit stream heads; detached proof bundles permit independent verification; optional transparency-log or signed-release anchors make later history replacement detectable outside the repository. Algorithm agility and format migrations are explicit so decades-long proofs do not depend on one hash forever.\n\nRestore is a projection, never a destructive rewrite of proof. Point-in-time reads replay from verified snapshots plus events. Compaction emits a verifiable checkpoint linked to the pruned prefix. Redaction, repair, and legal erasure append auditable transformation evidence with policy authority and preserve the maximum proof permitted. Verification gates enumerate every mutating CLI, SDK, MCP, and package action from contracts and require an event or a reviewed, shrinking waiver.","2026-07-29T21:27:58.954Z"
 body: "## Outcome\nEvery mutating pm action leaves a permanent, tamper-evident record. Any item is restorable to any recorded version. A third party holding only an exported proof bundle can confirm the recorded history was never altered.\n\n## Standing invariant this closes\nThe product invariant states that all mutating actions record permanently and immutably. Today item mutations satisfy it; workspace-scoped mutations (pm-klo8) do not, the completeness gate proving it (pm-9yfo) is not built, portable proof (pm-3z0k) is not exported, and authorship (pm-u14c) is self-asserted.\n\n## Delivery chain\npm-9yfo completeness gate (phase 1 item scope first) -> pm-klo8 workspace audit stream -> pm-3z0k portable attestation -> pm-u14c per-entry signatures. Compaction, redaction, and repair paths must each be proven not to break replay.\n\n## Explicit non-goals\nNo history rewriting to fix legacy gaps. No hand-attribution of legacy unknown-author events."

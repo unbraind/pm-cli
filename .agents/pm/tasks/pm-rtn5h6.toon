@@ -1,12 +1,12 @@
 id: pm-rtn5h6
 title: "Defect-escape ratchet: every escaped defect must land a gate that would have caught it, tracked as evidence on the fixing item"
-description: ""
+description: Establish a defect-escape ratchet in which every escaped defect contributes a durable negative control and a repository-owned gate that would have prevented recurrence.
 type: Task
 status: open
 priority: 1
 tags[6]: ci,continuous-improvement,defect-detection,governance,process,quality-gate
 created_at: "2026-07-24T23:46:03.890Z"
-updated_at: "2026-07-26T05:55:44.127Z"
+updated_at: "2026-07-29T21:22:24.534Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "A defined escape class taxonomy covers at minimum: production defect, nightly regression, scanner finding, and review-caught-late; Items of an escape class carry a structured gate-evidence field naming the gate added or strengthened, or a reviewed no-gate waiver; A governance check reports escaped-defect items closed without gate evidence, mapped to an owning item like every other warning; A periodic report shows escapes per class over time and the gates added, so the ratchet is visible rather than asserted"
@@ -19,13 +19,13 @@ why_now: "The workspace already records the raw material — resolution fields, 
 parent: pm-u9d0
 risk: low
 confidence: high
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-33cw,related,"2026-07-24T23:46:03.890Z",null,null
-  pm-6ixn,related,"2026-07-24T23:46:03.890Z",null,null
-  pm-92if,related,"2026-07-24T23:46:03.890Z",null,null
-  pm-9yfo,related,"2026-07-24T23:46:03.890Z",null,null
-  pm-w7ccmv,related,"2026-07-24T23:46:03.890Z",null,null
-  pm-wenq,related,"2026-07-24T23:46:03.890Z",null,null
-  pm-u9d0,verifies,"2026-07-26T05:50:10.078Z",null,null
-  pm-u9d0,implements,"2026-07-26T05:55:43.796Z",null,null
+dependencies[8]{id,kind,created_at}:
+  pm-33cw,related,"2026-07-24T23:46:03.890Z"
+  pm-6ixn,related,"2026-07-24T23:46:03.890Z"
+  pm-92if,related,"2026-07-24T23:46:03.890Z"
+  pm-9yfo,related,"2026-07-24T23:46:03.890Z"
+  pm-w7ccmv,related,"2026-07-24T23:46:03.890Z"
+  pm-wenq,related,"2026-07-24T23:46:03.890Z"
+  pm-u9d0,verifies,"2026-07-26T05:50:10.078Z"
+  pm-u9d0,implements,"2026-07-26T05:55:43.796Z"
 body: "## Problem\nThis repository has a deep gate stack — coverage, static quality, complexity, contracts snapshot, changelog drift, boundary ratchet, five external analyzers, nightly matrix. Despite that, defects still escape to nightly and to users, and the recurring pattern in the history is a class of defect that escapes, gets fixed at one site, and then escapes again at a second site months later.\n\n## Approach\nMake the gate the deliverable, not the fix. Every escape closes with a named gate. Class-level fixes are already the informal norm in this workspace; this makes the norm checkable.\n\n## Precedent in the history\nRepeated multi-site classes — path canonicalization asymmetry, POSIX-only assertions in specs, silent-zero filter validation, capability-blind hint rendering — each escaped two or more times before a class-level fix landed. Every one of them would have been caught once by a gate written at first escape.\n\n## Boundary\nNot blame attribution. Not a mandatory postmortem document. One structured field and one governance check."

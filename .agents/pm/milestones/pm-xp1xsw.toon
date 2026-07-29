@@ -1,12 +1,12 @@
 id: pm-xp1xsw
 title: "Outcome milestone: v1.0 GA stability contract — frozen grammar, semver SDK surface, storage format policy, published scale targets"
-description: ""
+description: "Outcome milestone defining the v1.0 stability contract for command grammar, semantic-versioned SDK APIs, storage compatibility, and reproducible performance claims."
 type: Milestone
 status: open
 priority: 2
 tags[7]: contract,ga,"horizon:gate",milestone,outcome,semver,stability
 created_at: "2026-07-24T23:44:20.858Z"
-updated_at: "2026-07-26T05:57:42.510Z"
+updated_at: "2026-07-29T21:24:19.787Z"
 deadline: "2027-12-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 3600
@@ -20,19 +20,53 @@ why_now: "Deferred deliberately: freezing before grammar consolidation and SDK c
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[14]{id,kind,created_at,author,source_kind}:
-  pm-0mox,related,"2026-07-24T23:44:20.858Z",null,null
-  pm-9rgaal,blocked_by,"2026-07-24T23:44:20.858Z",null,null
-  pm-agou,blocked_by,"2026-07-24T23:44:20.858Z",null,null
-  pm-j82fd3,blocked_by,"2026-07-24T23:44:20.858Z",null,null
-  pm-m08hza,related,"2026-07-24T23:44:20.858Z",null,null
-  pm-m2u1,related,"2026-07-24T23:44:20.858Z",null,null
-  pm-w7ccmv,blocked_by,"2026-07-24T23:44:20.858Z",null,null
-  pm-4jk8kx,related,"2026-07-25T12:36:23.630Z",null,null
-  pm-9c7h9x,related,"2026-07-25T12:36:23.630Z",null,null
-  pm-e5yupa,related,"2026-07-25T12:36:23.630Z",null,null
-  pm-fs8q9x,related,"2026-07-25T12:36:23.630Z",null,null
-  pm-k6t4yb,related,"2026-07-25T12:36:23.630Z",null,null
-  pm-ygli86,related,"2026-07-25T12:36:23.630Z",null,null
-  pm-doxj,implements,"2026-07-26T05:57:42.210Z",null,null
+dependencies[15]:
+  - id: pm-0mox
+    kind: related
+    created_at: "2026-07-24T23:44:20.858Z"
+  - id: pm-9rgaal
+    kind: blocked_by
+    created_at: "2026-07-24T23:44:20.858Z"
+  - id: pm-agou
+    kind: blocked_by
+    created_at: "2026-07-24T23:44:20.858Z"
+  - id: pm-j82fd3
+    kind: blocked_by
+    created_at: "2026-07-24T23:44:20.858Z"
+  - id: pm-m08hza
+    kind: related
+    created_at: "2026-07-24T23:44:20.858Z"
+  - id: pm-m2u1
+    kind: related
+    created_at: "2026-07-24T23:44:20.858Z"
+  - id: pm-w7ccmv
+    kind: blocked_by
+    created_at: "2026-07-24T23:44:20.858Z"
+  - id: pm-4jk8kx
+    kind: related
+    created_at: "2026-07-25T12:36:23.630Z"
+  - id: pm-9c7h9x
+    kind: related
+    created_at: "2026-07-25T12:36:23.630Z"
+  - id: pm-e5yupa
+    kind: related
+    created_at: "2026-07-25T12:36:23.630Z"
+  - id: pm-fs8q9x
+    kind: related
+    created_at: "2026-07-25T12:36:23.630Z"
+  - id: pm-k6t4yb
+    kind: related
+    created_at: "2026-07-25T12:36:23.630Z"
+  - id: pm-ygli86
+    kind: related
+    created_at: "2026-07-25T12:36:23.630Z"
+  - id: pm-doxj
+    kind: implements
+    created_at: "2026-07-26T05:57:42.210Z"
+  - id: pm-o87av6
+    kind: blocked_by
+    created_at: "2026-07-29T21:24:18.742Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: "## Outcome\nA written, testable stability contract for the CLI grammar, the SDK API, the storage format, and the published scale targets.\n\n## Gate semantics\nThis milestone is a gate, not a workstream: it cannot open until the grammar, SDK-complete, and provable-history milestones are reached, and its scale claims are limited to what the scale milestone has actually measured.\n\n## Delivery chain\nADR pm-agou drafts the contract -> pm-0mox alias usage counters supply removal evidence -> the cross-version compatibility matrix supplies format evidence -> benchmark evidence supplies the scale numbers.\n\n## Explicit non-goals\nNot a feature freeze. Not a marketing event — messaging lives under pm-wjfa."

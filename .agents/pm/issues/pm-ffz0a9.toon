@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:sdk",detection,fleet,identity,provenance
 created_at: "2026-07-28T09:57:57.538Z"
-updated_at: "2026-07-28T22:39:22.071Z"
+updated_at: "2026-07-29T21:26:19.526Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A harness signal descriptor can declare a non-environment resolver for any provenance dimension, alongside its environment keys; The claude-code descriptor resolves the model by joining its already-declared session key to the harness session record, and a live mutation records a non-null model with the source naming the probe; Provenance observations distinguish a probe-sourced value from an environment-sourced value, the way effort already records its source; A probe is bounded in bytes and time, extracts only the declared dimension, never retains surrounding content, fails closed to null, and never blocks or fails a mutation; Probing is disableable by configuration and its default is documented; A harness version dimension exists and is populated for at least one harness that publishes it; A negative control proves the descriptor coverage analysis reports a dimension as uncovered when neither an environment key nor a resolver can supply it"
@@ -21,6 +21,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-rbg1qo,related,"2026-07-28T09:57:57.538Z","harness:claude-code","cli:create:dep",detected
   pm-szv11n,implements,"2026-07-28T09:57:57.538Z","harness:claude-code","cli:create:dep",detected
   pm-u14c,related,"2026-07-28T09:57:57.538Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-28T22:39:22.071Z","harness:claude-code","Live re-measure 2026-07-28 on this repository's own tracker, taken from the most recent entry of a real mutation stream rather than from a synthetic probe. The recorded provenance is:\n\n  author           harness:claude-code\n  author_source    detected\n  agent_harness    claude-code\n  agent_instance   present, a 24-character digest\n  agent_provenance model null, effort {value: xhigh, source: environment}\n\nSo three of the four dimensions the maintainer directive asks for are live and correct - harness, instance, and thinking level - and are obtained with no PM_AUTHOR and no --author, which is the mandate. The two that remain absent are exactly the two this item and pm-itsjf0 own: model stays null because the harness publishes no model key for any resolver to read, and session topic and role are carried by zero entries because no environment signal exists to detect them. Nothing about the measurement has changed since it was filed; recorded here so the claim rests on a current reading rather than a recalled one.\n"
+  "2026-07-29T21:26:19.526Z","harness:codex","Live provenance census 2026-07-29: pm activity read all 41,391 immutable events. 7,879 entries carry detected author provenance, with harness counts claude-code 4,608, codex 2,418, and opencode 155; 307 entries currently carry an effort value. Model is null on all 41,391 entries. This confirms the issue remains current and corpus-wide; no duplicate provenance item was created."
 body: ""

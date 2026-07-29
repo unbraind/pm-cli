@@ -1,12 +1,12 @@
 id: pm-bzmeaa
 title: "Strategic reachability invariant: every active item resolves to an outcome milestone through a typed, explainable path within a bounded hop count"
-description: ""
+description: "Define and enforce a strategic reachability invariant so every active and terminal item has a bounded, typed, explainable path to a canonical outcome milestone without fabricating graph depth."
 type: Task
 status: open
 priority: 1
 tags[7]: "area:sdk",context-management,depth,governance,graph,relationships,traceability
 created_at: "2026-07-24T23:47:30.529Z"
-updated_at: "2026-07-29T17:04:15.916Z"
+updated_at: "2026-07-29T21:22:06.562Z"
 author: maintainer-agent
 estimated_minutes: 1500
 acceptance_criteria: "The audit profile reports depth distribution, eccentricity, and shortest-path-to-milestone for every active item, not just isolate and degree counts; A declared policy states the maximum acceptable hop distance to an outcome milestone and the minimum distinct edge-kind count on the path; Violations surface as audit findings with a remediation hint naming candidate anchors, never as an instruction to fabricate an edge; Deliberately shallow items are representable as reviewed waivers with recorded rationale rather than silently failing; The profile is computed within the graph analytics token and latency budgets and stays bounded at million-item scale; The reachability invariant is stated and enforced for terminal items as well as active ones: every item in the workspace resolves to the index root through typed edges, the check runs in CI, and a regression that disconnects any item fails it"

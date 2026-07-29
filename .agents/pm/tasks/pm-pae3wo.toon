@@ -1,12 +1,12 @@
 id: pm-pae3wo
 title: "Cross-version workspace compatibility matrix: prove that workspaces written by older and newer pm releases stay readable and mergeable"
-description: ""
+description: "Build a cross-version compatibility matrix that exercises old and new readers, writers, migrations, and merge drivers so mixed-version agent fleets cannot silently corrupt or lose workspace state."
 type: Task
 status: open
 priority: 1
 tags[7]: ci,compatibility,format-version,migration,multi-agent,quality-gate,storage
 created_at: "2026-07-24T23:47:05.940Z"
-updated_at: "2026-07-26T05:59:54.305Z"
+updated_at: "2026-07-29T21:22:12.482Z"
 author: maintainer-agent
 estimated_minutes: 1500
 acceptance_criteria: "The matrix covers at least the previous two release lines writing and the current build reading, plus the reverse direction; Forward-incompatible reads fail loudly with an actionable error rather than silently misparsing or dropping fields; Backward-compatible reads preserve unknown fields on round-trip so an older reader cannot destroy a newer writer's data; Merge drivers are exercised across version skew, not only within one version; The declared compatibility window is documented and the matrix fails when the code drifts from the declaration"
@@ -19,17 +19,17 @@ why_now: "The format_version field exists and migrations are planned, but there 
 parent: pm-o2kc
 risk: medium
 confidence: medium
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-a8lnoh,related,"2026-07-24T23:47:05.940Z",null,null
-  pm-agou,related,"2026-07-24T23:47:05.940Z",null,null
-  pm-dijg,related,"2026-07-24T23:47:05.940Z",null,null
-  pm-dj98,related,"2026-07-24T23:47:05.940Z",null,null
-  pm-m2il,related,"2026-07-24T23:47:05.940Z",null,null
-  pm-rtn5h6,related,"2026-07-24T23:47:05.940Z",null,null
-  pm-w7ccmv,related,"2026-07-24T23:47:05.940Z",null,null
-  pm-xp1xsw,related,"2026-07-24T23:47:05.940Z",null,null
-  pm-xp1xsw,verifies,"2026-07-25T06:27:48.312Z",null,null
-  pm-4jk8kx,verifies,"2026-07-26T05:50:23.625Z",null,null
-  pm-o2kc,implements,"2026-07-26T05:55:51.961Z",null,null
-  pm-e5yupa,verifies,"2026-07-26T05:59:54.054Z",null,null
+dependencies[12]{id,kind,created_at}:
+  pm-a8lnoh,related,"2026-07-24T23:47:05.940Z"
+  pm-agou,related,"2026-07-24T23:47:05.940Z"
+  pm-dijg,related,"2026-07-24T23:47:05.940Z"
+  pm-dj98,related,"2026-07-24T23:47:05.940Z"
+  pm-m2il,related,"2026-07-24T23:47:05.940Z"
+  pm-rtn5h6,related,"2026-07-24T23:47:05.940Z"
+  pm-w7ccmv,related,"2026-07-24T23:47:05.940Z"
+  pm-xp1xsw,related,"2026-07-24T23:47:05.940Z"
+  pm-xp1xsw,verifies,"2026-07-25T06:27:48.312Z"
+  pm-4jk8kx,verifies,"2026-07-26T05:50:23.625Z"
+  pm-o2kc,implements,"2026-07-26T05:55:51.961Z"
+  pm-e5yupa,verifies,"2026-07-26T05:59:54.054Z"
 body: "## Problem\nStorage carries a format_version field and migration primitives are planned, but no test answers the practical questions: what does today's build do with a workspace written by last month's build, what does last month's build do with today's, and what happens when two such agents merge branches.\n\n## Approach\nA matrix job that installs prior published releases, generates representative workspaces with them, then runs the current build's read, mutate, validate, merge, and history-verify paths against those workspaces — and the mirror direction using the current build as writer.\n\n## Field preservation\nThe critical invariant is that an older reader must not destroy fields it does not understand. Round-trip preservation of unknown fields is what makes a staggered fleet safe, and it must be asserted explicitly.\n\n## Boundary\nNot schema migration itself, which is owned separately. This proves the compatibility window; migrations move workspaces across it."
