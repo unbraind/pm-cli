@@ -110,6 +110,18 @@ describe("workspace memory", () => {
         now: "invalid",
       }),
     ).toThrow("valid timestamp");
+    expect(() =>
+      buildWorkspaceMemorySnapshot(
+        [
+          item("pm-no-completion-time", {
+            completed_at: undefined,
+            closed_at: undefined,
+            updated_at: undefined as never,
+          }),
+        ],
+        { statusRegistry, sourceCursor: "cursor", now },
+      ),
+    ).toThrow("has no reporting timestamp");
   });
 
   it("bounds rollups by tokens and searches labels, outcomes, ids, and titles", () => {

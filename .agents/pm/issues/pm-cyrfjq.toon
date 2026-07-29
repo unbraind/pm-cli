@@ -2,11 +2,13 @@ id: pm-cyrfjq
 title: "Mode-paired envelopes zero-fill the inactive collection instead of omitting it, so parsing the obvious key returns an empty array that is indistinguishable from a real empty result"
 description: "pm history --json reports count:7 with history:[] and compact_history populated; --full inverts it. pm-p3x4 records the identical shape on pm activity. Two independent commands sharing the defect means the envelope contract lacks a rule for mode-inactive collection keys, and [] is the one option that cannot be told apart from a legitimate empty result. Duplicate check 2026-07-26: searched decoy-key/empty-array/envelope/output-contract items across all statuses; pm-p3x4 is the pm activity instance, pm-srns owns the uniform envelope spec, pm-psy1 owns stable field-name guarantees. No item states the cross-command rule."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:contracts",output-contract,scripting,token-efficiency
 created_at: "2026-07-26T05:43:39.360Z"
-updated_at: "2026-07-26T06:08:41.764Z"
+updated_at: "2026-07-29T14:33:08.940Z"
+closed_at: "2026-07-29T14:30:17.449Z"
+completed_at: "2026-07-29T14:30:17.449Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The output contract states that a row collection belonging to an inactive output mode is omitted rather than zero-filled, in both JSON and TOON; a contract-driven test enumerates every command declaring mutually exclusive output modes and asserts only the active collection key is present, so new commands inherit the assertion by declaration; pm history and pm activity are fixed as the first subjects and pm-p3x4 closes against this rule with its reproduction retained as the negative-control fixture; the envelope carries an explicit mode discriminator wherever the active mode is not otherwise inferable; the behaviour change from [] to absent is documented as a compatibility note in release output rather than shipped silently; the sweep covers at minimum history, activity, graph --summary, context depth tiers, health brief/summary/full, and validate detail rows"
@@ -17,16 +19,32 @@ why_now: "Found on pm history while probing the history and restore surface, whi
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[6]{id,kind,created_at,author,source_kind}:
-  pm-185870,related,"2026-07-26T05:43:39.360Z",null,null
-  pm-p3x4,related,"2026-07-26T05:43:39.360Z",null,null
-  pm-psy1,related,"2026-07-26T05:43:39.360Z",null,null
-  pm-srns,related,"2026-07-26T05:43:39.360Z",null,null
-  pm-m9xv,implements,"2026-07-26T05:49:58.526Z",null,null
-  pm-srns,verifies,"2026-07-26T05:50:33.639Z",null,null
-files[2]{path,scope,note}:
-  src/cli/commands/activity.ts,project,same shape on activity/compact_activity (pm-p3x4 instance)
-  src/cli/commands/history.ts,project,"emits history and compact_history together,zero-filling the inactive mode"
-tests[1]{command,scope,timeout_seconds}:
+resolution: "Shared mode-paired SDK declarations now drive activity/history row keys, omission receipts, and contract tests; the inactive collection is absent in JSON and TOON."
+expected_result: Each output mode exposes only its active collection and an explicit discriminator; inactive mode collections are absent.
+actual_result: "Before the fix, history and activity emitted both collections and zero-filled the inactive one."
+dependencies[6]{id,kind,created_at}:
+  pm-185870,related,"2026-07-26T05:43:39.360Z"
+  pm-p3x4,related,"2026-07-26T05:43:39.360Z"
+  pm-psy1,related,"2026-07-26T05:43:39.360Z"
+  pm-srns,related,"2026-07-26T05:43:39.360Z"
+  pm-m9xv,implements,"2026-07-26T05:49:58.526Z"
+  pm-srns,verifies,"2026-07-26T05:50:33.639Z"
+comments[3]{created_at,author,text}:
+  "2026-07-29T14:21:30.634Z","harness:codex","Implementation evidence: activity and history now emit only the active row collection, with projection.mode, projection.row_key, and bounded omission receipts shared through the SDK. CLI, SDK, MCP parity and deterministic key ordering passed; full suite 6510/6510 and exact 100% coverage."
+  "2026-07-29T14:30:11.910Z","harness:codex","Required surface sweep evidence: graph impact --summary omits affected while the full shape emits it; context depth tiers expose one section vocabulary plus sections_included rather than parallel decoy collections; health brief/summary/full retain one checks collection and now disclose omissions or explicit completeness; validate default/verbose retain one checks collection with no inactive detail array. Activity/history were the only declared mode-paired duplicate-collection offenders and are covered from the shared declaration."
+  "2026-07-29T14:33:08.939Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
+files[5]{path,scope,note}:
+  src/cli/commands/activity.ts,project,Emits only the active full or compact activity collection
+  src/cli/commands/history.ts,project,Emits only the active full or compact history collection
+  src/sdk/output-projection.ts,project,Shared mode-paired output declarations
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP compact activity conformance
+  tests/unit/commands/history-activity-command.spec.ts,project,Mode-paired row-key conformance
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/history-activity-command.spec.ts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/commands/history-activity-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,project,120
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms66ge2a-8jdqs6,test,passed,"2026-07-29T14:25:31.082Z","2026-07-29T14:25:54.994Z","2026-07-29T14:25:54.994Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Mode-paired collection compatibility guide
+close_reason: "Delivered contract-driven mutually exclusive activity/history collections, explicit mode/row discriminators, compatibility documentation, full surface sweep, sandbox-safe linked tests, and exact repository coverage."
 body: "## Evidence\n\n`pm history <id> --json` returns an envelope with two mutually exclusive row collections, and always emits both:\n\n```\n$ pm history <id> --json | jq '{count, h:(.history|length), ch:(.compact_history|length)}'\n{\"count\":7,\"h\":0,\"ch\":7}          # default (compact) mode\n\n$ pm history <id> --full --json | jq '{count, h:(.history|length), ch:(.compact_history|length)}'\n{\"count\":7,\"h\":7,\"ch\":0}          # --full mode\n```\n\nAn agent that parses the obvious key — `.history` — gets an empty array from a command that just reported `count: 7`. There is no error, no warning, and no exit-code signal. The failure is silent and the correct reading (`.compact_history`) is discoverable only by inspecting the envelope or reading the source.\n\n`pm-p3x4` records the identical shape on a different command: `pm activity --compact --json` emits an empty `activity: []` beside a populated `compact_activity`. Two independent commands with the same defect is not a coincidence; it is a missing rule in the envelope contract.\n\n## The rule that is missing\n\nThe output contract does not say what an envelope does with a collection key whose mode is inactive. Absent a rule, each command picked the same wrong default independently: **declare the field, zero-fill it, emit it anyway.** That default is the worst of the three available options, because it is indistinguishable from a legitimate empty result.\n\nThe three options, and why only one is defensible:\n\n1. **Emit `[]`** (current). A consumer cannot distinguish \"no rows matched\" from \"you read the wrong key\". Both are `[]`. This is the only option that can produce a silently wrong answer.\n2. **Omit the key.** A consumer reading the wrong key gets `undefined`/`null`, which every JSON consumer treats as distinguishable from `[]`. `--lean` already omits null and empty containers, so the machinery exists; the defect is that the *default* shape does not use it for mode-inactive keys.\n3. **Emit one canonical key whose shape varies with mode**, plus a `mode` discriminator. Strongest for consumers, largest compatibility cost, and it removes the ability to grep for a stable key name.\n\nOption 2 is the smallest correct change and composes with what already ships. Option 3 is worth stating as the direction for the uniform envelope work rather than doing here.\n\n## Why this is filed as a class and not a second instance\n\nFiling the `pm history` case alone would leave the generator intact: the next command with a `--compact`/`--full`/`--summary` mode pair reproduces it. The tractable deliverable is a contract clause plus a machine check that holds across the whole surface, with `pm history` and `pm activity` as its first two subjects.\n\nCandidate surfaces to sweep, all of which carry mode pairs today: `history` (`--compact`/`--full`), `activity` (`--compact`), `graph` (`--summary` versus row collections), `context` (`--depth` tiers), `health` (`--brief`/`--summary`/`--full`), `validate` (per-check detail rows). The sweep is part of the deliverable; the list above is a starting set, not an assertion of completeness.\n\n## Interaction with token efficiency\n\nEvery zero-filled key is also wasted output. It is small per call and it is paid on every call, including the ones already under budget pressure. The saving is secondary to the correctness argument and should not be the justification, but it means the fix has no cost side to trade against.\n\n## Deliverable\n\n- A clause in the output contract stating that a row collection belonging to an inactive output mode is omitted, not zero-filled, in both JSON and TOON.\n- A contract-driven test that enumerates every command declaring mutually exclusive output modes and asserts that only the active collection key is present. New commands inherit the assertion by declaration rather than by someone remembering.\n- `pm history` and `pm activity` fixed as the first subjects; `pm-p3x4` closes against this rule rather than being patched in isolation.\n- The envelope carries an explicit mode discriminator where one is not already inferable, so a consumer can branch on the mode instead of probing for whichever key happens to be populated.\n- Documented as a compatibility note: a consumer currently reading `.history` and getting `[]` starts getting `undefined`. That is the point of the change — the silent case becomes the loud case — and it is called out in the release notes rather than shipped quietly.\n\n## Relationship to neighbours\n\n- `pm-p3x4` is the first observed instance and becomes a subject of this rule. Recorded as `related`; it should not be closed as a duplicate, because its specific reproduction is the negative-control fixture.\n- `pm-srns` owns the uniform output contract — one format-flag grammar and one envelope spec across every command. This clause belongs inside that spec, and option 3 above is a decision for that item to take rather than this one.\n- `pm-psy1` owns the scripting contract's guarantees about stable machine-readable field names. A key that is stably present but stably wrong is precisely the failure that contract exists to prevent, and this rule is the missing half of it.\n- `pm-185870` establishes one error contract across subcommand families; this is the same consolidation instinct applied to success envelopes rather than error envelopes."

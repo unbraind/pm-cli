@@ -12,6 +12,7 @@ import {
 import { EXIT_CODE } from "../shared/constants.js";
 import { isHostOutputSuppressed } from "./output-control.js";
 import { projectMutationResult } from "./mutation-projection.js";
+import { attachOutputOmissionReceipt } from "../../sdk/output-projection.js";
 
 /** Documents the output options payload exchanged by command, SDK, and package integrations. */
 export interface OutputOptions {
@@ -177,6 +178,14 @@ function compactToonValue(value: unknown): unknown | undefined {
   if (isPlainObject(value)) {
     const compacted: Record<string, unknown> = {};
     for (const [key, entry] of Object.entries(value)) {
+      if (
+        key === "omitted_field_groups" &&
+        Array.isArray(entry) &&
+        entry.length === 0
+      ) {
+        compacted[key] = [];
+        continue;
+      }
       const compactedEntry = compactToonValue(entry);
       if (compactedEntry !== undefined) {
         compacted[key] = compactedEntry;
@@ -402,15 +411,19 @@ function formatEffectiveOutput(
     options.command === "test"
       ? projectLinkedTestEvidence(outputResult, options.lean === true)
       : outputResult;
+  const disclosedOutputResult = attachOutputOmissionReceipt(
+    options.command,
+    projectedOutputResult,
+  );
   if (format === "toon") {
-    const markdownDefault = renderDefaultMarkdownResult(projectedOutputResult);
+    const markdownDefault = renderDefaultMarkdownResult(disclosedOutputResult);
     if (markdownDefault !== null) {
       return markdownDefault;
     }
   }
   const rendererOverride = nativeOutput
     ? { rendered: null }
-    : runActiveRendererOverride(format, projectedOutputResult);
+    : runActiveRendererOverride(format, disclosedOutputResult);
   if (rendererOverride.rendered !== null) {
     return rendererOverride.rendered.endsWith("\n")
       ? rendererOverride.rendered
@@ -419,11 +432,11 @@ function formatEffectiveOutput(
   if (format === "json") {
     const jsonResult =
       options.lean === true
-        ? projectLeanJsonValue(projectedOutputResult)
-        : projectedOutputResult;
+        ? projectLeanJsonValue(disclosedOutputResult)
+        : disclosedOutputResult;
     return formatBuiltInOutput(jsonResult, "json");
   }
-  return formatBuiltInOutput(projectedOutputResult, "toon");
+  return formatBuiltInOutput(disclosedOutputResult, "toon");
 }
 
 /** Implements format output for the public runtime surface of this module. */

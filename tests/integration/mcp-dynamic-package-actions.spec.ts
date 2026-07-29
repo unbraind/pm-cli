@@ -1113,11 +1113,19 @@ describe("MCP dynamic package actions", () => {
       });
       expect(activity?.isError).not.toBe(true);
       const activityResult = (activity?.structuredContent as {
-        result?: { compact?: boolean; activity?: unknown[]; compact_activity?: unknown[] };
+        result?: {
+          compact?: boolean;
+          activity?: unknown[];
+          compact_activity?: unknown[];
+          omission_receipt?: { omitted_field_group_count?: number };
+        };
       } | undefined)?.result;
       expect(activityResult?.compact).toBe(true);
-      expect(activityResult?.activity).toEqual([]);
+      expect(activityResult?.activity).toBeUndefined();
       expect(Array.isArray(activityResult?.compact_activity)).toBe(true);
+      expect(
+        activityResult?.omission_receipt?.omitted_field_group_count,
+      ).toBe(1);
 
       const verbose = await handleRequest({
         jsonrpc: "2.0",

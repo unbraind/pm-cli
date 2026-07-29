@@ -948,7 +948,7 @@ export function printActivityJsonStream(
   const entries =
     result.compact && result.compact_activity
       ? result.compact_activity
-      : result.activity;
+      : (result.activity ?? []);
   for (const entry of entries) {
     if (
       !writeStdout(

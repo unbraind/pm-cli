@@ -960,6 +960,34 @@ describe("registration helpers", () => {
       ]);
 
       stdoutSpy.mockClear();
+      printActivityJsonStream(
+        { count: 0, compact: false } as never,
+        {},
+        { quiet: false },
+      );
+      expect(
+        stdoutSpy.mock.calls
+          .map((call) => String(call[0]).trim())
+          .filter(Boolean)
+          .map((line) => JSON.parse(line)),
+      ).toEqual([
+        {
+          type: "meta",
+          command: "activity",
+          count: 0,
+          filters: {
+            id: null,
+            op: null,
+            author: null,
+            from: null,
+            to: null,
+            limit: null,
+          },
+        },
+        { type: "end", command: "activity", count: 0 },
+      ]);
+
+      stdoutSpy.mockClear();
       printListJsonStream(
         "list",
         { count: 0, now: "now", filters: {}, items: [] } as never,

@@ -1821,6 +1821,7 @@ describe("release readiness runtime coverage", () => {
         "projection",
         "sorting",
         "now",
+        "omission_receipt",
       ]);
 
       const installCalendar = context.runCli(
@@ -1873,6 +1874,7 @@ describe("release readiness runtime coverage", () => {
         "blocked_fallback",
         "agenda",
         "applied_limit",
+        "omission_receipt",
       ]);
 
       const searchResult = context.runCli(
@@ -1889,6 +1891,7 @@ describe("release readiness runtime coverage", () => {
         "count",
         "applied_limit",
         "filters",
+        "omission_receipt",
       ]);
       expect((searchResult.json as { mode?: string }).mode).toBe("keyword");
 
@@ -1907,7 +1910,12 @@ describe("release readiness runtime coverage", () => {
         expectJson: true,
       });
       expect(getResult.code).toBe(0);
-      expectTopLevelKeyOrder(getResult.json, ["item", "linked", "claim_state"]);
+      expectTopLevelKeyOrder(getResult.json, [
+        "item",
+        "linked",
+        "claim_state",
+        "omission_receipt",
+      ]);
       const getJson = getResult.json as {
         item: Record<string, unknown> & { body?: string };
       };
@@ -2126,6 +2134,8 @@ describe("release readiness runtime coverage", () => {
         "id",
         "history",
         "compact",
+        "projection",
+        "omission_receipt",
         "count",
         "limit",
       ]);
@@ -2136,9 +2146,10 @@ describe("release readiness runtime coverage", () => {
       );
       expect(activityResult.code).toBe(0);
       expectTopLevelKeyOrder(activityResult.json, [
-        "activity",
         "compact_activity",
         "compact",
+        "projection",
+        "omission_receipt",
         "count",
         "total_count",
         "limit",
@@ -2167,6 +2178,7 @@ describe("release readiness runtime coverage", () => {
         "checks",
         "warnings",
         "generated_at",
+        "omission_receipt",
       ]);
 
       const gcResult = context.runCli(["gc", "--json"], { expectJson: true });

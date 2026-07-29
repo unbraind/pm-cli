@@ -48,6 +48,7 @@ describe("lifecycle completion SDK primitives", () => {
         }),
       ),
     ).toEqual({
+      resolved: true,
       timestamp: "2026-01-02T00:00:00.000Z",
       source: "completed_at",
       fallback: false,
@@ -60,9 +61,11 @@ describe("lifecycle completion SDK primitives", () => {
       ),
     ).toMatchObject({ source: "closed_at", fallback: true });
     expect(resolveCompletionTimestamp(item("pm-updated"))).toMatchObject({
+      resolved: true,
       source: "updated_at",
       fallback: true,
     });
+    expect(resolveCompletionTimestamp({})).toEqual({ resolved: false });
   });
 
   it("plans only evidence-backed terminal backfills and keeps absence explicit", () => {

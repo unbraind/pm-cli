@@ -25,6 +25,7 @@ const ITEM_ENVELOPE_KEYS = [
   "schedule",
   "claim_state",
   "children",
+  "omission_receipt",
 ] as const;
 const READ_ONLY_ITEM_KEYS = new Set([
   "created_at",

@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- GH-808: lifecycle completion resolver types and provenance lie when no timestamp exists ([pm-qhnq6t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qhnq6t.toon))
+- pm activity --compact --json emits an empty activity:\[\] decoy key alongside compact_activity ([pm-p3x4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p3x4.toon))
+- Mode-paired envelopes zero-fill the inactive collection instead of omitting it, so parsing the obvious key returns an empty array that is indistinguishable from a real empty result ([pm-cyrfjq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cyrfjq.toon))
 - GH-802: persist structured numeric measurements with test runs ([pm-ygerpy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ygerpy.toon))
 - GH-806: publish and reuse the eval query-set contract across help, errors, SDK, and machine discovery ([pm-wd61s2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wd61s2.toon))
 - The rendered command surface is not a subset of the contracted surface: pm workspace ships in help, runs, and exits 2 on its own contract lookup, and no gate compares the two sets ([pm-1jrdri](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1jrdri.toon))

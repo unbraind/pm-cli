@@ -34,6 +34,10 @@ import {
 export { readHistoryEntries } from "../../sdk/history-read.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { HistoryEntry } from "../../types/index.js";
+import {
+  resolveModePairedOutputOmissionReceipt,
+  type OutputOmissionReceipt,
+} from "../../sdk/output-projection.js";
 
 export { verifyHistoryChain };
 /** Documents the history command options payload exchanged by command, SDK, and package integrations. */
@@ -71,11 +75,20 @@ export interface HistoryResult {
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports history for this contract. */
-  history: HistoryEntry[];
+  history?: HistoryEntry[];
   /** Value that configures or reports compact history for this contract. */
   compact_history?: HistoryDiffEntry[];
   /** Value that configures or reports compact for this contract. */
   compact: boolean;
+  /** Explicit active row projection. */
+  projection: {
+    /** Stable projection mode. */
+    mode: "compact" | "full";
+    /** Active row collection key. */
+    row_key: "compact_history" | "history";
+  };
+  /** Constant-size disclosure of field groups withheld by the active mode. */
+  omission_receipt: OutputOmissionReceipt;
   /** Value that configures or reports count for this contract. */
   count: number;
   /** Value that configures or reports limit for this contract. */
@@ -174,11 +187,27 @@ export async function runHistory(
         Math.max(0, fullHistory.length - history.length),
       )
     : undefined;
+  const projectionMode = compact ? "compact" : "full";
+  const rowProjection = {
+    compact: { compact_history: compactHistory },
+    full: { history },
+  }[projectionMode];
+  const rowKey = {
+    compact: "compact_history",
+    full: "history",
+  } as const;
   const result: HistoryResult = {
     id: resolvedId,
-    history: compact ? [] : history,
-    compact_history: compactHistory,
+    ...rowProjection,
     compact,
+    projection: {
+      mode: projectionMode,
+      row_key: rowKey[projectionMode],
+    },
+    omission_receipt: resolveModePairedOutputOmissionReceipt(
+      "history",
+      projectionMode,
+    ),
     count: history.length,
     limit: limit ?? null,
   };

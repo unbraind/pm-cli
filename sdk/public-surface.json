@@ -284,6 +284,14 @@
       ],
       "package_version": "2026.7.29",
       "reason": "Keep EvalSearchMode package-owned while exposing versioned eval query values and parser from the aggregate SDK"
+    },
+    {
+      "changes": [
+        "signature ./sdk:resolveCompletionTimestamp",
+        "signature ./sdk:ResolvedCompletionTimestamp"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "GH-808 replaces an unsound always-resolved declaration with an explicit discriminated unresolved outcome"
     }
   ],
   "entrypoints": {
@@ -943,6 +951,12 @@
           "kind": "interface",
           "name": "AtomicMutationControls",
           "signature": "export interface AtomicMutationControls { createCompensation?: \"close\" | \"delete\"; lockTtlSeconds?: number; lockWaitMs?: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "attachOutputOmissionReceipt",
+          "signature": "(command: string | undefined, result: unknown) => unknown | calls: (command: string | undefined, result: unknown) => unknown"
         },
         {
           "classification": "supported",
@@ -1673,6 +1687,12 @@
         {
           "classification": "advanced_export",
           "kind": "type",
+          "name": "CompletionTimestampResolution",
+          "signature": "export type CompletionTimestampResolution = ResolvedCompletionTimestamp | UnresolvedCompletionTimestamp;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
           "name": "CompletionTimestampSource",
           "signature": "export type CompletionTimestampSource = \"completed_at\" | \"closed_at\" | \"updated_at\";"
         },
@@ -2179,6 +2199,12 @@
           "kind": "function",
           "name": "createLazyModule",
           "signature": "<T>(importer: () => Promise<T>) => () => Promise<T> | calls: <T>(importer: () => Promise<T>) => () => Promise<T>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "createOutputOmissionReceipt",
+          "signature": "(declaredGroups: readonly OutputProjectionFieldGroup[], includedGroupNames?: ReadonlySet<string>) => OutputOmissionReceipt | calls: (declaredGroups: readonly OutputProjectionFieldGroup[], includedGroupNames?: ReadonlySet<string>) => OutputOmissionReceipt"
         },
         {
           "classification": "supported",
@@ -5536,6 +5562,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ModePairedOutputProjectionContract",
+          "signature": "export interface ModePairedOutputProjectionContract { command: string; complete_mode: string; omissions_by_mode: Readonly<Record<string, readonly OutputProjectionFieldGroup[]>>; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "mutateItem",
           "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
@@ -5851,6 +5883,18 @@
           "kind": "function",
           "name": "orderingSuccessors",
           "signature": "(graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]> | calls: (graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "OutputOmissionReceipt",
+          "signature": "export interface OutputOmissionReceipt { has_omissions: boolean; omitted_field_group_count: number; omitted_field_groups: OutputProjectionFieldGroup[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "OutputProjectionFieldGroup",
+          "signature": "export interface OutputProjectionFieldGroup { name: string; restore_with: string; }"
         },
         {
           "classification": "supported",
@@ -6493,6 +6537,12 @@
           "kind": "value",
           "name": "PM_MCP_TOOL_COMMAND_CONTRACTS",
           "signature": "Readonly<Record<string, string>>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS",
+          "signature": "readonly [{ readonly command: \"activity\"; readonly complete_mode: \"full\"; readonly omissions_by_mode: { readonly compact: readonly [{ readonly name: \"provenance\"; readonly restore_with: \"--full\"; }]; }; }, { readonly command: \"history\"; readonly complete_mode: \"full\"; readonly omissions_by_mode: { readonly compact: readonly [{ readonly name: \"raw_history\"; readonly restore_with: \"--full\"; }]; }; }]"
         },
         {
           "classification": "supported",
@@ -8376,7 +8426,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "resolveCompletionTimestamp",
-          "signature": "(item: Pick<ItemMetadata, \"closed_at\" | \"completed_at\" | \"updated_at\">) => ResolvedCompletionTimestamp | calls: (item: Pick<ItemMetadata, \"completed_at\" | \"closed_at\" | \"updated_at\">) => ResolvedCompletionTimestamp"
+          "signature": "(item: Partial<Pick<ItemMetadata, \"closed_at\" | \"completed_at\" | \"updated_at\">>) => CompletionTimestampResolution | calls: (item: Partial<Pick<ItemMetadata, \"completed_at\" | \"closed_at\" | \"updated_at\">>) => CompletionTimestampResolution"
         },
         {
           "classification": "advanced_export",
@@ -8406,7 +8456,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ResolvedCompletionTimestamp",
-          "signature": "export interface ResolvedCompletionTimestamp { timestamp: string; source: CompletionTimestampSource; fallback: boolean; }"
+          "signature": "export interface ResolvedCompletionTimestamp { resolved: true; timestamp: string; source: CompletionTimestampSource; fallback: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -8497,6 +8547,18 @@
           "kind": "value",
           "name": "resolveMissingMetadataFilters",
           "signature": "(options: { filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; filterReviewerMissing?: boolean; filterRiskMissing?: boolean; filterConfidenceMissing?: boolean; filterSprintMissing?: boolean; filterReleaseMissing?: boolean; }) => MissingMetadataFilters | calls: (options: { filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; filterReviewerMissing?: boolean; filterRiskMissing?: boolean; filterConfidenceMissing?: boolean; filterSprintMissing?: boolean; filterReleaseMissing?: boolean; }) => MissingMetadataFilters"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveModePairedOutputOmissionReceipt",
+          "signature": "(command: string, mode: string) => OutputOmissionReceipt | calls: (command: string, mode: string) => OutputOmissionReceipt"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveOutputOmissionReceipt",
+          "signature": "(command: string, result: Record<string, unknown>) => OutputOmissionReceipt | undefined | calls: (command: string, result: Record<string, unknown>) => OutputOmissionReceipt | undefined"
         },
         {
           "classification": "advanced_export",
@@ -10807,6 +10869,12 @@
           "kind": "interface",
           "name": "UnreadableItemFileRow",
           "signature": "export interface UnreadableItemFileRow { path: string; id: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "UnresolvedCompletionTimestamp",
+          "signature": "export interface UnresolvedCompletionTimestamp { resolved: false; timestamp?: never; source?: never; fallback?: never; }"
         },
         {
           "classification": "supported",

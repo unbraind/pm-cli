@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-07-29T04:49:40.386Z"
-updated_at: "2026-07-29T04:50:01.738Z"
+updated_at: "2026-07-29T14:33:08.257Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every read command that supports more than one output shape emits an omission receipt naming the withheld field groups or sections, and for each one the exact flag that restores it; A shape that withholds nothing emits an explicit empty receipt, so a complete payload and a missing receipt can never look alike; The receipt is derived from the same declared contract that drives the shapes, so adding a field group makes it appear in the receipt with no per-command edit, proven by a fixture group no command declares today; The receipt is bounded and constant per command: a test asserts its size does not scale with the number of rows or the size of the corpus; pm get at brief depth names children, claim_state and linked as withheld, and pm activity in compact mode names the provenance group as withheld, because both are silent today and both are the cases that produced wrong conclusions; Row omission and field omission use one vocabulary: the receipt keys read consistently against the existing has_more, applied_limit and next_cursor keys rather than introducing a parallel naming scheme"
@@ -18,6 +18,24 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-cyrfjq,related,"2026-07-29T04:49:40.386Z","harness:claude-code","cli:create:dep",detected
   pm-g3n00m,implements,"2026-07-29T04:49:40.386Z","harness:claude-code","cli:create:dep",detected
   pm-sb0tns,related,"2026-07-29T04:49:40.386Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-29T04:49:40.386Z","harness:claude-code","Duplicate check before create: pm-oi4zs3 is CLOSED and made lean reads OMIT caller echoes, which is the opposite operation to declaring an omission; pm-cyrfjq owns envelopes that report a count beside an empty array, a defect this receipt would expose rather than a receipt; pm-pjnu91 owns the three incompatible list-family projections, which is about which fields are chosen and not about disclosing the choice; pm-sb0tns owns the row contract and the --fields axis. Searched keyword and semantic for omission receipt, projection declaration, withheld fields; inspected the live envelopes of list, context, activity, search and get to confirm five distinct behaviours."
+  "2026-07-29T14:21:29.876Z","harness:codex","Implementation evidence: introduced public SDK omission-receipt primitives; applied them consistently across CLI JSON/TOON rendering, SDK runAction, and MCP; covered context/get/list/search/health/contracts plus mode-paired activity/history. Full repo run passed 6510/6510 with 100/100/100/100 coverage. Static quality, 100% docstrings, zero jscpd clones, SDK surface, package boundary, token budget, and transport floors passed. Fresh packed consumer proof passed npm install, isolated npx, Bun, bunx, SDK imports, compact/full projection parsing, get-to-update JSON round trip, and exact restore instructions at /tmp/tmp.vo7ohsMXCI."
+  "2026-07-29T14:25:12.090Z","harness:codex","Linked-test correction: the direct full repository coverage command is green at 6510/6510 and 100/100/100/100, but nesting it inside pm test applied an outer schema PM_PATH and caused 12 unrelated fixture-root assertions. Removed that unsafe recursive link and retained focused sandbox-safe transport tests; this is test-context isolation, not a product failure."
+  "2026-07-29T14:30:12.565Z","harness:codex","Tranche boundary: this PR completes receipts for context, get, list aliases, search, health, contracts, activity, and history across CLI/SDK/MCP. The broader title remains intentionally open for graph summary, validate diagnostic modes, deps summary, and any extension-declared multi-shape reads; those surfaces need their own exact restore contracts rather than an inferred or non-actionable receipt."
+  "2026-07-29T14:33:08.257Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
+files[6]{path,scope,note}:
+  src/core/output/output.ts,project,Built-in CLI output receipt attachment and TOON preservation
+  src/sdk/output-projection.ts,project,Reusable omission receipt and mode-paired projection contracts
+  src/sdk/runtime.ts,project,SDK and MCP action parity for omission receipts
+  src/sdk/structured-mutations.ts,project,Round-trip tolerance for read-only receipt metadata
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,SDK CLI behavior-envelope parity
+  tests/unit/sdk/output-projection.spec.ts,project,Receipt derivation and defensive branch coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts tests/unit/core/output/output.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,180
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms66f4d6-ft01pz,test,failed,"2026-07-29T14:21:41.703Z","2026-07-29T14:24:55.770Z","2026-07-29T14:24:55.770Z",0,1,0
+  test-local-ms66frbk-0vlqcj,test,passed,"2026-07-29T14:25:12.773Z","2026-07-29T14:25:25.520Z","2026-07-29T14:25:25.520Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Agent and package-author output projection contract
 body: ""

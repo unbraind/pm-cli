@@ -451,8 +451,17 @@ describe("runHistory and runActivity", () => {
         { path: context.pmPath },
       );
       expect(compact.compact).toBe(true);
-      expect(compact.history).toEqual([]);
+      expect(compact.history).toBeUndefined();
       expect(compact.compact_history).toHaveLength(compact.count);
+      expect(compact.projection).toEqual({
+        mode: "compact",
+        row_key: "compact_history",
+      });
+      expect(compact.omission_receipt).toMatchObject({
+        omitted_field_groups: [
+          { name: "raw_history", restore_with: "--full" },
+        ],
+      });
       expect(
         compact.compact_history?.some((entry) =>
           entry.changed_fields.includes("body"),
@@ -463,7 +472,8 @@ describe("runHistory and runActivity", () => {
         expectJson: true,
       });
       expect(cliDefault.code).toBe(0);
-      expect(cliDefault.json).toMatchObject({ compact: true, history: [] });
+      expect(cliDefault.json).toMatchObject({ compact: true });
+      expect(cliDefault.json).not.toHaveProperty("history");
       expect(
         (cliDefault.json as { compact_history?: unknown[] }).compact_history
           ?.length,
@@ -475,7 +485,8 @@ describe("runHistory and runActivity", () => {
         expectJson: true,
       });
       expect(compactDiff.code).toBe(0);
-      expect(compactDiff.json).toMatchObject({ compact: true, history: [] });
+      expect(compactDiff.json).toMatchObject({ compact: true });
+      expect(compactDiff.json).not.toHaveProperty("history");
       const compactDiffEntries = (
         compactDiff.json as {
           diff?: Array<{ changed_fields: string[]; changes: unknown[] }>;
@@ -1609,7 +1620,8 @@ describe("runHistory and runActivity", () => {
         { expectJson: true },
       );
       expect(cliDefault.code).toBe(0);
-      expect(cliDefault.json).toMatchObject({ compact: true, activity: [] });
+      expect(cliDefault.json).toMatchObject({ compact: true });
+      expect(cliDefault.json).not.toHaveProperty("activity");
       expect(
         (cliDefault.json as { compact_activity?: unknown[] }).compact_activity
           ?.length,
@@ -1663,6 +1675,12 @@ describe("runHistory and runActivity", () => {
       expect(activity).toEqual({
         activity: [],
         compact: false,
+        projection: { mode: "full", row_key: "activity" },
+        omission_receipt: {
+          has_omissions: false,
+          omitted_field_group_count: 0,
+          omitted_field_groups: [],
+        },
         count: 0,
         total_count: 0,
         limit: 5,
