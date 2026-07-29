@@ -1,0 +1,30 @@
+id: pm-11phn1
+title: "GH-817: machine-readable flag contracts need semantic invocation metadata and stdin capability"
+description: "pm contracts command_flags currently exposes flag names without descriptions, value types, required/repeatable semantics, or accepts_stdin, forcing agents back to human help and hiding safe streaming paths for body-sized inputs."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,"area:contracts","area:sdk",context-efficiency
+created_at: "2026-07-29T22:22:14.499Z"
+updated_at: "2026-07-29T22:22:14.499Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: command_flags entries expose descriptions value types required repeatable and accepts_stdin from one canonical declaration; body and description stdin support is documented consistently in help and contracts; CLI SDK MCP and generated schemas remain parity-checked; compact contract projections remain bounded and measured; installed-consumer acceptance proves agents can discover and use stdin without scraping help
+goal: project management = context management
+objective: Make machine contracts sufficient to invoke every declared flag safely
+value: Agents select streaming and typed invocation paths without spending context on help prose or risking argv limits
+impact: Enriches the universal command contract for core and extension-provided flags
+why_now: GH-817 demonstrates that the recommended discovery path cannot explain how to call its own flags
+parent: pm-usfg
+risk: medium
+confidence: high
+affected_version: 2026.7.29
+component: sdk/cli-contracts
+regression: true
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fs8q9x,related_to,"2026-07-29T22:22:14.499Z","harness:codex","cli:create:dep",detected
+  pm-iktj,related_to,"2026-07-29T22:22:14.499Z","harness:codex","cli:create:dep",detected
+  pm-w7mqzt,discovered_from,"2026-07-29T22:22:14.499Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-29T22:22:14.499Z","harness:codex","Duplicate check 2026-07-29: searched all-status lineage for GH-817, accepts_stdin, machine-readable flag metadata, and stdin semantics. pm-iktj owns uniform stdin behavior, pm-fs8q9x owns lexicon conformance, and closed pm-w7mqzt owns the public SDK contract baseline; none owns semantic per-flag machine invocation metadata. GitHub: https://github.com/unbraind/pm-cli/issues/817"
+body: ""

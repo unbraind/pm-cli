@@ -87,6 +87,10 @@ import {
   GRAPH_SUBCOMMAND_VALUES,
   type GraphSubcommand,
 } from "../cli-contracts/enum-contracts.js";
+import {
+  assertProjectionModeChoice,
+  type OutputProjectionDeclaration,
+} from "../output-projection.js";
 
 export { GRAPH_SUBCOMMAND_VALUES, type GraphSubcommand };
 
@@ -132,6 +136,8 @@ export interface GraphCommandOptions {
   clear?: boolean;
   /** Return counts-first envelopes without row collections. */
   summary?: boolean;
+  /** Explicitly restore the complete row projection after a summary read. */
+  full?: boolean;
 }
 
 /** Cost metadata attached to every graph query projection. */
@@ -559,6 +565,32 @@ export type GraphResult =
   | GraphArticulationResult
   | GraphPlanResult
   | GraphIndexResult;
+
+/** Graph result with an explicit complete-or-summary row declaration. */
+export type ProjectedGraphResult = GraphResult & {
+  /** Self-describing row projection used to derive a bounded omission receipt. */
+  projection: OutputProjectionDeclaration;
+};
+
+/** Attach a complete or bounded row declaration to one graph result. */
+function attachGraphProjection(
+  result: GraphResult,
+  summary: boolean,
+  rowGroup?: string,
+): ProjectedGraphResult {
+  return {
+    ...result,
+    projection: {
+      mode: summary ? "summary" : "full",
+      declared_field_groups:
+        rowGroup === undefined
+          ? []
+          : [{ name: rowGroup, restore_with: "--full" }],
+      included_field_groups:
+        rowGroup === undefined || summary ? [] : [rowGroup],
+    },
+  };
+}
 
 /** Fully parsed graph invocation shared by the subcommand executors. */
 interface GraphInvocation {
@@ -1302,8 +1334,13 @@ export async function runGraph(
   target: string | undefined,
   options: GraphCommandOptions,
   global: GlobalOptions,
-): Promise<GraphResult> {
+): Promise<ProjectedGraphResult> {
   const subcommand = parseGraphSubcommand(subcommandRaw, id, target);
+  assertProjectionModeChoice(
+    options.summary === true,
+    options.full === true,
+    "--summary",
+  );
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(
@@ -1354,13 +1391,16 @@ export async function runGraph(
     summary: options.summary === true,
   };
   if (subcommand === "index") {
-    return runGraphIndex(
-      pmRoot,
-      lookup.fingerprint,
-      invocation,
-      items.length,
-      isTerminal,
-      options,
+    return attachGraphProjection(
+      await runGraphIndex(
+        pmRoot,
+        lookup.fingerprint,
+        invocation,
+        items.length,
+        isTerminal,
+        options,
+      ),
+      false,
     );
   }
   const root = ROOTED_SUBCOMMANDS.has(subcommand)
@@ -1418,5 +1458,5 @@ export async function runGraph(
     durable:
       durableValue !== undefined ? "hit" : persistEnabled ? "miss" : "off",
   };
-  return value;
+  return attachGraphProjection(value, invocation.summary, "result_rows");
 }

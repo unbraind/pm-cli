@@ -1,0 +1,58 @@
+id: pm-r8u2g6
+title: "GH-815: optional missing merge drivers must be advisory in default health verdicts"
+description: Default health latches ok=false when field-aware merge drivers were never installed even though the tracker has no material integrity defect. Missing optional clone-local tooling must be distinguished from installed-but-drifted configuration and from authoritative-data failures.
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:health","area:merge","area:sdk",context-integrity
+created_at: "2026-07-29T21:43:53.986Z"
+updated_at: "2026-07-29T22:59:45.322Z"
+closed_at: "2026-07-29T22:20:04.449Z"
+completed_at: "2026-07-29T22:20:04.449Z"
+author: "harness:codex"
+estimated_minutes: 150
+acceptance_criteria: Default SDK and CLI health report missing never-installed merge drivers as an advisory without flipping ok false; installed but drifted or incomplete merge-driver configuration remains actionable and blocking according to the existing contract; strict callers can explicitly require merge drivers through a documented SDK and CLI option; structured diagnostics retain exact missing keys remediation and stable status values; focused fresh-clone integration tests and installed-consumer acceptance prove both default and strict modes
+goal: project management = context management
+objective: Make the SDK health verdict encode material project truth instead of optional workstation setup
+value: Projects can use health.ok as a portable CI context-integrity gate without clone-local false failures
+impact: Separates advisory concurrency setup from blocking corruption while retaining strict opt-in enforcement
+why_now: GH-815 reproduces the published 2026.7.29 false-negative verdict in otherwise healthy trackers
+parent: pm-33cw
+risk: medium
+confidence: high
+resolution: Separated never-installed optional merge drivers from partial or drifted configuration and added explicit strict enforcement.
+expected_result: Portable default health remains healthy for optional missing drivers while strict callers and drift retain blocking verdicts.
+actual_result: CLI SDK MCP and completion contracts expose strict policy; default and strict packed-consumer verdicts pass.
+affected_version: 2026.7.29
+component: sdk/governance/health
+regression: true
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0k4o8t,related,"2026-07-29T21:43:53.986Z","harness:codex","cli:create:dep",detected
+  pm-83ov2i,related,"2026-07-29T21:43:53.986Z","harness:codex","cli:create:dep",detected
+  pm-w91mvg,discovered_from,"2026-07-29T21:43:53.986Z","harness:codex","cli:create:dep",detected
+  pm-xyuhh7,related,"2026-07-29T21:43:53.986Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-07-29T21:43:53.986Z","harness:codex","Duplicate check evidence 2026-07-29: searched all 2,197 items across every status for GH-815, merge_driver_configuration missing, optional merge drivers health, fresh-clone health, and warn-only ok semantics. Closed pm-w91mvg owns installed-path drift; pm-xyuhh7 and pm-0k4o8t own clone-optional directories; pm-83ov2i owns general warning semantics. None owns never-installed optional merge drivers plus a strict opt-in gate. GitHub: https://github.com/unbraind/pm-cli/issues/815"
+  "2026-07-29T22:19:20.480Z","harness:codex","Implementation evidence: health now treats a completely never-installed clone-local merge-driver set as advisory by default, exposes --require-merge-drivers and SDK/MCP equivalents for strict workflows, and keeps partial or drifted installation blocking. Focused tests pass 2/2 and full coverage passes 6540/6540 at 100/100/100/100. Packed consumer proved default ok with merge_driver_configuration_missing:5 and strict required false-to-true verdict change."
+  "2026-07-29T22:29:53.436Z","harness:codex","Delivery review: PR #818 https://github.com/unbraind/pm-cli/pull/818 carries advisory-by-default missing merge drivers, explicit strict enforcement, drift blocking, CLI/SDK/MCP/completion contracts, documentation, and real git acceptance coverage. GitHub issue #815 is configured to close on merge."
+learnings[1]{created_at,author,text}:
+  "2026-07-29T22:19:21.204Z","harness:codex",Health must distinguish an optional capability that was never installed from a capability whose partial or drifted configuration can silently corrupt future merges; explicit policy should promote the former without weakening the latter.
+files[9]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,Fail-closed health command token surface after strict merge-driver flag
+  src/cli/register-operations.ts,project,Health strict-policy CLI flag
+  src/sdk/cli-contracts/flag-contracts.ts,project,Machine-discoverable health policy flag
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Strict merge-driver MCP parameter contract
+  src/sdk/cli-contracts/tool-schema.ts,project,Health action strict-policy reachability
+  src/sdk/governance/health.ts,project,Advisory default and explicit strict merge-driver policy
+  tests/unit/commands/completion-command.spec.ts,project,Shell completion coverage for strict health policy
+  tests/unit/sdk/action-schema-parity.spec.ts,project,CLI SDK MCP parity for health policy
+  tests/unit/sdk/health-merge-driver-policy.spec.ts,project,Policy coverage for advisory and strict merge-driver health modes
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-merge-driver-policy.spec.ts,project,120
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms6moqze-drd3fm,test,passed,"2026-07-29T22:00:10.615Z","2026-07-29T22:00:18.841Z","2026-07-29T22:00:18.841Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated PM changelog entry for merge-driver health policy
+  docs/SDK_CONTEXT_TRUTH_CONTRACTS.md,project,Merge-driver health policy and remediation
+close_reason: Health now distinguishes never-installed optional merge drivers from drift and exposes explicit strict policy across CLI SDK MCP; packed consumer and 100 percent coverage pass.
+body: ""

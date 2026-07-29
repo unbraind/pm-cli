@@ -438,6 +438,7 @@ export function graphOptionsFromFlat(
     rebuild: options.rebuild === true,
     clear: options.clear === true,
     summary: options.summary === true,
+    ...(options.full === true ? { full: true } : {}),
   };
 }
 

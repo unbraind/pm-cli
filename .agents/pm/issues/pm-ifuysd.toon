@@ -1,0 +1,36 @@
+id: pm-ifuysd
+title: Workspace snapshot heartbeat races atomic root activation and loses its writer lock
+description: "A long restore renews the workspace writer lock under the tracker root while atomic activation renames and replaces that same root. A heartbeat write can race the swap, lose its temporary path with ENOENT, and fail an otherwise safe restore. Quiesce and verify the heartbeat before copying the current lease into staging and activating the staged root, while preserving TTL exclusion against competing writers."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-07-29T22:50:13.344Z"
+updated_at: "2026-07-29T22:59:46.119Z"
+closed_at: "2026-07-29T22:56:38.697Z"
+completed_at: "2026-07-29T22:56:38.697Z"
+author: "harness:codex"
+acceptance_criteria: A restore longer than the lock TTL rejects a competing writer; heartbeat renewal cannot race the root swap; the staged root carries the verified current lease through activation; lock loss and malformed ownership still fail closed; focused snapshot tests and full coverage pass.
+parent: pm-o2kc
+risk: high
+confidence: high
+resolution: Quiesce heartbeat across the rename gap and resume it on the activated root before backup cleanup.
+expected_result: Long snapshot activation retains exclusive writer ownership without racing lock-file atomic writes.
+actual_result: "The verified current lease is copied into staging, activation occurs with no concurrent renewal against the renamed path, and renewal resumes on the stable active root."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dkrmzv,discovered_from,"2026-07-29T22:50:13.344Z","harness:codex","cli:create:dep",detected
+  pm-p258tx,related,"2026-07-29T22:50:13.344Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-29T22:50:13.344Z","harness:codex","Duplicate-check evidence: searched all statuses for workspace snapshot writer lease heartbeat lock ENOENT temporary path and restore lost writer lock. The closed pm-dkrmzv owns the shipped snapshot primitive but no item owns this activation race. Reproduced twice on 2026-07-30, once in full coverage and once in the focused 10-test snapshot suite."
+  "2026-07-29T22:56:31.682Z","harness:codex","Implementation evidence: quiesced and verified the heartbeat before copying the current lease into staging, restarted renewal immediately after the staged root became active, and kept it live while the old backup is removed. The previously deterministic focused failure now passes 10/10; the combined changed-area suite passes 64/64; full coverage passes 6,540/6,540 at exact 100/100/100/100. Delivery is included in PR #818."
+files[2]{path,scope,note}:
+  src/sdk/workspace-snapshot.ts,project,Quiesce heartbeat before staged lock copy and atomic root activation
+  tests/unit/sdk/workspace-snapshot.spec.ts,project,Long-restore lease renewal and lock-loss regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms6op0xu-nczs7i,test,passed,"2026-07-29T22:56:14.086Z","2026-07-29T22:56:30.978Z","2026-07-29T22:56:30.978Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated release note for snapshot activation lease-race fix
+close_reason: "Fixed the workspace snapshot activation heartbeat race; focused, combined, and exact full-coverage gates pass."
+body: ""

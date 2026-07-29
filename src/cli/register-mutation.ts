@@ -2110,6 +2110,7 @@ async function runDepsAction(
       maxDepth: readOptionString(options, "maxDepth"),
       collapse: options.collapse as string,
       summary: options.summary === true,
+      full: options.full === true,
       nodeLimit: readOptionString(options, "nodeLimit"),
       edgeLimit: readOptionString(options, "edgeLimit"),
       tokenBudget: readOptionString(options, "tokenBudget"),
@@ -3530,6 +3531,7 @@ export function registerMutationCommands(
     )
     .option("--collapse <value>", "Collapse mode (none or repeated)", "none")
     .option("--summary", "Return counts only without full tree/graph payload")
+    .option("--full", "Return the complete dependency row projection")
     .option("--node-limit <value>", "Maximum nodes in context output")
     .option(
       "--edge-limit <value>",

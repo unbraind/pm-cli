@@ -6,17 +6,20 @@ status: open
 priority: 3
 tags[2]: "area:toolchain",upstream-gated
 created_at: "2026-07-17T04:42:09.880Z"
-updated_at: "2026-07-26T05:56:04.084Z"
+updated_at: "2026-07-29T22:44:15.388Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: "typescript 7.x is the sole compiler in devDependencies; strict ESLint gate runs (typescript-eslint TS7-compatible or successor adopted); static-quality-gate.mts produces identical violation baselines under the new parser (docstrings, complexity, boundary ratchet all byte-identical or intentionally re-baselined with evidence); dependabot major-version ignore for typescript lifted; CI fully green on all legs"
 parent: pm-92if
 risk: medium
 confidence: medium
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-9rxu,related,"2026-07-17T04:42:09.880Z",null,null
-  pm-9x6e,related,"2026-07-17T04:42:09.880Z",null,null
-  pm-onpb,related,"2026-07-17T04:42:09.880Z",null,null
-  pm-tll8,related,"2026-07-17T04:42:09.880Z",null,null
-  pm-92if,implements,"2026-07-26T05:56:03.771Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-9rxu,related,"2026-07-17T04:42:09.880Z"
+  pm-9x6e,related,"2026-07-17T04:42:09.880Z"
+  pm-onpb,related,"2026-07-17T04:42:09.880Z"
+  pm-tll8,related,"2026-07-17T04:42:09.880Z"
+  pm-92if,implements,"2026-07-26T05:56:03.771Z"
+comments[2]{created_at,author,text}:
+  "2026-07-29T22:24:52.434Z","harness:codex","Live dependency refresh 2026-07-30: pnpm outdated still reports TypeScript 7.0.2 while the repository remains on 6.0.3. The canonical typescript-eslint/compiler-API compatibility blockers recorded here remain the current disposition; pnpm audit reports no known vulnerabilities."
+  "2026-07-29T22:44:15.387Z","harness:codex","Date convention clarification: the preceding dependency refresh was executed on 2026-07-30 in the configured Europe/Vienna project timezone; its append-only history event is correctly timestamped 2026-07-29T22:24:52Z in UTC."
 body: ""

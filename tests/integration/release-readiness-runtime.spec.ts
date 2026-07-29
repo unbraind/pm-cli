@@ -1751,6 +1751,8 @@ describe("release readiness runtime coverage", () => {
         "edge_count",
         "missing_count",
         "tree",
+        "projection",
+        "omission_receipt",
       ]);
 
       const depsGraphResult = context.runCli(
@@ -1765,6 +1767,8 @@ describe("release readiness runtime coverage", () => {
         "edge_count",
         "missing_count",
         "graph",
+        "projection",
+        "omission_receipt",
       ]);
 
       const depsSummaryResult = context.runCli(
@@ -1787,6 +1791,8 @@ describe("release readiness runtime coverage", () => {
         "node_count",
         "edge_count",
         "missing_count",
+        "projection",
+        "omission_receipt",
       ]);
 
       const testResult = context.runCli(["test", createdId, "--json"], {

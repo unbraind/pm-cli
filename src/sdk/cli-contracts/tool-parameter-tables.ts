@@ -335,6 +335,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkFiles: { type: "boolean" },
   checkStorageIntegrity: { type: "boolean" },
   strictDirectories: { type: "boolean" },
+  requireMergeDrivers: { type: "boolean" },
   checkOnly: { type: "boolean" },
   checkTelemetry: { type: "boolean" },
   noRefresh: { type: "boolean" },
@@ -1315,6 +1316,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   strictDirectories: {
     description:
       "Treat optional item-type directories as required health failures.",
+  },
+  requireMergeDrivers: {
+    description:
+      "Treat never-installed clone-local semantic merge drivers as required health failures.",
   },
   checkOnly: {
     description:

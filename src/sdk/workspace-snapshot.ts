@@ -395,6 +395,26 @@ export async function publishWorkspaceSnapshotObject(
   }
 }
 
+/** Activate a staged tracker root, run a post-activation hook, and restore the backup if activation fails. */
+async function swapWorkspaceSnapshotRootWithActivation(
+  staging: string,
+  pmRoot: string,
+  backup: string,
+  operations: WorkspaceSnapshotAtomicOperations,
+  afterActivation?: () => Promise<void>,
+): Promise<void> {
+  await operations.renameEntry(pmRoot, backup);
+  try {
+    await operations.renameEntry(staging, pmRoot);
+    await afterActivation?.();
+  } catch (error: unknown) {
+    await operations.renameEntry(backup, pmRoot);
+    await operations.removeEntry(staging);
+    throw error;
+  }
+  await operations.removeEntry(backup);
+}
+
 /** Activate a staged tracker root and restore the backup if activation fails. */
 export async function swapWorkspaceSnapshotRoot(
   staging: string,
@@ -402,15 +422,12 @@ export async function swapWorkspaceSnapshotRoot(
   backup: string,
   operations: WorkspaceSnapshotAtomicOperations = DEFAULT_ATOMIC_OPERATIONS,
 ): Promise<void> {
-  await operations.renameEntry(pmRoot, backup);
-  try {
-    await operations.renameEntry(staging, pmRoot);
-  } catch (error: unknown) {
-    await operations.renameEntry(backup, pmRoot);
-    await operations.removeEntry(staging);
-    throw error;
-  }
-  await operations.removeEntry(backup);
+  await swapWorkspaceSnapshotRootWithActivation(
+    staging,
+    pmRoot,
+    backup,
+    operations,
+  );
 }
 
 async function resolveSnapshotFingerprint(
@@ -725,6 +742,8 @@ export async function restoreWorkspaceSnapshotWithRecovery(
     const auditHistoryPath = path
       .relative(staging, audit.historyPath)
       .replaceAll("\\", "/");
+    await heartbeat.stop();
+    heartbeatStopped = true;
     const stagedWorkspaceLock = getLockPath(staging, WORKSPACE_WRITER_LOCK_ID);
     await mkdir(path.dirname(stagedWorkspaceLock), { recursive: true });
     await writeFile(
@@ -732,9 +751,17 @@ export async function restoreWorkspaceSnapshotWithRecovery(
       await readFile(getLockPath(pmRoot, WORKSPACE_WRITER_LOCK_ID)),
       { flag: "wx" },
     );
-    heartbeat.assertHealthy();
     swapStarted = true;
-    await swapWorkspaceSnapshotRoot(staging, pmRoot, backup);
+    await swapWorkspaceSnapshotRootWithActivation(
+      staging,
+      pmRoot,
+      backup,
+      DEFAULT_ATOMIC_OPERATIONS,
+      async () => {
+        heartbeat.start();
+        heartbeatStopped = false;
+      },
+    );
     await heartbeat.stop();
     heartbeatStopped = true;
     return {

@@ -27,6 +27,11 @@ import type {
 } from "../types/index.js";
 import { estimatePmOutputTokens } from "./cli-contracts/agent-output-contracts.js";
 import {
+  assertProjectionModeChoice,
+  attachOutputOmissionReceipt,
+  type OutputProjectionDeclaration,
+} from "./output-projection.js";
+import {
   assembleWorkspaceRelationshipGraph,
   collectDanglingDependencyReferences,
   resolveWorkspaceRelationshipKindRegistry,
@@ -74,6 +79,8 @@ export interface DepsCommandOptions {
   collapse?: string;
   /** Value that configures or reports summary for this contract. */
   summary?: boolean;
+  /** Explicitly restore the complete row projection after a summary read. */
+  full?: boolean;
   /** Maximum graph-context nodes returned. */
   nodeLimit?: string | number;
   /** Maximum graph-context edges and enumerated missing-reference rows returned. */
@@ -215,7 +222,11 @@ export interface DepsResult {
   graph?: DepsGraphResult;
   /** Explainable bounded graph-context projection. */
   context?: RelationshipContextResult;
+  /** Self-describing row projection used to derive a bounded omission receipt. */
+  projection: OutputProjectionDeclaration;
 }
+
+type UnprojectedDepsResult = Omit<DepsResult, "projection">;
 
 function parseFormat(raw: string | undefined): DepsFormat {
   const candidate = raw?.trim().toLowerCase() ?? "tree";
@@ -795,7 +806,7 @@ function createContextDepsResult(params: {
   missingReferences: DanglingDependencyReference[];
   referenceLimit: number;
   summaryOnly: boolean;
-}): DepsResult {
+}): UnprojectedDepsResult {
   const {
     canonicalId,
     context,
@@ -860,8 +871,12 @@ function settleRenderedTokenCount(
   let embeddedTokens: number | undefined;
   for (;;) {
     const measuredTokens = estimatePmOutputTokens(
-      new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
-        .byteLength,
+      new TextEncoder().encode(
+        formatBuiltInOutput(
+          attachOutputOmissionReceipt("deps", result),
+          outputFormat,
+        ),
+      ).byteLength,
     );
     if (measuredTokens === embeddedTokens) return measuredTokens;
     assign(measuredTokens);
@@ -887,8 +902,8 @@ function buildContextAtRenderedBudget(params: {
   contextOptions: RelationshipContextOptions;
   internalTokenBudget: number | undefined;
   rootEvidence: readonly string[];
-  smallestResult: DepsResult | undefined;
-}): RelationshipContextResult | DepsResult {
+  smallestResult: UnprojectedDepsResult | undefined;
+}): RelationshipContextResult | UnprojectedDepsResult {
   try {
     return buildContextFromAssembly(
       params.assembly,
@@ -921,7 +936,7 @@ function enforceContextRenderedTokenBudget(params: {
   outputFormat: "json" | "toon";
   missingCount: number;
   missingReferences: DanglingDependencyReference[];
-}): DepsResult {
+}): UnprojectedDepsResult {
   const {
     assembly,
     canonicalId,
@@ -936,7 +951,7 @@ function enforceContextRenderedTokenBudget(params: {
   let emittedReferenceLimit = referenceLimit;
   let internalTokenBudget = contextOptions.tokenBudget;
   let requestedTokenBudget: number | undefined;
-  let smallestResult: DepsResult | undefined;
+  let smallestResult: UnprojectedDepsResult | undefined;
   for (;;) {
     const contextOrFloor = buildContextAtRenderedBudget({
       assembly,
@@ -962,7 +977,7 @@ function enforceContextRenderedTokenBudget(params: {
     if (summaryOnly) return result;
     context.meta.tokenBudget = requestedTokenBudget;
     context.meta.usedTokens = settleRenderedTokenCount(
-      result,
+      attachDepsProjection(result, false),
       outputFormat,
       (tokens) => {
         context.meta.usedTokens = tokens;
@@ -991,7 +1006,7 @@ function buildContextDepsResult(params: {
   rootEvidence: readonly string[];
   summaryOnly: boolean;
   outputFormat: "json" | "toon";
-}): DepsResult {
+}): UnprojectedDepsResult {
   const {
     assembly,
     canonicalId,
@@ -1074,7 +1089,7 @@ function buildTreeOrGraphDepsResult(
   maxDepth: number | undefined,
   collapse: DepsCollapseMode,
   outputFormat: "json" | "toon",
-): DepsResult {
+): UnprojectedDepsResult {
   const effectiveMaxDepth = maxDepth ?? DEFAULT_DEPS_TREE_MAX_DEPTH;
   const nodeLimit =
     parsePositiveInteger(options.nodeLimit, "node-limit") ??
@@ -1104,7 +1119,7 @@ function buildTreeOrGraphDepsResult(
     budget,
   );
   const totals = countDependencyGraph(id, index, undefined);
-  let result: DepsResult;
+  let result: UnprojectedDepsResult;
   for (;;) {
     const graph = toGraph(tree);
     const truncation =
@@ -1143,12 +1158,23 @@ function buildTreeOrGraphDepsResult(
     const settledTokens =
       result.truncation === undefined
         ? estimatePmOutputTokens(
-            new TextEncoder().encode(formatBuiltInOutput(result, outputFormat))
-              .byteLength,
+            new TextEncoder().encode(
+              formatBuiltInOutput(
+                attachOutputOmissionReceipt(
+                  "deps",
+                  attachDepsProjection(result, false),
+                ),
+                outputFormat,
+              ),
+            ).byteLength,
           )
-        : settleRenderedTokenCount(result, outputFormat, (tokens) => {
-            result.truncation!.estimated_tokens = tokens;
-          });
+        : settleRenderedTokenCount(
+            attachDepsProjection(result, false),
+            outputFormat,
+            (tokens) => {
+              result.truncation!.estimated_tokens = tokens;
+            },
+          );
     if (settledTokens <= tokenBudget) {
       return result;
     }
@@ -1158,6 +1184,29 @@ function buildTreeOrGraphDepsResult(
     }
     budget.reasons.add("token_budget");
   }
+}
+
+function attachDepsProjection(
+  result: UnprojectedDepsResult,
+  summaryOnly: boolean,
+): DepsResult {
+  const group = {
+    name:
+      result.format === "tree"
+        ? "dependency_tree"
+        : result.format === "graph"
+          ? "dependency_graph"
+          : "relationship_context",
+    restore_with: "--full",
+  };
+  return {
+    ...result,
+    projection: {
+      mode: summaryOnly ? "summary" : "full",
+      declared_field_groups: [group],
+      included_field_groups: summaryOnly ? [] : [group.name],
+    },
+  };
 }
 
 /** Implements run deps for the public runtime surface of this module. */
@@ -1176,6 +1225,11 @@ export async function runDeps(
   const format = parseFormat(options.format);
   const maxDepth = parseMaxDepth(options.maxDepth);
   const collapse = parseCollapse(options.collapse);
+  assertProjectionModeChoice(
+    options.summary === true,
+    options.full === true,
+    "--summary",
+  );
   const summaryOnly = options.summary === true;
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
@@ -1243,31 +1297,40 @@ export async function runDeps(
           relationshipRegistry,
         ),
     );
-    return buildContextDepsResult({
-      assembly: lookup.assembly,
-      canonicalId,
-      options,
-      rootEvidence,
+    return attachDepsProjection(
+      buildContextDepsResult({
+        assembly: lookup.assembly,
+        canonicalId,
+        options,
+        rootEvidence,
+        summaryOnly,
+        outputFormat: global.json === true ? "json" : "toon",
+      }),
       summaryOnly,
-      outputFormat: global.json === true ? "json" : "toon",
-    });
+    );
   }
 
   if (summaryOnly) {
-    return {
-      id,
-      format,
-      ...countDependencyGraph(id, index, maxDepth),
-    };
+    return attachDepsProjection(
+      {
+        id,
+        format,
+        ...countDependencyGraph(id, index, maxDepth),
+      },
+      true,
+    );
   }
 
-  return buildTreeOrGraphDepsResult(
-    id,
-    format,
-    options,
-    index,
-    maxDepth,
-    collapse,
-    global.json === true ? "json" : "toon",
+  return attachDepsProjection(
+    buildTreeOrGraphDepsResult(
+      id,
+      format,
+      options,
+      index,
+      maxDepth,
+      collapse,
+      global.json === true ? "json" : "toon",
+    ),
+    false,
   );
 }

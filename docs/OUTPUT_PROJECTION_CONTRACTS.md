@@ -47,6 +47,41 @@ SDK authors can reuse `createOutputOmissionReceipt`,
 `@unbrained/pm-cli/sdk`. The CLI uses the same declarations, so package
 integrations and built-in output cannot drift independently.
 
+## Self-Describing SDK Projections
+
+Built-ins and extensions can declare bounded shapes directly on their result:
+
+```ts
+const result = {
+  projection: {
+    mode: "summary",
+    declared_field_groups: [
+      { name: "evidence_rows", restore_with: "--full" },
+      { name: "risk_rows", restore_with: "--include risk" },
+    ],
+    included_field_groups: ["risk_rows"],
+  },
+};
+```
+
+`attachOutputOmissionReceipt` validates this declaration and derives the same
+constant-sized receipt used by built-in commands. Invalid or incomplete
+declarations are ignored rather than producing an untruthful restore
+instruction. Package authors therefore own the names and restoration controls
+for their domain without adding package-specific logic to the CLI renderer.
+
+The following bounded built-ins now use this shared declaration:
+
+| Command mode | Withheld group | Restore |
+|---|---|---|
+| `deps --summary` | selected dependency tree, graph, or relationship context | `--full` |
+| `graph --summary` | `result_rows` | `--full` |
+| `validate --counts` | `diagnostic_rows` | `--full` |
+
+Passing `--full` with the corresponding compact flag is a usage error. An
+explicit full request and the default full request produce the same payload
+shape; the flag exists as a machine-actionable restore instruction.
+
 For `get`, each independently selectable group uses its composable field
 selector as the restore instruction: `--fields children`,
 `--fields claim_state`, or `--fields linked`. Combine them in one selector
@@ -78,3 +113,7 @@ This is an intentional machine-output correction. Consumers that probed an
 inactive collection and received `[]` must branch on `projection.mode` or read
 the active `projection.row_key`. Consumers that already used the populated key
 continue to receive the same rows.
+
+Dependency token accounting includes the projection declaration and derived
+receipt. Reported `usedTokens` and truncation estimates therefore describe the
+final serialized result, not a pre-receipt intermediate.

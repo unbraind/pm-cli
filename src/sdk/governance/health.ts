@@ -150,6 +150,8 @@ export interface HealthResult {
 export interface RunHealthOptions {
   /** Value that configures or reports strict directories for this contract. */
   strictDirectories?: boolean;
+  /** Treat absent clone-local merge drivers as a required health failure instead of an advisory. */
+  requireMergeDrivers?: boolean;
   /** Value that configures or reports check only for this contract. */
   checkOnly?: boolean;
   /** Value that configures or reports check telemetry for this contract. */
@@ -246,11 +248,16 @@ const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
 ] as const;
 
 /** Advisory warnings are surfaced for visibility but never flip overall health to not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable telemetry endpoint or corrupt local telemetry state is not a project-health failure and must not block agents that gate on `pm health` `ok`. History over-compaction-threshold warnings are likewise advisory maintenance hints — a deep stream is healthy, just a candidate for `pm history-compact`. */
-function isAdvisoryHealthWarning(warning: string): boolean {
+function isAdvisoryHealthWarning(
+  warning: string,
+  requireMergeDrivers = false,
+): boolean {
   return (
     warning.startsWith("telemetry_") ||
     warning.startsWith("history_stream_over_compact_threshold:") ||
-    warning.startsWith("stale_in_progress_items:")
+    warning.startsWith("stale_in_progress_items:") ||
+    (!requireMergeDrivers &&
+      warning.startsWith("merge_driver_configuration_missing:"))
   );
 }
 
@@ -598,6 +605,7 @@ async function buildIntegrityCheck(
   pmRoot: string,
   typeToFolder: Record<string, string>,
   schema: PmSettings["schema"],
+  requireMergeDrivers: boolean,
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const itemScan = await scanItemIntegrity(pmRoot, typeToFolder, schema);
   const historyScan = await scanHistoryIntegrity(pmRoot);
@@ -610,6 +618,10 @@ async function buildIntegrityCheck(
       : await auditMergeDriverConfiguration(gitWorkspaceRoot);
   const pendingMergeReceipts =
     gitWorkspaceRoot === null ? [] : await listMergeReceipts(gitWorkspaceRoot);
+  const mergeDriverInstallationMissing =
+    mergeDriverAudit?.status === "missing" &&
+    mergeDriverAudit.missing_keys.length === 5 &&
+    mergeDriverAudit.drifted_keys.length === 0;
 
   const warnings = [
     ...itemScan.unreadable.map((entry) => `integrity_item_unreadable:${entry}`),
@@ -643,7 +655,7 @@ async function buildIntegrityCheck(
       : []),
     ...(mergeDriverAudit !== null && mergeDriverAudit.status !== "ok"
       ? [
-          `merge_driver_configuration:${mergeDriverAudit.missing_keys.length + mergeDriverAudit.drifted_keys.length}`,
+          `merge_driver_configuration_${mergeDriverInstallationMissing ? "missing" : "drift"}:${mergeDriverAudit.missing_keys.length + mergeDriverAudit.drifted_keys.length}`,
         ]
       : []),
     ...(pendingMergeReceipts.length > 0
@@ -692,7 +704,13 @@ async function buildIntegrityCheck(
           tracked_path_count: trackedRuntimeCache.tracked_path_count,
           remediation_command: trackedRuntimeCache.remediation_command,
         },
-        merge_driver_configuration: mergeDriverAudit,
+        merge_driver_configuration:
+          mergeDriverAudit === null
+            ? null
+            : {
+                ...mergeDriverAudit,
+                required: requireMergeDrivers,
+              },
         pending_merge_decision_items: [
           ...new Set(pendingMergeReceipts.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),
@@ -2825,6 +2843,7 @@ export async function runHealth(
         pmRoot,
         typeRegistry.type_to_folder,
         settings.schema,
+        options.requireMergeDrivers === true,
       );
   const historyDriftCheck = skipPolicy.skipDrift
     ? buildSkippedHealthCheck("history_drift")
@@ -2902,7 +2921,11 @@ export async function runHealth(
   // it must never flip overall project health to not-ok. Such warnings are still
   // surfaced in `warnings` and the telemetry check's own `warn` status.
   const blockingWarnings = normalizedWarnings.filter(
-    (warning) => !isAdvisoryHealthWarning(warning),
+    (warning) =>
+      !isAdvisoryHealthWarning(
+        warning,
+        options.requireMergeDrivers === true,
+      ),
   );
   const result: HealthResult = {
     ok: blockingWarnings.length === 0,
