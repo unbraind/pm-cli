@@ -25,9 +25,7 @@
       "reason": "Additive structured context, tombstone result, and context-integrity SDK contracts for the 2026.7.25 release"
     },
     {
-      "changes": [
-        "signature ./sdk/governance:_testOnlySimilarity"
-      ],
+      "changes": ["signature ./sdk/governance:_testOnlySimilarity"],
       "package_version": "2026.7.25",
       "reason": "Additive deterministic duplicate-cluster verification seams for the 2026.7.25 release"
     },
@@ -298,13 +296,6 @@
         "signature ./sdk:CorpusShape",
         "signature ./sdk:CorpusShapeProfile",
         "signature ./sdk:defineCorpusShape"
-      ],
-      "package_version": "2026.7.29",
-      "reason": "Correct unpublished PR corpus-shape draft before merge"
-    },
-    {
-      "changes": [
-        "signature ./sdk:CorpusShape"
       ],
       "package_version": "2026.7.29",
       "reason": "Correct unpublished PR corpus-shape draft before merge"

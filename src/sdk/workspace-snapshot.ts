@@ -16,6 +16,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
+import { writeFileAtomic } from "../core/fs/fs-utils.js";
 import { appendWorkspaceAuditEvent } from "../core/history/workspace-history.js";
 import { acquireLock } from "../core/lock/lock.js";
 import { getLockPath } from "../core/store/paths.js";
@@ -47,6 +48,87 @@ const DEFAULT_ATOMIC_OPERATIONS: WorkspaceSnapshotAtomicOperations = {
   removeEntry: async (target) => {
     await rm(target, { recursive: true, force: true });
   },
+};
+
+/** Keeps one workspace writer lease current while a long restore is active. */
+class WorkspaceLockHeartbeat {
+  private readonly lockPath: string;
+  private readonly owner: string;
+  private readonly intervalMs: number;
+  private timer: ReturnType<typeof setInterval> | undefined;
+  private refresh: Promise<void> | undefined;
+  private failure: unknown;
+
+  /** Capture the exact lock identity and derive a sub-TTL renewal interval. */
+  constructor(lockPath: string, owner: string, ttlSeconds: number) {
+    this.lockPath = lockPath;
+    this.owner = owner;
+    this.intervalMs = Math.max(10, Math.floor((ttlSeconds * 1_000) / 3));
+  }
+
+  /** Begin renewing the lock without keeping the process alive on its own. */
+  start(): void {
+    this.timer = setInterval(() => {
+      if (this.refresh !== undefined) return;
+      this.refresh = this.renew()
+        .catch((error: unknown) => {
+          this.failure = error;
+        })
+        .finally(() => {
+          this.refresh = undefined;
+        });
+    }, this.intervalMs);
+    this.timer.unref();
+  }
+
+  /** Fail the restore before activation when lease ownership was lost. */
+  assertHealthy(): void {
+    if (this.failure !== undefined) {
+      throw new Error("Workspace snapshot restore lost its writer lock", {
+        cause: this.failure,
+      });
+    }
+  }
+
+  /** Stop future renewals and await the last in-flight atomic write. */
+  async stop(): Promise<void> {
+    if (this.timer !== undefined) clearInterval(this.timer);
+    await this.refresh;
+    this.assertHealthy();
+  }
+
+  /** Atomically refresh only the lock still owned by this process and actor. */
+  private async renew(): Promise<void> {
+    const parsed = JSON.parse(await readFile(this.lockPath, "utf8")) as unknown;
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      throw new Error("Workspace writer lock has invalid structure");
+    }
+    const lock = parsed as Record<string, unknown>;
+    if (
+      lock.id !== WORKSPACE_WRITER_LOCK_ID ||
+      lock.owner !== this.owner ||
+      lock.pid !== process.pid
+    ) {
+      throw new Error("Workspace writer lock ownership changed");
+    }
+    await writeFileAtomic(
+      this.lockPath,
+      `${JSON.stringify(
+        { ...lock, created_at: new Date().toISOString() },
+        null,
+        2,
+      )}\n`,
+    );
+  }
+}
+
+/** Internal heartbeat constructor exposed only for deterministic lock tests. */
+export const _testOnlyWorkspaceSnapshot = {
+  WorkspaceLockHeartbeat,
 };
 
 /** Immutable manifest stored with every content-addressed snapshot object. */
@@ -227,8 +309,7 @@ async function snapshotContents(
     const batch = files.slice(offset, offset + 32);
     const entries = await Promise.all(
       batch.map(
-        async (file) =>
-          [file, await readFile(path.join(root, file))] as const,
+        async (file) => [file, await readFile(path.join(root, file))] as const,
       ),
     );
     for (const [file, content] of entries) contents.set(file, content);
@@ -368,7 +449,9 @@ export async function createWorkspaceSnapshot(
     const objectStat = await lstat(objectRoot);
     deduplicated = objectStat.isDirectory();
   } catch (error: unknown) {
-    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) {
+    if (
+      !(error instanceof Error && "code" in error && error.code === "ENOENT")
+    ) {
       throw error;
     }
   }
@@ -406,7 +489,11 @@ export async function createWorkspaceSnapshot(
       refsRoot,
       `.ref-${process.pid}-${crypto.randomUUID()}`,
     );
-    await writeFile(temporaryRef, `${JSON.stringify(reference, null, 2)}\n`, "utf8");
+    await writeFile(
+      temporaryRef,
+      `${JSON.stringify(reference, null, 2)}\n`,
+      "utf8",
+    );
     await rename(temporaryRef, path.join(refsRoot, `${options.name}.json`));
   }
   return {
@@ -436,16 +523,18 @@ export async function inspectWorkspaceSnapshot(
 }
 
 /** List immutable objects and human-readable named references. */
-export async function listWorkspaceSnapshots(
-  pmRoot: string,
-): Promise<{
+export async function listWorkspaceSnapshots(pmRoot: string): Promise<{
   objects: WorkspaceSnapshotManifest[];
   references: WorkspaceSnapshotReference[];
 }> {
   const store = snapshotStore(pmRoot);
   const objectNames = await readdir(path.join(store, "objects")).catch(
     (error: unknown) => {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
         return [];
       }
       throw error;
@@ -453,7 +542,11 @@ export async function listWorkspaceSnapshots(
   );
   const referenceNames = await readdir(path.join(store, "refs")).catch(
     (error: unknown) => {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
         return [];
       }
       throw error;
@@ -470,10 +563,11 @@ export async function listWorkspaceSnapshots(
       referenceNames
         .filter((name) => name.endsWith(".json"))
         .sort()
-        .map(async (name) =>
-          JSON.parse(
-            await readFile(path.join(store, "refs", name), "utf8"),
-          ) as WorkspaceSnapshotReference,
+        .map(
+          async (name) =>
+            JSON.parse(
+              await readFile(path.join(store, "refs", name), "utf8"),
+            ) as WorkspaceSnapshotReference,
         ),
     ),
   };
@@ -537,9 +631,8 @@ export async function planWorkspaceSnapshotRestore(
     removed_file_count: [...currentFiles].filter(
       (file) => !targetFiles.has(file),
     ).length,
-    added_file_count: [...targetFiles].filter(
-      (file) => !currentFiles.has(file),
-    ).length,
+    added_file_count: [...targetFiles].filter((file) => !currentFiles.has(file))
+      .length,
     removed_item_count: [...currentFiles].filter(
       (file) => file.endsWith(".toon") && !targetFiles.has(file),
     ).length,
@@ -583,6 +676,15 @@ export async function restoreWorkspaceSnapshotWithRecovery(
     false,
     lockWaitMs,
   );
+  const heartbeat = new WorkspaceLockHeartbeat(
+    getLockPath(pmRoot, WORKSPACE_WRITER_LOCK_ID),
+    author,
+    lockTtlSeconds,
+  );
+  heartbeat.start();
+  let staging: string | undefined;
+  let swapStarted = false;
+  let heartbeatStopped = false;
   try {
     const plan = await planWorkspaceSnapshotRestore(pmRoot, target);
     const manifest = await inspectWorkspaceSnapshot(pmRoot, target);
@@ -592,7 +694,7 @@ export async function restoreWorkspaceSnapshotWithRecovery(
     const source = path.join(store, "objects", fingerprint, "files");
     const parent = path.dirname(pmRoot);
     const base = path.basename(pmRoot);
-    const staging = path.join(parent, `.${base}.restore-${crypto.randomUUID()}`);
+    staging = path.join(parent, `.${base}.restore-${crypto.randomUUID()}`);
     const backup = path.join(parent, `.${base}.backup-${crypto.randomUUID()}`);
     await mkdir(staging, { recursive: true });
     await cp(source, staging, { recursive: true, force: false });
@@ -623,17 +725,18 @@ export async function restoreWorkspaceSnapshotWithRecovery(
     const auditHistoryPath = path
       .relative(staging, audit.historyPath)
       .replaceAll("\\", "/");
-    const stagedWorkspaceLock = getLockPath(
-      staging,
-      WORKSPACE_WRITER_LOCK_ID,
-    );
+    const stagedWorkspaceLock = getLockPath(staging, WORKSPACE_WRITER_LOCK_ID);
     await mkdir(path.dirname(stagedWorkspaceLock), { recursive: true });
-    await cp(
-      getLockPath(pmRoot, WORKSPACE_WRITER_LOCK_ID),
+    await writeFile(
       stagedWorkspaceLock,
-      { force: false },
+      await readFile(getLockPath(pmRoot, WORKSPACE_WRITER_LOCK_ID)),
+      { flag: "wx" },
     );
+    heartbeat.assertHealthy();
+    swapStarted = true;
     await swapWorkspaceSnapshotRoot(staging, pmRoot, backup);
+    await heartbeat.stop();
+    heartbeatStopped = true;
     return {
       manifest,
       plan,
@@ -641,8 +744,19 @@ export async function restoreWorkspaceSnapshotWithRecovery(
       audit_history_path: auditHistoryPath,
       audit_operation: "workspace_snapshot_restore",
     };
+  } catch (error: unknown) {
+    if (staging !== undefined && !swapStarted) {
+      await Promise.allSettled([rm(staging, { recursive: true, force: true })]);
+    }
+    throw error;
   } finally {
-    await releaseWorkspaceLock();
+    try {
+      if (!heartbeatStopped) await heartbeat.stop();
+    } catch {
+      // A body failure already owns the outcome; lease cleanup must not mask it.
+    } finally {
+      await releaseWorkspaceLock();
+    }
   }
 }
 

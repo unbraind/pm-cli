@@ -2,6 +2,7 @@ import {
   access,
   mkdir,
   readFile,
+  readdir,
   symlink,
   writeFile,
 } from "node:fs/promises";
@@ -19,9 +20,12 @@ import {
   restoreWorkspaceSnapshotWithRecovery,
 } from "../../../src/sdk/index.js";
 import {
+  _testOnlyWorkspaceSnapshot,
   publishWorkspaceSnapshotObject,
   swapWorkspaceSnapshotRoot,
 } from "../../../src/sdk/workspace-snapshot.js";
+import { acquireLock } from "../../../src/core/lock/lock.js";
+import { getLockPath } from "../../../src/core/store/paths.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("workspace snapshots", () => {
@@ -44,38 +48,42 @@ describe("workspace snapshots", () => {
   it.runIf(process.platform !== "win32")(
     "rejects non-file filesystem entries in authoritative state",
     async () => {
-    await withTempPmPath(async ({ pmPath }) => {
-      const socketPath = path.join(pmPath, "local.socket");
-      const server = createServer();
-      try {
-        await new Promise<void>((resolve, reject) => {
-          server.once("error", reject);
-          server.listen(socketPath, resolve);
-        });
-        await expect(createWorkspaceSnapshot(pmPath)).rejects.toThrow(
-          "unsupported filesystem entries",
-        );
-      } finally {
-        if (server.listening) {
+      await withTempPmPath(async ({ pmPath }) => {
+        const socketPath = path.join(pmPath, "local.socket");
+        const server = createServer();
+        try {
           await new Promise<void>((resolve, reject) => {
-            server.close((error) => {
-              if (error === undefined) {
-                resolve();
-              } else {
-                reject(error);
-              }
-            });
+            server.once("error", reject);
+            server.listen(socketPath, resolve);
           });
+          await expect(createWorkspaceSnapshot(pmPath)).rejects.toThrow(
+            "unsupported filesystem entries",
+          );
+        } finally {
+          if (server.listening) {
+            await new Promise<void>((resolve, reject) => {
+              server.close((error) => {
+                if (error === undefined) {
+                  resolve();
+                } else {
+                  reject(error);
+                }
+              });
+            });
+          }
         }
-      }
-    });
+      });
     },
   );
 
   it("deduplicates authoritative state and excludes clone-local runtime data", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       await mkdir(path.join(pmPath, "search"), { recursive: true });
-      await writeFile(path.join(pmPath, "search", "index.json"), "cache", "utf8");
+      await writeFile(
+        path.join(pmPath, "search", "index.json"),
+        "cache",
+        "utf8",
+      );
       const first = await createWorkspaceSnapshot(pmPath, { name: "baseline" });
       const second = await createWorkspaceSnapshot(pmPath);
 
@@ -101,14 +109,24 @@ describe("workspace snapshots", () => {
       await createWorkspaceSnapshot(pmPath, { name: "clean" });
       await writeFile(settingsPath, '{"changed":true}\n', "utf8");
       await mkdir(path.join(pmPath, "locks"), { recursive: true });
-      await writeFile(path.join(pmPath, "locks", "stale.lock"), "stale", "utf8");
+      await writeFile(
+        path.join(pmPath, "locks", "stale.lock"),
+        "stale",
+        "utf8",
+      );
 
-      const restored = await restoreWorkspaceSnapshotWithRecovery(pmPath, "clean", {
-        force: true,
-        author: "snapshot-test",
-      });
+      const restored = await restoreWorkspaceSnapshotWithRecovery(
+        pmPath,
+        "clean",
+        {
+          force: true,
+          author: "snapshot-test",
+        },
+      );
       expect(await readFile(settingsPath)).toEqual(originalSettings);
-      await expect(access(path.join(pmPath, "locks", "stale.lock"))).rejects.toThrow();
+      await expect(
+        access(path.join(pmPath, "locks", "stale.lock")),
+      ).rejects.toThrow();
       expect(
         await inspectWorkspaceSnapshot(pmPath, restored.manifest.fingerprint),
       ).toEqual(restored.manifest);
@@ -116,9 +134,7 @@ describe("workspace snapshots", () => {
         restored.manifest.fingerprint,
       );
       expect(restored.audit_operation).toBe("workspace_snapshot_restore");
-      expect(restored.audit_history_path).toBe(
-        "history/_workspace.jsonl",
-      );
+      expect(restored.audit_history_path).toBe("history/_workspace.jsonl");
     });
   });
 
@@ -156,9 +172,8 @@ describe("workspace snapshots", () => {
         ],
         { expectJson: true },
       );
-      const secondItemId = (
-        secondCreated.json as { item: { id: string } }
-      ).item.id;
+      const secondItemId = (secondCreated.json as { item: { id: string } }).item
+        .id;
       const plan = await planWorkspaceSnapshotRestore(
         context.pmPath,
         "baseline",
@@ -186,9 +201,7 @@ describe("workspace snapshots", () => {
         },
       );
       expect(restored.plan).toEqual(plan);
-      expect(restored.audit_history_path).toBe(
-        "history/_workspace.jsonl",
-      );
+      expect(restored.audit_history_path).toBe("history/_workspace.jsonl");
       const workspaceHistory = (
         await readFile(
           path.join(context.pmPath, "history", "_workspace.jsonl"),
@@ -225,9 +238,143 @@ describe("workspace snapshots", () => {
     });
   });
 
+  it("renews the writer lease beyond its TTL and removes failed staging", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const payloadRoot = path.join(pmPath, "lease-payload");
+      await mkdir(payloadRoot);
+      await Promise.all(
+        Array.from({ length: 1_000 }, (_, index) =>
+          writeFile(
+            path.join(payloadRoot, `${index.toString().padStart(4, "0")}.txt`),
+            `${index}\n`,
+            "utf8",
+          ),
+        ),
+      );
+      await createWorkspaceSnapshot(pmPath, { name: "lease-target" });
+      await writeFile(
+        path.join(pmPath, "settings.json"),
+        '{"changed":true}\n',
+        "utf8",
+      );
+      const restore = restoreWorkspaceSnapshotWithRecovery(
+        pmPath,
+        "lease-target",
+        {
+          force: true,
+          author: "lease-holder",
+          lockTtlSeconds: 0.03,
+        },
+      );
+      const writerLock = getLockPath(pmPath, "sdk-workspace-transaction");
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        try {
+          await access(writerLock);
+          break;
+        } catch {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      await expect(
+        acquireLock(
+          pmPath,
+          "sdk-workspace-transaction",
+          0.03,
+          "competing-restore",
+          false,
+          false,
+          0,
+        ),
+      ).rejects.toThrow("locked");
+      await expect(restore).resolves.toMatchObject({
+        audit_operation: "workspace_snapshot_restore",
+      });
+    });
+
+    await withTempPmPath(async ({ pmPath }) => {
+      const malformedAuditPath = path.join(
+        pmPath,
+        "history",
+        "_workspace.jsonl",
+      );
+      await mkdir(malformedAuditPath);
+      await writeFile(
+        path.join(malformedAuditPath, "nested"),
+        "not an audit stream",
+        "utf8",
+      );
+      await createWorkspaceSnapshot(pmPath, { name: "invalid-audit-target" });
+      await writeFile(
+        path.join(pmPath, "settings.json"),
+        '{"changed":true}\n',
+        "utf8",
+      );
+      const parent = path.dirname(pmPath);
+      const stagingPrefix = `.${path.basename(pmPath)}.restore-`;
+      await expect(
+        restoreWorkspaceSnapshotWithRecovery(pmPath, "invalid-audit-target", {
+          force: true,
+          author: "cleanup-test",
+        }),
+      ).rejects.toThrow();
+      expect(
+        (await readdir(parent)).filter((entry) =>
+          entry.startsWith(stagingPrefix),
+        ),
+      ).toEqual([]);
+    });
+  });
+
+  it("fails closed when heartbeat lock structure or ownership changes", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const heartbeatPath = path.join(pmPath, "heartbeat.lock");
+      const invalidLocks = [
+        "null\n",
+        "[]\n",
+        `${JSON.stringify({
+          id: "wrong-id",
+          owner: "heartbeat-owner",
+          pid: process.pid,
+        })}\n`,
+        `${JSON.stringify({
+          id: "sdk-workspace-transaction",
+          owner: "wrong-owner",
+          pid: process.pid,
+        })}\n`,
+        `${JSON.stringify({
+          id: "sdk-workspace-transaction",
+          owner: "heartbeat-owner",
+          pid: process.pid + 1,
+        })}\n`,
+      ];
+      for (const invalidLock of invalidLocks) {
+        await writeFile(heartbeatPath, invalidLock, "utf8");
+        const heartbeat = new _testOnlyWorkspaceSnapshot.WorkspaceLockHeartbeat(
+          heartbeatPath,
+          "heartbeat-owner",
+          0.03,
+        );
+        heartbeat.start();
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        await expect(heartbeat.stop()).rejects.toThrow("lost its writer lock");
+      }
+
+      const idleHeartbeat =
+        new _testOnlyWorkspaceSnapshot.WorkspaceLockHeartbeat(
+          heartbeatPath,
+          "heartbeat-owner",
+          1,
+        );
+      await expect(idleHeartbeat.stop()).resolves.toBeUndefined();
+    });
+  });
+
   it("deletes references before their immutable objects and rejects unsafe names", async () => {
     await withTempPmPath(async ({ pmPath }) => {
-      const created = await createWorkspaceSnapshot(pmPath, { name: "temporary" });
+      const created = await createWorkspaceSnapshot(pmPath, {
+        name: "temporary",
+      });
       await expect(
         deleteWorkspaceSnapshot(pmPath, created.manifest.fingerprint),
       ).rejects.toThrow("still referenced");
@@ -241,9 +388,9 @@ describe("workspace snapshots", () => {
         deleted: "object",
         target: created.manifest.fingerprint,
       });
-      await expect(createWorkspaceSnapshot(pmPath, { name: "../escape" })).rejects.toThrow(
-        "must use lowercase",
-      );
+      await expect(
+        createWorkspaceSnapshot(pmPath, { name: "../escape" }),
+      ).rejects.toThrow("must use lowercase");
       await expect(
         createWorkspaceSnapshot(pmPath, { name: "a".repeat(64) }),
       ).rejects.toThrow("must not be 64-character");
@@ -253,6 +400,11 @@ describe("workspace snapshots", () => {
       await expect(
         inspectWorkspaceSnapshot(pmPath, "c".repeat(64)),
       ).rejects.toThrow(`Unknown workspace snapshot: ${"c".repeat(64)}`);
+      await expect(
+        restoreWorkspaceSnapshotWithRecovery(pmPath, "missing", {
+          force: true,
+        }),
+      ).rejects.toThrow("Unknown workspace snapshot: missing");
       await expect(deleteWorkspaceSnapshot(pmPath, "missing")).rejects.toThrow(
         "Unknown workspace snapshot: missing",
       );
@@ -268,9 +420,9 @@ describe("workspace snapshots", () => {
       );
       await mkdir(path.dirname(malformedRef), { recursive: true });
       await writeFile(malformedRef, "{", "utf8");
-      await expect(inspectWorkspaceSnapshot(pmPath, "malformed")).rejects.toThrow(
-        SyntaxError,
-      );
+      await expect(
+        inspectWorkspaceSnapshot(pmPath, "malformed"),
+      ).rejects.toThrow(SyntaxError);
       const directoryRef = path.join(
         pmPath,
         "runtime",
@@ -279,7 +431,9 @@ describe("workspace snapshots", () => {
         "directory.json",
       );
       await mkdir(directoryRef);
-      await expect(deleteWorkspaceSnapshot(pmPath, "directory")).rejects.toThrow();
+      await expect(
+        deleteWorkspaceSnapshot(pmPath, "directory"),
+      ).rejects.toThrow();
     });
   });
 

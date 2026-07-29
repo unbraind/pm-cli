@@ -421,8 +421,9 @@ describe("scale benchmark runner", () => {
         "--update",
       ]);
       const strictManifest = JSON.parse(await readFile(manifestPath, "utf8"));
-      strictManifest.tiers["scratch:100"].transports.sdk.list.max_estimated_tokens =
-        0;
+      strictManifest.tiers[
+        "scratch:100"
+      ].transports.sdk.list.max_estimated_tokens = 0;
       await writeFile(
         manifestPath,
         `${JSON.stringify(strictManifest)}\n`,
@@ -453,19 +454,17 @@ describe("scale benchmark runner", () => {
       ).toHaveProperty("tiers.scratch:10");
       const representativeReport = structuredClone(sampleReport());
       representativeReport.fixture.shape.name = "representative";
-      await updateBudgetManifest(
-        legacyManifestPath,
-        representativeReport,
-        1,
-      );
-      expect(
-        JSON.parse(await readFile(legacyManifestPath, "utf8")),
-      ).toMatchObject({
+      await updateBudgetManifest(legacyManifestPath, representativeReport, 1);
+      const migratedManifest = JSON.parse(
+        await readFile(legacyManifestPath, "utf8"),
+      ) as { tiers: Record<string, unknown> };
+      expect(migratedManifest).toMatchObject({
         tiers: {
           "scratch:10": expect.any(Object),
           "representative:10": expect.any(Object),
         },
       });
+      expect(migratedManifest.tiers).not.toHaveProperty("10");
     });
   }, 30_000);
 

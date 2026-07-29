@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:sdk","area:storage",durability,history,immutability,provenance,reproducibility,rl-substrate
 created_at: "2026-07-29T16:53:20.611Z"
-updated_at: "2026-07-29T19:59:26.478Z"
+updated_at: "2026-07-29T20:27:32.034Z"
 closed_at: "2026-07-29T18:39:32.982Z"
 completed_at: "2026-07-29T18:39:32.982Z"
 author: "harness:claude-code"
@@ -30,12 +30,14 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,implements,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
   pm-wlqxg3,related,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
   pm-vv2lti,related_to,"2026-07-29T18:28:03.553Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-29T17:11:01.705Z","harness:claude-code","The windows-latest with Node 24 nightly leg is red against HEAD on one spec in this item's linked verification file - tests/unit/sdk/workspace-snapshot.spec.ts, rejects non-file filesystem entries in authoritative state, run id 30473431691. The recorded-and-reversible-restore work will therefore land in a file that is currently failing on one platform, so sequence the portability fix owned by pm-j668gl first or expect the new conformance test to be unverifiable on Windows."
   "2026-07-29T18:28:05.673Z","harness:codex","Implementation evidence: whole-workspace restore now plans exact changed/added/removed item and history impact, refuses without explicit force, captures a content-addressed recovery snapshot, stages and atomically swaps the target, and appends a durable _workspace workspace_snapshot_restore event containing actor, reason, before/target fingerprints, recovery fingerprint, and exact counts. Restore-then-return tests recover every removed item and erased history entry; CLI and public SDK compatibility paths are covered."
   "2026-07-29T18:36:28.473Z","harness:codex","Verification context correction: repository-wide coverage passed directly at 6528 tests and exact 100/100/100/100. It is intentionally not retained as a linked pm test because linked tests replace PM_PATH with a schema-only sandbox; that outer tracker context changes validate fixtures and makes broad nested coverage non-representative. The two direct snapshot links remain sandbox-safe and pass through pm test."
   "2026-07-29T18:51:18.501Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/813 at implementation head c7ac2767e. The PR description links this canonical record and includes exact coverage, installed-consumer, security, retrieval, gate-registry, and PM validation evidence."
   "2026-07-29T19:59:26.477Z","harness:codex","Review-fix evidence for PR #813 exact working tree: workspace snapshot restore now acquires and preserves the live workspace transaction lock across planning, staging, activation, and audit publication; confirmation is checked before restore planning; audit paths are derived from the staged root; target reads are bounded. Focused snapshot tests pass, full coverage passes 395 files / 6530 tests at 100% statements, branches, functions, and lines, and static/contracts/security/context gates pass."
+  "2026-07-29T20:15:20.794Z","harness:codex","Second-round review evidence for PR #813: long workspace restores now renew the writer lock at a sub-TTL interval, fail before activation if ownership is lost, preserve the lease across the activated root, and remove pre-swap staging after preparation failures without masking the original error. Regression coverage holds a restore beyond its TTL against a competing writer and proves failed staging cleanup; focused tests and strict static quality pass."
+  "2026-07-29T20:27:32.034Z","harness:codex","Terminal second-round verification at exact working tree: 395 test files and 6532 tests pass with 100% statements (45907/45907), branches (32799/32799), functions (9372/9372), and lines (44582/44582). Static quality, public SDK surface, contracts, ESLint, zero-duplicate scan, secret scan, dependency audit, tracker health, and history drift checks pass. The only validator warning is the pre-existing 292-item historical resolution metadata backlog."
 notes[1]{created_at,author,text}:
   "2026-07-29T18:28:06.440Z","harness:codex","Design decision: preserve restoreWorkspaceSnapshot(pmRoot,target) as an additive compatibility surface while routing it through the guarded recovery implementation; new callers can use the explicit plan/result types and restoreWorkspaceSnapshotWithRecovery options."
 learnings[1]{created_at,author,text}:

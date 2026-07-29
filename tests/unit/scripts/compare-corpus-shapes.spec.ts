@@ -120,11 +120,7 @@ describe("corpus-shape comparison", () => {
       await expect(
         main([], {
           run: async (options: { shape: string }) =>
-            report(
-              options.shape,
-              10,
-              options.shape === "scratch" ? 100 : 101,
-            ),
+            report(options.shape, 10, options.shape === "scratch" ? 100 : 101),
         }),
       ).rejects.toThrow("identical item counts and seeds");
     });
@@ -180,8 +176,15 @@ describe("corpus-shape comparison", () => {
       expect.objectContaining({ message: "comparison failed" }),
     );
     await withTempDir("pm-corpus-entrypoint-default-", async (root) => {
-      const run = async (options: { shape: string }) =>
-        report(options.shape, 10);
+      let activeRuns = 0;
+      let maximumConcurrency = 0;
+      const run = async (options: { shape: string }) => {
+        activeRuns += 1;
+        maximumConcurrency = Math.max(maximumConcurrency, activeRuns);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        activeRuns -= 1;
+        return report(options.shape, 10);
+      };
       await expect(
         runCorpusShapeComparisonEntrypoint({
           argv: [
@@ -201,13 +204,14 @@ describe("corpus-shape comparison", () => {
           write,
         }),
       ).resolves.toBe(true);
+      expect(maximumConcurrency).toBe(1);
     });
-    const exit = vi
-      .spyOn(process, "exit")
-      .mockImplementation((() => {
-        throw new Error("EXIT:1");
-      }) as never);
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const exit = vi.spyOn(process, "exit").mockImplementation((() => {
+      throw new Error("EXIT:1");
+    }) as never);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     await expect(
       runCorpusShapeComparisonEntrypoint({
         argv: [process.execPath, scriptPath],

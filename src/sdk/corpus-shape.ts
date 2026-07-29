@@ -573,8 +573,8 @@ class IncrementalCorpusShapeMeasurement implements CorpusShapeMeasurement {
         last: this.lastTimestamp,
       },
       history_entry_count: this.historyEntryCount,
-      annotations: this.annotations,
-      edge_kinds: this.edgeKinds,
+      annotations: { ...this.annotations },
+      edge_kinds: { ...this.edgeKinds },
       matches_declaration: uniqueMismatches.length === 0,
       mismatches: uniqueMismatches,
     };

@@ -3,6 +3,7 @@ import {
   BUILTIN_CORPUS_SHAPES,
   PM_CORPUS_SHAPE_SCHEMA,
   buildCorpusShapeItemPlan,
+  createCorpusShapeMeasurement,
   defineCorpusShape,
   listBuiltinCorpusShapes,
   measureCorpusShapePlan,
@@ -215,5 +216,16 @@ describe("corpus shape SDK", () => {
     expect(
       measureCorpusShapePlan(shape, missingExpectedEdge).mismatches,
     ).toContain("edge_kind:related:0!=1");
+
+    const measurement = createCorpusShapeMeasurement(shape);
+    measurement.add(buildCorpusShapeItemPlan(shape, 0, 2));
+    const firstProfile = measurement.finish();
+    firstProfile.annotations.comments = 999;
+    firstProfile.edge_kinds.related = 999;
+    measurement.add(buildCorpusShapeItemPlan(shape, 1, 2));
+    const secondProfile = measurement.finish();
+    expect(secondProfile.annotations.comments).not.toBe(999);
+    expect(secondProfile.edge_kinds.related).toBe(1);
+    expect(firstProfile.item_count).toBe(1);
   });
 });
