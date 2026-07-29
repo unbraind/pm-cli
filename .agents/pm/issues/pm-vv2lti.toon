@@ -1,0 +1,37 @@
+id: pm-vv2lti
+title: "Scale fixtures vary only in size: the sole synthetic workspace generator hardcodes population shape, so the million-item tier is eleven simulated days deep with one history entry per item"
+description: "The scale benchmark generator at scripts/bench/scale-workspace.mjs is the only synthetic workspace producer in the repository and it exposes exactly two knobs, items and seed. Every other dimension of corpus shape is a hardcoded constant: parent index is the item index minus index modulo twenty, giving a hierarchy of exactly depth two with fan-out exactly twenty; timestamps are the 2026-01-01 base plus one second per item, so the million-item tier spans 11.6 days of simulated project time while the roadmap promises millions of items spanning decades; each item receives exactly one history entry, where the live corpus carries 41,231 entries over 2,204 streams for a mean of 18.7, a median of 14, a p90 of 33 and a maximum of 922, meaning every history-path measurement at the top tier is understated by roughly nineteen times; dependency rows use only two kinds, related on every third index and blocks on every eleventh, where the live graph uses ten kinds including 2,069 implements, 426 blocked_by, 236 discovered_from, 150 verifies and 56 supersedes; there are zero comments, notes and learnings; there is one constant author where the live corpus has 477 spellings; and there are no custom types, statuses, fields, applied profiles or extension-contributed fields. This is a conformance gap against pm-m2il's own fixture criterion, which requires empty and seconds-old scratch projects, representative medium histories, deep and cyclic typed graphs, multi-decade event streams and disconnected archives alongside the size tiers - only the size tiers are producible today. It is also the missing instrument for roadmap horizon Q, which asks which of the product's fitted constants travel to other corpora: that question cannot be answered while only one corpus shape can be synthesized."
+type: Issue
+status: open
+priority: 2
+tags[8]: "area:testing",benchmark,conformance,corpus,eval,fixtures,rl-substrate,scale
+created_at: "2026-07-29T16:54:05.041Z"
+updated_at: "2026-07-29T17:03:39.147Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "Corpus shape is a declared, versioned specification naming hierarchy depth and fan-out distribution, age span and density, history entries per item, annotation volume, edge-kind mix, author cardinality, and schema customization; The generator produces every fixture shape that pm-m2il's criterion names, including a deep typed graph, a multi-decade age span, a disconnected archive, and a seconds-old scratch workspace, each reproducible from a seed and a shape name; Generated corpora report their measured shape so a benchmark result is attributable to a population rather than to a size alone, and a shape whose measured profile drifts from its declaration fails; At least one published scale, retrieval, and context number is re-measured across two shapes at the same item count, and any constant whose behaviour differs by more than a declared margin is recorded as corpus-fitted rather than universal; The shape specification is reachable from the public SDK so downstream users, evaluation episodes, and domain packs generate their own populations without copying the benchmark script"
+parent: pm-9rxu
+risk: medium
+confidence: 90
+expected_result: "A declared corpus-shape specification drives generation, so scale, retrieval, context and history claims can be measured across populations that differ in shape as well as size."
+actual_result: "Only item count and seed are variable; hierarchy depth, fan-out, age spread, history depth, edge-kind mix, annotation volume, author diversity and schema customization are compiled-in constants."
+dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
+  pm-atfm,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-e5yupa,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-li2fj5,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-m2il,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-mi2x,discovered_from,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-o79o,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-o87av6,implements,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-p1g43q,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-sxyj1v,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-z436,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-z71aoy,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
+  pm-6l2mza,related,"2026-07-29T17:02:44.761Z","harness:claude-code","cli:update:dep",detected
+  pm-b2hc4x,related,"2026-07-29T17:02:44.761Z","harness:claude-code","cli:update:dep",detected
+files[2]{path,scope,note}:
+  scripts/bench/run-scale-benchmarks.mjs,project,Consumer of the generator whose published numbers are attributable to one corpus shape
+  scripts/bench/scale-workspace.mjs,project,"The only synthetic workspace generator - hardcodes hierarchy, age spread, history depth, edge mix and author cardinality"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts,project,300
+body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: agent-ux,"area:cli","area:contracts",diagnostics,error-contract,scripting,simplification
 created_at: "2026-07-26T06:02:22.287Z"
-updated_at: "2026-07-26T15:24:37.961Z"
+updated_at: "2026-07-29T16:56:42.913Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "pm contracts emits an error-code catalog generated from the same declarations the runtime uses, so it cannot drift; each entry carries code, stable exit code, stable-or-provisional status, emitting commands, and a one-line meaning; a snapshot gate in the shape of contracts:check and sdk:surface:check makes adding a code a reviewed change and makes renaming or removing a stable code fail the build; a deduplication pass applies the one-spelling-per-concept rule from pm-fs8q9x to the 195 codes, merging near-synonyms behind aliases rather than deleting them; a documented code-class to exit-code mapping lets a shell consumer classify a failure from exit status alone, closing the exit-code half of pm-psy1; the catalog is emitted under a surface tier so the default pm contracts payload does not grow"
@@ -17,20 +17,21 @@ why_now: "The simplification epic has censused commands and flags twice and neve
 parent: pm-n7rr
 risk: low
 confidence: high
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-185870,related,"2026-07-26T06:02:22.287Z",null,null
-  pm-cha95z,related,"2026-07-26T06:02:22.287Z",null,null
-  pm-cyrfjq,discovered_from,"2026-07-26T06:02:22.287Z",null,null
-  pm-e6tm5c,related,"2026-07-26T06:02:22.287Z",null,null
-  pm-fs8q9x,related,"2026-07-26T06:02:22.287Z",null,null
-  pm-n7rr,implements,"2026-07-26T06:02:22.287Z",null,null
-  pm-psy1,related,"2026-07-26T06:02:22.287Z",null,null
-  pm-yqe0mo,discovered_from,"2026-07-26T06:02:22.287Z",null,null
-comments[4]{created_at,author,text}:
+dependencies[8]{id,kind,created_at}:
+  pm-185870,related,"2026-07-26T06:02:22.287Z"
+  pm-cha95z,related,"2026-07-26T06:02:22.287Z"
+  pm-cyrfjq,discovered_from,"2026-07-26T06:02:22.287Z"
+  pm-e6tm5c,related,"2026-07-26T06:02:22.287Z"
+  pm-fs8q9x,related,"2026-07-26T06:02:22.287Z"
+  pm-n7rr,implements,"2026-07-26T06:02:22.287Z"
+  pm-psy1,related,"2026-07-26T06:02:22.287Z"
+  pm-yqe0mo,discovered_from,"2026-07-26T06:02:22.287Z"
+comments[5]{created_at,author,text}:
   "2026-07-26T14:27:05.518Z","harness:codex","GitHub report linkage: GH-745 https://github.com/unbraind/pm-cli/issues/745 demonstrates unsupported PmClient actions returning literal 64 while EXIT_CODE.USAGE is 2. Reusing this canonical all-status error-contract feature; no duplicate item created."
   "2026-07-26T14:47:00.511Z","harness:codex","Evidence: SDK native dispatch now imports and uses the canonical EXIT_CODE.USAGE contract for every unsupported extension-action branch. Focused regression tests passed, full coverage passed 374/374 files and 6420/6420 tests at literal 100/100/100/100, lint/static quality/contracts passed, and an unrelated temporary consumer installed the packed tarball and observed exitCode=2 matching the exported EXIT_CODE.USAGE."
   "2026-07-26T15:12:40.567Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/748. Initial exact implementation commit 004790f7; hosted exact-head checks and AI review loop pending."
   "2026-07-26T15:24:34.646Z","harness:codex","Exact-head hosted evidence for PR #748: commit eeb768ba50dde4c902ced790798e93ff43eb0f71 passes the complete GitHub matrix, including Windows regression, macOS/Ubuntu runtime smokes, four coverage shards plus aggregate coverage, static, compatibility, typecheck, package smokes, CodeQL, Semgrep, Trivy, TruffleHog, ShellCheck, PSScriptAnalyzer, actionlint, docs, CodeFactor, DeepScan, Hound, Codecov, and Sourcery. The initial Windows-only test-path defect was corrected; the unchanged-head macOS retry passed after GitHub's transient artifact-download ECONNRESET. Thread inventory has no actionable inline feedback. This follow-up intentionally implements the usage exit-code parity escape while the broader catalog remains open."
+  "2026-07-29T16:56:42.913Z","harness:claude-code","A misclassification instance for the catalog, build 2026.7.29.\n\nRunning workspace snapshot restore with an empty target produces this envelope: type urn:pm-cli:error:unknown_error, code unknown_error, title \"Unhandled error\", detail \"Snapshot names and fingerprints must use lowercase letters, digits, dots, underscores, or hyphens\", exit_code 1, why \"Unexpected runtime failures can occur from environment or extension-level issues\", examples pm --help and pm health --json.\n\nThe detail is precise and correct - it names a declared input grammar. Everything around it is wrong for the situation: the code says the failure was unexpected, the why blames the environment or an extension, and the recovery examples point at root help and a health check instead of the one command that would supply a valid target, workspace snapshot list.\n\nThe generalisable rule this argues for, alongside the catalog and stability work already in scope here: no violation of a declared input grammar may surface under an unknown or unhandled code. That is checkable as a negative control - feed each documented grammar a deliberately invalid value and assert the emitted code is a typed input error - which makes it a cheap conformance test rather than a review habit.\n"
 files[4]{path,scope,note}:
   src/cli/commands/contracts.ts,project,contracts table that must gain the error-code catalog tier
   src/cli/error-guidance.ts,project,error code declarations; 195 distinct codes across src

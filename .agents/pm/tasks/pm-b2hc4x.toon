@@ -1,0 +1,35 @@
+id: pm-b2hc4x
+title: "The product advertises CI gates in its own help that no pipeline runs: pm eval names --fail-under a CI gate and nothing consumes it"
+description: "The eval command's own help states that --fail-under should be used as a CI gate. It appears in none of the 58 package.json scripts and in none of the six workflow files. The only wired relevance gate is scripts/release/context-eval-gate.mjs, which scores a different corpus at tests/context-eval/golden-scenarios.json and never invokes eval or reads the eval query set. Measured live at build 2026.7.29: the shipped golden set is four queries in 694 bytes, aggregate nDCG at 10 of 0.7168, MRR 0.625, precision 0.125 and recall 1.0 - recall is saturated because every query has exactly one relevant item, so the set cannot regress. Two issues closed on 2026-07-29 made this gate ready and still did not wire it: one moved the default query path out of the managed gitignore block so the file can be version-controlled, the other published the query-set contract across help, errors and machine-readable surfaces. This repeats a class already closed once as pm-dpqa3h, where a measurement harness shipped with no script entry, no CI step and no baseline. The existing gate registry item covers gates that are enforced and needs a negative control for each; the inverse direction is uncovered, so a command may claim to be a gate forever without anything noticing."
+type: Task
+status: open
+priority: 2
+tags[7]: "area:ci","area:cli",conformance,eval,gates,governance,retrieval
+created_at: "2026-07-29T16:54:34.620Z"
+updated_at: "2026-07-29T17:03:42.494Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Every command flag or documented workflow that the product describes as a CI gate is either wired into an enforced pipeline step or explicitly declared advisory in contract data, and a conformance check fails when a gate claim has neither; The retrieval relevance gate runs in CI with a declared threshold and a documented baseline-update path, and its golden set is expanded until at least one query can fail on a deliberate relevance regression; A negative control proves the retrieval gate rejects a seeded ranking regression rather than passing because the judgment set is saturated; The gate inventory is a single machine-readable list that names, for every gate, the pipeline step that runs it, the owning item, and whether it is enforced or advisory, so local and hosted coverage can be compared"
+parent: pm-u9d0
+risk: medium
+confidence: 85
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+  pm-atfm,related,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-dpqa3h,discovered_from,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-ei6x66,related,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-jdh1jg,related,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-k6t4yb,blocked_by,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-kpftft,related,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-p1g43q,related,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-rtn5h6,related,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-wd61s2,related,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-xgcp18,related,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,implements,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope,note}:
+  .agents/pm/search/eval-queries.json,project,"Shipped golden set - four queries, 694 bytes, recall saturated at 1.0 so it cannot regress"
+  scripts/release/context-eval-gate.mjs,project,The only wired relevance gate - scores a different corpus and never invokes the eval command
+tests[1]{command,scope,timeout_seconds}:
+  node dist/cli.js eval --json --k 10,project,180
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Where the gate inventory and the enforced-versus-advisory distinction should be published
+body: ""

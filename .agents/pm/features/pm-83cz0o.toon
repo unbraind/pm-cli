@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[2]: agent-ux,lifecycle
 created_at: "2026-07-28T14:56:19.121Z"
-updated_at: "2026-07-28T14:56:44.768Z"
+updated_at: "2026-07-29T16:56:18.859Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A terminal item can return to an active status through a lifecycle transition that requires a recurrence reason and refuses an already-active item with an actionable error; The reopen appends to the history stream and the prior closure entry, reason and resolution remain readable after the transition; Terminal lifecycle fields that must not survive are cleared by the existing update path rather than a second implementation, and a test proves the two agree; Duplicate search surfaces the reopen transition when the strongest match is terminal, so an agent is offered the canonical item before creating a new one; The spelling is whatever the noun-verb decision accepts and the top-level command count does not grow without that decision being recorded"
@@ -23,4 +23,6 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-pbyu,blocked_by,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
   pm-wenq,related,"2026-07-28T14:56:38.955Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-29T16:56:18.859Z","harness:claude-code","Measured behaviour of the ad-hoc reopen path, sandbox tracker, build 2026.7.29.\n\nClosing an item then running update --status in_progress succeeds with exit 0 and changed_field_count 4. Reading the item afterwards: close_reason null, closed_at null, resolution null. All three closure fields are erased in place, not superseded, so the item's own record no longer says it was ever closed or why. The prior closure survives only inside the history stream, which means the answer to \"has this recurred, and how many times\" is reachable only by replaying every stream.\n\nThis is consistent with the third criterion here - terminal fields that must not survive are cleared by the existing update path - and it sharpens the second one. The prior closure entry does remain in history, so the criterion is satisfiable, but nothing on the item points at it and no op distinguishes a reopen from an ordinary status edit, so a reader cannot tell a reopened item from one that was never closed without a replay.\n\nTwo consequences worth carrying into the implementation. A reopen wants its own op in the history vocabulary, which places it inside pm-0elqjj's enumeration rather than reusing update. And recurrence rate becomes a measurable quality signal for the first time once the transition is distinguishable, which is a downstream consumer for the flow-metrics work rather than a criterion here.\n\nRelated probe on the same path: closed to draft also succeeds, moving a terminal item into the provisional tier tracked by pm-xpzped.\n"
 body: ""

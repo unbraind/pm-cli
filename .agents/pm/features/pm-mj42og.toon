@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[6]: "area:sdk",governance,platform,policy,universal-domain,workflow
 created_at: "2026-07-25T12:39:45.946Z"
-updated_at: "2026-07-25T12:40:04.071Z"
+updated_at: "2026-07-29T16:56:18.081Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A policy is declared data naming subject, rule, and effect, validated against a published schema, with no code required to express a common rule; Enforcement lives in the SDK so CLI, MCP, packages, and direct SDK consumers observe identical outcomes, proven by a test that exercises the same policy through every surface; The default effect is advisory; refusal is opt-in per policy and per workspace, so adopting the engine cannot break an existing workflow silently; A refusal names the policy that refused, the rule that matched, and the corrective action, within the diagnostic token budget; The documentation states that detected identity is unverified and that this engine is a workflow mechanism rather than an authorization boundary, with signed identity named as the prerequisite for any stronger claim; Policy evaluation cost is bounded and measured at fleet scale, and a workspace with no policies pays no measurable cost; Every policy decision that changes an outcome is recorded in history, so an audit can reconstruct which rule shaped which mutation"
@@ -18,17 +18,19 @@ outcome: Business workflows with approvals and role boundaries run on pm without
 parent: pm-33cw
 risk: high
 confidence: 55
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-33cw,related,"2026-07-25T12:39:45.946Z",null,null
-  pm-8jdc,related,"2026-07-25T12:39:45.946Z",null,null
-  pm-g608fc,related,"2026-07-25T12:39:45.946Z",null,null
-  pm-qwuber,related,"2026-07-25T12:39:45.946Z",null,null
-  pm-t4d7nz,related,"2026-07-25T12:39:45.946Z",null,null
-  pm-u14c,related,"2026-07-25T12:39:45.946Z",null,null
-  pm-wenq,related,"2026-07-25T12:39:45.946Z",null,null
-  pm-xc68,implements,"2026-07-25T12:39:45.946Z",null,null
-  pm-iiv1gl,related,"2026-07-25T12:40:03.665Z",null,null
-  pm-mn4zas,related,"2026-07-25T12:40:03.665Z",null,null
-  pm-odohgb,related,"2026-07-25T12:40:03.665Z",null,null
-  pm-szv11n,related,"2026-07-25T12:40:03.665Z",null,null
+dependencies[12]{id,kind,created_at}:
+  pm-33cw,related,"2026-07-25T12:39:45.946Z"
+  pm-8jdc,related,"2026-07-25T12:39:45.946Z"
+  pm-g608fc,related,"2026-07-25T12:39:45.946Z"
+  pm-qwuber,related,"2026-07-25T12:39:45.946Z"
+  pm-t4d7nz,related,"2026-07-25T12:39:45.946Z"
+  pm-u14c,related,"2026-07-25T12:39:45.946Z"
+  pm-wenq,related,"2026-07-25T12:39:45.946Z"
+  pm-xc68,implements,"2026-07-25T12:39:45.946Z"
+  pm-iiv1gl,related,"2026-07-25T12:40:03.665Z"
+  pm-mn4zas,related,"2026-07-25T12:40:03.665Z"
+  pm-odohgb,related,"2026-07-25T12:40:03.665Z"
+  pm-szv11n,related,"2026-07-25T12:40:03.665Z"
+comments[1]{created_at,author,text}:
+  "2026-07-29T16:56:18.081Z","harness:claude-code","Evidence that the transition half of this policy engine has no substrate at all today, measured on a sandbox tracker at build 2026.7.29.\n\nWhat is declared. The workspace schema file schema/workflows.json contains exactly six entries, and all six are role-to-status-name aliases: draft_status, open_status, in_progress_status, blocked_status, close_status, canceled_status. There is no transition list, no guard, no precondition and no required-field rule anywhere in schema data. So the lifecycle state machine exists only as control flow inside the mutation paths, and nothing publishes it.\n\nWhat that permits. A closed item moved to in_progress through update --status succeeds, exit 0, changed_field_count 4. A closed item moved to draft succeeds - into a tier the corpus has never once written, 0 of 40,856 entries. Closing an already-closed item succeeds and overwrites the stored close reason. None of the three emits a warning.\n\nWhy this matters beyond tidiness. Custom statuses can be registered with a lifecycle role, so a domain pack can add states; it cannot say which states may follow which, who may perform the move, or what must be supplied. That makes the universal-customization claim thin in exactly the place a non-software domain needs it most: a review state that anyone can leave, an approval that requires no approver. It also means an agent - or a reinforcement-learning policy treating the mutation surface as an action space - has no machine-readable way to enumerate the legal actions for an item in a given state, so legality can only be discovered by attempting a mutation and reading the outcome.\n\nScope note. The specific reopen transition and the clearing of terminal fields belong to pm-83cz0o. What is recorded here is the absence of a declared transition relation for this engine to enforce.\n"
 body: ""

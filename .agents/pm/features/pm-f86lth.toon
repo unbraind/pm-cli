@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:sdk",context,evidence,governance,graph,traceability
 created_at: "2026-07-25T06:19:09.470Z"
-updated_at: "2026-07-26T05:49:47.017Z"
+updated_at: "2026-07-29T16:56:44.091Z"
 author: unknown
 estimated_minutes: 900
 acceptance_criteria: "Given a file path and optional line range, the SDK returns the tracked items associated with it, ranked by contribution and recency, with the evidence that produced each association; Each returned item carries its rationale (value, why-now, outcome) and the shortest typed path to the decision that governs it, so the answer is a why and not just a what; Attribution is derived from existing evidence - linked paths, commit association, and line attribution - and ambiguity is reported explicitly rather than resolved by guessing; The reverse index is bounded and incremental at repository scale, and never blocks a command on a full history scan; The derivation writes no fabricated relationships onto items; any edge it proposes is surfaced as a reviewable suggestion; A CLI surface exposes the query in the target noun grammar, and the answer fits an explicit token budget"
@@ -19,12 +19,14 @@ why_now: "Linked-file ownership, evidence-edge reconstruction, and graph path qu
 parent: pm-33cw
 risk: medium
 confidence: medium
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related,"2026-07-25T06:19:09.470Z",null,null
-  pm-bzmeaa,related,"2026-07-25T06:19:09.470Z",null,null
-  pm-j8z6,related,"2026-07-25T06:19:09.470Z",null,null
-  pm-rml5,related,"2026-07-25T06:19:09.470Z",null,null
-  pm-s5e04g,related,"2026-07-25T06:19:09.470Z",null,null
-  pm-t4d7nz,related,"2026-07-25T06:19:09.470Z",null,null
-  pm-bwyw,implements,"2026-07-26T05:49:46.805Z",null,null
+dependencies[7]{id,kind,created_at}:
+  pm-4k6b,related,"2026-07-25T06:19:09.470Z"
+  pm-bzmeaa,related,"2026-07-25T06:19:09.470Z"
+  pm-j8z6,related,"2026-07-25T06:19:09.470Z"
+  pm-rml5,related,"2026-07-25T06:19:09.470Z"
+  pm-s5e04g,related,"2026-07-25T06:19:09.470Z"
+  pm-t4d7nz,related,"2026-07-25T06:19:09.470Z"
+  pm-bwyw,implements,"2026-07-26T05:49:46.805Z"
+comments[1]{created_at,author,text}:
+  "2026-07-29T16:56:44.090Z","harness:claude-code","Traceability coverage measured at build 2026.7.29, and it is complete.\n\nEvery source, test and documentation file in the repository is referenced by at least one tracker item: 400 of 400 src TypeScript files, 390 of 390 test spec files, 42 of 42 docs markdown files. Zero unreferenced files in any of the three sets. 1,137 distinct repository paths appear across item files.\n\nMethod and its honest limit. The census matches any occurrence of a repository path inside an item's stored document, which includes formal linked-file and linked-doc entries as well as paths named in descriptions, comments and notes. It therefore proves reachability - for any file, some item explains why it exists - but not that every file carries a structured link on the item that owns it. The forward direction this item inverts is the stronger claim; this measurement bounds the reverse direction at 100 percent and tells the eventual gate what its baseline is.\n\nCompanion number for the linked-path health check: validate reports 179 missing linked paths against this same corpus, all of which are moved or deleted historical paths on terminal holders, partitioned under pm-zw9188.\n"
 body: ""
