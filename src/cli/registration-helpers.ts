@@ -788,7 +788,11 @@ export function normalizeListOptions(
   const normalized: Record<string, unknown> = {
     status: readListOptionString(options, "status"),
     type: readListOptionString(options, "type"),
-    tag: readListOptionString(options, "tag"),
+    tag: Array.isArray(options.tag)
+      ? options.tag
+          .filter((value): value is string => typeof value === "string")
+          .join(",")
+      : readListOptionString(options, "tag"),
     priority: readListOptionString(options, "priority"),
     deadlineBefore: readListOptionString(options, "deadlineBefore"),
     deadlineAfter: readListOptionString(options, "deadlineAfter"),

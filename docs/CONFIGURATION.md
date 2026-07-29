@@ -73,6 +73,9 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 | `id_prefix`                                | generated item ID prefix, default `pm-`                                                                                                                                                               |
 | `ids.token_length`                         | random base36 token length for newly minted item ids (4-12, default `4`); raise it to shrink cross-branch id collision odds in concurrent multi-agent workflows (see [Merge Safety](MERGE_SAFETY.md)) |
 | `author_default`                           | configured mutation author before automatic harness detection                                                                                                                                         |
+| `mutation_guard.require_attributed_author` | reject mutations whose effective author remains `unknown` (default `false`)                                                                                                                           |
+| `mutation_guard.secret_guard`              | credential-shaped content policy: `off`, `advise`, or `block` (default `advise`)                                                                                                                      |
+| `mutation_guard.stale_in_progress_hours`   | age threshold for unclaimed in-progress work surfaced by `pm health` (integer >= 1, default `72`)                                                                                                     |
 | `item_format`                              | item storage format (`toon` writes; legacy markdown is read/migrate only)                                                                                                                             |
 | `output.default_format`                    | default renderer, usually `toon`                                                                                                                                                                      |
 | `locks.ttl_seconds`                        | stale lock threshold                                                                                                                                                                                  |
@@ -101,6 +104,9 @@ Each scalar setting above is settable via `pm config set <key> <value>` (no hand
 pm config project set id_prefix task                       # (id_prefix) IDs become task-xxxx
 pm config project set ids_token_length 6                   # (ids.token_length) integer 4..12; longer ids for multi-agent collision safety
 pm config project set author_default release-bot           # (author_default) default mutation author
+pm config project set mutation-guard-require-attributed-author true
+pm config project set mutation-guard-secret-guard block
+pm config project set mutation-guard-stale-in-progress-hours 48
 pm config project set output_default_format json           # (output.default_format) toon | json
 pm config project set locks_ttl_seconds 60                 # (locks.ttl_seconds) integer >= 1
 pm config project set locks_wait_ms 3000                   # (locks.wait_ms) integer >= 0

@@ -1158,6 +1158,9 @@
           "flag": "--close-reason"
         },
         {
+          "flag": "--completed-at"
+        },
+        {
           "flag": "--duplicate-of"
         },
         {
@@ -1325,6 +1328,9 @@
         },
         {
           "flag": "--reason"
+        },
+        {
+          "flag": "--completed-at"
         },
         {
           "flag": "--resolution"
@@ -6543,6 +6549,9 @@
           "flag": "--close-reason"
         },
         {
+          "flag": "--completed-at"
+        },
+        {
           "flag": "--priority",
           "short": "-p"
         },
@@ -6606,6 +6615,9 @@
         },
         {
           "flag": "--parent"
+        },
+        {
+          "flag": "--allow-missing-parent"
         },
         {
           "flag": "--reviewer"
@@ -8567,6 +8579,20 @@
       },
       {
         "keys": [
+          "allowMissingParent",
+          "allow_missing_parent"
+        ],
+        "target": "allowMissingParent"
+      },
+      {
+        "keys": [
+          "completedAt",
+          "completed_at"
+        ],
+        "target": "completedAt"
+      },
+      {
+        "keys": [
           "reviewer"
         ],
         "target": "reviewer"
@@ -9420,6 +9446,11 @@
           },
           "closeReason": {
             "description": "Close Reason.",
+            "type": "string"
+          },
+          "completedAt": {
+            "description": "Completed At.",
+            "format": "date-time",
             "type": "string"
           },
           "cwd": {
@@ -15222,6 +15253,10 @@
             "description": "Affected Version.",
             "type": "string"
           },
+          "allowMissingParent": {
+            "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "type": "string"
@@ -15292,6 +15327,11 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "completedAt": {
+            "description": "Completed At.",
+            "format": "date-time",
+            "type": "string"
           },
           "component": {
             "description": "Component.",
@@ -27382,6 +27422,10 @@
             "description": "Affected Version.",
             "type": "string"
           },
+          "allowMissingParent": {
+            "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "type": "string"
@@ -27452,6 +27496,11 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "completedAt": {
+            "description": "Completed At.",
+            "format": "date-time",
+            "type": "string"
           },
           "component": {
             "description": "Component.",
@@ -28674,6 +28723,11 @@
             "description": "Close Reason.",
             "type": "string"
           },
+          "completedAt": {
+            "description": "Completed At.",
+            "format": "date-time",
+            "type": "string"
+          },
           "duplicateOf": {
             "description": "Duplicate Of.",
             "type": "string"
@@ -28795,6 +28849,11 @@
           },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "completedAt": {
+            "description": "Completed At.",
+            "format": "date-time",
             "type": "string"
           },
           "dryRun": {

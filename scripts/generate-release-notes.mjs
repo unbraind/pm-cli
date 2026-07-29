@@ -138,7 +138,8 @@ function loadPmItems() {
 }
 
 function itemChangedInReleaseWindow(item, since, until) {
-  const timestampSource = item.closed_at ?? item.updated_at ?? item.created_at;
+  const timestampSource =
+    item.completed_at ?? item.closed_at ?? item.updated_at ?? item.created_at;
   const timestamp = typeof timestampSource === "string" ? Date.parse(timestampSource) : Number.NaN;
   const status = typeof item.status === "string" ? item.status : "unknown";
   return status === "closed" && Number.isFinite(timestamp) && timestamp > since && timestamp <= until;

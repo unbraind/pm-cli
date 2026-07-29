@@ -182,6 +182,10 @@ export interface ContextFocusItem {
   children_closed?: number;
   /** Value that configures or reports completion pct for this contract. */
   completion_pct?: number;
+  /** True when lifecycle state or an unresolved dependency prevents action. */
+  blocked?: true;
+  /** Canonical unresolved blocker IDs; an empty array denotes lifecycle-only blocking. */
+  blocker_ids?: string[];
 }
 
 /** Compact agenda reference used when the corresponding item is already present in a focus section. */
@@ -558,6 +562,8 @@ const FOCUS_PROJECTION_FIELDS = new Set<string>([
   "children_total",
   "children_closed",
   "completion_pct",
+  "blocked",
+  "blocker_ids",
   "created_at",
 ]);
 
@@ -1586,7 +1592,11 @@ function formatFocusLine(item: ContextFocusItem): string {
     item.completion_pct !== undefined
       ? ` children:${item.children_closed}/${item.children_total} done:${item.completion_pct}%`
       : "";
-  return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken}${parentToken}${progressToken} ${item.title}`;
+  const blockedToken =
+    item.blocked === true
+      ? ` blocked:${item.blocker_ids?.join(",") || "lifecycle"}`
+      : "";
+  return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken}${parentToken}${progressToken}${blockedToken} ${item.title}`;
 }
 
 // Renders a focus row projected to a `--fields` subset as space-separated
@@ -2112,6 +2122,7 @@ function resolveContextSubtreeIds(
 async function resolveContextFocusGroups(
   listedItemMetadata: ItemMetadata[],
   allItems: ItemMetadata[],
+  fullCorpus: ItemMetadata[],
   blockedIds: ReadonlySet<string>,
   statusRegistry: RuntimeStatusRegistry,
   sectionsIncluded: ContextSectionName[],
@@ -2197,18 +2208,36 @@ async function resolveContextFocusGroups(
   const focusChildrenByParent = contextNeedsAllItems(sectionsIncluded)
     ? childrenByParent
     : undefined;
+  const fullCorpusById = new Map(
+    fullCorpus.map((item) => [item.id.trim().toLowerCase(), item]),
+  );
+  const projectFocusItem = (item: ItemMetadata): ContextFocusItem => {
+    const focus = toContextFocusItem(
+      item,
+      statusRegistry,
+      focusChildrenByParent,
+    );
+    if (!blockedIds.has(item.id.trim().toLowerCase())) {
+      return focus;
+    }
+    focus.blocked = true;
+    focus.blocker_ids = resolveItemBlockers(
+      item,
+      fullCorpusById,
+      statusRegistry,
+    )
+      .filter((blocker) => !blocker.resolved)
+      .map((blocker) => blocker.id);
+    return focus;
+  };
   const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, useBoundedPage ? focusPage.length : limit)
-    .map((item) =>
-      toContextFocusItem(item, statusRegistry, focusChildrenByParent),
-    );
+    .map(projectFocusItem);
   const lowLevel = activeItems
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, useBoundedPage ? focusPage.length : limit)
-    .map((item) =>
-      toContextFocusItem(item, statusRegistry, focusChildrenByParent),
-    );
+    .map(projectFocusItem);
   const blockedFallbackUsed = rankedActiveItems.length === 0;
   return {
     activeItems,
@@ -2218,9 +2247,7 @@ async function resolveContextFocusGroups(
     blockedFallback: blockedFallbackUsed
       ? blockedItems
           .slice(0, limit)
-          .map((item) =>
-            toContextFocusItem(item, statusRegistry, focusChildrenByParent),
-          )
+          .map(projectFocusItem)
       : [],
     blockedFallbackUsed,
     ranking,
@@ -2605,6 +2632,7 @@ export async function runContext(
   const focusGroups = await resolveContextFocusGroups(
     corpus.listedItemMetadata,
     corpus.allItems,
+    corpus.fullCorpus,
     blockedIds,
     runtime.statusRegistry,
     runtime.sectionsIncluded,

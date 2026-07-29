@@ -895,6 +895,7 @@ async function runCloseManyAction(
       status: readOptionString(options, "filterStatus"),
       list: buildCloseManyListOptions(options),
       reason: readOptionString(options, "reason"),
+      completedAt: readOptionString(options, "completedAt"),
       resolution: readOptionString(options, "resolution"),
       expectedResult: pickStringOption(
         options.expectedResult,
@@ -993,6 +994,7 @@ async function runCloseAction(
           : readOptionString(options, "validateClose"),
       force: Boolean(options.force),
       duplicateOf: readOptionString(options, "duplicateOf"),
+      completedAt: readOptionString(options, "completedAt"),
       resolution: readOptionString(options, "resolution"),
       expectedResult: pickStringOption(
         options.expectedResult,
@@ -2533,6 +2535,10 @@ export function registerMutationCommands(
       "Close reason text (alias for positional <text>)",
     )
     .option(
+      "--completed-at <value>",
+      "Actual completion timestamp (ISO or relative), distinct from tracker close time",
+    )
+    .option(
       "-d, --duplicate-of <id>",
       "Close as a duplicate of the canonical item id and auto-fill duplicate closure metadata",
     )
@@ -2632,6 +2638,10 @@ export function registerMutationCommands(
     .option(
       "--reason <value>",
       "Shared close reason applied to matched items (required when governance.require_close_reason is enabled)",
+    )
+    .option(
+      "--completed-at <value>",
+      "Actual completion timestamp (ISO or relative) applied to every matched item",
     )
     .option(
       "--resolution <value>",

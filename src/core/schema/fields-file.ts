@@ -52,6 +52,7 @@ export const BUILTIN_FIELD_KEYS: ReadonlySet<string> = new Set([
   "created_at",
   "updated_at",
   "closed_at",
+  "completed_at",
   "author",
   "deadline",
   "estimate",

@@ -9,6 +9,12 @@
 
 ### Fixed
 
+- GH-676: list tag filter must accept the CSV shape used by tag mutations ([pm-b1zsk9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b1zsk9.toon))
+- GH-675: lifecycle must record actual completion time separately from tracker close time ([pm-bwnclq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bwnclq.toon))
+- GH-711: update must support intentional unresolved parent references under strict governance ([pm-cragzs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cragzs.toon))
+- GH-715: expose mutation-guard policies through canonical config help and output ([pm-5ecnar](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5ecnar.toon))
+- GH-672: pm context low_level rows omit blocked state and blocker IDs ([pm-r2suqb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r2suqb.toon))
+- GH-651: pm activity bare relative windows silently return empty results ([pm-b0twiy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b0twiy.toon))
 - GH-784: SDK blueprint preflight misses host-owned flag collisions and malformed long-flag tokens ([pm-huolbk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-huolbk.toon))
 - GH-785: align pm health ok with warn-only exit semantics on fresh clones ([pm-83ov2i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-83ov2i.toon))
 - GH-792: fresh-clone health must not require ignored runtime and empty extension directories ([pm-0k4o8t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0k4o8t.toon))
@@ -31,6 +37,7 @@
 
 ### Other
 
+- Refresh compatible 2026-07-29 development dependencies ([pm-77bmeu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-77bmeu.toon))
 - Token-budget gate corpus is unrepresentative in both scale and coverage: budgets are set on a seeded micro-workspace and the largest agent-facing payloads are not measured at all ([pm-z71aoy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z71aoy.toon))
 - GH-782: guide-shell special-cases one multi-word command name and duplicates its status derivation, and calendar's throw-only validation call is unexplained, inside package-managed built-ins consumers cannot patch ([pm-cb8qq2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-cb8qq2.toon))
 

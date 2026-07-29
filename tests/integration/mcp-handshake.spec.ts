@@ -443,6 +443,15 @@ describe("MCP protocol handshake", () => {
       ),
     ).toEqual({ add: "keep-scalar" });
     expect(
+      mcpServerTestOnly.optionsWithAuthor(
+        { title: "not-hoisted", options: {} },
+        "unknown-action",
+      ),
+    ).toEqual({});
+    expect(
+      mcpServerTestOnly.optionsWithAuthor({ title: "not-hoisted", options: {} }),
+    ).toEqual({});
+    expect(
       mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_run", { typo: true }),
     ).toEqual([]);
     expect(

@@ -91,8 +91,11 @@ export type PmBulkMutationControlOptions = {
   noCheckpoint?: boolean;
 };
 
-/** Typed input for the SDK `update-many` action: update fields plus bulk selection filters and checkpoint controls. */
-export type PmUpdateManyActionOptions = PmUpdateActionOptions &
+/** Typed input for the SDK `update-many` action: bulk-supported update fields plus selection filters and checkpoint controls. */
+export type PmUpdateManyActionOptions = Omit<
+  PmUpdateActionOptions,
+  "allowMissingParent" | "completedAt"
+> &
   PmBulkMutationFilterOptions &
   PmBulkMutationControlOptions;
 
@@ -100,6 +103,7 @@ export type PmUpdateManyActionOptions = PmUpdateActionOptions &
 export type PmCloseManyActionOptions = Pick<
   PmCloseActionOptions,
   | "reason"
+  | "completedAt"
   | "resolution"
   | "expectedResult"
   | "actualResult"

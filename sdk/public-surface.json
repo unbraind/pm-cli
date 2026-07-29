@@ -223,6 +223,46 @@
       ],
       "package_version": "2026.7.28",
       "reason": "Export snapshot schema and strengthen workspace recipe JSON/exact-key contracts"
+    },
+    {
+      "changes": [
+        "signature ./sdk:CLOSE_ACTION_OPTION_KEYS",
+        "signature ./sdk:CloseCommandOptions",
+        "signature ./sdk:ContextFocusItem",
+        "signature ./sdk:ItemMetadata",
+        "signature ./sdk:NestedSettingResultValue",
+        "signature ./sdk:TOOL_UPDATE_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk:UpdateCommandOptions",
+        "signature ./sdk:WorkspaceMemorySelection",
+        "signature ./sdk:WorkspaceMemorySnapshot",
+        "signature ./sdk/contracts:CLOSE_ACTION_OPTION_KEYS",
+        "signature ./sdk/contracts:TOOL_UPDATE_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk/core:ItemMetadata",
+        "signature ./sdk/query:WorkspaceMemorySelection",
+        "signature ./sdk/query:WorkspaceMemorySnapshot",
+        "signature ./sdk/runtime:CloseCommandOptions",
+        "signature ./sdk/runtime:ContextFocusItem",
+        "signature ./sdk/runtime:ItemMetadata",
+        "signature ./sdk/runtime:UpdateCommandOptions"
+      ],
+      "package_version": "2026.7.28",
+      "reason": "Add optional completion timestamps, blocker provenance, and configuration metadata while preserving existing inputs and fallbacks (pm-bwnclq, pm-r2suqb, pm-5ecnar)."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmUpdateManyActionOptions",
+        "signature ./sdk/contracts:PmUpdateManyActionOptions"
+      ],
+      "package_version": "2026.7.28",
+      "reason": "Add optional completion timestamps, blocker provenance, and configuration metadata while preserving existing inputs and fallbacks (pm-bwnclq, pm-r2suqb, pm-5ecnar)."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCloseManyActionOptions",
+        "signature ./sdk/contracts:PmCloseManyActionOptions"
+      ],
+      "package_version": "2026.7.28",
+      "reason": "Expose completedAt on close-many typed SDK inputs for lifecycle parity"
     }
   ],
   "entrypoints": {
@@ -1283,7 +1323,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "CLOSE_ACTION_OPTION_KEYS",
-          "signature": "readonly [\"text\", \"reason\", \"closeReason\", \"duplicateOf\", \"validateClose\", \"resolution\", \"expectedResult\", \"actualResult\"]"
+          "signature": "readonly [\"text\", \"reason\", \"closeReason\", \"completedAt\", \"duplicateOf\", \"validateClose\", \"resolution\", \"expectedResult\", \"actualResult\"]"
         },
         {
           "classification": "contract_data",
@@ -1307,7 +1347,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "CloseCommandOptions",
-          "signature": "export interface CloseCommandOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; }"
+          "signature": "export interface CloseCommandOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; completedAt?: string; }"
         },
         {
           "classification": "supported",
@@ -1586,6 +1626,12 @@
           "signature": "export interface CompileCachePruneResult { retained: string; removed: string[]; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CompletedAtBackfillCandidate",
+          "signature": "export interface CompletedAtBackfillCandidate { id: string; completed_at: string; history_op: string; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "COMPLETION_FLAG_CONTRACTS",
@@ -1602,6 +1648,12 @@
           "kind": "type",
           "name": "CompletionShell",
           "signature": "export type CompletionShell = \"bash\" | \"zsh\" | \"fish\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "CompletionTimestampSource",
+          "signature": "export type CompletionTimestampSource = \"completed_at\" | \"closed_at\" | \"updated_at\";"
         },
         {
           "classification": "supported",
@@ -1811,7 +1863,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContextFocusItem",
-          "signature": "export interface ContextFocusItem { id: string; title: string; type: string; status: ItemStatus; priority: number; order: number | null; deadline: string | null; assignee: string | null; tags?: string[]; tags_inherited?: string; updated_at: string; parent: string | null; children_total?: number; children_closed?: number; completion_pct?: number; }"
+          "signature": "export interface ContextFocusItem { id: string; title: string; type: string; status: ItemStatus; priority: number; order: number | null; deadline: string | null; assignee: string | null; tags?: string[]; tags_inherited?: string; updated_at: string; parent: string | null; children_total?: number; children_closed?: number; completion_pct?: number; blocked?: true; blocker_ids?: string[]; }"
         },
         {
           "classification": "supported",
@@ -4787,7 +4839,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -5489,7 +5541,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "NestedSettingResultValue",
-          "signature": "export interface NestedSettingResultValue { key: string; path: string; kind: NestedSettingDescriptor[\"kind\"]; value: string | number | boolean | null; }"
+          "signature": "export interface NestedSettingResultValue { key: string; canonical_key?: string; path: string; kind: NestedSettingDescriptor[\"kind\"]; value: string | number | boolean | null; summary?: string; choices?: string[]; min?: number; max?: number; }"
         },
         {
           "classification": "supported",
@@ -6213,6 +6265,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "function",
+          "name": "planCompletedAtBackfill",
+          "signature": "(items: readonly ItemMetadata[], historyById: ReadonlyMap<string, readonly HistoryEntry[]>, terminalStatuses: ReadonlySet<string>) => CompletedAtBackfillCandidate[] | calls: (items: readonly ItemMetadata[], historyById: ReadonlyMap<string, readonly HistoryEntry[]>, terminalStatuses: ReadonlySet<string>) => CompletedAtBackfillCandidate[]"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "PlanDispatchInput",
           "signature": "export interface PlanDispatchInput { subcommand: PlanSubcommand; id?: string; stepRef?: string; reorderTo?: number; options: PlanCommandOptions; global: GlobalOptions; }"
@@ -6569,7 +6627,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCloseManyActionOptions",
-          "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"completedAt\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -6737,7 +6795,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateManyActionOptions",
-          "signature": "export type PmUpdateManyActionOptions = PmUpdateActionOptions & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionOptions, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "supported",
@@ -8254,6 +8312,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveCompletionTimestamp",
+          "signature": "(item: Pick<ItemMetadata, \"closed_at\" | \"completed_at\" | \"updated_at\">) => ResolvedCompletionTimestamp | calls: (item: Pick<ItemMetadata, \"completed_at\" | \"closed_at\" | \"updated_at\">) => ResolvedCompletionTimestamp"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveConfiguredPmPackageRoot",
           "signature": "(env?: NodeJS.ProcessEnv, envName?: string, metaUrl?: string, fallbackRelativeSegments?: string[]) => string | calls: (env?: NodeJS.ProcessEnv, envName?: string, metaUrl?: string, fallbackRelativeSegments?: string[]) => string"
         },
@@ -8274,6 +8338,12 @@
           "kind": "interface",
           "name": "ResolvedBlocker",
           "signature": "export interface ResolvedBlocker { id: string; title: string | null; status: ItemStatus | null; resolved: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ResolvedCompletionTimestamp",
+          "signature": "export interface ResolvedCompletionTimestamp { timestamp: string; source: CompletionTimestampSource; fallback: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -10619,7 +10689,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_UPDATE_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"removeTags\"; readonly flag: \"--remove-tags\"; readonly repeatable: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"addAc\"; readonly flag: \"--add-ac\"; readonly repeatable: true; }, { readonly param: \"removeAc\"; readonly flag: \"--remove-ac\"; readonly repeatable: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"depRemove\"; readonly flag: \"--dep-remove\"; readonly repeatable: true; }, { readonly param: \"replaceDeps\"; readonly flag: \"--replace-deps\"; }, { readonly param: \"replaceTests\"; readonly flag: \"--replace-tests\"; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
+          "signature": "readonly [{ readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"completedAt\"; readonly flag: \"--completed-at\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"removeTags\"; readonly flag: \"--remove-tags\"; readonly repeatable: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"addAc\"; readonly flag: \"--add-ac\"; readonly repeatable: true; }, { readonly param: \"removeAc\"; readonly flag: \"--remove-ac\"; readonly repeatable: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"depRemove\"; readonly flag: \"--dep-remove\"; readonly repeatable: true; }, { readonly param: \"replaceDeps\"; readonly flag: \"--replace-deps\"; }, { readonly param: \"replaceTests\"; readonly flag: \"--replace-tests\"; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
         },
         {
           "classification": "contract_data",
@@ -10703,7 +10773,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "UpdateCommandOptions",
-          "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; status?: string; closeReason?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
+          "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; status?: string; closeReason?: string; completedAt?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; allowMissingParent?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -10997,13 +11067,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceMemorySelection",
-          "signature": "export interface WorkspaceMemorySelection { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }"
+          "signature": "export interface WorkspaceMemorySelection { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; completion_time_sources?: Record<CompletionTimestampSource, number>; rollups: WorkspaceMemoryRollup[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceMemorySnapshot",
-          "signature": "export interface WorkspaceMemorySnapshot { format_version: number; source_cursor: string; source_item_count: number; generated_at: string; rollups: WorkspaceMemoryRollup[]; }"
+          "signature": "export interface WorkspaceMemorySnapshot { format_version: number; source_cursor: string; source_item_count: number; generated_at: string; completion_time_sources?: Record<CompletionTimestampSource, number>; rollups: WorkspaceMemoryRollup[]; }"
         },
         {
           "classification": "advanced_export",
@@ -12563,7 +12633,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "CLOSE_ACTION_OPTION_KEYS",
-          "signature": "readonly [\"text\", \"reason\", \"closeReason\", \"duplicateOf\", \"validateClose\", \"resolution\", \"expectedResult\", \"actualResult\"]"
+          "signature": "readonly [\"text\", \"reason\", \"closeReason\", \"completedAt\", \"duplicateOf\", \"validateClose\", \"resolution\", \"expectedResult\", \"actualResult\"]"
         },
         {
           "classification": "contract_data",
@@ -13157,7 +13227,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCloseManyActionOptions",
-          "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"completedAt\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -13247,7 +13317,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateManyActionOptions",
-          "signature": "export type PmUpdateManyActionOptions = PmUpdateActionOptions & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionOptions, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -13493,7 +13563,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_UPDATE_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"removeTags\"; readonly flag: \"--remove-tags\"; readonly repeatable: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"addAc\"; readonly flag: \"--add-ac\"; readonly repeatable: true; }, { readonly param: \"removeAc\"; readonly flag: \"--remove-ac\"; readonly repeatable: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"depRemove\"; readonly flag: \"--dep-remove\"; readonly repeatable: true; }, { readonly param: \"replaceDeps\"; readonly flag: \"--replace-deps\"; }, { readonly param: \"replaceTests\"; readonly flag: \"--replace-tests\"; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
+          "signature": "readonly [{ readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"completedAt\"; readonly flag: \"--completed-at\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"removeTags\"; readonly flag: \"--remove-tags\"; readonly repeatable: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"addAc\"; readonly flag: \"--add-ac\"; readonly repeatable: true; }, { readonly param: \"removeAc\"; readonly flag: \"--remove-ac\"; readonly repeatable: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"depRemove\"; readonly flag: \"--dep-remove\"; readonly repeatable: true; }, { readonly param: \"replaceDeps\"; readonly flag: \"--replace-deps\"; }, { readonly param: \"replaceTests\"; readonly flag: \"--replace-tests\"; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
         },
         {
           "classification": "contract_data",
@@ -14033,7 +14103,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -17303,13 +17373,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceMemorySelection",
-          "signature": "export interface WorkspaceMemorySelection { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }"
+          "signature": "export interface WorkspaceMemorySelection { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; completion_time_sources?: Record<CompletionTimestampSource, number>; rollups: WorkspaceMemoryRollup[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "WorkspaceMemorySnapshot",
-          "signature": "export interface WorkspaceMemorySnapshot { format_version: number; source_cursor: string; source_item_count: number; generated_at: string; rollups: WorkspaceMemoryRollup[]; }"
+          "signature": "export interface WorkspaceMemorySnapshot { format_version: number; source_cursor: string; source_item_count: number; generated_at: string; completion_time_sources?: Record<CompletionTimestampSource, number>; rollups: WorkspaceMemoryRollup[]; }"
         }
       ],
       "types": "dist/sdk/query.d.ts"
@@ -17465,7 +17535,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "CloseCommandOptions",
-          "signature": "export interface CloseCommandOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; }"
+          "signature": "export interface CloseCommandOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; completedAt?: string; }"
         },
         {
           "classification": "supported",
@@ -17573,7 +17643,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContextFocusItem",
-          "signature": "export interface ContextFocusItem { id: string; title: string; type: string; status: ItemStatus; priority: number; order: number | null; deadline: string | null; assignee: string | null; tags?: string[]; tags_inherited?: string; updated_at: string; parent: string | null; children_total?: number; children_closed?: number; completion_pct?: number; }"
+          "signature": "export interface ContextFocusItem { id: string; title: string; type: string; status: ItemStatus; priority: number; order: number | null; deadline: string | null; assignee: string | null; tags?: string[]; tags_inherited?: string; updated_at: string; parent: string | null; children_total?: number; children_closed?: number; completion_pct?: number; blocked?: true; blocker_ids?: string[]; }"
         },
         {
           "classification": "supported",
@@ -18137,7 +18207,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -19583,7 +19653,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "UpdateCommandOptions",
-          "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; status?: string; closeReason?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
+          "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; status?: string; closeReason?: string; completedAt?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; allowMissingParent?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
         },
         {
           "classification": "supported",

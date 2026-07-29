@@ -2,23 +2,47 @@ id: pm-cragzs
 title: "GH-711: update must support intentional unresolved parent references under strict governance"
 description: "Add create/update parity for an explicit allow-missing-parent escape hatch so strict parent_reference policy can support forward-declared hierarchy construction without disabling validation globally. GitHub: https://github.com/unbraind/pm-cli/issues/711"
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,gh-711,governance,relationships
 created_at: "2026-07-25T15:23:57.781Z"
-updated_at: "2026-07-26T05:57:30.803Z"
+updated_at: "2026-07-29T01:02:44.340Z"
+closed_at: "2026-07-29T01:02:40.379Z"
+completed_at: "2026-07-29T01:02:40.379Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "pm update accepts the same allow-missing-parent escape hatch as pm create, with one shared flag spelling and one shared contract entry rather than a second per-command implementation; using it under strict parent_reference governance records a validation warning instead of failing, matching create-side behaviour exactly; omitting it preserves today's strict fail-fast on an unresolved parent; forward-declared hierarchy construction (child created or re-parented before its parent exists) round-trips through create and update without disabling parent validation globally; a parity spec asserts create/update agreement for the flag, its warning payload, and its history record"
 parent: pm-usfg
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-p9hw,related,"2026-07-25T15:23:57.781Z",null,null
-  pm-fs8q9x,related,"2026-07-25T17:52:36.305Z",null,null
-  pm-wt43zj,related,"2026-07-25T17:52:36.305Z",null,null
-  pm-x2aplf,related,"2026-07-25T17:52:36.305Z",null,null
-  pm-usfg,implements,"2026-07-26T05:57:30.548Z",null,null
-comments[1]{created_at,author,text}:
+resolution: Update accepts an intentional allow-missing-parent escape hatch across CLI SDK MCP and generated contracts while preserving strict defaults.
+expected_result: Strict-governance work can be re-parented to a forward-declared item only when explicitly allowed.
+actual_result: Focused tests and packed strict-preset acceptance persist the normalized parent and emit a validation warning.
+dependencies[5]{id,kind,created_at}:
+  pm-p9hw,related,"2026-07-25T15:23:57.781Z"
+  pm-fs8q9x,related,"2026-07-25T17:52:36.305Z"
+  pm-wt43zj,related,"2026-07-25T17:52:36.305Z"
+  pm-x2aplf,related,"2026-07-25T17:52:36.305Z"
+  pm-usfg,implements,"2026-07-26T05:57:30.548Z"
+comments[2]{created_at,author,text}:
   "2026-07-25T15:23:57.781Z","harness:codex","Duplicate check: searched every tracker status for GH-711, allow missing parent, strict parent_reference, and update parent parity; no canonical item exists. Related lineage: pm-p9hw established create parent semantics and pm-usfg owns SDK-first mutation parity."
+  "2026-07-29T01:01:41.288Z","harness:codex","Delivery evidence: update now supports --allow-missing-parent consistently across Commander, CLI contracts, typed SDK input, runtime hoisting, MCP schema, and generated contract snapshots. The linked 140-test update/MCP suite passed; isolated strict-preset acceptance persisted a forward parent and emitted the explicit validation warning."
+files[12]{path,scope,note}:
+  src/cli/commands/update.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/cli/register-mutation.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/sdk/cli-contracts/flag-contracts.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/sdk/cli-contracts/tool-schema.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/sdk/cli-contracts/typed-action-inputs.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  src/sdk/runtime-input.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  tests/fixtures/contracts/full.json,project,generated allow-missing-parent CLI MCP and tool contracts
+  tests/integration/mcp-handshake.spec.ts,project,allow missing parent parity across CLI SDK MCP and tests
+  tests/unit/commands/update-command.spec.ts,project,allow missing parent parity across CLI SDK MCP and tests
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/integration/mcp-handshake.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms5cvu7p-vitgbc,test,passed,"2026-07-29T00:37:51.562Z","2026-07-29T00:38:07.286Z","2026-07-29T00:38:07.286Z",1,0,0
+close_reason: Update missing-parent parity implemented and verified
 body: ""

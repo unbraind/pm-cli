@@ -778,8 +778,9 @@ describe("runUpdate", () => {
         changedFields,
       );
 
-      expect(changedFields).toEqual(["status", "closed_at", "close_reason"]);
+      expect(changedFields).toEqual(["status", "closed_at", "completed_at", "close_reason"]);
       expect(missingClosedAtDocument.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
+      expect(missingClosedAtDocument.metadata.completed_at).toBe("2026-01-02T00:00:00.000Z");
 
       const nullClosedAtDocument: ItemDocument = {
         metadata: {
@@ -807,10 +808,11 @@ describe("runUpdate", () => {
         changedFields,
       );
 
-      expect(changedFields).toEqual(["status", "closed_at", "close_reason"]);
+      expect(changedFields).toEqual(["status", "closed_at", "completed_at", "close_reason"]);
       expect(nullClosedAtDocument.metadata.status).toBe("closed");
       expect(nullClosedAtDocument.metadata.close_reason).toBe("direct mutation path");
       expect(nullClosedAtDocument.metadata.closed_at).toBe("2026-01-02T00:00:00.000Z");
+      expect(nullClosedAtDocument.metadata.completed_at).toBe("2026-01-02T00:00:00.000Z");
 
       const reopenNullClosedAtDocument: ItemDocument = {
         metadata: {
@@ -824,6 +826,8 @@ describe("runUpdate", () => {
         body: "",
       };
       reopenNullClosedAtDocument.metadata.closed_at = null as unknown as string;
+      reopenNullClosedAtDocument.metadata.completed_at =
+        "2026-01-01T12:00:00.000Z";
       changedFields.length = 0;
 
       _testOnlyUpdateCommand.applyStatusAndCloseReasonMutations(
@@ -838,9 +842,45 @@ describe("runUpdate", () => {
         changedFields,
       );
 
-      expect(changedFields).toEqual(["status", "closed_at"]);
+      expect(changedFields).toEqual(["status", "closed_at", "completed_at"]);
       expect(reopenNullClosedAtDocument.metadata.status).toBe("open");
       expect(reopenNullClosedAtDocument.metadata.closed_at).toBeUndefined();
+      expect(reopenNullClosedAtDocument.metadata.completed_at).toBeUndefined();
+    });
+  });
+
+  it("governs completed_at corrections through terminal update history", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "correct-actual-completion");
+      await runUpdate(
+        id,
+        {
+          status: "closed",
+          closeReason: "Completed before tracker closeout",
+        },
+        { path: context.pmPath },
+      );
+
+      const actualCompletion = "2026-05-14T09:15:00.000Z";
+      const corrected = await runUpdate(
+        id,
+        {
+          completedAt: actualCompletion,
+          message: "Correct actual completion time from delivery evidence",
+        },
+        { path: context.pmPath },
+      );
+      expect(corrected.item.completed_at).toBe(actualCompletion);
+      expect(corrected.changed_fields).toEqual(["completed_at"]);
+
+      const activeId = createTask(context, "reject-active-completion-time");
+      await expect(
+        runUpdate(
+          activeId,
+          { completedAt: actualCompletion },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
     });
   });
 
@@ -1465,6 +1505,54 @@ describe("runUpdate", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("allows an intentional missing parent through the shared escape hatch", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-parent-forward-declared");
+
+      const updated = await runUpdate(
+        id,
+        {
+          parent: "pm-parent-forward-declared",
+          allowMissingParent: true,
+          message: "stage forward-declared hierarchy",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(updated.item.parent).toBe("pm-parent-forward-declared");
+      expect(updated.changed_fields).toContain("parent");
+      expect(updated.warnings).toContain(
+        "validation_warning:parent_reference_missing:pm-parent-forward-declared",
+      );
+      const history = (
+        await readFile(
+          path.join(context.pmPath, "history", `${id}.jsonl`),
+          "utf8",
+        )
+      )
+        .trim()
+        .split("\n")
+        .map(
+          (line) =>
+            JSON.parse(line) as {
+              message?: string;
+              patch: Array<{ path: string; value?: unknown }>;
+            },
+        );
+      expect(
+        history.some(
+          (entry) =>
+            entry.message === "stage forward-declared hierarchy" &&
+            entry.patch.some(
+              (operation) =>
+                operation.path === "/metadata/parent" &&
+                operation.value === "pm-parent-forward-declared",
+            ),
+        ),
+      ).toBe(true);
     });
   });
 

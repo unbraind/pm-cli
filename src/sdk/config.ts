@@ -138,12 +138,22 @@ export interface ConfigCommandOptions {
 export interface NestedSettingResultValue {
   /** Value that configures or reports key for this contract. */
   key: string;
+  /** Preferred kebab-case CLI spelling for copy/paste-safe configuration. */
+  canonical_key?: string;
   /** Filesystem path used for path resolution. */
   path: string;
   /** Value that configures or reports kind for this contract. */
   kind: NestedSettingDescriptor["kind"];
   /** Value that configures or reports value for this contract. */
   value: string | number | boolean | null;
+  /** Short operator-facing explanation of the setting. */
+  summary?: string;
+  /** Closed value domain when the setting accepts a fixed vocabulary. */
+  choices?: string[];
+  /** Inclusive numeric lower bound when one is declared. */
+  min?: number;
+  /** Inclusive numeric upper bound when one is declared. */
+  max?: number;
 }
 
 /** Documents the config result payload exchanged by command, SDK, and package integrations. */
@@ -1183,9 +1193,16 @@ function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
   const nestedSettings: NestedSettingResultValue[] =
     NESTED_SETTING_DESCRIPTORS.map((descriptor) => ({
       key: descriptor.key,
+      canonical_key: descriptor.key.replaceAll("_", "-"),
       path: descriptor.path,
       kind: descriptor.kind,
       value: readNestedSettingValue(context.settings, descriptor),
+      summary: descriptor.summary,
+      ...(descriptor.choices
+        ? { choices: [...descriptor.choices] }
+        : {}),
+      ...(descriptor.min === undefined ? {} : { min: descriptor.min }),
+      ...(descriptor.max === undefined ? {} : { max: descriptor.max }),
     }));
   return withWarnings(
     {

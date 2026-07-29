@@ -11,6 +11,10 @@ import { stableStringify } from "../core/shared/serialization.js";
 import { readItemMetadataDerivedIndexState } from "../core/store/item-metadata-cache.js";
 import type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import type { ItemMetadata } from "../types/index.js";
+import {
+  resolveCompletionTimestamp,
+  type CompletionTimestampSource,
+} from "./lifecycle-completion.js";
 import fs from "node:fs/promises";
 
 const WORKSPACE_MEMORY_FORMAT_VERSION = 1;
@@ -58,6 +62,8 @@ export interface WorkspaceMemorySnapshot {
   source_item_count: number;
   /** Timestamp at which this projection was generated. */
   generated_at: string;
+  /** Counts disclosing actual-completion use versus legacy fallback sources. */
+  completion_time_sources?: Record<CompletionTimestampSource, number>;
   /** Deterministically ordered historical rollups. */
   rollups: WorkspaceMemoryRollup[];
 }
@@ -78,6 +84,8 @@ export interface WorkspaceMemorySelection {
   cache_status: "fresh" | "rebuilt";
   /** Authoritative cursor represented by the projection. */
   source_cursor: string;
+  /** Counts disclosing actual-completion use versus legacy fallback sources. */
+  completion_time_sources?: Record<CompletionTimestampSource, number>;
   /** Token-bounded historical rollups. */
   rollups: WorkspaceMemoryRollup[];
 }
@@ -98,7 +106,7 @@ interface MutableRollup {
 }
 
 function completionTimestamp(item: ItemMetadata): string {
-  return item.closed_at ?? item.updated_at;
+  return resolveCompletionTimestamp(item).timestamp;
 }
 
 function quarterKey(timestamp: string): string {
@@ -208,6 +216,15 @@ export function buildWorkspaceMemorySnapshot(
     source_cursor: options.sourceCursor,
     source_item_count: items.length,
     generated_at: options.now,
+    completion_time_sources: completed.reduce<
+      Record<CompletionTimestampSource, number>
+    >(
+      (counts, item) => {
+        counts[resolveCompletionTimestamp(item).source] += 1;
+        return counts;
+      },
+      { completed_at: 0, closed_at: 0, updated_at: 0 },
+    ),
     rollups: [...groups.values()]
       .map(finalizeRollup)
       .sort(
@@ -417,6 +434,13 @@ export function selectWorkspaceMemory(
   return {
     cache_status: memory.cache_status === "fresh" ? "fresh" : "rebuilt",
     source_cursor: memory.snapshot.source_cursor,
+    ...(memory.snapshot.completion_time_sources
+      ? {
+          completion_time_sources: {
+            ...memory.snapshot.completion_time_sources,
+          },
+        }
+      : {}),
     rollups,
   };
 }

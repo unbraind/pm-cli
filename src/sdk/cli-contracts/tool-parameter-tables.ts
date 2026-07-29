@@ -128,6 +128,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   filterSprint: { type: "string" },
   filterRelease: { type: "string" },
   closeReason: { type: "string" },
+  completedAt: { type: "string", format: "date-time" },
   reason: { type: "string" },
   priority: { anyOf: [{ type: "string" }, { type: "number" }] },
   tags: { type: "string" },

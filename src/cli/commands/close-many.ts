@@ -54,6 +54,8 @@ export interface CloseManyCommandOptions {
   list?: ListOptions;
   /** Value that configures or reports reason for this contract. */
   reason?: string;
+  /** Actual completion time shared by every matched close. */
+  completedAt?: string;
   /** Value that configures or reports resolution for this contract. */
   resolution?: string;
   /** Structured result returned by the expected operation. */
@@ -668,6 +670,7 @@ export async function runCloseMany(
   const closeOptions: CloseCommandOptions = {
     author: options.author,
     message: options.message ?? `close-many apply ${checkpointId}`,
+    completedAt: options.completedAt,
     validateClose: context.validateCloseMode,
     force: context.force,
     resolution: options.resolution,

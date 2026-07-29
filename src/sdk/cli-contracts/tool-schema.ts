@@ -184,7 +184,9 @@ const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 
 const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
-  ...UPDATE_CONTRACT_PARAMETER_KEYS,
+  ...UPDATE_CONTRACT_PARAMETER_KEYS.filter(
+    (key) => key !== "allowMissingParent" && key !== "completedAt",
+  ),
   "dryRun",
   "rollback",
   "noCheckpoint",
@@ -193,6 +195,7 @@ const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const CLOSE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
   "reason",
+  "completedAt",
   "resolution",
   "expectedResult",
   "actualResult",
@@ -311,6 +314,7 @@ export const CLOSE_ACTION_OPTION_KEYS = [
   "text",
   "reason",
   "closeReason",
+  "completedAt",
   "duplicateOf",
   "validateClose",
   "resolution",

@@ -179,7 +179,7 @@ describe("runClose", () => {
     });
   });
 
-  it("stamps closed_at on close/create-closed and clears it when leaving closed", async () => {
+  it("tracks actual completion separately from close time and clears both when reopened", async () => {
     await withTempPmPath(async (context) => {
       const closedViaClose = createTask(context, "close-at-via-close");
 
@@ -190,13 +190,45 @@ describe("runClose", () => {
         { path: context.pmPath },
       );
       const closedItem = closeResult.item as Record<string, unknown>;
-      expect(closeResult.changed_fields).toEqual(expect.arrayContaining(["status", "closed_at", "close_reason"]));
+      expect(closeResult.changed_fields).toEqual(expect.arrayContaining(["status", "closed_at", "completed_at", "close_reason"]));
       expect(typeof closedItem.closed_at).toBe("string");
+      expect(closedItem.completed_at).toBe(closedItem.closed_at);
       expect(Number.isFinite(Date.parse(closedItem.closed_at as string))).toBe(true);
+
+      const actualCompletion = "2026-06-01T08:30:00.000Z";
+      const explicitId = createTask(context, "close-with-actual-completion");
+      const explicitlyCompleted = await runClose(
+        explicitId,
+        "Closed after delayed tracker cleanup",
+        { completedAt: actualCompletion },
+        { path: context.pmPath },
+      );
+      expect(explicitlyCompleted.item).toMatchObject({
+        completed_at: actualCompletion,
+      });
+      expect(explicitlyCompleted.item.closed_at).not.toBe(actualCompletion);
+
+      const forceReclose = await runClose(
+        explicitId,
+        "Reclosed without correcting completion",
+        { force: true },
+        { path: context.pmPath },
+      );
+      expect(forceReclose.item.completed_at).toBe(actualCompletion);
+      expect(forceReclose.changed_fields).not.toContain("completed_at");
 
       const closedViaCloseMany = createTestItemId(context, { title: "close-at-via-close-many", tags: "close-at-bulk", status: "open" });
       const closeManyResult = context.runCli(
-        ["close-many", "--filter-tag", "close-at-bulk", "--reason", "bulk closed with timestamp", "--json"],
+        [
+          "close-many",
+          "--filter-tag",
+          "close-at-bulk",
+          "--reason",
+          "bulk closed with timestamp",
+          "--completed-at",
+          actualCompletion,
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(closeManyResult.code).toBe(0);
@@ -205,9 +237,10 @@ describe("runClose", () => {
       expect(closeManyPayload.ids).toEqual([closedViaCloseMany]);
       const bulkClosed = context.runCli(["get", closedViaCloseMany, "--json"], { expectJson: true });
       expect(bulkClosed.code).toBe(0);
-      const bulkClosedPayload = bulkClosed.json as { item: { closed_at?: string; status: string } };
+      const bulkClosedPayload = bulkClosed.json as { item: { closed_at?: string; completed_at?: string; status: string } };
       expect(bulkClosedPayload.item.status).toBe("closed");
       expect(Number.isFinite(Date.parse(bulkClosedPayload.item.closed_at ?? ""))).toBe(true);
+      expect(bulkClosedPayload.item.completed_at).toBe(actualCompletion);
 
       const createdClosed = context.runCli(
         [
@@ -224,16 +257,19 @@ describe("runClose", () => {
         { expectJson: true },
       );
       expect(createdClosed.code).toBe(0);
-      const createdPayload = createdClosed.json as { item: { id: string; closed_at?: string }; changed_fields: string[] };
+      const createdPayload = createdClosed.json as { item: { id: string; closed_at?: string; completed_at?: string }; changed_fields: string[] };
       expect(createdPayload.changed_fields).toContain("closed_at");
+      expect(createdPayload.item.completed_at).toBe(createdPayload.item.closed_at);
       expect(Number.isFinite(Date.parse(createdPayload.item.closed_at ?? ""))).toBe(true);
 
       const reopened = context.runCli(["update", createdPayload.item.id, "--status", "open", "--json"], { expectJson: true });
       expect(reopened.code).toBe(0);
-      const reopenedPayload = reopened.json as { item: { closed_at?: string; status: string }; changed_fields: string[] };
+      const reopenedPayload = reopened.json as { item: { closed_at?: string; completed_at?: string; status: string }; changed_fields: string[] };
       expect(reopenedPayload.item.status).toBe("open");
       expect(reopenedPayload.item.closed_at).toBeUndefined();
+      expect(reopenedPayload.item.completed_at).toBeUndefined();
       expect(reopenedPayload.changed_fields).toContain("closed_at");
+      expect(reopenedPayload.changed_fields).toContain("completed_at");
     });
   });
 

@@ -743,6 +743,7 @@ function assertValidItemMetadata(
   assertReminderEntries(record);
   assertCalendarEvents(record);
   assertOptionalTimestampString(record, "closed_at", "closed_at");
+  assertOptionalTimestampString(record, "completed_at", "completed_at");
   assertOptionalStringFields(record);
   assertTypeOptionsField(record);
   coerceRuntimeItemMetadataFields(record, itemType, runtimeContext);
@@ -1589,6 +1590,7 @@ export function normalizeItemMetadata(
     reminders: sortReminders(itemMetadata.reminders),
     events: sortEvents(itemMetadata.events),
     closed_at: emptyStringToUndefined(itemMetadata.closed_at),
+    completed_at: emptyStringToUndefined(itemMetadata.completed_at),
     assignee: trimStringOrUndefined(itemMetadata.assignee),
     claim_principal: trimStringOrUndefined(itemMetadata.claim_principal),
     source_owner: trimStringOrUndefined(itemMetadata.source_owner),
