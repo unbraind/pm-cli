@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: ci,governance,quality,release,testing
 created_at: "2026-07-25T12:31:33.732Z"
-updated_at: "2026-07-29T18:41:07.957Z"
+updated_at: "2026-07-29T18:51:20.198Z"
 closed_at: "2026-07-29T18:39:46.539Z"
 completed_at: "2026-07-29T18:39:46.539Z"
 author: "harness:claude-code"
@@ -90,8 +90,9 @@ dependencies[21]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-29T18:28:13.325Z","harness:codex","Implementation evidence: gate-registry discovery inventories all 43 named enforced workflow steps and validates exact pipeline parity against 10 owned gate groups. Each group declares PM owner, failure taxonomy, bypass policy, executable negative-control test/assertion, and source claims. quality:gate-registry is mandatory inside quality:static; adding or removing a named workflow gate without registry parity now fails. Known-bad fixtures cover malformed ownership, duplicate/stale pipelines, missing assertions, missing source claims, and invalid negative controls."
+  "2026-07-29T18:51:20.198Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/813 at implementation head c7ac2767e. The PR description links this canonical record and includes 43-step registry parity, executable negative controls, exact coverage, installed-consumer, security, and PM validation evidence."
 notes[1]{created_at,author,text}:
   "2026-07-29T18:28:14.365Z","harness:codex",Registry design groups pipeline steps by one policy owner and one executable negative-control suite rather than duplicating the same ownership and taxonomy record for every matrix occurrence; discovered pipeline identifiers remain exact and exhaustive.
 learnings[1]{created_at,author,text}:

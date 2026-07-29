@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[8]: "area:testing",benchmark,conformance,corpus,eval,fixtures,rl-substrate,scale
 created_at: "2026-07-29T16:54:05.041Z"
-updated_at: "2026-07-29T18:41:07.079Z"
+updated_at: "2026-07-29T18:51:19.293Z"
 closed_at: "2026-07-29T18:39:39.561Z"
 completed_at: "2026-07-29T18:39:39.561Z"
 author: "harness:claude-code"
@@ -33,9 +33,10 @@ dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-6l2mza,related,"2026-07-29T17:02:44.761Z","harness:claude-code","cli:update:dep",detected
   pm-b2hc4x,related,"2026-07-29T17:02:44.761Z","harness:claude-code","cli:update:dep",detected
   pm-k6t4yb,verifies,"2026-07-29T18:28:02.339Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-29T18:28:09.956Z","harness:codex","Implementation evidence: the public SDK now exposes a versioned corpus-shape schema and five deterministic built-ins (scratch, representative, deep-graph, multi-decade, disconnected-archive). The generator materializes authors, schema customizations, annotations, typed edges, history depth, time span, parents and disconnected archives, emits measured shape manifests, and fails closed on declaration drift. A committed same-count scratch-versus-representative report compares claim/context/create/get/list/next/search p95 with a declared 20 percent materiality margin."
   "2026-07-29T18:36:32.148Z","harness:codex","Linked benchmark hygiene: the executable comparison link writes to an explicit temporary output so repeated PM verification cannot rewrite the committed evidence report; the committed report remains a deliberate versioned artifact generated for this delivery."
+  "2026-07-29T18:51:19.293Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/813 at implementation head c7ac2767e. The PR description links this canonical record and includes exact coverage, installed-consumer, security, cross-shape measurement, and PM validation evidence."
 notes[1]{created_at,author,text}:
   "2026-07-29T18:28:11.006Z","harness:codex","Compatibility decision: scale budgets are keyed by shape, with a scratch fallback to legacy unqualified budget records so existing benchmark consumers do not break while new population-specific evidence remains attributable."
 learnings[1]{created_at,author,text}:
