@@ -74,6 +74,7 @@ import {
   memoizeWorkspaceExtensionRegistrations,
 } from "./workspace-contracts-cache.js";
 import { createExtensionCommandSdk } from "./extension-command-context.js";
+import { attachOutputOmissionReceipt } from "./output-projection.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import {
   type AggregateOptions,
@@ -3905,15 +3906,18 @@ async function dispatchAction(
     activeExtensions,
   };
   const handler = getOwnHandler(SDK_ACTION_HANDLERS, action);
-  return handler
-    ? handler(ctx)
-    : dispatchActiveExtensionAction(
+  const result = handler
+    ? await handler(ctx)
+    : await dispatchActiveExtensionAction(
         action,
         args,
         options,
         global,
         activeExtensions,
       );
+  return handler === undefined
+    ? result
+    : attachOutputOmissionReceipt(action, result);
 }
 
 const actionRunnerTestHooks = {

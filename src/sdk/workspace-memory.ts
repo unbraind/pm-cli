@@ -14,6 +14,7 @@ import type { ItemMetadata } from "../types/index.js";
 import {
   resolveCompletionTimestamp,
   type CompletionTimestampSource,
+  type ResolvedCompletionTimestamp,
 } from "./lifecycle-completion.js";
 import fs from "node:fs/promises";
 
@@ -102,11 +103,10 @@ interface MutableRollup {
   kind: "epoch" | "epic";
   key: string;
   label: string;
-  items: ItemMetadata[];
-}
-
-function completionTimestamp(item: ItemMetadata): string {
-  return resolveCompletionTimestamp(item).timestamp;
+  items: Array<{
+    item: ItemMetadata;
+    completion: ResolvedCompletionTimestamp;
+  }>;
 }
 
 function quarterKey(timestamp: string): string {
@@ -132,14 +132,14 @@ function nearestEpic(
 
 function finalizeRollup(rollup: MutableRollup): WorkspaceMemoryRollup {
   const ordered = [...rollup.items].sort((left, right) => {
-    const timestampOrder = completionTimestamp(right).localeCompare(
-      completionTimestamp(left),
+    const timestampOrder = right.completion.timestamp.localeCompare(
+      left.completion.timestamp,
     );
-    return timestampOrder || left.id.localeCompare(right.id);
+    return timestampOrder || left.item.id.localeCompare(right.item.id);
   });
   const outcomes = new Set<string>();
   let knowledgeEntries = 0;
-  for (const item of ordered) {
+  for (const { item } of ordered) {
     const outcome = item.resolution ?? item.close_reason;
     if (outcome?.trim()) outcomes.add(outcome.trim());
     knowledgeEntries +=
@@ -150,11 +150,11 @@ function finalizeRollup(rollup: MutableRollup): WorkspaceMemoryRollup {
     key: rollup.key,
     label: rollup.label,
     item_count: ordered.length,
-    first_closed_at: completionTimestamp(ordered.at(-1)!),
-    last_closed_at: completionTimestamp(ordered[0]!),
+    first_closed_at: ordered.at(-1)!.completion.timestamp,
+    last_closed_at: ordered[0]!.completion.timestamp,
     representative_items: ordered
       .slice(0, 5)
-      .map(({ id, title }) => ({ id, title })),
+      .map(({ item: { id, title } }) => ({ id, title })),
     outcomes: [...outcomes].sort().slice(0, 5),
     knowledge_entries: knowledgeEntries,
   };
@@ -179,15 +179,26 @@ export function buildWorkspaceMemorySnapshot(
   if (!Number.isFinite(Date.parse(options.now))) {
     throw new TypeError("Workspace memory clock must be a valid timestamp");
   }
-  const completed = items.filter((item) =>
-    options.statusRegistry.terminal_done_statuses.has(
-      normalizeStatusForRegistry(item.status, options.statusRegistry),
-    ),
-  );
+  const completed = items
+    .filter((item) =>
+      options.statusRegistry.terminal_done_statuses.has(
+        normalizeStatusForRegistry(item.status, options.statusRegistry),
+      ),
+    )
+    .map((item) => {
+      const completion = resolveCompletionTimestamp(item);
+      if (!completion.resolved) {
+        throw new TypeError(
+          `Completed item ${item.id} has no reporting timestamp`,
+        );
+      }
+      return { item, completion };
+    });
   const itemsById = new Map(items.map((item) => [item.id, item]));
   const groups = new Map<string, MutableRollup>();
-  for (const item of completed) {
-    const epoch = quarterKey(completionTimestamp(item));
+  for (const completedItem of completed) {
+    const { item, completion } = completedItem;
+    const epoch = quarterKey(completion.timestamp);
     const epochKey = `epoch:${epoch}`;
     const epochRollup = groups.get(epochKey) ?? {
       kind: "epoch" as const,
@@ -195,7 +206,7 @@ export function buildWorkspaceMemorySnapshot(
       label: epoch,
       items: [],
     };
-    epochRollup.items.push(item);
+    epochRollup.items.push(completedItem);
     groups.set(epochKey, epochRollup);
 
     const epic = nearestEpic(item, itemsById);
@@ -207,7 +218,7 @@ export function buildWorkspaceMemorySnapshot(
         label: epic.title,
         items: [],
       };
-      epicRollup.items.push(item);
+      epicRollup.items.push(completedItem);
       groups.set(epicKey, epicRollup);
     }
   }
@@ -219,8 +230,8 @@ export function buildWorkspaceMemorySnapshot(
     completion_time_sources: completed.reduce<
       Record<CompletionTimestampSource, number>
     >(
-      (counts, item) => {
-        counts[resolveCompletionTimestamp(item).source] += 1;
+      (counts, { completion }) => {
+        counts[completion.source] += 1;
         return counts;
       },
       { completed_at: 0, closed_at: 0, updated_at: 0 },

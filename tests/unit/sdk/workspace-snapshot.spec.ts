@@ -52,15 +52,17 @@ describe("workspace snapshots", () => {
           "unsupported filesystem entries",
         );
       } finally {
-        await new Promise<void>((resolve, reject) => {
-          server.close((error) => {
-            if (error === undefined) {
-              resolve();
-            } else {
-              reject(error);
-            }
+        if (server.listening) {
+          await new Promise<void>((resolve, reject) => {
+            server.close((error) => {
+              if (error === undefined) {
+                resolve();
+              } else {
+                reject(error);
+              }
+            });
           });
-        });
+        }
       }
     });
   });

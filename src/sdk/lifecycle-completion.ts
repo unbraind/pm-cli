@@ -11,8 +11,10 @@ export type CompletionTimestampSource =
   | "closed_at"
   | "updated_at";
 
-/** A completion timestamp together with its explicit compatibility source. */
+/** A resolved completion timestamp together with its explicit compatibility source. */
 export interface ResolvedCompletionTimestamp {
+  /** Discriminator proving that timestamp and source are present. */
+  resolved: true;
   /** ISO timestamp selected for reporting. */
   timestamp: string;
   /** Metadata field that supplied the timestamp. */
@@ -20,6 +22,23 @@ export interface ResolvedCompletionTimestamp {
   /** Whether a legacy fallback was required. */
   fallback: boolean;
 }
+
+/** Explicit outcome when legacy metadata contains no completion timestamp. */
+export interface UnresolvedCompletionTimestamp {
+  /** Discriminator proving that no metadata field supplied a timestamp. */
+  resolved: false;
+  /** Resolved-only timestamp is impossible on this branch. */
+  timestamp?: never;
+  /** Resolved-only provenance is impossible on this branch. */
+  source?: never;
+  /** Fallback disclosure is meaningful only after a field supplied a value. */
+  fallback?: never;
+}
+
+/** Exhaustive completion-time resolution result. */
+export type CompletionTimestampResolution =
+  | ResolvedCompletionTimestamp
+  | UnresolvedCompletionTimestamp;
 
 /** One lossless backfill supported by terminal-transition history evidence. */
 export interface CompletedAtBackfillCandidate {
@@ -89,10 +108,13 @@ function findEvidenceBackfill(
 
 /** Resolve reporting time while disclosing every legacy fallback. */
 export function resolveCompletionTimestamp(
-  item: Pick<ItemMetadata, "completed_at" | "closed_at" | "updated_at">,
-): ResolvedCompletionTimestamp {
+  item: Partial<
+    Pick<ItemMetadata, "completed_at" | "closed_at" | "updated_at">
+  >,
+): CompletionTimestampResolution {
   if (item.completed_at !== undefined) {
     return {
+      resolved: true,
       timestamp: item.completed_at,
       source: "completed_at",
       fallback: false,
@@ -100,16 +122,21 @@ export function resolveCompletionTimestamp(
   }
   if (item.closed_at !== undefined) {
     return {
+      resolved: true,
       timestamp: item.closed_at,
       source: "closed_at",
       fallback: true,
     };
   }
-  return {
-    timestamp: item.updated_at,
-    source: "updated_at",
-    fallback: true,
-  };
+  if (item.updated_at !== undefined) {
+    return {
+      resolved: true,
+      timestamp: item.updated_at,
+      source: "updated_at",
+      fallback: true,
+    };
+  }
+  return { resolved: false };
 }
 
 /** Plan only backfills proven by a transition into a terminal status. */

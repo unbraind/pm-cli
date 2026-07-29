@@ -117,6 +117,21 @@ describe("core/output/output", () => {
         drop: [null, undefined],
       }),
     ).toEqual({ keep: "value" });
+    expect(
+      outputTestOnly.compactToonValue({
+        omission_receipt: {
+          has_omissions: false,
+          omitted_field_group_count: 0,
+          omitted_field_groups: [],
+        },
+      }),
+    ).toEqual({
+      omission_receipt: {
+        has_omissions: false,
+        omitted_field_group_count: 0,
+        omitted_field_groups: [],
+      },
+    });
     expect(outputTestOnly.renderToonValue([], 0)).toBe("[]");
     expect(outputTestOnly.renderToonValue({}, 0)).toBe("{}");
     expect(

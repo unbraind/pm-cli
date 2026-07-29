@@ -42,6 +42,7 @@ pm guide release --json
 - [SDK Primitive Inventory](SDK_PRIMITIVE_INVENTORY.md) - SDK-first migration map and private-import ratchet for CLI/MCP layering.
 - [Package SDK Contract Conformance](PACKAGE_SDK_CONTRACT_CONFORMANCE.md) - authoritative public types, `typeof` module derivation, and the first-party parity gate.
 - [Context Relevance and Packing](CONTEXT_RELEVANCE.md) - shared CLI/SDK signals, derived-store provenance, ranking explanations, and token budgets.
+- [Output Projection and Omission Contracts](OUTPUT_PROJECTION_CONTRACTS.md) - explicit withheld-field receipts, mode-paired row keys, and completion resolver outcomes.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.
 - [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.
 - [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md) - durable mutation events, bounded duplicate governance, and scale-safe package primitives.

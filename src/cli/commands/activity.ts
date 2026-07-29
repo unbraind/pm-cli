@@ -25,6 +25,10 @@ import {
 import { readHistoryEntries } from "./history.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { HistoryEntry } from "../../types/index.js";
+import {
+  resolveModePairedOutputOmissionReceipt,
+  type OutputOmissionReceipt,
+} from "../../sdk/output-projection.js";
 
 const DEFAULT_COMPACT_ACTIVITY_LIMIT = 20;
 const DEFAULT_FULL_ACTIVITY_LIMIT = 5;
@@ -72,11 +76,20 @@ export interface CompactActivityEntry {
 /** Documents the activity result payload exchanged by command, SDK, and package integrations. */
 export interface ActivityResult {
   /** Value that configures or reports activity for this contract. */
-  activity: ActivityEntry[];
+  activity?: ActivityEntry[];
   /** Value that configures or reports compact activity for this contract. */
   compact_activity?: CompactActivityEntry[];
   /** Value that configures or reports compact for this contract. */
   compact: boolean;
+  /** Explicit active row projection. */
+  projection: {
+    /** Stable projection mode. */
+    mode: "compact" | "full";
+    /** Active row collection key. */
+    row_key: "compact_activity" | "activity";
+  };
+  /** Constant-size disclosure of field groups withheld by the active mode. */
+  omission_receipt: OutputOmissionReceipt;
   /** Value that configures or reports count for this contract. */
   count: number;
   /** Total matching rows before the applied bound. */
@@ -369,10 +382,23 @@ export async function runActivity(
   const compact = options.compact === true;
   const compactActivity = compact ? formatCompactActivity(activity) : undefined;
   const omittedCount = matchingActivity.length - activity.length;
+  const projectionMode = compact ? "compact" : "full";
+  const rowProjection = {
+    compact: { compact_activity: compactActivity },
+    full: { activity },
+  }[projectionMode];
   return {
-    activity: compact ? [] : activity,
-    compact_activity: compactActivity,
+    ...rowProjection,
     compact,
+    projection: {
+      mode: projectionMode,
+      row_key:
+        projectionMode === "compact" ? "compact_activity" : "activity",
+    },
+    omission_receipt: resolveModePairedOutputOmissionReceipt(
+      "activity",
+      projectionMode,
+    ),
     count: activity.length,
     total_count: matchingActivity.length,
     limit: filters.limit ?? null,

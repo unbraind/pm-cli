@@ -16073,6 +16073,11 @@
       "required": []
     }
   ],
+  "omission_receipt": {
+    "has_omissions": false,
+    "omitted_field_group_count": 0,
+    "omitted_field_groups": []
+  },
   "runtime_schema": {
     "canceled_status": "canceled",
     "close_status": "closed",
