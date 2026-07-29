@@ -150,6 +150,13 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   // CommandError when expected-error capture is enabled for release smokes.
   'merge-strategy "fail": bead',
 ];
+const KNOWN_EXPECTED_HANDLED_VALIDATION_ISSUE_PATTERNS = [
+  // Snapshot acceptance deliberately exercises the public identifier validator
+  // with invalid input. Sentry reports this caught validation failure as Error
+  // rather than CommandError, so keep it in a separate exact-message allowlist
+  // that never applies to explicitly unhandled events.
+  "snapshot names and fingerprints must use lowercase letters, digits, dots, underscores, or hyphens",
+];
 const KNOWN_EXPECTED_HANDLED_ENVIRONMENT_ISSUE_PATTERNS = [
   // Local disk exhaustion is an operational host-capacity failure surfaced by
   // Node as Error/ENOSPC, not a pm-cli crash. It remains relevant in telemetry
@@ -180,11 +187,17 @@ function isIgnoredConsoleNoiseIssue(issue) {
 function isExpectedHandledCliIssue(issue) {
   const metadata = issue && typeof issue === "object" ? issue.metadata : null;
   const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
-  if ((type !== "PmCliError" && type !== "CommandError") || issue?.isUnhandled === true) {
+  if (issue?.isUnhandled === true) {
     return false;
   }
   const combinedText = issueTextValue(issue).toLowerCase();
-  return KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
+  const isKnownCliError =
+    (type === "PmCliError" || type === "CommandError") &&
+    KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
+  const isKnownValidationError =
+    (type === "Error" || type === "PmCliError" || type === "CommandError") &&
+    KNOWN_EXPECTED_HANDLED_VALIDATION_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
+  return isKnownCliError || isKnownValidationError;
 }
 
 function isExpectedHandledEnvironmentIssue(issue) {
