@@ -208,9 +208,27 @@ describe("runClose", () => {
       });
       expect(explicitlyCompleted.item.closed_at).not.toBe(actualCompletion);
 
+      const forceReclose = await runClose(
+        explicitId,
+        "Reclosed without correcting completion",
+        { force: true },
+        { path: context.pmPath },
+      );
+      expect(forceReclose.item.completed_at).toBe(actualCompletion);
+      expect(forceReclose.changed_fields).not.toContain("completed_at");
+
       const closedViaCloseMany = createTestItemId(context, { title: "close-at-via-close-many", tags: "close-at-bulk", status: "open" });
       const closeManyResult = context.runCli(
-        ["close-many", "--filter-tag", "close-at-bulk", "--reason", "bulk closed with timestamp", "--json"],
+        [
+          "close-many",
+          "--filter-tag",
+          "close-at-bulk",
+          "--reason",
+          "bulk closed with timestamp",
+          "--completed-at",
+          actualCompletion,
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(closeManyResult.code).toBe(0);
@@ -219,9 +237,10 @@ describe("runClose", () => {
       expect(closeManyPayload.ids).toEqual([closedViaCloseMany]);
       const bulkClosed = context.runCli(["get", closedViaCloseMany, "--json"], { expectJson: true });
       expect(bulkClosed.code).toBe(0);
-      const bulkClosedPayload = bulkClosed.json as { item: { closed_at?: string; status: string } };
+      const bulkClosedPayload = bulkClosed.json as { item: { closed_at?: string; completed_at?: string; status: string } };
       expect(bulkClosedPayload.item.status).toBe("closed");
       expect(Number.isFinite(Date.parse(bulkClosedPayload.item.closed_at ?? ""))).toBe(true);
+      expect(bulkClosedPayload.item.completed_at).toBe(actualCompletion);
 
       const createdClosed = context.runCli(
         [

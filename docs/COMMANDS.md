@@ -335,7 +335,7 @@ pm close-many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met
 pm close-many --rollback close-many-20260604-abc123   # restore the batch
 ```
 
-`close-many` skips already-terminal matches by default (pass `--force` to re-close), reports a per-item plan (`close`/`skip`, plus `active_child_ids` for parents that would be orphaned) under `--dry-run`, and writes a checkpoint by default (`--no-checkpoint` to disable). Checkpoints for both commands live under `.agents/pm/checkpoints/<command>/` and are restored with `--rollback <checkpoint-id>`.
+`close-many` skips already-terminal matches by default (pass `--force` to re-close), accepts `--completed-at <timestamp>` to preserve one shared actual-completion time across the batch, reports a per-item plan (`close`/`skip`, plus `active_child_ids` for parents that would be orphaned) under `--dry-run`, and writes a checkpoint by default (`--no-checkpoint` to disable). Checkpoints for both commands live under `.agents/pm/checkpoints/<command>/` and are restored with `--rollback <checkpoint-id>`.
 
 When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`).
 

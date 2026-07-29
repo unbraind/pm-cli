@@ -195,6 +195,7 @@ const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const CLOSE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
   "reason",
+  "completedAt",
   "resolution",
   "expectedResult",
   "actualResult",

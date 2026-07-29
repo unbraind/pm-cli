@@ -255,6 +255,14 @@
       ],
       "package_version": "2026.7.28",
       "reason": "Add optional completion timestamps, blocker provenance, and configuration metadata while preserving existing inputs and fallbacks (pm-bwnclq, pm-r2suqb, pm-5ecnar)."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCloseManyActionOptions",
+        "signature ./sdk/contracts:PmCloseManyActionOptions"
+      ],
+      "package_version": "2026.7.28",
+      "reason": "Expose completedAt on close-many typed SDK inputs for lifecycle parity"
     }
   ],
   "entrypoints": {
@@ -6619,7 +6627,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCloseManyActionOptions",
-          "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"completedAt\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -13219,7 +13227,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCloseManyActionOptions",
-          "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmCloseManyActionOptions = Pick<PmCloseActionOptions, \"reason\" | \"completedAt\" | \"resolution\" | \"expectedResult\" | \"actualResult\" | \"validateClose\" | \"author\" | \"message\" | \"force\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",

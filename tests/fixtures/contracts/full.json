@@ -1330,6 +1330,9 @@
           "flag": "--reason"
         },
         {
+          "flag": "--completed-at"
+        },
+        {
           "flag": "--resolution"
         },
         {
@@ -28846,6 +28849,11 @@
           },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "completedAt": {
+            "description": "Completed At.",
+            "format": "date-time",
             "type": "string"
           },
           "dryRun": {

@@ -895,6 +895,7 @@ async function runCloseManyAction(
       status: readOptionString(options, "filterStatus"),
       list: buildCloseManyListOptions(options),
       reason: readOptionString(options, "reason"),
+      completedAt: readOptionString(options, "completedAt"),
       resolution: readOptionString(options, "resolution"),
       expectedResult: pickStringOption(
         options.expectedResult,
@@ -2637,6 +2638,10 @@ export function registerMutationCommands(
     .option(
       "--reason <value>",
       "Shared close reason applied to matched items (required when governance.require_close_reason is enabled)",
+    )
+    .option(
+      "--completed-at <value>",
+      "Actual completion timestamp (ISO or relative) applied to every matched item",
     )
     .option(
       "--resolution <value>",

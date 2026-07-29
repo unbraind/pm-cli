@@ -666,11 +666,16 @@ function mutateCloseMetadata(
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;
-  metadata.completed_at = context.completedAt;
+  const shouldWriteCompletedAt =
+    context.options.completedAt !== undefined ||
+    metadata.completed_at === undefined;
+  if (shouldWriteCompletedAt) {
+    metadata.completed_at = context.completedAt;
+  }
   const changedFields = [
     "status",
     "closed_at",
-    "completed_at",
+    ...(shouldWriteCompletedAt ? ["completed_at"] : []),
     ...applyCloseReason(metadata, context.closeReason),
     ...inlineChangedFields,
   ];

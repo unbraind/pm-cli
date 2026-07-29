@@ -801,6 +801,7 @@ export const CLOSE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--filter-release" },
   ...MANY_GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS,
   { flag: "--reason" },
+  { flag: "--completed-at" },
   { flag: "--resolution" },
   { flag: "--expected-result", aliases: ["--expected_result", "--expected"] },
   { flag: "--actual-result", aliases: ["--actual_result", "--actual"] },

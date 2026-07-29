@@ -31,6 +31,62 @@ export interface CompletedAtBackfillCandidate {
   history_op: string;
 }
 
+/** Read the normalized status written by one history entry, if present. */
+function patchedStatus(entry: HistoryEntry): string | undefined {
+  for (const operation of entry.patch) {
+    if (
+      operation.path === "/metadata/status" ||
+      operation.path === "/front_matter/status"
+    ) {
+      if (typeof operation.value === "string") {
+        return operation.value.trim().toLowerCase();
+      }
+      continue;
+    }
+    if (operation.path !== "" || typeof operation.value !== "object") {
+      continue;
+    }
+    const root = operation.value as Record<string, unknown>;
+    const metadata =
+      (root.metadata as Record<string, unknown> | undefined) ??
+      (root.front_matter as Record<string, unknown> | undefined);
+    if (typeof metadata?.status === "string") {
+      return metadata.status.trim().toLowerCase();
+    }
+  }
+  return undefined;
+}
+
+/** Select the latest timestamp backed by a genuine terminal transition. */
+function findEvidenceBackfill(
+  id: string,
+  entries: readonly HistoryEntry[],
+  terminalStatuses: ReadonlySet<string>,
+): CompletedAtBackfillCandidate | undefined {
+  let previousStatus: string | undefined;
+  let candidate: CompletedAtBackfillCandidate | undefined;
+  for (const entry of entries) {
+    const nextStatus = patchedStatus(entry);
+    if (nextStatus === undefined) {
+      continue;
+    }
+    const hasTransitionEvidence =
+      terminalStatuses.has(nextStatus) &&
+      ((previousStatus !== undefined &&
+        !terminalStatuses.has(previousStatus)) ||
+        (previousStatus === undefined && entry.op === "create"));
+    previousStatus = nextStatus;
+    if (hasTransitionEvidence && Number.isFinite(Date.parse(entry.ts))) {
+      candidate = {
+        id,
+        completed_at: entry.ts,
+        history_op: entry.op,
+      };
+    }
+  }
+  return candidate;
+}
+
 /** Resolve reporting time while disclosing every legacy fallback. */
 export function resolveCompletionTimestamp(
   item: Pick<ItemMetadata, "completed_at" | "closed_at" | "updated_at">,
@@ -56,7 +112,7 @@ export function resolveCompletionTimestamp(
   };
 }
 
-/** Plan only backfills proven by the latest transition into a terminal status. */
+/** Plan only backfills proven by a transition into a terminal status. */
 export function planCompletedAtBackfill(
   items: readonly ItemMetadata[],
   historyById: ReadonlyMap<string, readonly HistoryEntry[]>,
@@ -70,39 +126,13 @@ export function planCompletedAtBackfill(
     ) {
       continue;
     }
-    const entries = historyById.get(item.id) ?? [];
-    for (let index = entries.length - 1; index >= 0; index -= 1) {
-      const entry = entries[index]!;
-      const hasTerminalTransition = entry.patch.some((operation) => {
-        if (
-          operation.path === "/metadata/status" ||
-          operation.path === "/front_matter/status"
-        ) {
-          return (
-            typeof operation.value === "string" &&
-            terminalStatuses.has(operation.value.trim().toLowerCase())
-          );
-        }
-        if (operation.path !== "" || typeof operation.value !== "object") {
-          return false;
-        }
-        const root = operation.value as Record<string, unknown>;
-        const metadata =
-          (root.metadata as Record<string, unknown> | undefined) ??
-          (root.front_matter as Record<string, unknown> | undefined);
-        return (
-          typeof metadata?.status === "string" &&
-          terminalStatuses.has(metadata.status.trim().toLowerCase())
-        );
-      });
-      if (hasTerminalTransition && Number.isFinite(Date.parse(entry.ts))) {
-        candidates.push({
-          id: item.id,
-          completed_at: entry.ts,
-          history_op: entry.op,
-        });
-        break;
-      }
+    const candidate = findEvidenceBackfill(
+      item.id,
+      historyById.get(item.id) ?? [],
+      terminalStatuses,
+    );
+    if (candidate !== undefined) {
+      candidates.push(candidate);
     }
   }
   return candidates.sort((left, right) => left.id.localeCompare(right.id));

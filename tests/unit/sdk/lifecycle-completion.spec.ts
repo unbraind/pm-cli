@@ -73,6 +73,8 @@ describe("lifecycle completion SDK primitives", () => {
       item("pm-d", { completed_at: "2026-01-02T00:00:00.000Z" }),
       item("pm-e"),
       item("pm-f"),
+      item("pm-g"),
+      item("pm-h"),
     ];
     const histories = new Map<string, readonly HistoryEntry[]>([
       [
@@ -104,11 +106,39 @@ describe("lifecycle completion SDK primitives", () => {
         [
           history("not-a-time", "closed"),
           {
+            ...history("2026-01-01T00:00:00.000Z", "closed"),
+            patch: [
+              {
+                op: "replace",
+                path: "/front_matter/status",
+                value: 42,
+              },
+            ],
+          },
+          {
             ...history("2026-01-01T00:00:00.000Z", "closed", ""),
             patch: [{ op: "replace", path: "", value: "closed" }],
           },
         ],
       ],
+      [
+        "pm-f",
+        [
+          {
+            ...history("2026-01-02T00:00:00.000Z", "closed", ""),
+            op: "create",
+            patch: [
+              {
+                op: "replace",
+                path: "",
+                value: { metadata: { status: "closed" } },
+              },
+            ],
+          },
+          history("2026-01-07T00:00:00.000Z", "closed"),
+        ],
+      ],
+      ["pm-g", [history("2026-01-08T00:00:00.000Z", "closed")]],
     ]);
 
     expect(
@@ -126,6 +156,11 @@ describe("lifecycle completion SDK primitives", () => {
       {
         id: "pm-b",
         completed_at: "2026-01-06T00:00:00.000Z",
+        history_op: "create",
+      },
+      {
+        id: "pm-f",
+        completed_at: "2026-01-02T00:00:00.000Z",
         history_op: "create",
       },
     ]);

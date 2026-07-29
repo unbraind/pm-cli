@@ -103,6 +103,7 @@ export type PmUpdateManyActionOptions = Omit<
 export type PmCloseManyActionOptions = Pick<
   PmCloseActionOptions,
   | "reason"
+  | "completedAt"
   | "resolution"
   | "expectedResult"
   | "actualResult"
