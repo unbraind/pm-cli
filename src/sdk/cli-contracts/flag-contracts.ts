@@ -942,6 +942,9 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--require-assertions-for-pm" },
   { flag: "--check-context" },
   { flag: "--auto-pm-context" },
+  { flag: "--measure", list: true },
+  { flag: "--metric-below" },
+  { flag: "--metric-diff" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -1556,6 +1559,9 @@ export const EVAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--format" },
 ];
 
+/** Public no-flag contract for portable workspace snapshot command paths. */
+export const WORKSPACE_FLAG_CONTRACTS: CliFlagContract[] = [];
+
 /** Public contract for next flag contracts, shared by SDK and presentation-layer consumers. */
 export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--type" },
@@ -1716,6 +1722,13 @@ const SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map<string, CliFlagContract[]>(
     ["search", SEARCH_FLAG_CONTRACTS],
     ["next", NEXT_FLAG_CONTRACTS],
     ["eval", EVAL_FLAG_CONTRACTS],
+    ["workspace", WORKSPACE_FLAG_CONTRACTS],
+    ["workspace snapshot", WORKSPACE_FLAG_CONTRACTS],
+    ["workspace snapshot create", WORKSPACE_FLAG_CONTRACTS],
+    ["workspace snapshot list", WORKSPACE_FLAG_CONTRACTS],
+    ["workspace snapshot inspect", WORKSPACE_FLAG_CONTRACTS],
+    ["workspace snapshot restore", WORKSPACE_FLAG_CONTRACTS],
+    ["workspace snapshot delete", WORKSPACE_FLAG_CONTRACTS],
     ["history", HISTORY_FLAG_CONTRACTS],
     ["history-redact", HISTORY_REDACT_FLAG_CONTRACTS],
     ["history-repair", HISTORY_REPAIR_FLAG_CONTRACTS],

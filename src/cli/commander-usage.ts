@@ -499,6 +499,9 @@ function scoreRuntimeCommandCandidates(params: {
   for (const [aliasToken, canonicalPath] of Object.entries(
     EXECUTABLE_COMMAND_ALIASES,
   )) {
+    if (aliasToken === "read") {
+      continue;
+    }
     recordCandidateScore(canonicalPath, scoreAgainstUnknown(aliasToken));
   }
   return [...scoresByCommandPath.entries()]

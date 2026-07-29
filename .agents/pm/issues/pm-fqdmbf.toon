@@ -2,11 +2,13 @@ id: pm-fqdmbf
 title: "GH-803: hoist repeated linked-test execution context and honor lean output"
 description: "pm test --run --json repeats a 16-field sandbox execution_context on every result even though the context is invocation-scoped; in the reported one-test case it consumes 727 of 1,301 bytes and grows redundantly with each linked test."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[8]: agent-ux,"area:cli","area:sdk",context-management,gh-issue,linked-tests,output-contract,token-efficiency
 created_at: "2026-07-29T02:34:38.529Z"
-updated_at: "2026-07-29T04:25:42.388Z"
+updated_at: "2026-07-29T05:58:26.687Z"
+closed_at: "2026-07-29T05:55:54.364Z"
+completed_at: "2026-07-29T05:55:54.364Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Invocation-scoped execution context is emitted once rather than duplicated on every linked-test result, with no diagnostic information loss; Lean structured output omits non-actionable successful-run sandbox plumbing while failures retain enough provenance to diagnose context isolation; Default and full projections remain explicitly contracted and backward compatibility is handled through a documented schema/version strategy; CLI, SDK, MCP, JSON schemas, contracts, and documentation expose one consistent test-run output shape; Measured multi-test output proves a material byte and token reduction while focused and exact 100 percent coverage remain green"
@@ -21,6 +23,7 @@ risk: medium
 confidence: high
 severity: medium
 repro_steps: "Enable test-result-tracking in a fresh workspace, link multiple passing tests, run pm test --run --json, and compare repeated execution_context bytes with result-specific bytes."
+resolution: Linked-test output now hoists shared execution context and lean passing results omit non-actionable streams without losing failure diagnostics.
 expected_result: "One invocation-level execution context plus compact result-specific records, with lean success output and diagnostic failure output."
 actual_result: "Every result repeats the same 16-field sandbox context, including temporary absolute paths, regardless of status or lean intent."
 affected_version: 2026.7.29
@@ -31,6 +34,26 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-g3n00m,implements,"2026-07-29T02:34:38.529Z","harness:codex","cli:create:dep",detected
   pm-oi4zs3,discovered_from,"2026-07-29T02:34:38.529Z","harness:codex","cli:create:dep",detected
   pm-vrsn,related,"2026-07-29T02:34:38.529Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-29T02:34:38.529Z","harness:codex","Duplicate check evidence: all-status searches for execution_context, sandbox plumbing, lean output, and GH-778 found closed pm-oi4zs3 for caller echoes and inactive pagination metadata plus open pm-5t33or/pm-cxr0jb for general budget and intent projections. None owns invocation-level hoisting or status-aware linked-test provenance, so GH-803 is a distinct successor in that canonical lineage: https://github.com/unbraind/pm-cli/issues/803."
+  "2026-07-29T05:55:21.096Z","harness:codex","Delivery evidence: CLI linked-test output hoists identical invocation context once, retains heterogeneous per-row context, removes successful streams in lean JSON, and preserves failure diagnostics. Output unit coverage and exact token gates passed."
+files[2]{path,scope,note}:
+  src/core/output/output.ts,project,Invocation context hoisting and lean success projection
+  tests/unit/core/output/output.spec.ts,project,Token-efficient evidence contract
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/output/output.spec.ts,project,240
+test_runs[1]:
+  - run_id: test-local-ms5o6w2r-pz6n5f
+    kind: test
+    status: passed
+    started_at: "2026-07-29T05:54:31.611Z"
+    finished_at: "2026-07-29T05:54:38.690Z"
+    recorded_at: "2026-07-29T05:54:38.690Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[2]{name,value,unit,threshold,recorded_at}:
+      coverage,100,percent,100,"2026-07-29T05:54:38.690Z"
+      gate,1,boolean,1,"2026-07-29T05:54:38.690Z"
+close_reason: "Implemented and verified in the broad SDK context-contract delivery; linked evidence, full gates, and isolated consumer acceptance passed."
 body: ""

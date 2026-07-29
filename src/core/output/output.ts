@@ -297,6 +297,52 @@ function projectLeanJsonValue(value: unknown): unknown {
 }
 
 /**
+ * Hoist an invocation-wide linked-test sandbox context out of repeated result
+ * rows. Lean output also removes successful-process streams while retaining
+ * failure diagnostics, so agents pay once for context and only for actionable
+ * evidence.
+ */
+function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
+  if (!isPlainObject(value) || !Array.isArray(value.run_results)) {
+    return value;
+  }
+  const rows = value.run_results.filter(isPlainObject);
+  const contexts = rows
+    .map((row) => row.execution_context)
+    .filter((context) => context !== undefined);
+  const sharedContext =
+    contexts.length === rows.length &&
+    contexts.length > 0 &&
+    contexts.every(
+      (context) => JSON.stringify(context) === JSON.stringify(contexts[0]),
+    )
+      ? contexts[0]
+      : undefined;
+  const runResults = rows.map((row) => {
+    const {
+      execution_context: _executionContext,
+      stdout,
+      stderr,
+      ...rest
+    } = row;
+    if (sharedContext === undefined) {
+      return row;
+    }
+    if (!lean || row.status !== "passed") {
+      return { ...rest, stdout, stderr };
+    }
+    return rest;
+  });
+  return {
+    ...value,
+    ...(sharedContext === undefined
+      ? {}
+      : { execution_context: sharedContext }),
+    run_results: runResults,
+  };
+}
+
+/**
  * Render a result with pm's built-in JSON or TOON formatter without invoking
  * extension overrides. SDK budget accounting uses this exact representation
  * so reported token cost describes the bytes the host emits by default.
@@ -349,15 +395,19 @@ function formatEffectiveOutput(
   const outputResult = serviceOverride.handled
     ? serviceOverride.result
     : effectiveResult;
+  const projectedOutputResult =
+    options.command === "test"
+      ? projectLinkedTestEvidence(outputResult, options.lean === true)
+      : outputResult;
   if (format === "toon") {
-    const markdownDefault = renderDefaultMarkdownResult(outputResult);
+    const markdownDefault = renderDefaultMarkdownResult(projectedOutputResult);
     if (markdownDefault !== null) {
       return markdownDefault;
     }
   }
   const rendererOverride = nativeOutput
     ? { rendered: null }
-    : runActiveRendererOverride(format, outputResult);
+    : runActiveRendererOverride(format, projectedOutputResult);
   if (rendererOverride.rendered !== null) {
     return rendererOverride.rendered.endsWith("\n")
       ? rendererOverride.rendered
@@ -365,10 +415,12 @@ function formatEffectiveOutput(
   }
   if (format === "json") {
     const jsonResult =
-      options.lean === true ? projectLeanJsonValue(outputResult) : outputResult;
+      options.lean === true
+        ? projectLeanJsonValue(projectedOutputResult)
+        : projectedOutputResult;
     return formatBuiltInOutput(jsonResult, "json");
   }
-  return formatBuiltInOutput(outputResult, "toon");
+  return formatBuiltInOutput(projectedOutputResult, "toon");
 }
 
 /** Implements format output for the public runtime surface of this module. */

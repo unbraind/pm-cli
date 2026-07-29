@@ -60,7 +60,18 @@ import {
   type LinkedTestRunSelection,
 } from "../../core/test/run-selectors.js";
 import { SCOPE_VALUES } from "../../types/index.js";
-import type { LinkedTest, LinkScope } from "../../types/index.js";
+import type {
+  ItemTestRunSummary,
+  LinkedTest,
+  LinkScope,
+  TestRunMeasurement,
+} from "../../types/index.js";
+import {
+  diffTestRunMeasurements,
+  parseTestRunMeasurements,
+  queryTestRunMeasurementsBelow,
+  type TestRunMeasurementDiff,
+} from "./measurements.js";
 
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
@@ -225,6 +236,12 @@ export interface TestCommandOptions {
   message?: string;
   /** Value that configures or reports force for this contract. */
   force?: boolean;
+  /** Repeatable `name=value[,unit=...][,threshold=...]` numeric evidence. */
+  measure?: string[];
+  /** Filter recorded evidence below `name=value`. */
+  metricBelow?: string;
+  /** Compare the latest and previous values for one metric name. */
+  metricDiff?: string;
 }
 
 /** Restricts linked test failure category values accepted by command, SDK, and storage contracts. */
@@ -298,6 +315,12 @@ export interface TestResult {
   changed: boolean;
   /** Value that configures or reports count for this contract. */
   count: number;
+  /** Measurements supplied for the current producing run. */
+  measurements?: TestRunMeasurement[];
+  /** Existing and current measurements below the selected threshold. */
+  metric_below?: Array<TestRunMeasurement & { run_id: string }>;
+  /** Latest-versus-previous comparison for the selected metric. */
+  metric_diff?: TestRunMeasurementDiff;
 }
 
 function resolveTrackedRunId(kind: "test" | "test-all"): string {
@@ -2448,6 +2471,7 @@ export async function runLinkedTests(
 interface ResolvedTestItem {
   itemId: string;
   tests: LinkedTest[];
+  testRuns: ItemTestRunSummary[];
   changed: boolean;
 }
 
@@ -2479,6 +2503,7 @@ async function readLinkedTestItem(params: {
   return {
     itemId: located.id,
     tests: loaded.document.metadata.tests ?? [],
+    testRuns: loaded.document.metadata.test_runs ?? [],
     changed: false,
   };
 }
@@ -2602,6 +2627,7 @@ async function resolveLinkedTestItem(params: {
   return {
     itemId: result.item.id,
     tests: result.item.tests ?? [],
+    testRuns: result.item.test_runs ?? [],
     changed: result.changedFields.length > 0,
   };
 }
@@ -2696,6 +2722,45 @@ function buildTestWarnings(
   return warnings;
 }
 
+function buildTrackedTestRunSummary(params: {
+  options: TestCommandOptions;
+  runStartedAt: string;
+  runResults: TestRunResult[];
+  failOnSkippedTriggered: boolean;
+}): ItemTestRunSummary {
+  const summary = summarizeRunResultStatuses(params.runResults);
+  const parsedAttempt = Number.parseInt(
+    process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim() ?? "",
+    10,
+  );
+  const resumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
+  const recordedAt = nowIso();
+  const measurements = parseTestRunMeasurements(
+    params.options.measure,
+    recordedAt,
+  );
+  return {
+    run_id: resolveTrackedRunId("test"),
+    kind: "test",
+    status:
+      summary.failed > 0 || params.failOnSkippedTriggered ? "failed" : "passed",
+    started_at: params.runStartedAt,
+    finished_at: recordedAt,
+    recorded_at: recordedAt,
+    attempt:
+      Number.isFinite(parsedAttempt) && parsedAttempt >= 1
+        ? parsedAttempt
+        : undefined,
+    resumed_from:
+      resumedFrom && resumedFrom.length > 0 ? resumedFrom : undefined,
+    passed: summary.passed,
+    failed: summary.failed,
+    skipped: summary.skipped,
+    fail_on_skipped_triggered: params.failOnSkippedTriggered ? true : undefined,
+    measurements: measurements.length > 0 ? measurements : undefined,
+  };
+}
+
 async function recordTestRunSummary(params: {
   options: TestCommandOptions;
   pmRoot: string;
@@ -2705,7 +2770,7 @@ async function recordTestRunSummary(params: {
   runResults: TestRunResult[];
   failOnSkippedTriggered: boolean;
   warnings: string[];
-}): Promise<void> {
+}): Promise<ItemTestRunSummary | undefined> {
   const {
     options,
     pmRoot,
@@ -2721,49 +2786,58 @@ async function recordTestRunSummary(params: {
     !runStartedAt ||
     settings.testing.record_results_to_items !== true
   ) {
-    return;
+    return undefined;
   }
-  const summary = summarizeRunResultStatuses(runResults);
-  const trackedRunId = resolveTrackedRunId("test");
-  const attemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
-  const parsedAttempt = attemptRaw
-    ? Number.parseInt(attemptRaw, 10)
-    : Number.NaN;
-  const resumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
+  const entry = buildTrackedTestRunSummary({
+    options,
+    runStartedAt,
+    runResults,
+    failOnSkippedTriggered,
+  });
   try {
     await appendTrackedTestRunSummary({
       pmRoot,
       settings,
       itemId,
       author: resolveAuthor(options.author, settings.author_default),
-      message: `Track test run summary (${trackedRunId})`,
-      entry: {
-        run_id: trackedRunId,
-        kind: "test",
-        status:
-          summary.failed > 0 || failOnSkippedTriggered === true
-            ? "failed"
-            : "passed",
-        started_at: runStartedAt,
-        finished_at: nowIso(),
-        recorded_at: nowIso(),
-        attempt:
-          Number.isFinite(parsedAttempt) && parsedAttempt >= 1
-            ? parsedAttempt
-            : undefined,
-        resumed_from:
-          resumedFrom && resumedFrom.length > 0 ? resumedFrom : undefined,
-        passed: summary.passed,
-        failed: summary.failed,
-        skipped: summary.skipped,
-        fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
-      },
+      message: `Track test run summary (${entry.run_id})`,
+      entry,
     });
+    return entry;
   } catch (error: unknown) {
     warnings.push(
       `test_result_tracking_failed:${itemId}:${error instanceof Error ? error.message : String(error)}`,
     );
+    return undefined;
   }
+}
+
+function buildTestMeasurementProjection(
+  options: TestCommandOptions,
+  runs: ItemTestRunSummary[],
+  recordedRun: ItemTestRunSummary | undefined,
+): Pick<TestResult, "measurements" | "metric_below" | "metric_diff"> {
+  let metricBelow: Array<TestRunMeasurement & { run_id: string }> | undefined;
+  if (options.metricBelow !== undefined) {
+    const separator = options.metricBelow.indexOf("=");
+    const name = options.metricBelow.slice(0, separator).trim();
+    const threshold = Number(options.metricBelow.slice(separator + 1).trim());
+    if (separator <= 0 || name.length === 0 || !Number.isFinite(threshold)) {
+      throw new PmCliError(
+        "--metric-below must use name=value",
+        EXIT_CODE.USAGE,
+      );
+    }
+    metricBelow = queryTestRunMeasurementsBelow(runs, name, threshold);
+  }
+  return {
+    measurements: recordedRun?.measurements,
+    metric_below: metricBelow,
+    metric_diff:
+      options.metricDiff === undefined
+        ? undefined
+        : diffTestRunMeasurements(runs, options.metricDiff),
+  };
 }
 
 /** Implements run test for the public runtime surface of this module. */
@@ -2808,6 +2882,9 @@ export async function runTest(
     adds,
     removes,
   });
+  if ((options.measure?.length ?? 0) > 0 && options.run !== true) {
+    throw new PmCliError("--measure requires --run", EXIT_CODE.USAGE);
+  }
   const runOptions = resolveTestRunOptions(options, item.tests);
   const runStartedAt = options.run === true ? nowIso() : undefined;
   const runResults = await executeSelectedLinkedTests({
@@ -2825,7 +2902,7 @@ export async function runTest(
     runOptions.runSelection,
     runResults,
   );
-  await recordTestRunSummary({
+  const recordedRun = await recordTestRunSummary({
     options,
     pmRoot,
     settings,
@@ -2835,6 +2912,12 @@ export async function runTest(
     failOnSkippedTriggered,
     warnings,
   });
+  const runs = recordedRun ? [...item.testRuns, recordedRun] : item.testRuns;
+  const measurementProjection = buildTestMeasurementProjection(
+    options,
+    runs,
+    recordedRun,
+  );
 
   return {
     ok:
@@ -2857,6 +2940,7 @@ export async function runTest(
     warnings: warnings.length > 0 ? warnings : undefined,
     changed: item.changed,
     count: item.tests.length,
+    ...measurementProjection,
   };
 }
 /* c8 ignore stop */

@@ -63,6 +63,7 @@ This file is generated from `PM_COMMAND_VISIBILITY_CONTRACTS`. Do not edit it ma
 | `health` | standard |
 | `validate` | core |
 | `gc` | full |
+| `workspace` | full |
 | `contracts` | standard |
 | `claim` | core |
 | `release` | core |

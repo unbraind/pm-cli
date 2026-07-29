@@ -315,6 +315,19 @@ pm test <item-id> --run \
   --require-assertions-for-pm
 ```
 
+Structured quantitative evidence can be recorded and queried without parsing
+logs or comments:
+
+```bash
+pm test <item-id> --run \
+  --measure coverage=100,unit=percent,threshold=100 \
+  --measure p95_latency=42,unit=ms,threshold=50
+pm test <item-id> --metric-below coverage=100 --metric-diff p95_latency
+```
+
+Measurements are stored on the producing `test_runs` row, retained with the
+bounded run history, and exposed consistently by CLI, SDK, MCP, and contracts.
+
 ## Linked-Test Assertions
 
 Linked tests can include assertion metadata:

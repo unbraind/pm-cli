@@ -872,6 +872,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "requireAssertionsForPm",
         "checkContext",
         "autoPmContext",
+        "measure",
+        "metricBelow",
+        "metricDiff",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
     },
@@ -1348,8 +1351,7 @@ export function buildPmActionToolInputSchema(
       []),
   ];
   const required = (
-    options.required ??
-    (actionSchema.required as unknown[]).map(String)
+    options.required ?? (actionSchema.required as unknown[]).map(String)
   ).filter((key) => {
     if (key === "action") return false;
     if (options.required === undefined) return true;

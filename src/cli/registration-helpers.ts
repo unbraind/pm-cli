@@ -358,6 +358,9 @@ export function buildBackgroundTestCommandArgs(
   pushOptionalValueFlag(args, "--match", options.match);
   pushOptionalValueFlag(args, "--only-index", options.onlyIndex);
   pushOptionalBooleanFlag(args, "--only-last", options.onlyLast);
+  pushRepeatableValueFlag(args, "--measure", options.measure);
+  pushOptionalValueFlag(args, "--metric-below", options.metricBelow);
+  pushOptionalValueFlag(args, "--metric-diff", options.metricDiff);
   pushSharedBackgroundTestCommandArgs(args, options);
   pushOptionalValueFlag(args, "--author", options.author);
   pushOptionalValueFlag(args, "--message", options.message);

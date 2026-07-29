@@ -238,7 +238,7 @@ describe("init tracker-path guardrails", () => {
       ).toMatchObject({ id_prefix: "acme-" });
       expect(
         await readFile(path.join(workspaceRoot, ".gitignore"), "utf8"),
-      ).toContain(".agents/pm/runtime/\n.agents/pm/search/");
+      ).toContain(".agents/pm/runtime/\n.agents/pm/search/*");
 
       const discovered = context.runCli(["context", "--json"], {
         expectJson: true,

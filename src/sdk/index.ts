@@ -379,6 +379,7 @@ export {
   UPDATE_MANY_FLAG_CONTRACTS,
   UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
+  WORKSPACE_FLAG_CONTRACTS,
   buildPmActionToolInputSchema,
   compactFlagAliasContracts,
   definePmCommandOutputBudget,
@@ -907,6 +908,10 @@ export {
 export { runStats } from "./stats.js";
 export {
   DEFAULT_EVAL_QUERIES_RELATIVE_PATH,
+  EVAL_QUERY_SET_CONTRACT,
+  EVAL_QUERY_SET_EXAMPLE,
+  EVAL_QUERY_SET_SCHEMA_ID,
+  parseEvalQuerySet,
   runEval,
   type EvalOptions,
   type EvalQueryReport,
@@ -931,6 +936,13 @@ export {
   type TestResult,
   type TestRunResult,
 } from "./test/execution.js";
+export {
+  TEST_RUN_MEASUREMENT_LIMIT,
+  diffTestRunMeasurements,
+  parseTestRunMeasurements,
+  queryTestRunMeasurementsBelow,
+  type TestRunMeasurementDiff,
+} from "./test/measurements.js";
 export {
   runTestAll,
   type TestAllCommandOptions,

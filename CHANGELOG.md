@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-802: persist structured numeric measurements with test runs ([pm-ygerpy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ygerpy.toon))
+- GH-803: hoist repeated linked-test execution context and honor lean output ([pm-fqdmbf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fqdmbf.toon))
+- GH-797: rank read/show/view recovery by executable intent and bounded contracts guidance ([pm-bex0ui](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bex0ui.toon))
+- GH-807: make the default eval query set version-controllable in every initialized workspace ([pm-jdh1jg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jdh1jg.toon))
+- GH-806: publish and reuse the eval query-set contract across help, errors, SDK, and machine discovery ([pm-wd61s2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wd61s2.toon))
+- The rendered command surface is not a subset of the contracted surface: pm workspace ships in help, runs, and exits 2 on its own contract lookup, and no gate compares the two sets ([pm-1jrdri](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1jrdri.toon))
+
 ## 2026.7.29 - 2026-07-29
 
 ### Added

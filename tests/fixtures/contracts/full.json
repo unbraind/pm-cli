@@ -6449,6 +6449,16 @@
           "flag": "--auto-pm-context"
         },
         {
+          "flag": "--measure",
+          "list": true
+        },
+        {
+          "flag": "--metric-below"
+        },
+        {
+          "flag": "--metric-diff"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -7370,6 +7380,41 @@
           "flag": "--counts"
         }
       ],
+      "provider": "core"
+    },
+    {
+      "command": "workspace",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "workspace snapshot",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "workspace snapshot create",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "workspace snapshot delete",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "workspace snapshot inspect",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "workspace snapshot list",
+      "flags": [],
+      "provider": "core"
+    },
+    {
+      "command": "workspace snapshot restore",
+      "flags": [],
       "provider": "core"
     }
   ],
@@ -8833,7 +8878,14 @@
     "update",
     "update-many",
     "upgrade",
-    "validate"
+    "validate",
+    "workspace",
+    "workspace snapshot",
+    "workspace snapshot create",
+    "workspace snapshot delete",
+    "workspace snapshot inspect",
+    "workspace snapshot list",
+    "workspace snapshot restore"
   ],
   "extension_commands": [],
   "extension_contracts": {
@@ -15084,8 +15136,34 @@
             ],
             "type": "string"
           },
+          "measure": {
+            "description": "Repeatable numeric run evidence in name=value[,unit=...][,threshold=...] form.",
+            "examples": [
+              [
+                "coverage=100,unit=percent,threshold=100"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "message": {
             "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "metricBelow": {
+            "description": "Return recorded evidence below a name=value threshold.",
+            "examples": [
+              "coverage=100"
+            ],
+            "type": "string"
+          },
+          "metricDiff": {
+            "description": "Compare the latest and previous values for one metric.",
+            "examples": [
+              "coverage"
+            ],
             "type": "string"
           },
           "noExtensions": {
@@ -31264,8 +31342,34 @@
             ],
             "type": "string"
           },
+          "measure": {
+            "description": "Repeatable numeric run evidence in name=value[,unit=...][,threshold=...] form.",
+            "examples": [
+              [
+                "coverage=100,unit=percent,threshold=100"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "message": {
             "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "metricBelow": {
+            "description": "Return recorded evidence below a name=value threshold.",
+            "examples": [
+              "coverage=100"
+            ],
+            "type": "string"
+          },
+          "metricDiff": {
+            "description": "Compare the latest and previous values for one metric.",
+            "examples": [
+              "coverage"
+            ],
             "type": "string"
           },
           "noExtensions": {

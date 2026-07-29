@@ -14,6 +14,12 @@ interface ContractsSnapshotOptions {
     stderr?: string;
     error?: Error;
   };
+  spawnResults?: Array<{
+    status?: number | null;
+    stdout?: string;
+    stderr?: string;
+    error?: Error;
+  }>;
   snapshotReadResult?: string;
   snapshotReadError?: Error;
 }
@@ -36,12 +42,16 @@ async function runContractsSnapshotScenario(options: ContractsSnapshotOptions) {
   const writeFile = vi.fn(async () => undefined);
   vi.doMock("node:fs/promises", () => ({ mkdir, readFile, writeFile }));
 
-  const spawnSync = vi.fn(() => ({
-    status: "status" in (options.spawnResult ?? {}) ? options.spawnResult?.status : 0,
-    stdout: "stdout" in (options.spawnResult ?? {}) ? options.spawnResult?.stdout : '{"b":2,"a":1}',
-    stderr: "stderr" in (options.spawnResult ?? {}) ? options.spawnResult?.stderr : "",
-    error: options.spawnResult?.error,
-  }));
+  const queuedSpawnResults = [...(options.spawnResults ?? [])];
+  const spawnSync = vi.fn(() => {
+    const configured = queuedSpawnResults.shift() ?? options.spawnResult ?? {};
+    return {
+      status: "status" in configured ? configured.status : 0,
+      stdout: "stdout" in configured ? configured.stdout : '{"b":2,"a":1}',
+      stderr: "stderr" in configured ? configured.stderr : "",
+      error: configured.error,
+    };
+  });
   vi.doMock("node:child_process", () => ({ spawnSync }));
 
   const logs: string[] = [];
@@ -57,23 +67,40 @@ async function runContractsSnapshotScenario(options: ContractsSnapshotOptions) {
 
   let failure: unknown = null;
   try {
-    await harness.importModule("scripts/contracts-snapshot.mjs", "contractsSnapshotScenario");
+    await harness.importModule(
+      "scripts/contracts-snapshot.mjs",
+      "contractsSnapshotScenario",
+    );
   } catch (error) {
     failure = error;
   }
   exitSpy.mockRestore();
-  return { failure, logs, errors, existsSync, readFile, writeFile, mkdir, spawnSync };
+  return {
+    failure,
+    logs,
+    errors,
+    existsSync,
+    readFile,
+    writeFile,
+    mkdir,
+    spawnSync,
+  };
 }
 
 describe("scripts/contracts-snapshot: mode and build guards", () => {
   it("requires --update or --check", async () => {
     const result = await runContractsSnapshotScenario({ args: [] });
     expect(String(result.failure ?? "")).toContain("EXIT:2");
-    expect(result.errors.join("\n")).toContain("Usage: node scripts/contracts-snapshot.mjs --update|--check");
+    expect(result.errors.join("\n")).toContain(
+      "Usage: node scripts/contracts-snapshot.mjs --update|--check",
+    );
   });
 
   it("requires a built dist/cli.js", async () => {
-    const result = await runContractsSnapshotScenario({ args: ["--check"], cliExists: false });
+    const result = await runContractsSnapshotScenario({
+      args: ["--check"],
+      cliExists: false,
+    });
     expect(String(result.failure ?? "")).toContain("EXIT:1");
     expect(result.errors.join("\n")).toContain("Missing dist/cli.js");
   });
@@ -83,11 +110,50 @@ describe("scripts/contracts-snapshot: check/update flows", () => {
   it("confirms a current snapshot on --check", async () => {
     const result = await runContractsSnapshotScenario({
       args: ["--check"],
-      snapshotReadResult: '{\n  "a": 1,\n  "b": 2\n}\n',
-      spawnResult: { status: 0, stdout: '{"b":2,"a":1}' },
+      snapshotReadResult:
+        '{\n  "a": 1,\n  "b": 2,\n  "commands": [\n    "contracts"\n  ]\n}\n',
+      spawnResults: [
+        {
+          status: 0,
+          stdout: '{"b":2,"a":1,"commands":["contracts"]}',
+        },
+        {
+          status: 0,
+          stdout: '{"subcommands":[{"name":"contracts"}]}',
+        },
+      ],
     });
     expect(result.failure).toBeNull();
     expect(result.logs.join("\n")).toContain("Contract snapshot is current");
+  });
+
+  it("fails when a rendered command has no machine-readable contract", async () => {
+    const result = await runContractsSnapshotScenario({
+      args: ["--check"],
+      spawnResults: [
+        {
+          status: 0,
+          stdout: JSON.stringify({
+            commands: ["contracts"],
+          }),
+        },
+        {
+          status: 0,
+          stdout: JSON.stringify({
+            subcommands: [
+              { name: "contracts" },
+              { name: "test-runs-worker" },
+              { name: "ignored", hidden: true },
+              { name: 42 },
+              { name: "workspace" },
+            ],
+          }),
+        },
+      ],
+    });
+    expect(String(result.failure ?? "")).toContain(
+      "Rendered commands missing contracts: workspace",
+    );
   });
 
   it("fails on a stale snapshot and reports the first differing line", async () => {
@@ -103,7 +169,9 @@ describe("scripts/contracts-snapshot: check/update flows", () => {
   it("fails when the snapshot file is missing (ENOENT)", async () => {
     const result = await runContractsSnapshotScenario({
       args: ["--check"],
-      snapshotReadError: Object.assign(new Error("missing"), { code: "ENOENT" }),
+      snapshotReadError: Object.assign(new Error("missing"), {
+        code: "ENOENT",
+      }),
     });
     expect(String(result.failure ?? "")).toContain("EXIT:1");
     expect(result.errors.join("\n")).toContain("Missing contracts snapshot");
@@ -116,7 +184,9 @@ describe("scripts/contracts-snapshot: check/update flows", () => {
     });
     expect(String(result.failure ?? "")).toContain("EXIT:0");
     expect(result.writeFile).toHaveBeenCalledWith(
-      expect.stringContaining(path.join("tests", "fixtures", "contracts", "full.json")),
+      expect.stringContaining(
+        path.join("tests", "fixtures", "contracts", "full.json"),
+      ),
       '{\n  "a": 1,\n  "z": 9\n}\n',
       "utf8",
     );
@@ -126,7 +196,10 @@ describe("scripts/contracts-snapshot: check/update flows", () => {
   it("stably sorts nested arrays/objects on update (array map recursion)", async () => {
     const result = await runContractsSnapshotScenario({
       args: ["--update"],
-      spawnResult: { status: 0, stdout: JSON.stringify({ list: [{ b: 2, a: 1 }, "leaf"], top: 1 }) },
+      spawnResult: {
+        status: 0,
+        stdout: JSON.stringify({ list: [{ b: 2, a: 1 }, "leaf"], top: 1 }),
+      },
     });
     expect(String(result.failure ?? "")).toContain("EXIT:0");
     const written = String(result.writeFile.mock.calls.at(-1)?.[1] ?? "");
@@ -140,7 +213,12 @@ describe("scripts/contracts-snapshot: spawn and parse failures", () => {
   it("fails to start when spawn returns an error", async () => {
     const result = await runContractsSnapshotScenario({
       args: ["--check"],
-      spawnResult: { error: new Error("spawn failed"), status: null, stdout: "", stderr: "" },
+      spawnResult: {
+        error: new Error("spawn failed"),
+        status: null,
+        stdout: "",
+        stderr: "",
+      },
     });
     expect(String(result.failure ?? "")).toContain("failed to start");
   });
@@ -156,9 +234,16 @@ describe("scripts/contracts-snapshot: spawn and parse failures", () => {
   it("uses fallback defaults when spawn fails with undefined stdio and null status", async () => {
     const result = await runContractsSnapshotScenario({
       args: ["--check"],
-      spawnResult: { status: null, stdout: undefined, stderr: undefined, error: undefined },
+      spawnResult: {
+        status: null,
+        stdout: undefined,
+        stderr: undefined,
+        error: undefined,
+      },
     });
-    expect(String(result.failure ?? "")).toContain("failed with exit code unknown");
+    expect(String(result.failure ?? "")).toContain(
+      "failed with exit code unknown",
+    );
   });
 
   it("fails when the contracts subprocess emits invalid JSON", async () => {

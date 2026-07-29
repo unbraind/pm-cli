@@ -31,6 +31,9 @@ export const PM_GITIGNORE_RUNTIME_DIRECTORIES = [
   "checkpoints/",
 ] as const;
 
+/** Tracker-relative curated search evidence that remains version controlled. */
+export const PM_GITIGNORE_TRACKED_FILES = ["search/eval-queries.json"] as const;
+
 /** Result of reconciling the init-owned repository ignore block. */
 export interface EnsurePmGitignoreResult {
   /** Absolute path to the reconciled file. */
@@ -63,9 +66,12 @@ export function getPmGitignoreBlock(
   const root = normalizeTrackerRelativeRoot(trackerRelativeRoot);
   return [
     PM_GITIGNORE_START,
-    ...PM_GITIGNORE_RUNTIME_DIRECTORIES.map(
-      (directory) => `${root}/${directory}`,
+    ...PM_GITIGNORE_RUNTIME_DIRECTORIES.map((directory) =>
+      directory === "search/"
+        ? `${root}/${directory}*`
+        : `${root}/${directory}`,
     ),
+    ...PM_GITIGNORE_TRACKED_FILES.map((file) => `!${root}/${file}`),
     PM_GITIGNORE_END,
   ].join("\n");
 }

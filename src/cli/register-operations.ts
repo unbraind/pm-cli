@@ -197,6 +197,13 @@ function buildRunTestOptions(
     author: typeof options.author === "string" ? options.author : undefined,
     message: typeof options.message === "string" ? options.message : undefined,
     force: Boolean(options.force),
+    measure: Array.isArray(options.measure)
+      ? (options.measure as string[])
+      : [],
+    metricBelow:
+      typeof options.metricBelow === "string" ? options.metricBelow : undefined,
+    metricDiff:
+      typeof options.metricDiff === "string" ? options.metricDiff : undefined,
   };
 }
 
@@ -388,18 +395,17 @@ async function runDuplicatesAction(
   const threshold = readOptionString(options, "threshold");
   const limit = readOptionString(options, "limit");
   const result = await runDuplicates(globalOptions, {
-    status: Array.isArray(options.status) && options.status.length > 0
-      ? (options.status as string[])
-      : undefined,
+    status:
+      Array.isArray(options.status) && options.status.length > 0
+        ? (options.status as string[])
+        : undefined,
     since: readOptionString(options, "since"),
     ...(threshold === undefined ? {} : { threshold: Number(threshold) }),
     ...(limit === undefined ? {} : { limit: Number(limit) }),
   });
   printResult(result, globalOptions);
   if (globalOptions.profile) {
-    printError(
-      `profile:command=duplicates took_ms=${Date.now() - startedAt}`,
-    );
+    printError(`profile:command=duplicates took_ms=${Date.now() - startedAt}`);
   }
 }
 
@@ -623,17 +629,20 @@ async function runClaimAction(
               typeof options.assigneeFilter === "string"
                 ? options.assigneeFilter
                 : undefined,
-            parent: typeof options.parent === "string" ? options.parent : undefined,
-            sprint: typeof options.sprint === "string" ? options.sprint : undefined,
-            release: typeof options.release === "string" ? options.release : undefined,
+            parent:
+              typeof options.parent === "string" ? options.parent : undefined,
+            sprint:
+              typeof options.sprint === "string" ? options.sprint : undefined,
+            release:
+              typeof options.release === "string" ? options.release : undefined,
             includeDecisions: options.includeDecisions === true,
-            tokenBudget:
-              (options.tokenBudget ?? options.token_budget) as
-                | string
-                | number
-                | undefined,
+            tokenBudget: (options.tokenBudget ?? options.token_budget) as
+              | string
+              | number
+              | undefined,
             explainRanking:
-              options.explainRanking === true || options.explain_ranking === true,
+              options.explainRanking === true ||
+              options.explain_ranking === true,
           },
         )
       : await runClaim(
@@ -825,7 +834,10 @@ function addLinkedTestExecutionOptions(command: Command): Command {
       "--fail-on-context-mismatch",
       "Fail linked PM commands when context item counts differ",
     )
-    .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
+    .option(
+      "--fail-on-skipped",
+      "Treat skipped linked tests as dependency failures",
+    )
     .option(
       "--fail-on-empty-test-run",
       "Treat successful linked-test commands that report zero executed tests as failures",
@@ -876,6 +888,19 @@ export function registerOperationCommands(program: Command): void {
     )
     .option("--only-last", "Run only the most recently added linked test");
   addLinkedTestExecutionOptions(testCommand)
+    .option(
+      "--measure <value>",
+      "Record numeric run evidence as name=value[,unit=...][,threshold=...] (repeatable)",
+      collect,
+    )
+    .option(
+      "--metric-below <value>",
+      "Return recorded evidence below a name=value threshold",
+    )
+    .option(
+      "--metric-diff <name>",
+      "Compare the latest and previous values for one metric",
+    )
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
@@ -888,8 +913,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--status <value>", "Filter items by status before running tests")
     .option("--limit <n>", "Limit matching items before running linked tests")
     .option("--offset <n>", "Skip matching items before running linked tests");
-  addLinkedTestExecutionOptions(testAllCommand)
-    .action(runTestAllAction);
+  addLinkedTestExecutionOptions(testAllCommand).action(runTestAllAction);
 
   program
     .command("test-runs-worker", { hidden: true })
@@ -931,7 +955,10 @@ export function registerOperationCommands(program: Command): void {
       collect,
       [],
     )
-    .option("--since <value>", "Only inspect items created at or after this time")
+    .option(
+      "--since <value>",
+      "Only inspect items created at or after this time",
+    )
     .option("--threshold <value>", "Minimum similarity score from 0 through 1")
     .option("--limit <n>", "Maximum duplicate clusters to return")
     .action(runDuplicatesAction);
@@ -1127,8 +1154,14 @@ export function registerOperationCommands(program: Command): void {
     .command("workspace")
     .description("Manage portable workspace-level SDK primitives.")
     .command("snapshot")
-    .argument("<action>", "Snapshot action: create, list, inspect, restore, delete")
-    .argument("[target]", "Optional name for create; name or fingerprint otherwise")
+    .argument(
+      "<action>",
+      "Snapshot action: create, list, inspect, restore, delete",
+    )
+    .argument(
+      "[target]",
+      "Optional name for create; name or fingerprint otherwise",
+    )
     .description(
       "Create, inspect, list, restore, or delete content-addressed tracker snapshots.",
     )

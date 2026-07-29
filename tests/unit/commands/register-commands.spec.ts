@@ -660,11 +660,28 @@ describe("operation command actions", () => {
   });
 
   it("maps pm test flags and flags dependency failures via exit code", async () => {
-    await runCli("test", "pm-1", "--list", "--match", "unit", "--env-set", "A=1");
+    await runCli(
+      "test",
+      "pm-1",
+      "--list",
+      "--match",
+      "unit",
+      "--env-set",
+      "A=1",
+      "--measure",
+      "coverage=100",
+      "--metric-below",
+      "coverage=100",
+      "--metric-diff",
+      "coverage",
+    );
     let options = lastCallArg<Record<string, unknown>>(vi.mocked(runTest) as never, 1);
     expect(options.list).toBe(true);
     expect(options.match).toBe("unit");
     expect(options.envSet).toEqual(["A=1"]);
+    expect(options.measure).toEqual(["coverage=100"]);
+    expect(options.metricBelow).toBe("coverage=100");
+    expect(options.metricDiff).toBe("coverage");
     expect(invalidateSearchCachesForMutation).not.toHaveBeenCalled();
 
     vi.mocked(runTest).mockResolvedValue({

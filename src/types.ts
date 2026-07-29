@@ -711,6 +711,20 @@ export interface RuntimeSchemaSettings {
 }
 
 /** Documents the item test run summary payload exchanged by command, SDK, and package integrations. */
+export interface TestRunMeasurement {
+  /** Stable metric name, such as coverage or p95_latency. */
+  name: string;
+  /** Numeric value recorded by the producing verification run. */
+  value: number;
+  /** Optional domain-specific unit, such as percent, ms, bytes, or count. */
+  unit?: string;
+  /** Optional pass/fail or budget threshold associated with the measurement. */
+  threshold?: number;
+  /** ISO 8601 timestamp binding the measurement to its producing run. */
+  recorded_at: string;
+}
+
+/** Documents the item test run summary payload exchanged by command, SDK, and package integrations. */
 export interface ItemTestRunSummary {
   /** Executes the id operation through the package runtime. */
   run_id: string;
@@ -740,6 +754,8 @@ export interface ItemTestRunSummary {
   linked_tests?: number;
   /** Value that configures or reports fail on skipped triggered for this contract. */
   fail_on_skipped_triggered?: boolean;
+  /** Bounded, deterministic quantitative evidence produced by this run. */
+  measurements?: TestRunMeasurement[];
 }
 
 /** Documents the item metadata payload exchanged by command, SDK, and package integrations. */
@@ -935,13 +951,13 @@ export interface HistoryEntry {
   /** Extensible local-only descriptive agent provenance; null means declared but unavailable. */
   agent_provenance?: Readonly<
     Record<
-    string,
-    {
-      /** Bounded descriptive value observed for this dimension. */
-      value: string;
-      /** Bounded signal class that supplied the value. */
-      source: "override" | "environment" | "mcp_client" | "argv" | "host";
-    } | null
+      string,
+      {
+        /** Bounded descriptive value observed for this dimension. */
+        value: string;
+        /** Bounded signal class that supplied the value. */
+        source: "override" | "environment" | "mcp_client" | "argv" | "host";
+      } | null
     >
   >;
   /** Value that configures or reports op for this contract. */

@@ -2,11 +2,13 @@ id: pm-bex0ui
 title: "GH-797: rank read/show/view recovery by executable intent and bounded contracts guidance"
 description: "Align unknown-command recovery for read-shaped intents so pm read does not surface alphabetical command noise while show/view consistently resolve to get, and replace the oversized root-help fallback with the bounded contracts summary surface."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-experience,"area:cli",context-efficiency,github-report,recovery
 created_at: "2026-07-28T16:30:32.604Z"
-updated_at: "2026-07-29T04:25:43.349Z"
+updated_at: "2026-07-29T05:58:28.128Z"
+closed_at: "2026-07-29T05:55:48.452Z"
+completed_at: "2026-07-29T05:55:48.452Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "pm read, show, and view recover to executable read semantics with deterministic ranking; unknown-command recovery recommends bounded contracts summary guidance instead of root help; token and executable-alias regressions cover human and structured modes"
@@ -20,14 +22,38 @@ reporter: github-issue-797
 severity: medium
 environment: Published CLI recovery path
 repro_steps: "Run pm read, pm show, and pm view for an item-shaped intent and compare suggestions and recovery guidance."
+resolution: Read is an executable get alias and unknown-command recovery now favors bounded actionable contract guidance.
 expected_result: Read-shaped aliases and mistakes converge on pm get with a bounded discovery fallback.
 actual_result: "pm read receives alphabetical noise while show/view resolve to get, and fallback guidance sends agents to the full root help payload."
 component: "cli:unknown-command-recovery"
 customer_impact: A common read intent spends unnecessary tokens and can route automation toward unrelated commands.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-185870,related,"2026-07-28T16:30:32.604Z","harness:codex","cli:create:dep",detected
   pm-i35t,discovered_from,"2026-07-28T16:30:32.604Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-1jrdri,related,"2026-07-29T05:06:54.740Z","harness:codex","cli:update:dep",detected
+  pm-5t33or,implements,"2026-07-29T05:06:54.740Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
   "2026-07-28T16:30:32.604Z","harness:codex","Duplicate-check evidence: all-status searches for GH-797, pm read/show/view, recovery bundle, and contracts summary found closed executable-alias predecessor pm-i35t, open cross-family recovery owner pm-185870, and parent grammar epic pm-n7rr, but no item owns this ranking plus bounded-guidance gap. Created as the canonical GitHub follow-up; it is intentionally open and unclaimed in this delivery."
   "2026-07-28T16:31:07.704Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/797 with owner comment linking this canonical item."
+  "2026-07-29T05:55:20.414Z","harness:codex","Delivery evidence: read is now an executable get alias alongside show/view, while fuzzy recovery deliberately excludes the generic read token so unrelated guesses retain bounded pm --help recovery. Full help runtime acceptance passed."
+files[3]{path,scope,note}:
+  src/cli/commander-usage.ts,project,Recovery ranking
+  src/sdk/cli-contracts/command-aliases.ts,project,Executable read alias
+  tests/integration/help-runtime.spec.ts,project,Alias acceptance and unrelated recovery regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,project,240
+test_runs[1]:
+  - run_id: test-local-ms5o6q2g-smlrn5
+    kind: test
+    status: passed
+    started_at: "2026-07-29T05:54:13.587Z"
+    finished_at: "2026-07-29T05:54:30.904Z"
+    recorded_at: "2026-07-29T05:54:30.904Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[2]{name,value,unit,threshold,recorded_at}:
+      coverage,100,percent,100,"2026-07-29T05:54:30.904Z"
+      gate,1,boolean,1,"2026-07-29T05:54:30.904Z"
+close_reason: "Implemented and verified in the broad SDK context-contract delivery; linked evidence, full gates, and isolated consumer acceptance passed."
 body: ""

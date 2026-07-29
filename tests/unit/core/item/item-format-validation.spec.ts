@@ -1068,6 +1068,26 @@ describe("item-format metadata validation", () => {
           passed: 1,
           failed: 0,
           skipped: 0,
+          measurements: [
+            null,
+            {
+              name: " coverage ",
+              value: 100,
+              unit: " ",
+              threshold: Number.NaN,
+              recorded_at: ` ${FIXED_TS} `,
+            },
+            {
+              name: "latency",
+              value: 12,
+              unit: " ms ",
+              threshold: 20,
+              recorded_at: FIXED_TS,
+            },
+            { name: "", value: 1, recorded_at: FIXED_TS },
+            { name: "bad-value", value: Number.NaN, recorded_at: FIXED_TS },
+            { name: "bad-time", value: 1, recorded_at: "" },
+          ],
         },
         {
           run_id: "run-1",
@@ -1079,6 +1099,7 @@ describe("item-format metadata validation", () => {
           passed: 1,
           failed: 0,
           skipped: 0,
+          measurements: [],
         },
         {
           run_id: "",
@@ -1142,6 +1163,20 @@ describe("item-format metadata validation", () => {
 
     expect(normalized.type_options).toEqual({ a: "one", b: "two" });
     expect(normalized.test_runs?.map((entry) => entry.kind)).toEqual(["test", "test-all"]);
+    expect(normalized.test_runs?.[1]?.measurements).toEqual([
+      {
+        name: "coverage",
+        value: 100,
+        recorded_at: FIXED_TS,
+      },
+      {
+        name: "latency",
+        value: 12,
+        unit: "ms",
+        threshold: 20,
+        recorded_at: FIXED_TS,
+      },
+    ]);
     expect(normalized.plan_steps?.map((entry) => entry.id)).toEqual(["step-1", "step-2"]);
     expect(normalized.plan_steps?.[1]?.linked_items).toEqual([
       { id: "dep-1", kind: "dependency", note: "linked", required_before_step: true },

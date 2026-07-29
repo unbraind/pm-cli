@@ -106,6 +106,7 @@ import {
   PROFILE_FLAG_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   EVAL_FLAG_CONTRACTS,
+  WORKSPACE_FLAG_CONTRACTS,
   NEXT_FLAG_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
   STATS_FLAG_CONTRACTS,
@@ -392,7 +393,10 @@ const AGENT_BOOTSTRAP_FLAGS = new Map<string, readonly string[]>([
     "create",
     ["--title", "--type", "--status", "--priority", "--dep", "--comment"],
   ],
-  ["get", ["--full", "--depth", "--fields", "--tree", "--tree-depth", "--format"]],
+  [
+    "get",
+    ["--full", "--depth", "--fields", "--tree", "--tree-depth", "--format"],
+  ],
   [
     "health",
     [
@@ -416,8 +420,14 @@ const AGENT_BOOTSTRAP_FLAGS = new Map<string, readonly string[]>([
       "--format",
     ],
   ],
-  ["search", ["--mode", "--status", "--type", "--limit", "--after", "--fields"]],
-  ["update", ["--status", "--message", "--dep", "--comment", "--file", "--test"]],
+  [
+    "search",
+    ["--mode", "--status", "--type", "--limit", "--after", "--fields"],
+  ],
+  [
+    "update",
+    ["--status", "--message", "--dep", "--comment", "--file", "--test"],
+  ],
   [
     "validate",
     [
@@ -605,6 +615,7 @@ const COMMAND_INTENTS = new Map<string, string>([
   ["update", "Update work."],
   ["upgrade", "Upgrade packages."],
   ["validate", "Validate data."],
+  ["workspace", "Manage portable workspace primitives."],
 ]);
 
 // Lifecycle subcommand flag contracts for `pm extension`. Only `init` differs
@@ -666,6 +677,13 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<
   ["get", GET_FLAG_CONTRACTS],
   ["search", SEARCH_FLAG_CONTRACTS],
   ["eval", EVAL_FLAG_CONTRACTS],
+  ["workspace", WORKSPACE_FLAG_CONTRACTS],
+  ["workspace snapshot", WORKSPACE_FLAG_CONTRACTS],
+  ["workspace snapshot create", WORKSPACE_FLAG_CONTRACTS],
+  ["workspace snapshot list", WORKSPACE_FLAG_CONTRACTS],
+  ["workspace snapshot inspect", WORKSPACE_FLAG_CONTRACTS],
+  ["workspace snapshot restore", WORKSPACE_FLAG_CONTRACTS],
+  ["workspace snapshot delete", WORKSPACE_FLAG_CONTRACTS],
   ["next", NEXT_FLAG_CONTRACTS],
   ["aggregate", AGGREGATE_FLAG_CONTRACTS],
   ["deps", DEPS_FLAG_CONTRACTS],

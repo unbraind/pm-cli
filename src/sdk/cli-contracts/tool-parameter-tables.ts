@@ -308,6 +308,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   requireAssertionsForPm: { type: "boolean" },
   checkContext: { type: "boolean" },
   autoPmContext: { type: "boolean" },
+  measure: { type: "array", items: { type: "string" } },
+  metricBelow: { type: "string" },
+  metricDiff: { type: "string" },
   diff: { type: "boolean" },
   storage: { type: "boolean" },
   metadataCoverage: { type: "boolean" },
@@ -1182,6 +1185,19 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   autoPmContext: {
     description:
       "Auto-remediate PM tracker-read linked commands by routing those entries through tracker context regardless of linked-test pm_context_mode overrides.",
+  },
+  measure: {
+    description:
+      "Repeatable numeric run evidence in name=value[,unit=...][,threshold=...] form.",
+    examples: [["coverage=100,unit=percent,threshold=100"]],
+  },
+  metricBelow: {
+    description: "Return recorded evidence below a name=value threshold.",
+    examples: ["coverage=100"],
+  },
+  metricDiff: {
+    description: "Compare the latest and previous values for one metric.",
+    examples: ["coverage"],
   },
   dryRun: {
     description: "Preview command effects without mutating storage artifacts.",

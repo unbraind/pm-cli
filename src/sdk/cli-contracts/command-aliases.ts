@@ -6,6 +6,7 @@
 
 /** High-frequency executable aliases whose targets accept the same positional and flag contracts. */
 export const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
+  read: "get",
   show: "get",
   view: "get",
   comment: "comments",

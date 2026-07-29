@@ -17,6 +17,9 @@ describe("ensurePmGitignore", () => {
         `${getPmGitignoreBlock()}\n`,
       );
       expect(getPmGitignoreBlock()).toContain(".agents/pm/locks/");
+      expect(getPmGitignoreBlock()).toContain(
+        "!.agents/pm/search/eval-queries.json",
+      );
 
       await writeFile(
         first.path,
