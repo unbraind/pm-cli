@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Sentry gate misclassifies handled snapshot identifier validation as a blocking runtime error ([pm-k785lu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k785lu.toon))
 - Scale fixtures vary only in size: the sole synthetic workspace generator hardcodes population shape, so the million-item tier is eleven simulated days deep with one history entry per item ([pm-vv2lti](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vv2lti.toon))
 - Whole-workspace snapshot restore silently rewinds the immutable record: history streams are deleted and nothing records that a rewind happened ([pm-6l2mza](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6l2mza.toon))
 - GH-808: lifecycle completion resolver types and provenance lie when no timestamp exists ([pm-qhnq6t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qhnq6t.toon))

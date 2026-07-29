@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:observability","area:release",regression,sentry,telemetry
 created_at: "2026-07-29T20:38:39.675Z"
-updated_at: "2026-07-29T20:50:30.435Z"
+updated_at: "2026-07-29T20:57:15.450Z"
 closed_at: "2026-07-29T20:49:04.080Z"
 completed_at: "2026-07-29T20:49:04.080Z"
 author: "harness:codex"
@@ -23,12 +23,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,related_to,"2026-07-29T20:38:39.675Z","harness:codex","cli:create:dep",detected
   pm-c8qa,implements,"2026-07-29T20:38:39.675Z","harness:codex","cli:create:dep",detected
   pm-flbo,related_to,"2026-07-29T20:38:39.675Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-29T20:38:39.675Z","harness:codex","Duplicate check: all-status searches for the exact snapshot validation text and Sentry classifier lineage found completed prior classifier refreshes pm-flbo/pm-lg9i/pm-io4t/pm-yohx but no item for this distinct snapshot identifier validation shape. Live Sentry evidence is privacy-scrubbed: one handled CommandError in release pm-cli@2026.7.29, first/last seen 2026-07-29, count 1."
   "2026-07-29T20:42:26.704Z","harness:codex","TDD evidence: the escaped-defect regression failed before implementation with sentry.high=3 instead of 2, then passed after introducing a separate exact validation allowlist. Live production-shape inspection showed metadata.type=Error and no unhandled marker; the contract now ignores that exact handled validation for Error/CommandError/PmCliError while explicit unhandled events and unrelated handled Error events remain blocking. Live gate passes with critical=0, high=0, ignored_expected_handled=1."
   "2026-07-29T20:48:58.157Z","harness:codex","Verification evidence: 395 test files and 6,533 tests passed with literal all-source V8 coverage at statements 45,911/45,911, branches 32,805/32,805, functions 9,373/9,373, lines 44,587/44,587. Typecheck passed across core, typetests, packages, and examples. ESLint passed with zero warnings; jscpd found zero clones across 817 analyzed files; static quality/docstring gate passed at mandatory 100%; package SDK parity, token budget, gate registry, public SDK surface, entrypoint cost, and CLI transport gates passed. pnpm audit found no known vulnerabilities. pm-changelog 2026.7.29-1 check reported CHANGELOG.md unchanged. pm health and history drift are clean; validation retains only the known historical 292-item resolution warning baseline."
   "2026-07-29T20:49:39.682Z","harness:codex","Package lifecycle evidence: package-owned changelog verification refreshed the managed-extension receipt for the already-current pm-changelog 2026.7.29-1; generation check remained unchanged."
   "2026-07-29T20:50:29.792Z","harness:codex","PR evidence: follow-up observability closeout opened as https://github.com/unbraind/pm-cli/pull/816 from commit cb758a935 after all local gates passed."
+  "2026-07-29T20:55:00.554Z","harness:codex","CI correction: Gates (static) correctly detected that CHANGELOG.md became stale because pm-k785lu was closed after the pre-close changelog check. Regenerated CHANGELOG.md only through pm-changelog 2026.7.29-1, then linked the generated document; no generator defect was found."
+  "2026-07-29T20:57:14.703Z","harness:codex","Static-gate rerun evidence: package-generated CHANGELOG.md is current after closing pm-k785lu; version, contracts, SDK surface, secrets, ESLint, duplication, 100% static/docstring quality, package boundary, SDK parity, token budget, gate registry, performance budgets, and npm pack dry-run all pass locally."
 files[3]{path,scope,note}:
   scripts/release/sentry-telemetry-gate.mjs,project,Narrow expected-handled snapshot identifier classifier
   tests/unit/scripts/release/sentry-telemetry-gate.spec.ts,project,Escaped-defect regression proving handled-only classification
@@ -40,5 +42,7 @@ tests[4]{command,scope,timeout_seconds}:
   "pnpm sentry:telemetry:gate",project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms6k4zgr-yvf2nd,test,passed,"2026-07-29T20:48:51.078Z","2026-07-29T20:48:57.482Z","2026-07-29T20:48:57.482Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated closed-item release record
 close_reason: "Delivered TDD classifier correction with exact production-shape coverage, live strict observability proof, full 100 percent repository coverage, static/type/security gates, and clean PM integrity."
 body: ""
