@@ -1,0 +1,35 @@
+id: pm-fqdmbf
+title: "GH-803: hoist repeated linked-test execution context and honor lean output"
+description: "pm test --run --json repeats a 16-field sandbox execution_context on every result even though the context is invocation-scoped; in the reported one-test case it consumes 727 of 1,301 bytes and grows redundantly with each linked test."
+type: Issue
+status: open
+priority: 1
+tags[8]: agent-ux,"area:cli","area:sdk",context-management,gh-issue,linked-tests,output-contract,token-efficiency
+created_at: "2026-07-29T02:34:38.529Z"
+updated_at: "2026-07-29T02:34:38.529Z"
+author: "harness:codex"
+acceptance_criteria: "Invocation-scoped execution context is emitted once rather than duplicated on every linked-test result, with no diagnostic information loss; Lean structured output omits non-actionable successful-run sandbox plumbing while failures retain enough provenance to diagnose context isolation; Default and full projections remain explicitly contracted and backward compatibility is handled through a documented schema/version strategy; CLI, SDK, MCP, JSON schemas, contracts, and documentation expose one consistent test-run output shape; Measured multi-test output proves a material byte and token reduction while focused and exact 100 percent coverage remain green"
+goal: project management = context management
+objective: Pay once for invocation provenance and reserve per-result output for result-specific evidence
+value: Agents retain more context for actionable test failures and project decisions
+impact: Removes multiplicative payload overhead from linked-test sweeps without discarding sandbox diagnostics
+outcome: Structured linked-test output scales with useful results rather than repeated temporary-path plumbing
+why_now: GH-803 measured execution_context at 56 percent of a passing one-test JSON response and identified per-result duplication that worsens with fleet sweeps
+parent: pm-5t33or
+risk: medium
+confidence: high
+severity: medium
+repro_steps: "Enable test-result-tracking in a fresh workspace, link multiple passing tests, run pm test --run --json, and compare repeated execution_context bytes with result-specific bytes."
+expected_result: "One invocation-level execution context plus compact result-specific records, with lean success output and diagnostic failure output."
+actual_result: "Every result repeats the same 16-field sandbox context, including temporary absolute paths, regardless of status or lean intent."
+affected_version: 2026.7.29
+component: linked-test-output-contract
+customer_impact: Fleet-wide linked-test sweeps spend most structured output on repeated sandbox plumbing that cannot change an agent decision.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cxr0jb,related,"2026-07-29T02:34:38.529Z","harness:codex","cli:create:dep",detected
+  pm-g3n00m,implements,"2026-07-29T02:34:38.529Z","harness:codex","cli:create:dep",detected
+  pm-oi4zs3,discovered_from,"2026-07-29T02:34:38.529Z","harness:codex","cli:create:dep",detected
+  pm-vrsn,related,"2026-07-29T02:34:38.529Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-29T02:34:38.529Z","harness:codex","Duplicate check evidence: all-status searches for execution_context, sandbox plumbing, lean output, and GH-778 found closed pm-oi4zs3 for caller echoes and inactive pagination metadata plus open pm-5t33or/pm-cxr0jb for general budget and intent projections. None owns invocation-level hoisting or status-aware linked-test provenance, so GH-803 is a distinct successor in that canonical lineage: https://github.com/unbraind/pm-cli/issues/803."
+body: ""
