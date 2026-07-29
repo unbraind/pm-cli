@@ -420,6 +420,58 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     expect(json.sentry.threshold_ok).toBe(true);
   });
 
+  it("ignores handled snapshot identifier validation without hiding unhandled or unrelated errors", async () => {
+    const validationMessage =
+      "Snapshot names and fingerprints must use lowercase letters, digits, dots, underscores, or hyphens";
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "2"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: buildSentryFetch([
+        {
+          shortId: "PM-SNAPSHOT-HANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: `CommandError: ${validationMessage}`,
+          metadata: { value: validationMessage, type: "CommandError" },
+        },
+        {
+          shortId: "PM-SNAPSHOT-HANDLED-ERROR",
+          level: "error",
+          logger: "node",
+          title: `Error: ${validationMessage}`,
+          metadata: { value: validationMessage, type: "Error" },
+        },
+        {
+          shortId: "PM-SNAPSHOT-UNHANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: true,
+          title: `Error: ${validationMessage}`,
+          metadata: { value: validationMessage, type: "Error" },
+        },
+        {
+          shortId: "PM-UNRELATED-HANDLED",
+          level: "error",
+          logger: "node",
+          isUnhandled: false,
+          title: "Error: unrelated runtime failure",
+          metadata: { value: "unrelated runtime failure", type: "Error" },
+        },
+      ]),
+    });
+    expect(json.sentry.high).toBe(2);
+    expect(json.sentry.blocking_short_ids).toEqual([
+      "PM-SNAPSHOT-UNHANDLED",
+      "PM-UNRELATED-HANDLED",
+    ]);
+    expect(json.sentry.ignored_expected_handled_short_ids).toEqual([
+      "PM-SNAPSHOT-HANDLED",
+      "PM-SNAPSHOT-HANDLED-ERROR",
+    ]);
+    expect(json.sentry.threshold_ok).toBe(true);
+  });
+
   it("handles malformed issue entries while still tallying high-priority items", async () => {
     const { json } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "off", "--max-high", "1"],
