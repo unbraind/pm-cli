@@ -451,6 +451,21 @@ describe("scale benchmark runner", () => {
       expect(
         JSON.parse(await readFile(legacyManifestPath, "utf8")),
       ).toHaveProperty("tiers.scratch:10");
+      const representativeReport = structuredClone(sampleReport());
+      representativeReport.fixture.shape.name = "representative";
+      await updateBudgetManifest(
+        legacyManifestPath,
+        representativeReport,
+        1,
+      );
+      expect(
+        JSON.parse(await readFile(legacyManifestPath, "utf8")),
+      ).toMatchObject({
+        tiers: {
+          "scratch:10": expect.any(Object),
+          "representative:10": expect.any(Object),
+        },
+      });
     });
   }, 30_000);
 
@@ -495,6 +510,13 @@ describe("scale benchmark runner", () => {
       ).resolves.toBe(false);
 
       const defaultRunWrite = vi.fn();
+      const defaultRun = async () => ({
+        fixture: { item_count: 100 },
+        iterations: 1,
+        product_target: { target: { p95_ms: 1000 } },
+        transports: {},
+        transport_overhead: null,
+      });
       await expect(
         runScaleBenchmarkEntrypoint({
           argv: [
@@ -509,6 +531,7 @@ describe("scale benchmark runner", () => {
             "--output",
             path.join(tempRoot, "default-run.json"),
           ],
+          mainOptions: { run: defaultRun },
           write: defaultRunWrite,
         }),
       ).resolves.toBe(true);

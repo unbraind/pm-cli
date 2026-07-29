@@ -15,26 +15,26 @@ copying repository benchmark scripts:
 
 ```ts
 import {
-  buildCorpusShapePlan,
+  buildCorpusShapeItemPlan,
+  createCorpusShapeMeasurement,
   listBuiltinCorpusShapes,
-  measureCorpusShapePlan,
-  resolveCorpusShape,
+  resolveBuiltinCorpusShape,
 } from "@unbrained/pm-cli/sdk";
 
-const shape = resolveCorpusShape("representative");
-const plan = buildCorpusShapePlan(shape, {
-  itemCount: 1_000,
-  seed: 42,
-  clock: "2026-07-29T00:00:00.000Z",
-});
-const profile = measureCorpusShapePlan(shape, plan);
+const shape = resolveBuiltinCorpusShape("representative");
+const measurement = createCorpusShapeMeasurement(shape);
+for (let index = 0; index < 1_000; index += 1) {
+  measurement.add(buildCorpusShapeItemPlan(shape, index, 1_000, 42));
+}
+const profile = measurement.finish();
 
 if (!profile.matches_declaration) {
   throw new Error(profile.mismatches.join("\n"));
 }
 ```
 
-The item plan provides stable identifiers, parents, timestamps, authors,
+The incremental measurement avoids retaining a million-item plan in memory.
+Each item plan provides stable identifiers, parents, timestamps, authors,
 history depth, typed relationship kinds, evidence annotations, and custom
 schema selections. Callers retain control over how those plans are written:
 direct storage fixtures, public `PmClient` operations, a remote adapter, or
@@ -55,7 +55,10 @@ identifier is `https://schema.unbrained.dev/pm/corpus-shape/v1`.
 
 The scale generator accepts `--shape <name>` and writes a measured profile into
 its manifest. Generation fails when the observed deterministic plan does not
-conform to the declaration.
+conform to the declaration, including hierarchy depth and fanout, exact
+relationship-kind selection, history density, and bounded annotation rates.
+Custom terminal statuses use terminal lifecycle roles rather than appearing as
+active work.
 
 ```bash
 pnpm build

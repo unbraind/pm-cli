@@ -26,7 +26,7 @@ export async function runRetrievalEval(args, options = {}) {
   const child = (options.spawn ?? spawn)(options.executablePath ?? process.execPath, [
     options.cliPath ?? CLI_PATH,
     "--pm-path",
-    path.join(repoRoot, ".agents", "pm"),
+    options.pmPath ?? path.join(repoRoot, ".agents", "pm"),
     "eval",
     "--json",
     "--k",
@@ -43,19 +43,57 @@ export async function runRetrievalEval(args, options = {}) {
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
+  const maxOutputBytes = options.maxOutputBytes ?? 1_048_576;
+  const timeoutMs = options.timeoutMs ?? 30_000;
   let stdout = "";
   let stderr = "";
+  let outputBytes = 0;
+  let outputError;
   child.stdout.setEncoding("utf8");
   child.stderr.setEncoding("utf8");
   child.stdout.on("data", (chunk) => {
-    stdout += chunk;
+    outputBytes += Buffer.byteLength(chunk);
+    if (outputBytes > maxOutputBytes) {
+      outputError ??= new Error(
+        `Retrieval eval output exceeded ${maxOutputBytes} bytes`,
+      );
+      child.kill?.("SIGKILL");
+    } else {
+      stdout += chunk;
+    }
   });
   child.stderr.on("data", (chunk) => {
-    stderr += chunk;
+    outputBytes += Buffer.byteLength(chunk);
+    if (outputBytes > maxOutputBytes) {
+      outputError ??= new Error(
+        `Retrieval eval output exceeded ${maxOutputBytes} bytes`,
+      );
+      child.kill?.("SIGKILL");
+    } else {
+      stderr += chunk;
+    }
   });
   const code = await new Promise((resolve, reject) => {
-    child.once("error", reject);
-    child.once("close", (exitCode) => resolve(exitCode ?? 1));
+    let settled = false;
+    const finish = (error, exitCode) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error !== undefined) reject(error);
+      else resolve(exitCode ?? 1);
+    };
+    const timer = setTimeout(() => {
+      child.kill?.("SIGKILL");
+      finish(
+        new Error(`Retrieval eval timed out after ${timeoutMs}ms`),
+        undefined,
+      );
+    }, timeoutMs);
+    timer.unref?.();
+    child.once("error", (error) => finish(error, undefined));
+    child.once("close", (exitCode) =>
+      finish(outputError, exitCode),
+    );
   });
   return { code, stdout, stderr };
 }
@@ -103,23 +141,41 @@ export function evaluateRetrievalGate(report, baseline) {
   return violations;
 }
 
-function baselineFromReport(report) {
+function baselineFromReport(report, previous) {
+  const previousMinimum = previous?.minimum ?? {};
+  const minimum = {};
+  for (const metric of ["ndcg", "mrr", "precision", "recall"]) {
+    minimum[metric] = Math.max(
+      previousMinimum[metric] ?? 0,
+      finiteMetric(report.aggregate?.[metric], metric) - 0.02,
+      0,
+    );
+  }
   return {
     version: 1,
-    minimum_query_count: report.query_count,
-    minimum: {
-      ndcg: Math.max(0, finiteMetric(report.aggregate?.ndcg, "ndcg") - 0.02),
-      mrr: Math.max(0, finiteMetric(report.aggregate?.mrr, "mrr") - 0.02),
-      precision: Math.max(
-        0,
-        finiteMetric(report.aggregate?.precision, "precision") - 0.02,
-      ),
-      recall: Math.max(
-        0,
-        finiteMetric(report.aggregate?.recall, "recall") - 0.02,
-      ),
-    },
+    minimum_query_count: Math.max(
+      previous?.minimum_query_count ?? 0,
+      report.query_count,
+    ),
+    minimum,
   };
+}
+
+async function readBaseline(baselinePath, allowMissing) {
+  try {
+    return JSON.parse(await readFile(baselinePath, "utf8"));
+  } catch (error) {
+    if (
+      allowMissing &&
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return undefined;
+    }
+    throw error;
+  }
 }
 
 /** Run the enforced gate, refresh its baseline, or exercise its negative control. */
@@ -130,7 +186,9 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     baselineFlag === undefined || baselineFlag === true
       ? DEFAULT_BASELINE_PATH
       : path.resolve(String(baselineFlag));
-  const runner = options.run ?? runRetrievalEval;
+  const runner =
+    options.run ??
+    ((args) => runRetrievalEval(args, options.runOptions));
   if (flags.has("negative-control")) {
     const negative = await runner(["--fail-under", "1"]);
     if (negative.code === 0) {
@@ -140,9 +198,7 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     }
     return { ok: true, negative_control: "seeded_ranking_regression" };
   }
-  const baseline = flags.has("update")
-    ? undefined
-    : JSON.parse(await readFile(baselinePath, "utf8"));
+  const baseline = await readBaseline(baselinePath, flags.has("update"));
   const threshold =
     baseline === undefined
       ? "0"
@@ -155,7 +211,7 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   }
   const report = JSON.parse(result.stdout);
   if (flags.has("update")) {
-    const nextBaseline = baselineFromReport(report);
+    const nextBaseline = baselineFromReport(report, baseline);
     await writeFile(
       baselinePath,
       `${JSON.stringify(nextBaseline, null, 2)}\n`,
@@ -180,7 +236,10 @@ export async function runRetrievalEvalEntrypoint(options = {}) {
     return false;
   }
   try {
-    const result = await (options.run ?? main)(argv.slice(2));
+    const execute =
+      options.run ??
+      ((args) => main(args, options.mainOptions));
+    const result = await execute(argv.slice(2));
     (options.write ?? ((output) => process.stdout.write(output)))(
       `${JSON.stringify(result, null, 2)}\n`,
     );

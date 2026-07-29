@@ -246,19 +246,19 @@
   "claims": [
     {
       "source": "src/sdk/eval.ts",
-      "evidence": "CI gate",
+      "evidence": "provider swaps (including the offline BM25 provider",
       "gate": "context-retrieval",
       "disposition": "enforced"
     },
     {
       "source": "src/cli/register-list-query.ts",
-      "evidence": "CI gate",
+      "evidence": "Evaluate search relevance against a curated golden-query set",
       "gate": "context-retrieval",
       "disposition": "enforced"
     },
     {
       "source": "docs/COMMANDS.md",
-      "evidence": "CI gate",
+      "evidence": "`--fail-under <0..1>` turns `pm eval` into a CI gate",
       "gate": "context-retrieval",
       "disposition": "enforced"
     }

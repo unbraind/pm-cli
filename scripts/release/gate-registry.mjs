@@ -10,6 +10,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseDocument } from "yaml";
 import { fail, parseFlags, repoRoot } from "./utils.mjs";
 
 const DEFAULT_REGISTRY_PATH = path.join(
@@ -23,6 +24,44 @@ const GATE_STEP_PATTERN =
 const NON_GATE_STEP_PATTERN =
   /^(setup|install|checkout|download|upload|restore|record|resolve|alert|create github release)/i;
 
+function gateNamesFromWorkflow(source, file) {
+  const document = parseDocument(source);
+  if (document.errors.length > 0) {
+    throw new Error(
+      `Invalid workflow YAML ${file}: ${document.errors.map((error) => error.message).join("; ")}`,
+    );
+  }
+  const workflow = document.toJS();
+  const jobs =
+    typeof workflow === "object" &&
+    workflow !== null &&
+    typeof workflow.jobs === "object" &&
+    workflow.jobs !== null
+      ? workflow.jobs
+      : {};
+  const names = [];
+  for (const job of Object.values(jobs)) {
+    const steps =
+      typeof job === "object" &&
+      job !== null &&
+      Array.isArray(job.steps)
+        ? job.steps
+        : [];
+    for (const step of steps) {
+      if (
+        typeof step === "object" &&
+        step !== null &&
+        typeof step.name === "string" &&
+        GATE_STEP_PATTERN.test(step.name) &&
+        !NON_GATE_STEP_PATTERN.test(step.name)
+      ) {
+        names.push(step.name);
+      }
+    }
+  }
+  return names;
+}
+
 /** Discover enforced workflow steps that make a build, quality, or release claim. */
 export async function discoverWorkflowGates(workflowsRoot) {
   const files = (await readdir(workflowsRoot))
@@ -30,21 +69,9 @@ export async function discoverWorkflowGates(workflowsRoot) {
     .sort();
   const discovered = [];
   for (const file of files) {
-    const lines = (await readFile(path.join(workflowsRoot, file), "utf8")).split(
-      "\n",
-    );
-    for (const line of lines) {
-      const match = line.match(/^\s+- name:\s*(.+?)\s*$/);
-      if (match === null) {
-        continue;
-      }
-      const name = match[1].replace(/^["']|["']$/g, "");
-      if (
-        GATE_STEP_PATTERN.test(name) &&
-        !NON_GATE_STEP_PATTERN.test(name)
-      ) {
-        discovered.push(`${file}#${name}`);
-      }
+    const source = await readFile(path.join(workflowsRoot, file), "utf8");
+    for (const name of gateNamesFromWorkflow(source, file)) {
+      discovered.push(`${file}#${name}`);
     }
   }
   return [...new Set(discovered)].sort();
@@ -134,6 +161,8 @@ async function validateGatePolicy(
 async function validateClaim(claim, root, ids, violations) {
   if (
     typeof claim.source !== "string" ||
+    typeof claim.evidence !== "string" ||
+    claim.evidence.trim().length === 0 ||
     typeof claim.gate !== "string" ||
     !ids.has(claim.gate) ||
     !["enforced", "advisory"].includes(claim.disposition)

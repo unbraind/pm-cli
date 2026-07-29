@@ -68,7 +68,8 @@ The matching CLI surface is:
 pm workspace snapshot create before-migration
 pm workspace snapshot list
 pm workspace snapshot inspect before-migration
-pm workspace snapshot restore before-migration
+pm workspace snapshot restore before-migration --dry-run
+pm workspace snapshot restore before-migration --force --message "Restore verified checkpoint"
 pm workspace snapshot delete before-migration
 ```
 

@@ -116,6 +116,9 @@ describe("workspace snapshots", () => {
         restored.manifest.fingerprint,
       );
       expect(restored.audit_operation).toBe("workspace_snapshot_restore");
+      expect(restored.audit_history_path).toBe(
+        "history/_workspace.jsonl",
+      );
     });
   });
 
@@ -183,6 +186,9 @@ describe("workspace snapshots", () => {
         },
       );
       expect(restored.plan).toEqual(plan);
+      expect(restored.audit_history_path).toBe(
+        "history/_workspace.jsonl",
+      );
       const workspaceHistory = (
         await readFile(
           path.join(context.pmPath, "history", "_workspace.jsonl"),

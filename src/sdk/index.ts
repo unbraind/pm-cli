@@ -50,6 +50,7 @@ export {
   BUILTIN_CORPUS_SHAPES,
   PM_CORPUS_SHAPE_SCHEMA,
   buildCorpusShapeItemPlan,
+  createCorpusShapeMeasurement,
   defineCorpusShape,
   listBuiltinCorpusShapes,
   measureCorpusShapePlan,
@@ -58,6 +59,7 @@ export {
   type CorpusShape,
   type CorpusShapeEdgeWeight,
   type CorpusShapeItemPlan,
+  type CorpusShapeMeasurement,
   type CorpusShapeProfile,
 } from "./corpus-shape.js";
 export * from "./core-governance.js";

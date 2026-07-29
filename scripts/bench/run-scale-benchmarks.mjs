@@ -468,6 +468,9 @@ export async function updateBudgetManifest(manifestPath, report, headroom) {
     report,
     headroom,
   );
+  if ((report.fixture.shape?.name ?? "scratch") === "scratch") {
+    delete manifest.tiers[String(report.fixture.item_count)];
+  }
   await writeFile(
     manifestPath,
     `${JSON.stringify(manifest, null, 2)}\n`,
@@ -563,7 +566,10 @@ export function benchmarkOptionsFromFlags(flags) {
     itemCount: flags.get("items") ?? "ci",
     iterations: flags.get("iterations") ?? 3,
     seed: flags.get("seed") ?? 42,
-    shape: flags.get("shape") ?? "scratch",
+    shape:
+      flags.get("shape") === undefined
+        ? "scratch"
+        : String(flags.get("shape")),
     mode:
       flags.get("mode") === undefined ? "direct" : String(flags.get("mode")),
     transport: flags.get("transport") ?? "both",
@@ -593,9 +599,11 @@ async function applyBudgetActions(flags, report, manifestPath) {
 }
 
 /** Execute the scale benchmark command-line interface. */
-export async function main(argv = process.argv.slice(2)) {
+export async function main(argv = process.argv.slice(2), options = {}) {
   const { flags } = parseFlags(argv);
-  const report = await runScaleBenchmarks(benchmarkOptionsFromFlags(flags));
+  const report = await (options.run ?? runScaleBenchmarks)(
+    benchmarkOptionsFromFlags(flags),
+  );
   const outputPath = resolveBenchmarkPathFlag(
     flags,
     "output",
@@ -625,7 +633,10 @@ export async function runScaleBenchmarkEntrypoint(options = {}) {
   const argv = options.argv ?? process.argv;
   if (!isMainModule(argv)) return false;
   try {
-    const { report, outputPath } = await (options.run ?? main)(argv.slice(2));
+    const execute =
+      options.run ??
+      ((args) => main(args, options.mainOptions));
+    const { report, outputPath } = await execute(argv.slice(2));
     (options.write ?? ((output) => process.stdout.write(output)))(
       `${JSON.stringify(
         {

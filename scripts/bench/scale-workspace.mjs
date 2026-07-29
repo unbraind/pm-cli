@@ -15,11 +15,11 @@ import {
   appendHistoryEntry,
   buildCorpusShapeItemPlan,
   canonicalDocument,
+  createCorpusShapeMeasurement,
   createHistoryEntry,
   emptyImportedDocument,
   getHistoryPath,
   getItemPath,
-  measureCorpusShapePlan,
   resolveBuiltinCorpusShape,
   serializeItemDocument,
   writeFileAtomic,
@@ -96,13 +96,17 @@ function typeFor(index, random) {
   return WEIGHTED_TYPES[Math.floor(random() * WEIGHTED_TYPES.length)];
 }
 
-function buildDependencies(plan, itemCount) {
+function buildDependencies(plan, itemCount, shape, seed) {
   if (plan.index === 0 || plan.dependency_kinds.length === 0) return undefined;
   return plan.dependency_kinds.map((kind, offset) => ({
-    id:
+    id: buildCorpusShapeItemPlan(
+      shape,
       offset > 0 && plan.index + 1 < itemCount
-        ? scaleItemId(plan.index + 1)
-        : scaleItemId(plan.index - 1),
+        ? plan.index + 1
+        : plan.index - 1,
+      itemCount,
+      seed,
+    ).id,
     kind,
     created_at: plan.timestamp,
     author: plan.author,
@@ -115,15 +119,21 @@ export function buildSyntheticItemDocument(
   seed = 42,
   shape = resolveBuiltinCorpusShape("scratch"),
   itemCount = Math.max(100, index + 1),
+  itemPlan = buildCorpusShapeItemPlan(shape, index, itemCount, seed),
 ) {
-  const plan = buildCorpusShapeItemPlan(shape, index, itemCount, seed);
+  const plan = itemPlan;
   const random = createSeededRandom(seed + index);
-  const id = scaleItemId(index);
+  const id = plan.id;
   const createdAt = plan.timestamp;
   const status = plan.custom_status ?? statusFor(index);
   const type = plan.custom_type ?? typeFor(index, random);
-  const terminal = status === "closed" || status === "canceled";
-  const dependencies = buildDependencies(plan, itemCount);
+  const terminalStatuses = new Set([
+    "closed",
+    "canceled",
+    ...shape.terminal_statuses,
+  ]);
+  const terminal = terminalStatuses.has(status);
+  const dependencies = buildDependencies(plan, itemCount, shape, seed);
   const customFields = Object.fromEntries(
     shape.custom_fields.map((field) => [
       field,
@@ -321,7 +331,10 @@ export async function generateSyntheticWorkspace(options) {
   for (const status of shape.custom_statuses) {
     await client.schemaAddStatus(status, {
       description: `Synthetic ${shape.name} corpus status`,
-      role: ["active"],
+      role:
+        shape.terminal_statuses.includes(status)
+          ? ["terminal", "terminal_done"]
+          : ["active"],
       author: AUTHOR,
     });
   }
@@ -344,18 +357,21 @@ export async function generateSyntheticWorkspace(options) {
 
   const startedAt = performance.now();
   const sampleIds = { get: undefined, open: [] };
-  const plans = [];
+  const measurement = (
+    options.createShapeMeasurement ?? createCorpusShapeMeasurement
+  )(shape);
   for (let offset = 0; offset < itemCount; offset += BATCH_SIZE) {
     const writes = [];
     for (let index = offset; index < Math.min(itemCount, offset + BATCH_SIZE); index += 1) {
       const plan = buildCorpusShapeItemPlan(shape, index, itemCount, seed);
-      plans.push(plan);
       const document = buildSyntheticItemDocument(
         index,
         seed,
         shape,
         itemCount,
+        plan,
       );
+      measurement.add(plan);
       recordFixtureSample(sampleIds, document);
       writes.push(
         writeGeneratedItem(
@@ -369,9 +385,7 @@ export async function generateSyntheticWorkspace(options) {
     await Promise.all(writes);
   }
   const canonicalWorkspaceRoot = await realpath(workspaceRoot);
-  const measuredShape = (
-    options.measureShapePlan ?? measureCorpusShapePlan
-  )(shape, plans);
+  const measuredShape = measurement.finish();
   if (!measuredShape.matches_declaration) {
     throw new Error(
       `Generated corpus shape drifted: ${measuredShape.mismatches.join(", ")}`,
@@ -416,7 +430,10 @@ export function generatorOptionsFromFlags(flags, workspaceRoot) {
     workspaceRoot,
     itemCount: flags.get("items") ?? "ci",
     seed: flags.get("seed") ?? 42,
-    shape: flags.get("shape") ?? "scratch",
+    shape:
+      flags.get("shape") === undefined
+        ? "scratch"
+        : String(flags.get("shape")),
     mode: flags.get("mode") === undefined ? "direct" : String(flags.get("mode")),
     force: flags.has("force"),
   };

@@ -292,6 +292,22 @@
       ],
       "package_version": "2026.7.29",
       "reason": "GH-808 replaces an unsound always-resolved declaration with an explicit discriminated unresolved outcome"
+    },
+    {
+      "changes": [
+        "signature ./sdk:CorpusShape",
+        "signature ./sdk:CorpusShapeProfile",
+        "signature ./sdk:defineCorpusShape"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "Correct unpublished PR corpus-shape draft before merge"
+    },
+    {
+      "changes": [
+        "signature ./sdk:CorpusShape"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "Correct unpublished PR corpus-shape draft before merge"
     }
   ],
   "entrypoints": {
@@ -2144,7 +2160,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "CorpusShape",
-          "signature": "export interface CorpusShape { schema: typeof PM_CORPUS_SHAPE_SCHEMA; name: string; description: string; hierarchy_depth: number; hierarchy_fanout: number; age_span_days: number; history_entries_per_item: number; comments_per_100_items: number; notes_per_100_items: number; learnings_per_100_items: number; edge_kind_mix: readonly CorpusShapeEdgeWeight[]; author_cardinality: number; component_count: number; include_cycles: boolean; custom_types: readonly string[]; custom_statuses: readonly string[]; custom_fields: readonly string[]; }"
+          "signature": "export interface CorpusShape { schema: typeof PM_CORPUS_SHAPE_SCHEMA; name: string; description: string; hierarchy_depth: number; hierarchy_fanout: number; age_span_days: number; history_entries_per_item: number; comments_per_100_items: number; notes_per_100_items: number; learnings_per_100_items: number; edge_kind_mix: readonly CorpusShapeEdgeWeight[]; author_cardinality: number; component_count: number; include_cycles: boolean; custom_types: readonly string[]; custom_statuses: readonly string[]; terminal_statuses: readonly string[]; custom_fields: readonly string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -2161,8 +2177,14 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "CorpusShapeMeasurement",
+          "signature": "export interface CorpusShapeMeasurement { add(plan: CorpusShapeItemPlan): void; finish(): CorpusShapeProfile; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "CorpusShapeProfile",
-          "signature": "export interface CorpusShapeProfile { shape: string; item_count: number; author_count: number; component_count: number; hierarchy_depth: number; timestamp_range: { first: string | null; last: string | null; }; history_entry_count: number; annotations: { comments: number; notes: number; learnings: number; }; edge_kinds: Record<string, number>; matches_declaration: boolean; mismatches: readonly string[]; }"
+          "signature": "export interface CorpusShapeProfile { shape: string; item_count: number; author_count: number; component_count: number; hierarchy_depth: number; hierarchy_fanout: number; timestamp_range: { first: string | null; last: string | null; }; history_entry_count: number; annotations: { comments: number; notes: number; learnings: number; }; edge_kinds: Record<string, number>; matches_declaration: boolean; mismatches: readonly string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -2217,6 +2239,12 @@
           "kind": "function",
           "name": "createCoreCommandHookContext",
           "signature": "(options: { commandName: string; commandArgs: string[]; commandOptions: Record<string, unknown>; globalOptions: GlobalOptions; pmRoot: string; }) => ActiveExtensionHookContext<never> | calls: (options: { commandName: string; commandArgs: string[]; commandOptions: Record<string, unknown>; globalOptions: GlobalOptions; pmRoot: string; }) => ActiveExtensionHookContext<never>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "createCorpusShapeMeasurement",
+          "signature": "(shape: Readonly<CorpusShape>) => CorpusShapeMeasurement | calls: (shape: Readonly<CorpusShape>) => CorpusShapeMeasurement"
         },
         {
           "classification": "advanced_export",
@@ -2456,7 +2484,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "defineCorpusShape",
-          "signature": "(shape: CorpusShape) => Readonly<CorpusShape> | calls: (shape: CorpusShape) => Readonly<CorpusShape>"
+          "signature": "<const Shape extends CorpusShape>(shape: ExactCorpusShape<Shape>) => Readonly<Shape> | calls: <const Shape extends CorpusShape>(shape: ExactCorpusShape<Shape>) => Readonly<Shape>"
         },
         {
           "classification": "supported",

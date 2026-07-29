@@ -123,10 +123,10 @@
     "quality:token-budget": "node scripts/release/token-budget-gate.mjs",
     "quality:token-surface": "node scripts/measure-agent-token-surface.mjs --check",
     "quality:token-surface:update": "pnpm build && node scripts/measure-agent-token-surface.mjs --update",
-    "quality:context-eval": "node scripts/release/context-eval-gate.mjs && node scripts/release/retrieval-eval-gate.mjs --negative-control && node scripts/release/retrieval-eval-gate.mjs && pnpm quality:token-surface",
-    "quality:retrieval-eval": "node scripts/release/retrieval-eval-gate.mjs",
-    "quality:retrieval-eval:update": "node scripts/release/retrieval-eval-gate.mjs --update",
-    "quality:gate-registry": "node scripts/release/gate-registry.mjs",
+    "quality:context-eval": "pnpm build && node scripts/release/context-eval-gate.mjs && node scripts/release/retrieval-eval-gate.mjs --negative-control && node scripts/release/retrieval-eval-gate.mjs && pnpm quality:token-surface",
+    "quality:retrieval-eval": "pnpm build && node scripts/release/retrieval-eval-gate.mjs",
+    "quality:retrieval-eval:update": "pnpm build && node scripts/release/retrieval-eval-gate.mjs --update",
+    "quality:gate-registry": "pnpm build && node scripts/release/gate-registry.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
     "quality:docs-links": "node scripts/release/docs-skills-gate.mjs --links-only",
     "quality:hosted-analysis": "node scripts/release/hosted-analysis-gate.mjs",
@@ -220,6 +220,7 @@
     "tsx": "^4.23.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.65.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "yaml": "^2.9.0"
   }
 }

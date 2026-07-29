@@ -208,6 +208,18 @@ should use the public SDK shapes documented in
 remeasures the same SDK operations across equal-count `scratch` and
 `representative` populations and records their measured profiles.
 
+When a deliberate ranking change improves or intentionally redefines the golden
+judgments, review the scenario-level diff first, then refresh the baseline:
+
+```bash
+pnpm quality:context-eval -- --update
+pnpm quality:context-eval
+```
+
+Do not update the baseline merely to make CI green. Change judgments and
+rationales in the corpus when product intent changes, and commit the corpus,
+baseline, scorer tests, and SDK documentation together.
+
 ## Hosted Gate Registry
 
 Tracked by [pm-k6t4yb](../.agents/pm/tasks/pm-k6t4yb.toon) and
@@ -232,21 +244,9 @@ node scripts/release/gate-registry.mjs --inventory
 
 `pnpm quality:static` includes the registry. A newly named workflow gate fails
 until it has an owner and negative-control proof; a removed or renamed workflow
-step also fails until stale policy is reconciled. Public source claims such as
-“CI gate” are mapped to an enforced registry entry so documentation cannot
-silently advertise advisory behavior.
-
-When a deliberate ranking change improves or intentionally redefines the golden
-judgments, review the scenario-level diff first, then refresh the baseline:
-
-```bash
-pnpm quality:context-eval -- --update
-pnpm quality:context-eval
-```
-
-Do not update the baseline merely to make CI green. Change judgments and
-rationales in the corpus when product intent changes, and commit the corpus,
-baseline, scorer tests, and SDK documentation together.
+step also fails until stale policy is reconciled. Public source claims are
+mapped to exact evidence strings and an enforced registry entry so
+documentation cannot silently advertise advisory behavior.
 
 ## Agent Output Token Budgets
 

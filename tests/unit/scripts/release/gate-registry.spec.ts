@@ -30,7 +30,7 @@ async function fixtureRoot(): Promise<string> {
   await mkdir(path.join(root, "src"), { recursive: true });
   await writeFile(
     path.join(root, ".github", "workflows", "ci.yml"),
-    "steps:\n  - name: Checkout\n  - name: Build\n  - name: Run quality gate\n",
+    "jobs:\n  test:\n    steps:\n      - name: Checkout\n      - name: Build\n      - name: Run quality gate\n",
   );
   await writeFile(path.join(root, "tests", "negative.spec.ts"), "rejects drift");
   await writeFile(path.join(root, "src", "claim.ts"), "CI gate");
@@ -69,11 +69,19 @@ describe("gate registry", () => {
     const root = await fixtureRoot();
     await writeFile(
       path.join(root, ".github", "workflows", "other.yaml"),
-      "steps:\n  - name: Install test tools\n  - name: 'Security scan'\n  - name: Build\n",
+      "jobs:\n  quality:\n    steps:\n      - name: Install test tools\n      - name: 'Security scan'\n      - name: Build\n      - run: |\n          echo '- name: Fake quality gate'\n",
     );
     await writeFile(
       path.join(root, ".github", "workflows", "notes.txt"),
       "- name: Ignored check\n",
+    );
+    await writeFile(
+      path.join(root, ".github", "workflows", "nonsteps.yml"),
+      "jobs:\n  reusable:\n    uses: owner/repo/.github/workflows/check.yml@main\n  empty:\n    steps:\n      - run: echo no-name\n      - null\n",
+    );
+    await writeFile(
+      path.join(root, ".github", "workflows", "empty.yml"),
+      "jobs: null\n",
     );
 
     await expect(
@@ -187,23 +195,40 @@ describe("gate registry", () => {
       "claim:src/claim.ts:evidence_missing",
       "claim:src/missing.ts:source_missing",
     ]);
+    const emptyEvidence = registry();
+    emptyEvidence.claims[0].evidence = "";
+    await expect(
+      validateGateRegistry(emptyEvidence, { repoRoot: root }),
+    ).resolves.toEqual(["claim:invalid"]);
+
+    await writeFile(
+      path.join(root, ".github", "workflows", "broken.yml"),
+      "jobs: [",
+    );
+    await expect(
+      discoverWorkflowGates(path.join(root, ".github", "workflows")),
+    ).rejects.toThrow("Invalid workflow YAML broken.yml");
   });
 
   it("validates the committed registry and prints its live inventory", async () => {
-    const inventory = await main(["--inventory"]);
-    expect(inventory.discovered.length).toBeGreaterThan(30);
-    const result = await main([]);
-    expect(result).toMatchObject({
-      ok: true,
-      registered_gate_count: 10,
-      claim_count: 3,
-    });
-    expect(result.enforced_pipeline_count).toBe(inventory.discovered.length);
     const committed = JSON.parse(
       await readFile(
         path.join(process.cwd(), "scripts", "release", "gate-registry.json"),
         "utf8",
       ),
+    );
+    const inventory = await main(["--inventory"]);
+    const result = await main([]);
+    expect(result).toMatchObject({
+      ok: true,
+      registered_gate_count: committed.gates.length,
+      claim_count: committed.claims.length,
+    });
+    expect(result.enforced_pipeline_count).toBe(inventory.discovered.length);
+    expect(inventory.discovered.length).toBe(
+      committed.gates.flatMap(
+        (gate: { pipelines: string[] }) => gate.pipelines,
+      ).length,
     );
     expect(committed.version).toBe(1);
     const root = await fixtureRoot();

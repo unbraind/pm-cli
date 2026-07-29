@@ -17,6 +17,8 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { appendWorkspaceAuditEvent } from "../core/history/workspace-history.js";
+import { acquireLock } from "../core/lock/lock.js";
+import { getLockPath } from "../core/store/paths.js";
 
 /** Current content-addressed workspace snapshot manifest schema identifier. */
 export const SNAPSHOT_SCHEMA =
@@ -30,6 +32,7 @@ const EXCLUDED_ROOT_NAMES = new Set([
   "transactions",
 ]);
 const SNAPSHOT_TARGET_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
+const WORKSPACE_WRITER_LOCK_ID = "sdk-workspace-transaction";
 
 /** Filesystem operations required by atomic snapshot publish and restore swaps. */
 export interface WorkspaceSnapshotAtomicOperations {
@@ -120,9 +123,9 @@ export interface RestoreWorkspaceSnapshotOptions {
   author?: string;
   /** Optional human-readable restore rationale. */
   message?: string;
-  /** Workspace-history lock time-to-live in seconds. */
+  /** Workspace-writer and audit lock time-to-live in seconds. */
   lockTtlSeconds?: number;
-  /** Maximum workspace-history lock wait in milliseconds. */
+  /** Maximum workspace-writer and audit lock wait in milliseconds. */
   lockWaitMs?: number;
 }
 
@@ -219,14 +222,18 @@ async function snapshotContents(
   root: string,
   files: readonly string[],
 ): Promise<Map<string, Buffer>> {
-  return new Map(
-    await Promise.all(
-      files.map(
+  const contents = new Map<string, Buffer>();
+  for (let offset = 0; offset < files.length; offset += 32) {
+    const batch = files.slice(offset, offset + 32);
+    const entries = await Promise.all(
+      batch.map(
         async (file) =>
           [file, await readFile(path.join(root, file))] as const,
       ),
-    ),
-  );
+    );
+    for (const [file, content] of entries) contents.set(file, content);
+  }
+  return contents;
 }
 
 function validateSnapshotTarget(target: string): void {
@@ -559,56 +566,84 @@ export async function restoreWorkspaceSnapshotWithRecovery(
   target: string,
   options: RestoreWorkspaceSnapshotOptions = {},
 ): Promise<RestoreWorkspaceSnapshotResult> {
-  const plan = await planWorkspaceSnapshotRestore(pmRoot, target);
   if (options.force !== true) {
     throw new Error(
       "Workspace snapshot restore requires explicit force confirmation; inspect the impact with planWorkspaceSnapshotRestore or pm workspace snapshot restore <target> --dry-run, then retry with force",
     );
   }
   const author = options.author?.trim() || "pm-sdk";
-  const manifest = await inspectWorkspaceSnapshot(pmRoot, target);
-  const recovery = await createWorkspaceSnapshot(pmRoot);
-  const fingerprint = manifest.fingerprint;
-  const store = snapshotStore(pmRoot);
-  const source = path.join(store, "objects", fingerprint, "files");
-  const parent = path.dirname(pmRoot);
-  const base = path.basename(pmRoot);
-  const staging = path.join(parent, `.${base}.restore-${crypto.randomUUID()}`);
-  const backup = path.join(parent, `.${base}.backup-${crypto.randomUUID()}`);
-  await mkdir(staging, { recursive: true });
-  await cp(source, staging, { recursive: true, force: false });
-  await mkdir(path.join(staging, "runtime"), { recursive: true });
-  await cp(store, path.join(staging, SNAPSHOT_RUNTIME_PATH), {
-    recursive: true,
-    force: false,
-  });
-  const audit = await appendWorkspaceAuditEvent({
-    pmRoot: staging,
-    op: "workspace_snapshot_restore",
+  const lockTtlSeconds = options.lockTtlSeconds ?? 60;
+  const lockWaitMs = options.lockWaitMs ?? 5_000;
+  const releaseWorkspaceLock = await acquireLock(
+    pmRoot,
+    WORKSPACE_WRITER_LOCK_ID,
+    lockTtlSeconds,
     author,
-    message:
-      options.message ??
-      `Restore workspace snapshot ${fingerprint}; recovery snapshot ${recovery.manifest.fingerprint}`,
-    context: {
-      target_fingerprint: fingerprint,
-      pre_restore_fingerprint: recovery.manifest.fingerprint,
-      changed_file_count: plan.changed_file_count,
-      removed_file_count: plan.removed_file_count,
-      removed_item_count: plan.removed_item_count,
-      affected_history_stream_count: plan.affected_history_stream_count,
-      removed_history_entry_count: plan.removed_history_entry_count,
-    },
-    lockTtlSeconds: options.lockTtlSeconds ?? 60,
-    lockWaitMs: options.lockWaitMs ?? 5_000,
-  });
-  await swapWorkspaceSnapshotRoot(staging, pmRoot, backup);
-  return {
-    manifest,
-    plan,
-    recovery_fingerprint: recovery.manifest.fingerprint,
-    audit_history_path: path.relative(pmRoot, audit.historyPath).replaceAll("\\", "/"),
-    audit_operation: "workspace_snapshot_restore",
-  };
+    false,
+    false,
+    lockWaitMs,
+  );
+  try {
+    const plan = await planWorkspaceSnapshotRestore(pmRoot, target);
+    const manifest = await inspectWorkspaceSnapshot(pmRoot, target);
+    const recovery = await createWorkspaceSnapshot(pmRoot);
+    const fingerprint = manifest.fingerprint;
+    const store = snapshotStore(pmRoot);
+    const source = path.join(store, "objects", fingerprint, "files");
+    const parent = path.dirname(pmRoot);
+    const base = path.basename(pmRoot);
+    const staging = path.join(parent, `.${base}.restore-${crypto.randomUUID()}`);
+    const backup = path.join(parent, `.${base}.backup-${crypto.randomUUID()}`);
+    await mkdir(staging, { recursive: true });
+    await cp(source, staging, { recursive: true, force: false });
+    await mkdir(path.join(staging, "runtime"), { recursive: true });
+    await cp(store, path.join(staging, SNAPSHOT_RUNTIME_PATH), {
+      recursive: true,
+      force: false,
+    });
+    const audit = await appendWorkspaceAuditEvent({
+      pmRoot: staging,
+      op: "workspace_snapshot_restore",
+      author,
+      message:
+        options.message ??
+        `Restore workspace snapshot ${fingerprint}; recovery snapshot ${recovery.manifest.fingerprint}`,
+      context: {
+        target_fingerprint: fingerprint,
+        pre_restore_fingerprint: recovery.manifest.fingerprint,
+        changed_file_count: plan.changed_file_count,
+        removed_file_count: plan.removed_file_count,
+        removed_item_count: plan.removed_item_count,
+        affected_history_stream_count: plan.affected_history_stream_count,
+        removed_history_entry_count: plan.removed_history_entry_count,
+      },
+      lockTtlSeconds,
+      lockWaitMs,
+    });
+    const auditHistoryPath = path
+      .relative(staging, audit.historyPath)
+      .replaceAll("\\", "/");
+    const stagedWorkspaceLock = getLockPath(
+      staging,
+      WORKSPACE_WRITER_LOCK_ID,
+    );
+    await mkdir(path.dirname(stagedWorkspaceLock), { recursive: true });
+    await cp(
+      getLockPath(pmRoot, WORKSPACE_WRITER_LOCK_ID),
+      stagedWorkspaceLock,
+      { force: false },
+    );
+    await swapWorkspaceSnapshotRoot(staging, pmRoot, backup);
+    return {
+      manifest,
+      plan,
+      recovery_fingerprint: recovery.manifest.fingerprint,
+      audit_history_path: auditHistoryPath,
+      audit_operation: "workspace_snapshot_restore",
+    };
+  } finally {
+    await releaseWorkspaceLock();
+  }
 }
 
 /**

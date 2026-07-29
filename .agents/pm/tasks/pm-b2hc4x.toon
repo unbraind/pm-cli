@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[7]: "area:ci","area:cli",conformance,eval,gates,governance,retrieval
 created_at: "2026-07-29T16:54:34.620Z"
-updated_at: "2026-07-29T18:51:20.983Z"
+updated_at: "2026-07-29T19:59:28.589Z"
 closed_at: "2026-07-29T18:39:53.231Z"
 completed_at: "2026-07-29T18:39:53.231Z"
 author: "harness:claude-code"
@@ -31,18 +31,19 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-07-29T16:54:34.620Z","harness:claude-code","cli:create:dep",detected
   pm-k6t4yb,implements,"2026-07-29T18:27:59.970Z","harness:codex","cli:update:dep",detected
   pm-vv2lti,related_to,"2026-07-29T18:27:59.970Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-29T18:28:16.551Z","harness:codex","Implementation evidence: quality:context-eval now executes the shipped CLI retrieval evaluator against the committed tracker corpus, checks query count plus nDCG/MRR/precision/recall against a versioned baseline, and runs an impossible perfect-score negative control that must exit nonzero. The query set grew from four saturated single-relevance judgments to five queries including an 11-item judgment set with partial recall. Live metrics: nDCG 0.6223, MRR 0.55, precision 0.16, recall 0.8545; the non-saturated query recall is 0.2727. Gate claims are cross-checked against the enforced workflow registry."
   "2026-07-29T18:36:30.282Z","harness:codex","Verification context correction: removed the legacy direct eval linked command because pm test correctly supplies an empty schema sandbox and the committed golden query file is therefore absent. The enforced quality:context-eval link pins the version-controlled read-only corpus explicitly and passed, while the focused evaluator suite stays sandbox-safe."
   "2026-07-29T18:51:20.983Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/813 at implementation head c7ac2767e. The PR description links this canonical record and includes live retrieval metrics, executable negative control, exact coverage, installed-consumer, security, and PM validation evidence."
+  "2026-07-29T19:59:28.588Z","harness:codex","Review-fix evidence for PR #813 exact working tree: retrieval evaluation subprocesses now use explicit pm-path context, 30-second timeout, 1 MiB bounded output, deterministic termination, injectable process seams, isolated unit fixtures, and monotonic baseline updates that cannot weaken thresholds. Live retrieval gate passes nDCG 0.6223, MRR 0.55, precision 0.16, recall 0.8545; negative control and context/token gates pass; full coverage is 100/100/100/100."
 notes[1]{created_at,author,text}:
   "2026-07-29T18:28:17.848Z","harness:codex",Baseline updates are explicit via --update and retain a 0.02 metric margin; ordinary runs execute the built dist/cli.js with the repository tracker pinned through --pm-path and telemetry disabled for deterministic CI.
 learnings[1]{created_at,author,text}:
   "2026-07-29T18:28:18.904Z","harness:codex",A retrieval threshold is not a negative control when every query has one relevant item and recall is saturated. Multi-relevant judgments plus an executable impossible threshold prove the CLI failure path and make ranking regressions observable.
 files[7]{path,scope,note}:
-  .agents/pm/search/eval-queries.json,project,"Shipped golden set - four queries, 694 bytes, recall saturated at 1.0 so it cannot regress"
+  .agents/pm/search/eval-queries.json,project,Five-query golden set with a non-saturated multi-item relevance judgment
   package.json,project,Retrieval gate wired into mandatory context quality script
-  scripts/release/context-eval-gate.mjs,project,The only wired relevance gate - scores a different corpus and never invokes the eval command
+  scripts/release/context-eval-gate.mjs,project,Required context gate composed with the enforced shipped CLI retrieval evaluator
   scripts/release/gate-registry.json,project,CI gate claim mapped to enforced workflow inventory
   scripts/release/retrieval-eval-gate.mjs,project,Enforced multi-metric retrieval baseline and executable negative control
   tests/search-eval/retrieval-gate-baseline.json,project,Committed non-saturated retrieval thresholds

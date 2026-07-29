@@ -28,6 +28,7 @@ function validShape(overrides: Partial<CorpusShape> = {}): CorpusShape {
     include_cycles: false,
     custom_types: [],
     custom_statuses: [],
+    terminal_statuses: [],
     custom_fields: [],
     ...overrides,
   };
@@ -47,6 +48,9 @@ describe("corpus shape SDK", () => {
     );
     expect(() => resolveBuiltinCorpusShape("missing")).toThrow(
       /Available: scratch, representative, deep-graph, multi-decade, disconnected-archive/,
+    );
+    expect(() => resolveBuiltinCorpusShape("__proto__")).toThrow(
+      /Unknown corpus shape/,
     );
   });
 
@@ -72,6 +76,10 @@ describe("corpus shape SDK", () => {
       validShape({ edge_kind_mix: [] }),
       validShape({ edge_kind_mix: [{ kind: "", weight: 1 }] }),
       validShape({ edge_kind_mix: [{ kind: "related", weight: 0 }] }),
+      validShape({
+        custom_statuses: ["review"],
+        terminal_statuses: ["archived"],
+      }),
     ]) {
       expect(() => defineCorpusShape(invalid)).toThrow(/Corpus shape|Unsupported/);
     }
@@ -88,6 +96,7 @@ describe("corpus shape SDK", () => {
         author_count: Math.min(shape.author_cardinality, 100),
         component_count: Math.min(shape.component_count, 100),
         history_entry_count: 100 * shape.history_entries_per_item,
+        hierarchy_fanout: expect.any(Number),
         matches_declaration: true,
         mismatches: [],
       });
@@ -137,7 +146,9 @@ describe("corpus shape SDK", () => {
     ).toContain("author_count:1!=2");
     expect(measureCorpusShapePlan(shape, [])).toMatchObject({
       timestamp_range: { first: null, last: null },
-      matches_declaration: true,
+      hierarchy_fanout: 0,
+      matches_declaration: false,
+      mismatches: ["item_count:empty"],
     });
 
     const deepPlans = Array.from({ length: 4 }, (_, index) => ({
@@ -153,5 +164,56 @@ describe("corpus shape SDK", () => {
     expect(measureCorpusShapePlan(shape, deepPlans).hierarchy_depth).toBeGreaterThan(
       0,
     );
+
+    const fanoutPlans = Array.from({ length: 4 }, (_, index) => ({
+      ...buildCorpusShapeItemPlan(shape, index, 4),
+      parent: index === 0 ? undefined : "pm-s0000000",
+    }));
+    expect(measureCorpusShapePlan(shape, fanoutPlans).mismatches).toContain(
+      "hierarchy_fanout:3>2",
+    );
+    const invalidPlan = {
+      ...buildCorpusShapeItemPlan(
+        defineCorpusShape(
+          validShape({
+            comments_per_100_items: 0,
+            notes_per_100_items: 0,
+            learnings_per_100_items: 0,
+          }),
+        ),
+        0,
+        1,
+      ),
+      has_comment: true,
+      dependency_kinds: ["unexpected"],
+    };
+    expect(
+      measureCorpusShapePlan(
+        defineCorpusShape(
+          validShape({
+            comments_per_100_items: 0,
+            notes_per_100_items: 0,
+            learnings_per_100_items: 0,
+          }),
+        ),
+        [invalidPlan, { ...invalidPlan }],
+      ).mismatches,
+    ).toEqual(
+      expect.arrayContaining([
+        "comments:2!in[0,0]",
+        "edge_kind:unexpected:2!=0",
+        "duplicate_id:pm-s0000000",
+      ]),
+    );
+    const missingExpectedEdge = [
+      buildCorpusShapeItemPlan(shape, 0, 2),
+      {
+        ...buildCorpusShapeItemPlan(shape, 1, 2),
+        dependency_kinds: [],
+      },
+    ];
+    expect(
+      measureCorpusShapePlan(shape, missingExpectedEdge).mismatches,
+    ).toContain("edge_kind:related:0!=1");
   });
 });

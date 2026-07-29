@@ -18,7 +18,8 @@ function report(shape: string, p95: number, itemCount = 100, seed = 42) {
     fixture: {
       item_count: itemCount,
       seed,
-      shape: { name: shape, measured_profile: { shape } },
+      shape: { name: shape },
+      measured_shape: { shape },
     },
     transports: {
       sdk: {
@@ -90,6 +91,10 @@ describe("corpus-shape comparison", () => {
         outputPath: output,
       });
       expect(JSON.parse(await readFile(output, "utf8")).version).toBe(1);
+      expect(JSON.parse(await readFile(output, "utf8"))).toMatchObject({
+        left: { measured_profile: { shape: "scratch" } },
+        right: { measured_profile: { shape: "representative" } },
+      });
       await expect(
         main(
           [
@@ -175,6 +180,8 @@ describe("corpus-shape comparison", () => {
       expect.objectContaining({ message: "comparison failed" }),
     );
     await withTempDir("pm-corpus-entrypoint-default-", async (root) => {
+      const run = async (options: { shape: string }) =>
+        report(options.shape, 10);
       await expect(
         runCorpusShapeComparisonEntrypoint({
           argv: [
@@ -187,6 +194,10 @@ describe("corpus-shape comparison", () => {
             "--output",
             path.join(root, "comparison.json"),
           ],
+          mainOptions: {
+            run,
+            defaultOutputPath: path.join(root, "default-comparison.json"),
+          },
           write,
         }),
       ).resolves.toBe(true);

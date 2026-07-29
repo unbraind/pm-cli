@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: ci,governance,quality,release,testing
 created_at: "2026-07-25T12:31:33.732Z"
-updated_at: "2026-07-29T18:51:20.198Z"
+updated_at: "2026-07-29T19:59:27.929Z"
 closed_at: "2026-07-29T18:39:46.539Z"
 completed_at: "2026-07-29T18:39:46.539Z"
 author: "harness:claude-code"
@@ -90,15 +90,17 @@ dependencies[21]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-29T18:28:13.325Z","harness:codex","Implementation evidence: gate-registry discovery inventories all 43 named enforced workflow steps and validates exact pipeline parity against 10 owned gate groups. Each group declares PM owner, failure taxonomy, bypass policy, executable negative-control test/assertion, and source claims. quality:gate-registry is mandatory inside quality:static; adding or removing a named workflow gate without registry parity now fails. Known-bad fixtures cover malformed ownership, duplicate/stale pipelines, missing assertions, missing source claims, and invalid negative controls."
   "2026-07-29T18:51:20.198Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/813 at implementation head c7ac2767e. The PR description links this canonical record and includes 43-step registry parity, executable negative controls, exact coverage, installed-consumer, security, and PM validation evidence."
+  "2026-07-29T19:59:27.928Z","harness:codex","Review-fix evidence for PR #813 exact working tree: gate registry parsing now uses the declared YAML dependency and structurally inspects workflow job steps, derives enforced pipeline counts, fails closed on empty evidence, and covers invalid, matrix, block-scalar, and reusable-workflow cases. Registry reports 10 gates, 43 enforced pipelines, and 3 distinct claims. Full coverage is 100/100/100/100 across 6530 tests; dependency audit reports no known vulnerabilities."
 notes[1]{created_at,author,text}:
   "2026-07-29T18:28:14.365Z","harness:codex",Registry design groups pipeline steps by one policy owner and one executable negative-control suite rather than duplicating the same ownership and taxonomy record for every matrix occurrence; discovered pipeline identifiers remain exact and exhaustive.
 learnings[1]{created_at,author,text}:
   "2026-07-29T18:28:15.524Z","harness:codex","A gate inventory becomes trustworthy only when discovery is derived from enforced workflow configuration and the registry fails in both drift directions: unregistered live steps and registered steps no longer enforced."
-files[6]{path,scope,note}:
+files[7]{path,scope,note}:
   package.json,project,Mandatory static quality gate registration
+  pnpm-lock.yaml,project,Declared YAML parser dependency for structural workflow discovery
   scripts/release/gate-registry.json,project,Machine-readable ownership taxonomy bypass negative-control and claim registry
   scripts/release/gate-registry.mjs,project,Workflow discovery and fail-closed registry conformance gate
   tests/integration/release-automation-contract.spec.ts,project,Release workflow command contract parity

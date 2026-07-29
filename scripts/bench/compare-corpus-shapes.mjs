@@ -63,11 +63,11 @@ export function compareShapeReports(left, right, materialPercent = 20) {
     material_difference_percent: materialPercent,
     left: {
       shape: left.fixture.shape.name,
-      measured_profile: left.fixture.shape.measured_profile,
+      measured_profile: left.fixture.measured_shape,
     },
     right: {
       shape: right.fixture.shape.name,
-      measured_profile: right.fixture.shape.measured_profile,
+      measured_profile: right.fixture.measured_shape,
     },
     operations,
   };
@@ -102,10 +102,8 @@ export async function main(argv = process.argv.slice(2), options = {}) {
       ["transport", "sdk"],
     ]),
   );
-  const [left, right] = await Promise.all([
-    run({ ...common, shape: leftShape }),
-    run({ ...common, shape: rightShape }),
-  ]);
+  const left = await run({ ...common, shape: leftShape });
+  const right = await run({ ...common, shape: rightShape });
   if (
     left.fixture.item_count !== right.fixture.item_count ||
     left.fixture.seed !== right.fixture.seed
@@ -128,7 +126,10 @@ export async function runCorpusShapeComparisonEntrypoint(options = {}) {
     return false;
   }
   try {
-    const { report, outputPath } = await (options.run ?? main)(argv.slice(2));
+    const execute =
+      options.run ??
+      ((args) => main(args, options.mainOptions));
+    const { report, outputPath } = await execute(argv.slice(2));
     (options.write ?? ((output) => process.stdout.write(output)))(
       `${JSON.stringify(
         {

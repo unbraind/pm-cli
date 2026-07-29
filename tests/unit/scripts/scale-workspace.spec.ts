@@ -79,6 +79,17 @@ describe("scale workspace generator", () => {
       100,
     );
     expect(cyclic.metadata.dependencies?.[1]?.id).toBe(scaleItemId(18));
+    expect(
+      buildSyntheticItemDocument(
+        0,
+        9,
+        resolveBuiltinCorpusShape("multi-decade"),
+        100,
+      ).metadata,
+    ).toMatchObject({
+      status: "archived",
+      close_reason: "Synthetic archived fixture",
+    });
     const closed = documents[1]!.metadata;
     expect(closed).toMatchObject({
       status: "closed",
@@ -142,14 +153,40 @@ describe("scale workspace generator", () => {
     await withTempDir("pm-scale-shape-drift-", async (tempRoot) => {
       await expect(
         generateSyntheticWorkspace({
+          workspaceRoot: path.join(tempRoot, "unknown"),
+          itemCount: 1,
+          shape: "unknown",
+        }),
+      ).rejects.toThrow(/Unknown corpus shape/);
+      await expect(
+        main([
+          "--output",
+          path.join(tempRoot, "valueless"),
+          "--shape",
+        ]),
+      ).rejects.toThrow(/Unknown corpus shape "true"/);
+      await expect(
+        generateSyntheticWorkspace({
           workspaceRoot: path.join(tempRoot, "drift"),
           itemCount: 1,
-          measureShapePlan: () => ({
-            matches_declaration: false,
-            mismatches: ["history_entries_per_item:drift"],
+          createShapeMeasurement: () => ({
+            add: () => undefined,
+            finish: () => ({
+              matches_declaration: false,
+              mismatches: ["history_entries_per_item:drift"],
+            }),
           }),
         }),
       ).rejects.toThrow("Generated corpus shape drifted");
+      await expect(
+        generateSyntheticWorkspace({
+          workspaceRoot: path.join(tempRoot, "terminal-status"),
+          itemCount: 1,
+          shape: "multi-decade",
+        }),
+      ).resolves.toMatchObject({
+        measured_shape: { matches_declaration: true },
+      });
     });
 
     await withTempDir("pm-scale-safety-", async (tempRoot) => {
