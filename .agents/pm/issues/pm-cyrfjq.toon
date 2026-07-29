@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:contracts",output-contract,scripting,token-efficiency
 created_at: "2026-07-26T05:43:39.360Z"
-updated_at: "2026-07-29T14:30:50.308Z"
+updated_at: "2026-07-29T14:33:08.940Z"
 closed_at: "2026-07-29T14:30:17.449Z"
 completed_at: "2026-07-29T14:30:17.449Z"
 author: "harness:claude-code"
@@ -29,9 +29,10 @@ dependencies[6]{id,kind,created_at}:
   pm-srns,related,"2026-07-26T05:43:39.360Z"
   pm-m9xv,implements,"2026-07-26T05:49:58.526Z"
   pm-srns,verifies,"2026-07-26T05:50:33.639Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-29T14:21:30.634Z","harness:codex","Implementation evidence: activity and history now emit only the active row collection, with projection.mode, projection.row_key, and bounded omission receipts shared through the SDK. CLI, SDK, MCP parity and deterministic key ordering passed; full suite 6510/6510 and exact 100% coverage."
   "2026-07-29T14:30:11.910Z","harness:codex","Required surface sweep evidence: graph impact --summary omits affected while the full shape emits it; context depth tiers expose one section vocabulary plus sections_included rather than parallel decoy collections; health brief/summary/full retain one checks collection and now disclose omissions or explicit completeness; validate default/verbose retain one checks collection with no inactive detail array. Activity/history were the only declared mode-paired duplicate-collection offenders and are covered from the shared declaration."
+  "2026-07-29T14:33:08.939Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
 files[5]{path,scope,note}:
   src/cli/commands/activity.ts,project,Emits only the active full or compact activity collection
   src/cli/commands/history.ts,project,Emits only the active full or compact history collection

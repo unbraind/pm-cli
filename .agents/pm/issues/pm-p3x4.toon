@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-07-10T10:48:01.400Z"
-updated_at: "2026-07-29T14:30:50.995Z"
+updated_at: "2026-07-29T14:33:09.611Z"
 closed_at: "2026-07-29T14:30:23.322Z"
 completed_at: "2026-07-29T14:30:23.322Z"
 author: maintainer-agent
@@ -21,9 +21,10 @@ actual_result: "Compact activity emitted activity: [] beside populated compact_a
 dependencies[2]{id,kind,created_at}:
   pm-cfed,related,"2026-07-10T10:48:01.400Z"
   pm-mpbb,implements,"2026-07-26T05:56:32.410Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T06:05:39.471Z","harness:claude-code","Class generalization 2026-07-26: the same shape was found on a second, unrelated command. pm history <id> --json reports count:7 with history:[] while compact_history carries the seven rows; --full inverts it, emptying compact_history. Two independent commands sharing the defect means the envelope contract is missing a rule for mode-inactive collection keys rather than two commands each making a local mistake. Filed pm-cyrfjq for the cross-command rule (omit the inactive collection instead of zero-filling it, contract-driven test over every command declaring mutually exclusive modes). This item stays open as the pm activity instance and its reproduction is nominated as the negative-control fixture for that rule, so it should close against the rule rather than be patched in isolation."
   "2026-07-29T14:21:31.410Z","harness:codex","Implementation evidence: compact activity omits the inactive activity key instead of emitting activity: []; streaming selects the active collection safely; CLI/MCP regression coverage and full 6510-test exact-coverage gate passed."
+  "2026-07-29T14:33:09.610Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
 files[4]{path,scope,note}:
   src/cli/commands/activity.ts,project,Remove inactive activity decoy key
   src/cli/registration-helpers.ts,project,Stream active activity collection safely

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",lifecycle,provenance,regression,types
 created_at: "2026-07-29T13:44:03.703Z"
-updated_at: "2026-07-29T14:30:51.697Z"
+updated_at: "2026-07-29T14:33:10.307Z"
 closed_at: "2026-07-29T14:30:29.225Z"
 completed_at: "2026-07-29T14:30:29.225Z"
 author: "harness:codex"
@@ -25,9 +25,10 @@ regression: true
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-bwnclq,discovered_from,"2026-07-29T13:44:03.703Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-07-29T13:44:03.703Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-29T13:44:03.703Z","harness:codex","Duplicate check: searched all statuses for resolveCompletionTimestamp, lifecycle-completion, completion timestamp source/fallback, and GH-675 lineage. pm-bwnclq is closed and correctly owns the shipped completion feature; no live item owns this distinct public type/runtime/provenance regression reported by GH-808."
   "2026-07-29T14:21:32.187Z","harness:codex","Implementation evidence: GH-808 now exposes a discriminated resolved/unresolved completion timestamp union; workspace memory rejects terminal records with no evidence timestamp and counts only proven sources. Public SDK surface snapshot was explicitly regenerated and acknowledged; lifecycle/workspace tests plus 6510-test 100/100/100/100 suite passed. Packed external SDK consumer validated the unresolved branch."
+  "2026-07-29T14:33:10.307Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
 files[5]{path,scope,note}:
   sdk/public-surface.json,project,Reviewed public SDK signature snapshot
   src/sdk/lifecycle-completion.ts,project,Discriminated resolved and unresolved completion timestamp contract

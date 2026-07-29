@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,cross-platform,nightly,test-quality,windows
 created_at: "2026-07-28T10:29:33.965Z"
-updated_at: "2026-07-29T14:30:35.063Z"
+updated_at: "2026-07-29T14:33:11.028Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: No test asserts on a hardcoded POSIX absolute path or a raw platform errno string; a red Windows nightly leg names only product defects
@@ -17,7 +17,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2kkl,related,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
   pm-e70zh5,related,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
   pm-ihmfs6,discovered_from,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-07-28T11:53:13.607Z","harness:codex","Progress tranche evidence: canonical/native path expectations were fixed in merge safety, guide-shell runtime, and context-integrity tests, and drift-cache filesystem failures now expose stable diagnostic codes instead of raw errno text. The full repo-wide removal of all hardcoded POSIX paths and raw errno assertions remains, so this broader chore returns to open after the cross-platform nightly evidence is captured on pm-ihmfs6."
   "2026-07-28T11:57:10.427Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
   "2026-07-28T12:15:00.058Z","harness:codex","Nightly run 30356894804 reduced the Windows failures to three actionable portability cases: stable diagnostic semantics for invalid tracker roots, one canonical-path assertion, and cwd-safe cleanup. Implemented deterministic root classification independent of raw errno, realpath expectations, and finally-guarded cwd restoration; focused 27 tests and strict static quality now pass."
@@ -27,6 +27,7 @@ comments[9]{created_at,author,text}:
   "2026-07-28T13:04:23.670Z","harness:codex","Completed tranche evidence: run 30361026722 is green on Windows Node 24 after canonical merge paths, native separator assertions, cwd-safe cleanup, and stable drift-cache diagnostics. The acceptance criterion is intentionally broader than this delivery: the repo-wide POSIX-literal/raw-errno census remains, so this item returns to open and is released rather than falsely closed."
   "2026-07-28T15:18:48.550Z","harness:claude-code","Cross-platform nightly is GREEN on main again, verified by dispatch 2026-07-28. Run 30372071932 on main succeeded in 7m31s with every leg passing, immediately after PR#795 merged at 14:20:36Z.\n\nThe preceding red streak was pre-fix, not an unowned regression: the last three scheduled runs on main failed (30334992958 at 06:29Z today, 30246735868 on 07-27, 30191427127 on 07-26), all on the same two legs, macos-latest Node 24 and windows-latest Node 24, and the actual failures were four specs — guide-shell-runtime building completion registries across schema shapes, context-integrity-primitives invalidating derived drift state after conventional history writes, and merge-safety twice for installing idempotent git attributes and for preferring explicit tracker paths over protected source coordinates. Every scheduled run predated the merge, and PR#795's own branch was named for this work and had already been verified by dispatch, run 30361026722 passing at 12:54Z.\n\nThe durable lesson for this item rather than the incident: a scheduled-only signal necessarily reports a stale verdict for as long as the interval, so a red nightly on main is not evidence of a live defect until the last completed run postdates the last merge. Confirm by dispatch before filing anything, and compare the run start against the merge timestamp rather than against the calendar day."
   "2026-07-29T14:21:32.894Z","harness:codex","Progress evidence for GH-810 tranche: workspace snapshot server cleanup now checks listening state before close, preserving the original listen failure while eliminating Windows cleanup noise. Focused snapshot/test-command tests and full 6510-test exact-coverage suite pass on Linux; the broader portability census remains open pending the new PR nightly Windows run."
+  "2026-07-29T14:33:11.026Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
 files[5]{path,scope,note}:
   src/core/history/drift-cache.ts,project,Stable cross-platform diagnostics and native path expectations
   tests/unit/packages/guide-shell-runtime.spec.ts,project,Stable cross-platform diagnostics and native path expectations
