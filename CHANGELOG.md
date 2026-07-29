@@ -1768,11 +1768,12 @@
 
 ### Fixed
 
+- auto-release.yml workflow_dispatch silently overrides explicit push=false to true ([pm-qa2h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qa2h.toon))
+- Accept positional title argument in pm create ([pm-7vm9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7vm9.toon))
 - Sentry extension errors: cannot find module and activate failures ([pm-p7av](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p7av.toon))
 - Embedding timeout UX: improve ollama feedback for PM-CLI-A/9 ([pm-ibp7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ibp7.toon))
 - pm bare command silent exit 0 — no help shown ([pm-8rj2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8rj2.toon))
 - pm contracts default returns 286 KB / 9612 lines — token catastrophe for agents ([pm-p8j6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p8j6.toon))
-- auto-release.yml workflow_dispatch silently overrides explicit push=false to true ([pm-qa2h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qa2h.toon))
 - pm validate after fresh create is scary — downgrade default profile noise ([pm-tylj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tylj.toon))
 - pm install <invalid\> lacks did-you-mean for built-in aliases ([pm-uuee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uuee.toon))
 - CLI silently corrupts --tags '\["a","b"\]' JSON-array input (agent-unfriendly) ([pm-klqo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-klqo.toon))
@@ -1796,7 +1797,6 @@
 - Investigate validate/health telemetry classification (71-74% failure rate) ([pm-bzx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bzx3.toon))
 - Fix: ENOENT lstat in extension path operations ([pm-bh13](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bh13.toon))
 - Fix: localeCompare on undefined in sort comparators ([pm-b9y1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b9y1.toon))
-- Accept positional title argument in pm create ([pm-7vm9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7vm9.toon))
 - Suppress benign extension_service_override_collision when calendar+guide-shell both bundled ([pm-5u9z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5u9z.toon))
 - MCP pm_list defaults to compact projection for agents ([pm-2cqx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2cqx.toon))
 - CI: split quality+smoke gates into a parallel job, share dist via artifact ([pm-27yz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-27yz.toon))

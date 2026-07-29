@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: data-quality,governance,metadata,normalization,relevance,tracker-governance
 created_at: "2026-07-26T10:59:12.234Z"
-updated_at: "2026-07-26T10:59:12.234Z"
+updated_at: "2026-07-29T04:34:56.161Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Every field dominated by a repeated literal is classified: the value is either replaced with a recoverable fact, cleared so the field is honestly empty, or retained with a recorded rationale that says explicitly it is an archival marker rather than an observation; Clearing and reclassification are ordinary history-recorded mutations, so the original values stay recoverable and the change is explainable; A validation surface reports fields whose values are dominated by a single literal beyond a declared threshold, so this condition is detectable in future rather than discovered by census; Completeness reporting distinguishes a field that is populated from a field that is populated with distinct meaningful values; The relevance engine's signal set is checked against the result, so no scoring signal depends on a field the pass emptied or reclassified; The pass runs under the release-attribution protocol so it produces no unintended changelog movement"
@@ -19,15 +19,17 @@ why_now: "The relevance engine is being extended with more metadata signals now,
 parent: pm-33cw
 risk: medium
 confidence: 85
-dependencies[10]{id,kind,created_at,author,source_kind}:
-  pm-33cw,implements,"2026-07-26T10:59:12.234Z",null,null
-  pm-4k6b,related,"2026-07-26T10:59:12.234Z",null,null
-  pm-e9zh,related,"2026-07-26T10:59:12.234Z",null,null
-  pm-g8t7b9,related,"2026-07-26T10:59:12.234Z",null,null
-  pm-htbetn,related,"2026-07-26T10:59:12.234Z",null,null
-  pm-lnrk,related,"2026-07-26T10:59:12.234Z",null,null
-  pm-pcys9n,blocked_by,"2026-07-26T10:59:12.234Z",null,null
-  pm-pww8ax,related,"2026-07-26T10:59:12.234Z",null,null
-  pm-w7ccmv,verifies,"2026-07-26T10:59:12.234Z",null,null
-  pm-wenq,related,"2026-07-26T10:59:12.234Z",null,null
+dependencies[10]{id,kind,created_at}:
+  pm-33cw,implements,"2026-07-26T10:59:12.234Z"
+  pm-4k6b,related,"2026-07-26T10:59:12.234Z"
+  pm-e9zh,related,"2026-07-26T10:59:12.234Z"
+  pm-g8t7b9,related,"2026-07-26T10:59:12.234Z"
+  pm-htbetn,related,"2026-07-26T10:59:12.234Z"
+  pm-lnrk,related,"2026-07-26T10:59:12.234Z"
+  pm-pcys9n,blocked_by,"2026-07-26T10:59:12.234Z"
+  pm-pww8ax,related,"2026-07-26T10:59:12.234Z"
+  pm-w7ccmv,verifies,"2026-07-26T10:59:12.234Z"
+  pm-wenq,related,"2026-07-26T10:59:12.234Z"
+comments[1]{created_at,author,text}:
+  "2026-07-29T04:34:56.161Z","harness:claude-code","Measured 2026-07-29: the placeholder block has a lifecycle consequence that was not previously recorded. Sixteen closed items carry no close_reason and validate warns on all of them, and every one of those sixteen carries the placeholder resolution sentence Resolution normalized from closed status because the field was missing or low-signal, plus the matching actual_result placeholder. Two further items in the same warning set - pm-7vm9 and pm-qa2h - carry real recorded resolutions describing what actually shipped, and their close_reason was backfilled honestly from that record today, dropping the count from 18 to 16. The split is exact: where a real resolution exists the missing close_reason is recoverable from the tracker itself, and where the placeholder sentence sits there the record contains nothing to recover from. The normalization sweep that wrote those sentences therefore did more than add noise to relevance scoring - it consumed the only field that could have told a later reader whether the closure evidence was ever captured, and it did so in a way that is indistinguishable from a genuine one-line resolution to every consumer except a literal string match. Any future normalization must write a value that is machine-distinguishable from an authored one."
 body: ""

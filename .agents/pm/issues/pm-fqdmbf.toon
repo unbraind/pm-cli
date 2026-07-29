@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[8]: agent-ux,"area:cli","area:sdk",context-management,gh-issue,linked-tests,output-contract,token-efficiency
 created_at: "2026-07-29T02:34:38.529Z"
-updated_at: "2026-07-29T02:34:38.529Z"
+updated_at: "2026-07-29T04:25:42.388Z"
 author: "harness:codex"
+estimated_minutes: 240
 acceptance_criteria: "Invocation-scoped execution context is emitted once rather than duplicated on every linked-test result, with no diagnostic information loss; Lean structured output omits non-actionable successful-run sandbox plumbing while failures retain enough provenance to diagnose context isolation; Default and full projections remain explicitly contracted and backward compatibility is handled through a documented schema/version strategy; CLI, SDK, MCP, JSON schemas, contracts, and documentation expose one consistent test-run output shape; Measured multi-test output proves a material byte and token reduction while focused and exact 100 percent coverage remain green"
 goal: project management = context management
 objective: Pay once for invocation provenance and reserve per-result output for result-specific evidence

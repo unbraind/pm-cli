@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[3]: core,governance,history
 created_at: "2026-07-28T02:52:26.634Z"
-updated_at: "2026-07-28T02:52:26.634Z"
+updated_at: "2026-07-29T04:41:47.928Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A single declared source enumerates every permitted history op name, and every write site derives its op from that source rather than a literal; A naming grammar for op names is written down and machine-checked, so a non-conforming op cannot reach a stream; The init type-preset duplicate spelling is resolved to one name and the historical entries carrying the retired spelling are documented as a known legacy alias rather than rewritten; The declared vocabulary is published through the runtime contract surface so an external replay or verification tool can enumerate it without reading source; A gate fails when a new op literal appears that is absent from the declared vocabulary"
@@ -19,4 +19,6 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-fs8q9x,related,"2026-07-28T02:52:26.634Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-07-28T02:52:26.634Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,related,"2026-07-28T02:52:26.634Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-29T04:41:47.927Z","harness:claude-code","Sibling class measured 2026-07-29 in the same record this item censuses: the author field of the same 41,021 entries holds 477 distinct spellings with no enumeration, no contract entry and no gate, and four of its six most frequent values are two harnesses written two ways. It is the same ungoverned-value-domain shape as the 71 op literals, one layer harder for the same reason - the stream is append-only, so neither vocabulary can be fixed by migration and both need read-time canonicalization against declared data. Owner for the author half is pm-3yxwv5; keep the two separate because the op vocabulary is written only by the product while the author vocabulary is also written by callers through --author and PM_AUTHOR."
 body: ""

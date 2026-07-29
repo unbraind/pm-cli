@@ -6,17 +6,29 @@ status: open
 priority: 2
 tags[4]: "area:sdk","area:storage",performance,scale
 created_at: "2026-07-06T21:24:54.440Z"
-updated_at: "2026-07-28T10:32:18.456Z"
+updated_at: "2026-07-29T04:57:59.463Z"
 author: maintainer-agent
 estimated_minutes: 900
 acceptance_criteria: "Read commands consult a rebuildable, gitignored derived index (format per ADR pm-bl8x) maintained transactionally with item writes; index is never authoritative — pm can always rebuild it from .toon files and detects staleness automatically; benchmark shows list/context/next p95 < 1s at 1M items; falls back to full scan transparently when index is absent; zero behavior change to outputs"
 parent: pm-9rxu
 risk: high
 confidence: medium
-dependencies[3]{id,kind,created_at}:
-  pm-bl8x,blocked_by,"2026-07-06T21:24:54.440Z"
-  pm-mi2x,blocked_by,"2026-07-06T21:24:54.440Z"
-  pm-g2zz,implements,"2026-07-25T06:27:58.840Z"
+dependencies[4]:
+  - id: pm-bl8x
+    kind: blocked_by
+    created_at: "2026-07-06T21:24:54.440Z"
+  - id: pm-mi2x
+    kind: blocked_by
+    created_at: "2026-07-06T21:24:54.440Z"
+  - id: pm-g2zz
+    kind: implements
+    created_at: "2026-07-25T06:27:58.840Z"
+  - id: pm-usfg
+    kind: implements
+    created_at: "2026-07-29T04:57:59.186Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[21]{created_at,author,text}:
   "2026-07-12T14:11:31.778Z",maintainer-agent,"Start evidence: dependency pm-bl8x is now closed/accepted. Work targets the existing three-tier metadata cache: add versioned per-directory generation signatures and an O(index) fast path that bypasses 100k per-item stat calls while retaining scan fallback."
   "2026-07-12T15:42:07.769Z",maintainer-agent,"Tranche evidence: delivered versioned per-directory signatures and a rebuildable cache fast path that bypasses per-item stat work while preserving source-scan fallback, staleness invalidation, index-on/off equivalence, race handling, and on-read-hook semantics. Focused cache tests passed 13/13 and the 10k local scale gate passed. Manual 100k SDK list/get are 923/440ms. This does not yet satisfy the full feature's 1M sub-second target or transactional write-path maintenance, so the canonical feature remains open for S3/S4 rather than being prematurely closed."
@@ -50,9 +62,8 @@ notes[8]{created_at,author,text}:
   "2026-07-25T21:41:24.900Z","harness:claude-code","Point-read scan factor confirmed 2026-07-25 with the product's own output rather than by inference. pm get pm-doxj --json reports children.scanned = 2037 on a 2,037-item tracker: reading one item by id walks every item file in the workspace to compute the children projection. Wall clock 882 to 1,204 ms across repeated runs.\n\nThe comparison that makes it actionable: pm history pm-doxj, which reads one stream file and does no workspace walk, returns in 658 ms, and pm --version returns in 85 ms. So the single-item read decomposes into roughly 85 ms of process start, roughly 570 ms of load that even a no-scan command pays, and roughly 250 to 500 ms of full-workspace scan on top. The scan is the part this item's index removes; the 570 ms shared floor is pm-yse5dt's.\n\nWorth recording because it bounds the win. An index that makes children O(result) takes pm get from about 1,200 ms to about 660 ms — a real improvement, and still not instant. Getting a point read to feel instant needs both this item and the bootstrap floor, which is an argument for sequencing them together rather than treating the index as sufficient on its own. Measurement caveat: the built-in --profile timer reports 286 ms for this same invocation and is not a usable instrument for this work; see pm-ag9nka."
 learnings[1]{created_at,author,text}:
   "2026-07-21T19:26:17.619Z",codex-root,"A transactional derived index cannot rewrite O(workspace) JSON envelopes on each mutation: a cursor-bound base manifest plus collapsed atomic delta preserves warm-read correctness while making mutation cost O(changed paths). Corrupt derived state must invalidate eagerly; directory metadata alone is not a safe substitute for a rejected delta."
-files[15]{path,scope,note}:
+files[13]{path,scope,note}:
   src/cli/commands/get.ts,project,counts-first standard container reads
-  src/core/store/front-matter-cache.ts,project,versioned directory-signature derived index fast path
   src/core/store/item-metadata-cache.ts,project,Persistent index source cursor and incremental writes
   src/core/store/item-metadata-query-index.ts,project,Persistent bounded SQLite metadata query projection
   src/core/store/item-store.ts,project,Supported mutation index maintenance
@@ -62,7 +73,6 @@ files[15]{path,scope,note}:
   src/sdk/item-metadata-index.ts,project,SDK host projection contract
   src/sdk/query/list.ts,project,Bounded default-order list index consumer with safe fallback
   tests/unit/commands/get-append-command.spec.ts,project,standard versus deep child projection coverage
-  tests/unit/core/item/front-matter-cache.spec.ts,project,index equivalence invalidation and race coverage
   tests/unit/core/item/item-metadata-derived-index.spec.ts,project,Incremental index mutation and recovery coverage
   tests/unit/sdk/context-signal-store.spec.ts,project,cursor staleness fallback and atomic persistence coverage
   tests/unit/sdk/history-read-primitives.spec.ts,project,zero-sample continuation coverage

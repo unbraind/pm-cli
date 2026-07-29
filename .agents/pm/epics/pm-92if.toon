@@ -6,18 +6,18 @@ status: open
 priority: 2
 tags[3]: code-quality,codefactor,tech-debt
 created_at: "2026-06-26T13:29:14.359Z"
-updated_at: "2026-07-26T05:49:02.643Z"
+updated_at: "2026-07-29T04:30:48.536Z"
 author: claude-code-agent
 estimated_minutes: 600
 acceptance_criteria: "CodeFactor overall repository grade reaches A+ (or the highest attainable) on branch main; CodeFactor reports 0 outstanding issues across Complexity, Maintainability, and Duplication; local lint/quality parity tooling exists so findings can be reproduced and kept at zero (no regressions on new PRs)."
 parent: pm-doxj
 risk: low
 confidence: high
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-fmjy,related,"2026-07-02T06:39:46.472Z",null,null
-  pm-rtn5h6,related,"2026-07-24T23:54:53.339Z",null,null
-  pm-zclzll,related,"2026-07-24T23:54:53.339Z",null,null
-  pm-xp1xsw,implements,"2026-07-26T05:49:02.336Z",null,null
+dependencies[4]{id,kind,created_at}:
+  pm-fmjy,related,"2026-07-02T06:39:46.472Z"
+  pm-rtn5h6,related,"2026-07-24T23:54:53.339Z"
+  pm-zclzll,related,"2026-07-24T23:54:53.339Z"
+  pm-xp1xsw,implements,"2026-07-26T05:49:02.336Z"
 comments[175]{created_at,author,text}:
   "2026-06-26T15:46:30.976Z",codex-gpt5,"Progress update: live CodeFactor for main still reports 255 issues until this branch lands (83 maintainability, 152 complexity, 20 duplication). This branch completes the maintainability groups tracked by pm-xsth, pm-m8yl, and pm-x878/Codecov; complexity pm-arzz and duplication pm-fmjy remain open for dedicated refactor follow-up."
   "2026-06-26T18:50:54.481Z",codex-codefactor-sdk-cli-20260626,"Investigation note: live 2026-06-26 CodeFactor public issues page reports A rating, 601 analyzed files, 172 issues after the merged maintainability branch; PM snapshot still tracks remaining complexity and duplication children. GitHub state: no open PRs, no open Dependabot or code-scanning alerts; issue #374 remains open and externally blocked on missing RELEASE_PAT in release environment; pnpm audit --audit-level moderate reports no known vulnerabilities. Dependency drift from pnpm outdated: @sentry/cli 3.5.1 -> 3.6.0, @sentry/node 10.61.0 -> 10.62.0, @types/node held at Node 22 types despite latest 26.x."
@@ -197,7 +197,7 @@ comments[175]{created_at,author,text}:
 notes[2]{created_at,author,text}:
   "2026-07-02T08:14:23.356Z",claude-code-agent,"2026-07-02 pm-chxp/PR#415 merged (17798d15): duplication leg complete — pnpm lint:duplicates now 0 clones repo-wide (was 24). Complexity suppressions already 0 (PR#413/#414). Remaining for A+: await CodeFactor re-analysis of main; verify grade at https://www.codefactor.io/repository/github/unbraind/pm-cli — if findings persist they are in generated runtime-loaders (excluded-by-design candidates via .codefactor.yml)."
   "2026-07-12T07:36:46.400Z",maintainer-agent,"Gate-calibration discovery (2026-07-12, GH-518/pm-2gvp): CodeFactor's \"Complex Method\" detector is NESTING-WEIGHTED, not plain cyclomatic. Evidence: it flagged renderNextMarkdown (cyclomatic 14, cognitive 22) while never flagging runNext in the same file (cyclomatic 16, cognitive 5 — flat early-return style). The old `complexity max 17` gate was calibrated to a \"CC>=18\" assumption and was structurally blind to this class. Fix: twin ceilings — complexity max 16 + sonarjs/cognitive-complexity max 16 (user policy: nothing over 16 on either metric); 76 pre-existing violations grandfathered (suppressions 104->180, budget re-pinned, burn-down = pm-j8vq). Any future CodeFactor Complex Method finding on code that passes both ceilings means the calibration needs ANOTHER metric — re-derive from the flagged function's scores, do not bump thresholds blindly."
-files[166]{path,scope,note}:
+files[160]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,pm-changelog package-owned check refreshed managed extension install timestamp
   .deepsource.toml,project,Explicit TypeScript ESM/Vitest analyzer metadata to replace stale CommonJS dashboard interpretation
   .github/workflows/security.yml,project,"Greptile P1 fix: checksum-verified actionlint install without remote script execution"
@@ -205,17 +205,17 @@ files[166]{path,scope,note}:
   eslint-suppressions.json,project,Prune resolved complexity suppressions after config/settings refactors
   eslint.config.mjs,project,"Greptile fix: scope CommonJS-only globals away from ESM lint surface"
   package.json,project,Align @types/node range to Node 22 supported floor after Dependabot PR #399 review
-  packages/pm-beads/extensions/beads/runtime-loader.ts,project,generated standard package runtime loader
   packages/pm-beads/extensions/beads/runtime.ts,project,split Beads runtime import validation and execution helpers to reduce complexity
   packages/pm-calendar/extensions/calendar/runtime.ts,project,"Review fix: stricter calendar payload parsing without guide-shell clone"
+  packages/pm-governance-audit/extensions/governance-audit/comments-audit.ts,project,Relocated from src/cli/commands/comments-audit.ts
+  packages/pm-governance-audit/extensions/governance-audit/dedupe-audit.ts,project,Relocated from src/cli/commands/dedupe-audit.ts
+  packages/pm-governance-audit/extensions/governance-audit/dedupe-merge.ts,project,Relocated from src/cli/commands/dedupe-merge.ts
   packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,complexity sweep zero ESLint complexity findings
-  packages/pm-todos/extensions/todos/runtime-loader.ts,project,generated alternate package runtime loader
   packages/pm-todos/extensions/todos/runtime.ts,project,split todos runtime SDK export validation and path resolution helpers
   plugins/pm-claude/scripts/pm-mcp-server.mjs,project,generated direct plugin MCP wrapper
   plugins/pm-codex/scripts/pm-mcp-server.mjs,project,generated loop-based plugin MCP wrapper
   pnpm-lock.yaml,project,Lock @types/node 22.20.0 and undici-types 6.21.0 for Node 22 support
   scripts/dogfood-package-first.mjs,project,Update package-first dogfood smoke to expect starter-prefixed reserved scaffold command
-  scripts/gen-package-runtime-loaders.mjs,project,generates distinct runtime-loader templates to avoid package-loader duplication
   scripts/gen-plugin-mcp-wrappers.mjs,project,generates distinct plugin MCP wrapper templates to avoid wrapper duplication
   scripts/generate-release-notes.mjs,project,complexity sweep zero ESLint complexity findings
   scripts/install.ps1,project,"Hosted CI fix: use Write-Information instead of Write-Host for PSScriptAnalyzer-clean installer status output"
@@ -223,7 +223,6 @@ files[166]{path,scope,note}:
   scripts/release/docs-skills-gate.mjs,project,complexity sweep zero ESLint complexity findings
   scripts/release/run-release-pipeline.mjs,project,complexity sweep zero ESLint complexity findings
   scripts/release/sentry-telemetry-gate.mjs,project,complexity sweep zero ESLint complexity findings
-  scripts/release/static-quality-gate.mjs,project,"Greptile fix: cache inline pragma scan text once and emit unified scan failures"
   scripts/release/static-quality-gate.mts,project,Analyzer-compatible TypeScript-module static quality gate with unchanged strict budgets
   scripts/release/utils.mjs,project,complexity sweep zero ESLint complexity findings
   scripts/smoke-external-packages.mjs,project,complexity sweep zero ESLint complexity findings
@@ -234,15 +233,11 @@ files[166]{path,scope,note}:
   src/cli/commands/calendar.ts,project,remaining complexity hotspot refactor target
   src/cli/commands/close-many.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/close.ts,project,complexity sweep zero ESLint complexity findings
-  src/cli/commands/comments-audit.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/completion.ts,project,deduplicates zsh completion filter and mutation argument script generation
   src/cli/commands/config.ts,project,reuse shared canonical config key type
   src/cli/commands/context.ts,project,split context rendering and section aggregation helpers to reduce complexity
   src/cli/commands/contracts.ts,project,split contracts runtime/schema/action shaping and extension schema branch helpers
   src/cli/commands/create.ts,project,reuse shared legacy-none and runtime-unset helpers
-  src/cli/commands/dedupe-audit.ts,project,complexity sweep zero ESLint complexity findings
-  src/cli/commands/dedupe-merge.ts,project,complexity sweep zero ESLint complexity findings
-  src/cli/commands/extension/doctor.ts,project,split doctor runtime activation status/path collection to reduce complexity
   src/cli/commands/extension/scaffold.ts,project,generate imperative package starter tests through createExtensionTestHarness for common command/teardown flow
   src/cli/commands/get.ts,project,split get/list projection routing helpers to reduce complexity
   src/cli/commands/health.ts,project,split health telemetry vectorization and integrity helpers to reduce complexity
@@ -251,7 +246,6 @@ files[166]{path,scope,note}:
   src/cli/commands/history-repair.ts,project,complexity sweep zero ESLint complexity findings
   src/cli/commands/init-agent-guidance.ts,project,splits init agent guidance control flow below CodeFactor complexity threshold
   src/cli/commands/init.ts,project,complexity sweep zero ESLint complexity findings
-  src/cli/commands/item-filter-options.ts,project,single-source shared list/search item filter option contracts
   src/cli/commands/legacy-none-tokens.ts,project,share legacy none/null collection normalization across create and update
   src/cli/commands/list.ts,project,reuse shared item filter option contract for list options
   src/cli/commands/mutation-command-options.ts,project,shared create/update mutation option contract removes duplicated option declarations
@@ -290,7 +284,6 @@ files[166]{path,scope,note}:
   src/core/search/vector-stores.ts,project,complexity sweep zero ESLint complexity findings
   src/core/sentry/helpers.ts,project,complexity sweep zero ESLint complexity findings
   src/core/sentry/instrument.ts,project,complexity sweep zero ESLint complexity findings
-  src/core/store/front-matter-cache.ts,project,complexity sweep zero ESLint complexity findings
   src/core/store/item-store.ts,project,suppress no-op mutateItem writes when changedFields is empty
   src/core/store/paths.ts,project,reuse type-registry default-folder derivation for custom item storage
   src/core/store/settings.ts,project,Refactor extension policy normalization to reduce settings complexity baseline
@@ -299,8 +292,10 @@ files[166]{path,scope,note}:
   src/sdk/cli-contracts/tool-option-contracts.ts,project,deduplicate SDK tool option contract groups while preserving generated contract snapshot
   src/sdk/cli-contracts/tool-schema.ts,project,deduplicates extension/package managed option schemas
   src/sdk/eval.ts,project,Review fix preserves empty fail-under as an omitted SDK eval threshold
+  src/sdk/extension/doctor.ts,project,Relocated from src/cli/commands/extension/doctor.ts
   src/sdk/index.ts,project,Remove duplicate public barrel export paths reported by hosted DeepSource
   src/sdk/package-import-adapters.ts,project,adds shared SDK import coercion primitives for package authors
+  src/sdk/query/item-filter-options.ts,project,Relocated from src/cli/commands/item-filter-options.ts
   src/sdk/query/list.ts,project,Reshape exported query-filter primitives to satisfy hosted analyzer without weakening contracts
   src/sdk/runtime.ts,project,exports SDK import adapter primitives from runtime barrel
   tests/fixtures/contracts/full.json,project,Generated runtime contract snapshot for docs/files missing aliases
@@ -353,7 +348,6 @@ files[166]{path,scope,note}:
   tests/unit/packages/guide-shell-runtime.spec.ts,project,Regression coverage for guide-shell array payload rendering
   tests/unit/packages/package-import-adapters.spec.ts,project,covers new SDK import adapter branch behavior
   tests/unit/packages/package-manifest.spec.ts,project,"Review fix: support quoted capabilities keys in module manifest assertions"
-  tests/unit/packages/runtime-loaders.spec.ts,project,covers both generated runtime-loader templates
   tests/unit/packages/todos-extension.spec.ts,project,Greptile response regression coverage for todos zero timeout omission
   tests/unit/plugins/pm-mcp-server.spec.ts,project,Greptile response coverage for generated Codex wrapper depth-limit null fallback
   tests/unit/scripts/dogfood-package-first.spec.ts,project,Align dogfood script harness with starter-prefixed reserved scaffold command

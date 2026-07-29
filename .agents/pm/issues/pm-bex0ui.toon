@@ -6,8 +6,9 @@ status: open
 priority: 2
 tags[5]: agent-experience,"area:cli",context-efficiency,github-report,recovery
 created_at: "2026-07-28T16:30:32.604Z"
-updated_at: "2026-07-28T16:31:07.704Z"
+updated_at: "2026-07-29T04:25:43.349Z"
 author: "harness:codex"
+estimated_minutes: 180
 acceptance_criteria: "pm read, show, and view recover to executable read semantics with deterministic ranking; unknown-command recovery recommends bounded contracts summary guidance instead of root help; token and executable-alias regressions cover human and structured modes"
 goal: project management = context management
 objective: Make mistaken read intents recover with minimal context cost

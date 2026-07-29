@@ -6,20 +6,21 @@ status: closed
 priority: 1
 tags[3]: agent-ux,create,dogfood
 created_at: "2026-05-16T16:12:05.486Z"
-updated_at: "2026-07-26T17:07:02.003Z"
+updated_at: "2026-07-29T04:25:39.019Z"
 author: maintainer-agent
 parent: pm-rnpb
 release: v2026.5.18
 resolution: "Added positional [title] argument to pm create. Title can be passed as positional shortcut or via --title flag. Updated help text and error guidance to mention the positional form. SDK contract description includes [required] marker so help payload still flags title as required for type-aware validation."
 expected_result: "pm create \"Title\" --type Issue works without requiring --title flag"
 actual_result: "Implemented; positional title flows through register-mutation action, normalized via existing options pipeline, validated by requireStringOption with enhanced error guidance"
-dependencies[1]{id,kind,created_at,author,source_kind}:
-  pm-rnpb,implements,"2026-07-26T17:07:01.734Z",null,null
-files[3]{path,scope,note}:
-  src/cli/commands/create.ts,project,null
-  src/cli/register-mutation.ts,project,null
-  src/sdk/cli-contracts/commander-mutation-options.ts,project,null
+dependencies[1]{id,kind,created_at}:
+  pm-rnpb,implements,"2026-07-26T17:07:01.734Z"
+files[3]{path,scope}:
+  src/cli/commands/create.ts,project
+  src/cli/register-mutation.ts,project
+  src/sdk/cli-contracts/commander-mutation-options.ts,project
 tests[2]{command,path,scope}:
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,tests/integration/help-runtime.spec.ts,project
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,tests/unit/create-command.spec.ts,project
+close_reason: "Positional [title] argument shipped on pm create; help text, error guidance, and the type-aware SDK contract all updated. Derived from the recorded resolution during 2026-07-29 governance repair."
 body: ""

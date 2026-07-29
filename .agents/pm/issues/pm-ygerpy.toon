@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[7]: "area:cli","area:sdk",context-management,gh-issue,linked-tests,metrics,queryability
 created_at: "2026-07-29T02:35:07.399Z"
-updated_at: "2026-07-29T02:35:07.399Z"
+updated_at: "2026-07-29T04:25:41.498Z"
 author: "harness:codex"
+estimated_minutes: 480
 acceptance_criteria: "Test-run records accept typed numeric measurements with a name, value, optional unit, optional threshold, and timestamp without requiring an extension; Measurements remain bound to the producing run and accumulate as a bounded deterministic series rather than overwriting prior evidence; CLI, SDK, MCP, schemas, contracts, storage normalization, migrations, and public types expose the same measurement model; Read surfaces can filter and aggregate measurements, including a metric-below query and a latest-versus-previous diff; Focused, integration, acceptance, compatibility, and exact 100 percent coverage gates prove persistence and query behavior"
 goal: project management = context management
 objective: Make quantitative verification evidence a first-class queryable SDK primitive
@@ -15,7 +16,7 @@ value: Agents and fleet operators can compare quality evidence without parsing p
 impact: Adds a universal numeric evidence series usable by any project domain while retaining bounded item storage
 outcome: "Quality, performance, reliability, and size measurements are durable, attributable, and queryable across items"
 why_now: GH-802 documents 18 package baselines currently stranded in prose despite test-result tracking being enabled
-parent: pm-lm0j
+parent: pm-5oj5
 risk: medium
 confidence: high
 severity: medium
@@ -25,11 +26,12 @@ actual_result: Current test_runs store status and counts only; measured baseline
 affected_version: 2026.7.29
 component: sdk-test-result-model
 customer_impact: Fleet-wide quality baselines cannot currently drive prioritization or trend analysis through pm.
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-16f4,related_to,"2026-07-29T02:35:07.399Z","harness:codex","cli:create:dep",detected
   pm-feecbs,related,"2026-07-29T02:35:07.399Z","harness:codex","cli:create:dep",detected
   pm-i2pc,discovered_from,"2026-07-29T02:35:07.399Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-07-29T02:35:07.399Z","harness:codex","cli:create:dep",detected
+  pm-lm0j,related,"2026-07-29T04:25:40.547Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-07-29T02:35:07.399Z","harness:codex","Duplicate check evidence: all-status searches for test result tracking, structured measurements, numeric metrics, quality metrics, and test_runs found the shipped pm-lm0j/pm-16f4/pm-i2pc persistence lineage but no item owning typed numeric evidence, series retention, metric filters, or diffs. GH-802 is therefore a new extension of that canonical lineage: https://github.com/unbraind/pm-cli/issues/802."
 body: ""

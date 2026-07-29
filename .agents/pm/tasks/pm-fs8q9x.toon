@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli",contracts,grammar,simplification,token-efficiency
 created_at: "2026-07-25T12:28:49.234Z"
-updated_at: "2026-07-26T05:59:50.748Z"
+updated_at: "2026-07-29T04:47:10.315Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "A declared lexicon maps every flag on every command to exactly one concept with one canonical spelling and one declared value kind; The conformance gate rejects a new or renamed flag that introduces a second spelling for an existing concept, or a value grammar inconsistent with its value kind; Every current spelling remains accepted as a hidden alias, proven by a test over the full pre-change flag inventory; Each command declares a flag budget; exceeding it fails the gate unless the budget is raised in the same change with a recorded rationale; The lexicon is published as contract data so agents and completions consume it without prose; Measured flag-count and help-token deltas per command are recorded as evidence"
@@ -18,24 +18,26 @@ outcome: An agent that learns pm's flag vocabulary once can predict the flags of
 parent: pm-n7rr
 risk: medium
 confidence: 70
-dependencies[17]{id,kind,created_at,author,source_kind}:
-  pm-e2bq,related,"2026-07-25T12:28:49.234Z",null,null
-  pm-gknu,related,"2026-07-25T12:28:49.234Z",null,null
-  pm-iktj,related,"2026-07-25T12:28:49.234Z",null,null
-  pm-j82fd3,related,"2026-07-25T12:28:49.234Z",null,null
-  pm-pbyu,related,"2026-07-25T12:28:49.234Z",null,null
-  pm-srns,related,"2026-07-25T12:28:49.234Z",null,null
-  pm-wt43zj,blocked_by,"2026-07-25T12:28:49.234Z",null,null
-  pm-0mox,related,"2026-07-25T12:35:11.542Z",null,null
-  pm-0z7n,related,"2026-07-25T12:35:11.542Z",null,null
-  pm-cxr0jb,related,"2026-07-25T12:35:11.542Z",null,null
-  pm-kxci8x,related,"2026-07-25T12:35:11.542Z",null,null
-  pm-mu8m,related,"2026-07-25T12:35:11.542Z",null,null
-  pm-xp1xsw,related,"2026-07-25T12:35:11.542Z",null,null
-  pm-pbyu,implements,"2026-07-25T20:44:45.885Z",null,null
-  pm-j82fd3,verifies,"2026-07-25T20:44:48.519Z",null,null
-  pm-n7rr,verifies,"2026-07-26T05:50:20.499Z",null,null
-  pm-pbyu,verifies,"2026-07-26T05:59:50.516Z",null,null
+dependencies[17]{id,kind,created_at}:
+  pm-e2bq,related,"2026-07-25T12:28:49.234Z"
+  pm-gknu,related,"2026-07-25T12:28:49.234Z"
+  pm-iktj,related,"2026-07-25T12:28:49.234Z"
+  pm-j82fd3,related,"2026-07-25T12:28:49.234Z"
+  pm-pbyu,related,"2026-07-25T12:28:49.234Z"
+  pm-srns,related,"2026-07-25T12:28:49.234Z"
+  pm-wt43zj,blocked_by,"2026-07-25T12:28:49.234Z"
+  pm-0mox,related,"2026-07-25T12:35:11.542Z"
+  pm-0z7n,related,"2026-07-25T12:35:11.542Z"
+  pm-cxr0jb,related,"2026-07-25T12:35:11.542Z"
+  pm-kxci8x,related,"2026-07-25T12:35:11.542Z"
+  pm-mu8m,related,"2026-07-25T12:35:11.542Z"
+  pm-xp1xsw,related,"2026-07-25T12:35:11.542Z"
+  pm-pbyu,implements,"2026-07-25T20:44:45.885Z"
+  pm-j82fd3,verifies,"2026-07-25T20:44:48.519Z"
+  pm-n7rr,verifies,"2026-07-26T05:50:20.499Z"
+  pm-pbyu,verifies,"2026-07-26T05:59:50.516Z"
+comments[1]{created_at,author,text}:
+  "2026-07-29T04:47:10.315Z","harness:claude-code","Lexicon census 2026-07-29 giving this item a concrete acceptance target. The live surface is 84 commands and 1,792 flag occurrences drawn from 481 distinct spellings. Two hundred spellings, 41.6 percent, appear on exactly one command; 54 appear on ten or more; the shared head is --help 84, --author 33, --limit 30, --message 30, --force 27, --priority 26, --parent 24, --type 24, --sprint 23, --release 23, --assignee 22, --tag 20. Two hundred and two spellings cover 80 percent of occurrences, so the tail is long rather than negligible. Per-command flag budgets, which this item's title already promises, now have real outliers to bound: update-many 126, plan 97, update 84, create 78, and five list-family commands at 63 to 65 each. The strongest single finding for the budget rule is that create, update and update-many spend 288 occurrences, sixteen percent of the entire surface, re-declaring one item schema three times with divergent arity - that is the population a one-spelling-per-concept gate should collapse first, and it is measurable before and after. The second is that a singleton flag is indistinguishable from a shared one in the rendered surface, so the gate needs a declared local-or-shared disposition per flag rather than a similarity heuristic. Sequencing consequence recorded as ruling F on pm-pbyu: this item is upstream of the noun consolidation, not parallel to it."
 notes[1]{created_at,author,text}:
   "2026-07-25T17:54:06.791Z","harness:claude-code","Flag-axis baseline measured 2026-07-25 (shipped 2026.7.25), for the per-command flag budget this item declares.\n\n1,712 flag declarations across 77 top-level commands; 470 distinct spellings. Distribution is extremely skewed — the top five commands (plan 97, update 82, create 78, list 66, search 58) carry 381 declarations, 22% of the total on 6% of the commands.\n\nTwo candidate budget shapes the item should choose between, with evidence:\n- A flat per-command ceiling would immediately fail on plan/update/create/list/search, which are the five commands agents use most; a ceiling low enough to be meaningful elsewhere would force real capability into subcommands or config on exactly the wrong surfaces.\n- A tiered ceiling keyed to the declared surface tier (pm-kxci8x) fits the measured shape better: core-tier commands get a hard, small budget; specialist commands are allowed a larger one but must justify each flag against the shared lexicon.\n\nLexicon evidence for the \"one spelling per concept\" half: --author appears on 35 commands, --message on 30, --compact on 28, --force on 27, --limit on 25, --priority on 23, --parent on 23, --type on 21. High repetition is the healthy case — it means the concept is shared. The conformance risk is the long tail: 470 distinct spellings against roughly 77 commands means most spellings appear once or twice, and single-use spellings are where synonym drift hides. Recommend the gate measure the tail (spellings used on exactly one command) rather than the head."
 body: ""

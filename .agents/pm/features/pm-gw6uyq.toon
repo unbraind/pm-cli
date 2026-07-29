@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: analytics,"area:sdk",identity,observability,provenance,scale
 created_at: "2026-07-25T12:26:56.829Z"
-updated_at: "2026-07-26T05:49:41.696Z"
+updated_at: "2026-07-29T04:40:42.905Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Analytics are pure derivations over immutable history with no new stored state and no telemetry dependency; Grouping is available by harness, by model, and by author_source, and every reported figure carries its sample count and window; A metric with an insufficient sample is reported as insufficient rather than as a number, so small workspaces get honest output; Output is bounded by the same token-budget contract as other read surfaces and degrades deterministically instead of dumping entries; The documentation states that these figures are observational, that detected identity is unverified, and that the figures must not be used as an authorization or allocation input; A workspace with no model provenance (pre-capture history) produces correct harness-level output and reports the model dimension as unavailable rather than empty"
@@ -18,17 +18,47 @@ outcome: Model and harness selection for a workspace becomes an evidence-backed 
 parent: pm-5oj5
 risk: medium
 confidence: 65
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-03pq3o,blocked_by,"2026-07-25T12:26:56.829Z",null,null
-  pm-3oqjnc,related,"2026-07-25T12:26:56.829Z",null,null
-  pm-5oj5,related,"2026-07-25T12:26:56.829Z",null,null
-  pm-pee5,related,"2026-07-25T12:26:56.829Z",null,null
-  pm-qwuber,related,"2026-07-25T12:26:56.829Z",null,null
-  pm-u14c,related,"2026-07-25T12:26:56.829Z",null,null
-  pm-6uxhe0,related,"2026-07-25T12:35:05.199Z",null,null
-  pm-o87av6,related,"2026-07-25T12:35:05.199Z",null,null
-  pm-szv11n,related,"2026-07-25T12:35:05.199Z",null,null
-  pm-t5dt4z,related,"2026-07-25T12:35:05.199Z",null,null
-  pm-w7ccmv,related,"2026-07-25T12:35:05.199Z",null,null
-  pm-szv11n,implements,"2026-07-26T05:49:41.434Z",null,null
+dependencies[13]:
+  - id: pm-03pq3o
+    kind: blocked_by
+    created_at: "2026-07-25T12:26:56.829Z"
+  - id: pm-3oqjnc
+    kind: related
+    created_at: "2026-07-25T12:26:56.829Z"
+  - id: pm-5oj5
+    kind: related
+    created_at: "2026-07-25T12:26:56.829Z"
+  - id: pm-pee5
+    kind: related
+    created_at: "2026-07-25T12:26:56.829Z"
+  - id: pm-qwuber
+    kind: related
+    created_at: "2026-07-25T12:26:56.829Z"
+  - id: pm-u14c
+    kind: related
+    created_at: "2026-07-25T12:26:56.829Z"
+  - id: pm-6uxhe0
+    kind: related
+    created_at: "2026-07-25T12:35:05.199Z"
+  - id: pm-o87av6
+    kind: related
+    created_at: "2026-07-25T12:35:05.199Z"
+  - id: pm-szv11n
+    kind: related
+    created_at: "2026-07-25T12:35:05.199Z"
+  - id: pm-t5dt4z
+    kind: related
+    created_at: "2026-07-25T12:35:05.199Z"
+  - id: pm-w7ccmv
+    kind: related
+    created_at: "2026-07-25T12:35:05.199Z"
+  - id: pm-szv11n
+    kind: implements
+    created_at: "2026-07-26T05:49:41.434Z"
+  - id: pm-v8gfi7
+    kind: blocked_by
+    created_at: "2026-07-29T04:40:42.717Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""
