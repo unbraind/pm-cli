@@ -460,6 +460,22 @@ describe("runDeps", () => {
       expect(result.missing_count).toBe(0);
       expect(result.tree).toBeUndefined();
       expect(result.graph).toBeUndefined();
+      expect(result.projection).toEqual({
+        mode: "summary",
+        declared_field_groups: [
+          { name: "dependency_tree", restore_with: "--full" },
+        ],
+        included_field_groups: [],
+      });
+      await expect(
+        runDeps(
+          rootId,
+          { format: "tree", summary: true, full: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

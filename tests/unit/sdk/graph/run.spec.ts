@@ -312,6 +312,27 @@ describe("runGraph", () => {
       )) as GraphTraversalResult;
       expect(summary.count).toBe(2);
       expect(summary.ids).toBeUndefined();
+      expect(summary).toMatchObject({
+        projection: {
+          mode: "summary",
+          declared_field_groups: [
+            { name: "result_rows", restore_with: "--full" },
+          ],
+          included_field_groups: [],
+        },
+      });
+
+      await expect(
+        runGraph(
+          "ancestors",
+          task,
+          undefined,
+          { summary: true, full: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

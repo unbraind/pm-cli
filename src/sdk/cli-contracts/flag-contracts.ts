@@ -1014,6 +1014,7 @@ export const DUPLICATES_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for health flag contracts, shared by SDK and presentation-layer consumers. */
 export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--strict-directories" },
+  { flag: "--require-merge-drivers" },
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
   { flag: "--check-only" },
@@ -1058,6 +1059,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-command-references" },
   { flag: "--check-storage-integrity" },
   { flag: "--counts" },
+  { flag: "--full" },
 ];
 
 /** Creates flag contracts using the validated operation inputs. */
@@ -1525,6 +1527,7 @@ export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--max-depth" },
   { flag: "--collapse" },
   { flag: "--summary" },
+  { flag: "--full" },
   { flag: "--node-limit" },
   { flag: "--edge-limit" },
   { flag: "--token-budget" },
@@ -1548,6 +1551,7 @@ export const GRAPH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--rebuild" },
   { flag: "--clear" },
   { flag: "--summary" },
+  { flag: "--full" },
 ];
 
 /** Public contract for eval flag contracts, shared by SDK and presentation-layer consumers. */

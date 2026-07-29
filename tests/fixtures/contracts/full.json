@@ -2049,6 +2049,9 @@
           "flag": "--summary"
         },
         {
+          "flag": "--full"
+        },
+        {
           "flag": "--node-limit"
         },
         {
@@ -2649,6 +2652,9 @@
         },
         {
           "flag": "--summary"
+        },
+        {
+          "flag": "--full"
         }
       ],
       "provider": "core"
@@ -2658,6 +2664,9 @@
       "flags": [
         {
           "flag": "--strict-directories"
+        },
+        {
+          "flag": "--require-merge-drivers"
         },
         {
           "flag": "--strict-exit"
@@ -7378,6 +7387,9 @@
         },
         {
           "flag": "--counts"
+        },
+        {
+          "flag": "--full"
         }
       ],
       "provider": "core"

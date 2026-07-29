@@ -57,6 +57,46 @@ describe("output projection omission contracts", () => {
     });
   });
 
+  it("derives receipts from self-describing built-in or extension projections", () => {
+    const projected = attachOutputOmissionReceipt("package-report", {
+      rows: [],
+      projection: {
+        mode: "summary",
+        declared_field_groups: [
+          { name: "evidence_rows", restore_with: "--full" },
+          { name: "risk_rows", restore_with: "--include risk" },
+        ],
+        included_field_groups: ["risk_rows"],
+      },
+    }) as Record<string, unknown>;
+    expect(projected.omission_receipt).toEqual({
+      has_omissions: true,
+      omitted_field_group_count: 1,
+      omitted_field_groups: [
+        { name: "evidence_rows", restore_with: "--full" },
+      ],
+    });
+
+    for (const malformed of [
+      {
+        projection: {
+          declared_field_groups: [{ name: "missing_restore" }],
+          included_field_groups: [],
+        },
+      },
+      {
+        projection: {
+          declared_field_groups: [],
+          included_field_groups: [42],
+        },
+      },
+    ]) {
+      expect(
+        attachOutputOmissionReceipt("package-report", malformed),
+      ).not.toHaveProperty("omission_receipt");
+    }
+  });
+
   it("attaches bounded receipts to context, get, list, and search shapes", () => {
     const context = attachOutputOmissionReceipt("context", {
       sections_included: ["hierarchy"],

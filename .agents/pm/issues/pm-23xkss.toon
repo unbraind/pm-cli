@@ -1,0 +1,48 @@
+id: pm-23xkss
+title: "GH-814: SDK metadata reads must distinguish missing and invalid tracker roots from an empty tracker"
+description: "Public SDK metadata enumeration silently returns an empty corpus when the supplied tracker root is absent or a regular file. This turns a path error into confident but false project context for graph, search, governance, and extension consumers."
+type: Issue
+status: closed
+priority: 0
+tags[4]: "area:sdk","area:storage",context-integrity,error-contract
+created_at: "2026-07-29T21:43:32.888Z"
+updated_at: "2026-07-29T22:24:58.349Z"
+closed_at: "2026-07-29T22:19:58.359Z"
+completed_at: "2026-07-29T22:19:58.359Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: listAllItemMetadata and its light and body variants reject missing roots and non-directory roots with stable typed diagnostics; a valid empty tracker remains a successful empty result; CLI query and governance callers preserve their intended domain-level errors; public SDK types documentation focused regression tests and installed-consumer acceptance cover the contract
+goal: project management = context management
+objective: Make foundational SDK reads fail loudly when their source of truth does not exist
+value: Agents and extensions never mistake an invalid workspace path for a real project with zero work
+impact: "Prevents silent empty graphs, missing blockers, and incorrect release decisions across every SDK consumer"
+why_now: GH-814 demonstrates the ambiguity in the current published SDK and an external graph package already needs this contract
+parent: pm-usfg
+risk: high
+confidence: high
+resolution: Validated tracker roots before metadata enumeration with stable typed missing and non-directory diagnostics.
+expected_result: Empty valid trackers return an empty corpus while invalid or unreadable roots cannot masquerade as project truth.
+actual_result: "All three metadata readers preserve empty success, distinguish missing and invalid roots, and rethrow unrelated filesystem errors."
+affected_version: 2026.7.29
+component: sdk/storage/item-store
+regression: true
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ju83,related,"2026-07-29T21:43:32.888Z","harness:codex","cli:create:dep",detected
+  pm-oxrw,related,"2026-07-29T21:43:32.888Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-29T21:43:32.888Z","harness:codex","Duplicate check evidence 2026-07-29: searched all 2,197 live items across every status for GH-814, listAllItemMetadata, missing metadata root, nonexistent pm root, regular-file tracker root, empty graph, and SDK reader semantics. No item owns this failure mode. Closed SDK-first and graph primitives establish the affected lineage but do not distinguish invalid roots from an empty valid tracker. GitHub: https://github.com/unbraind/pm-cli/issues/814"
+  "2026-07-29T22:19:19.094Z","harness:codex","Implementation evidence: all public metadata enumeration variants now accept an existing empty directory but throw stable typed diagnostics for missing and non-directory roots, while preserving unrelated filesystem errors. Focused tests pass 3/3 and full coverage passes 6540/6540 at 100/100/100/100. A packed SDK consumer proved empty returns [] and missing reports tracker_root_missing with reason missing."
+learnings[1]{created_at,author,text}:
+  "2026-07-29T22:19:19.795Z","harness:codex",An empty item array is project truth only after the SDK proves the supplied tracker root is an existing directory; filesystem discovery failures must remain distinguishable and non-ENOENT errors must retain their original identity.
+files[2]{path,scope,note}:
+  src/core/store/item-store.ts,project,Typed tracker-root validation for all metadata enumerators
+  tests/unit/core/store/item-store-root-contract.spec.ts,project,Empty missing invalid and filesystem-error root coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/item-store-root-contract.spec.ts,project,120
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms6mok4k-8vvd1p,test,passed,"2026-07-29T22:00:02.988Z","2026-07-29T22:00:09.956Z","2026-07-29T22:00:09.956Z",1,0,0
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated PM changelog entry for tracker-root truth contracts
+  docs/SDK_CONTEXT_TRUTH_CONTRACTS.md,project,Missing invalid and empty tracker semantics
+close_reason: SDK metadata enumeration now distinguishes empty missing invalid and unreadable tracker roots with typed diagnostics; packed consumer and 100 percent coverage pass.
+body: ""

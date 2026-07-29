@@ -117,6 +117,43 @@ function resolveItemFormatSearchOrder(
   return ["toon", "json_markdown"];
 }
 
+/** Require metadata enumeration to start from a real directory so an invalid source cannot masquerade as an empty tracker. */
+async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
+  let stats;
+  try {
+    stats = await fs.stat(pmRoot);
+  } catch (error: unknown) {
+    if (isErrno(error, "ENOENT")) {
+      throw new PmCliError(
+        `Tracker root does not exist at ${pmRoot}.`,
+        EXIT_CODE.NOT_FOUND,
+        {
+          code: "tracker_root_missing",
+          reason: "missing",
+          nextSteps: [
+            "Confirm the tracker root path and retry the SDK read.",
+            "Initialize a tracker before enumerating its item metadata.",
+          ],
+        },
+      );
+    }
+    throw error;
+  }
+  if (!stats.isDirectory()) {
+    throw new PmCliError(
+      `Tracker root is not a directory at ${pmRoot}.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "tracker_root_not_directory",
+        reason: "not_a_directory",
+        nextSteps: [
+          "Pass the tracker directory itself, usually <workspace>/.agents/pm.",
+        ],
+      },
+    );
+  }
+}
+
 /** Implements locate item for the public runtime surface of this module. */
 export async function locateItem(
   pmRoot: string,
@@ -190,6 +227,7 @@ export async function listAllItemMetadata(
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemMetadata[]> {
+  await assertItemMetadataRoot(pmRoot);
   const documents = await listAllDocumentsCached(
     pmRoot,
     preferredFormat,
@@ -213,6 +251,7 @@ export async function listAllItemMetadataLight(
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemMetadata[]> {
+  await assertItemMetadataRoot(pmRoot);
   const documents = await listAllDocumentsCachedLight(
     pmRoot,
     preferredFormat,
@@ -232,6 +271,7 @@ export async function listAllItemMetadataWithBody(
   schema?: RuntimeSchemaSettings,
   options: { forceSourceScan?: boolean } = {},
 ): Promise<Array<ItemMetadata & { body: string }>> {
+  await assertItemMetadataRoot(pmRoot);
   const candidates = await listAllDocumentCandidatesCached(
     pmRoot,
     preferredFormat,

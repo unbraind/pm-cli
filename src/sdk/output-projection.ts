@@ -3,6 +3,8 @@
  *
  * Declares machine-readable field-group omissions for bounded command results.
  */
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
 
 /** One field group that a richer output projection can restore. */
 export interface OutputProjectionFieldGroup {
@@ -20,6 +22,16 @@ export interface OutputOmissionReceipt {
   omitted_field_group_count: number;
   /** Withheld groups and the exact opt-in that restores each one. */
   omitted_field_groups: OutputProjectionFieldGroup[];
+}
+
+/** Self-describing projection metadata that built-ins and extensions can use to derive receipts without command-specific code. */
+export interface OutputProjectionDeclaration {
+  /** Active projection name. */
+  mode: string;
+  /** Every optional field group supported by this result shape. */
+  declared_field_groups: OutputProjectionFieldGroup[];
+  /** Names of declared groups present in this result. */
+  included_field_groups: string[];
 }
 
 /** Contract for a command whose output modes expose mutually exclusive row shapes. */
@@ -61,6 +73,20 @@ export const PM_MODE_PAIRED_OUTPUT_PROJECTION_CONTRACTS = [
     },
   },
 ] as const satisfies readonly ModePairedOutputProjectionContract[];
+
+/** Reject a compact projection and its explicit full restoration when callers request both. */
+export function assertProjectionModeChoice(
+  compactRequested: boolean,
+  fullRequested: boolean,
+  compactFlag: string,
+): void {
+  if (compactRequested && fullRequested) {
+    throw new PmCliError(
+      `${compactFlag} cannot be combined with --full`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
 
 /** Build an explicit constant-size receipt from declared and included groups. */
 export function createOutputOmissionReceipt(
@@ -118,6 +144,34 @@ const CONTEXT_FIELD_GROUPS = [
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function resolveDeclaredProjectionReceipt(
+  result: Record<string, unknown>,
+): OutputOmissionReceipt | undefined {
+  if (!isRecord(result.projection)) return undefined;
+  const declared = result.projection.declared_field_groups;
+  const included = result.projection.included_field_groups;
+  if (!Array.isArray(declared) || !Array.isArray(included)) return undefined;
+  const declaredGroups = declared.filter(
+    (entry): entry is OutputProjectionFieldGroup =>
+      isRecord(entry) &&
+      typeof entry.name === "string" &&
+      typeof entry.restore_with === "string",
+  );
+  const includedNames = included.filter(
+    (entry): entry is string => typeof entry === "string",
+  );
+  if (
+    declaredGroups.length !== declared.length ||
+    includedNames.length !== included.length
+  ) {
+    return undefined;
+  }
+  return createOutputOmissionReceipt(
+    declaredGroups,
+    new Set(includedNames),
+  );
 }
 
 function resolveContextReceipt(
@@ -197,6 +251,8 @@ export function resolveOutputOmissionReceipt(
   command: string,
   result: Record<string, unknown>,
 ): OutputOmissionReceipt | undefined {
+  const declaredReceipt = resolveDeclaredProjectionReceipt(result);
+  if (declaredReceipt !== undefined) return declaredReceipt;
   const [rootCommand] = command.split(/\s+/u, 1);
   if (rootCommand === "context") return resolveContextReceipt(result);
   if (rootCommand === "get") return resolveGetReceipt(result);

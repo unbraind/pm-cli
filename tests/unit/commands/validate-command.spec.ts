@@ -71,6 +71,13 @@ it("projects validation results to scalar counts without diagnostic row arrays",
       failed_fixes: [],
     },
     generated_at: "2026-07-23T00:00:00.000Z",
+    projection: {
+      mode: "full",
+      declared_field_groups: [
+        { name: "diagnostic_rows", restore_with: "--full" },
+      ],
+      included_field_groups: ["diagnostic_rows"],
+    },
   } satisfies ValidateResult);
 
   expect(projected.checks[0]?.details).toEqual({
@@ -92,6 +99,13 @@ it("projects validation results to scalar counts without diagnostic row arrays",
       checks: [],
       warnings: [],
       generated_at: "2026-07-23T00:00:00.000Z",
+      projection: {
+        mode: "full",
+        declared_field_groups: [
+          { name: "diagnostic_rows", restore_with: "--full" },
+        ],
+        included_field_groups: ["diagnostic_rows"],
+      },
     }),
   ).not.toHaveProperty("fixes");
 });
@@ -207,6 +221,39 @@ function checkByName(result: Awaited<ReturnType<typeof runValidate>>, name: stri
 }
 
 describe("runValidate", () => {
+  it("declares counts omissions and rejects conflicting restoration", async () => {
+    await withTempPmPath(async (context) => {
+      const full = await runValidate({}, { path: context.pmPath });
+      expect(full.projection).toEqual({
+        mode: "full",
+        declared_field_groups: [
+          { name: "diagnostic_rows", restore_with: "--full" },
+        ],
+        included_field_groups: ["diagnostic_rows"],
+      });
+
+      const counts = await runValidate(
+        { counts: true },
+        { path: context.pmPath },
+      );
+      expect(counts.projection).toEqual({
+        mode: "counts",
+        declared_field_groups: [
+          { name: "diagnostic_rows", restore_with: "--full" },
+        ],
+        included_field_groups: [],
+      });
+      await expect(
+        runValidate(
+          { counts: true, full: true },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-validate-not-init-"));
     try {

@@ -820,6 +820,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "maxDepth",
         "collapse",
         "summary",
+        "full",
         "nodeLimit",
         "edgeLimit",
         "tokenBudget",
@@ -846,6 +847,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "rebuild",
         "clear",
         "summary",
+        "full",
       ],
     },
     test: {
@@ -937,6 +939,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     health: {
       optional: [
         "strictDirectories",
+        "requireMergeDrivers",
         "strictExit",
         "failOnWarn",
         "checkOnly",
@@ -978,6 +981,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "checkHistoryDrift",
         "checkCommandReferences",
         "counts",
+        "full",
       ],
     },
     gc: { optional: ["dryRun", "gcScope"] },

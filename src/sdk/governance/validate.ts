@@ -77,6 +77,10 @@ import type {
   ValidateMetadataProfile,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
+import {
+  assertProjectionModeChoice,
+  type OutputProjectionDeclaration,
+} from "../output-projection.js";
 import { collectDanglingDependencyReferences } from "../graph/assembly.js";
 import {
   auditMergeAttributeFence,
@@ -312,6 +316,8 @@ export interface ValidateCommandOptions {
   pruneMissing?: boolean;
   /** Keep validation counts and scalar totals while omitting diagnostic row arrays. */
   counts?: boolean;
+  /** Explicitly restore complete diagnostic rows after a counts-only read. */
+  full?: boolean;
 }
 
 /** Mutation operations injected when validation is allowed to apply audited fixes. */
@@ -394,6 +400,8 @@ export interface ValidateResult {
   fixes?: ValidateFixesSummary;
   /** ISO 8601 timestamp recording when generated occurred. */
   generated_at: string;
+  /** Self-describing diagnostic projection used to derive a bounded omission receipt. */
+  projection: OutputProjectionDeclaration;
 }
 
 /** Validate result returned when `counts: true` omits diagnostic row arrays. */
@@ -3591,6 +3599,11 @@ export async function runValidate(
   global: GlobalOptions,
   services: ValidateMutationServices = {},
 ): Promise<ValidateResult | ValidateCountsResult> {
+  assertProjectionModeChoice(
+    options.counts === true,
+    options.full === true,
+    "--counts",
+  );
   const fixesRequested =
     options.autoFix === true || options.pruneMissing === true;
   if (options.dryRun === true && !fixesRequested) {
@@ -3704,7 +3717,24 @@ export async function runValidate(
     warnings: normalizedWarnings,
     ...(fixes !== undefined ? { fixes } : {}),
     generated_at: nowIso(),
+    projection: {
+      mode: "full",
+      declared_field_groups: [
+        { name: "diagnostic_rows", restore_with: "--full" },
+      ],
+      included_field_groups: ["diagnostic_rows"],
+    },
   };
-  return options.counts === true ? projectValidateCounts(result) : result;
+  if (options.counts !== true) return result;
+  return {
+    ...projectValidateCounts(result),
+    projection: {
+      mode: "counts",
+      declared_field_groups: [
+        { name: "diagnostic_rows", restore_with: "--full" },
+      ],
+      included_field_groups: [],
+    },
+  };
 }
 /* c8 ignore stop */

@@ -820,6 +820,7 @@ async function runGraphAction(
       rebuild: options.rebuild === true,
       clear: options.clear === true,
       summary: options.summary === true,
+      full: options.full === true,
     },
     globalOptions,
   );
@@ -1430,6 +1431,7 @@ export function registerListQueryCommands(
         "--summary",
         "Return counts-first envelopes without row collections",
       )
+      .option("--full", "Return the complete graph row projection")
       .description(
         "Bounded workspace relationship-graph queries, analytics, and governance audit.",
       )

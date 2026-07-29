@@ -18,6 +18,7 @@ describe("graphOptionsFromFlat", () => {
         rebuild: true,
         clear: true,
         summary: true,
+        full: true,
       }),
     ).toEqual({
       kind: ["blocked_by", "parent"],
@@ -33,6 +34,7 @@ describe("graphOptionsFromFlat", () => {
       rebuild: true,
       clear: true,
       summary: true,
+      full: true,
     });
   });
 

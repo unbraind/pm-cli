@@ -25,7 +25,9 @@
       "reason": "Additive structured context, tombstone result, and context-integrity SDK contracts for the 2026.7.25 release"
     },
     {
-      "changes": ["signature ./sdk/governance:_testOnlySimilarity"],
+      "changes": [
+        "signature ./sdk/governance:_testOnlySimilarity"
+      ],
       "package_version": "2026.7.25",
       "reason": "Additive deterministic duplicate-cluster verification seams for the 2026.7.25 release"
     },
@@ -299,6 +301,31 @@
       ],
       "package_version": "2026.7.29",
       "reason": "Correct unpublished PR corpus-shape draft before merge"
+    },
+    {
+      "changes": [
+        "signature ./sdk:DepsCommandOptions",
+        "signature ./sdk:DepsResult",
+        "signature ./sdk:GraphCommandOptions",
+        "signature ./sdk:runGraph",
+        "signature ./sdk:RunHealthOptions",
+        "signature ./sdk:ValidateCommandOptions",
+        "signature ./sdk:ValidateResult",
+        "signature ./sdk/core:DepsCommandOptions",
+        "signature ./sdk/core:DepsResult",
+        "signature ./sdk/governance:RunHealthOptions",
+        "signature ./sdk/governance:ValidateCommandOptions",
+        "signature ./sdk/governance:ValidateResult",
+        "signature ./sdk/graph:GraphCommandOptions",
+        "signature ./sdk/graph:runGraph",
+        "signature ./sdk/runtime:DepsCommandOptions",
+        "signature ./sdk/runtime:DepsResult",
+        "signature ./sdk/runtime:RunHealthOptions",
+        "signature ./sdk/runtime:ValidateCommandOptions",
+        "signature ./sdk/runtime:ValidateResult"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "Additive bounded-read controls and guaranteed projection receipts; runtime defaults remain compatible"
     }
   ],
   "entrypoints": {
@@ -832,6 +859,12 @@
           "kind": "function",
           "name": "assertParentReferenceIsNotSelf",
           "signature": "(itemId: string, parentId: string, prefix: string) => void | calls: (itemId: string, parentId: string, prefix: string) => void"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertProjectionModeChoice",
+          "signature": "(compactRequested: boolean, fullRequested: boolean, compactFlag: string) => void | calls: (compactRequested: boolean, fullRequested: boolean, compactFlag: string) => void"
         },
         {
           "classification": "supported",
@@ -2679,7 +2712,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsCommandOptions",
-          "signature": "export interface DepsCommandOptions { format?: string; maxDepth?: string | number; collapse?: string; summary?: boolean; nodeLimit?: string | number; edgeLimit?: string | number; tokenBudget?: string | number; cursor?: string; direction?: string; kind?: string | string[]; }"
+          "signature": "export interface DepsCommandOptions { format?: string; maxDepth?: string | number; collapse?: string; summary?: boolean; full?: boolean; nodeLimit?: string | number; edgeLimit?: string | number; tokenBudget?: string | number; cursor?: string; direction?: string; kind?: string | string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -2709,7 +2742,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "advanced_export",
@@ -4149,7 +4182,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphCommandOptions",
-          "signature": "export interface GraphCommandOptions { kind?: string | string[]; maxDepth?: string | number; limit?: string | number; after?: string; direction?: string; maxPaths?: string | number; sample?: string | number; exemptIsolate?: string | string[]; exemptIsolateType?: string | string[]; saveBaseline?: boolean; rebuild?: boolean; clear?: boolean; summary?: boolean; }"
+          "signature": "export interface GraphCommandOptions { kind?: string | string[]; maxDepth?: string | number; limit?: string | number; after?: string; direction?: string; maxPaths?: string | number; sample?: string | number; exemptIsolate?: string | string[]; exemptIsolateType?: string | string[]; saveBaseline?: boolean; rebuild?: boolean; clear?: boolean; summary?: boolean; full?: boolean; }"
         },
         {
           "classification": "supported",
@@ -5968,6 +6001,12 @@
           "kind": "interface",
           "name": "OutputOmissionReceipt",
           "signature": "export interface OutputOmissionReceipt { has_omissions: boolean; omitted_field_group_count: number; omitted_field_groups: OutputProjectionFieldGroup[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "OutputProjectionDeclaration",
+          "signature": "export interface OutputProjectionDeclaration { mode: string; declared_field_groups: OutputProjectionFieldGroup[]; included_field_groups: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -9057,7 +9096,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "runGraph",
-          "signature": "(subcommandRaw: string, id: string | undefined, target: string | undefined, options: GraphCommandOptions, global: GlobalOptions) => Promise<GraphResult> | calls: (subcommandRaw: string, id: string | undefined, target: string | undefined, options: GraphCommandOptions, global: GlobalOptions) => Promise<GraphResult>"
+          "signature": "(subcommandRaw: string, id: string | undefined, target: string | undefined, options: GraphCommandOptions, global: GlobalOptions) => Promise<ProjectedGraphResult> | calls: (subcommandRaw: string, id: string | undefined, target: string | undefined, options: GraphCommandOptions, global: GlobalOptions) => Promise<ProjectedGraphResult>"
         },
         {
           "classification": "advanced_export",
@@ -9075,7 +9114,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -11085,7 +11124,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCommandOptions",
-          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; }"
+          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
         },
         {
           "classification": "supported",
@@ -11133,7 +11172,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateResult",
-          "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; }"
+          "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "advanced_export",
@@ -14193,13 +14232,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsCommandOptions",
-          "signature": "export interface DepsCommandOptions { format?: string; maxDepth?: string | number; collapse?: string; summary?: boolean; nodeLimit?: string | number; edgeLimit?: string | number; tokenBudget?: string | number; cursor?: string; direction?: string; kind?: string | string[]; }"
+          "signature": "export interface DepsCommandOptions { format?: string; maxDepth?: string | number; collapse?: string; summary?: boolean; full?: boolean; nodeLimit?: string | number; edgeLimit?: string | number; tokenBudget?: string | number; cursor?: string; direction?: string; kind?: string | string[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "supported",
@@ -14985,7 +15024,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "supported",
@@ -15129,7 +15168,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCommandOptions",
-          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; }"
+          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
         },
         {
           "classification": "supported",
@@ -15159,7 +15198,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateResult",
-          "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; }"
+          "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; projection: OutputProjectionDeclaration; }"
         }
       ],
       "types": "dist/sdk/governance.d.ts"
@@ -15537,7 +15576,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphCommandOptions",
-          "signature": "export interface GraphCommandOptions { kind?: string | string[]; maxDepth?: string | number; limit?: string | number; after?: string; direction?: string; maxPaths?: string | number; sample?: string | number; exemptIsolate?: string | string[]; exemptIsolateType?: string | string[]; saveBaseline?: boolean; rebuild?: boolean; clear?: boolean; summary?: boolean; }"
+          "signature": "export interface GraphCommandOptions { kind?: string | string[]; maxDepth?: string | number; limit?: string | number; after?: string; direction?: string; maxPaths?: string | number; sample?: string | number; exemptIsolate?: string | string[]; exemptIsolateType?: string | string[]; saveBaseline?: boolean; rebuild?: boolean; clear?: boolean; summary?: boolean; full?: boolean; }"
         },
         {
           "classification": "supported",
@@ -16323,7 +16362,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "runGraph",
-          "signature": "(subcommandRaw: string, id: string | undefined, target: string | undefined, options: GraphCommandOptions, global: GlobalOptions) => Promise<GraphResult> | calls: (subcommandRaw: string, id: string | undefined, target: string | undefined, options: GraphCommandOptions, global: GlobalOptions) => Promise<GraphResult>"
+          "signature": "(subcommandRaw: string, id: string | undefined, target: string | undefined, options: GraphCommandOptions, global: GlobalOptions) => Promise<ProjectedGraphResult> | calls: (subcommandRaw: string, id: string | undefined, target: string | undefined, options: GraphCommandOptions, global: GlobalOptions) => Promise<ProjectedGraphResult>"
         },
         {
           "classification": "supported",
@@ -18045,13 +18084,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsCommandOptions",
-          "signature": "export interface DepsCommandOptions { format?: string; maxDepth?: string | number; collapse?: string; summary?: boolean; nodeLimit?: string | number; edgeLimit?: string | number; tokenBudget?: string | number; cursor?: string; direction?: string; kind?: string | string[]; }"
+          "signature": "export interface DepsCommandOptions { format?: string; maxDepth?: string | number; collapse?: string; summary?: boolean; full?: boolean; nodeLimit?: string | number; edgeLimit?: string | number; tokenBudget?: string | number; cursor?: string; direction?: string; kind?: string | string[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "supported",
@@ -19263,7 +19302,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "supported",
@@ -19971,7 +20010,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateCommandOptions",
-          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; }"
+          "signature": "export interface ValidateCommandOptions { checkMetadata?: boolean; checkResolution?: boolean; checkLifecycle?: boolean; checkStaleBlockers?: boolean; dependencyCycleSeverity?: string; parentCycleSeverity?: string; checkFiles?: boolean; includePmInternals?: boolean; verboseFileLists?: boolean; verboseDiagnostics?: boolean; allAffectedIds?: boolean; checkHistoryDrift?: boolean; checkStorageIntegrity?: boolean; checkCommandReferences?: boolean; scanMode?: string; metadataProfile?: string; fixHints?: boolean; autoFix?: boolean; dryRun?: boolean; fixScope?: string[]; pruneMissing?: boolean; counts?: boolean; full?: boolean; }"
         },
         {
           "classification": "supported",
@@ -19983,7 +20022,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ValidateResult",
-          "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; }"
+          "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "advanced_export",

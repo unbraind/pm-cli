@@ -419,6 +419,7 @@ async function runHealthAction(
   const startedAt = Date.now();
   const result = await runHealth(globalOptions, {
     strictDirectories: Boolean(options.strictDirectories),
+    requireMergeDrivers: Boolean(options.requireMergeDrivers),
     checkOnly: Boolean(options.checkOnly),
     checkTelemetry: Boolean(options.checkTelemetry),
     noRefresh: Boolean(options.noRefresh),
@@ -484,6 +485,7 @@ async function runValidateAction(
         : undefined,
       pruneMissing: Boolean(options.pruneMissing),
       counts: Boolean(options.counts),
+      full: Boolean(options.full),
     },
     globalOptions,
   );
@@ -1020,6 +1022,10 @@ export function registerOperationCommands(program: Command): void {
       "Treat optional item-type directories as required failures",
     )
     .option(
+      "--require-merge-drivers",
+      "Treat absent clone-local merge drivers as a required health failure",
+    )
+    .option(
       "--check-only",
       "Run read-only health diagnostics without refreshing vectors",
     )
@@ -1148,6 +1154,7 @@ export function registerOperationCommands(program: Command): void {
       "--counts",
       "Keep validation counts and totals while omitting per-item diagnostic arrays",
     )
+    .option("--full", "Return the complete validation diagnostic projection")
     .action(runValidateAction);
 
   program
