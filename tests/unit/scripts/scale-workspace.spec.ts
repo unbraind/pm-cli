@@ -13,6 +13,7 @@ import {
   scaleItemId,
 } from "../../../scripts/bench/scale-workspace.mjs";
 import { PmClient } from "../../../src/sdk/runtime.js";
+import { resolveBuiltinCorpusShape } from "../../../src/sdk/corpus-shape.js";
 import { withTempDir } from "../../helpers/temp.js";
 
 async function fixtureFiles(pmRoot: string): Promise<Map<string, string>> {
@@ -38,6 +39,7 @@ describe("scale workspace generator", () => {
       workspaceRoot: "/tmp/defaults",
       itemCount: "ci",
       seed: 42,
+      shape: "scratch",
       mode: "direct",
       force: false,
     });
@@ -49,18 +51,46 @@ describe("scale workspace generator", () => {
     expect([left(), left(), left()]).toEqual([right(), right(), right()]);
     expect(scaleItemId(35)).toBe("pm-s000000z");
 
-    const epic = buildSyntheticItemDocument(0, 9);
-    expect(epic.metadata).toMatchObject({ type: "Epic", status: "open" });
+    const shape = resolveBuiltinCorpusShape("representative");
+    const documents = Array.from({ length: 100 }, (_, index) =>
+      buildSyntheticItemDocument(index, 9, shape, 100),
+    );
+    const epic = documents[0]!;
+    expect(epic.metadata).toMatchObject({
+      type: "Experiment",
+      status: "review",
+    });
     expect(epic.metadata.parent).toBeUndefined();
-    expect(buildSyntheticItemDocument(13, 9).metadata.comments).toHaveLength(1);
-    expect(buildSyntheticItemDocument(15, 9).metadata).toMatchObject({ status: "canceled" });
-    expect(buildSyntheticItemDocument(17, 9).metadata).toMatchObject({ status: "open" });
-    expect(buildSyntheticItemDocument(19, 9).metadata).toMatchObject({ status: "in_progress" });
-    expect(buildSyntheticItemDocument(29, 9).metadata.notes).toHaveLength(1);
-    expect(buildSyntheticItemDocument(31, 9).metadata.learnings).toHaveLength(1);
-    expect(buildSyntheticItemDocument(33, 9).metadata.dependencies).toHaveLength(2);
-    expect(buildSyntheticItemDocument(39, 9).metadata).toMatchObject({ status: "blocked" });
-    const closed = buildSyntheticItemDocument(1, 9).metadata;
+    expect(documents.filter((document) => document.metadata.comments).length).toBe(30);
+    expect(documents.filter((document) => document.metadata.notes).length).toBe(12);
+    expect(documents.filter((document) => document.metadata.learnings).length).toBe(10);
+    expect(
+      documents.some(
+        (document) => (document.metadata.dependencies?.length ?? 0) > 0,
+      ),
+    ).toBe(true);
+    expect(documents.some((document) => document.metadata.type === "Experiment")).toBe(
+      true,
+    );
+    const cyclic = buildSyntheticItemDocument(
+      17,
+      9,
+      resolveBuiltinCorpusShape("deep-graph"),
+      100,
+    );
+    expect(cyclic.metadata.dependencies?.[1]?.id).toBe(scaleItemId(18));
+    expect(
+      buildSyntheticItemDocument(
+        0,
+        9,
+        resolveBuiltinCorpusShape("multi-decade"),
+        100,
+      ).metadata,
+    ).toMatchObject({
+      status: "archived",
+      close_reason: "Synthetic archived fixture",
+    });
+    const closed = documents[1]!.metadata;
     expect(closed).toMatchObject({
       status: "closed",
       resolution: "Synthetic benchmark work completed",
@@ -86,8 +116,26 @@ describe("scale workspace generator", () => {
         mode: "sdk",
       });
 
-      expect(direct).toMatchObject({ item_count: 40, history_stream_count: 40, seed: 17, mode: "direct" });
-      expect(sdk).toMatchObject({ item_count: 40, history_stream_count: 40, seed: 17, mode: "sdk" });
+      expect(direct).toMatchObject({
+        version: 2,
+        item_count: 40,
+        history_stream_count: 40,
+        history_entry_count: 40,
+        seed: 17,
+        shape: { name: "scratch" },
+        measured_shape: { matches_declaration: true },
+        mode: "direct",
+      });
+      expect(sdk).toMatchObject({
+        version: 2,
+        item_count: 40,
+        history_stream_count: 40,
+        history_entry_count: 40,
+        seed: 17,
+        shape: { name: "scratch" },
+        measured_shape: { matches_declaration: true },
+        mode: "sdk",
+      });
       expect(await fixtureFiles(direct.pm_root)).toEqual(await fixtureFiles(sdk.pm_root));
       const client = new PmClient({ pmRoot: direct.pm_root, cwd: directRoot, noExtensions: true });
       await expect(client.list({ status: "all", limit: "100" })).resolves.toMatchObject({ count: 40 });
@@ -102,6 +150,44 @@ describe("scale workspace generator", () => {
     await expect(
       generateSyntheticWorkspace({ workspaceRoot: path.join(path.dirname(process.cwd()), "outside"), itemCount: 1, mode: "bad" }),
     ).rejects.toThrow(/direct or sdk/);
+    await withTempDir("pm-scale-shape-drift-", async (tempRoot) => {
+      await expect(
+        generateSyntheticWorkspace({
+          workspaceRoot: path.join(tempRoot, "unknown"),
+          itemCount: 1,
+          shape: "unknown",
+        }),
+      ).rejects.toThrow(/Unknown corpus shape/);
+      await expect(
+        main([
+          "--output",
+          path.join(tempRoot, "valueless"),
+          "--shape",
+        ]),
+      ).rejects.toThrow(/Unknown corpus shape "true"/);
+      await expect(
+        generateSyntheticWorkspace({
+          workspaceRoot: path.join(tempRoot, "drift"),
+          itemCount: 1,
+          createShapeMeasurement: () => ({
+            add: () => undefined,
+            finish: () => ({
+              matches_declaration: false,
+              mismatches: ["history_entries_per_item:drift"],
+            }),
+          }),
+        }),
+      ).rejects.toThrow("Generated corpus shape drifted");
+      await expect(
+        generateSyntheticWorkspace({
+          workspaceRoot: path.join(tempRoot, "terminal-status"),
+          itemCount: 1,
+          shape: "multi-decade",
+        }),
+      ).resolves.toMatchObject({
+        measured_shape: { matches_declaration: true },
+      });
+    });
 
     await withTempDir("pm-scale-safety-", async (tempRoot) => {
       const emptyWorkspaceRoot = path.join(tempRoot, "empty-workspace");
@@ -152,11 +238,18 @@ describe("scale workspace generator", () => {
         "3",
         "--seed",
         "5",
+        "--shape",
+        "representative",
         "--mode",
         "sdk",
         "--force",
       ]);
-      expect(manifest).toMatchObject({ item_count: 3, seed: 5, mode: "sdk" });
+      expect(manifest).toMatchObject({
+        item_count: 3,
+        seed: 5,
+        shape: { name: "representative" },
+        mode: "sdk",
+      });
     });
   });
 

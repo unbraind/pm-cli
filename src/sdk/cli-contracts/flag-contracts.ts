@@ -1559,8 +1559,13 @@ export const EVAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--format" },
 ];
 
-/** Public no-flag contract for portable workspace snapshot command paths. */
-export const WORKSPACE_FLAG_CONTRACTS: CliFlagContract[] = [];
+/** Public contract for guarded portable workspace snapshot command paths. */
+export const WORKSPACE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
+  { flag: "--force" },
+  { flag: "--author" },
+  { flag: "--message" },
+];
 
 /** Public contract for next flag contracts, shared by SDK and presentation-layer consumers. */
 export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [

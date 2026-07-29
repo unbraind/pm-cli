@@ -2,20 +2,23 @@ id: pm-vv2lti
 title: "Scale fixtures vary only in size: the sole synthetic workspace generator hardcodes population shape, so the million-item tier is eleven simulated days deep with one history entry per item"
 description: "The scale benchmark generator at scripts/bench/scale-workspace.mjs is the only synthetic workspace producer in the repository and it exposes exactly two knobs, items and seed. Every other dimension of corpus shape is a hardcoded constant: parent index is the item index minus index modulo twenty, giving a hierarchy of exactly depth two with fan-out exactly twenty; timestamps are the 2026-01-01 base plus one second per item, so the million-item tier spans 11.6 days of simulated project time while the roadmap promises millions of items spanning decades; each item receives exactly one history entry, where the live corpus carries 41,231 entries over 2,204 streams for a mean of 18.7, a median of 14, a p90 of 33 and a maximum of 922, meaning every history-path measurement at the top tier is understated by roughly nineteen times; dependency rows use only two kinds, related on every third index and blocks on every eleventh, where the live graph uses ten kinds including 2,069 implements, 426 blocked_by, 236 discovered_from, 150 verifies and 56 supersedes; there are zero comments, notes and learnings; there is one constant author where the live corpus has 477 spellings; and there are no custom types, statuses, fields, applied profiles or extension-contributed fields. This is a conformance gap against pm-m2il's own fixture criterion, which requires empty and seconds-old scratch projects, representative medium histories, deep and cyclic typed graphs, multi-decade event streams and disconnected archives alongside the size tiers - only the size tiers are producible today. It is also the missing instrument for roadmap horizon Q, which asks which of the product's fitted constants travel to other corpora: that question cannot be answered while only one corpus shape can be synthesized."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[8]: "area:testing",benchmark,conformance,corpus,eval,fixtures,rl-substrate,scale
 created_at: "2026-07-29T16:54:05.041Z"
-updated_at: "2026-07-29T17:03:39.147Z"
+updated_at: "2026-07-29T20:27:33.055Z"
+closed_at: "2026-07-29T18:39:39.561Z"
+completed_at: "2026-07-29T18:39:39.561Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "Corpus shape is a declared, versioned specification naming hierarchy depth and fan-out distribution, age span and density, history entries per item, annotation volume, edge-kind mix, author cardinality, and schema customization; The generator produces every fixture shape that pm-m2il's criterion names, including a deep typed graph, a multi-decade age span, a disconnected archive, and a seconds-old scratch workspace, each reproducible from a seed and a shape name; Generated corpora report their measured shape so a benchmark result is attributable to a population rather than to a size alone, and a shape whose measured profile drifts from its declaration fails; At least one published scale, retrieval, and context number is re-measured across two shapes at the same item count, and any constant whose behaviour differs by more than a declared margin is recorded as corpus-fitted rather than universal; The shape specification is reachable from the public SDK so downstream users, evaluation episodes, and domain packs generate their own populations without copying the benchmark script"
 parent: pm-9rxu
 risk: medium
 confidence: 90
+resolution: Versioned corpus-shape SDK and measured conformance shipped
 expected_result: "A declared corpus-shape specification drives generation, so scale, retrieval, context and history claims can be measured across populations that differ in shape as well as size."
-actual_result: "Only item count and seed are variable; hierarchy depth, fan-out, age spread, history depth, edge-kind mix, annotation volume, author diversity and schema customization are compiled-in constants."
-dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Five deterministic shapes now drive SDK and benchmark generation with measured manifests, shape-qualified budgets, and committed same-size cross-shape search/context/scale evidence."
+dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-atfm,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
   pm-e5yupa,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
   pm-li2fj5,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
@@ -29,9 +32,39 @@ dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-z71aoy,related,"2026-07-29T16:54:05.041Z","harness:claude-code","cli:create:dep",detected
   pm-6l2mza,related,"2026-07-29T17:02:44.761Z","harness:claude-code","cli:update:dep",detected
   pm-b2hc4x,related,"2026-07-29T17:02:44.761Z","harness:claude-code","cli:update:dep",detected
-files[2]{path,scope,note}:
-  scripts/bench/run-scale-benchmarks.mjs,project,Consumer of the generator whose published numbers are attributable to one corpus shape
-  scripts/bench/scale-workspace.mjs,project,"The only synthetic workspace generator - hardcodes hierarchy, age spread, history depth, edge mix and author cardinality"
-tests[1]{command,scope,timeout_seconds}:
+  pm-k6t4yb,verifies,"2026-07-29T18:28:02.339Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-07-29T18:28:09.956Z","harness:codex","Implementation evidence: the public SDK now exposes a versioned corpus-shape schema and five deterministic built-ins (scratch, representative, deep-graph, multi-decade, disconnected-archive). The generator materializes authors, schema customizations, annotations, typed edges, history depth, time span, parents and disconnected archives, emits measured shape manifests, and fails closed on declaration drift. A committed same-count scratch-versus-representative report compares claim/context/create/get/list/next/search p95 with a declared 20 percent materiality margin."
+  "2026-07-29T18:36:32.148Z","harness:codex","Linked benchmark hygiene: the executable comparison link writes to an explicit temporary output so repeated PM verification cannot rewrite the committed evidence report; the committed report remains a deliberate versioned artifact generated for this delivery."
+  "2026-07-29T18:51:19.293Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/813 at implementation head c7ac2767e. The PR description links this canonical record and includes exact coverage, installed-consumer, security, cross-shape measurement, and PM validation evidence."
+  "2026-07-29T19:59:27.223Z","harness:codex","Review-fix evidence for PR #813 exact working tree: corpus-shape declarations now model terminal statuses, deterministic hierarchy fanout, incremental bounded measurement, exact declaration typing, duplicate/missing-parent/annotation/edge drift, and measured profiles in sequential comparison evidence. Default built-SDK integration coverage is included. Full coverage passes 395 files / 6530 tests at 100% statements, branches, functions, and lines; static complexity, docstring, contracts, docs, context, and security gates pass."
+  "2026-07-29T20:15:20.120Z","harness:codex","Lineage correction and second-round review evidence for PR #813: corpus benchmark generation/comparison files and their sequential-concurrency plus legacy-tier regression tests are canonical to this item, not pm-j668gl. Exact-head follow-up also returns defensive copies from incremental profiles so caller mutation or later additions cannot alter prior evidence. Focused corpus/benchmark tests and strict static quality pass."
+  "2026-07-29T20:27:33.055Z","harness:codex","Terminal second-round verification at exact working tree: 6532 tests pass at exact 100/100/100/100 coverage; sequential benchmark concurrency, legacy-tier migration removal, profile defensive copies, and canonical lineage corrections are regression-covered. Static quality, SDK surface, contracts, ESLint, duplicate, secret, dependency, tracker health, and history integrity gates pass."
+notes[1]{created_at,author,text}:
+  "2026-07-29T18:28:11.006Z","harness:codex","Compatibility decision: scale budgets are keyed by shape, with a scratch fallback to legacy unqualified budget records so existing benchmark consumers do not break while new population-specific evidence remains attributable."
+learnings[1]{created_at,author,text}:
+  "2026-07-29T18:28:12.101Z","harness:codex","Item count alone is not a corpus contract. Reproducible performance evidence needs a versioned population declaration, measured conformance after generation, and shape-qualified thresholds; otherwise constants fitted to one shallow synthetic population look universal."
+files[11]{path,scope,note}:
+  docs/performance/corpus-shape-comparison.json,project,Committed scratch versus representative measurements
+  scripts/bench/compare-corpus-shapes.mjs,project,Same-size cross-shape comparison with declared noise margin
+  scripts/bench/run-scale-benchmarks.mjs,project,Shape-qualified benchmark runner and legacy budget migration consumer
+  scripts/bench/scale-workspace.mjs,project,Incremental deterministic multi-shape generator with measured hierarchy schema history edge and annotation conformance
+  src/sdk/corpus-shape.ts,project,Versioned public corpus shape schema planning and measured conformance
+  src/sdk/index.ts,project,Public corpus-shape SDK exports
+  tests/integration/corpus-shape-comparison.integration.spec.ts,project,Built SDK same-count sequential corpus comparison acceptance coverage
+  tests/unit/scripts/compare-corpus-shapes.spec.ts,project,Comparison runner and entrypoint coverage
+  tests/unit/scripts/scale-benchmark.spec.ts,project,Shape-qualified budget and legacy compatibility coverage
+  tests/unit/scripts/scale-workspace.spec.ts,project,Deterministic multi-shape generation and fail-closed measured conformance
+  tests/unit/sdk/corpus-shape.spec.ts,project,Shape validation generation and measurement conformance
+tests[3]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/corpus-shape.spec.ts tests/unit/scripts/scale-workspace.spec.ts tests/unit/scripts/compare-corpus-shapes.spec.ts tests/unit/scripts/scale-benchmark.spec.ts,project,300
+  "pnpm benchmark:corpus-shapes -- --items 100 --iterations 1 --output /tmp/pm-corpus-shapes-linked.json",project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms6fc4fv-cakkwb,test,passed,"2026-07-29T18:33:33.312Z","2026-07-29T18:34:32.443Z","2026-07-29T18:34:32.443Z",3,0,0
+  test-local-ms6fi1fh-iom515,test,passed,"2026-07-29T18:38:10.270Z","2026-07-29T18:39:08.477Z","2026-07-29T18:39:08.477Z",3,0,0
+docs[2]{path,scope,note}:
+  docs/CORPUS_SHAPES.md,project,Downstream shape authoring and benchmark attribution guide
+  docs/README.md,project,Corpus shape documentation navigation
+close_reason: "Delivered versioned public corpus-shape primitives, five deterministic built-in populations, measured fail-closed generation, shape-qualified budgets, same-size cross-shape context/search/scale evidence, documentation, and passing linked verification."
 body: ""

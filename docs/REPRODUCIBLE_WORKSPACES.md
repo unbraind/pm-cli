@@ -68,7 +68,8 @@ The matching CLI surface is:
 pm workspace snapshot create before-migration
 pm workspace snapshot list
 pm workspace snapshot inspect before-migration
-pm workspace snapshot restore before-migration
+pm workspace snapshot restore before-migration --dry-run
+pm workspace snapshot restore before-migration --force --message "Restore verified checkpoint"
 pm workspace snapshot delete before-migration
 ```
 
@@ -90,8 +91,21 @@ history, schema, settings, and installed project extension state. They exclude:
 
 Restore stages the complete authoritative payload beside the tracker, swaps it
 into place with directory renames, preserves the snapshot object store, and
-discards stale caches and locks. Symbolic links are rejected so a snapshot
-cannot escape the tracker root. Snapshot storage is clone-local under
+discards stale caches and locks. Restore is guarded: use
+`pm workspace snapshot restore <target> --dry-run` to inspect exact changed,
+added, and removed file counts plus affected history streams and entries.
+Mutation requires `--force`, captures the pre-restore state as a recovery
+snapshot, and appends a durable `_workspace` audit event containing both
+fingerprints, the impact summary, author, and reason. The SDK exposes the same
+contract through `planWorkspaceSnapshotRestore` and returns the recovery
+fingerprint and audit coordinates from
+`restoreWorkspaceSnapshotWithRecovery`. The original
+`restoreWorkspaceSnapshot(pmRoot, target)` signature remains compatible, but
+now also captures recovery state and audit evidence before returning its
+manifest.
+
+Symbolic links are rejected so a snapshot cannot escape the tracker root.
+Snapshot storage is clone-local under
 `.agents/pm/runtime/workspace-snapshots`; it must not be committed or treated as
 a backup of credentials. `pm gc --scope runtime` removes interrupted
 `.create-*` and `.ref-*` publications after 24 hours while retaining newer

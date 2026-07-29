@@ -15,12 +15,13 @@ import {
   runScaleBenchmarkEntrypoint,
   runScaleBenchmarks,
   summarizeSamples,
+  updateBudgetManifest,
 } from "../../../scripts/bench/run-scale-benchmarks.mjs";
 import { withTempDir } from "../../helpers/temp.js";
 
 function sampleReport() {
   return {
-    fixture: { item_count: 10 },
+    fixture: { item_count: 10, shape: { name: "scratch" } },
     transports: {
       cli: {
         list: {
@@ -91,6 +92,7 @@ describe("scale benchmark runner", () => {
       itemCount: "ci",
       iterations: 3,
       seed: 42,
+      shape: "scratch",
       mode: "direct",
       transport: "both",
       keepWorkspace: false,
@@ -101,6 +103,7 @@ describe("scale benchmark runner", () => {
           ["items", "100"],
           ["iterations", "2"],
           ["seed", "7"],
+          ["shape", "deep-graph"],
           ["mode", "sdk"],
           ["transport", "cli"],
           ["keep-workspace", true],
@@ -110,6 +113,7 @@ describe("scale benchmark runner", () => {
       itemCount: "100",
       iterations: "2",
       seed: "7",
+      shape: "deep-graph",
       mode: "sdk",
       transport: "cli",
       keepWorkspace: true,
@@ -178,8 +182,13 @@ describe("scale benchmark runner", () => {
       },
     });
     expect(compareScaleBudgets(report, { tiers: {} })).toEqual([
-      "missing regression budget for 10 items",
+      "missing regression budget for scratch:10",
     ]);
+    const representative = structuredClone(report);
+    representative.fixture.shape.name = "representative";
+    expect(
+      compareScaleBudgets(representative, { tiers: { 10: budget } }),
+    ).toEqual(["missing regression budget for representative:10"]);
     expect(
       compareScaleBudgets(report, {
         tiers: { 10: { transports: { cli: {} } } },
@@ -363,7 +372,7 @@ describe("scale benchmark runner", () => {
       ]);
       expect(updated.outputPath).toBe(reportPath);
       expect(JSON.parse(await readFile(manifestPath, "utf8"))).toHaveProperty(
-        "tiers.100",
+        "tiers.scratch:100",
       );
       await expect(
         main([
@@ -412,7 +421,9 @@ describe("scale benchmark runner", () => {
         "--update",
       ]);
       const strictManifest = JSON.parse(await readFile(manifestPath, "utf8"));
-      strictManifest.tiers[100].transports.sdk.list.max_estimated_tokens = 0;
+      strictManifest.tiers[
+        "scratch:100"
+      ].transports.sdk.list.max_estimated_tokens = 0;
       await writeFile(
         manifestPath,
         `${JSON.stringify(strictManifest)}\n`,
@@ -433,6 +444,27 @@ describe("scale benchmark runner", () => {
           "--check",
         ]),
       ).rejects.toThrow(/Scale benchmark gate failed/);
+
+      const legacyManifestPath = path.join(tempRoot, "legacy-budget.json");
+      const legacyReport = structuredClone(sampleReport());
+      delete (legacyReport.fixture as { shape?: { name: string } }).shape;
+      await updateBudgetManifest(legacyManifestPath, legacyReport, 1);
+      expect(
+        JSON.parse(await readFile(legacyManifestPath, "utf8")),
+      ).toHaveProperty("tiers.scratch:10");
+      const representativeReport = structuredClone(sampleReport());
+      representativeReport.fixture.shape.name = "representative";
+      await updateBudgetManifest(legacyManifestPath, representativeReport, 1);
+      const migratedManifest = JSON.parse(
+        await readFile(legacyManifestPath, "utf8"),
+      ) as { tiers: Record<string, unknown> };
+      expect(migratedManifest).toMatchObject({
+        tiers: {
+          "scratch:10": expect.any(Object),
+          "representative:10": expect.any(Object),
+        },
+      });
+      expect(migratedManifest.tiers).not.toHaveProperty("10");
     });
   }, 30_000);
 
@@ -477,6 +509,13 @@ describe("scale benchmark runner", () => {
       ).resolves.toBe(false);
 
       const defaultRunWrite = vi.fn();
+      const defaultRun = async () => ({
+        fixture: { item_count: 100 },
+        iterations: 1,
+        product_target: { target: { p95_ms: 1000 } },
+        transports: {},
+        transport_overhead: null,
+      });
       await expect(
         runScaleBenchmarkEntrypoint({
           argv: [
@@ -491,6 +530,7 @@ describe("scale benchmark runner", () => {
             "--output",
             path.join(tempRoot, "default-run.json"),
           ],
+          mainOptions: { run: defaultRun },
           write: defaultRunWrite,
         }),
       ).resolves.toBe(true);

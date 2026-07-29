@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "generated_at": "2026-07-29T19:31:38.366Z",
+  "item_count": 100,
+  "seed": 42,
+  "material_difference_percent": 20,
+  "left": {
+    "shape": "scratch",
+    "measured_profile": {
+      "shape": "scratch",
+      "item_count": 100,
+      "author_count": 2,
+      "component_count": 1,
+      "hierarchy_depth": 2,
+      "hierarchy_fanout": 50,
+      "timestamp_range": {
+        "first": "2026-01-01T00:00:00.000Z",
+        "last": "2026-01-01T00:00:00.000Z"
+      },
+      "history_entry_count": 100,
+      "annotations": {
+        "comments": 2,
+        "notes": 1,
+        "learnings": 1
+      },
+      "edge_kinds": {
+        "related": 99
+      },
+      "matches_declaration": true,
+      "mismatches": []
+    }
+  },
+  "right": {
+    "shape": "representative",
+    "measured_profile": {
+      "shape": "representative",
+      "item_count": 100,
+      "author_count": 32,
+      "component_count": 1,
+      "hierarchy_depth": 4,
+      "hierarchy_fanout": 8,
+      "timestamp_range": {
+        "first": "2026-01-01T00:00:00.000Z",
+        "last": "2028-01-01T00:00:00.000Z"
+      },
+      "history_entry_count": 1200,
+      "annotations": {
+        "comments": 30,
+        "notes": 12,
+        "learnings": 10
+      },
+      "edge_kinds": {
+        "implements": 33,
+        "blocked_by": 12,
+        "discovered_from": 12,
+        "verifies": 12,
+        "supersedes": 6,
+        "related": 24
+      },
+      "matches_declaration": true,
+      "mismatches": []
+    }
+  },
+  "operations": {
+    "claim": {
+      "left_p95_ms": 5,
+      "right_p95_ms": 6,
+      "right_vs_left_percent": 20,
+      "classification": "slower"
+    },
+    "context": {
+      "left_p95_ms": 13,
+      "right_p95_ms": 12,
+      "right_vs_left_percent": -7.7,
+      "classification": "within_margin"
+    },
+    "create": {
+      "left_p95_ms": 6,
+      "right_p95_ms": 5,
+      "right_vs_left_percent": -16.7,
+      "classification": "within_margin"
+    },
+    "get": {
+      "left_p95_ms": 6,
+      "right_p95_ms": 6,
+      "right_vs_left_percent": 0,
+      "classification": "within_margin"
+    },
+    "list": {
+      "left_p95_ms": 6,
+      "right_p95_ms": 6,
+      "right_vs_left_percent": 0,
+      "classification": "within_margin"
+    },
+    "next": {
+      "left_p95_ms": 14,
+      "right_p95_ms": 15,
+      "right_vs_left_percent": 7.1,
+      "classification": "within_margin"
+    },
+    "search": {
+      "left_p95_ms": 46,
+      "right_p95_ms": 46,
+      "right_vs_left_percent": 0,
+      "classification": "within_margin"
+    }
+  }
+}

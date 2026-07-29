@@ -37,11 +37,63 @@ describe("workspace snapshot CLI integration", () => {
         (inspected.json as { fingerprint: string }).fingerprint,
       ).toBe(fingerprint);
 
+      const preview = await context.runCliInProcess(
+        [
+          "workspace",
+          "snapshot",
+          "restore",
+          "baseline",
+          "--dry-run",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(preview.code).toBe(0);
+      expect(
+        (preview.json as { target_fingerprint: string }).target_fingerprint,
+      ).toBe(fingerprint);
+
+      const unconfirmed = await context.runCliInProcess([
+        "workspace",
+        "snapshot",
+        "restore",
+        "baseline",
+        "--json",
+      ]);
+      expect(unconfirmed.code).not.toBe(0);
+      expect(unconfirmed.stderr).toContain("requires explicit force");
+
       const restored = await context.runCliInProcess(
-        ["workspace", "snapshot", "restore", "baseline", "--json"],
+        [
+          "workspace",
+          "snapshot",
+          "restore",
+          "baseline",
+          "--force",
+          "--author",
+          "snapshot-cli-test",
+          "--message",
+          "CLI integration restore",
+          "--json",
+        ],
         { expectJson: true },
       );
       expect(restored.code).toBe(0);
+      expect(
+        (restored.json as { audit_operation: string }).audit_operation,
+      ).toBe("workspace_snapshot_restore");
+      const defaultAuthorRestore = await context.runCliInProcess(
+        [
+          "workspace",
+          "snapshot",
+          "restore",
+          "baseline",
+          "--force",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(defaultAuthorRestore.code).toBe(0);
 
       const deletedReference = await context.runCliInProcess(
         ["workspace", "snapshot", "delete", "baseline", "--json"],

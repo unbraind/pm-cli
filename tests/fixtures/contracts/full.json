@@ -7384,37 +7384,128 @@
     },
     {
       "command": "workspace",
-      "flags": [],
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        }
+      ],
       "provider": "core"
     },
     {
       "command": "workspace snapshot",
-      "flags": [],
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        }
+      ],
       "provider": "core"
     },
     {
       "command": "workspace snapshot create",
-      "flags": [],
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        }
+      ],
       "provider": "core"
     },
     {
       "command": "workspace snapshot delete",
-      "flags": [],
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        }
+      ],
       "provider": "core"
     },
     {
       "command": "workspace snapshot inspect",
-      "flags": [],
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        }
+      ],
       "provider": "core"
     },
     {
       "command": "workspace snapshot list",
-      "flags": [],
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        }
+      ],
       "provider": "core"
     },
     {
       "command": "workspace snapshot restore",
-      "flags": [],
+      "flags": [
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--force"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        }
+      ],
       "provider": "core"
     }
   ],

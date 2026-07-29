@@ -9,6 +9,7 @@ import {
   setActiveCommandResult,
   EXIT_CODE,
   PmCliError,
+  resolveAuthor,
   resolvePmRoot,
   readSettings,
 } from "../sdk/runtime-primitives.js";
@@ -18,7 +19,8 @@ import {
   deleteWorkspaceSnapshot,
   inspectWorkspaceSnapshot,
   listWorkspaceSnapshots,
-  restoreWorkspaceSnapshot,
+  planWorkspaceSnapshotRestore,
+  restoreWorkspaceSnapshotWithRecovery,
 } from "../sdk/workspace-snapshot.js";
 import { runClaim, runClaimNext, runRelease } from "./commands/claim.js";
 import { runClose } from "./commands/close.js";
@@ -522,7 +524,7 @@ async function runGcAction(
 async function runWorkspaceSnapshotAction(
   action: string,
   target: string | undefined,
-  _options: Record<string, unknown>,
+  options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
@@ -571,7 +573,27 @@ async function runWorkspaceSnapshotAction(
     return;
   }
   if (normalizedAction === "restore") {
-    printResult(await restoreWorkspaceSnapshot(pmRoot, target), globalOptions);
+    if (options.dryRun === true) {
+      printResult(
+        await planWorkspaceSnapshotRestore(pmRoot, target),
+        globalOptions,
+      );
+      return;
+    }
+    const settings = await readSettings(pmRoot);
+    printResult(
+      await restoreWorkspaceSnapshotWithRecovery(pmRoot, target, {
+        force: options.force === true,
+        author: resolveAuthor(
+          readOptionString(options, "author"),
+          settings.author_default,
+        ),
+        message: readOptionString(options, "message"),
+        lockTtlSeconds: settings.locks.ttl_seconds,
+        lockWaitMs: settings.locks.wait_ms,
+      }),
+      globalOptions,
+    );
     return;
   }
   printResult(await deleteWorkspaceSnapshot(pmRoot, target), globalOptions);
@@ -1159,6 +1181,16 @@ export function registerOperationCommands(program: Command): void {
     .description(
       "Create, inspect, list, restore, or delete content-addressed tracker snapshots.",
     )
+    .option(
+      "--dry-run",
+      "Preview restore file, item, stream, and history-entry impact without mutating state",
+    )
+    .option(
+      "--force",
+      "Explicitly confirm a whole-workspace snapshot restore",
+    )
+    .option("--author <value>", "Actor recorded on the restore audit event")
+    .option("--message <value>", "Human-readable restore rationale")
     .action(runWorkspaceSnapshotAction);
 
   program

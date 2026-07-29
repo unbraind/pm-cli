@@ -1179,7 +1179,16 @@ describe("contracts command runtime", () => {
       );
       expect(result.selected.command).toBe(command);
       expect(result.command_flags).toEqual([
-        expect.objectContaining({ command, provider: "core", flags: [] }),
+        expect.objectContaining({
+          command,
+          provider: "core",
+          flags: [
+            { flag: "--dry-run" },
+            { flag: "--force" },
+            { flag: "--author" },
+            { flag: "--message" },
+          ],
+        }),
       ]);
     }
   });

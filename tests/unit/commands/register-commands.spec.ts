@@ -899,7 +899,24 @@ describe("operation command actions", () => {
     await runCli("workspace", "snapshot", "create");
     await runCli("workspace", "snapshot", "create", "registration");
     await runCli("workspace", "snapshot", "inspect", "registration");
-    await runCli("workspace", "snapshot", "restore", "registration");
+    await runCli(
+      "workspace",
+      "snapshot",
+      "restore",
+      "registration",
+      "--dry-run",
+    );
+    await runCli(
+      "workspace",
+      "snapshot",
+      "restore",
+      "registration",
+      "--force",
+      "--author",
+      "registration-test",
+      "--message",
+      "registration coverage",
+    );
     await runCli("workspace", "snapshot", "delete", "registration");
     await expect(runCli("workspace", "snapshot", "inspect")).rejects.toThrow(
       "requires a snapshot name",

@@ -2,20 +2,23 @@ id: pm-6l2mza
 title: "Whole-workspace snapshot restore silently rewinds the immutable record: history streams are deleted and nothing records that a rewind happened"
 description: "A workspace snapshot restore reverts item files and history streams to a content-addressed fingerprint. Measured on a sandbox tracker at build 2026.7.29: before the restore, two items and three history entries across two streams; after it, one item and one entry across one stream. The second item's entire history stream file was removed rather than tombstoned, the surviving item's update entry was erased, and no entry was written anywhere to say a restore occurred - not on any item stream and not on the workspace stream. History verify then reports a clean single-entry chain, so an observer arriving later sees a coherent, verifying record in which the erased work never existed. Every other destructive primitive in the product preserves proof: delete keeps the stream so point-in-time reads and per-item restore still answer, history-redact writes an audited redaction entry, history-compact writes a baseline entry that reconstructs correctly. Restore is also unguarded: no dry-run, no confirmation, no force flag on a whole-workspace revert, and an invalid target surfaces as an unhandled-error envelope. This is the residual of closed feature pm-dkrmzv, whose acceptance criteria covered atomicity, derived-state invalidation and lock safety but never the record of the revert itself."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[8]: "area:sdk","area:storage",durability,history,immutability,provenance,reproducibility,rl-substrate
 created_at: "2026-07-29T16:53:20.611Z"
-updated_at: "2026-07-29T17:11:01.706Z"
+updated_at: "2026-07-29T20:27:32.034Z"
+closed_at: "2026-07-29T18:39:32.982Z"
+completed_at: "2026-07-29T18:39:32.982Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A workspace restore appends a durable entry naming the snapshot fingerprint, the pre-restore workspace fingerprint, and the identity that ran it, and that entry survives the restore itself; Streams the restore reverts retain their erased entries in a form that keeps point-in-time reads answerable, or the restore refuses and names every stream it would truncate; The pre-restore state is captured so a restore is reversible, proven by a restore-then-return round trip that recovers every erased entry and every removed item; A whole-workspace revert requires an explicit confirmation or force flag and offers a dry-run reporting the item, stream, and entry counts it would remove; A conformance test asserts that no first-party command can reduce the entry count of an existing history stream without writing an audited record of the reduction"
 parent: pm-o2kc
 risk: high
 confidence: 90
+resolution: Guarded and audited workspace recovery shipped
 expected_result: "A whole-workspace revert is itself a recorded, reversible, guarded operation whose proof survives the revert."
-actual_result: "Restore removes item files and their history streams and truncates surviving streams, leaving no audited entry and a history chain that verifies as if the erased work never existed."
-dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Restore now requires explicit force, previews exact impact, captures a recovery snapshot, preserves an audited workspace event, and supports a complete restore-then-return history round trip."
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-0elqjj,related,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
   pm-3z0k,related,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
   pm-9yfo,related,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
@@ -26,11 +29,34 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,related,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
   pm-wlqxg3,related,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-vv2lti,related_to,"2026-07-29T18:28:03.553Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
   "2026-07-29T17:11:01.705Z","harness:claude-code","The windows-latest with Node 24 nightly leg is red against HEAD on one spec in this item's linked verification file - tests/unit/sdk/workspace-snapshot.spec.ts, rejects non-file filesystem entries in authoritative state, run id 30473431691. The recorded-and-reversible-restore work will therefore land in a file that is currently failing on one platform, so sequence the portability fix owned by pm-j668gl first or expect the new conformance test to be unverifiable on Windows."
-files[2]{path,scope,note}:
-  src/sdk/workspace-snapshot.ts,project,"Snapshot create, list, inspect, restore and delete implementation - the restore path that removes streams without recording it"
-  tests/unit/sdk/workspace-snapshot.spec.ts,project,"Existing snapshot suite - the conformance test for recorded, reversible restore belongs here"
-tests[1]{command,scope,timeout_seconds}:
+  "2026-07-29T18:28:05.673Z","harness:codex","Implementation evidence: whole-workspace restore now plans exact changed/added/removed item and history impact, refuses without explicit force, captures a content-addressed recovery snapshot, stages and atomically swaps the target, and appends a durable _workspace workspace_snapshot_restore event containing actor, reason, before/target fingerprints, recovery fingerprint, and exact counts. Restore-then-return tests recover every removed item and erased history entry; CLI and public SDK compatibility paths are covered."
+  "2026-07-29T18:36:28.473Z","harness:codex","Verification context correction: repository-wide coverage passed directly at 6528 tests and exact 100/100/100/100. It is intentionally not retained as a linked pm test because linked tests replace PM_PATH with a schema-only sandbox; that outer tracker context changes validate fixtures and makes broad nested coverage non-representative. The two direct snapshot links remain sandbox-safe and pass through pm test."
+  "2026-07-29T18:51:18.501Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/813 at implementation head c7ac2767e. The PR description links this canonical record and includes exact coverage, installed-consumer, security, retrieval, gate-registry, and PM validation evidence."
+  "2026-07-29T19:59:26.477Z","harness:codex","Review-fix evidence for PR #813 exact working tree: workspace snapshot restore now acquires and preserves the live workspace transaction lock across planning, staging, activation, and audit publication; confirmation is checked before restore planning; audit paths are derived from the staged root; target reads are bounded. Focused snapshot tests pass, full coverage passes 395 files / 6530 tests at 100% statements, branches, functions, and lines, and static/contracts/security/context gates pass."
+  "2026-07-29T20:15:20.794Z","harness:codex","Second-round review evidence for PR #813: long workspace restores now renew the writer lock at a sub-TTL interval, fail before activation if ownership is lost, preserve the lease across the activated root, and remove pre-swap staging after preparation failures without masking the original error. Regression coverage holds a restore beyond its TTL against a competing writer and proves failed staging cleanup; focused tests and strict static quality pass."
+  "2026-07-29T20:27:32.034Z","harness:codex","Terminal second-round verification at exact working tree: 395 test files and 6532 tests pass with 100% statements (45907/45907), branches (32799/32799), functions (9372/9372), and lines (44582/44582). Static quality, public SDK surface, contracts, ESLint, zero-duplicate scan, secret scan, dependency audit, tracker health, and history drift checks pass. The only validator warning is the pre-existing 292-item historical resolution metadata backlog."
+notes[1]{created_at,author,text}:
+  "2026-07-29T18:28:06.440Z","harness:codex","Design decision: preserve restoreWorkspaceSnapshot(pmRoot,target) as an additive compatibility surface while routing it through the guarded recovery implementation; new callers can use the explicit plan/result types and restoreWorkspaceSnapshotWithRecovery options."
+learnings[1]{created_at,author,text}:
+  "2026-07-29T18:28:07.315Z","harness:codex","A verifying post-restore history chain is not sufficient provenance: destructive workspace replacement needs a separately durable workspace audit stream plus a pre-mutation recovery object that survives the swap."
+files[7]{path,scope,note}:
+  src/cli/register-operations.ts,project,CLI dry-run force author and rationale restore surface
+  src/sdk/cli-contracts/flag-contracts.ts,project,Machine-readable workspace restore flag contract
+  src/sdk/index.ts,project,Public SDK exports for guarded snapshot planning and recovery
+  src/sdk/workspace-snapshot.ts,project,Guarded recovery restore with live workspace writer lock and durable tracker-relative audit evidence
+  tests/integration/workspace-snapshot-cli.integration.spec.ts,project,End-to-end guarded restore and audit coverage
+  tests/unit/commands/register-commands.spec.ts,project,CLI registration and option routing coverage
+  tests/unit/sdk/workspace-snapshot.spec.ts,project,Recorded reversible restore plus exact audit path and recovery round-trip coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/workspace-snapshot-cli.integration.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/workspace-snapshot.spec.ts,project,300
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms6f9qse-nti6u8,test,failed,"2026-07-29T18:28:25.266Z","2026-07-29T18:32:41.437Z","2026-07-29T18:32:41.437Z",2,1,0
+  test-local-ms6ff9uh-k9og5g,test,passed,"2026-07-29T18:36:32.881Z","2026-07-29T18:36:59.416Z","2026-07-29T18:36:59.416Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/REPRODUCIBLE_WORKSPACES.md,project,Recorded reversible guarded restore operator contract
+close_reason: "Delivered recorded, reversible, force-guarded workspace restore with exact dry-run impact, durable audit evidence, recovery round-trip, public SDK types, CLI contracts, documentation, and passing linked verification."
 body: ""

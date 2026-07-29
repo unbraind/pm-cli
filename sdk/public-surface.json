@@ -25,9 +25,7 @@
       "reason": "Additive structured context, tombstone result, and context-integrity SDK contracts for the 2026.7.25 release"
     },
     {
-      "changes": [
-        "signature ./sdk/governance:_testOnlySimilarity"
-      ],
+      "changes": ["signature ./sdk/governance:_testOnlySimilarity"],
       "package_version": "2026.7.25",
       "reason": "Additive deterministic duplicate-cluster verification seams for the 2026.7.25 release"
     },
@@ -292,6 +290,15 @@
       ],
       "package_version": "2026.7.29",
       "reason": "GH-808 replaces an unsound always-resolved declaration with an explicit discriminated unresolved outcome"
+    },
+    {
+      "changes": [
+        "signature ./sdk:CorpusShape",
+        "signature ./sdk:CorpusShapeProfile",
+        "signature ./sdk:defineCorpusShape"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "Correct unpublished PR corpus-shape draft before merge"
     }
   ],
   "entrypoints": {
@@ -1061,6 +1068,12 @@
           "signature": "export interface BuildContextSignalSnapshotOptions extends BuildItemContextRelevanceCandidatesOptions { sourceCursor: string; source: ContextSignalSnapshotSource; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "buildCorpusShapeItemPlan",
+          "signature": "(shape: Readonly<CorpusShape>, index: number, itemCount: number, seed?: number) => CorpusShapeItemPlan | calls: (shape: Readonly<CorpusShape>, index: number, itemCount: number, seed?: number) => CorpusShapeItemPlan"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "buildGovernanceMissingFilterEcho",
@@ -1157,6 +1170,12 @@
           "signature": "(items: readonly ItemMetadata[], options: { statusRegistry: RuntimeStatusRegistry; sourceCursor: string; now: string; }) => WorkspaceMemorySnapshot | calls: (items: readonly ItemMetadata[], options: { statusRegistry: RuntimeStatusRegistry; sourceCursor: string; now: string; }) => WorkspaceMemorySnapshot"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "BUILTIN_CORPUS_SHAPES",
+          "signature": "Readonly<Record<BuiltinCorpusShapeName, Readonly<CorpusShape>>>"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "BUILTIN_HARNESS_SIGNAL_DESCRIPTORS",
@@ -1173,6 +1192,12 @@
           "kind": "value",
           "name": "BUILTIN_PROFILES",
           "signature": "Record<\"agile\" | \"ops\" | \"research\", ProjectProfileDefinition>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "BuiltinCorpusShapeName",
+          "signature": "export type BuiltinCorpusShapeName = \"scratch\" | \"representative\" | \"deep-graph\" | \"multi-decade\" | \"disconnected-archive\";"
         },
         {
           "classification": "advanced_export",
@@ -2124,6 +2149,36 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CorpusShape",
+          "signature": "export interface CorpusShape { schema: typeof PM_CORPUS_SHAPE_SCHEMA; name: string; description: string; hierarchy_depth: number; hierarchy_fanout: number; age_span_days: number; history_entries_per_item: number; comments_per_100_items: number; notes_per_100_items: number; learnings_per_100_items: number; edge_kind_mix: readonly CorpusShapeEdgeWeight[]; author_cardinality: number; component_count: number; include_cycles: boolean; custom_types: readonly string[]; custom_statuses: readonly string[]; terminal_statuses: readonly string[]; custom_fields: readonly string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CorpusShapeEdgeWeight",
+          "signature": "export interface CorpusShapeEdgeWeight { kind: string; weight: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CorpusShapeItemPlan",
+          "signature": "export interface CorpusShapeItemPlan { index: number; id: string; parent?: string; component: number; timestamp: string; author: string; history_entry_count: number; dependency_kinds: readonly string[]; has_comment: boolean; has_note: boolean; has_learning: boolean; custom_type?: string; custom_status?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CorpusShapeMeasurement",
+          "signature": "export interface CorpusShapeMeasurement { add(plan: CorpusShapeItemPlan): void; finish(): CorpusShapeProfile; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CorpusShapeProfile",
+          "signature": "export interface CorpusShapeProfile { shape: string; item_count: number; author_count: number; component_count: number; hierarchy_depth: number; hierarchy_fanout: number; timestamp_range: { first: string | null; last: string | null; }; history_entry_count: number; annotations: { comments: number; notes: number; learnings: number; }; edge_kinds: Record<string, number>; matches_declaration: boolean; mismatches: readonly string[]; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "countFailureCategories",
           "signature": "(runResults: TestRunResult[]) => Record<LinkedTestFailureCategory, number> | calls: (runResults: TestRunResult[]) => Record<LinkedTestFailureCategory, number>"
@@ -2175,6 +2230,12 @@
           "kind": "function",
           "name": "createCoreCommandHookContext",
           "signature": "(options: { commandName: string; commandArgs: string[]; commandOptions: Record<string, unknown>; globalOptions: GlobalOptions; pmRoot: string; }) => ActiveExtensionHookContext<never> | calls: (options: { commandName: string; commandArgs: string[]; commandOptions: Record<string, unknown>; globalOptions: GlobalOptions; pmRoot: string; }) => ActiveExtensionHookContext<never>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "createCorpusShapeMeasurement",
+          "signature": "(shape: Readonly<CorpusShape>) => CorpusShapeMeasurement | calls: (shape: Readonly<CorpusShape>) => CorpusShapeMeasurement"
         },
         {
           "classification": "advanced_export",
@@ -2409,6 +2470,12 @@
           "kind": "function",
           "name": "defineCommandOverride",
           "signature": "(override: CommandOverride) => CommandOverride | calls: (override: CommandOverride) => CommandOverride"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "defineCorpusShape",
+          "signature": "<const Shape extends CorpusShape>(shape: ExactCorpusShape<Shape>) => Readonly<Shape> | calls: <const Shape extends CorpusShape>(shape: ExactCorpusShape<Shape>) => Readonly<Shape>"
         },
         {
           "classification": "supported",
@@ -5183,6 +5250,12 @@
           "signature": "(pmRoot: string, preferredFormat?: ItemFormat, typeToFolder?: Record<string, string>, warnings?: string[], schema?: RuntimeSchemaSettings) => Promise<ItemMetadata[]> | calls: (pmRoot: string, preferredFormat?: ItemFormat, typeToFolder?: Record<string, string>, warnings?: string[], schema?: RuntimeSchemaSettings) => Promise<ItemMetadata[]>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listBuiltinCorpusShapes",
+          "signature": "() => readonly Readonly<CorpusShape>[] | calls: () => readonly Readonly<CorpusShape>[]"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "ListCommandName",
@@ -5403,6 +5476,12 @@
           "kind": "function",
           "name": "maybeRunFirstUseTelemetryPrompt",
           "signature": "(commandPath: string, globalOptions: GlobalOptions) => Promise<void> | calls: (commandPath: string, globalOptions: GlobalOptions) => Promise<void>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "measureCorpusShapePlan",
+          "signature": "(shape: Readonly<CorpusShape>, plans: readonly CorpusShapeItemPlan[]) => CorpusShapeProfile | calls: (shape: Readonly<CorpusShape>, plans: readonly CorpusShapeItemPlan[]) => CorpusShapeProfile"
         },
         {
           "classification": "contract_data",
@@ -6437,6 +6516,12 @@
           "signature": "export type PlanTemplateName = (typeof PLAN_TEMPLATE_NAMES)[number];"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "planWorkspaceSnapshotRestore",
+          "signature": "(pmRoot: string, target: string) => Promise<WorkspaceSnapshotRestorePlan> | calls: (pmRoot: string, target: string) => Promise<WorkspaceSnapshotRestorePlan>"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "PM_CLI_EXPECTED_ERROR_NAME",
@@ -6459,6 +6544,12 @@
           "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
           "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"workspace\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_CORPUS_SHAPE_SCHEMA",
+          "signature": "\"https://schema.unbrained.dev/pm/corpus-shape/v1\""
         },
         {
           "classification": "contract_data",
@@ -8401,6 +8492,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveBuiltinCorpusShape",
+          "signature": "(name: string) => Readonly<CorpusShape> | calls: (name: string) => Readonly<CorpusShape>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveCalendarOutputFormat",
           "signature": "(options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat | calls: (options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat"
         },
@@ -8757,6 +8854,24 @@
           "kind": "function",
           "name": "restoreWorkspaceSnapshot",
           "signature": "(pmRoot: string, target: string) => Promise<WorkspaceSnapshotManifest> | calls: (pmRoot: string, target: string) => Promise<WorkspaceSnapshotManifest>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "RestoreWorkspaceSnapshotOptions",
+          "signature": "export interface RestoreWorkspaceSnapshotOptions { force?: boolean; author?: string; message?: string; lockTtlSeconds?: number; lockWaitMs?: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "RestoreWorkspaceSnapshotResult",
+          "signature": "export interface RestoreWorkspaceSnapshotResult { manifest: WorkspaceSnapshotManifest; plan: WorkspaceSnapshotRestorePlan; recovery_fingerprint: string; audit_history_path: string; audit_operation: \"workspace_snapshot_restore\"; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "restoreWorkspaceSnapshotWithRecovery",
+          "signature": "(pmRoot: string, target: string, options?: RestoreWorkspaceSnapshotOptions) => Promise<RestoreWorkspaceSnapshotResult> | calls: (pmRoot: string, target: string, options?: RestoreWorkspaceSnapshotOptions) => Promise<RestoreWorkspaceSnapshotResult>"
         },
         {
           "classification": "supported",
@@ -11263,6 +11378,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "WorkspaceSnapshotHistoryImpact",
+          "signature": "export interface WorkspaceSnapshotHistoryImpact { path: string; current_entries: number; target_entries: number; removed_entries: number; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "WorkspaceSnapshotManifest",
           "signature": "export interface WorkspaceSnapshotManifest { schema: typeof SNAPSHOT_SCHEMA; fingerprint: string; files: readonly string[]; bytes: number; }"
         },
@@ -11271,6 +11392,12 @@
           "kind": "interface",
           "name": "WorkspaceSnapshotReference",
           "signature": "export interface WorkspaceSnapshotReference { name: string; fingerprint: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WorkspaceSnapshotRestorePlan",
+          "signature": "export interface WorkspaceSnapshotRestorePlan { target_fingerprint: string; current_fingerprint: string; changed_file_count: number; removed_file_count: number; added_file_count: number; removed_item_count: number; affected_history_stream_count: number; removed_history_entry_count: number; affected_history_streams: readonly WorkspaceSnapshotHistoryImpact[]; changes_authoritative_state: boolean; }"
         },
         {
           "classification": "advanced_export",
