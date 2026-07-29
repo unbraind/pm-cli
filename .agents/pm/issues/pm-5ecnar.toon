@@ -2,24 +2,41 @@ id: pm-5ecnar
 title: "GH-715: expose mutation-guard policies through canonical config help and output"
 description: "The shipped mutation_guard settings can be changed only through an undocumented underscore key absent from config contracts and help. Add canonical dashed keys and typed policy/value domains, retain legacy aliases, expose effective values in bounded config reads, and align CLI, SDK contracts, completion, and documentation."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-26T01:00:17.799Z"
-updated_at: "2026-07-28T15:15:26.301Z"
+updated_at: "2026-07-29T01:02:36.840Z"
+closed_at: "2026-07-29T01:02:33.592Z"
+completed_at: "2026-07-29T01:02:33.592Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "config help, contracts, and completion advertise canonical mutation-guard keys and allowed value domains; Legacy underscore keys remain compatible and normalize to the canonical settings leaves; Config list and export expose effective guard posture without leaking protected content; CLI, SDK, MCP, documentation, and temporary-project acceptance pass full gates"
 parent: pm-mpbb
 risk: low
 confidence: 90
+resolution: Canonical config help and inventory now expose mutation guard nested settings with typed metadata and supported choices.
+expected_result: Operators can discover and configure author attribution secret guard and stale-work thresholds from pm config.
+actual_result: Focused tests and packed config inventory expose all mutation-guard keys including secret-guard advise/block choices.
 dependencies[5]{id,kind,created_at}:
   pm-e2bq,related,"2026-07-26T01:00:17.799Z"
   pm-h4zb,related,"2026-07-26T01:00:17.799Z"
   pm-mf4j,related,"2026-07-26T01:00:17.799Z"
   pm-33cw,implements,"2026-07-26T05:59:19.546Z"
   pm-pim7,discovered_from,"2026-07-26T10:56:04.444Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-26T01:00:17.799Z","harness:codex","Duplicate check: searched all statuses for secret-guard config help,mutation-guard policy discoverability,canonical dashed keys,and block-mode configuration. Closed pm-pim7 owns write-time detection and pm-mf4j owns positional config UX,but neither exposes the mutation_guard group in current contracts; this issue is the distinct discoverability gap."
   "2026-07-26T01:00:29.015Z","harness:codex","GitHub source: https://github.com/unbraind/pm-cli/issues/715"
+  "2026-07-29T01:01:40.389Z","harness:codex","Delivery evidence: mutation guard nested settings are now present in canonical config inventory and help with canonical keys, paths, types, choices, defaults, and kebab-case guidance. The linked 24-test config suite passed; packed acceptance found mutation-guard-secret-guard with value advise in project config JSON."
+files[3]{path,scope,note}:
+  src/cli/register-setup.ts,project,mutation guard configuration discovery implementation and regression proof
+  src/sdk/config.ts,project,mutation guard configuration discovery implementation and regression proof
+  tests/unit/commands/config-key-aliases-search.spec.ts,project,mutation guard configuration discovery implementation and regression proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/config-key-aliases-search.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms5cvhh3-b5ij79,test,passed,"2026-07-29T00:37:42.351Z","2026-07-29T00:37:50.775Z","2026-07-29T00:37:50.775Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,canonical mutation guard configuration guidance
+close_reason: Mutation guard configuration discovery implemented and verified
 body: ""

@@ -762,6 +762,7 @@ describe("item-format metadata validation", () => {
     const parsed = parseItemDocument(
       buildSource({
         closed_at: "2026-02-22T01:02:03.123456789+01:00",
+        completed_at: "2026-02-21T23:00:00.000Z",
         source_type: "bug",
         source_owner: "owner-a",
         design: "Design body",
@@ -774,6 +775,7 @@ describe("item-format metadata validation", () => {
     );
 
     expect(parsed.metadata.closed_at).toBe("2026-02-22T01:02:03.123456789+01:00");
+    expect(parsed.metadata.completed_at).toBe("2026-02-21T23:00:00.000Z");
     expect(parsed.metadata.source_type).toBe("bug");
     expect(parsed.metadata.source_owner).toBe("owner-a");
     expect(parsed.metadata.design).toBe("Design body");
@@ -830,6 +832,12 @@ describe("item-format metadata validation", () => {
     expect(() => parseItemDocument(buildSource({ closed_at: 42 }))).toThrow("closed_at must be a string");
     expect(() => parseItemDocument(buildSource({ closed_at: "not-a-timestamp" }))).toThrow(
       "closed_at must be a valid ISO timestamp",
+    );
+    expect(() => parseItemDocument(buildSource({ completed_at: 42 }))).toThrow(
+      "completed_at must be a string",
+    );
+    expect(() => parseItemDocument(buildSource({ completed_at: "not-a-timestamp" }))).toThrow(
+      "completed_at must be a valid ISO timestamp",
     );
     expect(() => parseItemDocument(buildSource({ design: 42 }))).toThrow("design must be a string");
   });

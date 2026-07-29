@@ -910,12 +910,67 @@ describe("context command module", () => {
       expect(result.high_level).toEqual([]);
       expect(result.low_level).toEqual([]);
       expect(result.blocked_fallback.map((item) => item.id)).toEqual([blockedTask]);
+      expect(result.blocked_fallback[0]).toMatchObject({
+        blocked: true,
+        blocker_ids: [],
+      });
       expect(result.agenda.summary.events).toBe(1);
 
       const markdown = renderContextMarkdown(result);
       expect(markdown).toContain("No high-level active items.");
       expect(markdown).toContain("No low-level active items.");
       expect(markdown).toContain("## Blocked fallback");
+      expect(markdown).toContain("blocked:lifecycle");
+    });
+  });
+
+  it("projects unresolved dependency blockers directly onto low-level focus rows", async () => {
+    await withTempPmPath(async (context) => {
+      const blockerId = createContextItem(context, {
+        title: "Active dependency blocker",
+        status: "open",
+      });
+      const blockedByDependencyId = createContextItem(context, {
+        title: "Dependency-blocked active task",
+        status: "open",
+        blockedBy: blockerId,
+      });
+      const terminalBlockerId = createContextItem(context, {
+        title: "Resolved dependency blocker",
+        status: "closed",
+      });
+      const actionableId = createContextItem(context, {
+        title: "Task with resolved dependency",
+        status: "open",
+        blockedBy: terminalBlockerId,
+      });
+      const missingBlockerId = "pm-forward-declared-blocker";
+      const missingReferenceId = createContextItem(context, {
+        title: "Task with missing dependency reference",
+        status: "open",
+        blockedBy: missingBlockerId,
+      });
+
+      const result = await runContext(
+        { limit: "20" },
+        { path: context.pmPath },
+      );
+      const rows = new Map(
+        result.low_level.map((item) => [item.id, item] as const),
+      );
+
+      expect(rows.get(blockedByDependencyId)).toMatchObject({
+        blocked: true,
+        blocker_ids: [blockerId],
+      });
+      expect(rows.get(missingReferenceId)).toMatchObject({
+        blocked: true,
+        blocker_ids: [missingBlockerId],
+      });
+      expect(rows.get(actionableId)).not.toHaveProperty("blocked");
+      expect(renderContextMarkdown(result)).toContain(
+        `blocked:${blockerId}`,
+      );
     });
   });
 

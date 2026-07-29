@@ -2930,6 +2930,7 @@ export async function runCreate(
     type_options: validatedTypeOptions.normalized,
     status,
     closed_at: closedAt,
+    completed_at: closedAt,
     close_reason: closeReason,
     priority,
     tags,

@@ -2,23 +2,37 @@ id: pm-b0twiy
 title: "GH-651: pm activity bare relative windows silently return empty results"
 description: "GitHub issue #651 reports that pm activity --from accepts plausible bare relative windows such as 7d, 1w, P7D, and now-7d but returns an empty success response, while -7d works and other invalid strings fail loudly. Normalize bare lower-bound windows to ago semantics or reject them consistently with an actionable grammar hint; document the accepted relative syntax."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-23T07:58:53.947Z"
-updated_at: "2026-07-28T15:15:27.491Z"
+updated_at: "2026-07-29T01:02:16.612Z"
+closed_at: "2026-07-29T01:02:13.077Z"
+completed_at: "2026-07-29T01:02:13.077Z"
 author: claude-code-agent
 estimated_minutes: 90
 acceptance_criteria: "pm activity --from 7d and equivalent supported bare windows either resolve deterministically to the intended ago bound or fail with invalid_argument_value; no invalid relative can silently masquerade as an empty activity set; help/contracts document accepted grammar; CLI and SDK regression tests cover valid, bare, and invalid forms"
 parent: pm-mpbb
 risk: medium
 confidence: 90
+resolution: Unsigned duration windows are normalized as past-relative activity boundaries without changing signed or absolute inputs.
+expected_result: pm activity --from 7d and --from 1w return activity within those past windows.
+actual_result: Focused tests and packed acceptance return recent events for bare 7d while legacy inputs remain compatible.
 dependencies[5]{id,kind,created_at}:
   pm-p3x4,related,"2026-07-23T07:58:54.556Z"
   pm-gknu,related,"2026-07-24T23:53:21.998Z"
   pm-mpbb,related,"2026-07-24T23:53:21.998Z"
   pm-srns,related,"2026-07-24T23:53:21.998Z"
   pm-mpbb,implements,"2026-07-26T05:57:25.009Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-23T07:58:55.367Z",claude-code-agent,"Duplicate check evidence 2026-07-23: all-status searches for activity --from, bare relative windows, 7d/1w, and relative duration found pm-p3x4 for a distinct compact response decoy key plus older completed activity/duration work; no item covers the current silent-empty parser contract. Source: https://github.com/unbraind/pm-cli/issues/651"
+  "2026-07-29T01:01:37.772Z","harness:codex","Delivery evidence: bare unsigned activity windows such as 7d and 1w now normalize to past-relative boundaries while signed and ISO inputs retain their existing semantics. The linked 43-test activity/history suite passed; packed npm npx and bunx acceptance confirmed activity --from 7d returns recent events."
+files[2]{path,scope,note}:
+  src/cli/commands/activity.ts,project,bare relative activity window implementation and regression proof
+  tests/unit/commands/history-activity-command.spec.ts,project,bare relative activity window implementation and regression proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/history-activity-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms5cuqzr-2mui9c,test,passed,"2026-07-29T00:37:04.916Z","2026-07-29T00:37:16.455Z","2026-07-29T00:37:16.455Z",1,0,0
+close_reason: Bare relative activity windows implemented and verified
 body: ""

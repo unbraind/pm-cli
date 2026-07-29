@@ -993,6 +993,7 @@ async function runCloseAction(
           : readOptionString(options, "validateClose"),
       force: Boolean(options.force),
       duplicateOf: readOptionString(options, "duplicateOf"),
+      completedAt: readOptionString(options, "completedAt"),
       resolution: readOptionString(options, "resolution"),
       expectedResult: pickStringOption(
         options.expectedResult,
@@ -2531,6 +2532,10 @@ export function registerMutationCommands(
     .option(
       "--close-reason <value>",
       "Close reason text (alias for positional <text>)",
+    )
+    .option(
+      "--completed-at <value>",
+      "Actual completion timestamp (ISO or relative), distinct from tracker close time",
     )
     .option(
       "-d, --duplicate-of <id>",

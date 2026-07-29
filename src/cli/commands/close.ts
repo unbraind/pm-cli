@@ -22,6 +22,7 @@ import {
   resolvePmRoot,
   readSettings,
   resolveAuthor,
+  resolveIsoOrRelative,
   shouldCompletePlanOnClose,
 } from "../../sdk/runtime-primitives.js";
 import { collectBlockedByIds } from "../../sdk/actionability.js";
@@ -50,6 +51,8 @@ export interface CloseCommandOptions {
   actualResult?: string;
   /** Value that configures or reports duplicate of for this contract. */
   duplicateOf?: string;
+  /** Actual completion time, distinct from the tracker close mutation time. */
+  completedAt?: string;
 }
 
 /** Documents the close result payload exchanged by command, SDK, and package integrations. */
@@ -78,6 +81,7 @@ interface CloseMutationContext {
   activeChildIds: string[];
   closeReason: string | undefined;
   closedAt: string;
+  completedAt: string;
 }
 
 function normalizeCloseReason(
@@ -662,9 +666,11 @@ function mutateCloseMetadata(
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;
+  metadata.completed_at = context.completedAt;
   const changedFields = [
     "status",
     "closed_at",
+    "completed_at",
     ...applyCloseReason(metadata, context.closeReason),
     ...inlineChangedFields,
   ];
@@ -780,6 +786,15 @@ export async function runClose(
     statusRegistry,
   );
 
+  const closedAt = new Date().toISOString();
+  const completedAt =
+    options.completedAt === undefined
+      ? closedAt
+      : resolveIsoOrRelative(
+          options.completedAt,
+          new Date(closedAt),
+          "completed-at",
+        );
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -797,7 +812,8 @@ export async function runClose(
         validateCloseMode,
         activeChildIds,
         closeReason,
-        closedAt: new Date().toISOString(),
+        closedAt,
+        completedAt,
       });
     },
   });

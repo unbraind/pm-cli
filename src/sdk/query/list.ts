@@ -1043,7 +1043,7 @@ interface ListFilterSet {
   statusSet: Set<ItemStatus> | undefined;
   excludeTerminal: boolean;
   typeFilter: ItemType | undefined;
-  tagFilter: string | undefined;
+  tagFilters: string[];
   priorityFilter: number | undefined;
   deadlineBefore: string | undefined;
   deadlineAfter: string | undefined;
@@ -1062,6 +1062,37 @@ interface ListFilterSet {
   lifecycleClassifier: ReturnType<typeof lifecycleClassifierFromStatusRegistry>;
   contentFieldFilters: ContentFieldFilters;
   contentFiltersActive: boolean;
+}
+
+function parseListTagFilters(raw: string | undefined): string[] {
+  return [
+    ...new Set(
+      (raw ?? "")
+        .split(",")
+        .map((tag) => tag.trim().toLowerCase())
+        .filter((tag) => tag.length > 0),
+    ),
+  ];
+}
+
+function appendUnknownTagWarning(
+  items: ItemMetadata[],
+  rawTags: string | undefined,
+  warnings: string[],
+): void {
+  const requestedTags = parseListTagFilters(rawTags);
+  if (requestedTags.length === 0) {
+    return;
+  }
+  const knownTags = new Set(
+    items.flatMap((item) =>
+      item.tags.map((tag) => tag.trim().toLowerCase()),
+    ),
+  );
+  const unknownTags = requestedTags.filter((tag) => !knownTags.has(tag));
+  if (unknownTags.length > 0) {
+    warnings.push(`unknown_tags:${unknownTags.join(",")}`);
+  }
 }
 
 function assertListAssigneeFilters(
@@ -1105,7 +1136,7 @@ function resolveListFilterSet(
       status && status.length > 0 ? new Set<ItemStatus>(status) : undefined,
     excludeTerminal: options.excludeTerminal === true,
     typeFilter: parseType(options.type, typeRegistry),
-    tagFilter: options.tag?.trim().toLowerCase(),
+    tagFilters: parseListTagFilters(options.tag),
     priorityFilter: parsePriority(options.priority),
     deadlineBefore: parseDeadline(options.deadlineBefore, "deadline-before"),
     deadlineAfter: parseDeadline(options.deadlineAfter, "deadline-after"),
@@ -1156,8 +1187,16 @@ function matchesListIdentityFilters(
   if (filters.excludeTerminal && isTerminalStatus(item.status, statusRegistry))
     return false;
   if (filters.typeFilter && item.type !== filters.typeFilter) return false;
-  if (filters.tagFilter && !(item.tags ?? []).includes(filters.tagFilter))
+  if (
+    filters.tagFilters.length > 0 &&
+    !filters.tagFilters.some((tag) =>
+      (item.tags ?? []).some(
+        (candidate) => candidate.trim().toLowerCase() === tag,
+      ),
+    )
+  ) {
     return false;
+  }
   return (
     filters.priorityFilter === undefined ||
     item.priority === filters.priorityFilter
@@ -1918,6 +1957,7 @@ export async function runList(
   let page = indexedPage;
   if (!page) {
     const items = await loadListItems(options, runtime, listWarnings);
+    appendUnknownTagWarning(items, options.tag, listWarnings);
     const filtered = applyFilters(
       items,
       statusSelection.resolvedStatus,

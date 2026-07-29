@@ -763,6 +763,7 @@ export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
 export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--reason" },
   { flag: "--close-reason" },
+  { flag: "--completed-at" },
   { flag: "--duplicate-of" },
   { flag: "--author" },
   { flag: "--message" },
@@ -1189,6 +1190,7 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-s", flag: "--status" },
   { flag: "--close-reason" },
   { flag: "--close_reason" },
+  { flag: "--completed-at" },
   { short: "-p", flag: "--priority" },
   { flag: "--type" },
   { flag: "--tags", aliases: ["--tag"], list: true },
@@ -1208,6 +1210,7 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--remove-ac", aliases: ["--remove_ac"] },
   { flag: "--assignee" },
   { flag: "--parent" },
+  { flag: "--allow-missing-parent" },
   { flag: "--reviewer" },
   { flag: "--risk" },
   { flag: "--confidence" },

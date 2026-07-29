@@ -162,6 +162,7 @@ export async function runCopy(
     updated_at: copiedAt,
   } as ItemMetadata;
   delete copiedMetadata.closed_at;
+  delete copiedMetadata.completed_at;
   delete copiedMetadata.close_reason;
   delete copiedMetadata.test_runs;
 

@@ -776,6 +776,8 @@ export interface ItemMetadata {
   events?: CalendarEvent[];
   /** ISO 8601 timestamp recording when closed occurred. */
   closed_at?: string;
+  /** ISO 8601 timestamp recording when the work actually completed. */
+  completed_at?: string;
   /** Value that configures or reports assignee for this contract. */
   assignee?: string;
   /** Internal privacy-safe ownership principal for concurrent agent sessions. */

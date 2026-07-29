@@ -342,7 +342,11 @@ function registerListCommand(
   }
   command
     .option("--type <value>", "Filter by item type")
-    .option("--tag <value>", "Filter by tag")
+    .option(
+      "--tag <value>",
+      "Filter by tag (repeatable or comma-separated; matches any)",
+      collect,
+    )
     .option("--priority <value>", "Filter by priority")
     .option(
       "--deadline-before <value>",

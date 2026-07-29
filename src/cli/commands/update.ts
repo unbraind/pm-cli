@@ -33,6 +33,7 @@ import {
   splitAcceptanceCriteria,
   resolvePriority,
   normalizeStatusInput,
+  isTerminalStatus,
   collectRuntimeUpdateFieldValues,
   resolveItemTypesFilePath,
   resolveRuntimeFieldRegistry,
@@ -146,6 +147,8 @@ export interface UpdateCommandOptions
   status?: string;
   /** Value that configures or reports close reason for this contract. */
   closeReason?: string;
+  /** Correct the actual completion time on a terminal item. */
+  completedAt?: string;
   /** Value that configures or reports priority for this contract. */
   priority?: string | number;
   /** Schema type that determines the shape and validation rules for this value. */
@@ -162,6 +165,8 @@ export interface UpdateCommandOptions
   removeAc?: string[];
   /** Value that configures or reports force for this contract. */
   force?: boolean;
+  /** Permit an intentional unresolved parent reference under strict validation. */
+  allowMissingParent?: boolean;
   /** Value that configures or reports dep remove for this contract. */
   depRemove?: string[];
   /** Value that configures or reports replace deps for this contract. */
@@ -1269,6 +1274,7 @@ const UPDATE_SIMPLE_FIELD_FLAG_KEYS: readonly (keyof UpdateCommandOptions)[] = [
   "body",
   "status",
   "closeReason",
+  "completedAt",
   "priority",
   "type",
   ...COMMON_MUTATION_COMMAND_OPTION_KEYS,
@@ -1869,7 +1875,11 @@ async function routeCloseStatusUpdate(
 
   const otherFieldKeys = Object.entries(context.fieldFlags)
     .filter(
-      ([key, value]) => value && key !== "status" && key !== "closeReason",
+      ([key, value]) =>
+        value &&
+        key !== "status" &&
+        key !== "closeReason" &&
+        key !== "completedAt",
     )
     .map(([key]) => key);
   const routeWarnings: string[] = [];
@@ -1906,6 +1916,7 @@ async function routeCloseStatusUpdate(
       author: context.options.author,
       message: context.options.message,
       force: context.options.force,
+      completedAt: context.options.completedAt,
     },
     context.global,
   );
@@ -1950,42 +1961,82 @@ function applySimpleItemMutations(
   );
 }
 
-function hasClosedAt(metadata: ItemDocument["metadata"]): boolean {
-  return metadata.closed_at !== undefined && metadata.closed_at !== null;
-}
+type UpdateStatusMutationContext = Pick<
+  UpdateMutationContext,
+  "options" | "statusRegistry" | "clearItemMetadataKeys" | "nowIso"
+>;
 
-function hasClosedAtProperty(metadata: ItemDocument["metadata"]): boolean {
-  return metadata.closed_at !== undefined;
-}
-
-function applyStatusAndCloseReasonMutations(
+function applyStatusMutation(
   document: ItemDocument,
-  context: Pick<
-    UpdateMutationContext,
-    "options" | "statusRegistry" | "clearItemMetadataKeys" | "nowIso"
-  >,
+  context: UpdateStatusMutationContext,
+  statusInput: string,
+  previousStatusNormalized: string,
+  changedFields: string[],
+): void {
+  const status = parseStatus(statusInput, context.statusRegistry);
+  document.metadata.status = status;
+  changedFields.push("status");
+  if (
+    status === context.statusRegistry.close_status &&
+    (document.metadata.closed_at === undefined ||
+      document.metadata.closed_at === null)
+  ) {
+    document.metadata.closed_at = context.nowIso;
+    document.metadata.completed_at = context.nowIso;
+    changedFields.push("closed_at", "completed_at");
+    return;
+  }
+  if (
+    status !== context.statusRegistry.close_status &&
+    previousStatusNormalized === context.statusRegistry.close_status &&
+    document.metadata.closed_at !== undefined
+  ) {
+    delete document.metadata.closed_at;
+    changedFields.push("closed_at");
+    if (document.metadata.completed_at !== undefined) {
+      delete document.metadata.completed_at;
+      changedFields.push("completed_at");
+    }
+  }
+}
+
+function applyStatusAndCompletionMutations(
+  document: ItemDocument,
+  context: UpdateStatusMutationContext,
   previousStatusNormalized: string,
   changedFields: string[],
 ): void {
   if (context.options.status !== undefined) {
-    const status = parseStatus(context.options.status, context.statusRegistry);
-    document.metadata.status = status;
-    changedFields.push("status");
-    if (
-      status === context.statusRegistry.close_status &&
-      !hasClosedAt(document.metadata)
-    ) {
-      document.metadata.closed_at = context.nowIso;
-      changedFields.push("closed_at");
-    } else if (
-      previousStatusNormalized === context.statusRegistry.close_status &&
-      status !== context.statusRegistry.close_status &&
-      hasClosedAtProperty(document.metadata)
-    ) {
-      delete document.metadata.closed_at;
-      changedFields.push("closed_at");
-    }
+    applyStatusMutation(
+      document,
+      context,
+      context.options.status,
+      previousStatusNormalized,
+      changedFields,
+    );
   }
+  if (context.options.completedAt !== undefined) {
+    if (!isTerminalStatus(document.metadata.status, context.statusRegistry)) {
+      throw new PmCliError(
+        "--completed-at can only be set on a terminal item",
+        EXIT_CODE.USAGE,
+      );
+    }
+    document.metadata.completed_at = resolveIsoOrRelative(
+      context.options.completedAt,
+      new Date(context.nowIso),
+      "completed-at",
+    );
+    changedFields.push("completed_at");
+  }
+}
+
+function applyCloseReasonMutations(
+  document: ItemDocument,
+  context: UpdateStatusMutationContext,
+  previousStatusNormalized: string,
+  changedFields: string[],
+): void {
   if (
     context.options.closeReason !== undefined ||
     context.clearItemMetadataKeys.has("close_reason")
@@ -2014,6 +2065,26 @@ function applyStatusAndCloseReasonMutations(
     delete document.metadata.close_reason;
     changedFields.push("close_reason");
   }
+}
+
+function applyStatusAndCloseReasonMutations(
+  document: ItemDocument,
+  context: UpdateStatusMutationContext,
+  previousStatusNormalized: string,
+  changedFields: string[],
+): void {
+  applyStatusAndCompletionMutations(
+    document,
+    context,
+    previousStatusNormalized,
+    changedFields,
+  );
+  applyCloseReasonMutations(
+    document,
+    context,
+    previousStatusNormalized,
+    changedFields,
+  );
 }
 
 function applyPriorityTypeAndOptions(
@@ -2792,7 +2863,22 @@ export async function runUpdate(
     settings.governance.workflow_enforcement ?? "off";
   const typeWorkflows =
     workflowEnforcement === "off" ? [] : resolveTypeWorkflows(settings.schema);
-  const parentReferencePolicy = settings.validation.parent_reference;
+  const parentReferencePolicy = (
+    [
+      {
+        strict_error: "strict_error",
+        warn: "warn",
+        off: "off",
+      },
+      {
+        strict_error: "warn",
+        warn: "warn",
+        off: "off",
+      },
+    ] as const
+  )[Number(options.allowMissingParent === true)]![
+    settings.validation.parent_reference
+  ];
   const unsetTargets = parseUpdateUnsetTargets(
     options.unset,
     runtimeFieldRegistry,

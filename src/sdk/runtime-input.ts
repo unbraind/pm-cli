@@ -157,6 +157,34 @@ const LIFECYCLE_AUTHOR_ALIAS_ACTIONS = new Set([
   "close-task",
 ]);
 
+const HOISTED_ACTION_OPTION_KEYS: Readonly<
+  Record<string, readonly string[]>
+> = {
+  list: ["status", "type", "tag", "priority", "limit", "offset"],
+  search: ["mode", "status", "type", "tag", "priority", "limit"],
+  create: [
+    "title",
+    "type",
+    "status",
+    "description",
+    "body",
+    "priority",
+    "tags",
+    "parent",
+    "createMode",
+    "create_mode",
+    "allowMissingParent",
+    "allowDuplicate",
+  ],
+  update: ["parent", "allowMissingParent", "completedAt"],
+  copy: ["allowDuplicate"],
+  close: ["duplicateOf", "completedAt"],
+  // pm-7u9j: the narrow pm_append tool declares `body` top-level; runAppend
+  // reads it from options, while schema/config consume their top-level values
+  // directly in runAction and therefore need no hoisting.
+  append: ["body"],
+};
+
 /** Reconcile MCP array/scalar option spellings with CLI flag expectations. */
 export function normalizeMcpOptionsArrays(
   options: Record<string, unknown>,
@@ -206,43 +234,8 @@ export function optionsWithAuthor(
     }
     hoistedTopLevel[key] = args[key];
   };
-  if (action === "list") {
-    hoistKey("status");
-    hoistKey("type");
-    hoistKey("tag");
-    hoistKey("priority");
-    hoistKey("limit");
-    hoistKey("offset");
-  } else if (action === "search") {
-    hoistKey("mode");
-    hoistKey("status");
-    hoistKey("type");
-    hoistKey("tag");
-    hoistKey("priority");
-    hoistKey("limit");
-  } else if (action === "create") {
-    hoistKey("title");
-    hoistKey("type");
-    hoistKey("status");
-    hoistKey("description");
-    hoistKey("body");
-    hoistKey("priority");
-    hoistKey("tags");
-    hoistKey("parent");
-    hoistKey("createMode");
-    hoistKey("create_mode");
-    hoistKey("allowMissingParent");
-    hoistKey("allowDuplicate");
-  } else if (action === "copy") {
-    hoistKey("allowDuplicate");
-  } else if (action === "close") {
-    hoistKey("duplicateOf");
-  } else if (action === "append") {
-    // pm-7u9j: the narrow pm_append tool declares `body` top-level; runAppend
-    // reads it from options, so hoist unless options.body already wins.
-    // (pm_schema/pm_config top-level args are consumed directly by runAction's
-    // schema/config cases, which read args before options — no hoist needed.)
-    hoistKey("body");
+  for (const key of HOISTED_ACTION_OPTION_KEYS[action ?? ""] ?? []) {
+    hoistKey(key);
   }
   const options = normalizeMcpOptionsArrays(
     { ...hoistedTopLevel, ...baseOptions },

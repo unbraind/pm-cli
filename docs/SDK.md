@@ -3059,6 +3059,19 @@ Optional advanced relevance hooks:
 Both hooks are best-effort. If a hook throws or returns an invalid shape, core
 search degrades gracefully and emits warning codes instead of hard-failing.
 
+## Completion-aware reporting and migration
+
+`resolveCompletionTimestamp(item)` gives reports one canonical timestamp plus a
+`source` and `fallback` disclosure. It prefers `completed_at` (when the work
+actually finished), then legacy `closed_at`, then `updated_at`.
+
+`planCompletedAtBackfill(items, historyById, terminalStatuses)` returns only
+legacy terminal items whose latest transition into a terminal status is proven
+by a valid history event. It never guesses from `updated_at`; items without
+history evidence stay explicitly absent. Apply returned candidates through the
+normal typed `update` action with `completedAt` so every correction writes item
+history and retains mutation governance.
+
 ## Robust Automation Pattern
 
 1. Read `PM_TOOL_ACTIONS` or `PM_TOOL_PARAMETERS_SCHEMA` for baseline static validation.

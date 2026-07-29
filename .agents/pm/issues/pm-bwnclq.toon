@@ -2,17 +2,22 @@ id: pm-bwnclq
 title: "GH-675: lifecycle must record actual completion time separately from tracker close time"
 description: "GitHub issue https://github.com/unbraind/pm-cli/issues/675 reports that closed_at is always mutation time, causing time-window reports to misattribute late tracker closeout. Add governed actual-completion semantics with migration and query contracts."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:37.256Z"
-updated_at: "2026-07-28T15:15:38.548Z"
+updated_at: "2026-07-29T01:06:01.453Z"
+closed_at: "2026-07-29T01:02:48.686Z"
+completed_at: "2026-07-29T01:02:48.686Z"
 author: unknown
 estimated_minutes: 480
 acceptance_criteria: "Items carry a completed_at (actual completion) field distinct from closed_at (tracker mutation time), settable at close and correctable through a governed update; Time-window reports, flow metrics, and changelog bucketing read the actual-completion field when present and fall back to closed_at otherwise, with the fallback disclosed; A lossless migration backfills completed_at for existing closed items from history evidence or leaves it explicitly absent, never guessed; CLI, SDK, and MCP expose the field with typed contracts and the history stream records every correction"
 parent: pm-usfg
 risk: medium
 confidence: 85
+resolution: completed_at is stored independently from tracker close time and exposed through lifecycle mutations SDK helpers context memory release notes and tool contracts.
+expected_result: Agents can record actual completion time and every reporting or changelog surface prefers that immutable fact with explicit legacy fallbacks.
+actual_result: 261 focused tests and full coverage pass; packed CLI and SDK acceptance persist and resolve completed_at; pm-changelog 2026.7.29 ships matching precedence.
 dependencies[6]{id,kind,created_at}:
   pm-4k6b,related_to,"2026-07-25T02:06:37.256Z"
   pm-5qmm,related,"2026-07-25T06:27:14.903Z"
@@ -20,6 +25,44 @@ dependencies[6]{id,kind,created_at}:
   pm-pee5,related,"2026-07-25T06:27:14.903Z"
   pm-wrbe,related,"2026-07-25T06:27:14.903Z"
   pm-usfg,implements,"2026-07-26T05:57:28.391Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-25T02:06:37.256Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
+  "2026-07-29T01:01:42.051Z","harness:codex","Delivery evidence: completed_at is now a first-class stored lifecycle fact across create/copy/update/close, CLI, SDK, MCP, release notes, workspace memory, generated contracts, and public SDK completion/backfill primitives. The linked 261-test lifecycle suite passed. Upstream pm-changelog PR #107 merged at 05d92d79421cff3d64d8ce5de2b8910b5963d33a and pm-changelog@2026.7.29 was published once; its generator now prefers completed_at before closed_at/updated_at/created_at. Packed acceptance proved -2d completion remains distinct from tracker close time and the SDK reports completed_at provenance."
+files[27]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Pins the project-managed pm-changelog extension to the released 2026.7.29 completion-timestamp-compatible generator
+  scripts/generate-release-notes.mjs,project,completion provenance storage SDK contracts release notes and tests
+  sdk/public-surface.json,project,completion provenance storage SDK contracts release notes and tests
+  src/cli/commands/close.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/cli/commands/copy.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/cli/commands/create.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/cli/commands/update.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  src/core/item/item-format.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/core/schema/fields-file.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/core/shared/constants.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  src/sdk/cli-contracts/flag-contracts.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  src/sdk/cli-contracts/tool-schema.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  src/sdk/cli-contracts/typed-action-inputs.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  src/sdk/index.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/sdk/lifecycle-completion.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/sdk/runtime-input.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  src/sdk/structured-mutations.ts,project,completion provenance storage SDK contracts release notes and tests
+  src/types.ts,project,completion provenance storage SDK contracts release notes and tests
+  tests/fixtures/contracts/full.json,project,generated completed_at CLI MCP and tool contracts
+  tests/integration/mcp-handshake.spec.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  tests/unit/commands/close-command.spec.ts,project,completion provenance storage SDK contracts release notes and tests
+  tests/unit/commands/update-command.spec.ts,project,completed_at mutation parity across CLI SDK MCP and regression tests
+  tests/unit/core/item/item-format-validation.spec.ts,project,completion provenance storage SDK contracts release notes and tests
+  tests/unit/sdk/lifecycle-completion.spec.ts,project,completion provenance storage SDK contracts release notes and tests
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/close-command.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/core/item/item-format-validation.spec.ts tests/unit/sdk/lifecycle-completion.spec.ts tests/integration/mcp-handshake.spec.ts,project,360
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms5cw6um-cy4vtz,test,passed,"2026-07-29T00:38:07.924Z","2026-07-29T00:38:23.662Z","2026-07-29T00:38:23.662Z",1,0,0
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,package-generated release ledger using completed_at-aware pm-changelog 2026.7.29
+  docs/COMMANDS.md,project,completion timestamp CLI and SDK guidance
+  docs/SDK.md,project,completion timestamp CLI and SDK guidance
+close_reason: Actual completion provenance implemented across CLI SDK reporting and changelog
 body: ""

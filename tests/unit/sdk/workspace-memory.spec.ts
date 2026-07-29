@@ -7,6 +7,7 @@ import {
   readWorkspaceMemory,
   resolveRuntimeStatusRegistry,
   searchWorkspaceMemory,
+  selectWorkspaceMemory,
   selectWorkspaceMemoryRollups,
 } from "../../../src/sdk/index.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
@@ -127,6 +128,27 @@ describe("workspace memory", () => {
     );
     expect(selectWorkspaceMemoryRollups(snapshot, 0)).toEqual([]);
     expect(selectWorkspaceMemoryRollups(snapshot, 10_000, 1)).toHaveLength(1);
+    expect(
+      selectWorkspaceMemory(
+        { snapshot, cache_status: "fresh", warnings: [] },
+        10_000,
+      ),
+    ).toMatchObject({
+      cache_status: "fresh",
+      completion_time_sources: {
+        completed_at: 0,
+        closed_at: 2,
+        updated_at: 0,
+      },
+    });
+    const legacySnapshot = { ...snapshot };
+    delete legacySnapshot.completion_time_sources;
+    expect(
+      selectWorkspaceMemory(
+        { snapshot: legacySnapshot, cache_status: "rebuilt", warnings: [] },
+        10_000,
+      ),
+    ).not.toHaveProperty("completion_time_sources");
     expect(searchWorkspaceMemory(snapshot, "pagination")).toHaveLength(1);
     expect(searchWorkspaceMemory(snapshot, "PM-A")).toHaveLength(1);
     expect(searchWorkspaceMemory(snapshot, "cursor contracts")).toHaveLength(1);

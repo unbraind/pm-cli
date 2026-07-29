@@ -135,7 +135,11 @@ function parseRangeBound(
       EXIT_CODE.USAGE,
     );
   }
-  return resolveIsoOrRelative(normalized, new Date(nowValue), fieldLabel);
+  const relativeInput =
+    fieldLabel === "--from" && /^\d+[hdwm]$/iu.test(normalized)
+      ? `-${normalized}`
+      : normalized;
+  return resolveIsoOrRelative(relativeInput, new Date(nowValue), fieldLabel);
 }
 
 function includeByTimeWindow(

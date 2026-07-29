@@ -30,6 +30,7 @@ const READ_ONLY_ITEM_KEYS = new Set([
   "created_at",
   "updated_at",
   "closed_at",
+  "completed_at",
   "version",
   "format_version",
   "path",

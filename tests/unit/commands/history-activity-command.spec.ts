@@ -1983,6 +1983,24 @@ describe("runHistory and runActivity", () => {
         { path: context.pmPath },
       );
       expect(relativeWindow.count).toBeGreaterThanOrEqual(1);
+
+      const bareAgoWindow = await runActivity(
+        {
+          from: "7d",
+          to: "now",
+        },
+        { path: context.pmPath },
+      );
+      expect(bareAgoWindow.count).toBeGreaterThanOrEqual(1);
+
+      const cliBareAgoWindow = context.runCli(
+        ["activity", "--from", "1w", "--to", "now", "--json"],
+        { expectJson: true },
+      );
+      expect(cliBareAgoWindow.code).toBe(0);
+      expect(
+        (cliBareAgoWindow.json as { count: number }).count,
+      ).toBeGreaterThanOrEqual(1);
     });
   });
 

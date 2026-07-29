@@ -1017,6 +1017,40 @@ describe("runList", () => {
       expect(openResult.items[0].tags).toContain("alpha");
       expect(openResult.filters.limit).toBe("1");
 
+      const csvTagResult = await runList(
+        undefined,
+        { tag: "alpha,beta" },
+        { path: context.pmPath },
+      );
+      expect(csvTagResult.items.map((item) => item.title).sort()).toEqual([
+        "Blocked Beta",
+        "Open Alpha",
+      ]);
+
+      const repeatedTagResult = context.runCli(
+        [
+          "list",
+          "--status",
+          "all",
+          "--tag",
+          "alpha",
+          "--tag",
+          "gamma",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(repeatedTagResult.code).toBe(0);
+      expect(
+        (
+          repeatedTagResult.json as {
+            items: Array<{ title: string }>;
+          }
+        ).items
+          .map((item) => item.title)
+          .sort(),
+      ).toEqual(["Closed Gamma", "Open Alpha"]);
+
       const blockedResult = await runList(
         "blocked",
         {},
@@ -1427,6 +1461,7 @@ describe("runList", () => {
         { path: context.pmPath },
       );
       expect(wrongTag.count).toBe(0);
+      expect(wrongTag.warnings).toContain("unknown_tags:missing-tag");
 
       const wrongPriority = await runList(
         undefined,

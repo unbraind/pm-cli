@@ -2,23 +2,39 @@ id: pm-b1zsk9
 title: "GH-676: list tag filter must accept the CSV shape used by tag mutations"
 description: "GitHub issue https://github.com/unbraind/pm-cli/issues/676 reports that pm list --tag with comma-separated tags silently returns no items even though mutation commands accept CSV tags. Normalize list filtering and emit unknown-tag diagnostics."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-07-25T02:06:36.319Z"
-updated_at: "2026-07-28T15:15:39.764Z"
+updated_at: "2026-07-29T01:02:23.509Z"
+closed_at: "2026-07-29T01:02:20.173Z"
+completed_at: "2026-07-29T01:02:20.173Z"
 author: unknown
 estimated_minutes: 120
 acceptance_criteria: "pm list --tag accepts the same CSV shape tag mutations accept, matching any of the listed tags unless an explicit all-match modifier is requested; Unknown tag values produce a diagnostic naming the unmatched tags instead of an empty result set; Tag filter semantics are declared once in the flag contract and shared by CLI, SDK, and MCP list paths; Regression coverage asserts CSV, repeated-flag, and unknown-tag behaviour on the same corpus"
 parent: pm-usfg
 risk: low
 confidence: 95
+resolution: List tag filters share normalized comma and repeated-value parsing with case-insensitive OR matching and deterministic unknown-tag warnings.
+expected_result: CSV and repeated tag filters select any requested tag and disclose unknown names.
+actual_result: Focused tests and packed acceptance return both red and blue rows and report missing-tag.
 dependencies[5]{id,kind,created_at}:
   pm-1exil1,related_to,"2026-07-25T02:06:36.319Z"
   pm-gknu,related,"2026-07-25T06:27:13.860Z"
   pm-plwm,related,"2026-07-25T06:27:13.860Z"
   pm-srns,related,"2026-07-25T06:27:13.860Z"
   pm-usfg,implements,"2026-07-26T05:57:27.237Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-25T02:06:36.319Z",unknown,"Duplicate check: searched every status using the exact GitHub issue number,title,reproduction terms,and adjacent shipped/open lineage before creation; no canonical item owned this distinct report."
+  "2026-07-29T01:01:38.626Z","harness:codex","Delivery evidence: list tag filters now accept repeated and comma-separated values with case-insensitive OR semantics and emit deterministic unknown_tags diagnostics. The linked 28-test list suite passed; isolated packed acceptance proved red,blue returns both rows and missing-tag is disclosed."
+files[4]{path,scope,note}:
+  src/cli/register-list-query.ts,project,multi-value tag filtering contracts implementation and regression proof
+  src/cli/registration-helpers.ts,project,multi-value tag filtering contracts implementation and regression proof
+  src/sdk/query/list.ts,project,multi-value tag filtering contracts implementation and regression proof
+  tests/unit/commands/list-command.spec.ts,project,multi-value tag filtering contracts implementation and regression proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/list-command.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms5cv0nt-v157t1,test,passed,"2026-07-29T00:37:17.120Z","2026-07-29T00:37:28.986Z","2026-07-29T00:37:28.986Z",1,0,0
+close_reason: Multi-value list tag filtering and diagnostics implemented and verified
 body: ""

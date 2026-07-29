@@ -1138,7 +1138,7 @@ export function registerSetupCommands(program: Command): void {
     .argument("[action]", "Config action: get|set|list|export")
     .argument(
       "[key]",
-      "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|lifecycle-stale-blocker-reason-patterns|lifecycle-closure-like-blocked-reason-patterns|lifecycle-closure-like-resolution-patterns|lifecycle-closure-like-actual-result-patterns|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-require-close-reason|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|governance-duplicate-detection-mode|governance-duplicate-detection-threshold|governance-duplicate-detection-limit|test-result-tracking|telemetry-tracking|context",
+      "Config key for get|set; use `pm config project list` for the complete typed inventory, including mutation-guard-* policies",
     )
     .argument(
       "[value]",
@@ -1160,7 +1160,7 @@ export function registerSetupCommands(program: Command): void {
     )
     .option(
       "--value <value>",
-      "Value for nested leaf settings keys (kebab-case preferred; underscore aliases remain accepted), including governance-duplicate-detection-threshold, governance-duplicate-detection-limit, search-provider, search-mutation-refresh-policy, openai-base-url, vector-store-adapter, and others. Equivalent to the positional value.",
+      "Typed nested setting value. Mutation guards: require-attributed-author=true|false, secret-guard=off|advise|block, stale-in-progress-hours=integer>=1. Kebab-case is preferred; underscore aliases remain accepted.",
     )
     .option(
       "--default-depth <value>",

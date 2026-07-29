@@ -266,6 +266,26 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
       expect(result.nested_settings).toHaveLength(Object.keys(ALL_EXPECTED_ALIASES).length);
       const keys = (result.nested_settings ?? []).map((entry) => entry.key).sort();
       expect(keys).toEqual(Object.keys(ALL_EXPECTED_ALIASES).sort());
+      expect(
+        result.nested_settings?.find(
+          (entry) => entry.key === "mutation_guard_secret_guard",
+        ),
+      ).toMatchObject({
+        canonical_key: "mutation-guard-secret-guard",
+        path: "mutation_guard.secret_guard",
+        kind: "string",
+        choices: ["off", "advise", "block"],
+        summary: expect.stringContaining("credential-shaped"),
+      });
+      expect(
+        result.nested_settings?.find(
+          (entry) =>
+            entry.key === "mutation_guard_stale_in_progress_hours",
+        ),
+      ).toMatchObject({
+        canonical_key: "mutation-guard-stale-in-progress-hours",
+        min: 1,
+      });
     });
   });
 });

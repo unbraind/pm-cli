@@ -2,24 +2,38 @@ id: pm-r2suqb
 title: "GH-672: pm context low_level rows omit blocked state and blocker IDs"
 description: "pm context summary reports blocked work but low_level rows omit a blocked marker and blocker IDs, forcing agents to spend another command roundtrip to understand actionability."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-24T19:16:01.543Z"
-updated_at: "2026-07-26T05:57:15.446Z"
+updated_at: "2026-07-29T01:02:30.179Z"
+closed_at: "2026-07-29T01:02:27.106Z"
+completed_at: "2026-07-29T01:02:27.106Z"
 author: claude-code-agent
 estimated_minutes: 120
 acceptance_criteria: Context low_level rows include a token-efficient blocked marker and blocker IDs; SDK and CLI projections share one implementation; bounded/default output remains within token budgets; context summary and rows cannot disagree; contracts docs and tests cover active terminal missing and custom-status blockers
 parent: pm-mpbb
 risk: low
 confidence: high
-expected_result: Each low_level context row exposes compact blocked state and blocker IDs consistently with the summary and pm next semantics.
-actual_result: The summary reports blocked items while low_level rows do not identify which rows are blocked or why.
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related,"2026-07-24T19:16:35.353Z",null,null
-  pm-l0bu,related,"2026-07-24T19:16:35.353Z",null,null
-  pm-uxkf,related,"2026-07-24T19:16:35.353Z",null,null
-  pm-mpbb,implements,"2026-07-26T05:57:15.259Z",null,null
-comments[1]{created_at,author,text}:
+resolution: Compact focus projections now annotate blocked rows with unresolved blocker IDs using the complete workspace corpus.
+expected_result: A context consumer can identify blocked low-level work and its blockers without an extra get call.
+actual_result: Focused tests and packed acceptance expose blocked=true plus canonical blocker_ids and lifecycle fallback.
+dependencies[4]{id,kind,created_at}:
+  pm-4k6b,related,"2026-07-24T19:16:35.353Z"
+  pm-l0bu,related,"2026-07-24T19:16:35.353Z"
+  pm-uxkf,related,"2026-07-24T19:16:35.353Z"
+  pm-mpbb,implements,"2026-07-26T05:57:15.259Z"
+comments[2]{created_at,author,text}:
   "2026-07-24T19:16:01.543Z",claude-code-agent,"author=claude-code-agent,created_at=now,text=Duplicate check evidence: exact all-status search for GH-672 returned zero items; broader blocked-marker search found closed pm-uxkf and pm-l0bu as related prior semantics, not this missing row projection. GitHub issue: https://github.com/unbraind/pm-cli/issues/672"
+  "2026-07-29T01:01:39.530Z","harness:codex","Delivery evidence: context focus rows now carry compact blocked=true and blocker_ids provenance using the full corpus while preserving lifecycle-only fallback. The linked 50-test context/workspace-memory suite passed; packed acceptance proved a low-level dependency-blocked row names its active blocker without another get roundtrip."
+files[4]{path,scope,note}:
+  src/cli/commands/context.ts,project,compact blocker provenance implementation and regression proof
+  src/sdk/workspace-memory.ts,project,compact blocker provenance implementation and regression proof
+  tests/unit/commands/context-command.spec.ts,project,compact blocker provenance implementation and regression proof
+  tests/unit/sdk/workspace-memory.spec.ts,project,compact blocker provenance implementation and regression proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/context-command.spec.ts tests/unit/sdk/workspace-memory.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms5cvagt-wjp3ri,test,passed,"2026-07-29T00:37:29.702Z","2026-07-29T00:37:41.693Z","2026-07-29T00:37:41.693Z",1,0,0
+close_reason: Context blocker provenance implemented and verified
 body: ""

@@ -161,6 +161,7 @@ export const ITEM_METADATA_KEY_ORDER: ReadonlyArray<string> = [
   "reminders",
   "events",
   "closed_at",
+  "completed_at",
   "assignee",
   "claim_principal",
   "source_owner",

@@ -763,6 +763,19 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       description: "Set parent item ID",
     },
     {
+      target: "allowMissingParent",
+      keys: ["allowMissingParent", "allow_missing_parent"],
+      option: "--allow-missing-parent",
+      description:
+        "Allow updating to an unresolved parent reference and emit a validation warning",
+    },
+    {
+      target: "completedAt",
+      keys: ["completedAt", "completed_at"],
+      option: "--completed-at <value>",
+      description: "Correct the actual completion timestamp on a terminal item",
+    },
+    {
       target: "reviewer",
       keys: ["reviewer"],
       option: "--reviewer <value>",

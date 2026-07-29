@@ -104,11 +104,6 @@
       "count": 1
     }
   },
-  "src/cli/commands/update.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/cli/error-guidance.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
