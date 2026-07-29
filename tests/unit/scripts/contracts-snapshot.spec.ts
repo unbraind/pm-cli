@@ -252,5 +252,7 @@ describe("scripts/contracts-snapshot: spawn and parse failures", () => {
       spawnResult: { status: 0, stdout: "not-json", stderr: "" },
     });
     expect(String(result.failure ?? "")).toContain("invalid JSON");
+    expect(String(result.failure ?? "")).toContain('stdout="not-json"');
+    expect(String(result.failure ?? "")).toContain('stderr=""');
   });
 });

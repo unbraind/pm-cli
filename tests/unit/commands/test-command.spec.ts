@@ -319,6 +319,45 @@ describe("runTest", () => {
     });
   });
 
+  it("validates measurement selectors before linked-test mutations", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-measurements-before-mutation");
+      await expect(
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project"],
+            run: true,
+            measure: ["coverage="],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project"],
+            metricBelow: "coverage=",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project"],
+            measure: ["coverage=100"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      const itemMetadata = await loadTaskMetadata(context, id);
+      expect(itemMetadata.tests).toBeUndefined();
+    });
+  });
+
   it("validates add/remove payloads and timeout parsing", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-test-command");

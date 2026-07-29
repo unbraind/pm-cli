@@ -73,7 +73,7 @@ function runCliJson(args, label) {
   } catch (error) {
     /* c8 ignore next -- JSON.parse only throws SyntaxError (an Error); String(error) fallback is unreachable */
     throw new Error(
-      `${label} produced invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+      `${label} produced invalid JSON: ${error instanceof Error ? error.message : String(error)}; stdout=${JSON.stringify(result.stdout)}; stderr=${JSON.stringify(result.stderr)}`,
     );
   }
 }

@@ -10,10 +10,7 @@ import {
   renderRowsAsCsv,
   renderRowsAsTable,
 } from "../sdk/runtime-primitives.js";
-import {
-  EVAL_QUERY_SET_EXAMPLE,
-  EVAL_QUERY_SET_SCHEMA_ID,
-} from "../sdk/eval.js";
+import { EVAL_QUERY_SET_SCHEMA_ID } from "../sdk/eval.js";
 import { serializeNdjsonRows } from "../sdk/output.js";
 import {
   listMutationEvents,
@@ -1236,7 +1233,7 @@ export function registerListQueryCommands(
       )
       .option(
         "--queries <path>",
-        `Path to a ${EVAL_QUERY_SET_SCHEMA_ID} golden-query JSON file (default: <pmRoot>/search/eval-queries.json; example: ${JSON.stringify(EVAL_QUERY_SET_EXAMPLE)})`,
+        `Query JSON (${EVAL_QUERY_SET_SCHEMA_ID}); default: search/eval-queries.json; errors show an example`,
       )
       .option("--format <value>", "Eval output format override: json|toon")
       .action(runEvalAction);

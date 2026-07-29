@@ -33,7 +33,10 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
+import {
+  appendTrackedTestRunSummary,
+  buildTrackedTestRunHistory,
+} from "../../core/test/item-test-run-tracking.js";
 import { runInit } from "../init.js";
 import {
   looksLikeStructuredLinkedTestEntry,
@@ -2821,8 +2824,14 @@ function buildTestMeasurementProjection(
   if (options.metricBelow !== undefined) {
     const separator = options.metricBelow.indexOf("=");
     const name = options.metricBelow.slice(0, separator).trim();
-    const threshold = Number(options.metricBelow.slice(separator + 1).trim());
-    if (separator <= 0 || name.length === 0 || !Number.isFinite(threshold)) {
+    const thresholdText = options.metricBelow.slice(separator + 1).trim();
+    const threshold = Number(thresholdText);
+    if (
+      separator <= 0 ||
+      name.length === 0 ||
+      thresholdText.length === 0 ||
+      !Number.isFinite(threshold)
+    ) {
       throw new PmCliError(
         "--metric-below must use name=value",
         EXIT_CODE.USAGE,
@@ -2855,6 +2864,11 @@ export async function runTest(
     );
   }
   const settings = await readSettings(pmRoot);
+  if ((options.measure?.length ?? 0) > 0 && options.run !== true) {
+    throw new PmCliError("--measure requires --run", EXIT_CODE.USAGE);
+  }
+  parseTestRunMeasurements(options.measure, "validation");
+  buildTestMeasurementProjection(options, [], undefined);
   const typeRegistry = resolveItemTypeRegistry(
     settings,
     getActiveExtensionRegistrations(),
@@ -2882,9 +2896,6 @@ export async function runTest(
     adds,
     removes,
   });
-  if ((options.measure?.length ?? 0) > 0 && options.run !== true) {
-    throw new PmCliError("--measure requires --run", EXIT_CODE.USAGE);
-  }
   const runOptions = resolveTestRunOptions(options, item.tests);
   const runStartedAt = options.run === true ? nowIso() : undefined;
   const runResults = await executeSelectedLinkedTests({
@@ -2912,7 +2923,9 @@ export async function runTest(
     failOnSkippedTriggered,
     warnings,
   });
-  const runs = recordedRun ? [...item.testRuns, recordedRun] : item.testRuns;
+  const runs = recordedRun
+    ? buildTrackedTestRunHistory([...item.testRuns, recordedRun])
+    : item.testRuns;
   const measurementProjection = buildTestMeasurementProjection(
     options,
     runs,

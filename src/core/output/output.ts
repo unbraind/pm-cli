@@ -306,7 +306,10 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
   if (!isPlainObject(value) || !Array.isArray(value.run_results)) {
     return value;
   }
-  const rows = value.run_results.filter(isPlainObject);
+  if (!value.run_results.every(isPlainObject)) {
+    return value;
+  }
+  const rows = value.run_results;
   const contexts = rows
     .map((row) => row.execution_context)
     .filter((context) => context !== undefined);

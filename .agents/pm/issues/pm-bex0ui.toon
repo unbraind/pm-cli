@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-experience,"area:cli",context-efficiency,github-report,recovery
 created_at: "2026-07-28T16:30:32.604Z"
-updated_at: "2026-07-29T05:58:28.128Z"
-closed_at: "2026-07-29T05:55:48.452Z"
-completed_at: "2026-07-29T05:55:48.452Z"
+updated_at: "2026-07-29T06:28:31.668Z"
+closed_at: "2026-07-29T06:28:28.834Z"
+completed_at: "2026-07-29T06:28:28.834Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "pm read, show, and view recover to executable read semantics with deterministic ranking; unknown-command recovery recommends bounded contracts summary guidance instead of root help; token and executable-alias regressions cover human and structured modes"
@@ -22,7 +22,7 @@ reporter: github-issue-797
 severity: medium
 environment: Published CLI recovery path
 repro_steps: "Run pm read, pm show, and pm view for an item-shaped intent and compare suggestions and recovery guidance."
-resolution: Read is an executable get alias and unknown-command recovery now favors bounded actionable contract guidance.
+resolution: "Fetch, read, show, and view execute get semantics while unknown-command recovery prioritizes bounded actionable guidance."
 expected_result: Read-shaped aliases and mistakes converge on pm get with a bounded discovery fallback.
 actual_result: "pm read receives alphabetical noise while show/view resolve to get, and fallback guidance sends agents to the full root help payload."
 component: "cli:unknown-command-recovery"
@@ -32,17 +32,18 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-i35t,discovered_from,"2026-07-28T16:30:32.604Z","harness:codex","cli:create:dep",detected
   pm-1jrdri,related,"2026-07-29T05:06:54.740Z","harness:codex","cli:update:dep",detected
   pm-5t33or,implements,"2026-07-29T05:06:54.740Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-28T16:30:32.604Z","harness:codex","Duplicate-check evidence: all-status searches for GH-797, pm read/show/view, recovery bundle, and contracts summary found closed executable-alias predecessor pm-i35t, open cross-family recovery owner pm-185870, and parent grammar epic pm-n7rr, but no item owns this ranking plus bounded-guidance gap. Created as the canonical GitHub follow-up; it is intentionally open and unclaimed in this delivery."
   "2026-07-28T16:31:07.704Z","harness:codex","GitHub linkage: https://github.com/unbraind/pm-cli/issues/797 with owner comment linking this canonical item."
   "2026-07-29T05:55:20.414Z","harness:codex","Delivery evidence: read is now an executable get alias alongside show/view, while fuzzy recovery deliberately excludes the generic read token so unrelated guesses retain bounded pm --help recovery. Full help runtime acceptance passed."
+  "2026-07-29T06:26:31.538Z","harness:codex","Correction to earlier delivery evidence: arbitrary misses retain the bounded unknown-command recovery bundle, which now prioritizes contract-oriented guidance; this review round also adds the omitted executable fetch -> get synonym required by GH-797. The prior phrase \"bounded pm --help recovery\" was imprecise and is superseded by this append-only correction."
 files[3]{path,scope,note}:
   src/cli/commander-usage.ts,project,Recovery ranking
   src/sdk/cli-contracts/command-aliases.ts,project,Executable read alias
   tests/integration/help-runtime.spec.ts,project,Alias acceptance and unrelated recovery regression
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,project,240
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-ms5o6q2g-smlrn5
     kind: test
     status: passed
@@ -55,5 +56,17 @@ test_runs[1]:
     measurements[2]{name,value,unit,threshold,recorded_at}:
       coverage,100,percent,100,"2026-07-29T05:54:30.904Z"
       gate,1,boolean,1,"2026-07-29T05:54:30.904Z"
-close_reason: "Implemented and verified in the broad SDK context-contract delivery; linked evidence, full gates, and isolated consumer acceptance passed."
+  - run_id: test-local-ms5pdjm4-vrzmis
+    kind: test
+    status: passed
+    started_at: "2026-07-29T06:27:31.196Z"
+    finished_at: "2026-07-29T06:27:48.748Z"
+    recorded_at: "2026-07-29T06:27:48.748Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[2]{name,value,unit,threshold,recorded_at}:
+      coverage,100,percent,100,"2026-07-29T06:27:48.748Z"
+      gate,1,boolean,1,"2026-07-29T06:27:48.748Z"
+close_reason: PR #809 review remediation verified through live issue requirements and executable alias acceptance.
 body: ""

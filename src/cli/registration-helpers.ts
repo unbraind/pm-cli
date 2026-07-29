@@ -159,11 +159,15 @@ export function clearResolvedGlobalOptions(command: Command): void {
 
 /** Implements get global options for the public runtime surface of this module. */
 export function getGlobalOptions(command: Command): GlobalOptions {
+  const commandPath = getCommandPath(command);
   const resolved = (command as CommandWithResolvedGlobals)[
     RESOLVED_GLOBAL_OPTIONS
   ];
   if (resolved) {
-    return { ...resolved };
+    return {
+      ...resolved,
+      ...(commandPath.length > 0 ? { command: commandPath } : {}),
+    };
   }
   const reader = commandOptionsReader(command);
   const opts =
@@ -188,6 +192,7 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     noExtensions: opts.extensions === false,
     noPager: Boolean(opts.noPager),
     profile: Boolean(opts.profile),
+    ...(commandPath.length > 0 ? { command: commandPath } : {}),
     ...(typeof opts.author === "string" ? { author: opts.author } : {}),
   };
 }

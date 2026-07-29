@@ -130,6 +130,9 @@ describe("registration helpers", () => {
     const parent = program.command("schema");
     const child = parent.command("add-type");
     expect(getCommandPath(child)).toBe("schema add-type");
+    expect(getGlobalOptions(child)).toMatchObject({
+      command: "schema add-type",
+    });
     // A root command with no parent yields an empty path.
     expect(getCommandPath(program)).toBe("");
   });

@@ -890,17 +890,11 @@ export function registerOperationCommands(program: Command): void {
   addLinkedTestExecutionOptions(testCommand)
     .option(
       "--measure <value>",
-      "Record numeric run evidence as name=value[,unit=...][,threshold=...] (repeatable)",
+      "Record name=value[,unit=...][,threshold=...] evidence; repeatable",
       collect,
     )
-    .option(
-      "--metric-below <value>",
-      "Return recorded evidence below a name=value threshold",
-    )
-    .option(
-      "--metric-diff <name>",
-      "Compare the latest and previous values for one metric",
-    )
+    .option("--metric-below <value>", "Return evidence below name=value")
+    .option("--metric-diff <name>", "Diff the latest two values")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")

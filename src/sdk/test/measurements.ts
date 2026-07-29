@@ -52,8 +52,14 @@ export function parseTestRunMeasurements(
     const [metricPair, ...attributes] = raw.split(",");
     const separator = metricPair.indexOf("=");
     const name = metricPair.slice(0, separator).trim();
-    const value = Number(metricPair.slice(separator + 1).trim());
-    if (separator <= 0 || name.length === 0 || !Number.isFinite(value)) {
+    const valueText = metricPair.slice(separator + 1).trim();
+    const value = Number(valueText);
+    if (
+      separator <= 0 ||
+      name.length === 0 ||
+      valueText.length === 0 ||
+      !Number.isFinite(value)
+    ) {
       throw new PmCliError(
         `Invalid --measure "${raw}"; expected name=value[,unit=...][,threshold=...]`,
         EXIT_CODE.USAGE,
@@ -69,6 +75,7 @@ export function parseTestRunMeasurements(
         unit = attributeValue;
       } else if (
         key === "threshold" &&
+        attributeValue.length > 0 &&
         Number.isFinite(Number(attributeValue))
       ) {
         threshold = Number(attributeValue);

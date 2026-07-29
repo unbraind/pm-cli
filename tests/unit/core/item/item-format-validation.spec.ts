@@ -11,7 +11,10 @@ import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
-function buildSource(overrides: Record<string, unknown> = {}, body = "Body"): string {
+function buildSource(
+  overrides: Record<string, unknown> = {},
+  body = "Body",
+): string {
   const itemMetadata: Record<string, unknown> = {
     id: "pm-validate",
     title: "Validate item metadata",
@@ -34,7 +37,10 @@ function runtimeSchemaOverrides(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function parseItemDocument(content: string, options: ItemDocumentFormatOptions = {}) {
+function parseItemDocument(
+  content: string,
+  options: ItemDocumentFormatOptions = {},
+) {
   return parseRawItemDocument(content, { format: "json_markdown", ...options });
 }
 
@@ -48,12 +54,17 @@ describe("item-format metadata validation", () => {
 
   it("ignores legacy YAML wrappers before JSON front matter", () => {
     const warnings: string[] = [];
-    const parsed = parseItemDocument(`\uFEFF---\ntitle: "{legacy-yaml-wrapper}"\n---\n  ${buildSource()}`, {
-      onWarning: (warning) => warnings.push(warning),
-    });
+    const parsed = parseItemDocument(
+      `\uFEFF---\ntitle: "{legacy-yaml-wrapper}"\n---\n  ${buildSource()}`,
+      {
+        onWarning: (warning) => warnings.push(warning),
+      },
+    );
     expect(parsed.metadata.id).toBe("pm-validate");
     expect(parsed.body).toBe("Body");
-    expect(warnings).toEqual(["json_markdown_leading_yaml_frontmatter_ignored"]);
+    expect(warnings).toEqual([
+      "json_markdown_leading_yaml_frontmatter_ignored",
+    ]);
   });
 
   it("accepts a UTF-8 BOM before JSON front matter without YAML warnings", () => {
@@ -66,13 +77,21 @@ describe("item-format metadata validation", () => {
   });
 
   it("throws when JSON front matter is missing", () => {
-    expect(() => parseItemDocument("Body only")).toThrow("missing JSON front matter");
-    expect(() => parseItemDocument("---\nyaml without closing marker")).toThrow("missing JSON front matter");
+    expect(() => parseItemDocument("Body only")).toThrow(
+      "missing JSON front matter",
+    );
+    expect(() => parseItemDocument("---\nyaml without closing marker")).toThrow(
+      "missing JSON front matter",
+    );
   });
 
   it("throws when JSON front matter is malformed", () => {
-    expect(() => parseItemDocument("{\n  \"id\": \"pm-validate\"\n")).toThrow("not valid JSON");
-    expect(() => parseItemDocument("{ invalid }\n\nBody")).toThrow("not valid JSON");
+    expect(() => parseItemDocument('{\n  "id": "pm-validate"\n')).toThrow(
+      "not valid JSON",
+    );
+    expect(() => parseItemDocument("{ invalid }\n\nBody")).toThrow(
+      "not valid JSON",
+    );
   });
 
   it("throws actionable guidance when merge conflict markers are present", () => {
@@ -84,40 +103,56 @@ describe("item-format metadata validation", () => {
       ">>>>>>> feature/conflict",
       "",
     ].join("\n");
-    expect(() => parseItemDocument(conflicted)).toThrow("Merge conflict markers detected in item document at line 1");
+    expect(() => parseItemDocument(conflicted)).toThrow(
+      "Merge conflict markers detected in item document at line 1",
+    );
   });
 
   it("throws when required string fields are missing or invalid", () => {
-    expect(() => parseItemDocument(buildSource({ title: undefined }))).toThrow("title is required and must be a string");
+    expect(() => parseItemDocument(buildSource({ title: undefined }))).toThrow(
+      "title is required and must be a string",
+    );
     expect(() => parseItemDocument(buildSource({ description: 42 }))).toThrow(
       "description is required and must be a string",
     );
   });
 
   it("throws on invalid type, status, and priority", () => {
-    expect(() => parseItemDocument(buildSource({ type: "   " }))).toThrow("type must be a non-empty string");
-    expect(() => parseItemDocument(buildSource({ status: "doing" }))).toThrow("status must be one of");
-    expect(() => parseItemDocument(buildSource({ priority: 7 }))).toThrow("priority must be an integer 0..4");
+    expect(() => parseItemDocument(buildSource({ type: "   " }))).toThrow(
+      "type must be a non-empty string",
+    );
+    expect(() => parseItemDocument(buildSource({ status: "doing" }))).toThrow(
+      "status must be one of",
+    );
+    expect(() => parseItemDocument(buildSource({ priority: 7 }))).toThrow(
+      "priority must be an integer 0..4",
+    );
   });
 
   it("rejects malformed pm_format_version values", () => {
-    expect(() => parseItemDocument(buildSource({ pm_format_version: 0 }))).toThrow("pm_format_version must be an integer >= 1");
-    expect(() => parseItemDocument(buildSource({ pm_format_version: 1.5 }))).toThrow(
-      "pm_format_version must be an integer >= 1",
-    );
-    expect(() => parseItemDocument(buildSource({ pm_format_version: "2" }))).toThrow(
-      "pm_format_version must be an integer >= 1",
-    );
+    expect(() =>
+      parseItemDocument(buildSource({ pm_format_version: 0 })),
+    ).toThrow("pm_format_version must be an integer >= 1");
+    expect(() =>
+      parseItemDocument(buildSource({ pm_format_version: 1.5 })),
+    ).toThrow("pm_format_version must be an integer >= 1");
+    expect(() =>
+      parseItemDocument(buildSource({ pm_format_version: "2" })),
+    ).toThrow("pm_format_version must be an integer >= 1");
   });
 
   it("drops a baseline pm_format_version on normalization but preserves versions above the baseline", () => {
     const baseline = parseItemDocument(buildSource({ pm_format_version: 1 }));
     expect(baseline.metadata.pm_format_version).toBeUndefined();
-    expect(serializeItemDocument(baseline, { format: "toon" })).not.toContain("pm_format_version");
+    expect(serializeItemDocument(baseline, { format: "toon" })).not.toContain(
+      "pm_format_version",
+    );
 
     const ahead = parseItemDocument(buildSource({ pm_format_version: 2 }));
     expect(ahead.metadata.pm_format_version).toBe(2);
-    expect(serializeItemDocument(ahead, { format: "toon" })).toContain("pm_format_version: 2");
+    expect(serializeItemDocument(ahead, { format: "toon" })).toContain(
+      "pm_format_version: 2",
+    );
   });
 
   it("accepts in-progress status alias and normalizes to canonical status", () => {
@@ -131,7 +166,10 @@ describe("item-format metadata validation", () => {
         { id: "open", roles: ["active", "default_open"] },
         { id: "review", roles: ["active"] },
         { id: "done", roles: ["terminal", "terminal_done", "default_close"] },
-        { id: "canceled", roles: ["terminal", "terminal_canceled", "default_cancel"] },
+        {
+          id: "canceled",
+          roles: ["terminal", "terminal_canceled", "default_cancel"],
+        },
       ],
       workflow: {
         ...SETTINGS_DEFAULTS.schema.workflow,
@@ -139,7 +177,9 @@ describe("item-format metadata validation", () => {
         close_status: "done",
       },
     });
-    const parsed = parseItemDocument(buildSource({ status: "review" }), { schema });
+    const parsed = parseItemDocument(buildSource({ status: "review" }), {
+      schema,
+    });
     expect(parsed.metadata.status).toBe("review");
   });
 
@@ -149,7 +189,14 @@ describe("item-format metadata validation", () => {
         {
           key: "story_points",
           type: "number",
-          commands: ["create", "update", "list", "search", "calendar", "context"],
+          commands: [
+            "create",
+            "update",
+            "list",
+            "search",
+            "calendar",
+            "context",
+          ],
         },
       ],
     });
@@ -166,16 +213,18 @@ describe("item-format metadata validation", () => {
       story_points: "abc",
       body: "Body",
     })}\n`;
-    expect(() => parseItemDocument(source, { format: "toon", schema })).toThrow('metadata field "story_points" must be a number');
+    expect(() => parseItemDocument(source, { format: "toon", schema })).toThrow(
+      'metadata field "story_points" must be a number',
+    );
   });
 
   it("rejects unknown metadata fields when unknown_field_policy is reject", () => {
     const schema = runtimeSchemaOverrides({
       unknown_field_policy: "reject",
     });
-    expect(() => parseItemDocument(buildSource({ mystery_field: "x" }), { schema })).toThrow(
-      "unknown schema fields are not allowed: mystery_field",
-    );
+    expect(() =>
+      parseItemDocument(buildSource({ mystery_field: "x" }), { schema }),
+    ).toThrow("unknown schema fields are not allowed: mystery_field");
   });
 
   it("emits warnings for unknown metadata fields when unknown_field_policy is warn", () => {
@@ -187,22 +236,28 @@ describe("item-format metadata validation", () => {
       schema,
       onWarning: (warning) => warnings.push(warning),
     });
-    expect((parsed.metadata as Record<string, unknown>).mystery_field).toBe("x");
+    expect((parsed.metadata as Record<string, unknown>).mystery_field).toBe(
+      "x",
+    );
     expect(warnings).toEqual(["item_unknown_schema_fields:mystery_field"]);
   });
 
   it("throws when tags are not string arrays", () => {
-    expect(() => parseItemDocument(buildSource({ tags: "core" }))).toThrow("tags must be an array");
-    expect(() => parseItemDocument(buildSource({ tags: ["ok", 2] }))).toThrow("tags entries must be strings");
+    expect(() => parseItemDocument(buildSource({ tags: "core" }))).toThrow(
+      "tags must be an array",
+    );
+    expect(() => parseItemDocument(buildSource({ tags: ["ok", 2] }))).toThrow(
+      "tags entries must be strings",
+    );
   });
 
   it("throws when timestamps are invalid", () => {
-    expect(() => parseItemDocument(buildSource({ created_at: "not-a-timestamp" }))).toThrow(
-      "created_at must be a valid ISO timestamp",
-    );
-    expect(() => parseItemDocument(buildSource({ deadline: "tomorrow-ish" }))).toThrow(
-      "deadline must be a valid ISO timestamp",
-    );
+    expect(() =>
+      parseItemDocument(buildSource({ created_at: "not-a-timestamp" })),
+    ).toThrow("created_at must be a valid ISO timestamp");
+    expect(() =>
+      parseItemDocument(buildSource({ deadline: "tomorrow-ish" })),
+    ).toThrow("deadline must be a valid ISO timestamp");
   });
 
   it("parses and normalizes reminders deterministically", () => {
@@ -241,17 +296,25 @@ describe("item-format metadata validation", () => {
   });
 
   it("throws on invalid reminder structures", () => {
-    expect(() => parseItemDocument(buildSource({ reminders: "tomorrow" }))).toThrow("reminders must be an array");
-    expect(() => parseItemDocument(buildSource({ reminders: [42] }))).toThrow("reminders entries must be objects");
-    expect(() => parseItemDocument(buildSource({ reminders: [{ text: "missing at" }] }))).toThrow(
-      "reminder.at must be a string",
+    expect(() =>
+      parseItemDocument(buildSource({ reminders: "tomorrow" })),
+    ).toThrow("reminders must be an array");
+    expect(() => parseItemDocument(buildSource({ reminders: [42] }))).toThrow(
+      "reminders entries must be objects",
     );
-    expect(() => parseItemDocument(buildSource({ reminders: [{ at: "invalid", text: "bad ts" }] }))).toThrow(
-      "reminder.at must be a valid ISO timestamp",
-    );
-    expect(() => parseItemDocument(buildSource({ reminders: [{ at: FIXED_TS, text: "" }] }))).toThrow(
-      "reminder.text must not be empty",
-    );
+    expect(() =>
+      parseItemDocument(buildSource({ reminders: [{ text: "missing at" }] })),
+    ).toThrow("reminder.at must be a string");
+    expect(() =>
+      parseItemDocument(
+        buildSource({ reminders: [{ at: "invalid", text: "bad ts" }] }),
+      ),
+    ).toThrow("reminder.at must be a valid ISO timestamp");
+    expect(() =>
+      parseItemDocument(
+        buildSource({ reminders: [{ at: FIXED_TS, text: "" }] }),
+      ),
+    ).toThrow("reminder.text must not be empty");
   });
 
   it("parses and normalizes events and recurrence deterministically", () => {
@@ -343,7 +406,10 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(timezoneSorted.events?.map((event) => event.timezone)).toEqual(["UTC", "Zulu"]);
+    expect(timezoneSorted.events?.map((event) => event.timezone)).toEqual([
+      "UTC",
+      "Zulu",
+    ]);
 
     const locationSorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -370,7 +436,10 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(locationSorted.events?.map((event) => event.location)).toEqual(["alpha room", "zeta room"]);
+    expect(locationSorted.events?.map((event) => event.location)).toEqual([
+      "alpha room",
+      "zeta room",
+    ]);
 
     const descriptionSorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -397,7 +466,9 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(descriptionSorted.events?.map((event) => event.description)).toEqual(["alpha desc", "zeta desc"]);
+    expect(descriptionSorted.events?.map((event) => event.description)).toEqual(
+      ["alpha desc", "zeta desc"],
+    );
 
     const recurrenceSorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -424,7 +495,9 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(recurrenceSorted.events?.map((event) => event.recurrence?.freq)).toEqual(["daily", "weekly"]);
+    expect(
+      recurrenceSorted.events?.map((event) => event.recurrence?.freq),
+    ).toEqual(["daily", "weekly"]);
   });
 
   it("covers event comparator optional-field branches and interval retention", () => {
@@ -467,7 +540,10 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(endSorted.events?.map((event) => event.end_at)).toEqual([undefined, "2026-02-24T10:00:00.000Z"]);
+    expect(endSorted.events?.map((event) => event.end_at)).toEqual([
+      undefined,
+      "2026-02-24T10:00:00.000Z",
+    ]);
 
     const titleSorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -485,7 +561,10 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(titleSorted.events?.map((event) => event.title)).toEqual([undefined, "Tie event"]);
+    expect(titleSorted.events?.map((event) => event.title)).toEqual([
+      undefined,
+      "Tie event",
+    ]);
 
     const allDaySorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -504,7 +583,10 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(allDaySorted.events?.map((event) => event.all_day)).toEqual([false, true]);
+    expect(allDaySorted.events?.map((event) => event.all_day)).toEqual([
+      false,
+      true,
+    ]);
 
     const timezoneSorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -524,7 +606,10 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(timezoneSorted.events?.map((event) => event.timezone)).toEqual([undefined, "UTC"]);
+    expect(timezoneSorted.events?.map((event) => event.timezone)).toEqual([
+      undefined,
+      "UTC",
+    ]);
 
     const locationSorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -546,7 +631,10 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(locationSorted.events?.map((event) => event.location)).toEqual([undefined, "Room 1"]);
+    expect(locationSorted.events?.map((event) => event.location)).toEqual([
+      undefined,
+      "Room 1",
+    ]);
 
     const descriptionSorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -570,7 +658,9 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(descriptionSorted.events?.map((event) => event.description)).toEqual([undefined, "Description"]);
+    expect(descriptionSorted.events?.map((event) => event.description)).toEqual(
+      [undefined, "Description"],
+    );
 
     const recurrenceSorted = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -596,7 +686,9 @@ describe("item-format metadata validation", () => {
         },
       ],
     });
-    expect(recurrenceSorted.events?.map((event) => event.recurrence?.freq)).toEqual(["weekly", undefined]);
+    expect(
+      recurrenceSorted.events?.map((event) => event.recurrence?.freq),
+    ).toEqual(["weekly", undefined]);
 
     const bothUndefinedFallback = normalizeItemMetadata({
       ...baseItemMetadata,
@@ -615,21 +707,37 @@ describe("item-format metadata validation", () => {
   });
 
   it("throws on invalid event and recurrence structures", () => {
-    expect(() => parseItemDocument(buildSource({ events: "calendar-event" }))).toThrow("events must be an array");
-    expect(() => parseItemDocument(buildSource({ events: [42] }))).toThrow("events entries must be objects");
-    expect(() => parseItemDocument(buildSource({ events: [{ title: "missing start" }] }))).toThrow("event.start_at must be a string");
-    expect(() => parseItemDocument(buildSource({ events: [{ start_at: "not-a-timestamp" }] }))).toThrow(
-      "event.start_at must be a valid ISO timestamp",
+    expect(() =>
+      parseItemDocument(buildSource({ events: "calendar-event" })),
+    ).toThrow("events must be an array");
+    expect(() => parseItemDocument(buildSource({ events: [42] }))).toThrow(
+      "events entries must be objects",
     );
     expect(() =>
-      parseItemDocument(buildSource({ events: [{ start_at: FIXED_TS, end_at: "2026-02-21T00:00:00.000Z" }] })),
+      parseItemDocument(buildSource({ events: [{ title: "missing start" }] })),
+    ).toThrow("event.start_at must be a string");
+    expect(() =>
+      parseItemDocument(
+        buildSource({ events: [{ start_at: "not-a-timestamp" }] }),
+      ),
+    ).toThrow("event.start_at must be a valid ISO timestamp");
+    expect(() =>
+      parseItemDocument(
+        buildSource({
+          events: [{ start_at: FIXED_TS, end_at: "2026-02-21T00:00:00.000Z" }],
+        }),
+      ),
     ).toThrow("event.end_at must be after event.start_at");
-    expect(() => parseItemDocument(buildSource({ events: [{ start_at: FIXED_TS, title: "   " }] }))).toThrow(
-      "event.title must not be empty",
-    );
-    expect(() => parseItemDocument(buildSource({ events: [{ start_at: FIXED_TS, all_day: "yes" }] }))).toThrow(
-      "event.all_day must be a boolean",
-    );
+    expect(() =>
+      parseItemDocument(
+        buildSource({ events: [{ start_at: FIXED_TS, title: "   " }] }),
+      ),
+    ).toThrow("event.title must not be empty");
+    expect(() =>
+      parseItemDocument(
+        buildSource({ events: [{ start_at: FIXED_TS, all_day: "yes" }] }),
+      ),
+    ).toThrow("event.all_day must be a boolean");
     expect(() =>
       parseItemDocument(
         buildSource({
@@ -716,11 +824,23 @@ describe("item-format metadata validation", () => {
       created_at: FIXED_TS,
       updated_at: FIXED_TS,
       dependencies: [
-        { id: "pm-a", kind: "related_to", created_at: FIXED_TS, source_kind: "z-rel" },
-        { id: "pm-a", kind: "related_to", created_at: FIXED_TS, source_kind: "a-rel" },
+        {
+          id: "pm-a",
+          kind: "related_to",
+          created_at: FIXED_TS,
+          source_kind: "z-rel",
+        },
+        {
+          id: "pm-a",
+          kind: "related_to",
+          created_at: FIXED_TS,
+          source_kind: "a-rel",
+        },
       ],
     });
-    expect(normalizedDirect.dependencies?.map((entry) => entry.source_kind)).toEqual(["a-rel", "z-rel"]);
+    expect(
+      normalizedDirect.dependencies?.map((entry) => entry.source_kind),
+    ).toEqual(["a-rel", "z-rel"]);
 
     const normalizedWithUndefinedSourceKind = normalizeItemMetadata({
       id: "pm-sort-source-kind-undefined",
@@ -733,11 +853,20 @@ describe("item-format metadata validation", () => {
       created_at: FIXED_TS,
       updated_at: FIXED_TS,
       dependencies: [
-        { id: "pm-a", kind: "related_to", created_at: FIXED_TS, source_kind: "b-rel" },
+        {
+          id: "pm-a",
+          kind: "related_to",
+          created_at: FIXED_TS,
+          source_kind: "b-rel",
+        },
         { id: "pm-a", kind: "related_to", created_at: FIXED_TS },
       ],
     });
-    expect(normalizedWithUndefinedSourceKind.dependencies?.map((entry) => entry.source_kind)).toEqual([undefined, "b-rel"]);
+    expect(
+      normalizedWithUndefinedSourceKind.dependencies?.map(
+        (entry) => entry.source_kind,
+      ),
+    ).toEqual([undefined, "b-rel"]);
 
     const normalizedWithLeadingUndefinedSourceKind = normalizeItemMetadata({
       id: "pm-sort-source-kind-leading-undefined",
@@ -751,13 +880,19 @@ describe("item-format metadata validation", () => {
       updated_at: FIXED_TS,
       dependencies: [
         { id: "pm-a", kind: "related_to", created_at: FIXED_TS },
-        { id: "pm-a", kind: "related_to", created_at: FIXED_TS, source_kind: "c-rel" },
+        {
+          id: "pm-a",
+          kind: "related_to",
+          created_at: FIXED_TS,
+          source_kind: "c-rel",
+        },
       ],
     });
-    expect(normalizedWithLeadingUndefinedSourceKind.dependencies?.map((entry) => entry.source_kind)).toEqual([
-      undefined,
-      "c-rel",
-    ]);
+    expect(
+      normalizedWithLeadingUndefinedSourceKind.dependencies?.map(
+        (entry) => entry.source_kind,
+      ),
+    ).toEqual([undefined, "c-rel"]);
 
     const parsed = parseItemDocument(
       buildSource({
@@ -768,19 +903,33 @@ describe("item-format metadata validation", () => {
         design: "Design body",
         external_ref: "EXT-1",
         dependencies: [
-          { id: "pm-a", kind: "related_to", created_at: FIXED_TS, source_kind: "z-rel" },
-          { id: "pm-a", kind: "related_to", created_at: FIXED_TS, source_kind: "a-rel" },
+          {
+            id: "pm-a",
+            kind: "related_to",
+            created_at: FIXED_TS,
+            source_kind: "z-rel",
+          },
+          {
+            id: "pm-a",
+            kind: "related_to",
+            created_at: FIXED_TS,
+            source_kind: "a-rel",
+          },
         ],
       }),
     );
 
-    expect(parsed.metadata.closed_at).toBe("2026-02-22T01:02:03.123456789+01:00");
+    expect(parsed.metadata.closed_at).toBe(
+      "2026-02-22T01:02:03.123456789+01:00",
+    );
     expect(parsed.metadata.completed_at).toBe("2026-02-21T23:00:00.000Z");
     expect(parsed.metadata.source_type).toBe("bug");
     expect(parsed.metadata.source_owner).toBe("owner-a");
     expect(parsed.metadata.design).toBe("Design body");
     expect(parsed.metadata.external_ref).toBe("EXT-1");
-    expect(parsed.metadata.dependencies?.map((entry) => entry.source_kind)).toEqual(["a-rel", "z-rel"]);
+    expect(
+      parsed.metadata.dependencies?.map((entry) => entry.source_kind),
+    ).toEqual(["a-rel", "z-rel"]);
   });
 
   it("parses and normalizes confidence values", () => {
@@ -806,7 +955,9 @@ describe("item-format metadata validation", () => {
     const regressionTrue = parseItemDocument(buildSource({ regression: true }));
     expect(regressionTrue.metadata.regression).toBe(true);
 
-    const regressionFalse = parseItemDocument(buildSource({ regression: false }));
+    const regressionFalse = parseItemDocument(
+      buildSource({ regression: false }),
+    );
     expect(regressionFalse.metadata.regression).toBe(false);
   });
 
@@ -814,32 +965,42 @@ describe("item-format metadata validation", () => {
     expect(() => parseItemDocument(buildSource({ confidence: 101 }))).toThrow(
       "confidence number value must be an integer 0..100",
     );
-    expect(() => parseItemDocument(buildSource({ confidence: "uncertain" }))).toThrow(
-      "confidence string value must be one of",
-    );
-    expect(() => parseItemDocument(buildSource({ confidence: { value: "low" } }))).toThrow(
-      "confidence must be a number or string",
-    );
+    expect(() =>
+      parseItemDocument(buildSource({ confidence: "uncertain" })),
+    ).toThrow("confidence string value must be one of");
+    expect(() =>
+      parseItemDocument(buildSource({ confidence: { value: "low" } })),
+    ).toThrow("confidence must be a number or string");
   });
 
   it("throws on invalid severity and regression values", () => {
-    expect(() => parseItemDocument(buildSource({ severity: "urgent" }))).toThrow("severity value must be one of");
-    expect(() => parseItemDocument(buildSource({ severity: 3 }))).toThrow("severity must be a string");
-    expect(() => parseItemDocument(buildSource({ regression: "true" }))).toThrow("regression must be a boolean");
+    expect(() =>
+      parseItemDocument(buildSource({ severity: "urgent" })),
+    ).toThrow("severity value must be one of");
+    expect(() => parseItemDocument(buildSource({ severity: 3 }))).toThrow(
+      "severity must be a string",
+    );
+    expect(() =>
+      parseItemDocument(buildSource({ regression: "true" })),
+    ).toThrow("regression must be a boolean");
   });
 
   it("throws on invalid Beads compatibility metadata values", () => {
-    expect(() => parseItemDocument(buildSource({ closed_at: 42 }))).toThrow("closed_at must be a string");
-    expect(() => parseItemDocument(buildSource({ closed_at: "not-a-timestamp" }))).toThrow(
-      "closed_at must be a valid ISO timestamp",
+    expect(() => parseItemDocument(buildSource({ closed_at: 42 }))).toThrow(
+      "closed_at must be a string",
     );
+    expect(() =>
+      parseItemDocument(buildSource({ closed_at: "not-a-timestamp" })),
+    ).toThrow("closed_at must be a valid ISO timestamp");
     expect(() => parseItemDocument(buildSource({ completed_at: 42 }))).toThrow(
       "completed_at must be a string",
     );
-    expect(() => parseItemDocument(buildSource({ completed_at: "not-a-timestamp" }))).toThrow(
-      "completed_at must be a valid ISO timestamp",
+    expect(() =>
+      parseItemDocument(buildSource({ completed_at: "not-a-timestamp" })),
+    ).toThrow("completed_at must be a valid ISO timestamp");
+    expect(() => parseItemDocument(buildSource({ design: 42 }))).toThrow(
+      "design must be a string",
     );
-    expect(() => parseItemDocument(buildSource({ design: 42 }))).toThrow("design must be a string");
   });
 
   it("drops invalid confidence text during direct normalize fallback", () => {
@@ -889,7 +1050,9 @@ describe("item-format metadata validation", () => {
   });
 
   it("round-trips TOON item documents while preserving canonical document shape", () => {
-    const source = parseItemDocument(buildSource({ tags: ["Alpha", "beta"], confidence: "med" }));
+    const source = parseItemDocument(
+      buildSource({ tags: ["Alpha", "beta"], confidence: "med" }),
+    );
     const serializedToon = serializeItemDocument(source, { format: "toon" });
     expect(serializedToon.startsWith("front_matter:")).toBe(false);
     expect(serializedToon.startsWith("id: ")).toBe(true);
@@ -967,11 +1130,15 @@ describe("item-format metadata validation", () => {
   });
 
   it("throws when TOON item document is malformed", () => {
-    expect(() => parseItemDocument("front_matter: [", { format: "toon" })).toThrow("item metadata must be an object");
+    expect(() =>
+      parseItemDocument("front_matter: [", { format: "toon" }),
+    ).toThrow("item metadata must be an object");
   });
 
   it("throws when TOON decoding returns a non-object value", () => {
-    expect(() => parseItemDocument("<<not-valid-toon>>", { format: "toon" })).toThrow("TOON item document must be an object");
+    expect(() =>
+      parseItemDocument("<<not-valid-toon>>", { format: "toon" }),
+    ).toThrow("TOON item document must be an object");
   });
 
   it("parses JSON front matter with escaped string content", () => {
@@ -984,7 +1151,9 @@ describe("item-format metadata validation", () => {
   });
 
   it("defaults TOON body to empty string when body is omitted", () => {
-    const withBody = serializeItemDocument(parseItemDocument(buildSource()), { format: "toon" });
+    const withBody = serializeItemDocument(parseItemDocument(buildSource()), {
+      format: "toon",
+    });
     const withoutBody = withBody.replace(/\nbody:[\s\S]*$/, "");
     const parsed = parseItemDocument(withoutBody, { format: "toon" });
     expect(parsed.body).toBe("");
@@ -1071,6 +1240,12 @@ describe("item-format metadata validation", () => {
           measurements: [
             null,
             {
+              name: "coverage",
+              value: 99,
+              unit: 1,
+              recorded_at: FIXED_TS,
+            },
+            {
               name: " coverage ",
               value: 100,
               unit: " ",
@@ -1121,11 +1296,29 @@ describe("item-format metadata validation", () => {
           linked_items: [
             null,
             { id: "", kind: "dependency" },
-            { id: "dep-1", kind: "dependency", note: " linked ", required_before_step: true },
+            {
+              id: "dep-1",
+              kind: "dependency",
+              note: " linked ",
+              required_before_step: true,
+            },
           ],
-          files: [null, { path: "" }, { path: " /tmp/file.ts ", scope: "project", note: " file note " }],
-          tests: [null, {}, { command: " pnpm test ", note: " test note " }, { path: " /tmp/test.ts " }],
-          docs: [null, { path: "" }, { path: " /tmp/doc.md ", scope: "global", note: " doc note " }],
+          files: [
+            null,
+            { path: "" },
+            { path: " /tmp/file.ts ", scope: "project", note: " file note " },
+          ],
+          tests: [
+            null,
+            {},
+            { command: " pnpm test ", note: " test note " },
+            { path: " /tmp/test.ts " },
+          ],
+          docs: [
+            null,
+            { path: "" },
+            { path: " /tmp/doc.md ", scope: "global", note: " doc note " },
+          ],
         },
         {
           id: "step-1",
@@ -1147,7 +1340,14 @@ describe("item-format metadata validation", () => {
       plan_decisions: [
         null,
         { ts: "", author: "agent", decision: "ignored" },
-        { ts: FIXED_TS, author: "agent", decision: "ship", rationale: "why", evidence: "proof", step_id: "step-1" },
+        {
+          ts: FIXED_TS,
+          author: "agent",
+          decision: "ship",
+          rationale: "why",
+          evidence: "proof",
+          step_id: "step-1",
+        },
       ],
       plan_discoveries: [
         null,
@@ -1162,7 +1362,10 @@ describe("item-format metadata validation", () => {
     } as never);
 
     expect(normalized.type_options).toEqual({ a: "one", b: "two" });
-    expect(normalized.test_runs?.map((entry) => entry.kind)).toEqual(["test", "test-all"]);
+    expect(normalized.test_runs?.map((entry) => entry.kind)).toEqual([
+      "test",
+      "test-all",
+    ]);
     expect(normalized.test_runs?.[1]?.measurements).toEqual([
       {
         name: "coverage",
@@ -1177,13 +1380,23 @@ describe("item-format metadata validation", () => {
         recorded_at: FIXED_TS,
       },
     ]);
-    expect(normalized.plan_steps?.map((entry) => entry.id)).toEqual(["step-1", "step-2"]);
+    expect(normalized.plan_steps?.map((entry) => entry.id)).toEqual([
+      "step-1",
+      "step-2",
+    ]);
     expect(normalized.plan_steps?.[1]?.linked_items).toEqual([
-      { id: "dep-1", kind: "dependency", note: "linked", required_before_step: true },
+      {
+        id: "dep-1",
+        kind: "dependency",
+        note: "linked",
+        required_before_step: true,
+      },
     ]);
     expect(normalized.plan_decisions).toHaveLength(1);
     expect(normalized.plan_discoveries).toHaveLength(1);
-    expect(normalized.plan_validation).toEqual([{ text: "run tests", command: "pnpm test", expected: "pass" }]);
+    expect(normalized.plan_validation).toEqual([
+      { text: "run tests", command: "pnpm test", expected: "pass" },
+    ]);
   });
 
   it("enforces schema unknown-field rejection and body trimming edge cases", () => {
@@ -1200,24 +1413,29 @@ describe("item-format metadata validation", () => {
     });
 
     expect(() =>
-      normalizeItemMetadata({
-        id: "pm-unknown-field",
-        title: "Unknown field",
-        description: "unknown",
-        type: "Task",
-        status: "open",
-        priority: 1,
-        tags: ["alpha"],
-        created_at: FIXED_TS,
-        updated_at: FIXED_TS,
-        release_train: "R1",
-        mystery_field: "blocked",
-      } as never, { schema }),
+      normalizeItemMetadata(
+        {
+          id: "pm-unknown-field",
+          title: "Unknown field",
+          description: "unknown",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          tags: ["alpha"],
+          created_at: FIXED_TS,
+          updated_at: FIXED_TS,
+          release_train: "R1",
+          mystery_field: "blocked",
+        } as never,
+        { schema },
+      ),
     ).toThrow("unknown schema fields are not allowed: mystery_field");
 
-    expect(() => parseItemDocument(buildSource({}, "\n\nBody with leading newlines"), { schema })).toThrow(
-      "missing required schema field: release_train",
-    );
+    expect(() =>
+      parseItemDocument(buildSource({}, "\n\nBody with leading newlines"), {
+        schema,
+      }),
+    ).toThrow("missing required schema field: release_train");
     expect(() =>
       normalizeItemMetadata({
         id: "pm-type-options-empty",
@@ -1238,21 +1456,24 @@ describe("item-format metadata validation", () => {
 
   it("covers unknown-field sorting and plan-step non-object normalization branches", () => {
     expect(() =>
-      normalizeItemMetadata({
-        id: "pm-unknown-sort",
-        title: "Unknown sort",
-        description: "Unknown sort coverage",
-        type: "Task",
-        status: "open",
-        priority: 1,
-        tags: ["alpha"],
-        created_at: FIXED_TS,
-        updated_at: FIXED_TS,
-        z_extra: "z",
-        a_extra: "a",
-      } as never, {
-        schema: runtimeSchemaOverrides({ unknown_field_policy: "reject" }),
-      }),
+      normalizeItemMetadata(
+        {
+          id: "pm-unknown-sort",
+          title: "Unknown sort",
+          description: "Unknown sort coverage",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          tags: ["alpha"],
+          created_at: FIXED_TS,
+          updated_at: FIXED_TS,
+          z_extra: "z",
+          a_extra: "a",
+        } as never,
+        {
+          schema: runtimeSchemaOverrides({ unknown_field_policy: "reject" }),
+        },
+      ),
     ).toThrow("unknown schema fields are not allowed: a_extra, z_extra");
 
     const planSteps = _testOnlyItemFormat.normalizePlanSteps([
@@ -1300,42 +1521,66 @@ describe("item-format metadata validation", () => {
       ]),
     ).toBeUndefined();
 
-    expect(_testOnlyItemFormat.normalizePlanStepLinks([null, {}] as never)).toBeUndefined();
-    expect(_testOnlyItemFormat.normalizePlanStepFiles([{ path: " /tmp/file.ts ", scope: "other", note: "   " }] as never)).toEqual([
-      { path: "/tmp/file.ts" },
-    ]);
-    expect(_testOnlyItemFormat.normalizePlanStepTests([{ command: "   ", path: "   ", note: "note" }] as never)).toBeUndefined();
-    expect(_testOnlyItemFormat.normalizePlanStepDocs([{ path: " /tmp/doc.md ", scope: "other", note: "   " }] as never)).toEqual([
-      { path: "/tmp/doc.md" },
-    ]);
+    expect(
+      _testOnlyItemFormat.normalizePlanStepLinks([null, {}] as never),
+    ).toBeUndefined();
+    expect(
+      _testOnlyItemFormat.normalizePlanStepFiles([
+        { path: " /tmp/file.ts ", scope: "other", note: "   " },
+      ] as never),
+    ).toEqual([{ path: "/tmp/file.ts" }]);
+    expect(
+      _testOnlyItemFormat.normalizePlanStepTests([
+        { command: "   ", path: "   ", note: "note" },
+      ] as never),
+    ).toBeUndefined();
+    expect(
+      _testOnlyItemFormat.normalizePlanStepDocs([
+        { path: " /tmp/doc.md ", scope: "other", note: "   " },
+      ] as never),
+    ).toEqual([{ path: "/tmp/doc.md" }]);
     expect(
       _testOnlyItemFormat.normalizePlanDecisions([
-        { ts: FIXED_TS, author: "agent", decision: "ship", rationale: "   ", evidence: "   ", step_id: "   " },
+        {
+          ts: FIXED_TS,
+          author: "agent",
+          decision: "ship",
+          rationale: "   ",
+          evidence: "   ",
+          step_id: "   ",
+        },
       ] as never),
     ).toEqual([{ ts: FIXED_TS, author: "agent", decision: "ship" }]);
     expect(
-      _testOnlyItemFormat.normalizePlanDiscoveries([{ ts: FIXED_TS, author: "agent", text: "found", step_id: "   " }] as never),
+      _testOnlyItemFormat.normalizePlanDiscoveries([
+        { ts: FIXED_TS, author: "agent", text: "found", step_id: "   " },
+      ] as never),
     ).toEqual([{ ts: FIXED_TS, author: "agent", text: "found" }]);
-    expect(_testOnlyItemFormat.normalizePlanValidation([{ text: "run", command: "   ", expected: "   " }] as never)).toEqual([
-      { text: "run" },
-    ]);
+    expect(
+      _testOnlyItemFormat.normalizePlanValidation([
+        { text: "run", command: "   ", expected: "   " },
+      ] as never),
+    ).toEqual([{ text: "run" }]);
 
-    const normalizedStatusFallback = normalizeItemMetadata({
-      id: "pm-status-fallback",
-      title: "Status fallback",
-      description: "Status fallback",
-      type: "Task",
-      status: "custom-status",
-      priority: 1,
-      tags: ["alpha"],
-      created_at: FIXED_TS,
-      updated_at: FIXED_TS,
-    } as never, {
-      schema: {
-        ...runtimeSchemaOverrides(),
-        unknown_field_policy: undefined as never,
+    const normalizedStatusFallback = normalizeItemMetadata(
+      {
+        id: "pm-status-fallback",
+        title: "Status fallback",
+        description: "Status fallback",
+        type: "Task",
+        status: "custom-status",
+        priority: 1,
+        tags: ["alpha"],
+        created_at: FIXED_TS,
+        updated_at: FIXED_TS,
+      } as never,
+      {
+        schema: {
+          ...runtimeSchemaOverrides(),
+          unknown_field_policy: undefined as never,
+        },
       },
-    });
+    );
     expect(normalizedStatusFallback.status).toBe("custom-status");
   });
 });

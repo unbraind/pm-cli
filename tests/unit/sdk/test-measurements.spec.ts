@@ -57,6 +57,15 @@ describe("SDK test-run measurements", () => {
     expect(() =>
       parseTestRunMeasurements(["coverage=100,unit="], BASE_RUN.recorded_at),
     ).toThrow(/Invalid --measure attribute/);
+    expect(() =>
+      parseTestRunMeasurements(["coverage="], BASE_RUN.recorded_at),
+    ).toThrow(/Invalid --measure/);
+    expect(() =>
+      parseTestRunMeasurements(
+        ["coverage=100,threshold="],
+        BASE_RUN.recorded_at,
+      ),
+    ).toThrow(/Invalid --measure attribute/);
   });
 
   it("filters below thresholds and diffs the newest two values", () => {

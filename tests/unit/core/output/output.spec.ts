@@ -225,15 +225,20 @@ describe("core/output/output", () => {
       ],
     };
     expect(
-      JSON.parse(
-        formatOutput(heterogeneous, { json: true, command: "test" }),
-      ),
+      JSON.parse(formatOutput(heterogeneous, { json: true, command: "test" })),
     ).toEqual(heterogeneous);
     expect(
-      JSON.parse(
-        formatOutput({ ok: true }, { json: true, command: "test" }),
-      ),
+      JSON.parse(formatOutput({ ok: true }, { json: true, command: "test" })),
     ).toEqual({ ok: true });
+    const mixed = {
+      run_results: [
+        null,
+        { status: "passed", execution_context: { pm_context_mode: "schema" } },
+      ],
+    };
+    expect(
+      JSON.parse(formatOutput(mixed, { json: true, command: "test" })),
+    ).toEqual(mixed);
   });
 
   it("preserves a null root when lean JSON removes the complete payload", () => {

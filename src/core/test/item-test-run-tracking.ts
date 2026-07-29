@@ -21,10 +21,11 @@ function trackedTestRunHistoryLimit(): number {
   return parsed;
 }
 
-function normalizeTrackedTestRunSummaries(
+/** Normalize, order, and bound test-run history using the configured retention policy. */
+export function buildTrackedTestRunHistory(
   entries: ItemTestRunSummary[],
 ): ItemTestRunSummary[] {
-  return [...entries]
+  const normalized = [...entries]
     .filter(
       (entry) =>
         entry.run_id.trim().length > 0 &&
@@ -42,6 +43,10 @@ function normalizeTrackedTestRunSummaries(
       if (byRunId !== 0) return byRunId;
       return left.kind.localeCompare(right.kind);
     });
+  const historyLimit = trackedTestRunHistoryLimit();
+  return normalized.length > historyLimit
+    ? normalized.slice(normalized.length - historyLimit)
+    : normalized;
 }
 
 /** Implements append tracked test run summary for the public runtime surface of this module. */
@@ -53,7 +58,6 @@ export async function appendTrackedTestRunSummary(options: {
   entry: ItemTestRunSummary;
   message?: string;
 }): Promise<void> {
-  const historyLimit = trackedTestRunHistoryLimit();
   await mutateItem({
     pmRoot: options.pmRoot,
     settings: options.settings,
@@ -64,15 +68,10 @@ export async function appendTrackedTestRunSummary(options: {
     force: false,
     mutate(document) {
       const current = document.metadata.test_runs ?? [];
-      const next = normalizeTrackedTestRunSummaries([
+      document.metadata.test_runs = buildTrackedTestRunHistory([
         ...current,
         options.entry,
       ]);
-      const bounded =
-        next.length > historyLimit
-          ? next.slice(next.length - historyLimit)
-          : next;
-      document.metadata.test_runs = bounded;
       return { changedFields: ["test_runs"] };
     },
   });

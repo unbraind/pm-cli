@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[7]: "area:cli","area:sdk",context-management,gh-issue,linked-tests,metrics,queryability
 created_at: "2026-07-29T02:35:07.399Z"
-updated_at: "2026-07-29T05:58:27.430Z"
-closed_at: "2026-07-29T05:56:00.631Z"
-completed_at: "2026-07-29T05:56:00.631Z"
+updated_at: "2026-07-29T06:28:25.897Z"
+closed_at: "2026-07-29T06:28:23.002Z"
+completed_at: "2026-07-29T06:28:23.002Z"
 author: "harness:codex"
 estimated_minutes: 480
 acceptance_criteria: "Test-run records accept typed numeric measurements with a name, value, optional unit, optional threshold, and timestamp without requiring an extension; Measurements remain bound to the producing run and accumulate as a bounded deterministic series rather than overwriting prior evidence; CLI, SDK, MCP, schemas, contracts, storage normalization, migrations, and public types expose the same measurement model; Read surfaces can filter and aggregate measurements, including a metric-below query and a latest-versus-previous diff; Focused, integration, acceptance, compatibility, and exact 100 percent coverage gates prove persistence and query behavior"
@@ -23,7 +23,7 @@ risk: medium
 confidence: high
 severity: medium
 repro_steps: "Enable test-result-tracking, run a linked verification that emits a coverage or latency value, inspect the persisted item, then attempt to filter items by that value."
-resolution: "Test runs now persist bounded typed measurements with SDK parsing, threshold queries, diffs, and CLI/MCP contract parity."
+resolution: "Test runs persist bounded, normalized, deduplicated measurements with pre-side-effect validation and retained-history SDK projections."
 expected_result: "A test run can carry structured numeric evidence that list, aggregate, and diff surfaces can query."
 actual_result: Current test_runs store status and counts only; measured baselines must be embedded in prose.
 affected_version: 2026.7.29
@@ -37,20 +37,24 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-lm0j,related,"2026-07-29T04:25:40.547Z","harness:claude-code","cli:update:dep",detected
   pm-fqdmbf,related,"2026-07-29T05:06:53.852Z","harness:codex","cli:update:dep",detected
   pm-wd61s2,related,"2026-07-29T05:06:53.852Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-29T02:35:07.399Z","harness:codex","Duplicate check evidence: all-status searches for test result tracking, structured measurements, numeric metrics, quality metrics, and test_runs found the shipped pm-lm0j/pm-16f4/pm-i2pc persistence lineage but no item owning typed numeric evidence, series retention, metric filters, or diffs. GH-802 is therefore a new extension of that canonical lineage: https://github.com/unbraind/pm-cli/issues/802."
   "2026-07-29T05:55:21.797Z","harness:codex","Delivery evidence: typed bounded run measurements now span storage normalization, public types, SDK parse/query/diff functions, CLI repeatable flags, background forwarding, MCP/tool schemas, contracts, docs, and run-attributed read results. Isolated packed npm+npx and Bun+bunx consumers passed, including public SDK imports and a real persisted coverage/latency run. Full suite: 6506 tests; 100% statements/branches/functions/lines."
-files[7]{path,scope,note}:
+  "2026-07-29T06:26:33.663Z","harness:codex","PR #809 review evidence: numeric operands reject empty strings before side effects; persisted measurements normalize malformed units and deduplicate names; projections use the same retained history as persistence; measurement forwarding uses a valid run. Full suite 6507/6507 at exact 100/100/100/100."
+files[9]{path,scope,note}:
   src/core/item/item-format.ts,project,Storage normalization
+  src/core/test/item-test-run-tracking.ts,project,Shared retention normalization used by persistence and SDK projection
   src/sdk/cli-contracts/tool-schema.ts,project,MCP and machine input schema
   src/sdk/test/execution.ts,project,Run persistence and read queries
   src/sdk/test/measurements.ts,project,Typed measurement parse query and diff SDK primitives
   src/types.ts,project,Public measurement model
   tests/unit/commands/test-command.spec.ts,project,Persistence integration
+  tests/unit/core/item/item-format-validation.spec.ts,project,Malformed and duplicate persisted measurement coverage
   tests/unit/sdk/test-measurements.spec.ts,project,Pure SDK coverage
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/test-measurements.spec.ts tests/unit/commands/test-command.spec.ts,project,300
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test-measurements.spec.ts tests/unit/commands/test-command.spec.ts tests/unit/core/item/item-format-validation.spec.ts,project,360
+test_runs[2]:
   - run_id: test-local-ms5o7c0u-gfzihs
     kind: test
     status: passed
@@ -63,8 +67,20 @@ test_runs[1]:
     measurements[2]{name,value,unit,threshold,recorded_at}:
       coverage,100,percent,100,"2026-07-29T05:54:59.358Z"
       gate,1,boolean,1,"2026-07-29T05:54:59.358Z"
+  - run_id: test-local-ms5pd5j8-wwejxu
+    kind: test
+    status: passed
+    started_at: "2026-07-29T06:26:53.001Z"
+    finished_at: "2026-07-29T06:27:30.500Z"
+    recorded_at: "2026-07-29T06:27:30.500Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    measurements[2]{name,value,unit,threshold,recorded_at}:
+      coverage,100,percent,100,"2026-07-29T06:27:30.500Z"
+      gate,1,boolean,1,"2026-07-29T06:27:30.500Z"
 docs[2]{path,scope,note}:
   docs/SDK.md,project,SDK measurement contract
   docs/TESTING.md,project,Operator examples
-close_reason: "Implemented and verified in the broad SDK context-contract delivery; linked evidence, full gates, and isolated consumer acceptance passed."
+close_reason: "PR #809 review remediation verified through focused tests, full coverage, and black-box mutation safety acceptance."
 body: ""

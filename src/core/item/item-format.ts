@@ -984,17 +984,25 @@ function normalizeTestRunMeasurements(
     .map((measurement) => ({
       name: measurement.name.trim(),
       value: measurement.value,
-      unit: measurement.unit?.trim() || undefined,
+      unit:
+        typeof measurement.unit === "string"
+          ? measurement.unit.trim() || undefined
+          : undefined,
       threshold:
         typeof measurement.threshold === "number" &&
         Number.isFinite(measurement.threshold)
           ? measurement.threshold
           : undefined,
       recorded_at: measurement.recorded_at.trim(),
-    }))
+    }));
+  const deduplicated = [
+    ...new Map(
+      normalized.map((measurement) => [measurement.name, measurement]),
+    ).values(),
+  ]
     .sort((left, right) => left.name.localeCompare(right.name))
     .slice(0, 32);
-  return normalized.length > 0 ? normalized : undefined;
+  return deduplicated.length > 0 ? deduplicated : undefined;
 }
 
 function normalizeTestRunSummary(
