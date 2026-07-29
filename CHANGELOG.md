@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Scale fixtures vary only in size: the sole synthetic workspace generator hardcodes population shape, so the million-item tier is eleven simulated days deep with one history entry per item ([pm-vv2lti](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vv2lti.toon))
+- Whole-workspace snapshot restore silently rewinds the immutable record: history streams are deleted and nothing records that a rewind happened ([pm-6l2mza](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6l2mza.toon))
 - GH-808: lifecycle completion resolver types and provenance lie when no timestamp exists ([pm-qhnq6t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qhnq6t.toon))
 - pm activity --compact --json emits an empty activity:\[\] decoy key alongside compact_activity ([pm-p3x4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p3x4.toon))
 - Mode-paired envelopes zero-fill the inactive collection instead of omitting it, so parsing the obvious key returns an empty array that is indistinguishable from a real empty result ([pm-cyrfjq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cyrfjq.toon))
@@ -13,6 +15,11 @@
 - GH-797: rank read/show/view recovery by executable intent and bounded contracts guidance ([pm-bex0ui](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bex0ui.toon))
 - GH-803: hoist repeated linked-test execution context and honor lean output ([pm-fqdmbf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fqdmbf.toon))
 - GH-807: make the default eval query set version-controllable in every initialized workspace ([pm-jdh1jg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jdh1jg.toon))
+
+### Other
+
+- The product advertises CI gates in its own help that no pipeline runs: pm eval names --fail-under a CI gate and nothing consumes it ([pm-b2hc4x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-b2hc4x.toon))
+- Gate registry: every enforced CI and release gate has an owner item, a declared failure taxonomy, a bypass policy, and a negative-control fixture proving it fails on known-bad input ([pm-k6t4yb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k6t4yb.toon))
 
 ## 2026.7.29 - 2026-07-29
 

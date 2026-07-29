@@ -2,11 +2,13 @@ id: pm-k6t4yb
 title: "Gate registry: every enforced CI and release gate has an owner item, a declared failure taxonomy, a bypass policy, and a negative-control fixture proving it fails on known-bad input"
 description: "The pipeline enforces a large and growing number of gates — static quality, coverage, contract snapshots, changelog drift, LOC caps, import boundary, SDK surface snapshot, token cost, latency, scanners, install smoke, nightly matrices — added incrementally by many changes over months. There is no single place that says which gates exist, who owns each, what a failure means, whether it can be bypassed and by whom, and, most importantly, whether each gate actually still catches what it was built to catch. A gate that silently stopped failing is worse than no gate: it produces false confidence on every green run. Build the registry as tracked data, one entry per enforced gate, each linked to its owning item, and require every gate to carry a negative-control fixture — a deliberately broken input the gate must reject. Run the negative controls in CI so a gate that has stopped detecting its own failure mode fails immediately. This is what converts the demand for a maximally critical pipeline from an intention into a mechanism, because it makes gate erosion visible."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[5]: ci,governance,quality,release,testing
 created_at: "2026-07-25T12:31:33.732Z"
-updated_at: "2026-07-26T10:52:10.377Z"
+updated_at: "2026-07-29T18:41:07.957Z"
+closed_at: "2026-07-29T18:39:46.539Z"
+completed_at: "2026-07-29T18:39:46.539Z"
 author: "harness:claude-code"
 estimated_minutes: 600
 acceptance_criteria: "A registry entry exists for every enforced CI and release gate, naming the owning item, the failure taxonomy, the bypass policy and who may invoke it, and the negative-control fixture; Every gate has a negative control — a deliberately broken input it must reject — and CI runs the negative controls so a gate that stopped detecting its failure mode fails; Adding a gate without a registry entry and a negative control fails the conformance gate; A bypass is recorded as an event with actor and reason and is visible in the registry, so silent bypasses are impossible; The registry is generated from enforced configuration rather than hand-maintained where the configuration is machine-readable, so it cannot drift from what actually runs; Gate coverage is reported against the failure taxonomy, so a class of defect with no owning gate is visible as a gap rather than an absence"
@@ -18,25 +20,95 @@ outcome: "A green pipeline is evidence that each gate ran and still works, not m
 parent: pm-u9d0
 risk: medium
 confidence: 70
-dependencies[20]{id,kind,created_at,author,source_kind}:
-  pm-feecbs,related,"2026-07-25T12:31:33.732Z",null,null
-  pm-rtn5h6,related,"2026-07-25T12:31:33.732Z",null,null
-  pm-u9d0,related,"2026-07-25T12:31:33.732Z",null,null
-  pm-xp1xsw,related,"2026-07-25T12:31:33.732Z",null,null
-  pm-zclzll,related,"2026-07-25T12:31:33.732Z",null,null
-  pm-zlv8jl,related,"2026-07-25T12:31:33.732Z",null,null
-  pm-76dnfg,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-92if,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-9c7h9x,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-a8lnoh,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-gnzh,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-vlnc,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-wlqxg3,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-xgcp18,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-ygli86,related,"2026-07-25T12:35:35.976Z",null,null
-  pm-xp1xsw,verifies,"2026-07-25T20:44:55.505Z",null,null
-  pm-u9d0,verifies,"2026-07-26T05:50:11.212Z",null,null
-  pm-u9d0,implements,"2026-07-26T05:55:45.027Z",null,null
-  pm-ei6x66,related,"2026-07-26T10:52:10.136Z",null,null
-  pm-lpqln4,related,"2026-07-26T10:52:10.136Z",null,null
+resolution: Workflow-derived gate registry and negative-control conformance shipped
+expected_result: "Every enforced gate is inventoried, owned, policy-described, and continuously checked against a known-bad negative control."
+actual_result: "All 43 named workflow steps are mapped into 10 owned policy groups; mandatory static conformance rejects workflow drift, invalid policy, absent source claims, and ineffective negative controls."
+dependencies[21]:
+  - id: pm-feecbs
+    kind: related
+    created_at: "2026-07-25T12:31:33.732Z"
+  - id: pm-rtn5h6
+    kind: related
+    created_at: "2026-07-25T12:31:33.732Z"
+  - id: pm-u9d0
+    kind: related
+    created_at: "2026-07-25T12:31:33.732Z"
+  - id: pm-xp1xsw
+    kind: related
+    created_at: "2026-07-25T12:31:33.732Z"
+  - id: pm-zclzll
+    kind: related
+    created_at: "2026-07-25T12:31:33.732Z"
+  - id: pm-zlv8jl
+    kind: related
+    created_at: "2026-07-25T12:31:33.732Z"
+  - id: pm-76dnfg
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-92if
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-9c7h9x
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-a8lnoh
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-gnzh
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-vlnc
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-wlqxg3
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-xgcp18
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-ygli86
+    kind: related
+    created_at: "2026-07-25T12:35:35.976Z"
+  - id: pm-xp1xsw
+    kind: verifies
+    created_at: "2026-07-25T20:44:55.505Z"
+  - id: pm-u9d0
+    kind: verifies
+    created_at: "2026-07-26T05:50:11.212Z"
+  - id: pm-u9d0
+    kind: implements
+    created_at: "2026-07-26T05:55:45.027Z"
+  - id: pm-ei6x66
+    kind: related
+    created_at: "2026-07-26T10:52:10.136Z"
+  - id: pm-lpqln4
+    kind: related
+    created_at: "2026-07-26T10:52:10.136Z"
+  - id: pm-b2hc4x
+    kind: verifies
+    created_at: "2026-07-29T18:28:01.210Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-07-29T18:28:13.325Z","harness:codex","Implementation evidence: gate-registry discovery inventories all 43 named enforced workflow steps and validates exact pipeline parity against 10 owned gate groups. Each group declares PM owner, failure taxonomy, bypass policy, executable negative-control test/assertion, and source claims. quality:gate-registry is mandatory inside quality:static; adding or removing a named workflow gate without registry parity now fails. Known-bad fixtures cover malformed ownership, duplicate/stale pipelines, missing assertions, missing source claims, and invalid negative controls."
+notes[1]{created_at,author,text}:
+  "2026-07-29T18:28:14.365Z","harness:codex",Registry design groups pipeline steps by one policy owner and one executable negative-control suite rather than duplicating the same ownership and taxonomy record for every matrix occurrence; discovered pipeline identifiers remain exact and exhaustive.
+learnings[1]{created_at,author,text}:
+  "2026-07-29T18:28:15.524Z","harness:codex","A gate inventory becomes trustworthy only when discovery is derived from enforced workflow configuration and the registry fails in both drift directions: unregistered live steps and registered steps no longer enforced."
+files[6]{path,scope,note}:
+  package.json,project,Mandatory static quality gate registration
+  scripts/release/gate-registry.json,project,Machine-readable ownership taxonomy bypass negative-control and claim registry
+  scripts/release/gate-registry.mjs,project,Workflow discovery and fail-closed registry conformance gate
+  tests/integration/release-automation-contract.spec.ts,project,Release workflow command contract parity
+  tests/integration/release-readiness-runtime.spec.ts,project,Runtime quality command contract parity
+  tests/unit/scripts/release/gate-registry.spec.ts,project,Known-bad registry and entrypoint negative controls
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/gate-registry.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300
+  "pnpm quality:gate-registry",project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms6fck74-s7u28k,test,passed,"2026-07-29T18:34:33.177Z","2026-07-29T18:34:52.864Z","2026-07-29T18:34:52.864Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Gate registry ownership and negative-control operating contract
+close_reason: "Delivered workflow-derived coverage of 43 enforced pipeline steps through 10 owned registry groups with taxonomy, bypass policy, executable negative controls, source-claim conformance, mandatory static wiring, docs, and passing linked verification."
 body: ""

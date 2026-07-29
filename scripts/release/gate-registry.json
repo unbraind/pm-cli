@@ -1,0 +1,266 @@
+{
+  "version": 1,
+  "gates": [
+    {
+      "id": "compilation",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "auto-release.yml#Build",
+        "ci.yml#Build",
+        "ci.yml#Run typecheck gate",
+        "docs.yml#Build",
+        "nightly.yml#Build",
+        "nightly.yml#Typecheck",
+        "release.yml#Build",
+        "release.yml#Typecheck"
+      ],
+      "failure_taxonomy": [
+        "build_failed",
+        "typecheck_failed",
+        "generated_surface_drift"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Compilation failures block every hosted delivery path."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/dogfood-package-first.spec.ts",
+        "assertion": "fails when the scaffold TypeScript typecheck (tsc) exits non-zero"
+      }
+    },
+    {
+      "id": "test-coverage",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "ci.yml#Merge coverage and enforce global thresholds",
+        "ci.yml#Run coverage shard",
+        "ci.yml#Run Windows packed-npm-extension install regression test",
+        "nightly.yml#Test",
+        "nightly.yml#Test with coverage gate",
+        "release.yml#Test with coverage gate"
+      ],
+      "failure_taxonomy": [
+        "test_failed",
+        "coverage_threshold_failed",
+        "coverage_artifact_missing",
+        "platform_regression"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Tests and 100 percent coverage are required delivery evidence."
+      },
+      "negative_control": {
+        "test": "tests/integration/ci-workflow-contract.spec.ts",
+        "assertion": "proves the full CI merge-integrity command rejects a non-representative drifted stream"
+      }
+    },
+    {
+      "id": "static-quality",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "ci.yml#Enforce discovery and answer token budgets",
+        "ci.yml#Run static + secret + version gates",
+        "nightly.yml#Static quality gate",
+        "release.yml#Static quality gate"
+      ],
+      "failure_taxonomy": [
+        "lint_failed",
+        "duplication_failed",
+        "docstring_coverage_failed",
+        "agent_token_budget_failed",
+        "sdk_contract_drift"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Static contracts and agent context budgets are mandatory."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/static-quality-gate.spec.ts",
+        "assertion": "checkSdkImportBoundary fails closed on computed dynamic imports and require calls"
+      }
+    },
+    {
+      "id": "tracker-integrity",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "ci.yml#Run tracker merge-safety gates"
+      ],
+      "failure_taxonomy": [
+        "tracker_validation_failed",
+        "history_drift",
+        "merge_driver_drift"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "The pm history chain and merge fence may not be bypassed."
+      },
+      "negative_control": {
+        "test": "tests/integration/ci-workflow-contract.spec.ts",
+        "assertion": "proves the full CI merge-integrity command rejects a non-representative drifted stream"
+      }
+    },
+    {
+      "id": "compatibility",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "ci.yml#Run compatibility migration gate",
+        "nightly.yml#Compatibility migration gate",
+        "release.yml#Compatibility migration gate"
+      ],
+      "failure_taxonomy": [
+        "legacy_read_failed",
+        "migration_failed",
+        "post_migration_validation_failed"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Published storage compatibility is a release requirement."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/compatibility-check.spec.ts",
+        "assertion": "fails when validate returns ok=false"
+      }
+    },
+    {
+      "id": "context-retrieval",
+      "owner": "pm-b2hc4x",
+      "pipelines": [
+        "ci.yml#Run required context relevance evaluation gate",
+        "release.yml#Context quality and token-entitlement gate"
+      ],
+      "failure_taxonomy": [
+        "context_metric_regressed",
+        "retrieval_metric_regressed",
+        "corpus_contract_invalid",
+        "token_entitlement_regressed"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Context and retrieval relevance are required CI and release gates."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/retrieval-eval-gate.spec.ts",
+        "assertion": "runs the built CLI gate and its impossible-threshold negative control"
+      }
+    },
+    {
+      "id": "documentation",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "docs.yml#Docs and skills gate",
+        "docs.yml#Docs relative-link check",
+        "release.yml#Docs and skills gate"
+      ],
+      "failure_taxonomy": [
+        "documentation_contract_failed",
+        "broken_relative_link",
+        "skill_contract_failed"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Public documentation and skill contracts ship with the CLI."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/docs-skills-gate.spec.ts",
+        "assertion": "main --links-only with broken link emits json + fail"
+      }
+    },
+    {
+      "id": "security",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "codeql.yml#Perform CodeQL Analysis",
+        "nightly.yml#Secret leak scan",
+        "release.yml#Secret leak scan",
+        "scorecard.yml#Run Scorecard analysis",
+        "security.yml#Trivy repository scan",
+        "security.yml#TruffleHog scan"
+      ],
+      "failure_taxonomy": [
+        "secret_detected",
+        "dependency_vulnerability",
+        "static_security_finding",
+        "supply_chain_posture_failed"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Security findings require remediation or a reviewed policy change."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/check-secrets.spec.ts",
+        "assertion": "exits non-zero and lists findings when a tracked file contains a secret"
+      }
+    },
+    {
+      "id": "package-consumer",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "ci.yml#Run npx + plugin smoke gates",
+        "release.yml#Package-first dogfood",
+        "release.yml#Packaging smoke check",
+        "release.yml#npx tarball smoke check"
+      ],
+      "failure_taxonomy": [
+        "pack_failed",
+        "installed_cli_failed",
+        "sdk_consumer_failed",
+        "plugin_consumer_failed"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Package consumers must pass from isolated installed artifacts."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/smoke-npx-from-pack.spec.ts",
+        "assertion": "fails when the packed TypeScript consumer typecheck rejects (GH-602)"
+      }
+    },
+    {
+      "id": "release-integrity",
+      "owner": "pm-k6t4yb",
+      "pipelines": [
+        "auto-release.yml#Run auto release pipeline",
+        "nightly.yml#Version policy check",
+        "release.yml#Reliability threshold gate",
+        "release.yml#Verify GitHub release metadata",
+        "release.yml#Verify generated pm changelog",
+        "release.yml#Verify published package on npm, npx, and bunx"
+      ],
+      "failure_taxonomy": [
+        "version_policy_failed",
+        "duplicate_daily_release",
+        "reliability_threshold_failed",
+        "release_metadata_failed",
+        "published_consumer_failed"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Release identity, observability, and installed consumers must agree."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/verify-published-release.spec.ts",
+        "assertion": "fails when an executor reports a mismatched version (no_output branch)"
+      }
+    }
+  ],
+  "claims": [
+    {
+      "source": "src/sdk/eval.ts",
+      "evidence": "CI gate",
+      "gate": "context-retrieval",
+      "disposition": "enforced"
+    },
+    {
+      "source": "src/cli/register-list-query.ts",
+      "evidence": "CI gate",
+      "gate": "context-retrieval",
+      "disposition": "enforced"
+    },
+    {
+      "source": "docs/COMMANDS.md",
+      "evidence": "CI gate",
+      "gate": "context-retrieval",
+      "disposition": "enforced"
+    }
+  ]
+}

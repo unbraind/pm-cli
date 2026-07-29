@@ -13,11 +13,14 @@ import { fileURLToPath } from "node:url";
 import {
   PmClient,
   appendHistoryEntry,
+  buildCorpusShapeItemPlan,
   canonicalDocument,
   createHistoryEntry,
   emptyImportedDocument,
   getHistoryPath,
   getItemPath,
+  measureCorpusShapePlan,
+  resolveBuiltinCorpusShape,
   serializeItemDocument,
   writeFileAtomic,
 } from "../../dist/cli-bundle/sdk.js";
@@ -34,7 +37,6 @@ export const SCALE_TIER_ITEMS = Object.freeze({
 const AUTHOR = "pm-scale-benchmark";
 const BATCH_SIZE = 128;
 const FIXTURE_MANIFEST = ".pm-scale-fixture.json";
-const BASE_TIMESTAMP_MS = Date.UTC(2026, 0, 1);
 const WEIGHTED_TYPES = [
   "Task",
   "Task",
@@ -80,10 +82,6 @@ export function scaleItemId(index) {
   return `pm-s${index.toString(36).padStart(7, "0")}`;
 }
 
-function timestampFor(index) {
-  return new Date(BASE_TIMESTAMP_MS + index * 1000).toISOString();
-}
-
 function statusFor(index) {
   if (index % 20 === 0) return "open";
   const bucket = index % 20;
@@ -98,36 +96,40 @@ function typeFor(index, random) {
   return WEIGHTED_TYPES[Math.floor(random() * WEIGHTED_TYPES.length)];
 }
 
-function buildDependencies(index, createdAt) {
-  if (index < 3 || index % 3 !== 0) return undefined;
-  const dependencies = [
-    {
-      id: scaleItemId(index - 1),
-      kind: "related",
-      created_at: createdAt,
-      author: AUTHOR,
-    },
-  ];
-  if (index >= 8 && index % 11 === 0) {
-    dependencies.push({
-      id: scaleItemId(index - 7),
-      kind: "blocks",
-      created_at: createdAt,
-      author: AUTHOR,
-    });
-  }
-  return dependencies;
+function buildDependencies(plan, itemCount) {
+  if (plan.index === 0 || plan.dependency_kinds.length === 0) return undefined;
+  return plan.dependency_kinds.map((kind, offset) => ({
+    id:
+      offset > 0 && plan.index + 1 < itemCount
+        ? scaleItemId(plan.index + 1)
+        : scaleItemId(plan.index - 1),
+    kind,
+    created_at: plan.timestamp,
+    author: plan.author,
+  }));
 }
 
 /** Build one deterministic, realistic item document for a scale fixture. */
-export function buildSyntheticItemDocument(index, seed = 42) {
+export function buildSyntheticItemDocument(
+  index,
+  seed = 42,
+  shape = resolveBuiltinCorpusShape("scratch"),
+  itemCount = Math.max(100, index + 1),
+) {
+  const plan = buildCorpusShapeItemPlan(shape, index, itemCount, seed);
   const random = createSeededRandom(seed + index);
   const id = scaleItemId(index);
-  const createdAt = timestampFor(index);
-  const status = statusFor(index);
-  const type = typeFor(index, random);
+  const createdAt = plan.timestamp;
+  const status = plan.custom_status ?? statusFor(index);
+  const type = plan.custom_type ?? typeFor(index, random);
   const terminal = status === "closed" || status === "canceled";
-  const parentIndex = index - (index % 20);
+  const dependencies = buildDependencies(plan, itemCount);
+  const customFields = Object.fromEntries(
+    shape.custom_fields.map((field) => [
+      field,
+      `synthetic-${shape.name}-${index % 8}`,
+    ]),
+  );
   return canonicalDocument({
     metadata: {
       id,
@@ -143,10 +145,10 @@ export function buildSyntheticItemDocument(index, seed = 42) {
       ],
       created_at: createdAt,
       updated_at: createdAt,
-      author: AUTHOR,
+      author: plan.author,
       estimated_minutes: 15 + (index % 16) * 15,
       acceptance_criteria: `Synthetic acceptance criterion ${index}`,
-      ...(index % 20 === 0 ? {} : { parent: scaleItemId(parentIndex) }),
+      ...(plan.parent === undefined ? {} : { parent: plan.parent }),
       ...(terminal ? { closed_at: createdAt, close_reason: `Synthetic ${status} fixture` } : {}),
       ...(status === "closed"
         ? {
@@ -162,42 +164,41 @@ export function buildSyntheticItemDocument(index, seed = 42) {
             blocked_reason: "Synthetic dependency wait",
           }
         : {}),
-      ...(buildDependencies(index, createdAt) === undefined
-        ? {}
-        : { dependencies: buildDependencies(index, createdAt) }),
-      ...(index % 13 === 0
+      ...(dependencies === undefined ? {} : { dependencies }),
+      ...(plan.has_comment
         ? {
             comments: [
               {
                 created_at: createdAt,
-                author: AUTHOR,
+                author: plan.author,
                 text: `Synthetic evidence comment ${index}`,
               },
             ],
           }
         : {}),
-      ...(index % 29 === 0
+      ...(plan.has_note
         ? {
             notes: [
               {
                 created_at: createdAt,
-                author: AUTHOR,
+                author: plan.author,
                 text: `Private synthetic context note ${index}`,
               },
             ],
           }
         : {}),
-      ...(index % 31 === 0
+      ...(plan.has_learning
         ? {
             learnings: [
               {
                 created_at: createdAt,
-                author: AUTHOR,
+                author: plan.author,
                 text: `Durable synthetic learning ${index}`,
               },
             ],
           }
         : {}),
+      ...customFields,
     },
     body: [
       `## Synthetic context ${index}`,
@@ -238,26 +239,46 @@ async function assertSafeWorkspaceRoot(workspaceRoot, force) {
   if (force) await rm(resolved, { recursive: true, force: true });
 }
 
-async function writeGeneratedItem(pmRoot, document, mode) {
+async function writeGeneratedItem(pmRoot, document, mode, historyEntryCount) {
   const itemPath = getItemPath(pmRoot, document.metadata.type, document.metadata.id, "toon");
   const historyPath = getHistoryPath(pmRoot, document.metadata.id);
-  const historyEntry = createHistoryEntry({
+  const historyEntries = [createHistoryEntry({
     nowIso: document.metadata.created_at,
-    author: AUTHOR,
+    author: document.metadata.author,
     op: "create",
     before: emptyImportedDocument(),
     after: document,
     message: "Synthetic scale fixture",
-  });
+  })];
+  for (let index = 1; index < historyEntryCount; index += 1) {
+    historyEntries.push(
+      createHistoryEntry({
+        nowIso: new Date(
+          Date.parse(document.metadata.created_at) + index,
+        ).toISOString(),
+        author: document.metadata.author,
+        op: `synthetic:history:${index}`,
+        before: document,
+        after: document,
+        message: "Synthetic history depth fixture",
+      }),
+    );
+  }
   const itemBytes = serializeItemDocument(document, { format: "toon" });
   if (mode === "sdk") {
     await writeFileAtomic(itemPath, itemBytes);
-    await appendHistoryEntry(historyPath, historyEntry);
+    for (const historyEntry of historyEntries) {
+      await appendHistoryEntry(historyPath, historyEntry);
+    }
     return;
   }
   await Promise.all([
     writeFile(itemPath, itemBytes, "utf8"),
-    writeFile(historyPath, `${JSON.stringify(historyEntry)}\n`, "utf8"),
+    writeFile(
+      historyPath,
+      `${historyEntries.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+      "utf8",
+    ),
   ]);
 }
 
@@ -276,6 +297,7 @@ export async function generateSyntheticWorkspace(options) {
   const workspaceRoot = path.resolve(options.workspaceRoot);
   const itemCount = resolveScaleItemCount(options.itemCount);
   const seed = parsePositiveInteger(options.seed ?? 42, "--seed");
+  const shape = resolveBuiltinCorpusShape(options.shape ?? "scratch");
   const mode = options.mode ?? "direct";
   if (mode !== "direct" && mode !== "sdk") {
     throw new Error("--mode must be direct or sdk");
@@ -290,9 +312,30 @@ export async function generateSyntheticWorkspace(options) {
     noExtensions: true,
   });
   await client.init(undefined, { defaults: true, force: true });
+  for (const type of shape.custom_types) {
+    await client.schemaAddType(type, {
+      description: `Synthetic ${shape.name} corpus type`,
+      author: AUTHOR,
+    });
+  }
+  for (const status of shape.custom_statuses) {
+    await client.schemaAddStatus(status, {
+      description: `Synthetic ${shape.name} corpus status`,
+      role: ["active"],
+      author: AUTHOR,
+    });
+  }
+  for (const field of shape.custom_fields) {
+    await client.schemaAddField(field, {
+      type: "string",
+      commands: ["create", "update", "list", "search", "context"],
+      description: `Synthetic ${shape.name} corpus field`,
+      author: AUTHOR,
+    });
+  }
 
   const itemDirectories = new Set(
-    ["Epic", ...WEIGHTED_TYPES].map((type) =>
+    ["Epic", ...WEIGHTED_TYPES, ...shape.custom_types].map((type) =>
       path.dirname(getItemPath(pmRoot, type, scaleItemId(0), "toon")),
     ),
   );
@@ -301,24 +344,50 @@ export async function generateSyntheticWorkspace(options) {
 
   const startedAt = performance.now();
   const sampleIds = { get: undefined, open: [] };
+  const plans = [];
   for (let offset = 0; offset < itemCount; offset += BATCH_SIZE) {
     const writes = [];
     for (let index = offset; index < Math.min(itemCount, offset + BATCH_SIZE); index += 1) {
-      const document = buildSyntheticItemDocument(index, seed);
+      const plan = buildCorpusShapeItemPlan(shape, index, itemCount, seed);
+      plans.push(plan);
+      const document = buildSyntheticItemDocument(
+        index,
+        seed,
+        shape,
+        itemCount,
+      );
       recordFixtureSample(sampleIds, document);
-      writes.push(writeGeneratedItem(pmRoot, document, mode));
+      writes.push(
+        writeGeneratedItem(
+          pmRoot,
+          document,
+          mode,
+          plan.history_entry_count,
+        ),
+      );
     }
     await Promise.all(writes);
   }
   const canonicalWorkspaceRoot = await realpath(workspaceRoot);
+  const measuredShape = (
+    options.measureShapePlan ?? measureCorpusShapePlan
+  )(shape, plans);
+  if (!measuredShape.matches_declaration) {
+    throw new Error(
+      `Generated corpus shape drifted: ${measuredShape.mismatches.join(", ")}`,
+    );
+  }
   const manifest = {
-    version: 1,
+    version: 2,
     generated_at: new Date().toISOString(),
     workspace_root: canonicalWorkspaceRoot,
     pm_root: path.join(canonicalWorkspaceRoot, ".agents", "pm"),
     item_count: itemCount,
     history_stream_count: itemCount,
+    history_entry_count: measuredShape.history_entry_count,
     seed,
+    shape,
+    measured_shape: measuredShape,
     mode,
     generation_ms: Math.round(performance.now() - startedAt),
     sample_ids: sampleIds,
@@ -347,6 +416,7 @@ export function generatorOptionsFromFlags(flags, workspaceRoot) {
     workspaceRoot,
     itemCount: flags.get("items") ?? "ci",
     seed: flags.get("seed") ?? 42,
+    shape: flags.get("shape") ?? "scratch",
     mode: flags.get("mode") === undefined ? "direct" : String(flags.get("mode")),
     force: flags.has("force"),
   };

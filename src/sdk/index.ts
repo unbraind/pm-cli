@@ -46,6 +46,20 @@ export {
   type HistoryAuthorAttributionScan,
   type UnknownAuthorHistoryEvent,
 } from "./author-attribution.js";
+export {
+  BUILTIN_CORPUS_SHAPES,
+  PM_CORPUS_SHAPE_SCHEMA,
+  buildCorpusShapeItemPlan,
+  defineCorpusShape,
+  listBuiltinCorpusShapes,
+  measureCorpusShapePlan,
+  resolveBuiltinCorpusShape,
+  type BuiltinCorpusShapeName,
+  type CorpusShape,
+  type CorpusShapeEdgeWeight,
+  type CorpusShapeItemPlan,
+  type CorpusShapeProfile,
+} from "./corpus-shape.js";
 export * from "./core-governance.js";
 export { createPmCliProgram } from "./cli-program.js";
 export { runSearchRefreshWorkerEntrypoint } from "./search-refresh-worker.js";
@@ -64,10 +78,16 @@ export {
   deleteWorkspaceSnapshot,
   inspectWorkspaceSnapshot,
   listWorkspaceSnapshots,
+  planWorkspaceSnapshotRestore,
   restoreWorkspaceSnapshot,
+  restoreWorkspaceSnapshotWithRecovery,
   type CreateWorkspaceSnapshotResult,
+  type RestoreWorkspaceSnapshotOptions,
+  type RestoreWorkspaceSnapshotResult,
+  type WorkspaceSnapshotHistoryImpact,
   type WorkspaceSnapshotManifest,
   type WorkspaceSnapshotReference,
+  type WorkspaceSnapshotRestorePlan,
 } from "./workspace-snapshot.js";
 export { flushTelemetryQueue } from "./telemetry-flush.js";
 export {

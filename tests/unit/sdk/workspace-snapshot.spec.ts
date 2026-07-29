@@ -14,7 +14,9 @@ import {
   deleteWorkspaceSnapshot,
   inspectWorkspaceSnapshot,
   listWorkspaceSnapshots,
+  planWorkspaceSnapshotRestore,
   restoreWorkspaceSnapshot,
+  restoreWorkspaceSnapshotWithRecovery,
 } from "../../../src/sdk/index.js";
 import {
   publishWorkspaceSnapshotObject,
@@ -39,7 +41,9 @@ describe("workspace snapshots", () => {
     });
   });
 
-  it("rejects non-file filesystem entries in authoritative state", async () => {
+  it.runIf(process.platform !== "win32")(
+    "rejects non-file filesystem entries in authoritative state",
+    async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const socketPath = path.join(pmPath, "local.socket");
       const server = createServer();
@@ -65,7 +69,8 @@ describe("workspace snapshots", () => {
         }
       }
     });
-  });
+    },
+  );
 
   it("deduplicates authoritative state and excludes clone-local runtime data", async () => {
     await withTempPmPath(async ({ pmPath }) => {
@@ -98,12 +103,119 @@ describe("workspace snapshots", () => {
       await mkdir(path.join(pmPath, "locks"), { recursive: true });
       await writeFile(path.join(pmPath, "locks", "stale.lock"), "stale", "utf8");
 
-      const restored = await restoreWorkspaceSnapshot(pmPath, "clean");
+      const restored = await restoreWorkspaceSnapshotWithRecovery(pmPath, "clean", {
+        force: true,
+        author: "snapshot-test",
+      });
       expect(await readFile(settingsPath)).toEqual(originalSettings);
       await expect(access(path.join(pmPath, "locks", "stale.lock"))).rejects.toThrow();
       expect(
-        await inspectWorkspaceSnapshot(pmPath, restored.fingerprint),
-      ).toEqual(restored);
+        await inspectWorkspaceSnapshot(pmPath, restored.manifest.fingerprint),
+      ).toEqual(restored.manifest);
+      expect(restored.recovery_fingerprint).not.toBe(
+        restored.manifest.fingerprint,
+      );
+      expect(restored.audit_operation).toBe("workspace_snapshot_restore");
+    });
+  });
+
+  it("plans history loss, requires confirmation, and restores the recovery snapshot", async () => {
+    await withTempPmPath(async (context) => {
+      await createWorkspaceSnapshot(context.pmPath, { name: "baseline" });
+      const created = await context.runCliInProcess(
+        [
+          "create",
+          "--create-mode",
+          "progressive",
+          "--title",
+          "Post-snapshot work",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const itemId = (created.json as { item: { id: string } }).item.id;
+      const secondCreated = await context.runCliInProcess(
+        [
+          "create",
+          "--create-mode",
+          "progressive",
+          "--title",
+          "Second post-snapshot work",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      const secondItemId = (
+        secondCreated.json as { item: { id: string } }
+      ).item.id;
+      const plan = await planWorkspaceSnapshotRestore(
+        context.pmPath,
+        "baseline",
+      );
+      expect(plan).toMatchObject({
+        removed_item_count: 2,
+        affected_history_stream_count: 2,
+        removed_history_entry_count: 2,
+        changes_authoritative_state: true,
+      });
+      expect(plan.affected_history_streams.map((entry) => entry.path)).toEqual(
+        [`history/${itemId}.jsonl`, `history/${secondItemId}.jsonl`].sort(),
+      );
+      await expect(
+        restoreWorkspaceSnapshotWithRecovery(context.pmPath, "baseline"),
+      ).rejects.toThrow("requires explicit force confirmation");
+
+      const restored = await restoreWorkspaceSnapshotWithRecovery(
+        context.pmPath,
+        "baseline",
+        {
+          force: true,
+          author: "snapshot-round-trip",
+          message: "Exercise reversible restore",
+        },
+      );
+      expect(restored.plan).toEqual(plan);
+      const workspaceHistory = (
+        await readFile(
+          path.join(context.pmPath, "history", "_workspace.jsonl"),
+          "utf8",
+        )
+      )
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as { op: string; context?: unknown });
+      expect(workspaceHistory.at(-1)).toMatchObject({
+        op: "workspace_snapshot_restore",
+        context: {
+          target_fingerprint: restored.manifest.fingerprint,
+          pre_restore_fingerprint: restored.recovery_fingerprint,
+          removed_item_count: 2,
+          removed_history_entry_count: 2,
+        },
+      });
+      const missing = await context.runCliInProcess(["get", itemId, "--json"]);
+      expect(missing.code).not.toBe(0);
+
+      const compatibilityManifest = await restoreWorkspaceSnapshot(
+        context.pmPath,
+        restored.recovery_fingerprint,
+      );
+      expect(compatibilityManifest.fingerprint).toBe(
+        restored.recovery_fingerprint,
+      );
+      const recovered = await context.runCliInProcess(
+        ["get", itemId, "--json"],
+        { expectJson: true },
+      );
+      expect(recovered.code).toBe(0);
     });
   });
 

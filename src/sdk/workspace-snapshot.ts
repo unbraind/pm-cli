@@ -16,6 +16,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
+import { appendWorkspaceAuditEvent } from "../core/history/workspace-history.js";
 
 /** Current content-addressed workspace snapshot manifest schema identifier. */
 export const SNAPSHOT_SCHEMA =
@@ -73,6 +74,70 @@ export interface CreateWorkspaceSnapshotResult {
   name?: string;
   /** True when an identical content object already existed. */
   deduplicated: boolean;
+}
+
+/** Exact destructive impact computed before a workspace snapshot restore. */
+export interface WorkspaceSnapshotRestorePlan {
+  /** Target snapshot fingerprint. */
+  target_fingerprint: string;
+  /** Fingerprint of the authoritative state that would be replaced. */
+  current_fingerprint: string;
+  /** Authoritative files whose bytes differ between current and target state. */
+  changed_file_count: number;
+  /** Current authoritative files absent from the target snapshot. */
+  removed_file_count: number;
+  /** Target authoritative files absent from current state. */
+  added_file_count: number;
+  /** Current item documents absent from the target snapshot. */
+  removed_item_count: number;
+  /** History streams absent from, or shorter in, the target snapshot. */
+  affected_history_stream_count: number;
+  /** History entries that the target snapshot does not retain. */
+  removed_history_entry_count: number;
+  /** Per-stream evidence for history reductions. */
+  affected_history_streams: readonly WorkspaceSnapshotHistoryImpact[];
+  /** True when applying the plan changes authoritative state. */
+  changes_authoritative_state: boolean;
+}
+
+/** One history stream whose retained entry count would decrease on restore. */
+export interface WorkspaceSnapshotHistoryImpact {
+  /** Tracker-relative history stream path. */
+  path: string;
+  /** Entry count in current authoritative state. */
+  current_entries: number;
+  /** Entry count in the target snapshot, or zero when the stream is absent. */
+  target_entries: number;
+  /** Entries no longer present after applying the target snapshot. */
+  removed_entries: number;
+}
+
+/** Options for a guarded, audited workspace snapshot restore. */
+export interface RestoreWorkspaceSnapshotOptions {
+  /** Explicit destructive-operation confirmation. */
+  force?: boolean;
+  /** Actor recorded on the durable workspace audit event. */
+  author?: string;
+  /** Optional human-readable restore rationale. */
+  message?: string;
+  /** Workspace-history lock time-to-live in seconds. */
+  lockTtlSeconds?: number;
+  /** Maximum workspace-history lock wait in milliseconds. */
+  lockWaitMs?: number;
+}
+
+/** Result of an audited and reversible workspace snapshot restore. */
+export interface RestoreWorkspaceSnapshotResult {
+  /** Immutable target manifest that supplied the restored payload. */
+  manifest: WorkspaceSnapshotManifest;
+  /** Exact impact accepted by the caller. */
+  plan: WorkspaceSnapshotRestorePlan;
+  /** Recovery object containing the complete pre-restore authoritative state. */
+  recovery_fingerprint: string;
+  /** Workspace audit stream receiving the restore event. */
+  audit_history_path: string;
+  /** Stable audit operation appended after staging and before activation. */
+  audit_operation: "workspace_snapshot_restore";
 }
 
 async function collectAuthoritativeFiles(
@@ -138,6 +203,30 @@ async function buildManifest(
     },
     contents,
   };
+}
+
+function lineCount(content: Buffer | undefined): number {
+  if (content === undefined || content.byteLength === 0) {
+    return 0;
+  }
+  return content
+    .toString("utf8")
+    .split("\n")
+    .filter((line) => line.trim().length > 0).length;
+}
+
+async function snapshotContents(
+  root: string,
+  files: readonly string[],
+): Promise<Map<string, Buffer>> {
+  return new Map(
+    await Promise.all(
+      files.map(
+        async (file) =>
+          [file, await readFile(path.join(root, file))] as const,
+      ),
+    ),
+  );
 }
 
 function validateSnapshotTarget(target: string): void {
@@ -383,12 +472,102 @@ export async function listWorkspaceSnapshots(
   };
 }
 
-/** Atomically replace tracker state with an authoritative snapshot payload. */
-export async function restoreWorkspaceSnapshot(
+/** Compute the exact authoritative and history impact of restoring a snapshot. */
+export async function planWorkspaceSnapshotRestore(
   pmRoot: string,
   target: string,
-): Promise<WorkspaceSnapshotManifest> {
+): Promise<WorkspaceSnapshotRestorePlan> {
+  const targetManifest = await inspectWorkspaceSnapshot(pmRoot, target);
+  const { manifest: currentManifest, contents: currentContentList } =
+    await buildManifest(pmRoot);
+  const currentContents = new Map(
+    currentManifest.files.map((file, index) => [
+      file,
+      currentContentList[index]!,
+    ]),
+  );
+  const targetContents = await snapshotContents(
+    path.join(
+      snapshotStore(pmRoot),
+      "objects",
+      targetManifest.fingerprint,
+      "files",
+    ),
+    targetManifest.files,
+  );
+  const currentFiles = new Set(currentManifest.files);
+  const targetFiles = new Set(targetManifest.files);
+  const changedFiles = new Set([...currentFiles, ...targetFiles]);
+  for (const file of changedFiles) {
+    const currentContent = currentContents.get(file);
+    const targetContent = targetContents.get(file);
+    if (
+      currentContent !== undefined &&
+      targetContent !== undefined &&
+      currentContent.equals(targetContent)
+    ) {
+      changedFiles.delete(file);
+    }
+  }
+  const affectedHistoryStreams = currentManifest.files
+    .filter((file) => file.startsWith("history/") && file.endsWith(".jsonl"))
+    .map((file) => {
+      const currentEntries = lineCount(currentContents.get(file));
+      const targetEntries = lineCount(targetContents.get(file));
+      return {
+        path: file,
+        current_entries: currentEntries,
+        target_entries: targetEntries,
+        removed_entries: Math.max(0, currentEntries - targetEntries),
+      };
+    })
+    .filter((entry) => entry.removed_entries > 0)
+    .sort((left, right) => left.path.localeCompare(right.path));
+  return {
+    target_fingerprint: targetManifest.fingerprint,
+    current_fingerprint: currentManifest.fingerprint,
+    changed_file_count: changedFiles.size,
+    removed_file_count: [...currentFiles].filter(
+      (file) => !targetFiles.has(file),
+    ).length,
+    added_file_count: [...targetFiles].filter(
+      (file) => !currentFiles.has(file),
+    ).length,
+    removed_item_count: [...currentFiles].filter(
+      (file) => file.endsWith(".toon") && !targetFiles.has(file),
+    ).length,
+    affected_history_stream_count: affectedHistoryStreams.length,
+    removed_history_entry_count: affectedHistoryStreams.reduce(
+      (total, entry) => total + entry.removed_entries,
+      0,
+    ),
+    affected_history_streams: affectedHistoryStreams,
+    changes_authoritative_state:
+      currentManifest.fingerprint !== targetManifest.fingerprint,
+  };
+}
+
+/**
+ * Atomically replace tracker state with an audited, reversible snapshot.
+ *
+ * The caller must explicitly confirm the whole-workspace mutation. The current
+ * state is captured as an immutable recovery object before staging begins, and
+ * the staged `_workspace` stream receives the restore event before activation.
+ */
+export async function restoreWorkspaceSnapshotWithRecovery(
+  pmRoot: string,
+  target: string,
+  options: RestoreWorkspaceSnapshotOptions = {},
+): Promise<RestoreWorkspaceSnapshotResult> {
+  const plan = await planWorkspaceSnapshotRestore(pmRoot, target);
+  if (options.force !== true) {
+    throw new Error(
+      "Workspace snapshot restore requires explicit force confirmation; inspect the impact with planWorkspaceSnapshotRestore or pm workspace snapshot restore <target> --dry-run, then retry with force",
+    );
+  }
+  const author = options.author?.trim() || "pm-sdk";
   const manifest = await inspectWorkspaceSnapshot(pmRoot, target);
+  const recovery = await createWorkspaceSnapshot(pmRoot);
   const fingerprint = manifest.fingerprint;
   const store = snapshotStore(pmRoot);
   const source = path.join(store, "objects", fingerprint, "files");
@@ -403,8 +582,53 @@ export async function restoreWorkspaceSnapshot(
     recursive: true,
     force: false,
   });
+  const audit = await appendWorkspaceAuditEvent({
+    pmRoot: staging,
+    op: "workspace_snapshot_restore",
+    author,
+    message:
+      options.message ??
+      `Restore workspace snapshot ${fingerprint}; recovery snapshot ${recovery.manifest.fingerprint}`,
+    context: {
+      target_fingerprint: fingerprint,
+      pre_restore_fingerprint: recovery.manifest.fingerprint,
+      changed_file_count: plan.changed_file_count,
+      removed_file_count: plan.removed_file_count,
+      removed_item_count: plan.removed_item_count,
+      affected_history_stream_count: plan.affected_history_stream_count,
+      removed_history_entry_count: plan.removed_history_entry_count,
+    },
+    lockTtlSeconds: options.lockTtlSeconds ?? 60,
+    lockWaitMs: options.lockWaitMs ?? 5_000,
+  });
   await swapWorkspaceSnapshotRoot(staging, pmRoot, backup);
-  return manifest;
+  return {
+    manifest,
+    plan,
+    recovery_fingerprint: recovery.manifest.fingerprint,
+    audit_history_path: path.relative(pmRoot, audit.historyPath).replaceAll("\\", "/"),
+    audit_operation: "workspace_snapshot_restore",
+  };
+}
+
+/**
+ * Restore a snapshot through the backward-compatible SDK signature.
+ *
+ * Existing callers retain the manifest return contract while every restore now
+ * captures a recovery snapshot and writes a durable audit event. New callers
+ * that need impact, recovery, and audit coordinates should use
+ * `restoreWorkspaceSnapshotWithRecovery`.
+ */
+export async function restoreWorkspaceSnapshot(
+  pmRoot: string,
+  target: string,
+): Promise<WorkspaceSnapshotManifest> {
+  return (
+    await restoreWorkspaceSnapshotWithRecovery(pmRoot, target, {
+      force: true,
+      message: "Restore requested through the compatibility SDK signature",
+    })
+  ).manifest;
 }
 
 /** Delete a named reference, or an unreferenced immutable object fingerprint. */

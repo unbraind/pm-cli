@@ -18,5 +18,22 @@
     "query": "item format version front-matter migration gating",
     "relevant_ids": ["pm-ae1u"],
     "description": "Per-item format-version front-matter field"
+  },
+  {
+    "query": "workspace snapshot restore history durability provenance reproducible episodes",
+    "relevant_ids": [
+      "pm-6l2mza",
+      "pm-dkrmzv",
+      "pm-wlqxg3",
+      "pm-e3gn0z",
+      "pm-h6wmtc",
+      "pm-tqel",
+      "pm-0elqjj",
+      "pm-3z0k",
+      "pm-9yfo",
+      "pm-li2fj5",
+      "pm-w7ccmv"
+    ],
+    "description": "Snapshot restore durability and reproducible evaluation lineage"
   }
 ]

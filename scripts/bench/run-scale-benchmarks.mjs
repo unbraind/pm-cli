@@ -376,10 +376,16 @@ function compareTransportOverhead(report, tier) {
 /** Return human-readable regression and product-target violations. */
 export function compareScaleBudgets(report, manifest) {
   const violations = [];
-  const tier = manifest?.tiers?.[String(report.fixture.item_count)];
+  const shapeName = report.fixture.shape?.name ?? "scratch";
+  const tierKey = `${shapeName}:${report.fixture.item_count}`;
+  const tier =
+    manifest?.tiers?.[tierKey] ??
+    (shapeName === "scratch"
+      ? manifest?.tiers?.[String(report.fixture.item_count)]
+      : undefined);
   if (!tier) {
     violations.push(
-      `missing regression budget for ${report.fixture.item_count} items`,
+      `missing regression budget for ${shapeName}:${report.fixture.item_count}`,
     );
     return violations;
   }
@@ -448,14 +454,17 @@ async function readBudgetManifest(manifestPath) {
   return JSON.parse(await readFile(manifestPath, "utf8"));
 }
 
-async function updateBudgetManifest(manifestPath, report, headroom) {
+/** Merge one shape-qualified report into a regression budget manifest. */
+export async function updateBudgetManifest(manifestPath, report, headroom) {
   let manifest = { version: 1, tiers: {} };
   try {
     manifest = await readBudgetManifest(manifestPath);
   } catch {
     // A first baseline creates the manifest.
   }
-  manifest.tiers[String(report.fixture.item_count)] = buildTierBudget(
+  manifest.tiers[
+    `${report.fixture.shape?.name ?? "scratch"}:${report.fixture.item_count}`
+  ] = buildTierBudget(
     report,
     headroom,
   );
@@ -492,6 +501,7 @@ export async function runScaleBenchmarks(options) {
       workspaceRoot,
       itemCount,
       seed: options.seed ?? 42,
+      shape: options.shape ?? "scratch",
       mode: options.mode ?? "direct",
       force: true,
     });
@@ -553,6 +563,7 @@ export function benchmarkOptionsFromFlags(flags) {
     itemCount: flags.get("items") ?? "ci",
     iterations: flags.get("iterations") ?? 3,
     seed: flags.get("seed") ?? 42,
+    shape: flags.get("shape") ?? "scratch",
     mode:
       flags.get("mode") === undefined ? "direct" : String(flags.get("mode")),
     transport: flags.get("transport") ?? "both",
@@ -620,6 +631,7 @@ export async function runScaleBenchmarkEntrypoint(options = {}) {
         {
           ok: true,
           item_count: report.fixture.item_count,
+          shape: report.fixture.shape?.name ?? "scratch",
           iterations: report.iterations,
           report: path.relative(repoRoot, outputPath),
           product_target: report.product_target.target,

@@ -160,7 +160,20 @@ Fixture authoring notes:
 - Keep expected IDs deterministic and scoped to stable seed data so CI does not flap.
 - Add new fixtures for regressions before tuning search defaults.
 
-CI currently runs this gate in advisory mode (`continue-on-error: true`), so failures do not block merges by default; treat failing nDCG as a quality signal to investigate, not as a silent ignore.
+The repository-native `pm eval` corpus is a required CI and release gate:
+
+```bash
+pnpm build
+pnpm quality:retrieval-eval
+```
+
+`tests/search-eval/retrieval-gate-baseline.json` enforces query count, nDCG,
+MRR, precision, and recall. The corpus includes at least one intentionally
+non-saturated judgment set so recall regressions remain observable. The
+required context-quality command also runs an impossible perfect-score negative
+control and fails if `pm eval --fail-under` stops returning a non-zero exit.
+Refresh the baseline only with `pnpm quality:retrieval-eval:update` after
+reviewing query-level ranking changes.
 
 ## Context Quality Evaluation
 
@@ -188,6 +201,40 @@ reciprocal rank, required-item recall, continuity coverage, token-budget
 adherence, and served-item signal attribution. It fails when an explicit corpus
 threshold is missed or any aggregate metric regresses below the committed
 baseline.
+
+Benchmark and evaluation populations that need realistic project structure
+should use the public SDK shapes documented in
+[Portable Corpus Shapes](CORPUS_SHAPES.md). `pnpm benchmark:corpus-shapes`
+remeasures the same SDK operations across equal-count `scratch` and
+`representative` populations and records their measured profiles.
+
+## Hosted Gate Registry
+
+Tracked by [pm-k6t4yb](../.agents/pm/tasks/pm-k6t4yb.toon) and
+[pm-b2hc4x](../.agents/pm/tasks/pm-b2hc4x.toon).
+
+Every named workflow step that makes a build, test, quality, security, package,
+or release claim is discovered and matched exactly against
+`scripts/release/gate-registry.json`. Each registry entry declares:
+
+- a canonical pm owner;
+- the enforced workflow steps it owns;
+- actionable failure taxonomy;
+- explicit bypass policy and audit rationale;
+- an executable negative-control test and assertion.
+
+Run the fail-closed inventory locally:
+
+```bash
+pnpm quality:gate-registry
+node scripts/release/gate-registry.mjs --inventory
+```
+
+`pnpm quality:static` includes the registry. A newly named workflow gate fails
+until it has an owner and negative-control proof; a removed or renamed workflow
+step also fails until stale policy is reconciled. Public source claims such as
+“CI gate” are mapped to an enforced registry entry so documentation cannot
+silently advertise advisory behavior.
 
 When a deliberate ranking change improves or intentionally redefines the golden
 judgments, review the scenario-level diff first, then refresh the baseline:
