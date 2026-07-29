@@ -6,18 +6,19 @@ status: open
 priority: 2
 tags[5]: ci,cross-platform,nightly,test-quality,windows
 created_at: "2026-07-28T10:29:33.965Z"
-updated_at: "2026-07-29T17:04:46.351Z"
+updated_at: "2026-07-29T17:11:00.931Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: No test asserts on a hardcoded POSIX absolute path or a raw platform errno string; a red Windows nightly leg names only product defects
 parent: pm-u9d0
 risk: low
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2kkl,related,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
   pm-e70zh5,related,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
   pm-ihmfs6,discovered_from,"2026-07-28T10:31:21.188Z","harness:claude-code","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+  pm-6l2mza,related,"2026-07-29T17:11:00.697Z","harness:claude-code","cli:update:dep",detected
+comments[12]{created_at,author,text}:
   "2026-07-28T11:53:13.607Z","harness:codex","Progress tranche evidence: canonical/native path expectations were fixed in merge safety, guide-shell runtime, and context-integrity tests, and drift-cache filesystem failures now expose stable diagnostic codes instead of raw errno text. The full repo-wide removal of all hardcoded POSIX paths and raw errno assertions remains, so this broader chore returns to open after the cross-platform nightly evidence is captured on pm-ihmfs6."
   "2026-07-28T11:57:10.427Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/795 at implementation head 862e88f71. The PR description links canonical PM records and records full coverage, isolated consumer, security, compatibility, and token-gate evidence."
   "2026-07-28T12:15:00.058Z","harness:codex","Nightly run 30356894804 reduced the Windows failures to three actionable portability cases: stable diagnostic semantics for invalid tracker roots, one canonical-path assertion, and cwd-safe cleanup. Implemented deterministic root classification independent of raw errno, realpath expectations, and finally-guarded cwd restoration; focused 27 tests and strict static quality now pass."
@@ -29,6 +30,7 @@ comments[11]{created_at,author,text}:
   "2026-07-29T14:21:32.894Z","harness:codex","Progress evidence for GH-810 tranche: workspace snapshot server cleanup now checks listening state before close, preserving the original listen failure while eliminating Windows cleanup noise. Focused snapshot/test-command tests and full 6510-test exact-coverage suite pass on Linux; the broader portability census remains open pending the new PR nightly Windows run."
   "2026-07-29T14:33:11.026Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/811 at implementation head 51478084e; description links canonical PM records and records exact coverage, packed-consumer, security, changelog, and same-day release-guard evidence."
   "2026-07-29T17:04:46.351Z","harness:claude-code","Nightly leg status enumerated 2026-07-29. The scheduled run at 06:34 UTC, run id 30428599608, failed. Exactly one leg is red: Nightly on windows-latest with Node 24. Every other leg in the matrix succeeded.\n\nTwo specs fail on that leg and no others:\n\ntests/unit/commands/test-command.spec.ts, runTest, \"terminates stubborn timed-out linked commands without hanging\" - failed after 3,693 ms, which is the timeout itself rather than an assertion. This one is a product-behaviour candidate, not spec noise: if a stubborn child cannot be killed on Windows, linked-test timeout enforcement does not work there, and the precedent in this class is explicit that the fix must not be spec-side only.\n\ntests/unit/sdk/workspace-snapshot.spec.ts, workspace snapshots, \"rejects non-file filesystem entries in authoritative state\" - failed in 93 ms, an assertion failure on filesystem-entry classification. This is on the snapshot surface that shipped on 2026-07-28, so the class is still acquiring new members as new surfaces land, which is the argument for the portability sweep this item owns rather than another point patch.\n\nVerification state. The auto-filed leg issue was closed on 2026-07-29 and the 2026-07-29 lanes merged afterwards, so no scheduled nightly has run against current HEAD. A dispatch was queued at 17:01 UTC, run id 30473431691, to establish whether HEAD is green independently of the closure. Do not treat the issue closure as evidence of a green leg.\n"
+  "2026-07-29T17:10:59.941Z","harness:claude-code","Dispatch verdict for the run queued earlier this session: run id 30473431691 against main at commit c66cb7ca8, completed failure at 17:09 UTC.\n\nFour of five legs are green - ubuntu with Node 22, 24 and 25, and macos with Node 24. windows-latest with Node 24 is red and it is now a single-spec residual:\n\ntests/unit/sdk/workspace-snapshot.spec.ts, workspace snapshots, \"rejects non-file filesystem entries in authoritative state\", assertion failure in 102 ms.\n\nThe other spec that failed on the 06:34 scheduled run, the linked-command termination timeout in tests/unit/commands/test-command.spec.ts, passes against current HEAD. So the 2026-07-29 lanes fixed one of the two and the leg issue was closed one failure early.\n\nTwo things this settles. First, the leg is genuinely red against HEAD with no open GitHub issue tracking it, because the auto-filing path runs on the scheduled trigger only - this item is the tracking of record. Second, the surviving failure is on the workspace snapshot surface that shipped 2026-07-28, in the same spec file that the restore-durability item pm-6l2mza links as its verification target, so the portability fix and the durability fix will touch the same file and should be sequenced rather than raced.\n"
 files[5]{path,scope,note}:
   src/core/history/drift-cache.ts,project,Stable cross-platform diagnostics and native path expectations
   tests/unit/packages/guide-shell-runtime.spec.ts,project,Stable cross-platform diagnostics and native path expectations

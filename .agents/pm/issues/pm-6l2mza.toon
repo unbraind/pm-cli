@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[8]: "area:sdk","area:storage",durability,history,immutability,provenance,reproducibility,rl-substrate
 created_at: "2026-07-29T16:53:20.611Z"
-updated_at: "2026-07-29T17:03:36.571Z"
+updated_at: "2026-07-29T17:11:01.706Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A workspace restore appends a durable entry naming the snapshot fingerprint, the pre-restore workspace fingerprint, and the identity that ran it, and that entry survives the restore itself; Streams the restore reverts retain their erased entries in a form that keeps point-in-time reads answerable, or the restore refuses and names every stream it would truncate; The pre-restore state is captured so a restore is reversible, proven by a restore-then-return round trip that recovers every erased entry and every removed item; A whole-workspace revert requires an explicit confirmation or force flag and offers a dry-run reporting the item, stream, and entry counts it would remove; A conformance test asserts that no first-party command can reduce the entry count of an existing history stream without writing an audited record of the reduction"
@@ -26,6 +26,8 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-tqel,related,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
   pm-wlqxg3,related,"2026-07-29T16:53:20.611Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-29T17:11:01.705Z","harness:claude-code","The windows-latest with Node 24 nightly leg is red against HEAD on one spec in this item's linked verification file - tests/unit/sdk/workspace-snapshot.spec.ts, rejects non-file filesystem entries in authoritative state, run id 30473431691. The recorded-and-reversible-restore work will therefore land in a file that is currently failing on one platform, so sequence the portability fix owned by pm-j668gl first or expect the new conformance test to be unverifiable on Windows."
 files[2]{path,scope,note}:
   src/sdk/workspace-snapshot.ts,project,"Snapshot create, list, inspect, restore and delete implementation - the restore path that removes streams without recording it"
   tests/unit/sdk/workspace-snapshot.spec.ts,project,"Existing snapshot suite - the conformance test for recorded, reversible restore belongs here"
