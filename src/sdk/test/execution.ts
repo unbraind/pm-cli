@@ -2784,11 +2784,7 @@ async function recordTestRunSummary(params: {
     failOnSkippedTriggered,
     warnings,
   } = params;
-  if (
-    options.run !== true ||
-    !runStartedAt ||
-    settings.testing.record_results_to_items !== true
-  ) {
+  if (options.run !== true || !runStartedAt) {
     return undefined;
   }
   const entry = buildTrackedTestRunSummary({
@@ -2797,6 +2793,9 @@ async function recordTestRunSummary(params: {
     runResults,
     failOnSkippedTriggered,
   });
+  if (settings.testing.record_results_to_items !== true) {
+    return entry;
+  }
   try {
     await appendTrackedTestRunSummary({
       pmRoot,
@@ -2811,7 +2810,7 @@ async function recordTestRunSummary(params: {
     warnings.push(
       `test_result_tracking_failed:${itemId}:${error instanceof Error ? error.message : String(error)}`,
     );
-    return undefined;
+    return entry;
   }
 }
 

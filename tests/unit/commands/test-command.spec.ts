@@ -3534,11 +3534,19 @@ describe("runTest", () => {
         {
           run: true,
           timeout: "20",
+          measure: ["coverage=100,unit=percent"],
         },
         { path: context.pmPath },
       );
 
       expect(result.run_results[0]?.status).toBe("passed");
+      expect(result.measurements).toEqual([
+        expect.objectContaining({
+          name: "coverage",
+          value: 100,
+          unit: "percent",
+        }),
+      ]);
       const itemMetadata = await loadTaskMetadata(context, id);
       expect(itemMetadata.test_runs).toBeUndefined();
     });
