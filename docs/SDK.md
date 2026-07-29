@@ -1432,8 +1432,9 @@ pre-pagination match count, and use key presence for filter diagnostics;
 
 ### Execution and diagnostics
 
-Tracked by [pm-oslr](../.agents/pm/features/pm-oslr.toon) and the SDK boundary
-capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon).
+Tracked by [pm-oslr](../.agents/pm/features/pm-oslr.toon), the SDK boundary
+capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon), and quantitative test
+evidence [pm-ygerpy](../.agents/pm/issues/pm-ygerpy.toon).
 
 Test execution, background-run supervision, search evaluation, telemetry
 inspection, and tracker statistics are SDK-owned primitives. A custom CI host or
@@ -1463,6 +1464,12 @@ const itemRun = await runTest(
     autoPmContext: true,
     checkContext: true,
     failOnEmptyTestRun: true,
+    measure: [
+      "coverage=100,unit=percent,threshold=100",
+      "p95_latency=42,unit=ms,threshold=50",
+    ],
+    metricBelow: "coverage=100",
+    metricDiff: "p95_latency",
   },
   global,
 );
@@ -1483,6 +1490,14 @@ const telemetry = await runTelemetry(
 global tracker roots. `pm_context_mode`, run-level overrides, automatic tracker
 context, assertion requirements, empty-run detection, and failure categories are
 part of the SDK result contract rather than presentation-layer behavior.
+When item test-result tracking is enabled, `measure` persists typed numeric
+evidence on the producing run. Each entry has a stable name, finite numeric
+value, optional unit and threshold, and the run timestamp. Run history remains
+bounded; measurements are sorted, de-duplicated by name within a run, and capped
+at 32 entries. `metricBelow` returns run-attributed values below a
+`name=value` budget, while `metricDiff` returns the newest value, previous
+value, and delta. Package authors can use `parseTestRunMeasurements`,
+`queryTestRunMeasurementsBelow`, and `diffTestRunMeasurements` directly.
 Background-run helpers return durable records and health/log projections; the
 host remains responsible for its own rendering and exit-code policy.
 

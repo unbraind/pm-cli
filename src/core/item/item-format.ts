@@ -965,6 +965,46 @@ function stringOrEmpty(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+function normalizeTestRunMeasurements(
+  value: ItemTestRunSummary["measurements"],
+): ItemTestRunSummary["measurements"] {
+  if (!Array.isArray(value)) return undefined;
+  const normalized = value
+    .filter(
+      (measurement) =>
+        measurement !== null &&
+        typeof measurement === "object" &&
+        typeof measurement.name === "string" &&
+        measurement.name.trim().length > 0 &&
+        typeof measurement.value === "number" &&
+        Number.isFinite(measurement.value) &&
+        typeof measurement.recorded_at === "string" &&
+        measurement.recorded_at.trim().length > 0,
+    )
+    .map((measurement) => ({
+      name: measurement.name.trim(),
+      value: measurement.value,
+      unit:
+        typeof measurement.unit === "string"
+          ? measurement.unit.trim() || undefined
+          : undefined,
+      threshold:
+        typeof measurement.threshold === "number" &&
+        Number.isFinite(measurement.threshold)
+          ? measurement.threshold
+          : undefined,
+      recorded_at: measurement.recorded_at.trim(),
+    }));
+  const deduplicated = [
+    ...new Map(
+      normalized.map((measurement) => [measurement.name, measurement]),
+    ).values(),
+  ]
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .slice(0, 32);
+  return deduplicated.length > 0 ? deduplicated : undefined;
+}
+
 function normalizeTestRunSummary(
   value: ItemTestRunSummary,
 ): ItemTestRunSummary {
@@ -990,6 +1030,7 @@ function normalizeTestRunSummary(
     linked_tests: normalizeNonNegativeInteger(value.linked_tests),
     fail_on_skipped_triggered:
       value.fail_on_skipped_triggered === true ? true : undefined,
+    measurements: normalizeTestRunMeasurements(value.measurements),
   };
   deleteUndefinedFields(summary as unknown as Record<string, unknown>);
   return summary;
@@ -1893,9 +1934,10 @@ function serializeToonItemDocument(
     ...orderedMetadata,
     body: normalizedBody,
   };
-  const encodablePayload = JSON.parse(
-    JSON.stringify(payload),
-  ) as Record<string, unknown>;
+  const encodablePayload = JSON.parse(JSON.stringify(payload)) as Record<
+    string,
+    unknown
+  >;
   const serialized = encodeToon(encodablePayload);
   let decoded: unknown;
   try {
@@ -1921,8 +1963,7 @@ function serializeToonItemDocument(
         : {};
     const field =
       Object.keys(encodablePayload).find(
-        (key) =>
-          !isDeepStrictEqual(encodablePayload[key], decodedRecord[key]),
+        (key) => !isDeepStrictEqual(encodablePayload[key], decodedRecord[key]),
       ) ?? "document";
     throw new PmCliError(
       `Refusing to persist a lossy TOON item document; round-trip mismatch at field "${field}".`,

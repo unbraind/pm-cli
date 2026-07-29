@@ -1,0 +1,65 @@
+id: pm-wd61s2
+title: "GH-806: publish and reuse the eval query-set contract across help, errors, SDK, and machine discovery"
+description: "The shipped pm eval gate accepts a curated query-set schema, but normal discovery paths omit the accepted top-level shapes and relevant_ids contract while malformed-content errors discard the existing actionable example."
+type: Issue
+status: closed
+priority: 1
+tags[7]: agent-ux,"area:cli","area:sdk",contracts,eval,gh-issue,token-efficiency
+created_at: "2026-07-29T05:06:02.686Z"
+updated_at: "2026-07-29T06:29:12.501Z"
+closed_at: "2026-07-29T06:29:09.742Z"
+completed_at: "2026-07-29T06:29:09.742Z"
+author: "harness:codex"
+acceptance_criteria: The accepted eval query-set shapes and fields are represented by one public SDK contract; pm eval help and explain expose a copy-pasteable valid example within the command output budget; Malformed-content errors reuse the same actionable examples as missing-file errors; pm contracts exposes the query-set input contract without requiring trial-and-error; Focused tests and exact repository coverage remain green
+parent: pm-5t33or
+resolution: "The versioned eval query-set contract is shared across SDK, parser, errors, and token-bounded CLI discovery."
+expected_result: "Eval input shape, schema, and a valid example are discoverable consistently without exceeding the established command budget."
+actual_result: "SDK, parser, errors, and compact CLI help share the versioned schema; errors provide the copy-ready example and token gates pass."
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-07-29T05:06:02.686Z","harness:codex","cli:create:dep",detected
+  pm-bex0ui,related,"2026-07-29T05:06:02.686Z","harness:codex","cli:create:dep",detected
+  pm-eg9k,related,"2026-07-29T05:06:02.686Z","harness:codex","cli:create:dep",detected
+  pm-u8n5,discovered_from,"2026-07-29T05:06:02.686Z","harness:codex","cli:create:dep",detected
+  pm-1jrdri,verifies,"2026-07-29T05:06:52.895Z","harness:codex","cli:update:dep",detected
+  pm-jdh1jg,related,"2026-07-29T05:06:52.895Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-07-29T05:06:02.686Z","harness:codex","Duplicate check evidence: all-status searches for GH-806 and eval golden-query schema found closed implementation owner pm-u8n5 and documentation predecessor pm-eg9k but no active successor owning shared self-describing input contracts or validation-error parity. This item tracks https://github.com/unbraind/pm-cli/issues/806."
+  "2026-07-29T05:55:18.997Z","harness:codex","Delivery evidence: the SDK publishes a versioned eval query-set schema id, machine contract, copy-ready example, parser, CLI help text, and the same actionable context on missing, invalid JSON, and structural errors. Focused linked test passed with structured coverage evidence."
+  "2026-07-29T06:26:34.496Z","harness:codex","PR #809 review evidence: eval help retains the public schema, default query path, and error-example discovery while fitting the pre-existing command token ceiling; the exact token-surface gate passes without a baseline increase."
+files[5]{path,scope,note}:
+  src/cli/register-list-query.ts,project,CLI discovery
+  src/core/search/eval.ts,project,Versioned query-set contract and example
+  src/sdk/eval.ts,project,Actionable structured diagnostics
+  tests/unit/commands/eval-command.spec.ts,project,Error context coverage
+  tests/unit/core/search/eval-metrics.spec.ts,project,Schema parser coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/search/eval-metrics.spec.ts tests/unit/commands/eval-command.spec.ts,project,240
+test_runs[2]:
+  - run_id: test-local-ms5o62ox-oogepw
+    kind: test
+    status: passed
+    started_at: "2026-07-29T05:53:53.525Z"
+    finished_at: "2026-07-29T05:54:00.609Z"
+    recorded_at: "2026-07-29T05:54:00.609Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[2]{name,value,unit,threshold,recorded_at}:
+      coverage,100,percent,100,"2026-07-29T05:54:00.609Z"
+      gate,1,boolean,1,"2026-07-29T05:54:00.609Z"
+  - run_id: test-local-ms5pdp02-8movih
+    kind: test
+    status: passed
+    started_at: "2026-07-29T06:27:49.368Z"
+    finished_at: "2026-07-29T06:27:55.730Z"
+    recorded_at: "2026-07-29T06:27:55.730Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[2]{name,value,unit,threshold,recorded_at}:
+      coverage,100,percent,100,"2026-07-29T06:27:55.730Z"
+      gate,1,boolean,1,"2026-07-29T06:27:55.730Z"
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Public SDK query-set guidance
+close_reason: PR #809 review remediation verified through focused eval tests and the unchanged token ceiling.
+body: ""

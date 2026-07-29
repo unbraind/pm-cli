@@ -1,0 +1,44 @@
+id: pm-jdh1jg
+title: "GH-807: make the default eval query set version-controllable in every initialized workspace"
+description: "pm eval defaults its curated CI-gate input beneath the blanket-ignored search cache directory, so git silently drops the source-of-truth file and fresh CI clones fail closed."
+type: Issue
+status: closed
+priority: 1
+tags[7]: "area:cli","area:sdk",ci,eval,gh-issue,git,reproducibility
+created_at: "2026-07-29T05:06:11.651Z"
+updated_at: "2026-07-29T05:58:29.597Z"
+closed_at: "2026-07-29T05:55:42.074Z"
+completed_at: "2026-07-29T05:55:42.074Z"
+author: "harness:codex"
+acceptance_criteria: A fresh pm init workspace can commit the default eval query-set file without force-adding or editing the managed ignore block; Derived search artifacts remain ignored; Existing initialized workspaces receive an idempotent managed-block repair; pm eval reports an actionable migration when an old default is still ignored; Fresh-clone acceptance and exact repository coverage remain green
+parent: pm-5t33or
+resolution: Initialized workspaces now keep the default eval query set version-controlled while ignoring generated search artifacts.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4k6b,verifies,"2026-07-29T05:06:11.651Z","harness:codex","cli:create:dep",detected
+  pm-5t33or,implements,"2026-07-29T05:06:11.651Z","harness:codex","cli:create:dep",detected
+  pm-kpftft,related,"2026-07-29T05:06:11.651Z","harness:codex","cli:create:dep",detected
+  pm-u8n5,discovered_from,"2026-07-29T05:06:11.651Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-29T05:06:11.651Z","harness:codex","Duplicate check evidence: all-status searches for GH-807 and ignored eval defaults found closed pm-u8n5 claiming an earlier negation plus general init and eval lineages but no active regression owner for restoring a version-controllable default. This item tracks https://github.com/unbraind/pm-cli/issues/807."
+  "2026-07-29T05:55:19.718Z","harness:codex","Delivery evidence: initialized workspaces ignore search cache contents rather than the directory, then re-include the curated eval query set. Unit plus fresh-init integration passed; an isolated consumer verified the generated workspace contract and version-controlled-file layout."
+files[3]{path,scope,note}:
+  src/sdk/workspace.ts,project,Track curated eval evidence while ignoring derived search caches
+  tests/integration/init-path-guard.integration.spec.ts,project,Fresh workspace init acceptance
+  tests/unit/core/workspace/gitignore.spec.ts,project,Managed block regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240
+test_runs[1]:
+  - run_id: test-local-ms5o6c7m-mfoja6
+    kind: test
+    status: passed
+    started_at: "2026-07-29T05:54:01.269Z"
+    finished_at: "2026-07-29T05:54:12.946Z"
+    recorded_at: "2026-07-29T05:54:12.946Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[2]{name,value,unit,threshold,recorded_at}:
+      coverage,100,percent,100,"2026-07-29T05:54:12.946Z"
+      gate,1,boolean,1,"2026-07-29T05:54:12.946Z"
+close_reason: "Implemented and verified in the broad SDK context-contract delivery; linked evidence, full gates, and isolated consumer acceptance passed."
+body: ""

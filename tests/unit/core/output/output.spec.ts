@@ -150,11 +150,102 @@ describe("core/output/output", () => {
     expect(JSON.parse(rendered)).toEqual(payload);
   });
 
+  it("hoists linked-test execution context once and keeps lean successes actionable", () => {
+    const context = {
+      requested_pm_context_mode: "schema",
+      pm_context_mode: "schema",
+      auto_pm_context_applied: false,
+      is_pm_command: false,
+      is_pm_tracker_read_command: false,
+      source_project_pm_path: "/source/project",
+      sandbox_project_pm_path: "/sandbox/project",
+      source_global_pm_path: "/source/global",
+      sandbox_global_pm_path: "/sandbox/global",
+      source_project_item_count: 2,
+      sandbox_project_item_count: 0,
+      source_global_item_count: 1,
+      sandbox_global_item_count: 0,
+      mismatch_detected: false,
+      project_extensions_seeded: true,
+      global_extensions_seeded: true,
+    };
+    const payload = {
+      ok: true,
+      run_results: [
+        {
+          command: "node --version",
+          status: "passed",
+          exit_code: 0,
+          execution_context: context,
+          stdout: "v26",
+          stderr: "",
+        },
+        {
+          command: "node --help",
+          status: "passed",
+          exit_code: 0,
+          execution_context: context,
+          stdout: "help",
+          stderr: "",
+        },
+      ],
+    };
+
+    const projected = JSON.parse(
+      formatOutput(payload, { json: true, command: "test" }),
+    ) as Record<string, unknown>;
+    expect(projected.execution_context).toEqual(context);
+    expect(
+      (projected.run_results as Array<Record<string, unknown>>).every(
+        (entry) => entry.execution_context === undefined,
+      ),
+    ).toBe(true);
+
+    const lean = JSON.parse(
+      formatOutput(payload, { json: true, lean: true, command: "test" }),
+    ) as Record<string, unknown>;
+    expect(lean.execution_context).toMatchObject({
+      pm_context_mode: "schema",
+      mismatch_detected: false,
+    });
+    expect(lean.run_results).toEqual([
+      { command: "node --version", status: "passed", exit_code: 0 },
+      { command: "node --help", status: "passed", exit_code: 0 },
+    ]);
+  });
+
+  it("preserves heterogeneous linked-test contexts and non-result payloads", () => {
+    const heterogeneous = {
+      run_results: [
+        { status: "passed", execution_context: { pm_context_mode: "schema" } },
+        {
+          status: "failed",
+          execution_context: { pm_context_mode: "tracker" },
+        },
+      ],
+    };
+    expect(
+      JSON.parse(formatOutput(heterogeneous, { json: true, command: "test" })),
+    ).toEqual(heterogeneous);
+    expect(
+      JSON.parse(formatOutput({ ok: true }, { json: true, command: "test" })),
+    ).toEqual({ ok: true });
+    const mixed = {
+      run_results: [
+        null,
+        { status: "passed", execution_context: { pm_context_mode: "schema" } },
+      ],
+    };
+    expect(
+      JSON.parse(formatOutput(mixed, { json: true, command: "test" })),
+    ).toEqual(mixed);
+  });
+
   it("preserves a null root when lean JSON removes the complete payload", () => {
     expect(formatOutput(null, { json: true, lean: true })).toBe("null\n");
-    expect(formatOutput({ empty: [], missing: null }, { json: true, lean: true })).toBe(
-      "null\n",
-    );
+    expect(
+      formatOutput({ empty: [], missing: null }, { json: true, lean: true }),
+    ).toBe("null\n");
   });
 
   it("prints to stdout and stderr unless quiet mode suppresses result output", () => {

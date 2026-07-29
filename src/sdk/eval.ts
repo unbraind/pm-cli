@@ -14,6 +14,8 @@ import path from "node:path";
 import {
   aggregateEvalMetrics,
   DEFAULT_EVAL_K,
+  EVAL_QUERY_SET_EXAMPLE,
+  EVAL_QUERY_SET_SCHEMA_ID,
   evaluateRanking,
   parseEvalQuerySet,
   type EvalSearchMode,
@@ -27,11 +29,27 @@ import { pathExists } from "../core/fs/fs-utils.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { runSearch } from "./query/search.js";
 
+export {
+  EVAL_QUERY_SET_CONTRACT,
+  EVAL_QUERY_SET_EXAMPLE,
+  EVAL_QUERY_SET_SCHEMA_ID,
+  parseEvalQuerySet,
+} from "../core/search/eval.js";
+
 /** Relative location (under the pm root) of the default golden-query set. A git-tracked, human-curated file so relevance ground truth lives alongside the tracker it evaluates. */
 export const DEFAULT_EVAL_QUERIES_RELATIVE_PATH = path.join(
   "search",
   "eval-queries.json",
 );
+
+/** Actionable context attached to every query-set loading or validation error. */
+const EVAL_QUERY_SET_ERROR_CONTEXT = {
+  schema: EVAL_QUERY_SET_SCHEMA_ID,
+  examples: [JSON.stringify(EVAL_QUERY_SET_EXAMPLE)],
+  nextSteps: [
+    "Create a git-tracked golden-query JSON file that follows the schema, then re-run pm eval.",
+  ],
+};
 
 /** Documents the eval command options payload exchanged by command, SDK, and package integrations. */
 export interface EvalOptions {
@@ -164,12 +182,10 @@ const readEvalQuerySetFile = async (queriesPath: string): Promise<string> => {
       `Eval query set not found at ${queriesPath}`,
       EXIT_CODE.NOT_FOUND,
       {
+        ...EVAL_QUERY_SET_ERROR_CONTEXT,
         examples: [
-          `echo '[{"query":"offline search","relevant_ids":["pm-75k9"]}]' > ${queriesPath}`,
+          `echo '${JSON.stringify(EVAL_QUERY_SET_EXAMPLE)}' > ${queriesPath}`,
           "pm eval --queries ./my-eval.json",
-        ],
-        nextSteps: [
-          "Create a git-tracked golden-query JSON file (an array of {query, relevant_ids, mode?} objects), then re-run pm eval.",
         ],
       },
     );
@@ -185,6 +201,7 @@ const parseEvalQuerySetJson = (raw: string, queriesPath: string): unknown => {
       /* c8 ignore next -- JSON.parse throws Error instances; String fallback protects nonstandard hosts. */
       `Eval query set at ${queriesPath} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
       EXIT_CODE.USAGE,
+      EVAL_QUERY_SET_ERROR_CONTEXT,
     );
   }
 };
@@ -200,6 +217,7 @@ const validateEvalQuerySet = (
       /* c8 ignore next -- parseEvalQuerySet throws Error instances; String fallback protects nonstandard hosts. */
       error instanceof Error ? error.message : String(error),
       EXIT_CODE.USAGE,
+      EVAL_QUERY_SET_ERROR_CONTEXT,
     );
   }
 };

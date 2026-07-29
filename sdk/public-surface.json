@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1259,
+    "covered_symbols": 1260,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1260
+    "required_symbols": 1261
   },
   "breaking_acknowledgements": [
     {
@@ -263,6 +263,27 @@
       ],
       "package_version": "2026.7.28",
       "reason": "Expose completedAt on close-many typed SDK inputs for lifecycle parity"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
+        "signature ./sdk:PM_CORE_COMMAND_NAMES",
+        "signature ./sdk:TestCommandOptions",
+        "signature ./sdk:TestResult",
+        "signature ./sdk/contracts:PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
+        "signature ./sdk/contracts:PM_CORE_COMMAND_NAMES"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "Additive workspace command, eval contract, and typed test measurement SDK primitives for pm-1jrdri pm-wd61s2 pm-ygerpy"
+    },
+    {
+      "changes": [
+        "symbol ./sdk:EvalQuery removed",
+        "symbol ./sdk:EvalQuerySet removed",
+        "symbol ./sdk:EvalSearchMode removed"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "Keep EvalSearchMode package-owned while exposing versioned eval query values and parser from the aggregate SDK"
     }
   ],
   "entrypoints": {
@@ -2702,6 +2723,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "diffTestRunMeasurements",
+          "signature": "(runs: ItemTestRunSummary[], name: string) => TestRunMeasurementDiff | calls: (runs: ItemTestRunSummary[], name: string) => TestRunMeasurementDiff"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "discoverExtensions",
           "signature": "(options: DiscoverExtensionsOptions) => Promise<ExtensionDiscoveryResult> | calls: (options: DiscoverExtensionsOptions) => Promise<ExtensionDiscoveryResult>"
         },
@@ -2914,6 +2941,24 @@
           "kind": "value",
           "name": "EVAL_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "EVAL_QUERY_SET_CONTRACT",
+          "signature": "{ readonly schema: \"https://schema.unbrained.dev/pm/eval-query-set/v1\"; readonly accepted_top_level: readonly [\"array\", \"object\"]; readonly required_query_fields: readonly [\"query\", \"relevant_ids\"]; readonly optional_fields: readonly [\"mode\", \"description\"]; readonly modes: readonly [\"keyword\", \"semantic\", \"hybrid\"]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "EVAL_QUERY_SET_EXAMPLE",
+          "signature": "{ readonly schema: \"https://schema.unbrained.dev/pm/eval-query-set/v1\"; readonly queries: readonly [{ readonly query: \"offline search\"; readonly relevant_ids: readonly [\"pm-75k9\"]; readonly mode: \"keyword\"; }]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "EVAL_QUERY_SET_SCHEMA_ID",
+          "signature": "\"https://schema.unbrained.dev/pm/eval-query-set/v1\""
         },
         {
           "classification": "advanced_export",
@@ -6006,6 +6051,12 @@
           "signature": "(raw: string, optionName: string) => Record<string, string> | calls: (raw: string, optionName: string) => Record<string, string>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "parseEvalQuerySet",
+          "signature": "(raw: unknown) => EvalQuerySet | calls: (raw: unknown) => EvalQuerySet"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "parseGraphSubcommand",
@@ -6166,6 +6217,12 @@
           "kind": "function",
           "name": "parseTags",
           "signature": "(raw: string) => string[] | calls: (raw: string) => string[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "parseTestRunMeasurements",
+          "signature": "(values: string[] | undefined, recordedAt: string) => TestRunMeasurement[] | calls: (values: string[] | undefined, recordedAt: string) => TestRunMeasurement[]"
         },
         {
           "classification": "supported",
@@ -6345,7 +6402,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
-          "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
+          "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\" | \"workspace\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
         },
         {
           "classification": "advanced_export",
@@ -6357,7 +6414,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
-          "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
+          "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"workspace\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
         },
         {
           "classification": "contract_data",
@@ -7192,6 +7249,12 @@
           "kind": "function",
           "name": "querySimilarItemMetadataIndex",
           "signature": "(options: { pmRoot: string; expectedSourceCursor: string; query: string; limit: number; }) => Promise<SimilarItemMetadataIndexResult | null> | calls: (options: { pmRoot: string; expectedSourceCursor: string; query: string; limit: number; }) => Promise<SimilarItemMetadataIndexResult | null>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "queryTestRunMeasurementsBelow",
+          "signature": "(runs: ItemTestRunSummary[], name: string, threshold: number) => Array<TestRunMeasurement & { run_id: string; }> | calls: (runs: ItemTestRunSummary[], name: string, threshold: number) => Array<TestRunMeasurement & { run_id: string; }>"
         },
         {
           "classification": "advanced_export",
@@ -10374,6 +10437,12 @@
           "signature": "CliFlagContract[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "TEST_RUN_MEASUREMENT_LIMIT",
+          "signature": "32"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "TEST_RUNS_FLAG_CONTRACTS",
@@ -10401,7 +10470,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestCommandOptions",
-          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -10413,7 +10482,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestResult",
-          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; count: number; }"
+          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; count: number; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TestRunMeasurementDiff",
+          "signature": "export interface TestRunMeasurementDiff { name: string; latest: number | null; previous: number | null; delta: number | null; unit?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -10972,6 +11047,12 @@
           "kind": "interface",
           "name": "WorkloadEntry",
           "signature": "export interface WorkloadEntry { assignee: string | null; active: number; in_progress: number; items: string[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "WORKSPACE_FLAG_CONTRACTS",
+          "signature": "CliFlagContract[]"
         },
         {
           "classification": "advanced_export",
@@ -13095,13 +13176,13 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
-          "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
+          "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\" | \"workspace\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
         },
         {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
-          "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
+          "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"workspace\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
         },
         {
           "classification": "contract_data",
@@ -13624,6 +13705,12 @@
           "kind": "function",
           "name": "withFlagAliasMetadata",
           "signature": "(flagContracts: CliFlagContract[]) => CliFlagContract[] | calls: (flagContracts: CliFlagContract[]) => CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "WORKSPACE_FLAG_CONTRACTS",
+          "signature": "CliFlagContract[]"
         }
       ],
       "types": "dist/sdk/contracts.d.ts"

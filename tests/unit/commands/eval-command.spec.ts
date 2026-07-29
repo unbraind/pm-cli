@@ -42,6 +42,10 @@ vi.mock("../../../src/sdk/query/search.js", () => ({
 }));
 
 import { runEval } from "../../../src/cli/commands/eval.js";
+import {
+  EVAL_QUERY_SET_EXAMPLE,
+  EVAL_QUERY_SET_SCHEMA_ID,
+} from "../../../src/core/search/eval.js";
 
 const GLOBAL: GlobalOptions = {} as GlobalOptions;
 
@@ -234,6 +238,12 @@ describe("runEval", () => {
     readFileMock.mockResolvedValue(JSON.stringify([{ query: "" }]));
     await expect(runEval({}, GLOBAL)).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
+      context: expect.objectContaining({
+        examples: expect.arrayContaining([
+          JSON.stringify(EVAL_QUERY_SET_EXAMPLE),
+        ]),
+        schema: EVAL_QUERY_SET_SCHEMA_ID,
+      }),
     });
   });
 

@@ -20,6 +20,31 @@ export type EvalSearchMode = "keyword" | "semantic" | "hybrid";
 /** Default cutoff (`@k`) used for every metric when the caller does not override it. */
 export const DEFAULT_EVAL_K = 10;
 
+/** Stable public schema identifier for versioned golden-query files. */
+export const EVAL_QUERY_SET_SCHEMA_ID =
+  "https://schema.unbrained.dev/pm/eval-query-set/v1" as const;
+
+/** Machine-readable input contract exposed by the SDK and CLI guidance. */
+export const EVAL_QUERY_SET_CONTRACT = {
+  schema: EVAL_QUERY_SET_SCHEMA_ID,
+  accepted_top_level: ["array", "object"],
+  required_query_fields: ["query", "relevant_ids"],
+  optional_fields: ["mode", "description"],
+  modes: ["keyword", "semantic", "hybrid"],
+} as const;
+
+/** Copy-ready minimal query set shared by help, diagnostics, and integrations. */
+export const EVAL_QUERY_SET_EXAMPLE = {
+  schema: EVAL_QUERY_SET_SCHEMA_ID,
+  queries: [
+    {
+      query: "offline search",
+      relevant_ids: ["pm-75k9"],
+      mode: "keyword",
+    },
+  ],
+} as const;
+
 /** One curated golden query: the query text, the set of item ids considered relevant, an optional per-query retrieval mode override, and an optional human-readable description of the relevance intent. */
 export interface EvalQuery {
   /** Value that configures or reports query for this contract. */
@@ -34,6 +59,8 @@ export interface EvalQuery {
 
 /** A parsed, validated golden-query set. */
 export interface EvalQuerySet {
+  /** Versioned schema used to interpret the query-set payload. */
+  schema: typeof EVAL_QUERY_SET_SCHEMA_ID;
   /** Value that configures or reports queries for this contract. */
   queries: EvalQuery[];
 }
@@ -291,6 +318,15 @@ function parseEvalQueryEntry(raw: unknown, index: number): EvalQuery {
  * fails {@link parseEvalQueryEntry}.
  */
 export function parseEvalQuerySet(raw: unknown): EvalQuerySet {
+  const rawSchema =
+    typeof raw === "object" && raw !== null && !Array.isArray(raw)
+      ? (raw as { schema?: unknown }).schema
+      : undefined;
+  if (rawSchema !== undefined && rawSchema !== EVAL_QUERY_SET_SCHEMA_ID) {
+    throw new EvalQuerySetError(
+      `Unsupported eval query set schema; expected "${EVAL_QUERY_SET_SCHEMA_ID}"`,
+    );
+  }
   const rawQueries = Array.isArray(raw)
     ? raw
     : typeof raw === "object" && raw !== null
@@ -307,6 +343,7 @@ export function parseEvalQuerySet(raw: unknown): EvalQuerySet {
     );
   }
   return {
+    schema: EVAL_QUERY_SET_SCHEMA_ID,
     queries: rawQueries.map((entry, index) =>
       parseEvalQueryEntry(entry, index),
     ),

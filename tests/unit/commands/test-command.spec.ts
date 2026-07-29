@@ -319,6 +319,45 @@ describe("runTest", () => {
     });
   });
 
+  it("validates measurement selectors before linked-test mutations", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-measurements-before-mutation");
+      await expect(
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project"],
+            run: true,
+            measure: ["coverage="],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project"],
+            metricBelow: "coverage=",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runTest(
+          id,
+          {
+            add: ["command=node --version,scope=project"],
+            measure: ["coverage=100"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      const itemMetadata = await loadTaskMetadata(context, id);
+      expect(itemMetadata.tests).toBeUndefined();
+    });
+  });
+
   it("validates add/remove payloads and timeout parsing", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-test-command");
@@ -3416,10 +3455,32 @@ describe("runTest", () => {
           {
             run: true,
             timeout: "20",
+            measure: [
+              "coverage=100,unit=percent,threshold=100",
+              "latency=12.5,unit=ms",
+            ],
+            metricBelow: "latency=20",
+            metricDiff: "coverage",
           },
           { path: context.pmPath },
         );
         expect(result.warnings).toBeUndefined();
+        expect(result.measurements).toEqual([
+          expect.objectContaining({ name: "coverage", value: 100 }),
+          expect.objectContaining({ name: "latency", value: 12.5 }),
+        ]);
+        expect(result.metric_below).toEqual([
+          expect.objectContaining({
+            run_id: "tr-unit-success",
+            name: "latency",
+            value: 12.5,
+          }),
+        ]);
+        expect(result.metric_diff).toMatchObject({
+          name: "coverage",
+          latest: 100,
+          previous: null,
+        });
         const itemMetadata = await loadTaskMetadata(context, id);
         const testRuns = (itemMetadata.test_runs ?? []) as Array<
           Record<string, unknown>
@@ -3431,6 +3492,10 @@ describe("runTest", () => {
           status: "passed",
           attempt: 2,
           resumed_from: "tr-previous",
+          measurements: [
+            expect.objectContaining({ name: "coverage", value: 100 }),
+            expect.objectContaining({ name: "latency", value: 12.5 }),
+          ],
         });
       } finally {
         if (previousRunId === undefined) {
@@ -3469,11 +3534,19 @@ describe("runTest", () => {
         {
           run: true,
           timeout: "20",
+          measure: ["coverage=100,unit=percent"],
         },
         { path: context.pmPath },
       );
 
       expect(result.run_results[0]?.status).toBe("passed");
+      expect(result.measurements).toEqual([
+        expect.objectContaining({
+          name: "coverage",
+          value: 100,
+          unit: "percent",
+        }),
+      ]);
       const itemMetadata = await loadTaskMetadata(context, id);
       expect(itemMetadata.test_runs).toBeUndefined();
     });

@@ -130,6 +130,9 @@ describe("registration helpers", () => {
     const parent = program.command("schema");
     const child = parent.command("add-type");
     expect(getCommandPath(child)).toBe("schema add-type");
+    expect(getGlobalOptions(child)).toMatchObject({
+      command: "schema add-type",
+    });
     // A root command with no parent yields an empty path.
     expect(getCommandPath(program)).toBe("");
   });
@@ -171,6 +174,9 @@ describe("registration helpers", () => {
         match: " unit ",
         onlyIndex: 2,
         onlyLast: true,
+        measure: ["coverage=100,unit=percent"],
+        metricBelow: "coverage=100",
+        metricDiff: "coverage",
         timeout: "120",
         envSet: ["A=1"],
         envClear: ["OLD"],
@@ -202,6 +208,12 @@ describe("registration helpers", () => {
       "--match",
       "unit",
       "--only-last",
+      "--measure",
+      "coverage=100,unit=percent",
+      "--metric-below",
+      "coverage=100",
+      "--metric-diff",
+      "coverage",
       "--timeout",
       "120",
       "--env-set",

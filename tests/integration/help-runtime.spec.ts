@@ -257,7 +257,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("executes common command aliases from live telemetry mistakes (show/view -> get, comment -> comments)", async () => {
+  it("executes common command aliases from live telemetry mistakes (fetch/read/show/view -> get, comment -> comments)", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(
         ["create", "--title", "Alias target", "--type", "Task", "--json"],
@@ -270,7 +270,19 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         (created.json as { item?: { id?: string } }).item?.id ?? "";
       expect(itemId).toBeTruthy();
 
-      // `pm show <id>` / `pm view <id>` now run instead of merely suggesting `get`.
+      // Read-shaped intents converge on the same executable, bounded item read.
+      const fetch = context.runCli(["fetch", itemId, "--json"], {
+        expectJson: true,
+      });
+      expect(fetch.code).toBe(0);
+      expect((fetch.json as { item?: { id?: string } }).item?.id).toBe(itemId);
+
+      const read = context.runCli(["read", itemId, "--json"], {
+        expectJson: true,
+      });
+      expect(read.code).toBe(0);
+      expect((read.json as { item?: { id?: string } }).item?.id).toBe(itemId);
+
       const show = context.runCli(["show", itemId, "--json"], {
         expectJson: true,
       });

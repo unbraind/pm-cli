@@ -121,6 +121,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "health",
   "validate",
   "gc",
+  "workspace",
   "contracts",
   "claim",
   "release",
