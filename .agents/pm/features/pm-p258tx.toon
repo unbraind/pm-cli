@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-29T04:49:40.386Z"
-updated_at: "2026-07-29T22:24:56.865Z"
+updated_at: "2026-07-29T22:29:52.101Z"
 closed_at: "2026-07-29T22:19:52.019Z"
 completed_at: "2026-07-29T22:19:52.019Z"
 author: "harness:claude-code"
@@ -23,7 +23,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-cyrfjq,related,"2026-07-29T04:49:40.386Z","harness:claude-code","cli:create:dep",detected
   pm-g3n00m,implements,"2026-07-29T04:49:40.386Z","harness:claude-code","cli:create:dep",detected
   pm-sb0tns,related,"2026-07-29T04:49:40.386Z","harness:claude-code","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-29T04:49:40.386Z","harness:claude-code","Duplicate check before create: pm-oi4zs3 is CLOSED and made lean reads OMIT caller echoes, which is the opposite operation to declaring an omission; pm-cyrfjq owns envelopes that report a count beside an empty array, a defect this receipt would expose rather than a receipt; pm-pjnu91 owns the three incompatible list-family projections, which is about which fields are chosen and not about disclosing the choice; pm-sb0tns owns the row contract and the --fields axis. Searched keyword and semantic for omission receipt, projection declaration, withheld fields; inspected the live envelopes of list, context, activity, search and get to confirm five distinct behaviours."
   "2026-07-29T14:21:29.876Z","harness:codex","Implementation evidence: introduced public SDK omission-receipt primitives; applied them consistently across CLI JSON/TOON rendering, SDK runAction, and MCP; covered context/get/list/search/health/contracts plus mode-paired activity/history. Full repo run passed 6510/6510 with 100/100/100/100 coverage. Static quality, 100% docstrings, zero jscpd clones, SDK surface, package boundary, token budget, and transport floors passed. Fresh packed consumer proof passed npm install, isolated npx, Bun, bunx, SDK imports, compact/full projection parsing, get-to-update JSON round trip, and exact restore instructions at /tmp/tmp.vo7ohsMXCI."
   "2026-07-29T14:25:12.090Z","harness:codex","Linked-test correction: the direct full repository coverage command is green at 6510/6510 and 100/100/100/100, but nesting it inside pm test applied an outer schema PM_PATH and caused 12 unrelated fixture-root assertions. Removed that unsafe recursive link and retained focused sandbox-safe transport tests; this is test-context isolation, not a product failure."
@@ -32,6 +32,7 @@ comments[8]{created_at,author,text}:
   "2026-07-29T21:56:09.481Z","harness:codex","Compatibility decision: the public SDK surface snapshot classifies 19 exported signature changes as breaking. The changes add optional restoration and strict-policy inputs, add self-describing projection metadata to result envelopes, and narrow runGraph output to guarantee that metadata. Runtime defaults remain unchanged; compact modes only activate when requested. Acknowledge the snapshot with this explicit release rationale and prove package-consumer compatibility before closure."
   "2026-07-29T21:58:43.858Z","harness:codex","Linked-test execution context: the initial four-file link passed directly but failed under pm test because the outer schema PM_PATH changes workspace-root assumptions for 11 unrelated validate file-scan fixtures. Replaced it with the same projection, deps, and graph coverage plus the targeted validate projection contract. The existing transport link remained green at 50/50."
   "2026-07-29T22:19:17.417Z","harness:codex","Implementation evidence: completed residual omission receipts for deps summary, graph summary, and validate counts; added generic extension-declared field groups; added exact --full restoration across CLI, SDK, MCP contracts, completions, and generated snapshots; and included receipts in dependency token accounting. Direct full coverage passed 6540/6540 at 100/100/100/100. Strict lint, zero clones, 100 percent docstrings, package boundary, SDK parity, token budgets, contracts, docs links, and secret scan passed. Fresh packed consumer proved npm exec, Bun, bunx, contained binary resolution, and compact/full receipt behavior."
+  "2026-07-29T22:29:52.101Z","harness:codex","Delivery review: PR #818 https://github.com/unbraind/pm-cli/pull/818 carries the exact cohesive implementation for reusable omission receipts, deps/graph/validate restoration modes, CLI/SDK/MCP parity, exact token accounting, contracts, documentation, generated changelog, 100% coverage, and isolated npm/Bun consumer proof. Review must evaluate exact head c87efa6db67b72fbfcecd29f7c72602ce7206e3d or its evidence-only successor."
 learnings[1]{created_at,author,text}:
   "2026-07-29T22:19:18.203Z","harness:codex",Projection metadata must be attached before rendered-token settlement; otherwise the receipt makes final serialized output larger than reported usedTokens. MCP action schemas and shell completions are part of the same public restoration contract as Commander flags.
 files[24]{path,scope,note}:

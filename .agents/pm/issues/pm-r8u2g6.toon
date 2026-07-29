@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:health","area:merge","area:sdk",context-integrity
 created_at: "2026-07-29T21:43:53.986Z"
-updated_at: "2026-07-29T22:24:57.568Z"
+updated_at: "2026-07-29T22:29:53.437Z"
 closed_at: "2026-07-29T22:20:04.449Z"
 completed_at: "2026-07-29T22:20:04.449Z"
 author: "harness:codex"
@@ -31,9 +31,10 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-83ov2i,related,"2026-07-29T21:43:53.986Z","harness:codex","cli:create:dep",detected
   pm-w91mvg,discovered_from,"2026-07-29T21:43:53.986Z","harness:codex","cli:create:dep",detected
   pm-xyuhh7,related,"2026-07-29T21:43:53.986Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-29T21:43:53.986Z","harness:codex","Duplicate check evidence 2026-07-29: searched all 2,197 items across every status for GH-815, merge_driver_configuration missing, optional merge drivers health, fresh-clone health, and warn-only ok semantics. Closed pm-w91mvg owns installed-path drift; pm-xyuhh7 and pm-0k4o8t own clone-optional directories; pm-83ov2i owns general warning semantics. None owns never-installed optional merge drivers plus a strict opt-in gate. GitHub: https://github.com/unbraind/pm-cli/issues/815"
   "2026-07-29T22:19:20.480Z","harness:codex","Implementation evidence: health now treats a completely never-installed clone-local merge-driver set as advisory by default, exposes --require-merge-drivers and SDK/MCP equivalents for strict workflows, and keeps partial or drifted installation blocking. Focused tests pass 2/2 and full coverage passes 6540/6540 at 100/100/100/100. Packed consumer proved default ok with merge_driver_configuration_missing:5 and strict required false-to-true verdict change."
+  "2026-07-29T22:29:53.436Z","harness:codex","Delivery review: PR #818 https://github.com/unbraind/pm-cli/pull/818 carries advisory-by-default missing merge drivers, explicit strict enforcement, drift blocking, CLI/SDK/MCP/completion contracts, documentation, and real git acceptance coverage. GitHub issue #815 is configured to close on merge."
 learnings[1]{created_at,author,text}:
   "2026-07-29T22:19:21.204Z","harness:codex",Health must distinguish an optional capability that was never installed from a capability whose partial or drifted configuration can silently corrupt future merges; explicit policy should promote the former without weakening the latter.
 files[8]{path,scope,note}:
