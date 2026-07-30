@@ -131,6 +131,32 @@ function trackerRootNotDirectoryError(pmRoot: string): PmCliError {
   );
 }
 
+async function assertMissingMetadataRootAncestors(
+  pmRoot: string,
+): Promise<void> {
+  const filesystemRoot = path.parse(path.resolve(pmRoot)).root;
+  let ancestor = path.dirname(path.resolve(pmRoot));
+  while (ancestor !== filesystemRoot) {
+    let ancestorStats;
+    try {
+      ancestorStats = await fs.stat(ancestor);
+    } catch (error: unknown) {
+      if (isErrno(error, "ENOTDIR")) {
+        throw trackerRootNotDirectoryError(pmRoot);
+      }
+      if (!isErrno(error, "ENOENT")) {
+        throw error;
+      }
+      ancestor = path.dirname(ancestor);
+      continue;
+    }
+    if (!ancestorStats.isDirectory()) {
+      throw trackerRootNotDirectoryError(pmRoot);
+    }
+    break;
+  }
+}
+
 /** Require metadata enumeration to start from a real directory so an invalid source cannot masquerade as an empty tracker. */
 async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
   let stats;
@@ -138,27 +164,7 @@ async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
     stats = await fs.stat(pmRoot);
   } catch (error: unknown) {
     if (isErrno(error, "ENOENT")) {
-      const filesystemRoot = path.parse(path.resolve(pmRoot)).root;
-      let ancestor = path.dirname(path.resolve(pmRoot));
-      while (ancestor !== filesystemRoot) {
-        let ancestorStats;
-        try {
-          ancestorStats = await fs.stat(ancestor);
-        } catch (ancestorError: unknown) {
-          if (isErrno(ancestorError, "ENOTDIR")) {
-            throw trackerRootNotDirectoryError(pmRoot);
-          }
-          if (!isErrno(ancestorError, "ENOENT")) {
-            throw ancestorError;
-          }
-          ancestor = path.dirname(ancestor);
-          continue;
-        }
-        if (!ancestorStats.isDirectory()) {
-          throw trackerRootNotDirectoryError(pmRoot);
-        }
-        break;
-      }
+      await assertMissingMetadataRootAncestors(pmRoot);
       throw new PmCliError(
         `Tracker root does not exist at ${pmRoot}.`,
         EXIT_CODE.NOT_FOUND,
