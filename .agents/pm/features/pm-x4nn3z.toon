@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: agent-ux,"area:cli","area:contracts",diagnostics,error-contract,scripting,simplification
 created_at: "2026-07-26T06:02:22.287Z"
-updated_at: "2026-07-30T07:38:29.946Z"
+updated_at: "2026-07-30T07:40:07.291Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "pm contracts emits an error-code catalog generated from the same declarations the runtime uses, so it cannot drift; each entry carries code, stable exit code, stable-or-provisional status, emitting commands, and a one-line meaning; a snapshot gate in the shape of contracts:check and sdk:surface:check makes adding a code a reviewed change and makes renaming or removing a stable code fail the build; a deduplication pass applies the one-spelling-per-concept rule from pm-fs8q9x to the 195 codes, merging near-synonyms behind aliases rather than deleting them; a documented code-class to exit-code mapping lets a shell consumer classify a failure from exit status alone, closing the exit-code half of pm-psy1; the catalog is emitted under a surface tier so the default pm contracts payload does not grow"
@@ -26,7 +26,7 @@ dependencies[8]{id,kind,created_at}:
   pm-n7rr,implements,"2026-07-26T06:02:22.287Z"
   pm-psy1,related,"2026-07-26T06:02:22.287Z"
   pm-yqe0mo,discovered_from,"2026-07-26T06:02:22.287Z"
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-26T14:27:05.518Z","harness:codex","GitHub report linkage: GH-745 https://github.com/unbraind/pm-cli/issues/745 demonstrates unsupported PmClient actions returning literal 64 while EXIT_CODE.USAGE is 2. Reusing this canonical all-status error-contract feature; no duplicate item created."
   "2026-07-26T14:47:00.511Z","harness:codex","Evidence: SDK native dispatch now imports and uses the canonical EXIT_CODE.USAGE contract for every unsupported extension-action branch. Focused regression tests passed, full coverage passed 374/374 files and 6420/6420 tests at literal 100/100/100/100, lint/static quality/contracts passed, and an unrelated temporary consumer installed the packed tarball and observed exitCode=2 matching the exported EXIT_CODE.USAGE."
   "2026-07-26T15:12:40.567Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/748. Initial exact implementation commit 004790f7; hosted exact-head checks and AI review loop pending."
@@ -35,6 +35,7 @@ comments[8]{created_at,author,text}:
   "2026-07-30T06:47:43.506Z","harness:codex","Implementation evidence: a generated SDK error-code catalog now derives from literal runtime declarations, validates ownership/message/remediation metadata, and is guarded against drift by contracts:check."
   "2026-07-30T06:53:18.331Z","harness:codex","Live Sentry linkage: PM-CLI-2Q is the snapshot-name grammar failure already captured in this item’s 2026-07-29 misclassification evidence. The 2026-07-30 14-day Sentry/telemetry release gate is green (critical=0, high=0); retaining the catalog item open until grammar-to-code conformance, deduplication, aliases, and stability semantics are complete."
   "2026-07-30T07:19:00.028Z","harness:codex","Tranche boundary: this PR lands the generated 201-code SDK/contracts inventory and drift gate as a reviewable foundation. The canonical feature remains open for runtime-owned meanings/remediation, stable/provisional compatibility rules, alias-preserving deduplication, and grammar-to-code/exit-class conformance."
+  "2026-07-30T07:40:07.290Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/822 carries the cohesive SDK/CLI self-describing context-contract bundle. Initial implementation commit e1fabaa97; final exact-head checks and review evidence will be recorded in the PR because post-review tracker mutations would create a new unreviewed Git tree."
 files[14]{path,scope,note}:
   package.json,project,Generated error catalog drift scripts and gate integration
   scripts/generate-error-code-catalog.mjs,project,Catalog drift generator and gate

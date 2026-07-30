@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,"area:cli","area:mcp",contracts,discoverability,simplification
 created_at: "2026-07-25T12:28:50.389Z"
-updated_at: "2026-07-30T07:38:27.674Z"
+updated_at: "2026-07-30T07:40:05.149Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "Every command declares exactly one tier in contract data, and help, MCP tool profiles, shell completions, and generated docs derive visibility from that field alone; A test asserts no surface maintains its own independent visibility list; The core tier's rendered help size is asserted against the one-screen budget, making the claim mechanically checked; The first landing changes no visible surface, proven by before-and-after snapshots of help, tool lists, and completions; Changing a command's tier is a single-field change whose effect on all four surfaces appears in one regenerated snapshot diff; Package-contributed commands declare a tier through the same field, so extensions cannot bypass tiering"
@@ -31,13 +31,14 @@ dependencies[12]{id,kind,created_at}:
   pm-ka6d,related,"2026-07-25T12:35:12.677Z"
   pm-xp1xsw,related,"2026-07-25T12:35:12.677Z"
   pm-1kxs,implements,"2026-07-25T20:44:19.567Z"
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-27T13:20:31.866Z","harness:codex","Scope decision: command tiering remains related to this SDK context-contract bundle, but the current implementation will not claim full help/MCP/completion/docs derivation; returning it to open until that acceptance surface is actively edited."
   "2026-07-27T16:42:27.992Z","harness:codex","Implementation start: active in the shared runtime-capability-contracts bundle. Duplicate check covered all 2,136 tracker items and live GitHub reports; this item owns a distinct acceptance facet and will share exact-head verification with the related active items."
   "2026-07-27T18:19:12.348Z","harness:codex","Foundation evidence: every built-in and extension command has a validated tier contract; MCP profiles, generated docs, and completion command sets consume it. Remaining acceptance before closure: route CLI help visibility through the tier field, add the explicit one-screen core-help budget assertion, and prove a single tier edit changes all four rendered surfaces in one snapshot. Returning to open/released rather than overstating completion."
   "2026-07-30T06:47:40.277Z","harness:codex","Implementation evidence: command enumeration retains aliases and now emits canonical_command plus core/compatibility/extended visibility in both detailed and summary projections."
   "2026-07-30T07:18:57.436Z","harness:codex","Tranche boundary: this PR exposes canonical visibility on command-scoped/full contracts and preserves the existing shared tier registry, MCP, completion, and generated-doc gates. CLI help routing and the one-field four-surface snapshot/budget proof remain; returning open without claiming the complete single-source migration."
   "2026-07-30T07:26:28.388Z","harness:codex","Token-efficiency evidence: command visibility and canonical identity remain available in command-scoped contracts, while unscoped/full projections omit repeated semantic rows. This preserves the visibility primitive without increasing the all-in-one context surface beyond its enforced budget."
+  "2026-07-30T07:40:05.149Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/822 carries the cohesive SDK/CLI self-describing context-contract bundle. Initial implementation commit e1fabaa97; final exact-head checks and review evidence will be recorded in the PR because post-review tracker mutations would create a new unreviewed Git tree."
 files[7]{path,scope,note}:
   package.json,project,mandatory generated surface check
   scripts/generate-agent-capability-surfaces.mjs,project,generated surface drift gate

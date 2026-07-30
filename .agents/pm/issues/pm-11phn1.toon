@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:contracts","area:sdk",context-efficiency
 created_at: "2026-07-29T22:22:14.499Z"
-updated_at: "2026-07-30T07:38:26.887Z"
+updated_at: "2026-07-30T07:40:04.038Z"
 closed_at: "2026-07-30T07:18:44.206Z"
 completed_at: "2026-07-30T07:18:44.206Z"
 author: "harness:codex"
@@ -31,13 +31,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-fs8q9x,related_to,"2026-07-29T22:22:14.499Z","harness:codex","cli:create:dep",detected
   pm-iktj,related_to,"2026-07-29T22:22:14.499Z","harness:codex","cli:create:dep",detected
   pm-w7mqzt,discovered_from,"2026-07-29T22:22:14.499Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-29T22:22:14.499Z","harness:codex","Duplicate check 2026-07-29: searched all-status lineage for GH-817, accepts_stdin, machine-readable flag metadata, and stdin semantics. pm-iktj owns uniform stdin behavior, pm-fs8q9x owns lexicon conformance, and closed pm-w7mqzt owns the public SDK contract baseline; none owns semantic per-flag machine invocation metadata. GitHub: https://github.com/unbraind/pm-cli/issues/817"
   "2026-07-30T06:47:37.645Z","harness:codex","Implementation evidence: contracts flag_invocations now describes arity, value requirement/type/name, repeatability, argv/stdin sources, and the stdin sentinel. An isolated packed CLI round-tripped create --description - and contract discovery without importing Commander internals."
   "2026-07-30T06:50:50.700Z","harness:codex","Bounded-surface evidence on the compiled CLI: contracts --summary is measured under the existing 12,000-byte gate; command-scoped create --flags-only is 40,973 bytes for 78 enriched flags and avoids the full catalog. Create/update help and machine contracts both advertise description stdin; packed consumer proof used only the contract metadata."
   "2026-07-30T06:50:57.370Z","harness:codex","Correction to the immediately preceding measurement: current compiled output is 14,271 bytes for contracts --summary and 35,332 bytes for create --flags-only. The earlier 12,000/40,973 figures were stale gate assumptions, not the just-measured output. The command-scoped projection remains bounded by omitting full catalogs; final token-budget gates will determine acceptance."
   "2026-07-30T07:18:39.127Z","harness:codex","Final local acceptance: linked tests passed; isolated packed npm consumer discovered and used description stdin through contracts; full repository coverage passed 403 files / 6,554 tests at 100% statements, branches, functions, and lines; static/docstring/token/package/security gates passed."
   "2026-07-30T07:26:27.729Z","harness:codex","Release-gate correction: the context entitlement gate caught semantic invocation metadata repeated across the unscoped full command catalog (1,491,544 bytes versus the 934,984-byte ceiling). The contract now exposes that detail only on bounded command-scoped calls; the full projection retains catalogs without repeated per-command metadata. The 91-surface token gate and focused contract tests pass."
+  "2026-07-30T07:40:04.037Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/822 carries the cohesive SDK/CLI self-describing context-contract bundle. Initial implementation commit e1fabaa97; final exact-head checks and review evidence will be recorded in the PR because post-review tracker mutations would create a new unreviewed Git tree."
 files[15]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog managed package receipt
   CHANGELOG.md,project,Package-owned generated release history
