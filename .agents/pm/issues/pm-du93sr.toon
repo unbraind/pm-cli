@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli",context,diagnostics,token-budget
 created_at: "2026-07-26T11:26:47.669Z"
-updated_at: "2026-07-30T11:24:56.150Z"
+updated_at: "2026-07-30T11:30:57.231Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "pm health --check-only produces a verdict-only projection materially smaller than the full report, or the flag is retired as a documented synonym and the guidance updated in the same change; A passing check emits its verdict and not its evidence; per-check detail is opt-in or reserved for non-passing checks; AGENTS.md and any other agent-facing guidance route to the cheapest form that answers the question, verified by a docs test rather than by review; pm health appears in the token-budget corpus with a declared ceiling measured on a real-scale workspace; The measured token cost of pm health before and after is recorded as evidence on this item"
@@ -25,9 +25,10 @@ dependencies[7]{id,kind,created_at}:
   pm-ka6d,related,"2026-07-26T11:32:26.158Z"
   pm-mfy1ux,related,"2026-07-26T11:32:26.158Z"
   pm-o87av6,implements,"2026-07-26T11:32:26.158Z"
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-30T10:27:25.583Z","harness:codex","Implementation evidence: health --check-only now defaults to summary verdict output with empty passing evidence bodies; --full retains complete diagnostics and explicit brief/summary preserve fast optional-scan behavior."
   "2026-07-30T11:24:16.147Z","harness:codex","Delivery boundary: --check-only now returns the summary verdict by default while still running every check, and --full restores evidence. The canonical issue remains open until health is added to the representative token-budget corpus with measured before/after evidence and agent-guidance coverage."
+  "2026-07-30T11:30:57.231Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
 notes[1]{created_at,author,text}:
   "2026-07-30T09:21:19.724Z","harness:claude-code","Re-measured 2026-07-30 at HEAD, after PR 818 shipped bounded projections and snapshot lease safety. The bounded-projection wave did not reach this command. pm health plain = 127,582 B; pm health --check-only = 127,583 B (one byte MORE than plain); pm health --summary = 727 B. The cheap form is 175x smaller than the form AGENTS.md routes agents to under When Unsure, and --check-only remains exactly as inert as when this item was filed. A new bounded-projection primitive existing in the SDK while this consumer cannot reach it is the seam pattern, not a fix."
 files[1]{path,scope,note}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts","area:sdk",conformance-gap,error-contract
 created_at: "2026-07-30T09:13:24.981Z"
-updated_at: "2026-07-30T11:24:42.735Z"
+updated_at: "2026-07-30T11:30:54.100Z"
 closed_at: "2026-07-30T11:24:31.743Z"
 completed_at: "2026-07-30T11:24:31.743Z"
 author: "harness:claude-code"
@@ -33,10 +33,11 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-fs8q9x,related,"2026-07-30T09:13:47.135Z","harness:claude-code","cli:update:dep",detected
   pm-x4nn3z,related,"2026-07-30T09:13:47.135Z","harness:claude-code","cli:update:dep",detected
   pm-j82fd3,implements,"2026-07-30T09:28:38.405Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-30T10:27:22.647Z","harness:codex","Implementation evidence: context orient/handoff now map declarative field groups to valid context depth/section options; CLI and SDK tests cover all six intent pairs and unknown-intent guidance."
   "2026-07-30T11:12:33.223Z","harness:codex","Evidence: Sentry issue PM-CLI-2R contained two handled production occurrences of invalid 'context --for hierarchy' input being surfaced as TypeError on v2026.7.30. The CLI now emits PmCliError usage code unknown_context_intent with field/reason/recovery steps, and the isolated executable acceptance asserts exit 2 plus an actionable command-specific suggestion. Final sandbox coverage: 405 files, 6570 tests, exact 100/100/100/100."
   "2026-07-30T11:24:20.240Z","harness:codex","Closure evidence: every declared built-in command/intent pair executes; field groups map explicitly to legal command options; invalid intent input produces one unknown_context_intent usage envelope and executable suggestion. Full release suite passed all local gates, packed smoke, and 88-command dogfood; its only pre-push stop was the hosted DeepScan status that can exist only after push."
+  "2026-07-30T11:30:54.100Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
 files[5]{path,scope,note}:
   src/cli/commands/context.ts,project,section-domain validator that rejects the intent before the intent validator runs
   src/core/output/output.ts,project,CLI rendering applies the same intent contract as SDK dispatch
