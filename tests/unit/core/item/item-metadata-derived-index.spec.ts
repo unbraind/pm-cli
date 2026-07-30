@@ -276,6 +276,16 @@ describe("item metadata derived-index transactions", () => {
         fs.stat(path.join(pmRoot, "locks", "metadata-derived-index.lock")),
       ).rejects.toMatchObject({ code: "ENOENT" });
       await releaseWithoutManifest();
+
+      const requiredRelease = await acquireItemMetadataDerivedIndexLock(
+        pmRoot,
+        "cache-test",
+        { required: true },
+      );
+      await expect(
+        fs.stat(path.join(pmRoot, "locks", "metadata-derived-index.lock")),
+      ).resolves.toBeDefined();
+      await requiredRelease();
     });
   });
 

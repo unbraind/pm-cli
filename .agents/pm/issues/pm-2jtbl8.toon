@@ -2,11 +2,13 @@ id: pm-2jtbl8
 title: "GH-824: core-field recovery must name dedicated flags instead of extension activation"
 description: "Core fields passed through --field are misclassified as unknown extension fields, and close-validation warnings expose snake_case names without executable flag recovery."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,error-contract,github-intake
 created_at: "2026-07-30T11:27:37.570Z"
-updated_at: "2026-07-30T17:04:17.569Z"
+updated_at: "2026-07-30T23:37:19.418Z"
+closed_at: "2026-07-30T22:52:29.664Z"
+completed_at: "2026-07-30T22:52:29.664Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Core field names passed to --field return the canonical dedicated update/close flag; close-validation warnings include executable flags; tests execute every rendered recovery command
@@ -17,9 +19,33 @@ impact: Removes a deterministic dead-end from close validation and generic field
 parent: pm-mpbb
 risk: low
 confidence: high
+resolution: fixed
+expected_result: Reserved core metadata supplied through --field names its dedicated CLI flag and close warnings expose executable flag recovery.
+actual_result: "Core-field classification now returns core_item_field_requires_dedicated_flag before extension lookup, and close warnings render dedicated kebab-case flags."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-qvdj,discovered_from,"2026-07-30T11:27:37.570Z","harness:codex","cli:create:dep",detected
   pm-j82fd3,implements,"2026-07-30T17:04:17.382Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-30T11:27:37.570Z","harness:codex","Duplicate check searched all statuses for extension_item_field_unknown and GH-824; no canonical owner found. GitHub report: https://github.com/unbraind/pm-cli/issues/824"
+  "2026-07-30T22:32:01.179Z","harness:codex","Verification evidence: repository-wide coverage passed 6584 tests at 100% statements, branches, functions, and lines; focused update/close recovery suites passed."
+  "2026-07-30T22:51:22.134Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
+  "2026-07-30T23:28:47.110Z","harness:codex","Final native-layout revalidation: the focused diff is 952 insertions and 97 deletions with no formatter churn; 406 files and 6,583 tests pass at 100% statements, branches, functions, and lines. Typecheck, ESLint, static quality, package boundary/parity, token budgets, SDK surface/import-cost/transport gates, docs, latest pm-changelog 2026.7.29-1 check mode, tracker health/history integrity, and fresh unrelated-workspace acceptance all pass."
+  "2026-07-30T23:31:05.770Z","harness:codex","Publication evidence: broad SDK/CLI implementation is published for exact-head CI and AI review in https://github.com/unbraind/pm-cli/pull/833 at commit 89e52f2ce."
+  "2026-07-30T23:36:50.175Z","harness:codex","CI correction evidence: exact-head static gate identified only a stale generated error-code catalog. Regenerated it with pnpm contracts:errors:update; the catalog now includes core_item_field_requires_dedicated_flag from core/extensions/item-fields.ts."
+  "2026-07-30T23:37:19.418Z","harness:codex","Generated-contract evidence: pnpm contracts:update added the same stable recovery code to tests/fixtures/contracts/full.json; no unrelated command-surface drift was present."
+learnings[1]{created_at,author,text}:
+  "2026-07-30T22:51:23.254Z","harness:codex",Reserved core metadata must be classified before extension-field lookup so recovery points to an executable dedicated flag and never suggests irrelevant activation.
+files[7]{path,scope,note}:
+  src/cli/commands/close.ts,project,render executable close-validation flags
+  src/core/extensions/item-fields.ts,project,route reserved core metadata to dedicated flags
+  src/sdk/generated-error-code-catalog.ts,project,Generated public error-code catalog entry for reserved core-field recovery
+  tests/fixtures/contracts/full.json,project,Generated full contract snapshot for the new stable recovery code
+  tests/integration/cli.integration.spec.ts,project,CLI warning integration expectation
+  tests/unit/commands/close-command.spec.ts,project,close warning recovery coverage
+  tests/unit/commands/update-command.spec.ts,project,core-field recovery contract
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts tests/unit/commands/close-command.spec.ts tests/integration/cli.integration.spec.ts,project,300,core field and close recovery
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms83vk66-z286jp,test,passed,"2026-07-30T22:48:47.821Z","2026-07-30T22:49:16.253Z","2026-07-30T22:49:16.253Z",1,0,0
+close_reason: "Implemented executable reserved-core-field recovery and dedicated close-validation flag guidance; focused linked tests, fresh-workspace no-write acceptance, and full 100/100/100/100 coverage passed."
 body: ""

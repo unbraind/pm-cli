@@ -5,6 +5,7 @@
  */
 import { Command, Option } from "commander";
 import {
+  type FlagDefinition,
   type RegisteredExtensionCommandDefinition,
   type RegisteredExtensionFlagDefinitions,
 } from "../sdk/runtime-primitives.js";
@@ -37,7 +38,7 @@ export interface ExtensionCommandHelpDescriptor {
   /** Value that configures or reports arguments for this contract. */
   arguments: ExtensionCommandArgumentHelpDescriptor[];
   /** Value that configures or reports flags for this contract. */
-  flags: Array<Record<string, unknown>>;
+  flags: FlagDefinition[];
   /** Value that configures or reports source for this contract. */
   source?: {
     layer: "global" | "project";
@@ -181,7 +182,7 @@ function toOptionalBoolean(value: unknown): boolean | undefined {
 
 /** Canonical value-arity contract shared by extension invocation recovery, Commander parsing, and structured help. */
 export function resolveExtensionFlagArity(
-  definition: Readonly<Record<string, unknown>>,
+  definition: Readonly<FlagDefinition>,
 ): {
   takesValue: boolean;
   valueName: string | null;
@@ -203,7 +204,7 @@ export function resolveExtensionFlagArity(
 }
 
 function formatDynamicExtensionFlagHelpLine(
-  definition: Record<string, unknown>,
+  definition: FlagDefinition,
 ): string | null {
   const visible = toOptionalBoolean(definition.visible);
   if (visible === false) {
@@ -236,7 +237,7 @@ function formatDynamicExtensionFlagHelpLine(
 }
 
 function buildDynamicExtensionFlagHelp(
-  definitions: Array<Record<string, unknown>>,
+  definitions: FlagDefinition[],
 ): string | null {
   const lines = [
     ...new Set(
@@ -255,7 +256,7 @@ function buildDynamicExtensionFlagHelp(
 export function collectDynamicExtensionFlagHelpByCommand(
   registrations: RegisteredExtensionFlagDefinitions[],
 ): Map<string, string> {
-  const grouped = new Map<string, Array<Record<string, unknown>>>();
+  const grouped = new Map<string, FlagDefinition[]>();
   for (const registration of registrations) {
     const commandPath = normalizeExtensionCommandPath(
       registration.target_command,
@@ -397,8 +398,8 @@ function collectExtensionDefinitionsByCommand(
 
 function collectExtensionFlagsByCommand(
   flagRegistrations: RegisteredExtensionFlagDefinitions[],
-): Map<string, Array<Record<string, unknown>>> {
-  const flagsByCommand = new Map<string, Array<Record<string, unknown>>>();
+): Map<string, FlagDefinition[]> {
+  const flagsByCommand = new Map<string, FlagDefinition[]>();
   for (const registration of flagRegistrations) {
     const commandPath = normalizeExtensionCommandPath(
       registration.target_command,
@@ -416,7 +417,7 @@ function collectExtensionFlagsByCommand(
 function collectExtensionHelpCommandSet(
   commandHandlers: string[],
   definitionsByCommand: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
-  flagsByCommand: ReadonlyMap<string, Array<Record<string, unknown>>>,
+  flagsByCommand: ReadonlyMap<string, FlagDefinition[]>,
 ): Set<string> {
   const commandSet = new Set<string>();
   for (const commandPath of commandHandlers) {
@@ -522,7 +523,7 @@ export function applyDynamicExtensionArguments(
 }
 
 function normalizeDynamicExtensionOptionNames(
-  definition: Record<string, unknown>,
+  definition: FlagDefinition,
 ): string[] | null {
   const visible = toOptionalBoolean(definition.visible);
   if (visible === false) {
@@ -545,7 +546,7 @@ function normalizeDynamicExtensionOptionNames(
 }
 
 function formatDynamicExtensionOptionFlags(
-  definition: Record<string, unknown>,
+  definition: FlagDefinition,
 ): string | null {
   const optionNames = normalizeDynamicExtensionOptionNames(definition);
   if (!optionNames) {
@@ -557,7 +558,7 @@ function formatDynamicExtensionOptionFlags(
 }
 
 function formatDynamicExtensionParseOptionFlags(
-  definition: Record<string, unknown>,
+  definition: FlagDefinition,
 ): string | null {
   const optionNames = normalizeDynamicExtensionOptionNames(definition);
   if (!optionNames) {
@@ -569,7 +570,7 @@ function formatDynamicExtensionParseOptionFlags(
 }
 
 function formatDynamicExtensionOptionDescription(
-  definition: Record<string, unknown>,
+  definition: FlagDefinition,
 ): string {
   const description =
     toNonEmptyFlagString(definition.description) ??
@@ -587,7 +588,7 @@ function formatDynamicExtensionOptionDescription(
 
 function commandAlreadyHasOption(
   command: Command,
-  definition: Record<string, unknown>,
+  definition: FlagDefinition,
 ): boolean {
   const longName = toNonEmptyFlagString(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
@@ -603,7 +604,7 @@ function commandAlreadyHasOption(
 /** Implements apply dynamic extension flag options for the public runtime surface of this module. */
 export function applyDynamicExtensionFlagOptions(
   command: Command,
-  definitions: Array<Record<string, unknown>>,
+  definitions: FlagDefinition[],
 ): void {
   for (const definition of definitions) {
     if (commandAlreadyHasOption(command, definition)) {
@@ -639,7 +640,7 @@ export function applyDynamicExtensionFlagOptions(
  */
 export function buildResidualDynamicExtensionFlagHelp(
   command: Command,
-  definitions: Array<Record<string, unknown>>,
+  definitions: FlagDefinition[],
 ): string | null {
   return buildDynamicExtensionFlagHelp(
     definitions.filter(
@@ -649,7 +650,7 @@ export function buildResidualDynamicExtensionFlagHelp(
 }
 
 function buildDynamicExtensionHelpOptionSummary(
-  definition: Record<string, unknown>,
+  definition: FlagDefinition,
 ): HelpOptionSummary | null {
   const flags = formatDynamicExtensionOptionFlags(definition);
   if (!flags) {

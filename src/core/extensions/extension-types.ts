@@ -794,8 +794,6 @@ export interface FlagDefinition {
   repeatable?: boolean;
   /** Default value applied when the flag is omitted. Surfaced to runtime contracts and help output. A `list` flag may default to an array of scalars (e.g. `["a", "b"]`); the array is flattened/coerced like any list value. */
   default?: string | number | boolean | Array<string | number | boolean>;
-  /** Extension metadata remains structurally interoperable while activation rejects unknown runtime fields. */
-  [key: string]: unknown;
 }
 
 /** Documents the schema field definition payload exchanged by command, SDK, and package integrations. */
@@ -810,7 +808,6 @@ export interface SchemaFieldDefinition {
   default?: unknown;
   /** Optional allow-list of accepted metadata values. */
   values?: unknown[];
-  [key: string]: unknown;
 }
 
 /** Documents the schema item type command option policy definition payload exchanged by command, SDK, and package integrations. */
@@ -825,7 +822,6 @@ export interface SchemaItemTypeCommandOptionPolicyDefinition {
   required?: boolean;
   /** Value that configures or reports visible for this contract. */
   visible?: boolean;
-  [key: string]: unknown;
 }
 
 /** Documents the schema item type option definition payload exchanged by command, SDK, and package integrations. */
@@ -838,7 +834,6 @@ export interface SchemaItemTypeOptionDefinition {
   required?: boolean;
   /** Value that configures or reports aliases for this contract. */
   aliases?: string[];
-  [key: string]: unknown;
 }
 
 /** Documents the schema item type definition payload exchanged by command, SDK, and package integrations. */
@@ -1735,6 +1730,12 @@ export interface CommandHandlerResult {
   warnings: string[];
   /** Human-readable, single-line, length-bounded message describing why an extension command handler failed. Surfaced to the user/CI so the real cause (e.g. "Changelog is out of date: CHANGELOG.md") is visible instead of only the opaque `extension_command_handler_failed` warning code. */
   errorMessage?: string;
+  /** Validated non-zero process status requested by a structured handler result. */
+  exitCode?: number;
+  /** Stable extension-provided error code preserved for structured recovery. */
+  errorCode?: string;
+  /** Actionable extension-provided recovery text preserved by the host. */
+  remediation?: string;
 }
 
 /** Documents the parser override result payload exchanged by command, SDK, and package integrations. */

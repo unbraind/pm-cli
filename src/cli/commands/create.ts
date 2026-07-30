@@ -2373,6 +2373,12 @@ async function writeCreatedItem(params: {
   historyMessage: string | undefined;
   changedFields: ReturnType<typeof buildChangedFields>;
   nowValue: string;
+  similarityCandidate: {
+    title: string;
+    description: string;
+    body: string;
+  };
+  allowDuplicate: boolean | undefined;
 }): Promise<string[]> {
   const {
     pmRoot,
@@ -2387,6 +2393,8 @@ async function writeCreatedItem(params: {
     historyMessage,
     changedFields,
     nowValue,
+    similarityCandidate,
+    allowDuplicate,
   } = params;
   const itemPath = getItemPath(
     pmRoot,
@@ -2431,9 +2439,26 @@ async function writeCreatedItem(params: {
     const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
       pmRoot,
       author,
+      {
+        required:
+          settings.governance.duplicate_detection_mode === "strict" &&
+          allowDuplicate !== true,
+      },
     );
     let derivedIndexWarnings: string[] = [];
     try {
+      if (
+        settings.governance.duplicate_detection_mode === "strict" &&
+        allowDuplicate !== true
+      ) {
+        await evaluateSimilarityGovernance(similarityCandidate, {
+          pmRoot,
+          mode: "strict",
+          threshold: settings.governance.duplicate_detection_threshold,
+          limit: settings.governance.duplicate_detection_limit,
+          allowDuplicate: false,
+        });
+      }
       await writeFileAtomic(
         itemPath,
         serializeItemDocument(afterDocument, {
@@ -3041,6 +3066,8 @@ export async function runCreate(
     historyMessage,
     changedFields,
     nowValue,
+    similarityCandidate: { title, description, body },
+    allowDuplicate: resolvedOptions.allowDuplicate,
   });
 
   const outputItem = structuredClone(itemMetadata);

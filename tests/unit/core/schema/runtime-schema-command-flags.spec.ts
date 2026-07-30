@@ -58,6 +58,38 @@ function createTaskWithSegment(
 }
 
 describe("runtime schema command flag registration", () => {
+  it("preserves normalized aliases that resolve to the canonical status id", () => {
+    const normalized = normalizeRuntimeSchemaSettings({
+      statuses: [
+        {
+          id: "in_progress",
+          aliases: ["working now", "in-progress"],
+          roles: ["active"],
+        },
+        {
+          id: "canceled",
+          aliases: ["cancelled"],
+          roles: ["terminal", "terminal_canceled"],
+        },
+      ],
+    });
+
+    expect(normalized.statuses).toEqual([
+      expect.objectContaining({
+        id: "in_progress",
+        aliases: ["in_progress", "working_now"],
+      }),
+      expect.objectContaining({
+        id: "canceled",
+        aliases: ["cancelled"],
+      }),
+    ]);
+    const registry = resolveRuntimeStatusRegistry(normalized);
+    expect(normalizeStatusInputWithRegistry("in-progress", registry)).toBe(
+      "in_progress",
+    );
+  });
+
   it("ignores malformed runtime schema tokens instead of throwing", () => {
     const normalized = normalizeRuntimeSchemaSettings({
       statuses: [

@@ -1556,6 +1556,14 @@ function normalizeRuntimeRegistrationRecord(
   return cloneRuntimeRegistrationValue(value) as Record<string, unknown>;
 }
 
+function normalizeRegistrationRecordList<T extends object>(
+  name: string,
+  value: readonly T[],
+): T[];
+function normalizeRegistrationRecordList(
+  name: string,
+  value: unknown,
+): Array<Record<string, unknown>>;
 function normalizeRegistrationRecordList(
   name: string,
   value: unknown,
@@ -2729,7 +2737,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
     const normalizedFields = normalizeRegistrationRecordList(
       "registerItemFields fields",
       fields,
-    ) as SchemaFieldDefinition[];
+    );
     if (normalizedFields.length === 0) {
       throw new TypeError(
         "registerItemFields requires at least one field definition",

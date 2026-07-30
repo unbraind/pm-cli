@@ -188,7 +188,11 @@ export async function runCopy(
     },
     {
       pmRoot,
-      mode: settings.governance.duplicate_detection_mode,
+      mode:
+        settings.governance.duplicate_detection_mode === "strict" &&
+        options.allowDuplicate !== true
+          ? "off"
+          : settings.governance.duplicate_detection_mode,
       threshold: settings.governance.duplicate_detection_threshold,
       limit: settings.governance.duplicate_detection_limit,
       allowDuplicate: options.allowDuplicate,
@@ -226,8 +230,33 @@ export async function runCopy(
     const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
       pmRoot,
       author,
+      {
+        required:
+          settings.governance.duplicate_detection_mode === "strict" &&
+          options.allowDuplicate !== true,
+      },
     );
     try {
+      if (
+        settings.governance.duplicate_detection_mode === "strict" &&
+        options.allowDuplicate !== true
+      ) {
+        await evaluateSimilarityGovernance(
+          {
+            title: copiedDocument.metadata.title,
+            description: copiedDocument.metadata.description,
+            body: copiedDocument.body,
+            excludeIds: [located.id],
+          },
+          {
+            pmRoot,
+            mode: "strict",
+            threshold: settings.governance.duplicate_detection_threshold,
+            limit: settings.governance.duplicate_detection_limit,
+            allowDuplicate: false,
+          },
+        );
+      }
       const collision = await locateItem(
         pmRoot,
         newId,

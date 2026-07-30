@@ -717,8 +717,12 @@ _behavior_ (`result.result`) rather than only that the command is wired. The
 (`{ json: true, quiet: true, noPager: true }`) that callers may override. A clean
 run yields `{ handled: true, result, warnings: [] }`; a handler that throws a
 non-exit error yields `{ handled: false, warnings: [code], errorMessage }` so the
-failure can be asserted, while one that throws an error carrying a numeric
-`exitCode` propagates the throw. An unregistered command throws a descriptive
+failure can be asserted. Returned objects may declare `exit_code` from `1`
+through `255` plus optional string `code` and `remediation` fields; the runner
+preserves the structured result and exposes those values as
+`exitCode`/`errorCode`/`remediation`. A thrown plain object preserves its
+`code`/`remediation`, while an error carrying a numeric `exitCode` propagates
+the throw. An unregistered command throws a descriptive
 error listing the available handler command paths. Because
 `registerImporter`/`registerExporter` register handlers under `"<name> import"` /
 `"<name> export"`, the same helper exercises importer and exporter handlers too.
@@ -1978,6 +1982,10 @@ export default defineExtension({
 `FlagDefinition` (used by `registerFlags` and inline command `flags`) supports the
 same list/default semantics as core flags:
 
+- Flag and schema authoring interfaces are closed contracts: misspelled
+  properties fail TypeScript excess-property checks instead of surviving until
+  runtime activation. Use only documented top-level fields and translate
+  package-private metadata before registration.
 - `value_type` is the canonical coercion kind (`string` | `number` | `boolean`;
   the aliases `int`/`integer`/`float` and `bool` are also accepted). The
   deprecated `type` alias is still read, but `value_type` wins when both are set
@@ -2094,6 +2102,24 @@ throw createPmCliExpectedError("hello requires --name", {
 ```
 
 The helper returns an `Error` whose public name is `PmCliError` and whose `exitCode` is structural. That makes it safe for bundled, linked, and separately installed package code even when class identity is not shared with the running CLI.
+
+For policy, lint, or verification commands that should render their full result
+and report failure without throwing, return a structured object instead:
+
+```ts
+return {
+  ok: false,
+  findings,
+  exit_code: EXIT_CODE.CONFLICT,
+  code: "policy_findings",
+  remediation: "Resolve the reported findings and rerun the command.",
+};
+```
+
+The CLI renders this payload unchanged, sets the process exit status, and
+propagates `code` and `remediation` through the command-handler result contract.
+Invalid `exit_code` values are rejected rather than truncated or silently
+treated as success.
 
 ## Package Runtime Imports
 

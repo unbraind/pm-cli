@@ -79,6 +79,12 @@ interface DirectorySignature extends StatSignature {
 
 type DirectorySignatures = Record<string, DirectorySignature>;
 
+/** Controls whether derived-index writers may skip the cross-process lock below the scale threshold. */
+export interface ItemMetadataDerivedIndexLockOptions {
+  /** Require serialization even when the derived index is absent or contains fewer than the normal locking threshold. */
+  required?: boolean;
+}
+
 interface CacheEnvelope {
   version: number;
   context_fingerprint: string;
@@ -1087,11 +1093,13 @@ async function persistCollectionsCacheIfNeeded(params: {
 export async function acquireItemMetadataDerivedIndexLock(
   pmRoot: string,
   author: string,
+  options: ItemMetadataDerivedIndexLockOptions = {},
 ): Promise<() => Promise<void>> {
   const cache = await loadDerivedIndexManifest(pmRoot);
   if (
-    cache === null ||
-    cache.entry_count < DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS
+    options.required !== true &&
+    (cache === null ||
+      cache.entry_count < DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS)
   ) {
     return async () => {};
   }

@@ -2696,6 +2696,57 @@ export default {
         'Command "tools" failed in extension handler (extension_command_handler_failed:project:broken-tools:tools). handler exploded',
       );
 
+      setActiveExtensionCommands({
+        overrides: [],
+        handlers: [
+          {
+            layer: "project",
+            name: "structured-tools",
+            command: "tools",
+            run: () => ({
+              ok: false,
+              exit_code: 9,
+              code: "policy_failed",
+              remediation: "Fix the policy configuration.",
+            }),
+          },
+        ],
+      });
+      process.exitCode = undefined;
+      await expect(
+        _testOnly.runRequiredExtensionCommand(command, {}, {
+          path: context.pmPath,
+        } as never),
+      ).resolves.toMatchObject({ ok: false, exit_code: 9 });
+      expect(process.exitCode).toBe(9);
+      process.exitCode = undefined;
+
+      setActiveExtensionCommands({
+        overrides: [],
+        handlers: [
+          {
+            layer: "project",
+            name: "recoverable-tools",
+            command: "tools",
+            run: () => {
+              throw {
+                message: "policy rejected",
+                code: "policy_rejected",
+                remediation: "Update policy.yml.",
+              };
+            },
+          },
+        ],
+      });
+      await expect(
+        _testOnly.runRequiredExtensionCommand(command, {}, {
+          path: context.pmPath,
+        } as never),
+      ).rejects.toMatchObject({
+        code: "policy_rejected",
+        context: { nextSteps: ["Update policy.yml."] },
+      });
+
       setActiveExtensionParsers({
         overrides: [
           {

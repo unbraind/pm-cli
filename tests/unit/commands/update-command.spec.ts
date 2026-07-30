@@ -3551,6 +3551,27 @@ describe("runUpdate", () => {
         exitCode: EXIT_CODE.USAGE,
         context: { code: "extension_item_field_unknown" },
       });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            field: ["status=closed"],
+            message: "route core field to its dedicated flag",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "core_item_field_requires_dedicated_flag",
+          field: "status",
+          recovery: {
+            provided_fields: ["status"],
+            suggested_flags: ["--status"],
+          },
+        },
+      });
     });
   });
 

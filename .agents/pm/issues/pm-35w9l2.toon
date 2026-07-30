@@ -1,0 +1,56 @@
+id: pm-35w9l2
+title: "GH-830: duplicate-safe creation must require explicit bypass before persistence"
+description: "pm create detects likely duplicates but persists them and exits successfully, so agent retries and concurrent submissions silently create duplicate tracker records."
+type: Issue
+status: closed
+priority: 1
+tags[7]: agent-ux,"area:cli","area:sdk",data-quality,dedupe,github-intake,multi-agent
+created_at: "2026-07-30T21:41:47.014Z"
+updated_at: "2026-07-30T23:31:10.323Z"
+closed_at: "2026-07-30T22:53:08.930Z"
+completed_at: "2026-07-30T22:53:08.930Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Default create and copy behavior refuses high-confidence likely duplicates before persistence with a structured machine-readable result; --allow-duplicate remains the explicit audited bypass; SDK, CLI, and MCP surfaces share the policy and result contract; concurrency tests prove two equivalent creates cannot both persist; advisory mode remains opt-in and documented"
+goal: project management = context management
+objective: Make duplicate prevention atomic and safe by default for agent-driven project creation
+value: Agents can retry creation without multiplying canonical work
+impact: Eliminates a primary source of graph ambiguity and duplicate lifecycle cleanup
+parent: pm-33cw
+risk: high
+confidence: high
+resolution: fixed
+expected_result: Default create and copy refuse likely duplicates atomically unless the caller explicitly supplies --allow-duplicate.
+actual_result: The default preset is strict and final similarity revalidation shares a required derived-index lock with persistence; concurrency commits exactly one equivalent item.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4ri6,discovered_from,"2026-07-30T21:41:47.014Z","harness:codex","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-07-30T21:41:47.014Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-07-30T21:41:47.014Z","harness:codex","text=Duplicate check searched all 2217 live items across every status for GH-830, likely_duplicates persistence, strict duplicate governance, and create-time advisory. Closed pm-4ri6 is completed shipped lineage for the deliberately configurable advisory; this issue tracks the newly reported safe-default and atomicity gap rather than reopening or duplicating that completed feature. GitHub report: https://github.com/unbraind/pm-cli/issues/830"
+  "2026-07-30T22:01:51.217Z","harness:codex","Correction: the create-time duplicate-check evidence is the comment text after the accidental literal 'text=' prefix; no tracker field or external secret was involved."
+  "2026-07-30T22:32:06.244Z","harness:codex","Verification evidence: strict create concurrency commits exactly one equivalent item, strict copy blocks before persistence, explicit bypass remains structured, and required SDK locking works below the 500-item cache threshold. Full coverage passed 6584 tests at 100/100/100/100."
+  "2026-07-30T22:51:35.236Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
+  "2026-07-30T23:28:53.771Z","harness:codex","Final native-layout revalidation: the focused diff is 952 insertions and 97 deletions with no formatter churn; 406 files and 6,583 tests pass at 100% statements, branches, functions, and lines. Typecheck, ESLint, static quality, package boundary/parity, token budgets, SDK surface/import-cost/transport gates, docs, latest pm-changelog 2026.7.29-1 check mode, tracker health/history integrity, and fresh unrelated-workspace acceptance all pass."
+  "2026-07-30T23:31:10.323Z","harness:codex","Publication evidence: broad SDK/CLI implementation is published for exact-head CI and AI review in https://github.com/unbraind/pm-cli/pull/833 at commit 89e52f2ce."
+learnings[1]{created_at,author,text}:
+  "2026-07-30T22:51:36.553Z","harness:codex",Strict duplicate checks are only safe when the final similarity read and persistence share a required derived-index lock; preflight-only advice leaves a concurrent time-of-check/time-of-use gap.
+files[10]{path,scope,note}:
+  sdk/public-surface.json,project,public required-lock option surface
+  src/cli/commands/copy.ts,project,copy duplicate revalidation
+  src/cli/commands/create.ts,project,atomic strict duplicate revalidation
+  src/core/shared/constants.ts,project,safe default governance preset
+  src/core/store/item-metadata-cache.ts,project,required SDK mutation lock mode
+  src/sdk/item-metadata-index.ts,project,public required-lock option contract
+  tests/integration/copy-command.spec.ts,project,strict copy rejection and explicit bypass acceptance
+  tests/unit/commands/create-command.spec.ts,project,concurrent create atomicity acceptance
+  tests/unit/core/item/item-metadata-derived-index.spec.ts,project,required lock behavior coverage
+  tests/unit/core/store/settings-store.spec.ts,project,governance preset defaults
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/create-command.spec.ts tests/integration/copy-command.spec.ts tests/unit/core/item/item-metadata-derived-index.spec.ts,project,300,duplicate governance and lock atomicity
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms83xgzh-69lmoc,test,passed,"2026-07-30T22:50:28.475Z","2026-07-30T22:50:45.436Z","2026-07-30T22:50:45.436Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/CONFIGURATION.md,project,strict default and atomicity contract
+  docs/SDK.md,project,SDK governance primitive context
+close_reason: "Made default create/copy duplicate governance strict and atomic under a required SDK lock with explicit audited bypass; concurrency, copy, manual acceptance, package dogfood, and full coverage passed."
+body: ""

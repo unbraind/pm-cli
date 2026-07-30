@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1280,
+    "covered_symbols": 1281,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1281
+    "required_symbols": 1282
   },
   "breaking_acknowledgements": [
     {
@@ -355,6 +355,25 @@
       ],
       "package_version": "2026.7.30",
       "reason": "Additive optional cursor, row, intent, and health projection contracts; no existing callable behavior or required member was removed"
+    },
+    {
+      "changes": [
+        "signature ./sdk:acquireItemMetadataDerivedIndexLock",
+        "signature ./sdk:CommandHandlerResult",
+        "signature ./sdk:FlagDefinition",
+        "signature ./sdk:SchemaFieldDefinition",
+        "signature ./sdk:SchemaItemTypeCommandOptionPolicyDefinition",
+        "signature ./sdk:SchemaItemTypeOptionDefinition",
+        "signature ./sdk/authoring:CommandHandlerResult",
+        "signature ./sdk/authoring:FlagDefinition",
+        "signature ./sdk/authoring:SchemaFieldDefinition",
+        "signature ./sdk/authoring:SchemaItemTypeCommandOptionPolicyDefinition",
+        "signature ./sdk/authoring:SchemaItemTypeOptionDefinition",
+        "signature ./sdk/query:acquireItemMetadataDerivedIndexLock",
+        "signature ./sdk/runtime:FlagDefinition"
+      ],
+      "package_version": "2026.7.30",
+      "reason": "Close extension authoring metadata contracts to reject misspelled properties and add explicit structured failure and required-lock fields."
     }
   ],
   "entrypoints": {
@@ -443,7 +462,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "acquireItemMetadataDerivedIndexLock",
-          "signature": "(pmRoot: string, author: string) => Promise<() => Promise<void>> | calls: (pmRoot: string, author: string) => Promise<() => Promise<void>>"
+          "signature": "(pmRoot: string, author: string, options?: ItemMetadataDerivedIndexLockOptions) => Promise<() => Promise<void>> | calls: (pmRoot: string, author: string, options?: ItemMetadataDerivedIndexLockOptions) => Promise<() => Promise<void>>"
         },
         {
           "classification": "advanced_export",
@@ -1655,7 +1674,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandHandlerResult",
-          "signature": "export interface CommandHandlerResult { handled: boolean; result: unknown; warnings: string[]; errorMessage?: string; }"
+          "signature": "export interface CommandHandlerResult { handled: boolean; result: unknown; warnings: string[]; errorMessage?: string; exitCode?: number; errorCode?: string; remediation?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -3923,7 +3942,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FlagDefinition",
-          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; [key: string]: unknown; }"
+          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; }"
         },
         {
           "classification": "supported",
@@ -5100,6 +5119,12 @@
           "kind": "interface",
           "name": "ItemMetadata",
           "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ItemMetadataDerivedIndexLockOptions",
+          "signature": "export interface ItemMetadataDerivedIndexLockOptions { required?: boolean; }"
         },
         {
           "classification": "supported",
@@ -9875,7 +9900,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SchemaFieldDefinition",
-          "signature": "export interface SchemaFieldDefinition { name: string; type: string; optional?: boolean; default?: unknown; values?: unknown[]; [key: string]: unknown; }"
+          "signature": "export interface SchemaFieldDefinition { name: string; type: string; optional?: boolean; default?: unknown; values?: unknown[]; }"
         },
         {
           "classification": "advanced_export",
@@ -9893,7 +9918,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SchemaItemTypeCommandOptionPolicyDefinition",
-          "signature": "export interface SchemaItemTypeCommandOptionPolicyDefinition { command: string; option: string; enabled?: boolean; required?: boolean; visible?: boolean; [key: string]: unknown; }"
+          "signature": "export interface SchemaItemTypeCommandOptionPolicyDefinition { command: string; option: string; enabled?: boolean; required?: boolean; visible?: boolean; }"
         },
         {
           "classification": "supported",
@@ -9905,7 +9930,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SchemaItemTypeOptionDefinition",
-          "signature": "export interface SchemaItemTypeOptionDefinition { key: string; values?: string[]; required?: boolean; aliases?: string[]; [key: string]: unknown; }"
+          "signature": "export interface SchemaItemTypeOptionDefinition { key: string; values?: string[]; required?: boolean; aliases?: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -11831,7 +11856,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandHandlerResult",
-          "signature": "export interface CommandHandlerResult { handled: boolean; result: unknown; warnings: string[]; errorMessage?: string; }"
+          "signature": "export interface CommandHandlerResult { handled: boolean; result: unknown; warnings: string[]; errorMessage?: string; exitCode?: number; errorCode?: string; remediation?: string; }"
         },
         {
           "classification": "supported",
@@ -12395,7 +12420,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FlagDefinition",
-          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; [key: string]: unknown; }"
+          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; }"
         },
         {
           "classification": "supported",
@@ -12899,13 +12924,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SchemaFieldDefinition",
-          "signature": "export interface SchemaFieldDefinition { name: string; type: string; optional?: boolean; default?: unknown; values?: unknown[]; [key: string]: unknown; }"
+          "signature": "export interface SchemaFieldDefinition { name: string; type: string; optional?: boolean; default?: unknown; values?: unknown[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "SchemaItemTypeCommandOptionPolicyDefinition",
-          "signature": "export interface SchemaItemTypeCommandOptionPolicyDefinition { command: string; option: string; enabled?: boolean; required?: boolean; visible?: boolean; [key: string]: unknown; }"
+          "signature": "export interface SchemaItemTypeCommandOptionPolicyDefinition { command: string; option: string; enabled?: boolean; required?: boolean; visible?: boolean; }"
         },
         {
           "classification": "supported",
@@ -12917,7 +12942,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SchemaItemTypeOptionDefinition",
-          "signature": "export interface SchemaItemTypeOptionDefinition { key: string; values?: string[]; required?: boolean; aliases?: string[]; [key: string]: unknown; }"
+          "signature": "export interface SchemaItemTypeOptionDefinition { key: string; values?: string[]; required?: boolean; aliases?: string[]; }"
         },
         {
           "classification": "supported",
@@ -17003,7 +17028,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "acquireItemMetadataDerivedIndexLock",
-          "signature": "(pmRoot: string, author: string) => Promise<() => Promise<void>> | calls: (pmRoot: string, author: string) => Promise<() => Promise<void>>"
+          "signature": "(pmRoot: string, author: string, options?: ItemMetadataDerivedIndexLockOptions) => Promise<() => Promise<void>> | calls: (pmRoot: string, author: string, options?: ItemMetadataDerivedIndexLockOptions) => Promise<() => Promise<void>>"
         },
         {
           "classification": "supported",
@@ -17454,6 +17479,12 @@
           "kind": "interface",
           "name": "ItemContextRelevanceCandidate",
           "signature": "export interface ItemContextRelevanceCandidate extends ContextRelevanceCandidate<ItemMetadata> { signals: ContextRelevanceSignals; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ItemMetadataDerivedIndexLockOptions",
+          "signature": "export interface ItemMetadataDerivedIndexLockOptions { required?: boolean; }"
         },
         {
           "classification": "supported",
@@ -18539,7 +18570,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FlagDefinition",
-          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; [key: string]: unknown; }"
+          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; }"
         },
         {
           "classification": "supported",
@@ -20966,6 +20997,7 @@
     "config_value_invalid",
     "conflicting_lifecycle_owner",
     "context_takes_no_item_argument",
+    "core_item_field_requires_dedicated_flag",
     "create_positional_type_without_title",
     "dependency_edge_not_allowed",
     "duplicate_command",

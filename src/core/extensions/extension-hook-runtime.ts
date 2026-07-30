@@ -127,6 +127,47 @@ function describeHandlerError(error: unknown): string {
     : normalized;
 }
 
+/** Read one bounded string field from an extension result or thrown value. */
+function readHandlerStringField(
+  value: unknown,
+  field: "code" | "remediation",
+): string | undefined {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    typeof (value as Record<string, unknown>)[field] !== "string"
+  ) {
+    return undefined;
+  }
+  const normalized = String((value as Record<string, unknown>)[field])
+    .replace(/\s+/gu, " ")
+    .trim();
+  return normalized.length > 0 ? normalized.slice(0, 300) : undefined;
+}
+
+/** Validate an optional structured extension result exit code. */
+function readHandlerResultExitCode(result: unknown): number | undefined {
+  if (
+    typeof result !== "object" ||
+    result === null ||
+    !Object.hasOwn(result, "exit_code")
+  ) {
+    return undefined;
+  }
+  const exitCode = (result as { exit_code?: unknown }).exit_code;
+  if (
+    typeof exitCode !== "number" ||
+    !Number.isInteger(exitCode) ||
+    exitCode < 1 ||
+    exitCode > 255
+  ) {
+    throw new TypeError(
+      "Extension command result exit_code must be an integer from 1 to 255.",
+    );
+  }
+  return exitCode;
+}
+
 /** Implements run command handler for the public runtime surface of this module. */
 export async function runCommandHandler(
   commands: ExtensionCommandRegistry,
@@ -168,6 +209,13 @@ export async function runCommandHandler(
       handled: true,
       result,
       warnings: [],
+      ...Object.fromEntries(
+        [
+          ["exitCode", readHandlerResultExitCode(result)],
+          ["errorCode", readHandlerStringField(result, "code")],
+          ["remediation", readHandlerStringField(result, "remediation")],
+        ].filter((entry) => entry[1] !== undefined),
+      ),
     };
   } catch (error: unknown) {
     const exitCode =
@@ -184,6 +232,12 @@ export async function runCommandHandler(
         `extension_command_handler_failed:${matched.layer}:${matched.name}:${matched.command}`,
       ],
       errorMessage: describeHandlerError(error),
+      ...Object.fromEntries(
+        [
+          ["errorCode", readHandlerStringField(error, "code")],
+          ["remediation", readHandlerStringField(error, "remediation")],
+        ].filter((entry) => entry[1] !== undefined),
+      ),
     };
   }
 }

@@ -27,6 +27,7 @@ export {
   type ExtensionRegistrationRegistry,
   type ExtensionRendererRegistry,
   type ExtensionServiceRegistry,
+  type FlagDefinition,
   type PreflightRuntimeDecision,
   type RegisteredExtensionCommandDefinition,
   type RegisteredExtensionFlagDefinitions,

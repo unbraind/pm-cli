@@ -9384,6 +9384,16 @@
       "stability": "stable"
     },
     {
+      "code": "core_item_field_requires_dedicated_flag",
+      "exit_code": 2,
+      "meaning": "Core item field requires dedicated flag condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/item-fields.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "create_positional_type_without_title",
       "exit_code": 2,
       "meaning": "Create positional type without title condition.",

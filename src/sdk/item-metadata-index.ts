@@ -15,6 +15,7 @@ export {
   refreshItemMetadataDerivedIndex,
   type ItemMetadataDerivedIndexState,
   type ItemMetadataDerivedIndexMutation,
+  type ItemMetadataDerivedIndexLockOptions,
 } from "../core/store/item-metadata-cache.js";
 export {
   queryItemMetadataIndex,

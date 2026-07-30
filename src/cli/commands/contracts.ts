@@ -12,6 +12,7 @@ import {
   getActiveExtensionRegistrations,
   loadExtensions,
   type ExtensionRegistrationRegistry,
+  type FlagDefinition,
   type RegisteredExtensionCommandDefinition,
   type RegisteredExtensionFlagDefinitions,
   pathExists,
@@ -1003,7 +1004,7 @@ function normalizeExtensionFlagName(
 }
 
 function toExtensionFlagContract(
-  definition: Record<string, unknown>,
+  definition: FlagDefinition,
 ): CliFlagContract | null {
   const normalizedLong = normalizeExtensionFlagName(definition.long, "long");
   const normalizedShort = normalizeExtensionFlagName(definition.short, "short");

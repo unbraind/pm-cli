@@ -2,11 +2,13 @@ id: pm-unwsns
 title: "GH-825: restore SDK excess-property safety for extension definition metadata"
 description: "Open index signatures on FlagDefinition and schema definition interfaces allow plausible misspellings to type-check, then abort runtime activation and drop later registrations."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:sdk",extensions,github-intake,type-safety
 created_at: "2026-07-30T11:27:55.105Z"
-updated_at: "2026-07-30T17:04:18.458Z"
+updated_at: "2026-07-30T23:31:06.566Z"
+closed_at: "2026-07-30T22:52:33.658Z"
+completed_at: "2026-07-30T22:52:33.658Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Known-field interfaces enforce excess-property checking; any metadata escape hatch is explicitly namespaced; type tests reject name/type misspellings; activation remains atomic and suggests canonical fields
@@ -17,9 +19,35 @@ impact: Closes a typed SDK/runtime contract gap across flags and schema definiti
 parent: pm-usfg
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: Misspelled flag and schema authoring properties fail TypeScript compilation before an extension can activate.
+actual_result: "Known authoring metadata contracts are closed, explicit loose internal contracts are isolated, and type tests reject excess properties."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-iqq0,discovered_from,"2026-07-30T11:27:55.105Z","harness:codex","cli:create:dep",detected
   pm-9rgaal,implements,"2026-07-30T17:04:18.275Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-30T11:27:55.105Z","harness:codex","Duplicate check searched all statuses for FlagDefinition excess properties and activation aborts; no canonical owner found. GitHub report: https://github.com/unbraind/pm-cli/issues/825"
+  "2026-07-30T22:32:02.261Z","harness:codex","Verification evidence: pnpm typecheck rejects misspelled flag/schema authoring properties; SDK surface snapshot updated with explicit breaking acknowledgement; repository-wide 100/100/100/100 coverage passed."
+  "2026-07-30T22:51:24.609Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
+  "2026-07-30T23:28:48.643Z","harness:codex","Final native-layout revalidation: the focused diff is 952 insertions and 97 deletions with no formatter churn; 406 files and 6,583 tests pass at 100% statements, branches, functions, and lines. Typecheck, ESLint, static quality, package boundary/parity, token budgets, SDK surface/import-cost/transport gates, docs, latest pm-changelog 2026.7.29-1 check mode, tracker health/history integrity, and fresh unrelated-workspace acceptance all pass."
+  "2026-07-30T23:31:06.566Z","harness:codex","Publication evidence: broad SDK/CLI implementation is published for exact-head CI and AI review in https://github.com/unbraind/pm-cli/pull/833 at commit 89e52f2ce."
+learnings[1]{created_at,author,text}:
+  "2026-07-30T22:51:25.723Z","harness:codex",Extension authoring inputs need closed known-property contracts; forward compatibility belongs in explicit namespaced metadata rather than open index signatures that erase compiler feedback.
+files[9]{path,scope,note}:
+  sdk/public-surface.json,project,acknowledged closed SDK authoring contract surface
+  src/cli/commands/contracts.ts,project,typed extension flag contracts
+  src/cli/extension-command-help.ts,project,closed flag help contracts
+  src/cli/extension-command-options.ts,project,explicit loose flag contract
+  src/core/extensions/extension-types.ts,project,closed SDK authoring contracts
+  src/core/extensions/loader.ts,project,typed registration normalization
+  src/core/extensions/runtime-registrations.ts,project,typed schema field projection
+  src/sdk/runtime-primitives.ts,project,public flag definition export
+  tests/types/sdk-subpath-entrypoints.test-d.ts,project,author-time excess property rejection
+tests[1]{command,scope,timeout_seconds,note}:
+  pnpm typecheck,project,240,public SDK excess-property compile contract
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms83w1gk-edzopz,test,passed,"2026-07-30T22:49:16.991Z","2026-07-30T22:49:38.660Z","2026-07-30T22:49:38.660Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,closed authoring contract guidance
+close_reason: "Closed SDK extension authoring metadata contracts, added compile-time excess-property rejection, and acknowledged the public SDK surface change; typecheck, SDK parity, and full coverage passed."
 body: ""

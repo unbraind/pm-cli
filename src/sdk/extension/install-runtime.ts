@@ -168,6 +168,28 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
     return;
   }
 
+  const shouldCopySourcePath = (sourcePath: string): boolean => {
+    const canonicalCandidate = path.resolve(sourcePath);
+    if (
+      canonicalCandidate === canonicalDestination ||
+      isPathWithinDirectory(canonicalDestination, canonicalCandidate)
+    ) {
+      return false;
+    }
+    const relative = path.relative(canonicalSource, canonicalCandidate);
+    const segments = relative.split(path.sep);
+    if (
+      segments.some(
+        (segment) =>
+          segment === "node_modules" ||
+          segment.startsWith(".pm-extension-install-backup-"),
+      )
+    ) {
+      return false;
+    }
+    return segments[0] !== ".agents";
+  };
+
   const systemTempDirectory = await fs
     .realpath(path.resolve(temporaryDirectory))
     .catch(() => resolveCanonicalExtensionInstallDestination(temporaryDirectory));
@@ -192,6 +214,7 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
     await copyDirectory(sourceDirectory, stagedDirectory, {
       recursive: true,
       force: true,
+      filter: shouldCopySourcePath,
     });
     await copyDirectory(stagedDirectory, destinationDirectory, {
       recursive: true,

@@ -242,6 +242,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["cli/error-guidance.ts"],
   },
   {
+    code: "core_item_field_requires_dedicated_flag",
+    meaning: "Core item field requires dedicated flag condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/extensions/item-fields.ts"],
+  },
+  {
     code: "create_positional_type_without_title",
     meaning: "Create positional type without title condition.",
     stability: "stable",

@@ -9,6 +9,30 @@ import {
   flattenFlagListValue,
   resolveFlagValueKind,
 } from "../sdk/runtime-primitives.js";
+
+/** Flag metadata consumed by loose-option parsing across core and extension commands. */
+export interface LooseCommandFlagDefinition {
+  /** Canonical long option token. */
+  long?: string;
+  /** Optional short option token. */
+  short?: string;
+  /** Backward-compatible aliases emitted by core command contracts. */
+  aliases?: string[];
+  /** Canonical runtime value kind. */
+  value_type?: string;
+  /** Backward-compatible runtime value kind alias. */
+  type?: string;
+  /** Whether the option can be supplied to the command. */
+  enabled?: boolean;
+  /** Whether callers must provide the option. */
+  required?: boolean;
+  /** Whether repeated or comma-delimited values accumulate. */
+  list?: boolean;
+  /** Whether repeated occurrences accumulate without splitting commas. */
+  repeatable?: boolean;
+  /** Value used when callers omit the option. */
+  default?: unknown;
+}
 const UNSAFE_LOOSE_OPTION_KEYS = new Set([
   "__proto__",
   "prototype",
@@ -125,7 +149,7 @@ function isUnsafeLooseOptionKey(key: string): boolean {
 type LooseOptionCoercionKind = "string" | "number" | "boolean";
 
 function resolveLooseOptionCoercionKind(
-  definition: Record<string, unknown>,
+  definition: LooseCommandFlagDefinition,
 ): LooseOptionCoercionKind | null {
   // `value_type` is the canonical field; the deprecated `type` alias resolves
   // only when `value_type` is absent (FlagDefinition documents this precedence).
@@ -137,7 +161,9 @@ function resolveLooseOptionCoercionKind(
   return resolveFlagValueKind(raw);
 }
 
-function collectLooseOptionKeys(definition: Record<string, unknown>): string[] {
+function collectLooseOptionKeys(
+  definition: LooseCommandFlagDefinition,
+): string[] {
   const keys: string[] = [];
   const long =
     typeof definition.long === "string" ? definition.long.trim() : "";
@@ -160,7 +186,7 @@ function collectLooseOptionKeys(definition: Record<string, unknown>): string[] {
 
 /** Implements collect loose command option keys for definitions for the public runtime surface of this module. */
 export function collectLooseCommandOptionKeysForDefinitions(
-  definitions: Array<Record<string, unknown>>,
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
 ): Set<string> {
   const keys = new Set<string>();
   for (const definition of definitions) {
@@ -172,7 +198,7 @@ export function collectLooseCommandOptionKeysForDefinitions(
 }
 
 function resolveCanonicalLooseOptionKey(
-  definition: Record<string, unknown>,
+  definition: LooseCommandFlagDefinition,
 ): string | null {
   const long =
     typeof definition.long === "string" ? definition.long.trim() : "";
@@ -186,7 +212,7 @@ function resolveCanonicalLooseOptionKey(
 }
 
 function formatLooseOptionLabel(
-  definition: Record<string, unknown>,
+  definition: LooseCommandFlagDefinition,
 ): string | null {
   const long =
     typeof definition.long === "string" ? definition.long.trim() : "";
@@ -204,7 +230,7 @@ function formatLooseOptionLabel(
 /** Implements validate loose command options with flag definitions for the public runtime surface of this module. */
 export function validateLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
-  definitions: Array<Record<string, unknown>>,
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
   commandPath: string,
 ): void {
   if (definitions.length === 0) {
@@ -385,7 +411,7 @@ function readOrderedLooseListValues(
 /** Implements coerce loose command options with flag definitions for the public runtime surface of this module. */
 export function coerceLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
-  definitions: Array<Record<string, unknown>>,
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
   occurrenceSource: Record<string, unknown> = options,
 ): Record<string, unknown> {
   if (definitions.length === 0) {
@@ -511,7 +537,7 @@ export function collectLoosePositionalArgs(args: string[]): string[] {
 /** Implements strip loose command option tokens for the public runtime surface of this module. */
 export function stripLooseCommandOptionTokens(
   args: string[],
-  definitions: Array<Record<string, unknown>>,
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
 ): string[] {
   if (definitions.length === 0) {
     return [...args];
