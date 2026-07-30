@@ -1,0 +1,34 @@
+id: pm-v0s2rm
+title: "Our own MCP integration suite passes two options no contract declares, so the unknown-option warning fires on every nightly run and escalates nowhere"
+description: "The MCP unknown-option warning works exactly as designed and nothing consumes it. Every nightly run emits two contract-violation warnings from our own integration suite and every leg still passes. Observed verbatim in scheduled run 30519801227 and again in dispatched run 30529480380: \"[pm-mcp] Unknown option full for pm_update action update. The update contract does not read it, so it has no effect\" followed by the full 80-key declared list, and \"[pm-mcp] Unknown option dryRun for pm_run action test-all. The test-all contract does not read it, so it has no effect\" followed by its 27-key list. Neither option is declared by the CLI either: pm update has no --full and pm test-all has no --dry-run. So these are suite-side arguments that no surface knows, asserted against a tool whose contract explicitly reports them as inert, in a run that reports success. The warning is the product working correctly; the gap is that a self-inflicted contract violation in our own test corpus is advisory forever. Two consequences. The suite is asserting against an option that has no effect, so whatever it believes it is covering is not covered. And the warning channel that exists precisely to catch agent-side contract drift is proven to be ignorable, because the repository that built it ignores it on every run."
+type: Chore
+status: open
+priority: 2
+tags[5]: "area:ci","area:mcp",contract-drift,gate-gap,test-hygiene
+created_at: "2026-07-30T09:30:52.934Z"
+updated_at: "2026-07-30T09:31:50.500Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "The two undeclared options are removed from the integration suite or declared by the contracts they are asserted against, with the covered behaviour restated so the assertion means something; an MCP unknown-option warning emitted anywhere in our own CI fails that job rather than passing advisorily, with a declared allowlist for any warning intentionally tolerated and a reason recorded per entry; a negative control proves the new gate fires by introducing one undeclared option and observing a red run; the gate is registered in the gate inventory so it cannot silently stop running"
+goal: project management = context management
+objective: Make a contract violation in our own corpus fail the build instead of scrolling past in a green run
+value: The warning channel built to catch agent-side contract drift becomes credible because its author stops ignoring it
+impact: "Two suite assertions currently exercise options that provably have no effect, and the only mechanism that would tell an agent it is misusing a tool is demonstrated to be safe to ignore"
+why_now: "Reproduced in both the scheduled and the dispatched nightly today, on a run that was otherwise fully green across all five legs"
+parent: pm-5k4v
+risk: low
+confidence: high
+severity: medium
+affected_version: 2026.7.30
+component: mcp/tool-definitions
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0834kq,related,"2026-07-30T09:31:12.345Z","harness:claude-code","cli:update:dep",detected
+  pm-j668gl,discovered_from,"2026-07-30T09:31:12.345Z","harness:claude-code","cli:update:dep",detected
+  pm-k6t4yb,related,"2026-07-30T09:31:12.345Z","harness:claude-code","cli:update:dep",detected
+  pm-rtn5h6,related,"2026-07-30T09:31:12.345Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-07-30T09:31:12.345Z","harness:claude-code","cli:update:dep",detected
+files[1]{path,scope,note}:
+  src/mcp/tool-definitions.ts,project,declared key lists the warning enumerates for pm_update update and pm_run test-all
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-server.spec.ts,project,300
+body: ""

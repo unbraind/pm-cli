@@ -1,0 +1,37 @@
+id: pm-ai45y9
+title: "Both declared context intents are unreachable because the intent applier assigns field-group names into the section value domain, and the two validators give contradictory advice"
+description: "The context intent applier at src/sdk/context-intent-contracts.ts line 281 assigns a contract included_field_groups array directly to projected.section. Those are two different namespaces. The ten legal --section values come from DEFAULT_SETTINGS.context.sections at src/core/shared/constants.ts lines 418 to 429: hierarchy, activity, progress, recently_created, unparented, blockers, files, workload, staleness, tests. The orient intent declares summary, focus, hierarchy, blockers, activity, so two of its five groups are not section names. The handoff intent declares summary, focus, in_progress, decisions, activity, so four of its five are not. Consequence: both declared context intents are unreachable. pm context --for orient and pm context --for handoff exit 2 with \"Context --section must be one of hierarchy|activity|progress|recently_created|unparented|blockers|files|workload|staleness|tests\" — an error that names a flag the caller never passed and lists values the intent vocabulary does not contain. Following that error is also a dead end: pm context --for hierarchy, taken verbatim from the error message rendered examples, exits 1 with Unknown context intent \"hierarchy\" for context. Did you mean \"handoff\"?. So one flag carries two validators with two exit codes and mutually exclusive advice, and the only command whose intents the mandated agent orientation preamble would actually use has zero working intents on the day the layer shipped."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:contracts","area:sdk",conformance-gap,error-contract
+created_at: "2026-07-30T09:13:24.981Z"
+updated_at: "2026-07-30T09:28:38.599Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "The intent field-group vocabulary and the context section vocabulary are either one declared enum or joined by an explicit contract-declared mapping, never by direct assignment; both built-in context intents resolve and return output, proven by a test that runs every declared command and intent pair and asserts a zero exit; one flag has exactly one validator, so an unknown --for value produces exactly one error code with one nearest-match suggestion drawn from the intent domain; every rendered example in an error envelope is executed by a test so a suggestion can never be a dead end; a contract-derived test enumerates all declared intents and fails when any names a field group its command cannot project"
+goal: project management = context management
+objective: "Make every declared intent reachable on the command that declares it, with one validator and one error vocabulary"
+value: Agents can use the intent layer on the orientation command instead of discovering that the documented path exits 2 and the suggested recovery exits 1
+impact: "The two intents on the most-used orientation surface are dead, and the error envelope actively misdirects by naming a flag the caller did not pass"
+why_now: Shipped 2026-07-30 with both context intents non-functional; fixing the namespace now avoids agents encoding workarounds against a broken domain
+parent: pm-mpbb
+risk: high
+confidence: high
+severity: high
+affected_version: 2026.7.30
+component: sdk/context-intent-contracts
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4020c5,related,"2026-07-30T09:13:47.135Z","harness:claude-code","cli:update:dep",detected
+  pm-7hbfch,related,"2026-07-30T09:13:47.135Z","harness:claude-code","cli:update:dep",detected
+  pm-cxr0jb,discovered_from,"2026-07-30T09:13:47.135Z","harness:claude-code","cli:update:dep",detected
+  pm-fs8q9x,related,"2026-07-30T09:13:47.135Z","harness:claude-code","cli:update:dep",detected
+  pm-x4nn3z,related,"2026-07-30T09:13:47.135Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,implements,"2026-07-30T09:28:38.405Z","harness:claude-code","cli:update:dep",detected
+files[3]{path,scope,note}:
+  src/sdk/context-intent-contracts.ts,project,line 281 assigns contract included_field_groups straight into projected.section
+  src/core/shared/constants.ts,project,the ten legal --section values are DEFAULT_SETTINGS.context.sections at lines 418 to 429
+  src/cli/commands/context.ts,project,section-domain validator that rejects the intent before the intent validator runs
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-intent-contracts.spec.ts,project,300
+body: ""

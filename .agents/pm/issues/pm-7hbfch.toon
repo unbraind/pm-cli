@@ -1,0 +1,36 @@
+id: pm-7hbfch
+title: "Declared read-intent token budgets are written to a flag three of five intent commands do not accept, so the shipped intent layer overruns its own declaration by up to 43.8x"
+description: "Every built-in read intent shipped on 2026-07-30 declares a token_budget, and applyContextIntentProjection writes that budget into projected.tokenBudget at src/sdk/context-intent-contracts.ts line 323 for all five intent commands. Only next and context actually declare a --token-budget flag: list, get and search reject it as an unknown option, so the declared budget is written into a key those commands never read and is silently discarded. Measured on the live 2201-item tracker: list --for triage returns 315,037 bytes (about 78.8k tokens) against a declared 1,800 (43.8x); get --for inspect returns 252,575 bytes (about 63.1k tokens) against 3,200 (19.7x); search --for discover 17,662 bytes against 1,800 (2.45x); next --for execute 5,123 bytes against 1,200 (1.07x). The single conforming pair is the only one whose command accepts the flag, which is the natural control that proves the mechanism. The response envelope carries no budget, estimated_tokens or degradation field at all, so a consumer cannot detect the overrun from the payload. The list intent narrows fields correctly (projection.mode fields, 16 named fields) and applies no row bound, so all 306 open items are emitted with truncated false and has_more false."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:contracts","area:sdk",conformance-gap,token-efficiency
+created_at: "2026-07-30T09:12:36.920Z"
+updated_at: "2026-07-30T09:28:37.742Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "Every declared intent budget is enforced at one response egress point rather than by a per-command flag, so no intent can overrun its own declaration; list, get and search either declare --token-budget or the intent layer refuses to claim a budget it cannot apply, with no silent third option; the response envelope of every intent-projected read carries the resolved budget, the measured estimate and the degradation actually applied, so a consumer can detect an overrun without measuring bytes itself; a negative-control test asserts that an intent whose command lacks budget enforcement fails the build rather than shipping; the published evidence table records observed versus declared tokens per intent on a corpus of at least the current tracker size"
+goal: project management = context management
+objective: Make a declared intent budget an enforced ceiling instead of an advisory number
+value: Agents get the bounded payload the intent promises rather than a 20x to 44x surprise that silently consumes the window
+impact: "Every intent-projected read on a real corpus is currently unbounded, so the token-efficiency guarantee the intent layer was built to deliver does not hold on any command except next"
+why_now: "The intent layer shipped 2026-07-30 and its budget declaration is inert on three of five commands from the first release, before any consumer depends on it"
+parent: pm-5t33or
+risk: high
+confidence: high
+severity: high
+affected_version: 2026.7.30
+component: sdk/context-intent-contracts
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cxr0jb,discovered_from,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
+  pm-du93sr,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
+  pm-mfy1ux,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
+  pm-okgxwa,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
+  pm-sb0tns,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
+  pm-o87av6,implements,"2026-07-30T09:28:37.564Z","harness:claude-code","cli:update:dep",detected
+files[2]{path,scope,note}:
+  src/sdk/context-intent-contracts.ts,project,applyContextIntentProjection writes the declared token_budget into projected.tokenBudget at line 323 for all five intent commands
+  src/sdk/cli-contracts.ts,project,"only next and context declare a --token-budget flag; list,get and search reject it as unknown"
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-intent-contracts.spec.ts,project,240
+body: ""

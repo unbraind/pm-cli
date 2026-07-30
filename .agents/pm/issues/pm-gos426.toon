@@ -1,0 +1,37 @@
+id: pm-gos426
+title: "The dependency remove flag accepts a value its own add flag refuses and reports success on a zero-match, so a mistyped graph repair exits 0 having changed nothing"
+description: "The add and remove halves of the dependency-edge surface do not share a value grammar or a zero-match contract, and only the add half validates. Proved with one value against both flags on the same item pair: pm update ITEM --dep \"OTHER,related\" exits 2 with Invalid --dep value \"OTHER,related\". Use a bare item id or id=<id>,kind=<kind>. The identical value passed to pm update ITEM --dep-remove \"OTHER,related\" exits 0, reports changed_field_count 0, removes nothing and emits no warning. A well-formed selector that matches no row behaves the same way: --dep-remove \"id=pm-zzzzzz,kind=related\" exits 0 with changed_field_count 0 and no diagnostic. The kind token alone is strictly validated, so --dep-remove \"id=OTHER,kind=notarealkind\" correctly exits 2 and prints the full fifteen-value allowed enum. The result is one flag with three input classes where only the invalid-enum class is refused, and a caller cannot distinguish a malformed selector from an already-absent edge from a successful removal without re-reading the item. This is not theoretical: it happened on the live tracker during graph repair in this session. Two removals issued with the unprefixed comma form both reported success, both target rows survived, and the two active dependency cycles they were meant to clear persisted. Only pm validate caught it. Because the mutation legitimately records nothing, the immutable history contains no trace of the attempt, so an agent-run repair script that checks exit codes reports a clean graph repair that never happened. The silent-zero class was declared closed after the strict-input-validation wave, which makes this a defect escape rather than a new class and puts the missing control in gate-ratchet territory."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:contracts",data-quality,error-contract,silent-zero
+created_at: "2026-07-30T09:19:55.520Z"
+updated_at: "2026-07-30T09:28:39.750Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "The add and remove halves of the dependency surface accept exactly one declared value grammar, derived from one contract, so a value refused by one is refused by the other; a remove selector that matches no dependency row fails with a distinct typed diagnostic naming the selector and the rows actually present, rather than exiting 0; the malformed unprefixed comma form is refused with the same message the add flag already emits; a contract-derived test asserts, for every paired mutating flag in the surface, that both halves reject the same invalid values and both disclose a zero-match; the silent-zero gate is extended so a mutating flag that can match nothing without diagnosing it fails the build"
+goal: project management = context management
+objective: Make every mutating dependency selector either change something or say why it did not
+value: Agent-run graph repair can trust its own exit codes instead of re-reading every item to discover the mutation was a no-op
+impact: "A mistyped selector silently leaves the relationship graph in the broken state the agent believed it had just fixed, and the immutable record holds no trace of the attempt because nothing legitimately changed"
+why_now: "Reproduced live during this session's graph repair: two removals reported success, both cycles survived, and only pm validate exposed it"
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: high
+affected_version: 2026.7.30
+component: cli/register-mutation-options
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4020c5,related,"2026-07-30T09:20:18.538Z","harness:claude-code","cli:update:dep",detected
+  pm-flnefm,related,"2026-07-30T09:20:18.538Z","harness:claude-code","cli:update:dep",detected
+  pm-fs8q9x,related,"2026-07-30T09:20:18.538Z","harness:claude-code","cli:update:dep",detected
+  pm-jkbqt8,related,"2026-07-30T09:20:18.538Z","harness:claude-code","cli:update:dep",detected
+  pm-rtn5h6,related,"2026-07-30T09:20:18.538Z","harness:claude-code","cli:update:dep",detected
+  pm-x4nn3z,related,"2026-07-30T09:20:18.538Z","harness:claude-code","cli:update:dep",detected
+  pm-j82fd3,implements,"2026-07-30T09:28:39.505Z","harness:claude-code","cli:update:dep",detected
+files[2]{path,scope,note}:
+  src/sdk/dependency-flag-validation.ts,project,the add-half validator that refuses the unprefixed comma form; the remove half does not route through an equivalent
+  src/cli/register-mutation.ts,project,dep-remove selector registration and application path
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/update-command.spec.ts,project,240
+body: ""

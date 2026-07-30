@@ -1,0 +1,37 @@
+id: pm-0834kq
+title: "The MCP action vocabulary is not derived from the CLI contract table: 26 MCP-only spellings, and seven contracted capability families including merge, workspace snapshot and eval have no MCP route at all"
+description: "Counting the same set in every place the product declares it gives three different answers. pm --help renders 85 top-level spellings. PM_CORE_COMMAND_NAMES in the published CLI contracts declares 70. The MCP server declares 31 tools: 28 narrow tools mapped one-to-one through NARROW_TOOL_ACTIONS, pm_events and pm_mutate wired directly, and pm_run whose action enum holds 86 entries. The two vocabularies diverge in both directions and nothing compares them. Twenty-six actions exist only in the MCP enum: the hyphen-flattened extension and package forms extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate and the thirteen package- equivalents. None is a contracted CLI command name, so MCP invented its own spelling for nested subcommands. In the other direction ten contracted CLI names have no MCP route at all, of which seven are real capability families rather than aliases: workspace (snapshot create, inspect, list, restore, delete, the whole content-addressed durability primitive), merge (install, reconcile, report, driver, the entire multi-agent branch-merge integration), eval (the retrieval-quality evaluation surface), and meet, event and remind (the only ergonomic path to the Meeting, Event and Reminder types that the capability dogfood ratchet already records as never exercised). The remaining three, item, packages and help, are cosmetic because pm_mutate covers item mutate and contracts covers help. Consequence: an agent driving pm exclusively through MCP, which is how the shipped server instructions tell it to work, cannot install the merge driver, cannot reconcile after a merge, cannot snapshot or restore the workspace, and cannot run the retrieval eval. Residual after two shipped MCP waves: schema derivation from flag contracts closed the per-tool input shape and the nested-options warning closed silent option drops, but the action name set itself was never derived from the contract table."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:contracts","area:mcp",conformance-gap,multi-agent
+created_at: "2026-07-30T09:14:08.293Z"
+updated_at: "2026-07-30T09:26:39.732Z"
+author: "harness:claude-code"
+estimated_minutes: 720
+acceptance_criteria: "One contract table is the single source for the CLI command set, the MCP narrow-tool map and the pm_run action enum, so no surface can declare a spelling the others do not know; a parity gate enumerates all three and fails the build on any difference in either direction, with an explicit declared-waiver list for anything intentionally CLI-only; merge, workspace snapshot and eval are reachable from MCP so an MCP-only agent can install the merge driver, reconcile after a merge, snapshot and restore the workspace and run the retrieval eval; the Meeting, Event and Reminder creation paths are reachable from MCP or the calendar sugar is declared as CLI-only in the waiver list with the reason recorded; the flattened extension and package action spellings are either contracted CLI names or generated from the nested contract rather than hand-listed in the MCP enum"
+goal: project management = context management
+objective: Make the MCP surface a projection of the CLI contract table instead of a hand-maintained parallel vocabulary
+value: "An agent gets the same product whichever transport it speaks, and the multi-agent merge and durability primitives stop being terminal-only"
+impact: "MCP-only agents silently lack the merge, workspace-durability and evaluation capabilities that the project treats as core guarantees, and the divergence is invisible because no control compares the surfaces"
+why_now: "Two MCP waves have shipped and closed without ever comparing the action sets, and the multi-agent merge story is the one the project is actively proving"
+parent: pm-5k4v
+risk: high
+confidence: high
+severity: high
+affected_version: 2026.7.30
+component: mcp/tool-definitions
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jrdri,related,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
+  pm-6l2mza,related,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
+  pm-9rgaal,implements,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
+  pm-b2hc4x,related,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
+  pm-lwmstb,related,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
+  pm-pww8ax,related,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
+  pm-xwah,discovered_from,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
+files[2]{path,scope,note}:
+  src/mcp/tool-definitions.ts,project,"TOOLS,NARROW_TOOL_ACTIONS and the 86-entry pm_run action enum are declared here independently of the CLI contract table"
+  src/sdk/cli-contracts.ts,project,PM_CORE_COMMAND_NAMES declares the 70 contracted CLI command names the MCP enum does not derive from
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts,project,240
+body: ""

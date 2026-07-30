@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: ci,core,release
 created_at: "2026-07-28T02:58:02.043Z"
-updated_at: "2026-07-28T02:58:02.043Z"
+updated_at: "2026-07-30T09:21:21.674Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "The same-day release check compares parsed date fields or a zero-padded canonical key rather than a prefix glob, so no tag from a different day can ever satisfy it; A negative-control fixture proves the guard skips when a same-day tag exists and does NOT skip when only a later-day tag from the same month exists; Days 1 through 9 of a month are covered explicitly by regression tests, including the case where a two-digit-day tag from the same month already exists; The skip envelope's tags_today list contains only tags whose own date equals the run's date key; The unpadded date key is either padded canonically or documented as intentional with every consumer audited for prefix-matching"
@@ -19,4 +19,6 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-k6t4yb,related,"2026-07-28T02:58:02.043Z","harness:claude-code","cli:create:dep",detected
   pm-q91qyd,related,"2026-07-28T02:58:02.043Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-07-28T02:58:02.043Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-07-30T09:21:21.674Z","harness:claude-code","First day the collision operand pair actually exists in the tag set. git tag --list \"v2026.7.3*\" now returns TWO tags: v2026.7.3 (July 3) and v2026.7.30 (July 30). The unpadded utcDateKey plus the v-prefix glob is therefore no longer a hypothetical pairing - the corpus now contains a real tag whose name is a strict prefix of another real tag in the same series.\n\nThe honest scope of this item still holds and must not be widened: on 2026-07-03 the key was 2026.7.3 and v2026.7.30 did not yet exist, so the glob could not have matched it; on 2026-07-30 the key is 2026.7.30 and the glob matches only itself. The guard remains correct by accident of forward-moving time, not by logic. What changed today is that the reachability argument no longer needs a hypothetical tag - it needs only a clock that is not monotonic (a re-run against an older ref, a backfilled tag, or a manual dispatch keyed to a past date)."
 body: ""

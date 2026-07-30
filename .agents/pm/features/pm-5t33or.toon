@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",context-management,contracts,output-contract,token-efficiency
 created_at: "2026-07-24T23:45:26.200Z"
-updated_at: "2026-07-29T04:50:13.275Z"
+updated_at: "2026-07-30T09:15:26.264Z"
 author: maintainer-agent
 estimated_minutes: 1800
 acceptance_criteria: "The contract table declares a default output token budget per command and per output format, generated rather than hand-maintained; Commands exceeding their budget apply the shared degradation ladder (projection narrowing, then bounded truncation) and disclose what was dropped in the envelope; A budget override flag and a no-budget escape hatch exist for human and pipeline use, and are documented as non-default; The token-cost corpus gate is extended to assert every command against its declared budget, failing on regression; Degradation never changes machine-readable field names or breaks the scripting contract"
@@ -19,7 +19,7 @@ why_now: "The token-cost regression gate and the context packer both shipped, so
 parent: pm-n7rr
 risk: medium
 confidence: medium
-dependencies[21]:
+dependencies[22]:
   - id: pm-4k6b
     kind: related
     created_at: "2026-07-24T23:45:26.200Z"
@@ -92,6 +92,12 @@ dependencies[21]:
   - id: pm-p258tx
     kind: blocked_by
     created_at: "2026-07-29T04:50:13.079Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-7hbfch
+    kind: blocked_by
+    created_at: "2026-07-30T09:15:26.011Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected

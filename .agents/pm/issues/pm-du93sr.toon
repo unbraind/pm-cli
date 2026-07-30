@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli",context,diagnostics,token-budget
 created_at: "2026-07-26T11:26:47.669Z"
-updated_at: "2026-07-26T11:32:26.388Z"
+updated_at: "2026-07-30T09:21:19.725Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "pm health --check-only produces a verdict-only projection materially smaller than the full report, or the flag is retired as a documented synonym and the guidance updated in the same change; A passing check emits its verdict and not its evidence; per-check detail is opt-in or reserved for non-passing checks; AGENTS.md and any other agent-facing guidance route to the cheapest form that answers the question, verified by a docs test rather than by review; pm health appears in the token-budget corpus with a declared ceiling measured on a real-scale workspace; The measured token cost of pm health before and after is recorded as evidence on this item"
@@ -17,12 +17,14 @@ impact: An agent can check workspace health for the price of a rounding error in
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[7]{id,kind,created_at,author,source_kind}:
-  pm-5t33or,blocked_by,"2026-07-26T11:26:47.669Z",null,null
-  pm-cha95z,related,"2026-07-26T11:26:47.669Z",null,null
-  pm-z71aoy,related,"2026-07-26T11:26:47.669Z",null,null
-  pm-g3n00m,implements,"2026-07-26T11:32:26.158Z",null,null
-  pm-ka6d,related,"2026-07-26T11:32:26.158Z",null,null
-  pm-mfy1ux,related,"2026-07-26T11:32:26.158Z",null,null
-  pm-o87av6,implements,"2026-07-26T11:32:26.158Z",null,null
+dependencies[7]{id,kind,created_at}:
+  pm-5t33or,blocked_by,"2026-07-26T11:26:47.669Z"
+  pm-cha95z,related,"2026-07-26T11:26:47.669Z"
+  pm-z71aoy,related,"2026-07-26T11:26:47.669Z"
+  pm-g3n00m,implements,"2026-07-26T11:32:26.158Z"
+  pm-ka6d,related,"2026-07-26T11:32:26.158Z"
+  pm-mfy1ux,related,"2026-07-26T11:32:26.158Z"
+  pm-o87av6,implements,"2026-07-26T11:32:26.158Z"
+notes[1]{created_at,author,text}:
+  "2026-07-30T09:21:19.724Z","harness:claude-code","Re-measured 2026-07-30 at HEAD, after PR 818 shipped bounded projections and snapshot lease safety. The bounded-projection wave did not reach this command. pm health plain = 127,582 B; pm health --check-only = 127,583 B (one byte MORE than plain); pm health --summary = 727 B. The cheap form is 175x smaller than the form AGENTS.md routes agents to under When Unsure, and --check-only remains exactly as inert as when this item was filed. A new bounded-projection primitive existing in the SDK while this consumer cannot reach it is the seam pattern, not a fix."
 body: ""
