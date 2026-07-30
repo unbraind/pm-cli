@@ -146,7 +146,10 @@ function visitImpactNeighbor(
   return "continue";
 }
 
-/** Bind an optional impact continuation cursor to the complete traversal contract. */
+/**
+ * Bind a continuation cursor to traversal semantics while allowing callers to
+ * choose a different page size when they resume.
+ */
 function resolveImpactCursor(
   root: string,
   options: RelationshipImpactOptions,

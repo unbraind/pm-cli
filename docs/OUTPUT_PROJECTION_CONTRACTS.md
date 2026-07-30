@@ -120,6 +120,8 @@ breadth-first order. `graph impact --full` is the explicit unbounded override;
 combining `--full` with `--limit` is rejected. A zero-row page remains
 resumable: when `--limit 0` truncates reachable work, its cursor represents the
 root boundary so a later positive-limit request can retrieve the first row.
+Impact cursors bind the root and traversal semantics, not the page size, so a
+caller may deliberately raise or lower `--limit` when resuming.
 
 For `get`, each independently selectable group uses its composable field
 selector as the restore instruction: `--fields children`,
@@ -149,7 +151,13 @@ resolved contract in `context_intent`:
 Use `context --for orient|handoff`, `get --for inspect`,
 `list --for triage`, `next --for execute`, or
 `search --for discover`. Explicit caller projection options win over intent
-defaults, while the intent ceiling still applies. If a selected result exceeds
+defaults, while the intent ceiling still applies. Selecting an intent is an
+explicit request for its bounded shape: `get --for inspect` defaults to
+standard depth, `list --for triage` defaults to two compact rows, and
+`search --for discover` defaults to fifteen compact rows. Callers that need a
+different depth or page size can pass `--depth` or `--limit`; list and search
+retain their ordinary completeness and continuation metadata when bounded.
+If a selected result exceeds
 its budget, long explanatory strings are compacted deterministically without
 dropping rows. If the complete row set still cannot fit, the result is replaced
 by a `budget_receipt_only` envelope instead of retaining stale counts or

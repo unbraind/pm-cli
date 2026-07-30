@@ -9073,7 +9073,7 @@
     },
     {
       "command": "get",
-      "description": "Complete item metadata, relationships, evidence, and lifecycle state.",
+      "description": "Standard-depth item metadata, relationships, evidence, and lifecycle state.",
       "included_field_groups": [
         "item",
         "children",
@@ -9086,7 +9086,7 @@
     },
     {
       "command": "list",
-      "description": "Compact governance, ownership, priority, and blocker fields for triage.",
+      "description": "The first two compact governance, ownership, priority, and blocker rows for triage.",
       "included_field_groups": [
         "identity",
         "governance",
@@ -9109,7 +9109,7 @@
     },
     {
       "command": "search",
-      "description": "Ranked canonical lineage candidates with compact match evidence.",
+      "description": "The first fifteen ranked canonical lineage candidates with compact match evidence.",
       "included_field_groups": [
         "identity",
         "status",

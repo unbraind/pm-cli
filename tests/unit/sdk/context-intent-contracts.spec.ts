@@ -261,6 +261,34 @@ describe("context intent contracts", () => {
     );
   });
 
+  it("reports the exact serialized token estimate and a stable source", () => {
+    const projected = attachContextIntentReceipt(
+      "next",
+      { for: "execute" },
+      { value: "xxx" },
+    );
+    expect(projected.context_intent!.estimated_tokens).toBe(
+      Math.ceil(Buffer.byteLength(JSON.stringify(projected), "utf8") / 4),
+    );
+
+    const executeContract = PM_CONTEXT_INTENT_CONTRACTS.find(
+      ({ command, intent }) => command === "next" && intent === "execute",
+    )!;
+    const originalSource = executeContract.source;
+    delete executeContract.source;
+    try {
+      expect(
+        attachContextIntentReceipt(
+          "next",
+          { for: "execute" },
+          { recommended: [] },
+        ),
+      ).toMatchObject({ context_intent: { source: "core" } });
+    } finally {
+      executeContract.source = originalSource;
+    }
+  });
+
   it("rejects explicit ceilings that cannot contain the minimum receipt", () => {
     expect(() =>
       attachContextIntentReceipt(

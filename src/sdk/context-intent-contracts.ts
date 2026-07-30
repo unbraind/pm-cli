@@ -100,7 +100,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "get",
       intent: "inspect",
       description:
-        "Complete item metadata, relationships, evidence, and lifecycle state.",
+        "Standard-depth item metadata, relationships, evidence, and lifecycle state.",
       included_field_groups: ["item", "children", "claim_state", "linked"],
       token_budget: 3200,
       source: "core",
@@ -109,7 +109,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "list",
       intent: "triage",
       description:
-        "Compact governance, ownership, priority, and blocker fields for triage.",
+        "The first two compact governance, ownership, priority, and blocker rows for triage.",
       included_field_groups: [
         "identity",
         "governance",
@@ -132,7 +132,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "search",
       intent: "discover",
       description:
-        "Ranked canonical lineage candidates with compact match evidence.",
+        "The first fifteen ranked canonical lineage candidates with compact match evidence.",
       included_field_groups: ["identity", "status", "lineage", "match"],
       token_budget: 1800,
       source: "core",
@@ -439,6 +439,22 @@ function resolveIntentTokenBudget(
   return parsed;
 }
 
+/** Update a receipt until its estimate matches the serialized projection that contains it. */
+function updateContextIntentEstimate(
+  projected: Record<string, unknown>,
+  receipt: PmContextIntentReceipt,
+): void {
+  let measuredTokens = receipt.estimated_tokens;
+  for (;;) {
+    receipt.estimated_tokens = measuredTokens;
+    const nextMeasurement = Math.ceil(
+      Buffer.byteLength(JSON.stringify(projected), "utf8") / 4,
+    );
+    if (nextMeasurement === measuredTokens) return;
+    measuredTokens = nextMeasurement;
+  }
+}
+
 /** Attach budget and degradation evidence for a selected built-in read intent. */
 export function attachContextIntentReceipt<
   Result extends Record<string, unknown>,
@@ -455,7 +471,7 @@ export function attachContextIntentReceipt<
   const receipt: PmContextIntentReceipt = {
     command: builtInCommand,
     intent: contract.intent,
-    source: contract.source as PmContextIntentSource,
+    source: contract.source ?? "core",
     included_field_groups: [...contract.included_field_groups],
     token_budget: resolveIntentTokenBudget(
       options.tokenBudget,
@@ -469,18 +485,14 @@ export function attachContextIntentReceipt<
     ...result,
     context_intent: receipt,
   };
-  receipt.estimated_tokens = Math.ceil(
-    Buffer.byteLength(JSON.stringify(projected), "utf8") / 4,
-  );
+  updateContextIntentEstimate(projected, receipt);
   if (receipt.estimated_tokens > receipt.token_budget) {
     receipt.degradation = "recursive_budget_compaction";
     projected = {
       ...(compactContextIntentValue(result) as Record<string, unknown>),
       context_intent: receipt,
     };
-    receipt.estimated_tokens = Math.ceil(
-      Buffer.byteLength(JSON.stringify(projected), "utf8") / 4,
-    );
+    updateContextIntentEstimate(projected, receipt);
   }
   if (receipt.estimated_tokens > receipt.token_budget) {
     receipt.degradation = "budget_receipt_only";
@@ -491,10 +503,10 @@ export function attachContextIntentReceipt<
       },
       context_intent: receipt,
     };
-    receipt.estimated_tokens = Math.ceil(
-      Buffer.byteLength(JSON.stringify(projected), "utf8") / 4,
-    );
+    updateContextIntentEstimate(projected, receipt);
   }
+  receipt.within_budget = receipt.estimated_tokens <= receipt.token_budget;
+  updateContextIntentEstimate(projected, receipt);
   receipt.within_budget = receipt.estimated_tokens <= receipt.token_budget;
   return projected as Result & { context_intent: PmContextIntentReceipt };
 }

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:graph",context,perf,token-budget
 created_at: "2026-07-26T11:26:14.695Z"
-updated_at: "2026-07-30T13:06:23.836Z"
+updated_at: "2026-07-30T13:39:06.608Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "pm graph impact applies a default row bound consistent with its sibling subcommands, and the bound is declared in contract data rather than hardcoded per subcommand; Truncated results disclose has_more and a resumable cursor so no reachable node becomes unreachable through the default; A test asserts default-invocation output size for every graph subcommand against a real-scale fixture, so a future subcommand cannot ship unbounded; Unbounded traversal remains available through an explicit flag and is documented; The help text's 'bounded' claim is true of every subcommand it covers, asserted structurally"
@@ -26,12 +26,13 @@ dependencies[8]{id,kind,created_at}:
   pm-du93sr,related,"2026-07-26T11:32:24.795Z"
   pm-g3n00m,implements,"2026-07-26T11:32:24.795Z"
   pm-o87av6,implements,"2026-07-26T11:32:24.795Z"
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-30T10:27:24.832Z","harness:codex","Implementation evidence: graph impact defaults to 10 rows, returns resumable next_cursor pages, rejects unknown cursors and --full plus --limit, while --full explicitly restores the complete impact set."
   "2026-07-30T11:24:15.338Z","harness:codex","Delivery boundary: impact now defaults to ten rows, resumes through stable cursors, rejects invalid cursor/full-limit combinations, and exposes explicit --full. The canonical issue remains open until the bound is declared in shared contract data and a real-scale structural test asserts every graph subcommand is bounded."
   "2026-07-30T11:30:56.402Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
   "2026-07-30T11:54:23.905Z","harness:codex","Review correction: graph impact cursors are now opaque and fingerprinted by root, direction, kinds, and max depth; mismatched traversal resumes fail with invalid_query_cursor."
   "2026-07-30T13:06:11.203Z","harness:codex","Review-fix evidence for PR #829: TDD reproduced zero-limit graph pagination losing the continuation cursor. Impact pagination now fingerprints a root-anchored cursor when limit=0 so the next request resumes at the first affected row; the new focused zero-limit SDK test passes, and the full sandboxed suite passed 6,578 tests at exact 100/100/100/100 coverage."
+  "2026-07-30T13:39:03.617Z","harness:codex","Exact-head Greptile review evidence: impact cursors intentionally bind traversal semantics rather than page size because resuming with a different limit is lossless. Source docstrings and the public contract documentation now state that callers may raise or lower --limit when resuming; the zero-limit continuation regression remains green and the full 6,579-test exact-coverage suite passes."
 notes[1]{created_at,author,text}:
   "2026-07-30T09:21:20.690Z","harness:claude-code","Re-measured 2026-07-30 at HEAD, after PR 818 shipped bounded projections. Unchanged in kind and slightly worse in ratio: pm graph impact pm-doxj default = 223,214 B; the same call with --summary = 488 B, a 457x spread. The default still honours no row bound while sibling subcommands do. Bounded projections shipped somewhere else; this default was not among them."
 files[3]{path,scope,note}:
