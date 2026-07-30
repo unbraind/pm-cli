@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-814: SDK metadata reads must distinguish missing and invalid tracker roots from an empty tracker ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - The runtime contract enumeration is not closed over the surface it can resolve: 14 rendered commands, including the list-open that AGENTS.md mandates, are contract-backed by name yet absent from every enumeration ([pm-6j7r1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6j7r1a.toon))
 - GH-817: machine-readable flag contracts need semantic invocation metadata and stdin capability ([pm-11phn1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-11phn1.toon))
 
@@ -17,7 +18,6 @@
 
 - Workspace snapshot heartbeat races atomic root activation and loses its writer lock ([pm-ifuysd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ifuysd.toon))
 - GH-815: optional missing merge drivers must be advisory in default health verdicts ([pm-r8u2g6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r8u2g6.toon))
-- GH-814: SDK metadata reads must distinguish missing and invalid tracker roots from an empty tracker ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - Sentry gate misclassifies handled snapshot identifier validation as a blocking runtime error ([pm-k785lu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-k785lu.toon))
 - Scale fixtures vary only in size: the sole synthetic workspace generator hardcodes population shape, so the million-item tier is eleven simulated days deep with one history entry per item ([pm-vv2lti](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vv2lti.toon))
 - Whole-workspace snapshot restore silently rewinds the immutable record: history streams are deleted and nothing records that a rewind happened ([pm-6l2mza](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6l2mza.toon))
