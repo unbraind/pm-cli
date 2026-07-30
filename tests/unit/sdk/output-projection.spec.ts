@@ -19,9 +19,7 @@ describe("output projection omission contracts", () => {
         omitted_field_group_count: 0,
         omitted_field_groups: [],
       });
-      for (const [mode, groups] of Object.entries(
-        contract.omissions_by_mode,
-      )) {
+      for (const [mode, groups] of Object.entries(contract.omissions_by_mode)) {
         expect(
           resolveModePairedOutputOmissionReceipt(contract.command, mode),
         ).toEqual({
@@ -72,9 +70,7 @@ describe("output projection omission contracts", () => {
     expect(projected.omission_receipt).toEqual({
       has_omissions: true,
       omitted_field_group_count: 1,
-      omitted_field_groups: [
-        { name: "evidence_rows", restore_with: "--full" },
-      ],
+      omitted_field_groups: [{ name: "evidence_rows", restore_with: "--full" }],
     });
 
     for (const malformed of [
@@ -139,18 +135,14 @@ describe("output projection omission contracts", () => {
       {
         projection: {
           mode: "summary",
-          declared_field_groups: [
-            { name: "rows", restore_with: "--full" },
-          ],
+          declared_field_groups: [{ name: "rows", restore_with: "--full" }],
           included_field_groups: ["rows", "rows"],
         },
       },
       {
         projection: {
           mode: "summary",
-          declared_field_groups: [
-            { name: "rows", restore_with: "--full" },
-          ],
+          declared_field_groups: [{ name: "rows", restore_with: "--full" }],
           included_field_groups: ["undeclared"],
         },
       },
@@ -262,6 +254,12 @@ describe("output projection omission contracts", () => {
     ).not.toHaveProperty("omission_receipt");
     expect(attachOutputOmissionReceipt("stats", { totals: {} })).toEqual({
       totals: {},
+      row_contract: {
+        command: "stats",
+        row_keys: [],
+        fields: "unsupported",
+        jq_selector: ".row_contract.row_keys[] as $key | .[$key][]?",
+      },
     });
     expect(
       attachOutputOmissionReceipt("get", {
@@ -270,6 +268,12 @@ describe("output projection omission contracts", () => {
       }),
     ).toEqual({
       item: { id: "pm-1" },
+      row_contract: {
+        command: "get",
+        row_keys: [],
+        fields: "supported",
+        jq_selector: ".row_contract.row_keys[] as $key | .[$key][]?",
+      },
       omission_receipt: { has_omissions: false },
     });
     expect(attachOutputOmissionReceipt(undefined, {})).toEqual({});

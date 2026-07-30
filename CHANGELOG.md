@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- CodeFactor fixed-only success payload blocks exact-head release gate ([pm-xcrlkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xcrlkl.toon))
+- Both declared context intents are unreachable because the intent applier assigns field-group names into the section value domain, and the two validators give contradictory advice ([pm-ai45y9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ai45y9.toon))
 - GH-814: SDK metadata reads must distinguish missing and invalid tracker roots from an empty tracker ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - The runtime contract enumeration is not closed over the surface it can resolve: 14 rendered commands, including the list-open that AGENTS.md mandates, are contract-backed by name yet absent from every enumeration ([pm-6j7r1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6j7r1a.toon))
 - GH-817: machine-readable flag contracts need semantic invocation metadata and stdin capability ([pm-11phn1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-11phn1.toon))

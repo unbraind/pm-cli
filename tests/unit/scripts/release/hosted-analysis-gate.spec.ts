@@ -21,7 +21,7 @@ const SUCCESSFUL_CODEFACTOR = {
       name: "CodeFactor",
       status: "completed",
       conclusion: "success",
-      output: { title: "No issues found." },
+      output: { title: "No issues found.", annotations_count: 0 },
     },
   ],
 };
@@ -71,7 +71,7 @@ function mockCommands({
         name: "CodeFactor",
         status: "completed",
         conclusion: "success",
-        output: { title: "No issues found." },
+        output: { title: "No issues found.", annotations_count: 0 },
       },
     ],
   },
@@ -149,7 +149,7 @@ describe("scripts/release/hosted-analysis-gate", () => {
       sha: SHA,
       analyzers: {
         deepscan: { new_issues: 0 },
-        codefactor: { new_issues: 0 },
+        codefactor: { new_issues: 0, outstanding_annotations: 0 },
       },
       branch_protection: {
         branch: "main",
@@ -167,6 +167,32 @@ describe("scripts/release/hosted-analysis-gate", () => {
     process.argv = ["node", "scripts/release/hosted-analysis-gate.mjs"];
     await harness.importModule("scripts/release/hosted-analysis-gate.mjs", "hostedAnalysisDefaults");
     expect(String(logSpy.mock.calls.at(-1)?.[0] ?? "")).toContain("DeepScan 0 new issues");
+    expect(process.exitCode).toBe(0);
+  });
+
+  it("accepts a successful zero-annotation CodeFactor run that only reports fixed issues", async () => {
+    mockCommands({
+      checks: {
+        check_runs: [
+          {
+            name: "CodeFactor",
+            status: "completed",
+            conclusion: "success",
+            output: { title: "1 issue fixed.", annotations_count: 0 },
+          },
+        ],
+      },
+    });
+    const payload = await runJson([], "hostedAnalysisCodeFactorFixedOnly");
+    expect(payload).toMatchObject({
+      ok: true,
+      analyzers: {
+        codefactor: {
+          title: "1 issue fixed.",
+          new_issues: 0,
+        },
+      },
+    });
     expect(process.exitCode).toBe(0);
   });
 
@@ -639,15 +665,57 @@ describe("scripts/release/hosted-analysis-gate", () => {
       label: "ambiguous",
       checks: {
         check_runs: [
-          { name: "CodeFactor", status: "completed", conclusion: "success", output: { title: "Grade A+" } },
+          {
+            name: "CodeFactor",
+            status: "completed",
+            conclusion: "success",
+            output: { title: "Grade A+", annotations_count: 0 },
+          },
         ],
       },
-      expected: "does not explicitly report No issues found",
+      expected: "title does not explicitly report no issues or fixed-only results",
     },
     {
       label: "missingTitle",
-      checks: { check_runs: [{ name: "CodeFactor", status: "completed", conclusion: "success" }] },
-      expected: "does not explicitly report No issues found",
+      checks: {
+        check_runs: [
+          {
+            name: "CodeFactor",
+            status: "completed",
+            conclusion: "success",
+            output: { annotations_count: 0 },
+          },
+        ],
+      },
+      expected: "title does not explicitly report no issues or fixed-only results",
+    },
+    {
+      label: "missingAnnotationCount",
+      checks: {
+        check_runs: [
+          {
+            name: "CodeFactor",
+            status: "completed",
+            conclusion: "success",
+            output: { title: "No issues found." },
+          },
+        ],
+      },
+      expected: "0 outstanding annotations (unknown)",
+    },
+    {
+      label: "outstandingAnnotation",
+      checks: {
+        check_runs: [
+          {
+            name: "CodeFactor",
+            status: "completed",
+            conclusion: "success",
+            output: { title: "1 issue fixed.", annotations_count: 1 },
+          },
+        ],
+      },
+      expected: "0 outstanding annotations (1)",
     },
   ])("rejects CodeFactor $label evidence", async ({ label, checks, expected }) => {
     mockCommands({ checks });

@@ -26,6 +26,8 @@ const ITEM_ENVELOPE_KEYS = [
   "claim_state",
   "children",
   "omission_receipt",
+  "row_contract",
+  "context_intent",
 ] as const;
 const READ_ONLY_ITEM_KEYS = new Set([
   "created_at",
@@ -357,13 +359,7 @@ function appendFacetOptions(
       [
         "dependencies",
         "dep",
-        [
-          "id",
-          "kind",
-          "created_at",
-          "author",
-          "source_kind",
-        ],
+        ["id", "kind", "created_at", "author", "source_kind"],
       ],
       ["comments", "comment", ["text", "created_at", "author"]],
       ["notes", "note", ["text", "created_at", "author"]],

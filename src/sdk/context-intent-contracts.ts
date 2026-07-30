@@ -4,6 +4,9 @@
  * Declares composable, intent-scoped read projections for core commands,
  * workspace configuration, and packages.
  */
+import { attachOutputOmissionReceipt } from "./output-projection.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
 
 /** Read commands that ship built-in intent projections. */
 export type PmContextIntentCommand =
@@ -31,6 +34,33 @@ export interface PmContextIntentContract {
   token_budget: number;
   /** Layer that supplied the resolved declaration. */
   source?: PmContextIntentSource;
+}
+
+/** Machine-readable proof of the intent projection resolved for one read result. */
+export interface PmContextIntentReceipt {
+  /** Canonical read command that resolved the intent. */
+  command: string;
+  /** Stable selected intent name. */
+  intent: string;
+  /** Layer that supplied the resolved declaration. */
+  source: PmContextIntentSource;
+  /** Field groups the selected intent promises to retain. */
+  included_field_groups: string[];
+  /** Effective token ceiling after an explicit caller override is applied. */
+  token_budget: number;
+  /** Deterministic JSON-size estimate for the result including this receipt. */
+  estimated_tokens: number;
+  /** Whether the measured result fits the declared ceiling. */
+  within_budget: boolean;
+  /** Projection strategy applied before the result was measured. */
+  degradation:
+    | "bounded_fields_and_rows"
+    | "bounded_ranked_rows"
+    | "bounded_sections"
+    | "recursive_budget_compaction"
+    | "budget_receipt_only"
+    | "standard_item"
+    | "none";
 }
 
 /** Built-in intent projections shared by CLI, SDK, MCP, and package authors. */
@@ -70,7 +100,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "get",
       intent: "inspect",
       description:
-        "Complete item metadata, relationships, evidence, and lifecycle state.",
+        "Standard-depth item metadata, relationships, evidence, and lifecycle state.",
       included_field_groups: ["item", "children", "claim_state", "linked"],
       token_budget: 3200,
       source: "core",
@@ -79,7 +109,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "list",
       intent: "triage",
       description:
-        "Compact governance, ownership, priority, and blocker fields for triage.",
+        "The first two compact governance, ownership, priority, and blocker rows for triage.",
       included_field_groups: [
         "identity",
         "governance",
@@ -102,7 +132,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "search",
       intent: "discover",
       description:
-        "Ranked canonical lineage candidates with compact match evidence.",
+        "The first fifteen ranked canonical lineage candidates with compact match evidence.",
       included_field_groups: ["identity", "status", "lineage", "match"],
       token_budget: 1800,
       source: "core",
@@ -212,7 +242,7 @@ export function resolveContextIntentContract(
     (entry) =>
       entry.command === normalizedCommand && entry.intent === normalizedIntent,
   );
-  if (exact) return exact;
+  if (exact) return { ...exact, source: exact.source ?? "core" };
   const candidates = contracts
     .filter((entry) => entry.command === normalizedCommand)
     .map((entry) => entry.intent);
@@ -255,8 +285,23 @@ export function resolveContextIntentContract(
         left.distance - right.distance ||
         left.candidate.localeCompare(right.candidate),
     )[0]!.candidate;
-  throw new TypeError(
+  const suggestedCommand = `pm ${normalizedCommand} --for ${suggestion}`;
+  throw new PmCliError(
     `Unknown context intent "${normalizedIntent}" for ${normalizedCommand}. Did you mean "${suggestion}"?`,
+    EXIT_CODE.USAGE,
+    {
+      code: "unknown_context_intent",
+      reason: "unknown_intent",
+      field: "for",
+      required: `Use a declared ${normalizedCommand} intent.`,
+      why: "Intent names are command-local contracts and cannot be inferred from output section names.",
+      nextSteps: [suggestedCommand],
+      recovery: {
+        recovery_mode: "compact",
+        attempted_command: `pm ${normalizedCommand} --for ${normalizedIntent}`,
+        suggested_retry: suggestedCommand,
+      },
+    },
   );
 }
 
@@ -277,13 +322,19 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
   >
 > = {
   context: (projected, contract) => {
+    if (projected.depth === undefined) {
+      projected.depth = contract.intent === "handoff" ? "deep" : "standard";
+    }
     if (projected.section === undefined) {
-      projected.section = [...contract.included_field_groups];
+      projected.section =
+        contract.intent === "handoff"
+          ? ["activity", "progress", "blockers"]
+          : ["hierarchy", "blockers", "activity"];
     }
   },
   get: (projected) => {
     if (projected.depth === undefined && projected.fields === undefined) {
-      projected.depth = "deep";
+      projected.depth = "standard";
     }
   },
   list: (projected) => {
@@ -296,6 +347,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       projected.fields =
         "id,title,status,type,priority,parent,assignee,reviewer,risk,confidence,sprint,release,blocked_by,blocked_reason,dependencies,updated_at";
     }
+    if (projected.limit === undefined) projected.limit = "2";
   },
   next: (projected) => {
     if (projected.readyOnly === undefined) projected.readyOnly = true;
@@ -308,6 +360,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
     ) {
       projected.compact = true;
     }
+    if (projected.limit === undefined) projected.limit = "15";
   },
 };
 
@@ -324,4 +377,154 @@ export function applyContextIntentProjection(
   }
   CONTEXT_INTENT_DEFAULT_APPLIERS[command](projected, contract);
   return projected;
+}
+
+const CONTEXT_INTENT_DEGRADATIONS: Readonly<
+  Record<BuiltInContextIntentCommand, PmContextIntentReceipt["degradation"]>
+> = {
+  context: "bounded_sections",
+  get: "standard_item",
+  list: "bounded_fields_and_rows",
+  next: "bounded_ranked_rows",
+  search: "bounded_ranked_rows",
+};
+
+const MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET = 256;
+
+/** Bound explanatory strings without dropping rows or invalidating pagination metadata. */
+function compactContextIntentValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(compactContextIntentValue);
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        compactContextIntentValue(entry),
+      ]),
+    );
+  }
+  return typeof value === "string" && value.length > 240
+    ? `${value.slice(0, 240)}…`
+    : value;
+}
+
+function resolveIntentTokenBudget(
+  value: unknown,
+  declaredBudget: number,
+): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && /^\d+$/u.test(value.trim())
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) return declaredBudget;
+  if (parsed < MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET) {
+    throw new PmCliError(
+      `Context intent token budget must be at least ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "invalid_argument_value",
+        reason: "below_minimum",
+        field: "tokenBudget",
+        required: `Use an integer token budget of at least ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET}.`,
+        why: "Smaller ceilings cannot contain the minimum machine-readable intent receipt.",
+        nextSteps: [
+          `Retry with --token-budget ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET} or omit the override.`,
+        ],
+      },
+    );
+  }
+  return parsed;
+}
+
+/** Update a receipt until its estimate matches the serialized projection that contains it. */
+function updateContextIntentEstimate(
+  projected: Record<string, unknown>,
+  receipt: PmContextIntentReceipt,
+): void {
+  let measuredTokens = receipt.estimated_tokens;
+  for (;;) {
+    receipt.estimated_tokens = measuredTokens;
+    const nextMeasurement = Math.ceil(
+      Buffer.byteLength(JSON.stringify(projected), "utf8") / 4,
+    );
+    if (nextMeasurement === measuredTokens) return;
+    measuredTokens = nextMeasurement;
+  }
+}
+
+/** Attach budget and degradation evidence for a selected built-in read intent. */
+export function attachContextIntentReceipt<
+  Result extends Record<string, unknown>,
+>(
+  command: string,
+  options: Record<string, unknown>,
+  result: Result,
+): Result & { context_intent?: PmContextIntentReceipt } {
+  if (typeof options.for !== "string") return result;
+  const normalizedCommand = command.startsWith("list-") ? "list" : command;
+  if (!(normalizedCommand in CONTEXT_INTENT_DEFAULT_APPLIERS)) return result;
+  const builtInCommand = normalizedCommand as BuiltInContextIntentCommand;
+  const contract = resolveContextIntentContract(builtInCommand, options.for)!;
+  const receipt: PmContextIntentReceipt = {
+    command: builtInCommand,
+    intent: contract.intent,
+    source: contract.source!,
+    included_field_groups: [...contract.included_field_groups],
+    token_budget: resolveIntentTokenBudget(
+      options.tokenBudget,
+      contract.token_budget,
+    ),
+    estimated_tokens: 0,
+    within_budget: true,
+    degradation: CONTEXT_INTENT_DEGRADATIONS[builtInCommand],
+  };
+  let projected: Record<string, unknown> = {
+    ...result,
+    context_intent: receipt,
+  };
+  updateContextIntentEstimate(projected, receipt);
+  if (receipt.estimated_tokens > receipt.token_budget) {
+    receipt.degradation = "recursive_budget_compaction";
+    projected = {
+      ...(compactContextIntentValue(result) as Record<string, unknown>),
+      context_intent: receipt,
+    };
+    updateContextIntentEstimate(projected, receipt);
+  }
+  if (receipt.estimated_tokens > receipt.token_budget) {
+    receipt.degradation = "budget_receipt_only";
+    projected = {
+      budget_exceeded: {
+        omitted_result: true,
+        restore_with: "Repeat the original command without --for.",
+      },
+      context_intent: receipt,
+    };
+    updateContextIntentEstimate(projected, receipt);
+  }
+  receipt.within_budget = receipt.estimated_tokens <= receipt.token_budget;
+  updateContextIntentEstimate(projected, receipt);
+  receipt.within_budget = receipt.estimated_tokens <= receipt.token_budget;
+  return projected as Result & { context_intent: PmContextIntentReceipt };
+}
+
+/** Attach universal row, omission, and optional intent-budget contracts in rendering order. */
+export function attachReadOutputContracts(
+  command: string | undefined,
+  options: Record<string, unknown>,
+  result: unknown,
+): unknown {
+  const disclosedResult = attachOutputOmissionReceipt(command, result);
+  return typeof disclosedResult === "object" &&
+    disclosedResult !== null &&
+    !Array.isArray(disclosedResult)
+    ? attachContextIntentReceipt(
+        command ?? "",
+        options,
+        disclosedResult as Record<string, unknown>,
+      )
+    : disclosedResult;
 }

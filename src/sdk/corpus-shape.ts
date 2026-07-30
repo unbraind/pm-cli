@@ -463,22 +463,33 @@ class IncrementalCorpusShapeMeasurement implements CorpusShapeMeasurement {
     ] as const;
   }
 
+  /** Retain one deterministic conformance mismatch when its predicate fails. */
+  private recordMismatch(mismatched: boolean, message: string): void {
+    if (mismatched) this.planMismatches.push(message);
+  }
+
+  /** Accumulate a sequence of relationship kinds into one count table. */
+  private recordEdgeKinds(
+    counts: Record<string, number>,
+    kinds: readonly string[],
+  ): void {
+    for (const kind of kinds) counts[kind] = (counts[kind] ?? 0) + 1;
+  }
+
   /** Add one generated plan in generation order. */
   add(plan: CorpusShapeItemPlan): void {
     this.itemCount += 1;
     this.authors.add(plan.author);
     this.components.add(plan.component);
-    if (this.depths.has(plan.id)) {
-      this.planMismatches.push(`duplicate_id:${plan.id}`);
-    }
+    this.recordMismatch(this.depths.has(plan.id), `duplicate_id:${plan.id}`);
     let depth = 1;
     if (plan.parent !== undefined) {
       const parentDepth = this.depths.get(plan.parent);
-      if (parentDepth === undefined) {
-        this.planMismatches.push(`parent_missing:${plan.parent}`);
-      } else {
-        depth = parentDepth + 1;
-      }
+      this.recordMismatch(
+        parentDepth === undefined,
+        `parent_missing:${plan.parent}`,
+      );
+      depth = (parentDepth ?? 0) + 1;
       const childCount = (this.childCounts.get(plan.parent) ?? 0) + 1;
       this.childCounts.set(plan.parent, childCount);
       this.observedFanout = Math.max(this.observedFanout, childCount);
@@ -486,9 +497,10 @@ class IncrementalCorpusShapeMeasurement implements CorpusShapeMeasurement {
     this.depths.set(plan.id, depth);
     this.observedDepth = Math.max(this.observedDepth, depth);
     this.historyEntryCount += plan.history_entry_count;
-    if (plan.history_entry_count !== this.shape.history_entries_per_item) {
-      this.planMismatches.push("history_entries_per_item:drift");
-    }
+    this.recordMismatch(
+      plan.history_entry_count !== this.shape.history_entries_per_item,
+      "history_entries_per_item:drift",
+    );
     this.firstTimestamp =
       this.firstTimestamp === null || plan.timestamp < this.firstTimestamp
         ? plan.timestamp
@@ -498,14 +510,13 @@ class IncrementalCorpusShapeMeasurement implements CorpusShapeMeasurement {
         ? plan.timestamp
         : this.lastTimestamp;
     for (const [annotation, property] of this.annotationFields) {
-      if (plan[property]) this.annotations[annotation] += 1;
+      this.annotations[annotation] += Number(plan[property]);
     }
-    for (const kind of plan.dependency_kinds) {
-      this.edgeKinds[kind] = (this.edgeKinds[kind] ?? 0) + 1;
-    }
-    for (const kind of selectedEdgeKinds(plan.index, this.shape)) {
-      this.expectedEdgeKinds[kind] = (this.expectedEdgeKinds[kind] ?? 0) + 1;
-    }
+    this.recordEdgeKinds(this.edgeKinds, plan.dependency_kinds);
+    this.recordEdgeKinds(
+      this.expectedEdgeKinds,
+      selectedEdgeKinds(plan.index, this.shape),
+    );
   }
 
   /** Finish the measurement and return its conformance profile. */

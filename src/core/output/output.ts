@@ -4,6 +4,7 @@
  * Formats compact human and machine output for Output.
  */
 import {
+  getActiveCommandContext,
   runActiveCommandOverride,
   runActiveRendererOverride,
   runActiveServiceOverrideSync,
@@ -12,7 +13,7 @@ import {
 import { EXIT_CODE } from "../shared/constants.js";
 import { isHostOutputSuppressed } from "./output-control.js";
 import { projectMutationResult } from "./mutation-projection.js";
-import { attachOutputOmissionReceipt } from "../../sdk/output-projection.js";
+import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js";
 
 /** Documents the output options payload exchanged by command, SDK, and package integrations. */
 export interface OutputOptions {
@@ -372,13 +373,18 @@ export function formatBuiltInOutput(
     : `${renderToonValue(compactedToon, 0)}\n`;
 }
 
-/** Formats a command result after command-level output ownership is resolved. */
-function formatEffectiveOutput(
+interface OutputServiceResolution {
+  result: unknown;
+  rendered: string | null;
+}
+
+/** Resolve extension service ownership before built-in projection and rendering. */
+function resolveOutputService(
   effectiveResult: unknown,
   nativeOutput: boolean,
   options: OutputOptions,
-): string {
-  const format = resolveOutputFormat(options);
+  format: "json" | "toon",
+): OutputServiceResolution {
   const serviceOverride = nativeOutput
     ? { handled: false, result: effectiveResult, warnings: [] }
     : runActiveServiceOverrideSync("output_format", {
@@ -400,30 +406,53 @@ function formatEffectiveOutput(
     );
   }
   if (serviceOverride.handled && typeof serviceOverride.result === "string") {
-    return serviceOverride.result.endsWith("\n")
-      ? serviceOverride.result
-      : `${serviceOverride.result}\n`;
+    return {
+      result: serviceOverride.result,
+      rendered: serviceOverride.result.endsWith("\n")
+        ? serviceOverride.result
+        : `${serviceOverride.result}\n`,
+    };
   }
-  const outputResult = serviceOverride.handled
-    ? serviceOverride.result
-    : effectiveResult;
+  return {
+    result: serviceOverride.handled ? serviceOverride.result : effectiveResult,
+    rendered: null,
+  };
+}
+
+/** Formats a command result after command-level output ownership is resolved. */
+function formatEffectiveOutput(
+  effectiveResult: unknown,
+  nativeOutput: boolean,
+  options: OutputOptions,
+): string {
+  const format = resolveOutputFormat(options);
+  const service = resolveOutputService(
+    effectiveResult,
+    nativeOutput,
+    options,
+    format,
+  );
+  if (service.rendered !== null) return service.rendered;
+  const outputResult = service.result;
   const projectedOutputResult =
     options.command === "test"
       ? projectLinkedTestEvidence(outputResult, options.lean === true)
       : outputResult;
-  const disclosedOutputResult = attachOutputOmissionReceipt(
-    options.command,
+  const activeCommandContext = getActiveCommandContext();
+  const intentOutputResult = attachReadOutputContracts(
+    options.command ?? activeCommandContext?.command,
+    options.commandOptions ?? activeCommandContext?.options ?? {},
     projectedOutputResult,
   );
   if (format === "toon") {
-    const markdownDefault = renderDefaultMarkdownResult(disclosedOutputResult);
+    const markdownDefault = renderDefaultMarkdownResult(intentOutputResult);
     if (markdownDefault !== null) {
       return markdownDefault;
     }
   }
   const rendererOverride = nativeOutput
     ? { rendered: null }
-    : runActiveRendererOverride(format, disclosedOutputResult);
+    : runActiveRendererOverride(format, intentOutputResult);
   if (rendererOverride.rendered !== null) {
     return rendererOverride.rendered.endsWith("\n")
       ? rendererOverride.rendered
@@ -432,11 +461,11 @@ function formatEffectiveOutput(
   if (format === "json") {
     const jsonResult =
       options.lean === true
-        ? projectLeanJsonValue(disclosedOutputResult)
-        : disclosedOutputResult;
+        ? projectLeanJsonValue(intentOutputResult)
+        : intentOutputResult;
     return formatBuiltInOutput(jsonResult, "json");
   }
-  return formatBuiltInOutput(disclosedOutputResult, "toon");
+  return formatBuiltInOutput(intentOutputResult, "toon");
 }
 
 /** Implements format output for the public runtime surface of this module. */

@@ -6,18 +6,25 @@ status: open
 priority: 3
 tags[2]: code-quality,codefactor
 created_at: "2026-07-12T07:36:30.261Z"
-updated_at: "2026-07-26T05:56:12.788Z"
+updated_at: "2026-07-30T11:54:34.409Z"
 author: maintainer-agent
 estimated_minutes: 600
 acceptance_criteria: "eslint-suppressions.json total reduced from 180 back toward 104 as functions are decomposed; MAX_ESLINT_SUPPRESSIONS lowered in lockstep (never raised); worst offenders first (extension-command-options.ts cog 34, lock-gc.ts 29, checkpoint-gc.ts 28, lock.ts 27, fs-utils.ts 27); each refactor keeps the 100% coverage gate green"
 parent: pm-92if
 risk: low
 confidence: high
-dependencies[3]{id,kind,created_at,author,source_kind}:
-  pm-yh8r,related,"2026-07-14T17:05:09.432Z",null,null
-  pm-vlnc,related,"2026-07-15T09:27:06.534Z",codex-root,null
-  pm-92if,implements,"2026-07-26T05:56:12.515Z",null,null
-comments[10]{created_at,author,text}:
+dependencies[3]:
+  - id: pm-yh8r
+    kind: related
+    created_at: "2026-07-14T17:05:09.432Z"
+  - id: pm-vlnc
+    kind: related
+    created_at: "2026-07-15T09:27:06.534Z"
+    author: codex-root
+  - id: pm-92if
+    kind: implements
+    created_at: "2026-07-26T05:56:12.515Z"
+comments[16]{created_at,author,text}:
   "2026-07-15T09:27:04.865Z",codex-root,"GitHub report coverage 2026-07-15: GH-569 reports a Complex Method in src/cli/bootstrap-args.ts. All-status exact search found no dedicated duplicate; this canonical complexity-baseline chore owns the report alongside the existing <=16 ratchet. The report is documented but remains open/unclaimed because PR #568 is actively limited to governance SDK review convergence."
   "2026-07-15T18:51:51.689Z",maintainer-agent,"GH-569 (CodeFactor Complex Method, src/cli/bootstrap-args.ts:94-169 parseBootstrapGlobalOptions) mapped here 2026-07-15 — file holds 2 grandfathered sonarjs/cognitive-complexity suppressions in eslint-suppressions.json. Close GH-569 when the bootstrap-args entries are burned down. No standalone item per baseline policy (GH-518/pm-2gvp precedent)."
   "2026-07-21T07:33:05.774Z",codex-root-20260721,"Progress evidence: decomposed both suppressed cli-bootstrap functions below cognitive complexity 16, pruned two suppressions, and ratcheted the repository maximum from 154 to 152. This advances but does not complete the broader 76-suppression burn-down item."
@@ -28,20 +35,36 @@ comments[10]{created_at,author,text}:
   "2026-07-21T10:25:06.160Z",codex-root-20260721,Full coverage preflight exposed the second stale 152 literal in release-readiness packaging parity. Updated to 151; all other 6052 tests passed in that run.
   "2026-07-21T10:29:28.720Z",codex-root-20260721,"Exact final-head proof: the 151 suppression ratchet, both package-script parity contracts, full ESLint, static quality, and all 6053 tests pass at 100/100/100/100 coverage. Broader suppression burn-down remains open."
   "2026-07-25T06:31:40.103Z","harness:claude-code","GitHub issues #569 (bootstrap-args.ts) and #583 (cli-bootstrap.ts) are CodeFactor Complex Method findings against grandfathered cognitive-complexity suppressions in eslint-suppressions.json, not new regressions. Both mapped to this burn-down on 2026-07-25 with comments on the issues; they close when the burn-down reaches those methods. No per-method items filed."
+  "2026-07-30T09:54:49.182Z","harness:codex","GitHub intake 2026-07-30: GH-820 reports current corpus-shape method complexity. This canonical complexity burn-down owns the report and will actively decompose the method without adding or raising suppressions. https://github.com/unbraind/pm-cli/issues/820"
+  "2026-07-30T10:27:27.055Z","harness:codex","Implementation evidence: corpus measurement add() delegates reused mismatch and edge-count primitives, removes branch-heavy loops, and obsolete complexity suppressions were pruned; static CodeFactor-parity gate passes."
+  "2026-07-30T11:24:17.779Z","harness:codex","Delivery boundary: this tranche reduced runtime/output/corpus-shape complexity, split action aliases into a focused module, pruned one suppression, and lowered the mandatory ESLint suppression ceiling from 130 to 129. The repo-wide complexity burn-down remains open."
+  "2026-07-30T11:30:58.844Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
+  "2026-07-30T11:54:24.653Z","harness:codex","Review correction: extension active-command context tests now mutate args/options/global snapshots and prove a second read is unchanged; CI doc links and generated error contracts are current."
+  "2026-07-30T11:54:34.409Z","harness:codex","Evidence clarification: e53544cd1 identifies the implementation commit. Exact-head review and merge proof is maintained on PR #829 because every append-only PM evidence mutation necessarily creates a newer Git head."
 notes[1]{created_at,author,text}:
   "2026-07-25T07:13:56.788Z","harness:claude-code","Complexity-suppression composition measured 2026-07-25 for the burn-down ledger. eslint-suppressions.json totals exactly 146 suppressions, at the hard MAX_ESLINT_SUPPRESSIONS = 146 budget in scripts/release/static-quality-gate.mts — zero headroom, so any new suppression fails the gate. Breakdown by rule: sonarjs/cognitive-complexity 52, complexity 38 (90 of 146, 62%, are the twin complexity gates this item owns), @typescript-eslint/no-unused-vars 22, no-useless-assignment 18, preserve-caught-error 16. Zero inline eslint-disable comments and zero broad disables (both budgets are 0 and both hold), and zero TODO/FIXME/HACK markers exist anywhere in src — the suppression file is the only debt ledger, which is the right shape; the ledger is simply full."
-files[8]{path,scope,note}:
+files[9]{path,scope,note}:
   eslint-suppressions.json,project,Two stale cognitive-complexity suppressions removed
   "https://github.com/unbraind/pm-cli/issues/569",global,GH-569 bootstrap-args Complex Method report
   package.json,project,Static quality invocation ratcheted to 152
   scripts/release/static-quality-gate.mts,project,Suppression budget ratcheted from 154 to 152
   src/sdk/cli-bootstrap.ts,project,Bootstrap parser and normalizer decomposition
+  src/sdk/corpus-shape.ts,project,Lower-complexity incremental corpus measurement
   tests/integration/release-automation-contract.spec.ts,project,Exact static quality script ratchet contract
   tests/integration/release-readiness-runtime.spec.ts,project,Published package and quality gate ratchet contract
   tests/unit/cli/bootstrap-args.spec.ts,project,Bootstrap behavior regression coverage
-tests[2]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/integration/release-automation-contract.spec.ts,project,600,Bootstrap and quality-contract verification
-  pnpm exec eslint . --max-warnings=0,project,600,No stale suppressions and complexity gates green
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 600
+    note: Bootstrap and quality-contract verification
+  - command: pnpm exec eslint . --max-warnings=0
+    scope: project
+    timeout_seconds: 600
+    note: No stale suppressions and complexity gates green
+  - command: "pnpm lint:codefactor"
+    scope: project
+    timeout_seconds: 300
 test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-mruc9d3i-w7hiva,test,failed,"2026-07-21T07:34:37.433Z","2026-07-21T07:35:10.735Z","2026-07-21T07:35:10.735Z",1,1,0
   test-local-mrucbi5e-5akit6,test,failed,"2026-07-21T07:36:17.901Z","2026-07-21T07:36:50.594Z","2026-07-21T07:36:50.594Z",1,1,0

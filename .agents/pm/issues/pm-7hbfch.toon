@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts","area:sdk",conformance-gap,token-efficiency
 created_at: "2026-07-30T09:12:36.920Z"
-updated_at: "2026-07-30T09:28:37.742Z"
+updated_at: "2026-07-30T11:54:22.385Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Every declared intent budget is enforced at one response egress point rather than by a per-command flag, so no intent can overrun its own declaration; list, get and search either declare --token-budget or the intent layer refuses to claim a budget it cannot apply, with no silent third option; the response envelope of every intent-projected read carries the resolved budget, the measured estimate and the degradation actually applied, so a consumer can detect an overrun without measuring bytes itself; a negative-control test asserts that an intent whose command lacks budget enforcement fails the build rather than shipping; the published evidence table records observed versus declared tokens per intent on a corpus of at least the current tracker size"
@@ -28,9 +28,17 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-okgxwa,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
   pm-sb0tns,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-07-30T09:28:37.564Z","harness:claude-code","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-07-30T10:27:23.385Z","harness:codex","Implementation evidence: every built-in intent now emits resolved budget, measured tokens, within-budget verdict, and degradation; oversized context/next results compact deterministically and all six live tracker probes remained within ceiling."
+  "2026-07-30T11:24:13.871Z","harness:codex","Delivery boundary: enforced intent receipts and deterministic degradation are implemented and exact 100% coverage plus token-budget gates pass. The canonical issue remains open until the current-tracker per-intent observed-versus-declared evidence table is published and its negative control is explicitly tied to the release gate."
+  "2026-07-30T11:30:54.844Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
+  "2026-07-30T11:54:22.385Z","harness:codex","Review correction: intent receipts now honor the effective explicit tokenBudget override, and over-budget row sets fall back to a receipt-only envelope instead of dropping rows while retaining stale counts or cursors."
 files[2]{path,scope,note}:
-  src/sdk/context-intent-contracts.ts,project,applyContextIntentProjection writes the declared token_budget into projected.tokenBudget at line 323 for all five intent commands
   src/sdk/cli-contracts.ts,project,"only next and context declare a --token-budget flag; list,get and search reject it as unknown"
-tests[1]{command,scope,timeout_seconds}:
+  src/sdk/context-intent-contracts.ts,project,applyContextIntentProjection writes the declared token_budget into projected.tokenBudget at line 323 for all five intent commands
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/context-intent-registration.spec.ts tests/unit/sdk/context-packing-usage.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/context-intent-contracts.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Budget enforcement and degradation contract
 body: ""

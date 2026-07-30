@@ -34,7 +34,7 @@ function report(outputJson, payload, exitCode) {
     process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
   } else if (payload.ok) {
     console.log(
-      `Hosted analysis gate passed for ${payload.repository}@${payload.sha.slice(0, 12)}: DeepScan 0 new issues; CodeFactor no issues found.`,
+      `Hosted analysis gate passed for ${payload.repository}@${payload.sha.slice(0, 12)}: DeepScan 0 new issues; CodeFactor 0 outstanding annotations.`,
     );
   } else {
     console.error(`Hosted analysis gate failed: ${payload.reason}`);
@@ -128,9 +128,16 @@ function inspectCodeFactor(checksPayload) {
   if (codeFactorConclusion !== "success") {
     return { ok: false, reason: `CodeFactor did not succeed (${codeFactorConclusion || "unknown"})` };
   }
+  const codeFactorAnnotationCount = codeFactor.output?.annotations_count;
+  if (codeFactorAnnotationCount !== 0) {
+    return {
+      ok: false,
+      reason: `CodeFactor does not explicitly report 0 outstanding annotations (${typeof codeFactorAnnotationCount === "number" ? codeFactorAnnotationCount : "unknown"})`,
+    };
+  }
   const codeFactorTitle = typeof codeFactor.output?.title === "string" ? codeFactor.output.title : "";
-  if (!/^no issues found\.?$/i.test(codeFactorTitle.trim())) {
-    return { ok: false, reason: "CodeFactor success does not explicitly report No issues found" };
+  if (!/^(?:no issues found|\d+ issues? fixed)\.?$/i.test(codeFactorTitle.trim())) {
+    return { ok: false, reason: "CodeFactor success title does not explicitly report no issues or fixed-only results" };
   }
 
   return {
@@ -139,6 +146,7 @@ function inspectCodeFactor(checksPayload) {
       status: codeFactorStatus,
       conclusion: codeFactorConclusion,
       title: codeFactorTitle,
+      outstanding_annotations: codeFactorAnnotationCount,
       new_issues: 0,
     },
   };

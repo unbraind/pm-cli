@@ -185,11 +185,6 @@
       "count": 1
     }
   },
-  "src/core/output/output.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "src/core/profile/profile-lint.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1

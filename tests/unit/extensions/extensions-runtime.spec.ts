@@ -4,6 +4,7 @@ import {
   runActiveCommandHandler,
   clearActiveExtensionHooks,
   consumeAfterCommandAffectedItems,
+  getActiveCommandContext,
   getActiveCommandResult,
   getActiveExtensionRegistrations,
   hasActiveOnReadHooks,
@@ -305,9 +306,11 @@ describe("core/extensions runtime wrappers", () => {
       setActiveExtensionPreflight({ overrides: [] });
       setActiveExtensionServices({ overrides: [] });
       setActiveExtensionRenderers({ overrides: [] });
-      expect(
-        runActiveServiceOverrideSync("output_format", "local"),
-      ).toEqual({ handled: false, result: "local", warnings: [] });
+      expect(runActiveServiceOverrideSync("output_format", "local")).toEqual({
+        handled: false,
+        result: "local",
+        warnings: [],
+      });
       expect(runActiveRendererOverride("json", { local: true })).toEqual({
         overridden: false,
         rendered: null,
@@ -327,6 +330,21 @@ describe("core/extensions runtime wrappers", () => {
         vector_store_adapters: [],
       });
       setActiveCommandContext({
+        command: "list",
+        args: [],
+        options: {},
+        global: {},
+        pm_root: "/tmp/request-local",
+      });
+      const commandContext = getActiveCommandContext()!;
+      expect(commandContext).toMatchObject({
+        command: "list",
+        pm_root: "/tmp/request-local",
+      });
+      commandContext.args.push("mutated");
+      commandContext.options.mutated = true;
+      commandContext.global!.quiet = true;
+      expect(getActiveCommandContext()).toMatchObject({
         command: "list",
         args: [],
         options: {},
