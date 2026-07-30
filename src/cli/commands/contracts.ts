@@ -141,6 +141,20 @@ import {
   type ListCommandName,
   type ListProjectionMode,
 } from "../../sdk/query/list.js";
+import {
+  PM_CONTEXT_INTENT_CONTRACTS,
+  type PmContextIntentContract,
+} from "../../sdk/context-intent-contracts.js";
+import {
+  enrichCliFlagInvocationContracts,
+  type CliFlagInvocationContract,
+} from "../../sdk/flag-invocation-contracts.js";
+import {
+  resolvePmCommandVisibilityTier,
+  type PmCommandVisibilityTier,
+} from "../../sdk/agent-capability-contracts.js";
+import { PM_ERROR_CODE_CATALOG } from "../../sdk/generated-error-code-catalog.js";
+import type { PmErrorCodeContract } from "../../sdk/error-code-catalog.js";
 
 /** Documents the contracts command options payload exchanged by command, SDK, and package integrations. */
 export interface ContractsCommandOptions {
@@ -164,7 +178,10 @@ export interface ContractsCommandOptions {
 
 interface CommandFlagSurface {
   command: string;
+  canonical_command?: string;
+  visibility?: PmCommandVisibilityTier;
   flags: CliFlagContract[];
+  flag_invocations?: CliFlagInvocationContract[];
   provider?: "core" | "extension" | "mixed";
   extension_sources?: Array<{
     layer: "global" | "project";
@@ -274,6 +291,10 @@ export interface ContractsResult {
   // Emitted with --full only — the snapshot script runs `pm contracts --full`.
   /** Value that configures or reports mcp tools for this contract. */
   mcp_tools?: McpToolContract[];
+  /** Built-in intent-scoped read projections available to CLI, SDK, MCP, and package consumers. */
+  context_intents?: readonly PmContextIntentContract[];
+  /** Exhaustive stable and provisional machine-readable failure vocabulary. */
+  error_codes?: readonly PmErrorCodeContract[];
 }
 
 type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
@@ -339,6 +360,7 @@ interface ExtensionCommandContract {
 
 interface CommandSummarySurface {
   command: string;
+  aliases?: string[];
   intent: string;
   flags?: string[];
   default_max_estimated_tokens: number | null;
@@ -1686,6 +1708,7 @@ function buildCommandFlagSurface(
   commands: string[],
   extensionFlagMap: ReturnType<typeof collectExtensionFlagContractsByCommand>,
   runtimeFieldFlagMap: Map<string, CliFlagContract[]>,
+  includeSemanticMetadata: boolean,
 ): CommandFlagSurface[] {
   return commands
     .map((command) => {
@@ -1710,24 +1733,23 @@ function buildCommandFlagSurface(
       return {
         command,
         flags,
+        ...(includeSemanticMetadata
+          ? {
+              canonical_command: canonicalSummaryCommand(command),
+              visibility: resolvePmCommandVisibilityTier(
+                canonicalSummaryCommand(command),
+              ),
+              flag_invocations: enrichCliFlagInvocationContracts(
+                command,
+                flags,
+              ),
+            }
+          : {}),
         provider,
         extension_sources: extensionFlags?.sources,
       };
     })
     .sort((left, right) => left.command.localeCompare(right.command));
-}
-
-function compactCommandAliasSurface(commands: string[]): string[] {
-  const commandSet = new Set(commands);
-  const result: string[] = [];
-  for (const command of commands) {
-    const canonical = COMMAND_ALIAS_TO_CANONICAL.get(command);
-    if (canonical && commandSet.has(canonical)) {
-      continue;
-    }
-    result.push(command);
-  }
-  return result;
 }
 
 function buildCommandAliasSurface(commands: string[]): CommandAliasSurface[] {
@@ -2397,14 +2419,10 @@ function resolveContractsCommands(
 }
 
 function resolveOutputCommands(
-  selection: ContractsSelection,
+  _selection: ContractsSelection,
   commands: string[],
 ): string[] {
-  return selection.flagsOnly &&
-    selection.selectedCommand === undefined &&
-    selection.selectedAction === undefined
-    ? compactCommandAliasSurface(commands)
-    : commands;
+  return commands;
 }
 
 function summarizeCommandIntent(command: string): string {
@@ -2436,9 +2454,15 @@ function canonicalSummaryCommand(command: string): string {
 function buildCommandSummarySurface(
   commands: readonly string[],
 ): CommandSummarySurface[] {
-  const rootCommands = [
-    ...new Set(commands.map((command) => canonicalSummaryCommand(command))),
-  ]
+  const rootsByCanonical = new Map<string, Set<string>>();
+  for (const command of commands) {
+    const root = command.split(" ")[0]!;
+    const canonical = canonicalSummaryCommand(root);
+    const roots = rootsByCanonical.get(canonical) ?? new Set<string>();
+    roots.add(root);
+    rootsByCanonical.set(canonical, roots);
+  }
+  const rootCommands = [...rootsByCanonical.keys()]
     .filter((command) => command.length > 0)
     .sort((left, right) => left.localeCompare(right));
   return rootCommands.map((command) => {
@@ -2449,8 +2473,12 @@ function buildCommandSummarySurface(
     const flags = (
       AGENT_BOOTSTRAP_FLAGS.get(command) ?? AGENT_BOUNDED_FLAG_PRIORITY
     ).filter((flag) => availableFlags.has(flag));
+    const aliases = [...rootsByCanonical.get(command)!]
+      .filter((root) => root !== command)
+      .sort((left, right) => left.localeCompare(right));
     return {
       command,
+      ...(aliases.length > 0 ? { aliases } : {}),
       intent: summarizeCommandIntent(command),
       ...(flags.length > 0 ? { flags } : {}),
       default_max_estimated_tokens:
@@ -2601,6 +2629,7 @@ function attachFlagContractsResult(
       outputCommands,
       runtime.extensionFlagMap,
       runtime.runtimeFieldFlagMap,
+      selection.selectedCommand !== undefined,
     );
     const commandSet = new Set(outputCommands);
     result.list_projections = (
@@ -2711,6 +2740,8 @@ export async function runContracts(
     !selection.availabilityOnly
   ) {
     result.mcp_tools = buildMcpToolContracts();
+    result.context_intents = PM_CONTEXT_INTENT_CONTRACTS;
+    result.error_codes = PM_ERROR_CODE_CATALOG;
   }
 
   return result;

@@ -185,6 +185,7 @@ const MANY_GOVERNANCE_AND_CONTENT_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
 export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
   withCursorSemantics(
     [
+      { flag: "--for", value_name: "intent" },
       { flag: "--status", list: true },
       { flag: "--type" },
       { flag: "--tag", aliases: ["--tags"] },
@@ -1462,6 +1463,7 @@ export const EVENTS_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for context flag contracts, shared by SDK and presentation-layer consumers. */
 export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
   [
+    { flag: "--for", value_name: "intent" },
     { flag: "--date" },
     { flag: "--from" },
     { flag: "--to" },
@@ -1504,6 +1506,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
 
 /** Public contract for get flag contracts, shared by SDK and presentation-layer consumers. */
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--for", value_name: "intent" },
   { flag: "--depth" },
   { flag: "--full" },
   { flag: "--fields", list: true },
@@ -1573,6 +1576,7 @@ export const WORKSPACE_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for next flag contracts, shared by SDK and presentation-layer consumers. */
 export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--for", value_name: "intent" },
   { flag: "--type" },
   { flag: "--tag" },
   { flag: "--priority" },
@@ -1596,6 +1600,7 @@ export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for search flag contracts, shared by SDK and presentation-layer consumers. */
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
   [
+    { flag: "--for", value_name: "intent" },
     { flag: "--mode" },
     { flag: "--semantic" },
     { flag: "--hybrid" },

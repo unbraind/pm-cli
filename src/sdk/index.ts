@@ -453,6 +453,7 @@ export type {
 export * from "./compose.js";
 export * from "./compile-cache.js";
 export * from "./context-relevance.js";
+export * from "./context-intent-contracts.js";
 export * from "./context-signal-store.js";
 export * from "./workspace-memory.js";
 export * from "./lifecycle-completion.js";
@@ -535,6 +536,9 @@ export * from "./item-metadata-index.js";
 export * from "./structured-mutations.js";
 export * from "./runtime-primitives.js";
 export * from "./error-runtime.js";
+export * from "./error-code-catalog.js";
+export * from "./generated-error-code-catalog.js";
+export * from "./flag-invocation-contracts.js";
 export * from "./relationships.js";
 export * from "./actionability.js";
 export type {

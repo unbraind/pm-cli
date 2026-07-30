@@ -11,6 +11,7 @@ import {
   renderRowsAsTable,
 } from "../sdk/runtime-primitives.js";
 import { EVAL_QUERY_SET_SCHEMA_ID } from "../sdk/eval.js";
+import { applyContextIntentProjection } from "../sdk/context-intent-contracts.js";
 import { serializeNdjsonRows } from "../sdk/output.js";
 import {
   listMutationEvents,
@@ -291,12 +292,13 @@ async function runRegisteredListCommand(params: {
       },
     );
   }
-  const listOptions = normalizeListOptions(params.options);
+  const intentOptions = applyContextIntentProjection("list", params.options);
+  const listOptions = normalizeListOptions(intentOptions);
   applyDefaultListProjection(listOptions, params.name);
   if (params.excludeTerminal) listOptions.excludeTerminal = true;
   listOptions.dependencyBlocked = params.dependencyBlocked;
   const output = resolveRegisteredListOutputContext(
-    params.options,
+    intentOptions,
     globalOptions,
   );
   const result = await runList(
@@ -342,6 +344,7 @@ function registerListCommand(
     );
   }
   command
+    .option("--for <intent>", "Apply a declared context intent projection")
     .option("--type <value>", "Filter by item type")
     .option(
       "--tag <value>",
@@ -506,7 +509,9 @@ async function runContextAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(actionCommand);
   const startedAt = Date.now();
-  const normalized = normalizeContextOptions(options);
+  const normalized = normalizeContextOptions(
+    applyContextIntentProjection("context", options),
+  );
   const result = await runContext(normalized, globalOptions);
   const outputFormat = resolveContextOutputFormat(normalized, globalOptions);
   if (outputFormat === "markdown") {
@@ -540,7 +545,9 @@ async function runNextAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(actionCommand);
   const startedAt = Date.now();
-  const nextOptions = normalizeNextOptions(options);
+  const nextOptions = normalizeNextOptions(
+    applyContextIntentProjection("next", options),
+  );
   const result = await runNext(nextOptions, globalOptions);
   const outputFormat = resolveNextOutputFormat(nextOptions, globalOptions);
   if (outputFormat === "markdown") {
@@ -562,7 +569,8 @@ async function runSearchAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const searchOptions = normalizeSearchOptions(options);
+  const intentOptions = applyContextIntentProjection("search", options);
+  const searchOptions = normalizeSearchOptions(intentOptions);
   const result = await runSearch(
     normalizeSearchKeywordsInput(keywords),
     {
@@ -576,12 +584,12 @@ async function runSearchAction(
     globalOptions,
   );
   const outputFormat =
-    typeof options.format === "string"
-      ? options.format.trim().toLowerCase()
+    typeof intentOptions.format === "string"
+      ? intentOptions.format.trim().toLowerCase()
       : undefined;
   const effectiveGlobal = resolveReadCommandOutputFormat(
     "Search",
-    options.format,
+    intentOptions.format,
     globalOptions,
     true,
   );
@@ -639,22 +647,23 @@ async function runGetAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
+  const intentOptions = applyContextIntentProjection("get", options);
   const result = await runGet(id, globalOptions, {
-    depth: typeof options.depth === "string" ? options.depth : undefined,
-    fields: typeof options.fields === "string" ? options.fields : undefined,
-    full: Boolean(options.full),
-    tree: options.tree === true,
+    depth: typeof intentOptions.depth === "string" ? intentOptions.depth : undefined,
+    fields: typeof intentOptions.fields === "string" ? intentOptions.fields : undefined,
+    full: Boolean(intentOptions.full),
+    tree: intentOptions.tree === true,
     treeDepth:
-      typeof options.treeDepth === "string"
-        ? options.treeDepth
-        : typeof options.tree_depth === "string"
-          ? options.tree_depth
+      typeof intentOptions.treeDepth === "string"
+        ? intentOptions.treeDepth
+        : typeof intentOptions.tree_depth === "string"
+          ? intentOptions.tree_depth
           : undefined,
-    at: typeof options.at === "string" ? options.at : undefined,
+    at: typeof intentOptions.at === "string" ? intentOptions.at : undefined,
   });
   printResult(
     result,
-    resolveReadCommandOutputFormat("Get", options.format, globalOptions),
+    resolveReadCommandOutputFormat("Get", intentOptions.format, globalOptions),
   );
   if (globalOptions.profile) {
     printError(`profile:command=get took_ms=${Date.now() - startedAt}`);
@@ -955,6 +964,7 @@ export function registerListQueryCommands(
       .description(
         "Show a token-efficient project context snapshot for next-work decisions.",
       )
+      .option("--for <intent>", "Apply a declared context intent projection")
       .option(
         "--date <value>",
         "Anchor date/time for agenda window calculations (ISO/date string or relative)",
@@ -1046,6 +1056,7 @@ export function registerListQueryCommands(
       .description(
         "Recommend the next actionable (unblocked, ready) work item with rationale + blocked companion.",
       )
+      .option("--for <intent>", "Apply a declared context intent projection")
       .option("--type <value>", "Filter candidate items by type")
       .option("--tag <value>", "Filter candidate items by tag")
       .option("--priority <value>", "Filter candidate items by priority")
@@ -1117,6 +1128,7 @@ export function registerListQueryCommands(
         "Search items with keyword, semantic, or hybrid retrieval. Inline field:value tokens " +
           "(tag:/status:/type:/priority:) in the query are parsed as filters, e.g. 'auth tag:area:search status:open'.",
       )
+      .option("--for <intent>", "Apply a declared context intent projection")
       .option(
         "--mode <value>",
         "Search mode: keyword|semantic|hybrid (default: keyword)",
@@ -1244,6 +1256,7 @@ export function registerListQueryCommands(
     const getCommand = program
       .command("get")
       .argument("<id>", "Item id")
+      .option("--for <intent>", "Apply a declared context intent projection")
       .option(
         "--depth <value>",
         "Detail depth: brief|standard|deep|full (full aliases deep; default: standard)",

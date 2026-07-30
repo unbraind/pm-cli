@@ -2,25 +2,45 @@ id: pm-6j7r1a
 title: "The runtime contract enumeration is not closed over the surface it can resolve: 14 rendered commands, including the list-open that AGENTS.md mandates, are contract-backed by name yet absent from every enumeration"
 description: "AGENTS.md instructs agents to learn the live surface from the runtime contract rather than from documentation, because packages and settings change what is available. The contract enumeration is not closed over the surface it describes, so the documented discovery path cannot find 14 of the commands the CLI actually renders - including one the same file tells agents to run.\n\nMeasured on this repository at 2026.7.28:\n\n- pm --help renders 89 top-level command spellings.\n- pm contracts --summary --json enumerates 75 in command_summaries.\n- The difference is 14, and the contract set is a strict subset: nothing is declared that help does not render.\n- The 14 undiscoverable commands are: list-all, list-blocked, list-canceled, list-closed, list-draft, list-in-progress, list-open, history-author-acknowledge, history-compact, history-redact, history-repair, extension, install, pm.\n- These commands are fully contract-backed when addressed BY NAME. pm contracts --command list-open --flags-only --json returns commands [\"list-open\"] and a complete command_flags entry with --status, --type, --tag and the rest. The data exists. Only the enumeration omits it.\n- Therefore discovery is impossible for exactly these 14: an agent can retrieve their contract only if it already knows the name, which is the one thing enumeration is for.\n- The AGENTS.md pm Workflow Quickstart mandates pm list-open --limit 20. An agent that follows the file's own instruction to verify flags through the contract surface will not find the command the same file told it to run.\n\nThis is a conformance gap against a closed item's own acceptance criterion. The summary-first discovery work shipped with the criterion that whatever the brief form omits is \"either unnecessary or reachable in one further bounded call\". These 14 are neither unnecessary nor reachable, because no bounded call enumerates them.\n\nScope is enumeration closure only: the set of commands the contract surface lists must equal the set it can resolve. If some of the 14 are intended as hidden compatibility aliases, the fix is to declare them as such with a tier marker so an enumerating caller can see that they exist and why they are de-emphasised, not to leave them invisible. The cost and shape of the discovery payload belong to the closed discovery item. Which tier a command occupies belongs to the surface-tiering owner. Folding the list-star family into a single command belongs to the consolidation owner and does not fix this, because the aliases will still be renderable and still need to be discoverable while they exist."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-experience,cli,core
 created_at: "2026-07-28T02:52:59.859Z"
-updated_at: "2026-07-29T16:55:46.456Z"
+updated_at: "2026-07-30T07:38:28.622Z"
+closed_at: "2026-07-30T07:18:50.895Z"
+completed_at: "2026-07-30T07:18:50.895Z"
 author: "harness:claude-code"
 estimated_minutes: 210
 acceptance_criteria: "The set of commands the contract surface enumerates equals the set it can resolve by name, verified by a gate that diffs the two; Commands intentionally de-emphasised are enumerated with an explicit tier or alias marker rather than omitted, so an enumerating caller can see that they exist; An agent following the AGENTS.md quickstart can discover every command that quickstart instructs it to run, using only the documented contract discovery path; The rendered help surface and the enumerated contract surface are generated from one source so the two counts cannot diverge silently; A regression test asserts the help-versus-contract command-set difference is empty"
 parent: pm-mpbb
 risk: low
 confidence: 92
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Unified root-help, enumerated-contract, and resolvable-command spelling sets, including compatibility aliases, and added an executable equality gate."
+expected_result: "Every top-level command spelling rendered by help is discoverable and resolvable through bounded runtime contracts, including AGENTS.md bootstrap commands and compatibility aliases."
+actual_result: "The compiled integration gate proves root help spellings, contract enumeration roots, and resolvable command_flags roots are identical; linked tests and repository-wide coverage pass."
+fixed_version: next-auto-release-after-2026.7.30
+component: cli/contracts
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-e2bq,related,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-gmdzaa,discovered_from,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
-  pm-kxci8x,blocked_by,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-n7rr,related,"2026-07-28T02:52:59.859Z","harness:claude-code","cli:create:dep",detected
   pm-1jrdri,related,"2026-07-28T22:39:23.775Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-28T22:39:22.901Z","harness:claude-code","Measurement sharpened 2026-07-28, and it partly falsifies this item's own scope. Live census at HEAD: 85 rendered top-level spellings, 70 command summaries in pm contracts --summary, 15 rendered and unenumerated. The item's title asserts those commands are \"contract-backed by name yet absent from every enumeration\". Thirteen of the fifteen are - extension, install, the seven list-* status variants, history-redact, history-repair, history-compact, history-author-acknowledge all resolve when asked for by name. Two do not:\n\n  pm contracts --command pm        -> unknown_command, exit 2\n  pm contracts --command workspace -> unknown_command, exit 2\n\nSo the enumerated set is a strict subset of the resolvable set, which is this item, AND the resolvable set is a strict subset of the rendered set, which is not. The second gap is filed separately as pm-1jrdri, because the invariant is different: this item needs enumerated to equal resolvable, and pm-1jrdri needs rendered to be contained in contracted. Fixing this one does not fix that one - a gate that diffs the enumeration against the resolver would still pass with pm workspace rendered and uncontracted. The fourth acceptance criterion here, that help and the enumeration are generated from one source, is the shared prerequisite.\n"
   "2026-07-29T16:55:46.456Z","harness:claude-code","Re-measurement at build 2026.7.29 - the gap narrowed and did not close.\n\nRendered top-level spellings in root help: 87. Commands enumerated by contracts --summary: 71. Help-only: 16 (ctx, extension, history-author-acknowledge, history-compact, history-redact, history-repair, install, list-all, list-blocked, list-canceled, list-closed, list-draft, list-in-progress, list-open, packages, pm).\n\nResolution probe over all 16: 15 resolve fully by name through contracts --command <name> --flags-only --json. Exactly one does not: the pm noun, which exits 2. On the prior measurement two failed to resolve, workspace and pm; workspace now both enumerates in the summary and resolves, so the residual is a single pathological spelling.\n\nNew commands since the last census all enumerate and resolve correctly: workspace, eval, item, duplicates, start-task, pause-task, close-task. So the enumeration gap is no longer growing with the surface - it is now a fixed legacy set of 16 aliases plus one unresolvable noun, which makes the closure criterion cheap to satisfy and cheap to gate.\n"
+  "2026-07-30T06:47:41.556Z","harness:codex","Implementation evidence: unscoped flags-only enumeration covers aliases without destructive compaction while preserving command-scoped compatibility and bounded summary output."
+  "2026-07-30T06:50:49.737Z","harness:codex","Acceptance evidence: a sandboxed compiled-CLI integration gate now proves root help spellings, contracts enumeration, and resolvable command_flags roots are identical, including every AGENTS.md bootstrap command and compatibility alias."
+  "2026-07-30T07:18:47.772Z","harness:codex","Final local acceptance: compiled sandbox gate proves help, enumeration, and resolvable flag rows are equal; all linked tests and full 6,554-test 100/100/100/100 coverage pass; token budgets preserve unscoped discovery."
+files[4]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,Alias-complete command enumeration
+  tests/fixtures/contracts/full.json,project,Alias-complete generated contract snapshot
+  tests/integration/contract-command-enumeration.integration.spec.ts,project,Gate rendered help enumerated contracts and resolvable flag rows as equal sets
+  tests/unit/commands/contracts-command.spec.ts,project,Resolvable alias enumeration regression coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/commands/contracts-command.spec.ts tests/integration/contract-command-enumeration.integration.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms76evqh-kxh3uq,test,passed,"2026-07-30T07:12:10.564Z","2026-07-30T07:12:30.761Z","2026-07-30T07:12:30.761Z",2,0,0
+close_reason: "Closed command-contract enumeration over every resolvable core spelling and compatibility alias, with an executable help-versus-enumeration-versus-resolution equality gate."
 body: ""

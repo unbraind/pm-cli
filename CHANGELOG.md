@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- The runtime contract enumeration is not closed over the surface it can resolve: 14 rendered commands, including the list-open that AGENTS.md mandates, are contract-backed by name yet absent from every enumeration ([pm-6j7r1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6j7r1a.toon))
+- GH-817: machine-readable flag contracts need semantic invocation metadata and stdin capability ([pm-11phn1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-11phn1.toon))
+
+## 2026.7.30 - 2026-07-30
+
 ### Added
 
 - Omission receipts: every bounded read shape names the field groups it withheld and the flag that restores each, with the same rigor row truncation already has ([pm-p258tx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-p258tx.toon))

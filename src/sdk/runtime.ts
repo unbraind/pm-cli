@@ -75,6 +75,7 @@ import {
 } from "./workspace-contracts-cache.js";
 import { createExtensionCommandSdk } from "./extension-command-context.js";
 import { attachOutputOmissionReceipt } from "./output-projection.js";
+import { applyContextIntentProjection } from "./context-intent-contracts.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import {
   type AggregateOptions,
@@ -2992,7 +2993,7 @@ function requireMcpItemId(
 async function runMcpListAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
-  const listOptions: Record<string, unknown> = { ...ctx.options };
+  const listOptions = applyContextIntentProjection("list", ctx.options);
   if (
     listOptions.compact === undefined &&
     listOptions.brief === undefined &&
@@ -3015,7 +3016,7 @@ async function runMcpListAction(
 async function runMcpSearchAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
-  const searchOptions: Parameters<typeof runSearch>[1] = { ...ctx.options };
+  const searchOptions = applyContextIntentProjection("search", ctx.options) as Parameters<typeof runSearch>[1];
   if (
     searchOptions.compact === undefined &&
     searchOptions.full === undefined &&
@@ -3758,10 +3759,11 @@ function runMcpHistoryAuthorAcknowledgeAction(
 const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   init: (ctx) =>
     runInit(readString(ctx.args, "prefix"), ctx.global, ctx.options),
-  context: (ctx) => runContext(ctx.options, ctx.global),
-  next: (ctx) => runNext(ctx.options, ctx.global),
+  context: (ctx) => runContext(applyContextIntentProjection("context", ctx.options), ctx.global),
+  next: (ctx) =>
+    runNext(applyContextIntentProjection("next", ctx.options), ctx.global),
   list: runMcpListAction,
-  get: (ctx) => runGet(requireMcpItemId(ctx), ctx.global, ctx.options),
+  get: (ctx) => runGet(requireMcpItemId(ctx), ctx.global, applyContextIntentProjection("get", ctx.options)),
   search: runMcpSearchAction,
   duplicates: (ctx) => {
     const status =

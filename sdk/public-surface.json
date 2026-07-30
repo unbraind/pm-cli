@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1260,
+    "covered_symbols": 1276,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1261
+    "required_symbols": 1277
   },
   "breaking_acknowledgements": [
     {
@@ -326,6 +326,21 @@
       ],
       "package_version": "2026.7.29",
       "reason": "Additive bounded-read controls and guaranteed projection receipts; runtime defaults remain compatible"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContractsResult",
+        "signature ./sdk/runtime:ContractsResult"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "ContractsResult gains additive optional context_intents and error_codes full-projection fields"
+    },
+    {
+      "changes": [
+        "error code context_intent_unsupported removed"
+      ],
+      "package_version": "2026.7.29",
+      "reason": "ContractsResult additive full-projection fields and context-intent schema parameters"
     }
   ],
   "entrypoints": {
@@ -721,6 +736,12 @@
           "kind": "function",
           "name": "applyBootstrapPagerPolicy",
           "signature": "(argv: string[]) => () => void | calls: (argv: string[]) => () => void"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "applyContextIntentProjection",
+          "signature": "(command: \"context\" | \"get\" | \"list\" | \"next\" | \"search\", options: Record<string, unknown>) => Record<string, unknown> | calls: (command: \"context\" | \"get\" | \"list\" | \"next\" | \"search\", options: Record<string, unknown>) => Record<string, unknown>"
         },
         {
           "classification": "supported",
@@ -1407,6 +1428,18 @@
           "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; cursor_semantics?: \"presentation\"; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "CliFlagInputSource",
+          "signature": "export type CliFlagInputSource = \"argv\" | \"file\" | \"stdin\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "CliFlagInvocationContract",
+          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; }"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "close",
@@ -1753,6 +1786,12 @@
           "kind": "type",
           "name": "CompletionTimestampSource",
           "signature": "export type CompletionTimestampSource = \"completed_at\" | \"closed_at\" | \"updated_at\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "composeContextIntentContracts",
+          "signature": "(workspaceContracts?: readonly PmContextIntentContract[], packageContracts?: readonly PmContextIntentContract[]) => PmContextIntentContract[] | calls: (workspaceContracts?: readonly PmContextIntentContract[], packageContracts?: readonly PmContextIntentContract[]) => PmContextIntentContract[]"
         },
         {
           "classification": "supported",
@@ -2160,7 +2199,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; error_codes?: readonly PmErrorCodeContract[]; }"
         },
         {
           "classification": "supported",
@@ -2595,6 +2634,12 @@
           "signature": "<TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract | calls: <TContract extends PmCommandOutputBudgetContract>(contract: TContract) => TContract"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "definePmErrorCodeCatalog",
+          "signature": "(declarations: readonly PmErrorCodeContract[]) => readonly PmErrorCodeContract[] | calls: (declarations: readonly PmErrorCodeContract[]) => readonly PmErrorCodeContract[]"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "definePreflightOverride",
@@ -3013,6 +3058,18 @@
           "kind": "function",
           "name": "enforceHistoryStreamPolicyForItems",
           "signature": "(params: HistoryStreamPolicyManyParams) => Promise<HistoryStreamPolicyResult> | calls: (params: HistoryStreamPolicyManyParams) => Promise<HistoryStreamPolicyResult>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "enrichCliFlagInvocationContract",
+          "signature": "(command: string, contract: CliFlagContract) => CliFlagInvocationContract | calls: (command: string, contract: CliFlagContract) => CliFlagInvocationContract"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "enrichCliFlagInvocationContracts",
+          "signature": "(command: string, contracts: readonly CliFlagContract[]) => CliFlagInvocationContract[] | calls: (command: string, contracts: readonly CliFlagContract[]) => CliFlagInvocationContract[]"
         },
         {
           "classification": "advanced_export",
@@ -6581,6 +6638,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_CONTEXT_INTENT_CONTRACTS",
+          "signature": "readonly PmContextIntentContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
           "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"workspace\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
         },
@@ -6589,6 +6652,12 @@
           "kind": "value",
           "name": "PM_CORPUS_SHAPE_SCHEMA",
           "signature": "\"https://schema.unbrained.dev/pm/corpus-shape/v1\""
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_ERROR_CODE_CATALOG",
+          "signature": "readonly PmErrorCodeContract[]"
         },
         {
           "classification": "contract_data",
@@ -6887,8 +6956,38 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmContextIntentCommand",
+          "signature": "export type PmContextIntentCommand = \"context\" | \"get\" | \"list\" | \"next\" | \"search\" | (string & {});"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmContextIntentContract",
+          "signature": "export interface PmContextIntentContract { command: PmContextIntentCommand; intent: string; description: string; included_field_groups: string[]; token_budget: number; source?: PmContextIntentSource; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmContextIntentSource",
+          "signature": "export type PmContextIntentSource = \"core\" | \"package\" | \"workspace\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmCreateActionOptions",
           "signature": "export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmErrorCodeContract",
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; recovery: string; sources: string[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmErrorCodeStability",
+          "signature": "export type PmErrorCodeStability = \"provisional\" | \"stable\";"
         },
         {
           "classification": "contract_data",
@@ -8577,6 +8676,12 @@
           "signature": "(options: Record<string, unknown>) => ContentFieldFilters | calls: (options: Record<string, unknown>) => ContentFieldFilters"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolveContextIntentContract",
+          "signature": "(command: string, intent: string, contracts?: readonly PmContextIntentContract[]) => PmContextIntentContract | undefined | calls: (command: string, intent: string, contracts?: readonly PmContextIntentContract[]) => PmContextIntentContract | undefined"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "ResolvedAuthorIdentity",
@@ -8713,6 +8818,12 @@
           "kind": "function",
           "name": "resolvePmCommandVisibilityTier",
           "signature": "(command: string, extensionTier?: PmCommandVisibilityTier) => PmCommandVisibilityTier | calls: (command: string, extensionTier?: PmCommandVisibilityTier) => PmCommandVisibilityTier"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmErrorCodeContract",
+          "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
         },
         {
           "classification": "advanced_export",
@@ -12917,6 +13028,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "applyContextIntentProjection",
+          "signature": "(command: \"context\" | \"get\" | \"list\" | \"next\" | \"search\", options: Record<string, unknown>) => Record<string, unknown> | calls: (command: \"context\" | \"get\" | \"list\" | \"next\" | \"search\", options: Record<string, unknown>) => Record<string, unknown>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "buildPmActionToolInputSchema",
           "signature": "(action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown> | calls: (action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown>"
         },
@@ -12943,6 +13060,18 @@
           "kind": "interface",
           "name": "CliFlagContract",
           "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; cursor_semantics?: \"presentation\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "CliFlagInputSource",
+          "signature": "export type CliFlagInputSource = \"argv\" | \"file\" | \"stdin\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "CliFlagInvocationContract",
+          "signature": "export interface CliFlagInvocationContract extends CliFlagContract { description: string; takes_value: boolean; value_required: boolean; value_type: \"string\" | \"number\" | \"boolean\"; required: boolean; repeatable: boolean; input_sources: CliFlagInputSource[]; stdin_token?: \"-\"; }"
         },
         {
           "classification": "contract_data",
@@ -12997,6 +13126,12 @@
           "kind": "value",
           "name": "COMPLETION_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "composeContextIntentContracts",
+          "signature": "(workspaceContracts?: readonly PmContextIntentContract[], packageContracts?: readonly PmContextIntentContract[]) => PmContextIntentContract[] | calls: (workspaceContracts?: readonly PmContextIntentContract[], packageContracts?: readonly PmContextIntentContract[]) => PmContextIntentContract[]"
         },
         {
           "classification": "contract_data",
@@ -13060,6 +13195,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "definePmErrorCodeCatalog",
+          "signature": "(declarations: readonly PmErrorCodeContract[]) => readonly PmErrorCodeContract[] | calls: (declarations: readonly PmErrorCodeContract[]) => readonly PmErrorCodeContract[]"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "DELETE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -13081,6 +13222,18 @@
           "kind": "value",
           "name": "DUPLICATES_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "enrichCliFlagInvocationContract",
+          "signature": "(command: string, contract: CliFlagContract) => CliFlagInvocationContract | calls: (command: string, contract: CliFlagContract) => CliFlagInvocationContract"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "enrichCliFlagInvocationContracts",
+          "signature": "(command: string, contracts: readonly CliFlagContract[]) => CliFlagInvocationContract[] | calls: (command: string, contracts: readonly CliFlagContract[]) => CliFlagInvocationContract[]"
         },
         {
           "classification": "contract_data",
@@ -13415,8 +13568,20 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_CONTEXT_INTENT_CONTRACTS",
+          "signature": "readonly PmContextIntentContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_CORE_COMMAND_NAMES",
           "signature": "readonly [\"init\", \"config\", \"extension\", \"package\", \"packages\", \"install\", \"upgrade\", \"create\", \"item\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"graph\", \"search\", \"duplicates\", \"eval\", \"next\", \"history\", \"events\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"merge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"plan\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"workspace\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\", \"meet\", \"event\", \"remind\", \"help\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_ERROR_CODE_CATALOG",
+          "signature": "readonly PmErrorCodeContract[]"
         },
         {
           "classification": "contract_data",
@@ -13553,8 +13718,38 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmContextIntentCommand",
+          "signature": "export type PmContextIntentCommand = \"context\" | \"get\" | \"list\" | \"next\" | \"search\" | (string & {});"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmContextIntentContract",
+          "signature": "export interface PmContextIntentContract { command: PmContextIntentCommand; intent: string; description: string; included_field_groups: string[]; token_budget: number; source?: PmContextIntentSource; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmContextIntentSource",
+          "signature": "export type PmContextIntentSource = \"core\" | \"package\" | \"workspace\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmCreateActionOptions",
           "signature": "export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmErrorCodeContract",
+          "signature": "export interface PmErrorCodeContract { code: string; meaning: string; stability: PmErrorCodeStability; exit_code: 1 | 2 | 3 | 4 | 5; recovery: string; sources: string[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmErrorCodeStability",
+          "signature": "export type PmErrorCodeStability = \"provisional\" | \"stable\";"
         },
         {
           "classification": "contract_data",
@@ -13679,8 +13874,20 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "resolveContextIntentContract",
+          "signature": "(command: string, intent: string, contracts?: readonly PmContextIntentContract[]) => PmContextIntentContract | undefined | calls: (command: string, intent: string, contracts?: readonly PmContextIntentContract[]) => PmContextIntentContract | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "resolvePmCommandOutputBudget",
           "signature": "(command: string) => PmCommandOutputBudgetContract | null | calls: (command: string) => PmCommandOutputBudgetContract | null"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmErrorCodeContract",
+          "signature": "(code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract | calls: (code: string, catalog: readonly PmErrorCodeContract[]) => PmErrorCodeContract"
         },
         {
           "classification": "contract_data",
@@ -17994,7 +18201,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ContractsResult",
-          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; }"
+          "signature": "export interface ContractsResult { schema_version: string | null; schema_id: string | null; selected: { action: string | null; command: string | null; summary: boolean; schema_only: boolean; flags_only: boolean; availability_only: boolean; runtime_only: boolean; command_scoped: boolean; }; actions?: string[]; action_availability?: ContractsActionAvailability[]; commands: string[]; schema?: Record<string, unknown>; schema_omitted_reason?: string; command_flags_omitted_reason?: string; commander_aliases_omitted_reason?: string; command_flags?: CommandFlagSurface[]; list_projections?: ListCommandProjectionSurface[]; command_aliases?: CommandAliasSurface[]; commander_aliases?: Record<string, CommanderOptionAliasContract[]>; extension_commands?: ExtensionCommandContract[]; command_summaries?: CommandSummarySurface[]; output_policy?: { token_estimate: \"ceil(utf8_bytes / 4)\"; degradation_ladder: string[]; allows_unbounded_opt_out: boolean; }; runtime_schema?: { statuses: string[]; open_status: string; close_status: string; canceled_status: string; types: string[]; fields_by_command: Record<string, string[]>; }; extension_contracts?: { capabilities: string[]; services: string[]; policy_modes: string[]; policy_mode_scope: \"extensions.policy.mode\"; policy_surfaces: string[]; trust_modes: string[]; trust_mode_scope: \"extensions.policy.trust_mode\"; sandbox_profiles: string[]; manifest_versions: number[]; compatibility: { current: string; previous: string[]; breaking_strategy: string; }; }; governance_contracts?: { ownership_enforcement_modes: string[]; create_modes: string[]; close_validation_modes: string[]; workflow_enforcement_modes: string[]; }; mcp_tools?: McpToolContract[]; context_intents?: readonly PmContextIntentContract[]; error_codes?: readonly PmErrorCodeContract[]; }"
         },
         {
           "classification": "supported",
@@ -20641,59 +20848,207 @@
     }
   },
   "error_codes": [
+    "acceptance_criteria_semicolon_forbidden",
+    "already_claimed_by",
+    "ambiguous_list_all",
+    "ambiguous_option_combination",
     "annotation_flag_like_value",
     "annotation_message_without_text",
+    "append_empty_body",
+    "body_file_conflicts_with_body",
+    "body_file_missing_path",
+    "body_file_unreadable",
+    "bundle_integrity_torn_install",
     "capability_undeclared",
     "capability_unused",
     "child_projection_item_bound_exceeded",
+    "close_reason_required",
+    "close_through_update",
+    "close_validation_missing_fields",
     "collected_zero_items",
+    "command_failed",
+    "command_namespace",
     "command_override_conflict",
+    "config_duplicate",
+    "config_key_unknown",
+    "config_value_invalid",
+    "conflicting_lifecycle_owner",
+    "context_takes_no_item_argument",
+    "create_positional_type_without_title",
     "dependency_edge_not_allowed",
     "duplicate_command",
+    "duplicate_edge",
     "duplicate_sweep_cost_limit",
+    "duplicate_target_circular",
+    "duplicate_target_is_duplicate",
+    "duplicate_target_missing",
+    "duplicate_target_self",
     "empty_surface",
     "event_cursor_query_mismatch",
     "event_index_unavailable",
     "extension_dependency_name_unsafe",
     "extension_dependency_spec_invalid",
     "extension_dependency_version_unsafe",
+    "extension_install_soft_failed",
     "extension_install_source_contains_destination",
+    "extension_item_field_reserved",
+    "extension_item_field_type_conflict",
+    "extension_item_field_unknown",
+    "extension_update_health_partial_coverage",
+    "field_duplicate",
+    "field_invalid",
     "github_source_entry_unbuilt",
+    "history_drift_chain_mismatch",
+    "history_drift_hash_mismatch",
+    "history_drift_missing_stream",
+    "history_drift_unreadable_stream",
+    "history_merge_conflict_markers_detected",
+    "history_stream_over_compact_threshold",
+    "history_target_out_of_range",
+    "history_unknown_author_events",
     "init_existing_settings_requires_force",
     "init_id_prefix_conflict",
     "init_id_prefix_path_like",
+    "integrity_history_conflict_marker",
+    "integrity_history_invalid_json",
+    "integrity_history_unreadable",
+    "integrity_item_ahead_format_version",
+    "integrity_item_conflict_marker",
+    "integrity_item_outdated_format_version",
+    "integrity_item_parse_failed",
+    "integrity_item_unreadable",
+    "invalid_argument_value",
+    "invalid_command_usage",
     "invalid_event_cursor",
     "invalid_event_follow_interval",
     "invalid_event_limit",
     "invalid_event_since",
     "invalid_query_cursor",
+    "item_document_invalid",
+    "item_document_roundtrip_failed",
+    "item_id_collision",
+    "item_not_found",
     "likely_duplicate",
+    "linked_test_value_not_quoted",
     "list_source_incomplete",
     "local_source_not_found_bare_name",
+    "lock_conflict",
+    "locks_stale_count",
+    "locks_unreadable",
+    "malformed_plan_step_evidence",
     "manifest_capabilities_absent",
+    "merge_conflict_markers_detected",
     "merge_git_config_unwritable",
     "merge_root_not_found",
+    "missing_directory",
     "missing_lifecycle_target",
     "missing_required_argument",
+    "missing_required_option",
+    "module_import_failed",
+    "multi_target_github_install_ambiguous",
     "mutation_author_required",
     "mutation_secret_guard_blocked",
     "no_matching_tests",
     "no_projects_matched_filters",
     "no_test_files_found",
     "no_tests_found",
+    "no_update_fields",
     "npm_package_not_found",
     "ownership_conflict",
+    "ownership_dependency_bypass_restricted_options",
+    "ownership_metadata_bypass_restricted_options",
+    "package_spec_empty",
+    "profile_name_empty",
+    "profile_name_not_normalized",
+    "profile_summary_empty",
+    "profile_title_empty",
     "redundant_edge",
+    "reindex_already_running",
     "reserved_item_field",
+    "schema_migration_input_required",
+    "settings_read_fs_error",
+    "settings_read_invalid_json",
+    "settings_read_invalid_schema",
+    "settings_read_merge_failed",
+    "status_duplicate",
+    "status_invalid",
     "stdin_json_invalid",
     "stdin_json_unknown_key",
+    "telemetry_endpoint_probe_failed",
+    "telemetry_endpoint_probe_http_status",
+    "telemetry_otel_export_failing",
+    "telemetry_queue_high_retries",
+    "telemetry_queue_invalid_rows",
+    "telemetry_queue_pending",
+    "telemetry_schema_version_behind",
+    "telemetry_state_invalid_json",
+    "template_type_unknown",
+    "terminal_plan_mutation",
+    "terminal_state_conflict",
+    "tracked_runtime_cache_files",
+    "tracker_not_initialized",
+    "tracker_root_missing",
+    "tracker_root_not_directory",
+    "type_duplicate",
+    "type_invalid",
+    "unknown_command",
+    "unknown_error",
     "unknown_field",
     "unknown_field_projection",
     "unknown_item_type",
     "unknown_lifecycle_action",
+    "unknown_option",
+    "unknown_plan_template",
     "unknown_status",
     "unknown_subcommand",
-    "workspace_root_pm_path"
+    "unsupported_update_option",
+    "validate_command_references_stale_pm_ids",
+    "validate_files_missing_linked_paths",
+    "validate_files_orphaned_paths",
+    "validate_files_tracked_all_strict_forces_pm_internals",
+    "validate_format_version_ahead_items",
+    "validate_format_version_outdated_items",
+    "validate_hierarchy_parent_cycle",
+    "validate_hierarchy_parent_cycle_error",
+    "validate_history_drift_chain_mismatches",
+    "validate_history_drift_hash_mismatches",
+    "validate_history_drift_missing_streams",
+    "validate_history_drift_unreadable_streams",
+    "validate_history_unknown_author_events",
+    "validate_lifecycle_active_closure_like_metadata",
+    "validate_lifecycle_active_terminal_parent",
+    "validate_lifecycle_dependency_cycles",
+    "validate_lifecycle_dependency_cycles_error",
+    "validate_lifecycle_stale_blockers",
+    "validate_merge_fence_drift",
+    "validate_metadata_custom_profile_missing_required_fields",
+    "validate_metadata_duplicate_issue_codes",
+    "validate_metadata_missing_acceptance_criteria",
+    "validate_metadata_missing_close_reason",
+    "validate_metadata_missing_confidence",
+    "validate_metadata_missing_estimate",
+    "validate_metadata_missing_release",
+    "validate_metadata_missing_reviewer",
+    "validate_metadata_missing_risk",
+    "validate_metadata_missing_sprint",
+    "validate_resolution_missing_fields",
+    "validate_storage_duplicate_item_ids",
+    "validate_storage_history_conflict_markers",
+    "validate_storage_resurrected_items",
+    "validate_storage_tracked_runtime_cache_files",
+    "validate_storage_unparseable_config",
+    "validate_storage_unparseable_history",
+    "validate_storage_unreadable_items",
+    "vectorization_embedding_identity_changed",
+    "vectorization_stale_items_remaining",
+    "workflow_duplicate_type",
+    "workflow_status_unknown",
+    "workflow_transition_malformed",
+    "workflow_type_empty",
+    "workflow_type_unknown",
+    "workspace_history_state_conflict",
+    "workspace_root_pm_path",
+    "wrong_item_type"
   ],
   "package": "@unbrained/pm-cli",
   "schema_version": 2
