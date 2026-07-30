@@ -242,7 +242,7 @@ export function resolveContextIntentContract(
     (entry) =>
       entry.command === normalizedCommand && entry.intent === normalizedIntent,
   );
-  if (exact) return exact;
+  if (exact) return { ...exact, source: exact.source ?? "core" };
   const candidates = contracts
     .filter((entry) => entry.command === normalizedCommand)
     .map((entry) => entry.intent);
@@ -471,7 +471,7 @@ export function attachContextIntentReceipt<
   const receipt: PmContextIntentReceipt = {
     command: builtInCommand,
     intent: contract.intent,
-    source: contract.source ?? "core",
+    source: contract.source!,
     included_field_groups: [...contract.included_field_groups],
     token_budget: resolveIntentTokenBudget(
       options.tokenBudget,

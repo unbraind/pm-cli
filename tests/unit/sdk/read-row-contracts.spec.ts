@@ -129,6 +129,14 @@ describe("read row contracts", () => {
       }),
     ).toBe(true);
     expect(
+      isReadRowContract({
+        command: "package-summary",
+        row_keys: [],
+        fields: "unsupported",
+        jq_selector: PM_READ_ROW_JQ_SELECTOR,
+      }),
+    ).toBe(true);
+    expect(
       attachOutputOmissionReceipt("list", {
         items: [],
         row_contract: {},

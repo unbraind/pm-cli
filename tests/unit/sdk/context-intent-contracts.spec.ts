@@ -271,22 +271,17 @@ describe("context intent contracts", () => {
       Math.ceil(Buffer.byteLength(JSON.stringify(projected), "utf8") / 4),
     );
 
-    const executeContract = PM_CONTEXT_INTENT_CONTRACTS.find(
-      ({ command, intent }) => command === "next" && intent === "execute",
-    )!;
-    const originalSource = executeContract.source;
-    delete executeContract.source;
-    try {
-      expect(
-        attachContextIntentReceipt(
-          "next",
-          { for: "execute" },
-          { recommended: [] },
-        ),
-      ).toMatchObject({ context_intent: { source: "core" } });
-    } finally {
-      executeContract.source = originalSource;
-    }
+    expect(
+      resolveContextIntentContract("custom", "view", [
+        {
+          command: "custom",
+          intent: "view",
+          description: "Locally scoped declaration without a source.",
+          included_field_groups: ["rows"],
+          token_budget: 1200,
+        },
+      ]),
+    ).toMatchObject({ source: "core" });
   });
 
   it("rejects explicit ceilings that cannot contain the minimum receipt", () => {
