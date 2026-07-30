@@ -198,6 +198,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Return whether an unknown value is a structurally valid row declaration. */
+export function isReadRowContract(value: unknown): value is ReadRowContract {
+  return (
+    isRecord(value) &&
+    typeof value.command === "string" &&
+    value.command.trim().length > 0 &&
+    Array.isArray(value.row_keys) &&
+    value.row_keys.every(
+      (key): key is string => typeof key === "string" && key.length > 0,
+    ) &&
+    new Set(value.row_keys).size === value.row_keys.length &&
+    (value.fields === "supported" || value.fields === "unsupported") &&
+    typeof value.jq_selector === "string" &&
+    value.jq_selector.trim().length > 0
+  );
+}
+
 const GRAPH_ROW_KEYS: Readonly<Record<string, readonly string[]>> = {
   ancestors: ["ids"],
   descendants: ["ids"],
@@ -429,13 +446,18 @@ export function attachOutputOmissionReceipt(
     return result;
   }
 
-  const rowContract = isRecord(result.row_contract)
-    ? undefined
+  const declaredRowContract = result.row_contract;
+  const rowContract = isReadRowContract(declaredRowContract)
+    ? declaredRowContract
     : resolveReadRowContract(command, result);
   const disclosedResult =
-    rowContract === undefined
-      ? result
-      : { ...result, row_contract: rowContract };
+    rowContract !== undefined
+      ? { ...result, row_contract: rowContract }
+      : Object.hasOwn(result, "row_contract")
+        ? Object.fromEntries(
+            Object.entries(result).filter(([key]) => key !== "row_contract"),
+          )
+        : result;
   if (isRecord(disclosedResult.omission_receipt)) return disclosedResult;
   const receipt = resolveOutputOmissionReceipt(command, disclosedResult);
   return receipt === undefined

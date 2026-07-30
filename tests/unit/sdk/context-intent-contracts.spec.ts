@@ -249,7 +249,7 @@ describe("context intent contracts", () => {
     expect(projected).toMatchObject({
       budget_exceeded: {
         omitted_result: true,
-        restore_with: "pm next without --for",
+        restore_with: "Repeat the original command without --for.",
       },
       context_intent: {
         degradation: "budget_receipt_only",
@@ -259,6 +259,42 @@ describe("context intent contracts", () => {
     expect(projected.context_intent!.estimated_tokens).toBeLessThanOrEqual(
       projected.context_intent!.token_budget,
     );
+  });
+
+  it("rejects explicit ceilings that cannot contain the minimum receipt", () => {
+    expect(() =>
+      attachContextIntentReceipt(
+        "next",
+        { for: "execute", tokenBudget: 1 },
+        { recommended: [] },
+      ),
+    ).toThrow(
+      expect.objectContaining<Partial<PmCliError>>({
+        code: "invalid_argument_value",
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({
+          field: "tokenBudget",
+        }),
+      }),
+    );
+  });
+
+  it("returns invocation-safe recovery guidance for positional reads", () => {
+    const oversized = Object.fromEntries(
+      Array.from({ length: 2500 }, (_, index) => [`field_${index}`, index]),
+    );
+    for (const [command, intent] of [
+      ["get", "inspect"],
+      ["search", "discover"],
+    ] as const) {
+      expect(
+        attachContextIntentReceipt(command, { for: intent }, oversized),
+      ).toMatchObject({
+        budget_exceeded: {
+          restore_with: "Repeat the original command without --for.",
+        },
+      });
+    }
   });
 
   it("never drops result rows while compacting explanatory strings", () => {

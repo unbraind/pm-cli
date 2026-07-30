@@ -389,6 +389,8 @@ const CONTEXT_INTENT_DEGRADATIONS: Readonly<
   search: "bounded_ranked_rows",
 };
 
+const MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET = 256;
+
 /** Bound explanatory strings without dropping rows or invalidating pagination metadata. */
 function compactContextIntentValue(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -417,7 +419,24 @@ function resolveIntentTokenBudget(
       : typeof value === "string" && /^\d+$/u.test(value.trim())
         ? Number(value)
         : Number.NaN;
-  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : declaredBudget;
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) return declaredBudget;
+  if (parsed < MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET) {
+    throw new PmCliError(
+      `Context intent token budget must be at least ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "invalid_argument_value",
+        reason: "below_minimum",
+        field: "tokenBudget",
+        required: `Use an integer token budget of at least ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET}.`,
+        why: "Smaller ceilings cannot contain the minimum machine-readable intent receipt.",
+        nextSteps: [
+          `Retry with --token-budget ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET} or omit the override.`,
+        ],
+      },
+    );
+  }
+  return parsed;
 }
 
 /** Attach budget and degradation evidence for a selected built-in read intent. */
@@ -468,7 +487,7 @@ export function attachContextIntentReceipt<
     projected = {
       budget_exceeded: {
         omitted_result: true,
-        restore_with: `pm ${builtInCommand} without --for`,
+        restore_with: "Repeat the original command without --for.",
       },
       context_intent: receipt,
     };

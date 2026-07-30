@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PM_READ_ROW_JQ_SELECTOR,
   attachOutputOmissionReceipt,
+  isReadRowContract,
   resolveReadRowContract,
 } from "../../../src/sdk/output-projection.js";
 
@@ -67,6 +68,85 @@ describe("read row contracts", () => {
         row_contract: rowContract,
       }),
     ).toMatchObject({ row_contract: rowContract });
+  });
+
+  it("replaces malformed declarations with the canonical row contract", () => {
+    for (const invalid of [
+      null,
+      {},
+      { command: "", row_keys: [], fields: "supported", jq_selector: ".x" },
+      {
+        command: "custom",
+        row_keys: "rows",
+        fields: "supported",
+        jq_selector: ".x",
+      },
+      {
+        command: "custom",
+        row_keys: [1],
+        fields: "supported",
+        jq_selector: ".x",
+      },
+      {
+        command: "custom",
+        row_keys: [""],
+        fields: "supported",
+        jq_selector: ".x",
+      },
+      {
+        command: "custom",
+        row_keys: ["rows", "rows"],
+        fields: "supported",
+        jq_selector: ".x",
+      },
+      {
+        command: "custom",
+        row_keys: ["rows"],
+        fields: "maybe",
+        jq_selector: ".x",
+      },
+      {
+        command: "custom",
+        row_keys: ["rows"],
+        fields: "supported",
+        jq_selector: 1,
+      },
+      {
+        command: "custom",
+        row_keys: ["rows"],
+        fields: "supported",
+        jq_selector: " ",
+      },
+    ]) {
+      expect(isReadRowContract(invalid)).toBe(false);
+    }
+    expect(
+      isReadRowContract({
+        command: "package-list",
+        row_keys: ["rows"],
+        fields: "unsupported",
+        jq_selector: ".rows[]",
+      }),
+    ).toBe(true);
+    expect(
+      attachOutputOmissionReceipt("list", {
+        items: [],
+        row_contract: {},
+      }),
+    ).toMatchObject({
+      row_contract: {
+        command: "list",
+        row_keys: ["items"],
+        fields: "supported",
+        jq_selector: PM_READ_ROW_JQ_SELECTOR,
+      },
+    });
+    expect(
+      attachOutputOmissionReceipt("package-report", {
+        rows: [],
+        row_contract: {},
+      }),
+    ).toEqual({ rows: [] });
   });
 
   it("attaches row metadata alongside omission evidence without changing rows", () => {

@@ -465,11 +465,11 @@ export function analyzeGraphImpact(
     affected: state.affected,
     exact: true,
     truncated,
-    ...(rowLimitTruncated && state.affected.length > 0
+    ...(rowLimitTruncated
       ? {
           nextCursor: encodeQueryCursor(
             cursorFingerprint,
-            state.affected.at(-1)!.id,
+            state.affected.at(-1)?.id ?? root,
           ),
         }
       : {}),

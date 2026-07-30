@@ -74,7 +74,10 @@ projection from a command that intentionally owns a fixed row shape.
 
 SDK and package authors can import `PM_READ_ROW_CONTRACTS`,
 `PM_READ_ROW_JQ_SELECTOR`, and `resolveReadRowContract` from
-`@unbrained/pm-cli/sdk`.
+`@unbrained/pm-cli/sdk`. Existing package declarations are preserved only
+when `command`, `row_keys`, `fields`, and `jq_selector` form a structurally
+valid row contract; malformed declarations are replaced by the canonical
+built-in contract when one applies.
 
 ## Self-Describing SDK Projections
 
@@ -114,7 +117,9 @@ shape; the flag exists as a machine-actionable restore instruction.
 `graph impact` is bounded to ten rows by default, returns `next_cursor` when
 more affected nodes exist, and accepts `--after <cursor>` to resume in stable
 breadth-first order. `graph impact --full` is the explicit unbounded override;
-combining `--full` with `--limit` is rejected.
+combining `--full` with `--limit` is rejected. A zero-row page remains
+resumable: when `--limit 0` truncates reachable work, its cursor represents the
+root boundary so a later positive-limit request can retrieve the first row.
 
 For `get`, each independently selectable group uses its composable field
 selector as the restore instruction: `--fields children`,
@@ -149,7 +154,12 @@ its budget, long explanatory strings are compacted deterministically without
 dropping rows. If the complete row set still cannot fit, the result is replaced
 by a `budget_receipt_only` envelope instead of retaining stale counts or
 pagination cursors. The receipt's `token_budget` is the effective ceiling after
-any explicit caller override. Calls
+any explicit caller override. Explicit overrides below 256 tokens are rejected
+because the minimum machine-readable receipt cannot fit; malformed or absent
+overrides retain the declared intent budget. A receipt-only response directs
+callers to repeat their original invocation without `--for`, avoiding
+non-runnable recovery strings for positional commands such as `get` and
+`search`. Calls
 without `--for` remain byte-compatible with the ordinary projection path apart
 from the universal row contract.
 
