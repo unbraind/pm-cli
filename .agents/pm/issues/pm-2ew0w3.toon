@@ -1,0 +1,22 @@
+id: pm-2ew0w3
+title: "One governance rule, two terminal-transition paths, opposite answers: pm close refuses a reasonless close while pm update --status closed invents a reason and writes it into the immutable record unmarked"
+description: "governance.require_close_reason is a declared workspace control, and only one of the two paths that reach the closed state honours it. Reproduced at HEAD in an isolated sandbox. pm close <id> with no reason is refused outright with close_reason_required and the detail names the governance key. pm update <id> --status closed with no message is accepted: it auto-routes to close, stamps closed_at, synthesizes close_reason as the literal Closed via pm update, and reports two warnings, auto_routed_from_update_to_close and close_reason_defaulted. The item is now terminal with a governance field the governance rule was supposed to require and nobody supplied. The record is worse than the response. The history entry for that transition carries op close, message null, and a patch that adds /metadata/close_reason with the synthesized literal. The close_reason_defaulted warning exists only on the ephemeral command response, so once the entry is written there is no way to distinguish a machine-invented reason from an author-supplied one, and the entry cannot be rewritten. Two live items and three history streams in this tracker already carry that literal. This is a defect escape rather than a new discovery. pm-4a1p closed the identical bypass on the create path under GH-249, and pm-12ib shipped the auto-route this path uses, so the class was known, fixed once, and reintroduced through a second route with no gate asserting that every path into a terminal state answers the same governance question. It is not the reopen direction, which is pm-83cz0o, and it is not transition legality, which is pm-mj42og."
+type: Issue
+status: open
+priority: 1
+tags[3]: conformance,governance,history
+created_at: "2026-07-30T17:08:54.465Z"
+updated_at: "2026-07-30T17:09:10.522Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Every path that reaches a terminal state evaluates the same governance preconditions, proved by a table test that enumerates the paths and asserts one verdict per rule; A required close reason is never synthesized, so the reasonless path is refused with the same error code on every route; If a value is ever defaulted by the tool rather than supplied by the author, the immutable entry records that provenance so a later reader can tell them apart without consulting an ephemeral warning; The two live items and three history streams carrying the existing synthesized literal are dispositioned explicitly, either repaired through the audited redaction path or documented as historical with a stated reason; A negative control proves the table test fails when a new terminal route is added without evaluating the rule set"
+parent: pm-33cw
+risk: high
+confidence: high
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4a1p,discovered_from,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
+  pm-83cz0o,related,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
+  pm-pj2isb,related,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
+  pm-rtn5h6,related,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,implements,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
+body: ""

@@ -1,0 +1,23 @@
+id: pm-sf31yl
+title: "The bounded read costs 13.8 times the unbounded read to deliver the same set, because eight metadata blocks are re-emitted per page and the page carries two rows"
+description: "Measured at HEAD on the live tracker. pm list --json returns all 315 open items in 71,709 bytes, about 228 bytes per row. pm list --for triage returns 2 rows in 6,250 bytes, about 3,125 bytes per row, with has_more true and a resumable cursor. Walking the same 315 items through the triage intent therefore takes 158 pages and 987,500 bytes, which is 13.8 times the single unprojected call and about 247,000 tokens against about 18,000. The token-efficiency feature is anti-efficient at whole-set scope, and it is anti-efficient by construction rather than by accident. Every page re-emits eight metadata blocks that do not vary across the chain: context_intent, row_contract, projection, omission_receipt, filters, sorting, completeness and the pagination triple. On a 2-row page those blocks and the wider per-row field set dominate the payload, so the marginal cost of a row is small compared to the fixed cost of asking for it. Two independent levers exist and neither is applied. The metadata is chain-invariant, so it can be emitted once for the cursor chain and referenced by fingerprint on continuation pages, or suppressed by an explicit caller opt-out. The row count is chosen without reference to measured per-row cost, so a budget that admits 1,045 tokens of payload is spent mostly on envelope instead of being divided by the observed bytes-per-row to pick the largest feasible page. This is scoped to per-page metadata amortization and page-size derivation across the paginated read family. It is not the per-row resume cursor in pm events, which is pm-ez1dfg, and it is not the encoding study, which is pm-kvxqp1."
+type: Issue
+status: open
+priority: 1
+tags[3]: context-management,pagination,token-budget
+created_at: "2026-07-30T17:01:49.124Z"
+updated_at: "2026-07-30T17:21:52.248Z"
+author: "harness:claude-code"
+estimated_minutes: 360
+acceptance_criteria: "Chain-invariant envelope metadata is emitted once per cursor chain and referenced on continuation pages, or is suppressible by an explicit caller opt-out, and the reduction is measured; Page size is derived from the measured bytes-per-row of the projection against the remaining budget rather than from a fixed constant, so a larger budget yields more rows rather than the same two; A gate asserts that walking a full result set through any bounded intent costs no more total tokens than the unprojected single call for the same set, on a corpus at least the size of the current tracker; The published evidence table records bytes per row and total walk cost for every bounded read family member before and after, including the 315-item list case; A negative control proves the gate fails when per-page metadata is reintroduced on every page"
+parent: pm-5t33or
+risk: high
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7hbfch,discovered_from,"2026-07-30T17:03:13.975Z","harness:claude-code","cli:update:dep",detected
+  pm-ez1dfg,related,"2026-07-30T17:03:13.975Z","harness:claude-code","cli:update:dep",detected
+  pm-kvxqp1,related,"2026-07-30T17:03:13.975Z","harness:claude-code","cli:update:dep",detected
+  pm-o87av6,implements,"2026-07-30T17:03:13.975Z","harness:claude-code","cli:update:dep",detected
+learnings[1]{created_at,author,text}:
+  "2026-07-30T17:21:52.247Z","harness:claude-code","Measurement discipline this issue depends on, worth stating because the intuitive measurement hides the defect: judge a bounded read by the cost of the whole answer, never by the cost of one page. Per page the triage projection looks like a clear win at 6,250 bytes against 71,709 for the unprojected call. Multiplied by the pages needed to reach the same 315 rows it is 987,500 bytes, and the win becomes a 13.8-fold loss. The comparison that matters is total tokens to answer the question the caller actually asked.\n\nThe derived quantity to record for any paginated surface is bytes per row at the offered page size, because it exposes envelope amortisation directly: 228 bytes per row unprojected against 3,125 per row at a two-row page is the whole finding in one ratio, and it stays meaningful across corpus sizes in a way that a page byte count does not."
+body: ""

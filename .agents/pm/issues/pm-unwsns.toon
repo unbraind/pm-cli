@@ -6,16 +6,20 @@ status: open
 priority: 1
 tags[4]: "area:sdk",extensions,github-intake,type-safety
 created_at: "2026-07-30T11:27:55.105Z"
-updated_at: "2026-07-30T11:27:55.105Z"
+updated_at: "2026-07-30T17:04:18.458Z"
 author: "harness:codex"
+estimated_minutes: 120
 acceptance_criteria: Known-field interfaces enforce excess-property checking; any metadata escape hatch is explicitly namespaced; type tests reject name/type misspellings; activation remains atomic and suggests canonical fields
 goal: project management = context management
 objective: Make invalid extension metadata fail at author time while preserving explicit forward-compatible metadata
 value: Package authors receive a compiler error before activation can partially register commands
 impact: Closes a typed SDK/runtime contract gap across flags and schema definitions
-parent: pm-doxj
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+parent: pm-usfg
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-iqq0,discovered_from,"2026-07-30T11:27:55.105Z","harness:codex","cli:create:dep",detected
+  pm-9rgaal,implements,"2026-07-30T17:04:18.275Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-07-30T11:27:55.105Z","harness:codex","Duplicate check searched all statuses for FlagDefinition excess properties and activation aborts; no canonical owner found. GitHub report: https://github.com/unbraind/pm-cli/issues/825"
 body: ""

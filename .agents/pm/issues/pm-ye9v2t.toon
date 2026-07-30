@@ -6,16 +6,20 @@ status: open
 priority: 1
 tags[4]: "area:sdk",error-contract,extensions,github-intake
 created_at: "2026-07-30T11:28:13.431Z"
-updated_at: "2026-07-30T11:28:13.431Z"
+updated_at: "2026-07-30T17:04:19.474Z"
 author: "harness:codex"
+estimated_minutes: 180
 acceptance_criteria: CommandHandlerResult carries a validated non-zero exit channel; structured payloads still render on failure; extension error code and remediation survive host rendering; CLI and SDK integration tests cover both returned and thrown failures
 goal: project management = context management
 objective: Give extension gates the same structured verdict and recovery contract as core commands
 value: "Custom lint, policy, changelog, and preflight commands can serve both CI and agents"
 impact: Removes the forced choice between structured output and a truthful process exit code
-parent: pm-doxj
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+parent: pm-ugqx
+risk: medium
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-iqq0,discovered_from,"2026-07-30T11:28:13.431Z","harness:codex","cli:create:dep",detected
+  pm-9rgaal,implements,"2026-07-30T17:04:19.227Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-07-30T11:28:13.431Z","harness:codex","Duplicate check searched all statuses for structured extension failure results and remediation preservation; no canonical owner found. GitHub report: https://github.com/unbraind/pm-cli/issues/826"
 body: ""

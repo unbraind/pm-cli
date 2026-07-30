@@ -1,0 +1,21 @@
+id: pm-wv47pf
+title: "A read whose result was omitted for budget still records those items as served and included, so the usage-affinity signal learns from context the agent never received"
+description: "The usage-affinity signal treats a recorded serve as evidence that an item was placed in front of an agent, and that evidence feeds relevance scoring. Enforcement of intent budgets can now delete the whole payload at egress, and the ledger write happens independently of that decision, so the two disagree. Measured at HEAD with controls run back to back. pm next --for execute emitted zero rows to the caller because its budget is infeasible, and the ledger recorded 200 candidate rows with 35 of them marked included true. The control pm next emitted six rows and recorded 200 candidates with 21 marked included true. pm context --for orient emitted zero and recorded 315 rows with 77 included, against 53 included on the served control. The omitted response therefore recorded more inclusions than the response that actually served content, and nothing in the entry distinguishes the two cases. Three consequences follow. The affinity signal is trained on serves that never happened, which is a silent data-quality fault in the input to relevance scoring rather than a visible failure. The served-then-acted-on outcome that the feedback signal is built around becomes unmeasurable, because a non-action after a phantom serve is indistinguishable from a non-action after a real one. And the fault appears precisely when the agent got nothing, so the corpus of phantom serves grows fastest for exactly the intents that are most broken. This is the correctness of the recorded signal. The cost and scaling of the same ledger are tracked separately."
+type: Issue
+status: open
+priority: 2
+tags[2]: context-management,data-quality
+created_at: "2026-07-30T17:02:34.169Z"
+updated_at: "2026-07-30T17:18:11.301Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A response that omits its result records no serve, or records one whose rows are all marked not included and whose entry states that the response was omitted; The ledger entry carries the egress decision, so a consumer can separate a delivered assembly from a suppressed one without re-deriving the budget; Inclusion is recorded from what the response actually emitted rather than from the packing decision that preceded enforcement, proved by a test that asserts recorded inclusions equal emitted rows for both a served and an omitted response; Any existing phantom serves are either identifiable by a recorded marker or the affinity reader documents that entries written before the fix cannot be trusted for inclusion; A negative control proves the assertion fails when inclusion is taken from the pre-enforcement packing set"
+parent: pm-4k6b
+risk: medium
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-o87av6,implements,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
+  pm-rtn5h6,related,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
+  pm-uwfs,discovered_from,"2026-07-30T17:03:16.021Z","harness:claude-code","cli:update:dep",detected
+  pm-bab3gb,related,"2026-07-30T17:18:11.070Z","harness:claude-code","cli:update:dep",detected
+body: ""

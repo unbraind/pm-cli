@@ -6,16 +6,20 @@ status: open
 priority: 2
 tags[3]: agent-ux,error-contract,github-intake
 created_at: "2026-07-30T11:27:37.570Z"
-updated_at: "2026-07-30T11:27:37.570Z"
+updated_at: "2026-07-30T17:04:17.569Z"
 author: "harness:codex"
+estimated_minutes: 90
 acceptance_criteria: Core field names passed to --field return the canonical dedicated update/close flag; close-validation warnings include executable flags; tests execute every rendered recovery command
 goal: project management = context management
 objective: Make core-field validation errors directly recoverable in one CLI turn
 value: Agents can satisfy resolution metadata without guessing flags or activating irrelevant extensions
 impact: Removes a deterministic dead-end from close validation and generic field setting
-parent: pm-doxj
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+parent: pm-mpbb
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-qvdj,discovered_from,"2026-07-30T11:27:37.570Z","harness:codex","cli:create:dep",detected
+  pm-j82fd3,implements,"2026-07-30T17:04:17.382Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-07-30T11:27:37.570Z","harness:codex","Duplicate check searched all statuses for extension_item_field_unknown and GH-824; no canonical owner found. GitHub report: https://github.com/unbraind/pm-cli/issues/824"
 body: ""
