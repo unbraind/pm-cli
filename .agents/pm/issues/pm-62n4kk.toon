@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:init","area:schema",github-intake,integrity
 created_at: "2026-07-30T11:28:54.704Z"
-updated_at: "2026-07-30T23:28:52.330Z"
+updated_at: "2026-07-30T23:31:09.347Z"
 closed_at: "2026-07-30T22:53:00.622Z"
 completed_at: "2026-07-30T22:53:00.622Z"
 author: "harness:codex"
@@ -25,11 +25,12 @@ actual_result: Status aliases use the canonical underscore normalization and pre
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-e77a,discovered_from,"2026-07-30T11:28:54.704Z","harness:codex","cli:create:dep",detected
   pm-j82fd3,implements,"2026-07-30T17:04:21.224Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-30T11:28:54.704Z","harness:codex","Duplicate check searched all statuses for init status alias registry disagreement and found no canonical owner. GitHub report: https://github.com/unbraind/pm-cli/issues/828"
   "2026-07-30T22:32:05.245Z","harness:codex","Verification evidence: normalized aliases remain present across generated status projections and resolve hyphen/space input; focused schema suite and full 6584-test coverage passed at 100/100/100/100."
   "2026-07-30T22:51:32.197Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
   "2026-07-30T23:28:52.329Z","harness:codex","Final native-layout revalidation: the focused diff is 952 insertions and 97 deletions with no formatter churn; 406 files and 6,583 tests pass at 100% statements, branches, functions, and lines. Typecheck, ESLint, static quality, package boundary/parity, token budgets, SDK surface/import-cost/transport gates, docs, latest pm-changelog 2026.7.29-1 check mode, tracker health/history integrity, and fresh unrelated-workspace acceptance all pass."
+  "2026-07-30T23:31:09.346Z","harness:codex","Publication evidence: broad SDK/CLI implementation is published for exact-head CI and AI review in https://github.com/unbraind/pm-cli/pull/833 at commit 89e52f2ce."
 learnings[1]{created_at,author,text}:
   "2026-07-30T22:51:33.722Z","harness:codex",Generated status projections should normalize aliases with the same runtime token function and retain aliases that differ textually even when they resolve to the canonical id.
 files[2]{path,scope,note}:

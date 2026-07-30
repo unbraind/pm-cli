@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",data-quality,dedupe,github-intake,multi-agent
 created_at: "2026-07-30T21:41:47.014Z"
-updated_at: "2026-07-30T23:28:53.771Z"
+updated_at: "2026-07-30T23:31:10.323Z"
 closed_at: "2026-07-30T22:53:08.930Z"
 completed_at: "2026-07-30T22:53:08.930Z"
 author: "harness:codex"
@@ -25,12 +25,13 @@ actual_result: The default preset is strict and final similarity revalidation sh
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4ri6,discovered_from,"2026-07-30T21:41:47.014Z","harness:codex","cli:create:dep",detected
   pm-j82fd3,implements,"2026-07-30T21:41:47.014Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-30T21:41:47.014Z","harness:codex","text=Duplicate check searched all 2217 live items across every status for GH-830, likely_duplicates persistence, strict duplicate governance, and create-time advisory. Closed pm-4ri6 is completed shipped lineage for the deliberately configurable advisory; this issue tracks the newly reported safe-default and atomicity gap rather than reopening or duplicating that completed feature. GitHub report: https://github.com/unbraind/pm-cli/issues/830"
   "2026-07-30T22:01:51.217Z","harness:codex","Correction: the create-time duplicate-check evidence is the comment text after the accidental literal 'text=' prefix; no tracker field or external secret was involved."
   "2026-07-30T22:32:06.244Z","harness:codex","Verification evidence: strict create concurrency commits exactly one equivalent item, strict copy blocks before persistence, explicit bypass remains structured, and required SDK locking works below the 500-item cache threshold. Full coverage passed 6584 tests at 100/100/100/100."
   "2026-07-30T22:51:35.236Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
   "2026-07-30T23:28:53.771Z","harness:codex","Final native-layout revalidation: the focused diff is 952 insertions and 97 deletions with no formatter churn; 406 files and 6,583 tests pass at 100% statements, branches, functions, and lines. Typecheck, ESLint, static quality, package boundary/parity, token budgets, SDK surface/import-cost/transport gates, docs, latest pm-changelog 2026.7.29-1 check mode, tracker health/history integrity, and fresh unrelated-workspace acceptance all pass."
+  "2026-07-30T23:31:10.323Z","harness:codex","Publication evidence: broad SDK/CLI implementation is published for exact-head CI and AI review in https://github.com/unbraind/pm-cli/pull/833 at commit 89e52f2ce."
 learnings[1]{created_at,author,text}:
   "2026-07-30T22:51:36.553Z","harness:codex",Strict duplicate checks are only safe when the final similarity read and persistence share a required derived-index lock; preflight-only advice leaves a concurrent time-of-check/time-of-use gap.
 files[10]{path,scope,note}:
