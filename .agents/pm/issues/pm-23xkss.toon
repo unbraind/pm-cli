@@ -6,9 +6,9 @@ status: closed
 priority: 0
 tags[4]: "area:sdk","area:storage",context-integrity,error-contract
 created_at: "2026-07-29T21:43:32.888Z"
-updated_at: "2026-07-29T22:44:18.383Z"
-closed_at: "2026-07-29T22:19:58.359Z"
-completed_at: "2026-07-29T22:19:58.359Z"
+updated_at: "2026-07-30T08:32:36.670Z"
+closed_at: "2026-07-30T08:32:33.807Z"
+completed_at: "2026-07-30T08:32:33.807Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: listAllItemMetadata and its light and body variants reject missing roots and non-directory roots with stable typed diagnostics; a valid empty tracker remains a successful empty result; CLI query and governance callers preserve their intended domain-level errors; public SDK types documentation focused regression tests and installed-consumer acceptance cover the contract
@@ -20,20 +20,23 @@ why_now: GH-814 demonstrates the ambiguity in the current published SDK and an e
 parent: pm-usfg
 risk: high
 confidence: high
-resolution: Validated tracker roots before metadata enumeration with stable typed missing and non-directory diagnostics.
+resolution: Tracker-root validation now inspects existing ancestors after ENOENT so Windows file/child paths retain the non-directory usage contract.
 expected_result: Empty valid trackers return an empty corpus while invalid or unreadable roots cannot masquerade as project truth.
-actual_result: "All three metadata readers preserve empty success, distinguish missing and invalid roots, and rethrow unrelated filesystem errors."
+actual_result: "All metadata readers distinguish valid empty, truly missing, file-root, and file-ancestor paths across POSIX and Windows semantics while preserving unrelated filesystem failures."
 affected_version: 2026.7.29
+fixed_version: next
 component: sdk/storage/item-store
 regression: true
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-ju83,related,"2026-07-29T21:43:32.888Z","harness:codex","cli:create:dep",detected
   pm-oxrw,related,"2026-07-29T21:43:32.888Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-29T21:43:32.888Z","harness:codex","Duplicate check evidence 2026-07-29: searched all 2,197 live items across every status for GH-814, listAllItemMetadata, missing metadata root, nonexistent pm root, regular-file tracker root, empty graph, and SDK reader semantics. No item owns this failure mode. Closed SDK-first and graph primitives establish the affected lineage but do not distinguish invalid roots from an empty valid tracker. GitHub: https://github.com/unbraind/pm-cli/issues/814"
   "2026-07-29T22:19:19.094Z","harness:codex","Implementation evidence: all public metadata enumeration variants now accept an existing empty directory but throw stable typed diagnostics for missing and non-directory roots, while preserving unrelated filesystem errors. Focused tests pass 3/3 and full coverage passes 6540/6540 at 100/100/100/100. A packed SDK consumer proved empty returns [] and missing reports tracker_root_missing with reason missing."
   "2026-07-29T22:29:52.730Z","harness:codex","Delivery review: PR #818 https://github.com/unbraind/pm-cli/pull/818 carries typed empty/missing/non-directory tracker-root semantics, SDK documentation, focused tests, full coverage, and isolated packed-consumer proof. GitHub issue #814 is configured to close on merge."
   "2026-07-29T22:44:18.382Z","harness:codex","Review-loop finding: CodeRabbit correctly identified ENOTDIR when a metadata root traverses beneath a regular file. The typed tracker_root_not_directory mapping and regression coverage now include both a direct file root and file/child traversal."
+  "2026-07-30T08:24:41.632Z","harness:codex","Regression evidence: GH-821 https://github.com/unbraind/pm-cli/issues/821 and nightly run 30519801227 prove that Windows reports ENOENT for a child path beneath a regular file, causing tracker_root_missing/NOT_FOUND where the contract requires tracker_root_not_directory/USAGE. Reopened because the previous close overstated cross-platform completion."
+  "2026-07-30T08:32:28.313Z","harness:codex","Final evidence for GH-821: focused contract suite passes 6/6; full sandboxed coverage passes 403 files and 6,558 tests at exact 100/100/100/100; strict static/docstring, SDK boundary/parity, token budget, secret, and dependency gates pass; an unrelated packed SDK consumer reports tracker_root_not_directory with exit 2 for file/child traversal. The Windows-specific ENOENT path is deterministically simulated without platform mocks of product behavior."
 learnings[1]{created_at,author,text}:
   "2026-07-29T22:19:19.795Z","harness:codex",An empty item array is project truth only after the SDK proves the supplied tracker root is an existing directory; filesystem discovery failures must remain distinguishable and non-ENOENT errors must retain their original identity.
 files[2]{path,scope,note}:
@@ -41,10 +44,11 @@ files[2]{path,scope,note}:
   tests/unit/core/store/item-store-root-contract.spec.ts,project,Empty missing invalid and filesystem-error root coverage
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/core/store/item-store-root-contract.spec.ts,project,120
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms6mok4k-8vvd1p,test,passed,"2026-07-29T22:00:02.988Z","2026-07-29T22:00:09.956Z","2026-07-29T22:00:09.956Z",1,0,0
+  test-local-ms799ofg-gp98c4,test,passed,"2026-07-30T08:32:19.852Z","2026-07-30T08:32:26.860Z","2026-07-30T08:32:26.860Z",1,0,0
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated PM changelog entry for tracker-root truth contracts
   docs/SDK_CONTEXT_TRUTH_CONTRACTS.md,project,Missing invalid and empty tracker semantics
-close_reason: SDK metadata enumeration now distinguishes empty missing invalid and unreadable tracker roots with typed diagnostics; packed consumer and 100 percent coverage pass.
+close_reason: GH-821 cross-platform tracker-root ancestor classification fixed with exact coverage and packed SDK proof.
 body: ""

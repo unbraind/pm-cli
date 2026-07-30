@@ -117,6 +117,20 @@ function resolveItemFormatSearchOrder(
   return ["toon", "json_markdown"];
 }
 
+function trackerRootNotDirectoryError(pmRoot: string): PmCliError {
+  return new PmCliError(
+    `Tracker root is not a directory at ${pmRoot}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "tracker_root_not_directory",
+      reason: "not_a_directory",
+      nextSteps: [
+        "Pass the tracker directory itself, usually <workspace>/.agents/pm.",
+      ],
+    },
+  );
+}
+
 /** Require metadata enumeration to start from a real directory so an invalid source cannot masquerade as an empty tracker. */
 async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
   let stats;
@@ -124,6 +138,27 @@ async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
     stats = await fs.stat(pmRoot);
   } catch (error: unknown) {
     if (isErrno(error, "ENOENT")) {
+      const filesystemRoot = path.parse(path.resolve(pmRoot)).root;
+      let ancestor = path.dirname(path.resolve(pmRoot));
+      while (ancestor !== filesystemRoot) {
+        let ancestorStats;
+        try {
+          ancestorStats = await fs.stat(ancestor);
+        } catch (ancestorError: unknown) {
+          if (isErrno(ancestorError, "ENOTDIR")) {
+            throw trackerRootNotDirectoryError(pmRoot);
+          }
+          if (!isErrno(ancestorError, "ENOENT")) {
+            throw ancestorError;
+          }
+          ancestor = path.dirname(ancestor);
+          continue;
+        }
+        if (!ancestorStats.isDirectory()) {
+          throw trackerRootNotDirectoryError(pmRoot);
+        }
+        break;
+      }
       throw new PmCliError(
         `Tracker root does not exist at ${pmRoot}.`,
         EXIT_CODE.NOT_FOUND,
@@ -138,32 +173,12 @@ async function assertItemMetadataRoot(pmRoot: string): Promise<void> {
       );
     }
     if (isErrno(error, "ENOTDIR")) {
-      throw new PmCliError(
-        `Tracker root is not a directory at ${pmRoot}.`,
-        EXIT_CODE.USAGE,
-        {
-          code: "tracker_root_not_directory",
-          reason: "not_a_directory",
-          nextSteps: [
-            "Pass the tracker directory itself, usually <workspace>/.agents/pm.",
-          ],
-        },
-      );
+      throw trackerRootNotDirectoryError(pmRoot);
     }
     throw error;
   }
   if (!stats.isDirectory()) {
-    throw new PmCliError(
-      `Tracker root is not a directory at ${pmRoot}.`,
-      EXIT_CODE.USAGE,
-      {
-        code: "tracker_root_not_directory",
-        reason: "not_a_directory",
-        nextSteps: [
-          "Pass the tracker directory itself, usually <workspace>/.agents/pm.",
-        ],
-      },
-    );
+    throw trackerRootNotDirectoryError(pmRoot);
   }
 }
 
