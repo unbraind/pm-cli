@@ -20997,6 +20997,7 @@
     "config_value_invalid",
     "conflicting_lifecycle_owner",
     "context_takes_no_item_argument",
+    "core_item_field_requires_dedicated_flag",
     "create_positional_type_without_title",
     "dependency_edge_not_allowed",
     "duplicate_command",
