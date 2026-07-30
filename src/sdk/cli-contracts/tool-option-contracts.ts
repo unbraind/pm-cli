@@ -105,6 +105,7 @@ const TOOL_CONTENT_PRESENCE_OPTION_CONTRACTS: readonly SharedToolOptionFlagContr
 
 /** Public contract for tool list filter option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "for", flag: "--for" },
   ...cloneOptionContracts(TOOL_ITEM_BASE_FILTER_OPTION_CONTRACTS),
   ...cloneOptionContracts(TOOL_LIST_WINDOW_FILTER_OPTION_CONTRACTS),
   { param: "ids", flag: "--ids" },
@@ -132,6 +133,7 @@ export const TOOL_AGGREGATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
 
 /** Public contract for tool search filter option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "for", flag: "--for" },
   { param: "matchMode", flag: "--match-mode" },
   { param: "minScore", flag: "--min-score" },
   { param: "count", flag: "--count", booleanish: true },
@@ -394,6 +396,7 @@ export const TOOL_ACTIVITY_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
 
 /** Public contract for tool context option contracts, shared by SDK and presentation-layer consumers. */
 export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "for", flag: "--for" },
   { param: "date", flag: "--date" },
   { param: "from", flag: "--from" },
   { param: "to", flag: "--to" },

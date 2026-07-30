@@ -59,6 +59,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   github: { type: "string" },
   ref: { type: "string" },
   query: { type: "string" },
+  for: { type: "string", minLength: 1 },
   keywords: { type: "string" },
   fields: { type: "string" },
   sort: {
@@ -1457,6 +1458,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   query: {
     description: "Search query text for search action.",
+  },
+  for: {
+    description:
+      "Named context intent projection declared for the selected read action.",
+    examples: ["orient", "inspect", "triage", "execute", "discover"],
   },
   keywords: {
     description: "Alias for query in search action payloads.",

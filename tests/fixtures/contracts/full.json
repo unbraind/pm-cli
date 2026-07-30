@@ -1486,6 +1486,10 @@
       "command": "context",
       "flags": [
         {
+          "flag": "--for",
+          "value_name": "intent"
+        },
+        {
           "flag": "--date"
         },
         {
@@ -1921,6 +1925,10 @@
     {
       "command": "ctx",
       "flags": [
+        {
+          "flag": "--for",
+          "value_name": "intent"
+        },
         {
           "flag": "--date"
         },
@@ -2581,6 +2589,10 @@
       "command": "get",
       "flags": [
         {
+          "flag": "--for",
+          "value_name": "intent"
+        },
+        {
           "flag": "--depth"
         },
         {
@@ -2992,6 +3004,10 @@
       "command": "list",
       "flags": [
         {
+          "flag": "--for",
+          "value_name": "intent"
+        },
+        {
           "flag": "--status",
           "list": true
         },
@@ -3211,6 +3227,10 @@
     {
       "command": "list-all",
       "flags": [
+        {
+          "flag": "--for",
+          "value_name": "intent"
+        },
         {
           "flag": "--status",
           "list": true
@@ -3432,6 +3452,10 @@
       "command": "list-blocked",
       "flags": [
         {
+          "flag": "--for",
+          "value_name": "intent"
+        },
+        {
           "flag": "--status",
           "list": true
         },
@@ -3651,6 +3675,10 @@
     {
       "command": "list-canceled",
       "flags": [
+        {
+          "flag": "--for",
+          "value_name": "intent"
+        },
         {
           "flag": "--status",
           "list": true
@@ -3872,6 +3900,10 @@
       "command": "list-closed",
       "flags": [
         {
+          "flag": "--for",
+          "value_name": "intent"
+        },
+        {
           "flag": "--status",
           "list": true
         },
@@ -4091,6 +4123,10 @@
     {
       "command": "list-draft",
       "flags": [
+        {
+          "flag": "--for",
+          "value_name": "intent"
+        },
         {
           "flag": "--status",
           "list": true
@@ -4312,6 +4348,10 @@
       "command": "list-in-progress",
       "flags": [
         {
+          "flag": "--for",
+          "value_name": "intent"
+        },
+        {
           "flag": "--status",
           "list": true
         },
@@ -4531,6 +4571,10 @@
     {
       "command": "list-open",
       "flags": [
+        {
+          "flag": "--for",
+          "value_name": "intent"
+        },
         {
           "flag": "--status",
           "list": true
@@ -4774,6 +4818,10 @@
     {
       "command": "next",
       "flags": [
+        {
+          "flag": "--for",
+          "value_name": "intent"
+        },
         {
           "flag": "--type"
         },
@@ -6154,6 +6202,10 @@
     {
       "command": "search",
       "flags": [
+        {
+          "flag": "--for",
+          "value_name": "intent"
+        },
         {
           "flag": "--mode"
         },
@@ -8990,6 +9042,2122 @@
     "workspace snapshot list",
     "workspace snapshot restore"
   ],
+  "context_intents": [
+    {
+      "command": "context",
+      "description": "Bounded active hierarchy, ownership, blockers, and recent progress.",
+      "included_field_groups": [
+        "summary",
+        "focus",
+        "hierarchy",
+        "blockers",
+        "activity"
+      ],
+      "intent": "orient",
+      "source": "core",
+      "token_budget": 2400
+    },
+    {
+      "command": "context",
+      "description": "Active ownership, evidence, decisions, and immediate continuation context.",
+      "included_field_groups": [
+        "summary",
+        "focus",
+        "in_progress",
+        "decisions",
+        "activity"
+      ],
+      "intent": "handoff",
+      "source": "core",
+      "token_budget": 2200
+    },
+    {
+      "command": "get",
+      "description": "Complete item metadata, relationships, evidence, and lifecycle state.",
+      "included_field_groups": [
+        "item",
+        "children",
+        "claim_state",
+        "linked"
+      ],
+      "intent": "inspect",
+      "source": "core",
+      "token_budget": 3200
+    },
+    {
+      "command": "list",
+      "description": "Compact governance, ownership, priority, and blocker fields for triage.",
+      "included_field_groups": [
+        "identity",
+        "governance",
+        "ownership",
+        "dependencies"
+      ],
+      "intent": "triage",
+      "source": "core",
+      "token_budget": 1800
+    },
+    {
+      "command": "next",
+      "description": "The highest-ranked actionable work with concise ranking evidence.",
+      "included_field_groups": [
+        "recommended"
+      ],
+      "intent": "execute",
+      "source": "core",
+      "token_budget": 1200
+    },
+    {
+      "command": "search",
+      "description": "Ranked canonical lineage candidates with compact match evidence.",
+      "included_field_groups": [
+        "identity",
+        "status",
+        "lineage",
+        "match"
+      ],
+      "intent": "discover",
+      "source": "core",
+      "token_budget": 1800
+    }
+  ],
+  "error_codes": [
+    {
+      "code": "acceptance_criteria_semicolon_forbidden",
+      "exit_code": 2,
+      "meaning": "Acceptance criteria semicolon forbidden condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/item/parse.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "already_claimed_by",
+      "exit_code": 4,
+      "meaning": "Already claimed by condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/claim.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "ambiguous_list_all",
+      "exit_code": 2,
+      "meaning": "Ambiguous list all condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-list-query.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "ambiguous_option_combination",
+      "exit_code": 2,
+      "meaning": "Ambiguous option combination condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/plan.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "annotation_flag_like_value",
+      "exit_code": 2,
+      "meaning": "Annotation flag like value condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "annotation_message_without_text",
+      "exit_code": 2,
+      "meaning": "Annotation message without text condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "append_empty_body",
+      "exit_code": 2,
+      "meaning": "Append empty body condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/append.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "body_file_conflicts_with_body",
+      "exit_code": 2,
+      "meaning": "Body file conflicts with body condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/io/body-file.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "body_file_missing_path",
+      "exit_code": 2,
+      "meaning": "Body file missing path condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/io/body-file.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "body_file_unreadable",
+      "exit_code": 3,
+      "meaning": "Body file unreadable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/io/body-file.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "bundle_integrity_torn_install",
+      "exit_code": 1,
+      "meaning": "Bundle integrity torn install condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/bundle-integrity.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "capability_undeclared",
+      "exit_code": 1,
+      "meaning": "Capability undeclared condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "capability_unused",
+      "exit_code": 1,
+      "meaning": "Capability unused condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "child_projection_item_bound_exceeded",
+      "exit_code": 1,
+      "meaning": "Child projection item bound exceeded condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-children.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "close_reason_required",
+      "exit_code": 2,
+      "meaning": "Close reason required condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/close-many.ts",
+        "cli/commands/close.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "close_through_update",
+      "exit_code": 1,
+      "meaning": "Close through update condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "close_validation_missing_fields",
+      "exit_code": 2,
+      "meaning": "Close validation missing fields condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/close.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "collected_zero_items",
+      "exit_code": 1,
+      "meaning": "Collected zero items condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "command_failed",
+      "exit_code": 1,
+      "meaning": "Command failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "command_namespace",
+      "exit_code": 2,
+      "meaning": "Command namespace condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/contracts.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "command_override_conflict",
+      "exit_code": 4,
+      "meaning": "Command override conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "config_duplicate",
+      "exit_code": 1,
+      "meaning": "Config duplicate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "config_key_unknown",
+      "exit_code": 2,
+      "meaning": "Config key unknown condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "config_value_invalid",
+      "exit_code": 2,
+      "meaning": "Config value invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "conflicting_lifecycle_owner",
+      "exit_code": 2,
+      "meaning": "Conflicting lifecycle owner condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-operations.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "context_takes_no_item_argument",
+      "exit_code": 1,
+      "meaning": "Context takes no item argument condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "create_positional_type_without_title",
+      "exit_code": 2,
+      "meaning": "Create positional type without title condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-mutation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "dependency_edge_not_allowed",
+      "exit_code": 2,
+      "meaning": "Dependency edge not allowed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/dependency-flag-validation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "duplicate_command",
+      "exit_code": 1,
+      "meaning": "Duplicate command condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "duplicate_edge",
+      "exit_code": 1,
+      "meaning": "Duplicate edge condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/graph/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "duplicate_sweep_cost_limit",
+      "exit_code": 4,
+      "meaning": "Duplicate sweep cost limit condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/similarity.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "duplicate_target_circular",
+      "exit_code": 2,
+      "meaning": "Duplicate target circular condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/close.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "duplicate_target_is_duplicate",
+      "exit_code": 2,
+      "meaning": "Duplicate target is duplicate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/close.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "duplicate_target_missing",
+      "exit_code": 2,
+      "meaning": "Duplicate target missing condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/close.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "duplicate_target_self",
+      "exit_code": 2,
+      "meaning": "Duplicate target self condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/close.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "empty_surface",
+      "exit_code": 1,
+      "meaning": "Empty surface condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "event_cursor_query_mismatch",
+      "exit_code": 2,
+      "meaning": "Event cursor query mismatch condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mutation-events.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "event_index_unavailable",
+      "exit_code": 1,
+      "meaning": "Event index unavailable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mutation-events.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_dependency_name_unsafe",
+      "exit_code": 2,
+      "meaning": "Extension dependency name unsafe condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_dependency_spec_invalid",
+      "exit_code": 2,
+      "meaning": "Extension dependency spec invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_dependency_version_unsafe",
+      "exit_code": 2,
+      "meaning": "Extension dependency version unsafe condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_install_soft_failed",
+      "exit_code": 1,
+      "meaning": "Extension install soft failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-setup.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_install_source_contains_destination",
+      "exit_code": 2,
+      "meaning": "Extension install source contains destination condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-runtime.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_item_field_reserved",
+      "exit_code": 2,
+      "meaning": "Extension item field reserved condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/item-fields.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_item_field_type_conflict",
+      "exit_code": 2,
+      "meaning": "Extension item field type conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/item-fields.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_item_field_unknown",
+      "exit_code": 2,
+      "meaning": "Extension item field unknown condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/item-fields.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_update_health_partial_coverage",
+      "exit_code": 1,
+      "meaning": "Extension update health partial coverage condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "field_duplicate",
+      "exit_code": 1,
+      "meaning": "Field duplicate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "field_invalid",
+      "exit_code": 2,
+      "meaning": "Field invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "github_source_entry_unbuilt",
+      "exit_code": 2,
+      "meaning": "Github source entry unbuilt condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/shared.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "history_drift_chain_mismatch",
+      "exit_code": 1,
+      "meaning": "History drift chain mismatch condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "history_drift_hash_mismatch",
+      "exit_code": 1,
+      "meaning": "History drift hash mismatch condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "history_drift_missing_stream",
+      "exit_code": 1,
+      "meaning": "History drift missing stream condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "history_drift_unreadable_stream",
+      "exit_code": 1,
+      "meaning": "History drift unreadable stream condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "history_merge_conflict_markers_detected",
+      "exit_code": 1,
+      "meaning": "History merge conflict markers detected condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/read.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "history_stream_over_compact_threshold",
+      "exit_code": 1,
+      "meaning": "History stream over compact threshold condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "history_target_out_of_range",
+      "exit_code": 1,
+      "meaning": "History target out of range condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/projection.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "history_unknown_author_events",
+      "exit_code": 2,
+      "meaning": "History unknown author events condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "init_existing_settings_requires_force",
+      "exit_code": 2,
+      "meaning": "Init existing settings requires force condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/init.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "init_id_prefix_conflict",
+      "exit_code": 2,
+      "meaning": "Init id prefix conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/init.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "init_id_prefix_path_like",
+      "exit_code": 2,
+      "meaning": "Init id prefix path like condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/init.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "integrity_history_conflict_marker",
+      "exit_code": 4,
+      "meaning": "Integrity history conflict marker condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "integrity_history_invalid_json",
+      "exit_code": 2,
+      "meaning": "Integrity history invalid json condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "integrity_history_unreadable",
+      "exit_code": 1,
+      "meaning": "Integrity history unreadable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "integrity_item_ahead_format_version",
+      "exit_code": 1,
+      "meaning": "Integrity item ahead format version condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "integrity_item_conflict_marker",
+      "exit_code": 4,
+      "meaning": "Integrity item conflict marker condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "integrity_item_outdated_format_version",
+      "exit_code": 1,
+      "meaning": "Integrity item outdated format version condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "integrity_item_parse_failed",
+      "exit_code": 1,
+      "meaning": "Integrity item parse failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "integrity_item_unreadable",
+      "exit_code": 1,
+      "meaning": "Integrity item unreadable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "invalid_argument_value",
+      "exit_code": 2,
+      "meaning": "Invalid argument value condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/create.ts",
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "invalid_command_usage",
+      "exit_code": 2,
+      "meaning": "Invalid command usage condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "invalid_event_cursor",
+      "exit_code": 2,
+      "meaning": "Invalid event cursor condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mutation-events.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "invalid_event_follow_interval",
+      "exit_code": 2,
+      "meaning": "Invalid event follow interval condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mutation-events.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "invalid_event_limit",
+      "exit_code": 2,
+      "meaning": "Invalid event limit condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mutation-events.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "invalid_event_since",
+      "exit_code": 2,
+      "meaning": "Invalid event since condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mutation-events.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "invalid_query_cursor",
+      "exit_code": 2,
+      "meaning": "Invalid query cursor condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/pagination.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "item_document_invalid",
+      "exit_code": 1,
+      "meaning": "Item document invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/item/item-format.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "item_document_roundtrip_failed",
+      "exit_code": 1,
+      "meaning": "Item document roundtrip failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/item/item-format.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "item_id_collision",
+      "exit_code": 4,
+      "meaning": "Item id collision condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/copy.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "item_not_found",
+      "exit_code": 3,
+      "meaning": "Item not found condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "likely_duplicate",
+      "exit_code": 4,
+      "meaning": "Likely duplicate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/similarity.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "linked_test_value_not_quoted",
+      "exit_code": 1,
+      "meaning": "Linked test value not quoted condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "list_source_incomplete",
+      "exit_code": 1,
+      "meaning": "List source incomplete condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/query/list.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "local_source_not_found_bare_name",
+      "exit_code": 3,
+      "meaning": "Local source not found bare name condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "lock_conflict",
+      "exit_code": 4,
+      "meaning": "Lock conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts",
+        "core/lock/lock.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "locks_stale_count",
+      "exit_code": 1,
+      "meaning": "Locks stale count condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "locks_unreadable",
+      "exit_code": 1,
+      "meaning": "Locks unreadable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "malformed_plan_step_evidence",
+      "exit_code": 2,
+      "meaning": "Malformed plan step evidence condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/plan.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "manifest_capabilities_absent",
+      "exit_code": 1,
+      "meaning": "Manifest capabilities absent condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "merge_conflict_markers_detected",
+      "exit_code": 1,
+      "meaning": "Merge conflict markers detected condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/item/item-format.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "merge_git_config_unwritable",
+      "exit_code": 5,
+      "meaning": "Merge git config unwritable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/install.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "merge_root_not_found",
+      "exit_code": 3,
+      "meaning": "Merge root not found condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/install.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "missing_directory",
+      "exit_code": 1,
+      "meaning": "Missing directory condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "missing_lifecycle_target",
+      "exit_code": 2,
+      "meaning": "Missing lifecycle target condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "missing_required_argument",
+      "exit_code": 2,
+      "meaning": "Missing required argument condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts",
+        "cli/main.ts",
+        "cli/register-mutation.ts",
+        "core/telemetry/observability.ts",
+        "sdk/history-redact.ts",
+        "sdk/invocation-author.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "missing_required_option",
+      "exit_code": 2,
+      "meaning": "Missing required option condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/create.ts",
+        "cli/commands/plan.ts",
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "module_import_failed",
+      "exit_code": 1,
+      "meaning": "Module import failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "multi_target_github_install_ambiguous",
+      "exit_code": 2,
+      "meaning": "Multi target github install ambiguous condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-setup.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "mutation_author_required",
+      "exit_code": 2,
+      "meaning": "Mutation author required condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mutation-guard.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "mutation_secret_guard_blocked",
+      "exit_code": 4,
+      "meaning": "Mutation secret guard blocked condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/mutation-guard.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "no_matching_tests",
+      "exit_code": 1,
+      "meaning": "No matching tests condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "no_projects_matched_filters",
+      "exit_code": 1,
+      "meaning": "No projects matched filters condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "no_test_files_found",
+      "exit_code": 1,
+      "meaning": "No test files found condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "no_tests_found",
+      "exit_code": 1,
+      "meaning": "No tests found condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/execution.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "no_update_fields",
+      "exit_code": 1,
+      "meaning": "No update fields condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "npm_package_not_found",
+      "exit_code": 3,
+      "meaning": "Npm package not found condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-sources.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "ownership_conflict",
+      "exit_code": 4,
+      "meaning": "Ownership conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts",
+        "sdk/annotations.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "ownership_dependency_bypass_restricted_options",
+      "exit_code": 1,
+      "meaning": "Ownership dependency bypass restricted options condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/update.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "ownership_metadata_bypass_restricted_options",
+      "exit_code": 1,
+      "meaning": "Ownership metadata bypass restricted options condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/update.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "package_spec_empty",
+      "exit_code": 1,
+      "meaning": "Package spec empty condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "profile_name_empty",
+      "exit_code": 1,
+      "meaning": "Profile name empty condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "profile_name_not_normalized",
+      "exit_code": 1,
+      "meaning": "Profile name not normalized condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "profile_summary_empty",
+      "exit_code": 1,
+      "meaning": "Profile summary empty condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "profile_title_empty",
+      "exit_code": 1,
+      "meaning": "Profile title empty condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "redundant_edge",
+      "exit_code": 1,
+      "meaning": "Redundant edge condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/graph/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "reindex_already_running",
+      "exit_code": 4,
+      "meaning": "Reindex already running condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/reindex.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "reserved_item_field",
+      "exit_code": 1,
+      "meaning": "Reserved item field condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/compose.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "schema_migration_input_required",
+      "exit_code": 2,
+      "meaning": "Schema migration input required condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/migration-gates.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "settings_read_fs_error",
+      "exit_code": 1,
+      "meaning": "Settings read fs error condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "settings_read_invalid_json",
+      "exit_code": 2,
+      "meaning": "Settings read invalid json condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "settings_read_invalid_schema",
+      "exit_code": 2,
+      "meaning": "Settings read invalid schema condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "settings_read_merge_failed",
+      "exit_code": 1,
+      "meaning": "Settings read merge failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "status_duplicate",
+      "exit_code": 1,
+      "meaning": "Status duplicate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "status_invalid",
+      "exit_code": 2,
+      "meaning": "Status invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "stdin_json_invalid",
+      "exit_code": 2,
+      "meaning": "Stdin json invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/structured-mutations.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "stdin_json_unknown_key",
+      "exit_code": 2,
+      "meaning": "Stdin json unknown key condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/structured-mutations.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "telemetry_endpoint_probe_failed",
+      "exit_code": 1,
+      "meaning": "Telemetry endpoint probe failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "telemetry_endpoint_probe_http_status",
+      "exit_code": 1,
+      "meaning": "Telemetry endpoint probe http status condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "telemetry_otel_export_failing",
+      "exit_code": 1,
+      "meaning": "Telemetry otel export failing condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "telemetry_queue_high_retries",
+      "exit_code": 1,
+      "meaning": "Telemetry queue high retries condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "telemetry_queue_invalid_rows",
+      "exit_code": 2,
+      "meaning": "Telemetry queue invalid rows condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "telemetry_queue_pending",
+      "exit_code": 1,
+      "meaning": "Telemetry queue pending condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "telemetry_schema_version_behind",
+      "exit_code": 1,
+      "meaning": "Telemetry schema version behind condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "telemetry_state_invalid_json",
+      "exit_code": 2,
+      "meaning": "Telemetry state invalid json condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "template_type_unknown",
+      "exit_code": 2,
+      "meaning": "Template type unknown condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "terminal_plan_mutation",
+      "exit_code": 4,
+      "meaning": "Terminal plan mutation condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/plan.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "terminal_state_conflict",
+      "exit_code": 4,
+      "meaning": "Terminal state conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "tracked_runtime_cache_files",
+      "exit_code": 1,
+      "meaning": "Tracked runtime cache files condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "tracker_not_initialized",
+      "exit_code": 1,
+      "meaning": "Tracker not initialized condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "tracker_root_missing",
+      "exit_code": 3,
+      "meaning": "Tracker root missing condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-store.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "tracker_root_not_directory",
+      "exit_code": 2,
+      "meaning": "Tracker root not directory condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-store.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "type_duplicate",
+      "exit_code": 1,
+      "meaning": "Type duplicate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "type_invalid",
+      "exit_code": 2,
+      "meaning": "Type invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_command",
+      "exit_code": 2,
+      "meaning": "Unknown command condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/contracts.ts",
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_error",
+      "exit_code": 2,
+      "meaning": "Unknown error condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_field",
+      "exit_code": 3,
+      "meaning": "Unknown field condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/schema.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_field_projection",
+      "exit_code": 2,
+      "meaning": "Unknown field projection condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/get.ts",
+        "sdk/query/list.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_item_type",
+      "exit_code": 3,
+      "meaning": "Unknown item type condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/schema.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_lifecycle_action",
+      "exit_code": 2,
+      "meaning": "Unknown lifecycle action condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_option",
+      "exit_code": 2,
+      "meaning": "Unknown option condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts",
+        "core/telemetry/observability.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_plan_template",
+      "exit_code": 2,
+      "meaning": "Unknown plan template condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/plan.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_status",
+      "exit_code": 3,
+      "meaning": "Unknown status condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/schema.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unknown_subcommand",
+      "exit_code": 2,
+      "meaning": "Unknown subcommand condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-mutation.ts",
+        "cli/register-operations.ts",
+        "sdk/telemetry.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "unsupported_update_option",
+      "exit_code": 1,
+      "meaning": "Unsupported update option condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_command_references_stale_pm_ids",
+      "exit_code": 1,
+      "meaning": "Validate command references stale pm ids condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_files_missing_linked_paths",
+      "exit_code": 1,
+      "meaning": "Validate files missing linked paths condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_files_orphaned_paths",
+      "exit_code": 1,
+      "meaning": "Validate files orphaned paths condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_files_tracked_all_strict_forces_pm_internals",
+      "exit_code": 1,
+      "meaning": "Validate files tracked all strict forces pm internals condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_format_version_ahead_items",
+      "exit_code": 1,
+      "meaning": "Validate format version ahead items condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_format_version_outdated_items",
+      "exit_code": 1,
+      "meaning": "Validate format version outdated items condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_hierarchy_parent_cycle",
+      "exit_code": 1,
+      "meaning": "Validate hierarchy parent cycle condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_hierarchy_parent_cycle_error",
+      "exit_code": 1,
+      "meaning": "Validate hierarchy parent cycle error condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_history_drift_chain_mismatches",
+      "exit_code": 1,
+      "meaning": "Validate history drift chain mismatches condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_history_drift_hash_mismatches",
+      "exit_code": 1,
+      "meaning": "Validate history drift hash mismatches condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_history_drift_missing_streams",
+      "exit_code": 1,
+      "meaning": "Validate history drift missing streams condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_history_drift_unreadable_streams",
+      "exit_code": 1,
+      "meaning": "Validate history drift unreadable streams condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_history_unknown_author_events",
+      "exit_code": 2,
+      "meaning": "Validate history unknown author events condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_lifecycle_active_closure_like_metadata",
+      "exit_code": 1,
+      "meaning": "Validate lifecycle active closure like metadata condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_lifecycle_active_terminal_parent",
+      "exit_code": 1,
+      "meaning": "Validate lifecycle active terminal parent condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_lifecycle_dependency_cycles",
+      "exit_code": 1,
+      "meaning": "Validate lifecycle dependency cycles condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_lifecycle_dependency_cycles_error",
+      "exit_code": 1,
+      "meaning": "Validate lifecycle dependency cycles error condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_lifecycle_stale_blockers",
+      "exit_code": 1,
+      "meaning": "Validate lifecycle stale blockers condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_merge_fence_drift",
+      "exit_code": 1,
+      "meaning": "Validate merge fence drift condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_custom_profile_missing_required_fields",
+      "exit_code": 2,
+      "meaning": "Validate metadata custom profile missing required fields condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_duplicate_issue_codes",
+      "exit_code": 1,
+      "meaning": "Validate metadata duplicate issue codes condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_missing_acceptance_criteria",
+      "exit_code": 1,
+      "meaning": "Validate metadata missing acceptance criteria condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_missing_close_reason",
+      "exit_code": 1,
+      "meaning": "Validate metadata missing close reason condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_missing_confidence",
+      "exit_code": 1,
+      "meaning": "Validate metadata missing confidence condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_missing_estimate",
+      "exit_code": 1,
+      "meaning": "Validate metadata missing estimate condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_missing_release",
+      "exit_code": 1,
+      "meaning": "Validate metadata missing release condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_missing_reviewer",
+      "exit_code": 1,
+      "meaning": "Validate metadata missing reviewer condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_missing_risk",
+      "exit_code": 1,
+      "meaning": "Validate metadata missing risk condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_metadata_missing_sprint",
+      "exit_code": 1,
+      "meaning": "Validate metadata missing sprint condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_resolution_missing_fields",
+      "exit_code": 1,
+      "meaning": "Validate resolution missing fields condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_storage_duplicate_item_ids",
+      "exit_code": 1,
+      "meaning": "Validate storage duplicate item ids condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_storage_history_conflict_markers",
+      "exit_code": 4,
+      "meaning": "Validate storage history conflict markers condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_storage_resurrected_items",
+      "exit_code": 1,
+      "meaning": "Validate storage resurrected items condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_storage_tracked_runtime_cache_files",
+      "exit_code": 1,
+      "meaning": "Validate storage tracked runtime cache files condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_storage_unparseable_config",
+      "exit_code": 1,
+      "meaning": "Validate storage unparseable config condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_storage_unparseable_history",
+      "exit_code": 1,
+      "meaning": "Validate storage unparseable history condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "validate_storage_unreadable_items",
+      "exit_code": 1,
+      "meaning": "Validate storage unreadable items condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "vectorization_embedding_identity_changed",
+      "exit_code": 1,
+      "meaning": "Vectorization embedding identity changed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "vectorization_stale_items_remaining",
+      "exit_code": 1,
+      "meaning": "Vectorization stale items remaining condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "workflow_duplicate_type",
+      "exit_code": 1,
+      "meaning": "Workflow duplicate type condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "workflow_status_unknown",
+      "exit_code": 2,
+      "meaning": "Workflow status unknown condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "workflow_transition_malformed",
+      "exit_code": 1,
+      "meaning": "Workflow transition malformed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "workflow_type_empty",
+      "exit_code": 1,
+      "meaning": "Workflow type empty condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "workflow_type_unknown",
+      "exit_code": 2,
+      "meaning": "Workflow type unknown condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/profile/profile-lint.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "workspace_history_state_conflict",
+      "exit_code": 4,
+      "meaning": "Workspace history state conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/workspace-history.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "workspace_root_pm_path",
+      "exit_code": 2,
+      "meaning": "Workspace root pm path condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/init.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "wrong_item_type",
+      "exit_code": 2,
+      "meaning": "Wrong item type condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/plan.ts"
+      ],
+      "stability": "stable"
+    }
+  ],
   "extension_commands": [],
   "extension_contracts": {
     "capabilities": [
@@ -10035,6 +12203,18 @@
               "id,title,score,matched_fields",
               "id,title,priority,deadline"
             ],
+            "type": "string"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
             "type": "string"
           },
           "format": {
@@ -11822,6 +14002,18 @@
             ],
             "type": "string"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "format": {
             "description": "Format.",
             "enum": [
@@ -12620,6 +14812,18 @@
             "description": "Filter Sprint Missing.",
             "type": "boolean"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -13008,6 +15212,18 @@
           "explainRanking": {
             "description": "Explain Ranking.",
             "type": "boolean"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "format": {
             "description": "Format.",
@@ -14909,6 +17125,18 @@
           "filterSprintMissing": {
             "description": "Filter Sprint Missing.",
             "type": "boolean"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -20898,6 +23126,18 @@
             "description": "Filter Sprint Missing.",
             "type": "boolean"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -21392,6 +23632,18 @@
           "filterSprintMissing": {
             "description": "Filter Sprint Missing.",
             "type": "boolean"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -21888,6 +24140,18 @@
             "description": "Filter Sprint Missing.",
             "type": "boolean"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -22382,6 +24646,18 @@
           "filterSprintMissing": {
             "description": "Filter Sprint Missing.",
             "type": "boolean"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -22878,6 +25154,18 @@
             "description": "Filter Sprint Missing.",
             "type": "boolean"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -23372,6 +25660,18 @@
           "filterSprintMissing": {
             "description": "Filter Sprint Missing.",
             "type": "boolean"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -23868,6 +26168,18 @@
             "description": "Filter Sprint Missing.",
             "type": "boolean"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -24362,6 +26674,18 @@
           "filterSprintMissing": {
             "description": "Filter Sprint Missing.",
             "type": "boolean"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -24917,6 +27241,18 @@
             ],
             "type": "string"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "format": {
             "description": "Format.",
             "type": "string"
@@ -25182,6 +27518,18 @@
             ],
             "type": "string"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "format": {
             "description": "Format.",
             "type": "string"
@@ -25408,6 +27756,18 @@
             ],
             "type": "string"
           },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
           "format": {
             "description": "Format.",
             "enum": [
@@ -25592,6 +27952,18 @@
           "filterSprintMissing": {
             "description": "Filter Sprint Missing.",
             "type": "boolean"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -26012,6 +28384,18 @@
           "explainRanking": {
             "description": "Explain Ranking.",
             "type": "boolean"
+          },
+          "for": {
+            "description": "Named context intent projection declared for the selected read action.",
+            "examples": [
+              "orient",
+              "inspect",
+              "triage",
+              "execute",
+              "discover"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "format": {
             "description": "Format.",

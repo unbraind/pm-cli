@@ -515,6 +515,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     get: {
       required: ["id"],
       optional: [
+        "for",
         "at",
         "depth",
         "full",
@@ -528,7 +529,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       optional: SEARCH_CONTRACT_PARAMETER_KEYS,
       anyOfRequired: [["query"], ["keywords"]],
     },
-    next: { optional: NEXT_CONTRACT_PARAMETER_KEYS },
+    next: { optional: [...NEXT_CONTRACT_PARAMETER_KEYS, "for"] },
     reindex: { optional: ["mode", "progress"] },
     history: {
       required: ["id"],

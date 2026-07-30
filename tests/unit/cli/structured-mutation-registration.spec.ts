@@ -115,6 +115,53 @@ describe("structured mutation command registration", () => {
     ).rejects.toThrow("must be valid JSON");
   });
 
+  it("routes the description stdin token through create and update", async () => {
+    mocks.stdin = "Multiline\nproject context";
+    const createProgram = programWithGlobals();
+    registerMutationCommands(createProgram);
+    await createProgram.parseAsync(
+      ["create", "--title", "Intent", "--description", "-"],
+      { from: "user" },
+    );
+    expect(mocks.runCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ description: "Multiline\nproject context" }),
+      expect.any(Object),
+    );
+
+    const updateProgram = programWithGlobals();
+    registerMutationCommands(updateProgram);
+    await updateProgram.parseAsync(
+      ["update", "pm-a", "--description", "-"],
+      { from: "user" },
+    );
+    expect(mocks.runUpdate).toHaveBeenCalledWith(
+      "pm-a",
+      expect.objectContaining({ description: "Multiline\nproject context" }),
+      expect.any(Object),
+    );
+
+    mocks.stdin = undefined;
+    const emptyProgram = programWithGlobals();
+    registerMutationCommands(emptyProgram);
+    await emptyProgram.parseAsync(
+      ["create", "--title", "Empty", "--description", "-"],
+      { from: "user" },
+    );
+    expect(mocks.runCreate).toHaveBeenLastCalledWith(
+      expect.objectContaining({ description: "" }),
+      expect.any(Object),
+    );
+    await emptyProgram.parseAsync(
+      ["update", "pm-a", "--description", "-"],
+      { from: "user" },
+    );
+    expect(mocks.runUpdate).toHaveBeenLastCalledWith(
+      "pm-a",
+      expect.objectContaining({ description: "" }),
+      expect.any(Object),
+    );
+  });
+
   it("rejects mixing whole-item JSON with other stdin consumers", async () => {
     const createProgram = programWithGlobals();
     registerMutationCommands(createProgram);
@@ -124,6 +171,15 @@ describe("structured mutation command registration", () => {
       }),
     ).rejects.toThrow(
       "--stdin-json cannot be combined with other stdin consumers: --body",
+    );
+
+    await expect(
+      createProgram.parseAsync(
+        ["create", "--stdin-json", "--description", "-"],
+        { from: "user" },
+      ),
+    ).rejects.toThrow(
+      "--stdin-json cannot be combined with other stdin consumers: --description",
     );
 
     const updateProgram = programWithGlobals();

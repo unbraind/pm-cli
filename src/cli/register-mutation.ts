@@ -26,6 +26,7 @@ import {
   runMergeReceiptReport,
 } from "./commands/merge.js";
 import { createStdinTokenResolver } from "../sdk/runtime-primitives.js";
+import { resolveDescriptionStdin } from "./description-stdin.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
 import { registerHistoryAuthorAcknowledgeCommand } from "./register-history-author.js";
@@ -765,7 +766,7 @@ function assertCreatePositionalTypeHasTitle(
 }
 
 const STRUCTURED_STDIN_CONFLICT_KEYS = [
-  "body",
+  "body", "description",
   "dep",
   "depRemove",
   "comment",
@@ -835,9 +836,8 @@ async function runCreateAction(
     typeof positionals.positionalTitle === "string" &&
     positionals.positionalTitle.length > 0 &&
     options.title === undefined
-  ) {
-    options.title = positionals.positionalTitle;
-  }
+  ) options.title = positionals.positionalTitle;
+  await resolveDescriptionStdin(options);
   if (typeof options.bodyFile === "string") {
     options.body = await resolveBodyFileContent(
       options.bodyFile,
@@ -1642,6 +1642,7 @@ async function runUpdateAction(
     );
     options = itemDocumentToMutationOptions(input ?? "", "update", options);
   }
+  await resolveDescriptionStdin(options);
   // GH-214: resolve --body-file into the existing body field before
   // normalization so the rest of update is unchanged. CLI-only input alias.
   if (typeof options.bodyFile === "string") {
