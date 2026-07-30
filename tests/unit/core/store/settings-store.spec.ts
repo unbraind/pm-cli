@@ -809,7 +809,7 @@ describe("core/store/settings", () => {
       metadata_profile: "core",
       force_required_for_stale_lock: true,
       require_close_reason: true,
-      duplicate_detection_mode: "advisory",
+      duplicate_detection_mode: "strict",
       duplicate_detection_threshold: 0.8,
       duplicate_detection_limit: 3,
     });
@@ -843,7 +843,7 @@ describe("core/store/settings", () => {
       metadata_profile: "core",
       force_required_for_stale_lock: false,
       require_close_reason: true,
-      duplicate_detection_mode: "advisory",
+      duplicate_detection_mode: "strict",
       duplicate_detection_threshold: 0.8,
       duplicate_detection_limit: 3,
     });

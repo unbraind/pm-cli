@@ -140,6 +140,52 @@ describe("runCopy", () => {
     });
   });
 
+  it("rejects strict duplicate copies before persistence and accepts explicit bypass", async () => {
+    await withTempPmPath(async (context) => {
+      expect(
+        context.runCli([
+          "config",
+          "project",
+          "set",
+          "governance-duplicate-detection-mode",
+          "strict",
+        ]).code,
+      ).toBe(0);
+      const source = await runCreate(
+        {
+          title: "Strict copy duplicate primitive",
+          description: "Equivalent copy candidate",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      const canonical = await runCreate(
+        {
+          title: "Strict copy duplicate primitive",
+          description: "Equivalent copy candidate",
+          type: "Task",
+          createMode: "progressive",
+          allowDuplicate: true,
+        },
+        { path: context.pmPath },
+      );
+
+      await expect(
+        runCopy(source.item.id, {}, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+      const copied = await runCopy(
+        source.item.id,
+        { allowDuplicate: true },
+        { path: context.pmPath },
+      );
+      expect(copied.item.id).not.toBe(source.item.id);
+      expect(copied.item.id).not.toBe(canonical.item.id);
+    });
+  });
+
   it("normalizes blank title/author/message inputs per copy semantics", async () => {
     await withTempPmPath(async (context) => {
       const source = await seedClosedSource(context);

@@ -2,11 +2,13 @@ id: pm-62n4kk
 title: "GH-828: init status registries must expose one coherent alias contract"
 description: "Fresh trackers embed status aliases in settings.json and write schema/statuses.json, but the two generated registries disagree specifically on the in_progress alias."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:init","area:schema",github-intake,integrity
 created_at: "2026-07-30T11:28:54.704Z"
-updated_at: "2026-07-30T17:04:21.420Z"
+updated_at: "2026-07-30T23:28:52.330Z"
+closed_at: "2026-07-30T22:53:00.622Z"
+completed_at: "2026-07-30T22:53:00.622Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Fresh init emits faithful alias data or an explicitly uniform summary; regeneration remains deterministic; fixtures cover in_progress and canceled aliases across both files; documentation states the authoritative registry
@@ -17,9 +19,27 @@ impact: Eliminates systematic fresh-tracker schema review noise
 parent: pm-8jdc
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: Fresh generated status projections expose aliases coherently with runtime normalization.
+actual_result: Status aliases use the canonical underscore normalization and preserve textual aliases that resolve to the same status id.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-e77a,discovered_from,"2026-07-30T11:28:54.704Z","harness:codex","cli:create:dep",detected
   pm-j82fd3,implements,"2026-07-30T17:04:21.224Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-30T11:28:54.704Z","harness:codex","Duplicate check searched all statuses for init status alias registry disagreement and found no canonical owner. GitHub report: https://github.com/unbraind/pm-cli/issues/828"
+  "2026-07-30T22:32:05.245Z","harness:codex","Verification evidence: normalized aliases remain present across generated status projections and resolve hyphen/space input; focused schema suite and full 6584-test coverage passed at 100/100/100/100."
+  "2026-07-30T22:51:32.197Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
+  "2026-07-30T23:28:52.329Z","harness:codex","Final native-layout revalidation: the focused diff is 952 insertions and 97 deletions with no formatter churn; 406 files and 6,583 tests pass at 100% statements, branches, functions, and lines. Typecheck, ESLint, static quality, package boundary/parity, token budgets, SDK surface/import-cost/transport gates, docs, latest pm-changelog 2026.7.29-1 check mode, tracker health/history integrity, and fresh unrelated-workspace acceptance all pass."
+learnings[1]{created_at,author,text}:
+  "2026-07-30T22:51:33.722Z","harness:codex",Generated status projections should normalize aliases with the same runtime token function and retain aliases that differ textually even when they resolve to the canonical id.
+files[2]{path,scope,note}:
+  src/core/schema/runtime-schema.ts,project,normalized alias projection coherence
+  tests/unit/core/schema/runtime-schema-command-flags.spec.ts,project,status projection and input coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/schema/runtime-schema-command-flags.spec.ts,project,240,status registry projection coverage
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms83x38p-7zxwtc,test,passed,"2026-07-30T22:50:16.549Z","2026-07-30T22:50:27.625Z","2026-07-30T22:50:27.625Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,authoritative status registry guidance
+close_reason: "Unified generated status alias projection with runtime normalization and documented the authoritative registry; schema tests, fresh initialization, and full coverage passed."
 body: ""

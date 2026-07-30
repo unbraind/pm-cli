@@ -834,7 +834,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const warnClose = context.runCli(["close", id, "done", "--validate-close", "--json"], { expectJson: true });
       expect(warnClose.code).toBe(0);
       expect((warnClose.json as { warnings: string[] }).warnings).toContain(
-        `close_validation_missing_fields:${id}:resolution,expected_result,actual_result`,
+        `close_validation_missing_fields:${id}:resolution (--resolution),expected_result (--expected-result),actual_result (--actual-result)`,
       );
 
       const validateResult = context.runCli(["validate", "--check-resolution", "--json"], { expectJson: true });

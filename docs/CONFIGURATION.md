@@ -90,7 +90,7 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 | `item_types.definitions[]`                 | custom item types and type options                                                                                                                                                                    |
 | `governance.create_default_type`           | default `--type` used by `pm create "title"` when `--type` is omitted (defaults to `Task`); must resolve to a known item type                                                                         |
 | `governance.workflow_enforcement`          | per-type transition enforcement mode for `pm update --status` (`off` default, `warn`, or `strict`)                                                                                                    |
-| `governance.duplicate_detection_mode`      | create/copy similarity policy: `off`, `advisory`, or `strict`; the minimal preset uses `off`, the default preset uses `advisory`, and strict governance uses `strict`                                 |
+| `governance.duplicate_detection_mode`      | create/copy similarity policy: `off`, `advisory`, or `strict`; the minimal preset uses `off`, while the default and strict presets use `strict`                                                       |
 | `governance.duplicate_detection_threshold` | inclusive likely-duplicate score from `0` through `1` (default `0.8`)                                                                                                                                 |
 | `governance.duplicate_detection_limit`     | maximum matches attached to a create/copy advisory from `0` through `20` (default `3`)                                                                                                                |
 | `schema.type_workflows[]`                  | per-type allowed status transitions (see Per-Type Workflows below)                                                                                                                                    |
@@ -112,7 +112,7 @@ pm config project set locks_ttl_seconds 60                 # (locks.ttl_seconds)
 pm config project set locks_wait_ms 3000                   # (locks.wait_ms) integer >= 0
 pm config project set checkpoints_retention_days 30        # (checkpoints.retention_days) integer >= 1; pm gc --scope checkpoints prunes checkpoints older than this many days
 pm config project set schema_unknown_field_policy reject   # (schema.unknown_field_policy) allow | warn | reject
-pm config project set governance-duplicate-detection-mode advisory       # (governance.duplicate_detection_mode) off | advisory | strict
+pm config project set governance-duplicate-detection-mode strict         # (governance.duplicate_detection_mode) off | advisory | strict
 pm config project set governance-duplicate-detection-threshold 0.8       # (governance.duplicate_detection_threshold) ratio 0..1
 pm config project set governance-duplicate-detection-limit 3             # (governance.duplicate_detection_limit) integer 0..20
 ```
@@ -121,7 +121,9 @@ Duplicate governance uses the shared SDK scorer and bounded metadata query
 index described in [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).
 Advisory mode keeps exit code zero and adds a structured
 `similarity_advisory`; strict mode requires `--allow-duplicate` to accept a
-threshold match. Kebab-case config keys are the documented spelling; existing
+threshold match. The strict check and authoritative item/index persistence share
+one cross-process mutation lock, so concurrent equivalent creates cannot both
+commit. Kebab-case config keys are the documented spelling; existing
 underscore aliases remain accepted for compatibility.
 
 ## Environment Variables
@@ -473,6 +475,13 @@ Use runtime contracts for exact active types:
 pm contracts --json
 pm create --help --type Task
 ```
+
+Status definitions are authored in `.agents/pm/schema/statuses.json`; the
+`schema.statuses` projection in `settings.json` is a deterministic runtime
+summary, not a second registry to edit independently. Status ids and aliases are
+normalized to underscore tokens in both projections (for example,
+`in-progress` becomes `in_progress`) while CLI input continues to accept
+underscore, hyphen, and space spellings through the resolved status registry.
 
 ## Custom Runtime Fields
 

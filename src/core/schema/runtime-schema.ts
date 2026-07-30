@@ -234,9 +234,13 @@ function normalizeRuntimeStatusDefinition(
   if (!id) {
     return null;
   }
-  const aliases = normalizeStringList(definition.aliases)
-    .map((value) => normalizeStatusToken(value))
-    .filter((value) => value !== id);
+  const aliases = [
+    ...new Set(
+      normalizeStringList(definition.aliases)
+        .map(normalizeStatusToken)
+        .filter((value) => value.length > 0),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
   const roles = normalizeStringList(definition.roles).filter(
     (value): value is RuntimeStatusRole => RUNTIME_STATUS_ROLE_SET.has(value),
   );

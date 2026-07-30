@@ -4380,7 +4380,11 @@ describe("extension loader", () => {
           run: () => {
             // Extensions may throw a plain/serialized object that carries a message
             // but does not inherit from Error.
-            throw { message: "plain-object-boom", code: "E_CUSTOM" };
+            throw {
+              message: "plain-object-boom",
+              code: " E_CUSTOM ",
+              remediation: " Retry with --force. ",
+            };
           },
         },
       ],
@@ -4404,7 +4408,98 @@ describe("extension loader", () => {
       result: null,
       warnings: ["extension_command_handler_failed:project:handler-object-ext:beads import"],
       errorMessage: "plain-object-boom",
+      errorCode: "E_CUSTOM",
+      remediation: "Retry with --force.",
     });
+  });
+
+  it("preserves structured handler failure metadata and validates exit codes", async () => {
+    const context = {
+      args: [],
+      options: {},
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    };
+    const result = await runCommandHandler(
+      {
+        overrides: [],
+        handlers: [
+          {
+            layer: "project" as const,
+            name: "structured-handler",
+            command: "policy check",
+            run: () => ({
+              ok: false,
+              exit_code: 7,
+              code: " policy_failed ",
+              remediation: " Fix the policy input. ",
+            }),
+          },
+        ],
+      },
+      { ...context, command: "policy check" },
+    );
+    expect(result).toEqual({
+      handled: true,
+      result: {
+        ok: false,
+        exit_code: 7,
+        code: " policy_failed ",
+        remediation: " Fix the policy input. ",
+      },
+      warnings: [],
+      exitCode: 7,
+      errorCode: "policy_failed",
+      remediation: "Fix the policy input.",
+    });
+
+    expect(
+      await runCommandHandler(
+        {
+          overrides: [],
+          handlers: [
+            {
+              layer: "project" as const,
+              name: "blank-structured-handler",
+              command: "policy check",
+              run: () => ({ code: " ", remediation: "\n" }),
+            },
+          ],
+        },
+        { ...context, command: "policy check" },
+      ),
+    ).toEqual({
+      handled: true,
+      result: { code: " ", remediation: "\n" },
+      warnings: [],
+    });
+
+    for (const exit_code of [0, 256, 1.5, "2"]) {
+      const invalid = await runCommandHandler(
+        {
+          overrides: [],
+          handlers: [
+            {
+              layer: "project" as const,
+              name: "invalid-structured-handler",
+              command: "policy check",
+              run: () => ({ exit_code }),
+            },
+          ],
+        },
+        { ...context, command: "policy check" },
+      );
+      expect(invalid).toMatchObject({
+        handled: false,
+        errorMessage:
+          "Extension command result exit_code must be an integer from 1 to 255.",
+      });
+    }
   });
 
   it("isolates command handler context snapshots from caller mutation", async () => {

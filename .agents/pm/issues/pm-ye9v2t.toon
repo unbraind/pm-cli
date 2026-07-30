@@ -2,11 +2,13 @@ id: pm-ye9v2t
 title: "GH-826: extension commands need structured failure results and preserved remediation"
 description: "Extension handlers cannot return a machine-readable report with a non-zero process status, while thrown handler remediation and codes are replaced by generic host guidance."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:sdk",error-contract,extensions,github-intake
 created_at: "2026-07-30T11:28:13.431Z"
-updated_at: "2026-07-30T17:04:19.474Z"
+updated_at: "2026-07-30T23:28:49.866Z"
+closed_at: "2026-07-30T22:52:43.228Z"
+completed_at: "2026-07-30T22:52:43.228Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: CommandHandlerResult carries a validated non-zero exit channel; structured payloads still render on failure; extension error code and remediation survive host rendering; CLI and SDK integration tests cover both returned and thrown failures
@@ -17,9 +19,32 @@ impact: Removes the forced choice between structured output and a truthful proce
 parent: pm-ugqx
 risk: medium
 confidence: high
+resolution: fixed
+expected_result: Extension handlers can render structured failure payloads with truthful non-zero status while preserving authored code and remediation.
+actual_result: "Validated exitCode, errorCode, and remediation flow through returned and thrown extension failures into the CLI host."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-iqq0,discovered_from,"2026-07-30T11:28:13.431Z","harness:codex","cli:create:dep",detected
   pm-9rgaal,implements,"2026-07-30T17:04:19.227Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-30T11:28:13.431Z","harness:codex","Duplicate check searched all statuses for structured extension failure results and remediation preservation; no canonical owner found. GitHub report: https://github.com/unbraind/pm-cli/issues/826"
+  "2026-07-30T22:32:03.221Z","harness:codex","Verification evidence: returned non-zero structured results render while setting exit status; returned/thrown code and remediation survive; focused runtime and full 6584-test coverage passed at 100/100/100/100."
+  "2026-07-30T22:51:26.873Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
+  "2026-07-30T23:28:49.866Z","harness:codex","Final native-layout revalidation: the focused diff is 952 insertions and 97 deletions with no formatter churn; 406 files and 6,583 tests pass at 100% statements, branches, functions, and lines. Typecheck, ESLint, static quality, package boundary/parity, token budgets, SDK surface/import-cost/transport gates, docs, latest pm-changelog 2026.7.29-1 check mode, tracker health/history integrity, and fresh unrelated-workspace acceptance all pass."
+learnings[1]{created_at,author,text}:
+  "2026-07-30T22:51:28.225Z","harness:codex",Extension command results can remain renderable while carrying a validated non-zero exit status; thrown plain-object code and remediation must be normalized at the host boundary.
+files[6]{path,scope,note}:
+  src/cli/main.ts,project,host exit and recovery propagation
+  src/core/extensions/extension-hook-runtime.ts,project,structured exit code and remediation extraction
+  src/core/extensions/extension-types.ts,project,structured command result contract
+  tests/unit/cli/cli-main-errors.spec.ts,project,host exit and remediation acceptance
+  tests/unit/extensions/extension-loader.spec.ts,project,plain-object error metadata preservation
+  tests/unit/extensions/extensions-runtime.spec.ts,project,returned and thrown failure coverage
+tests[1]{command,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-runtime.spec.ts,project,240,extension structured failure runtime
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms83w8rb-gg9psb,test,passed,"2026-07-30T22:49:39.471Z","2026-07-30T22:49:48.119Z","2026-07-30T22:49:48.119Z",1,0,0
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package command failure guidance
+  docs/SDK.md,project,structured extension failure authoring
+close_reason: "Implemented structured extension failure results with validated exit status plus preserved thrown codes and remediation; runtime tests, package dogfood, and full coverage passed."
 body: ""

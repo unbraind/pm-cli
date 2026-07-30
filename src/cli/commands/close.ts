@@ -157,9 +157,12 @@ const CLOSE_VALIDATION_FIELDS: Array<{
   >;
   label: string;
 }> = [
-  { key: "resolution", label: "resolution" },
-  { key: "expected_result", label: "expected_result" },
-  { key: "actual_result", label: "actual_result" },
+  { key: "resolution", label: "resolution (--resolution)" },
+  {
+    key: "expected_result",
+    label: "expected_result (--expected-result)",
+  },
+  { key: "actual_result", label: "actual_result (--actual-result)" },
 ];
 
 function parseValidateCloseMode(

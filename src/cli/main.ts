@@ -35,6 +35,7 @@ import {
   type ExtensionParserRegistry,
   type ExtensionPreflightRegistry,
   type ExtensionServiceRegistry,
+  type FlagDefinition,
   type PreflightRuntimeDecision,
   type RegisteredExtensionSchemaMigrationDefinition,
   type ExtensionRendererRegistry,
@@ -87,6 +88,7 @@ import {
   parseLooseCommandOptions,
   stripLooseCommandOptionTokens,
   validateLooseCommandOptionsWithFlagDefinitions,
+  type LooseCommandFlagDefinition,
 } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
 import { finishActiveTelemetryCommand, recordAfterCommandContextUsage } from "./after-command-context-usage.js";
@@ -766,7 +768,7 @@ async function handleGenericRunPmCliError(params: {
 function extractCommandScopedOptions(
   command: Command,
   commandArgs: string[],
-  extensionFlagDefinitions: Array<Record<string, unknown>> = [],
+  extensionFlagDefinitions: LooseCommandFlagDefinition[] = [],
 ): Record<string, unknown> {
   const allOptions = command.optsWithGlobals() as Record<string, unknown>;
   const scoped: Record<string, unknown> = { ...allOptions };
@@ -815,7 +817,7 @@ function extractCommandScopedOptions(
 function collectExtensionFlagDefinitionsForCommand(
   registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>,
   commandPath: string,
-): Array<Record<string, unknown>> {
+): FlagDefinition[] {
   const normalizedCommandPath = normalizeExtensionCommandPath(commandPath);
   if (normalizedCommandPath.length === 0) {
     return [];
@@ -827,10 +829,10 @@ function collectExtensionFlagDefinitionsForInvocation(
   registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>,
   commandPath: string,
   commandArgs: string[],
-): Array<Record<string, unknown>> {
+): FlagDefinition[] {
   const exact = collectExtensionFlagDefinitionsForCommand(registrations, commandPath);
   const pathParts = [commandPath];
-  let nestedMatch: Array<Record<string, unknown>> = [];
+  let nestedMatch: FlagDefinition[] = [];
   for (const arg of commandArgs) {
     if (arg.startsWith("-")) {
       break;
@@ -909,7 +911,7 @@ function formatDynamicOptionFlag(optionKey: string): string {
 function validateDynamicExtensionCommandOptions(
   descriptor: ExtensionCommandHelpDescriptor,
   options: Record<string, unknown>,
-  extensionFlagDefinitions: Array<Record<string, unknown>>,
+  extensionFlagDefinitions: LooseCommandFlagDefinition[],
 ): void {
   if (extensionFlagDefinitions.length > 0) {
     validateLooseCommandOptionsWithFlagDefinitions(options, extensionFlagDefinitions, descriptor.command);
@@ -931,7 +933,7 @@ function validateDynamicExtensionCommandInvocation(
   descriptor: ExtensionCommandHelpDescriptor | undefined,
   args: string[],
   options: Record<string, unknown>,
-  extensionFlagDefinitions: Array<Record<string, unknown>>,
+  extensionFlagDefinitions: LooseCommandFlagDefinition[],
 ): void {
   if (!descriptor) {
     return;
@@ -958,7 +960,10 @@ const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<Record<string, RuntimeFiel
   "templates save": "create",
 };
 
-const runtimeFieldLooseFlagDefinitionCache = new Map<string, Array<Record<string, unknown>>>();
+const runtimeFieldLooseFlagDefinitionCache = new Map<
+  string,
+  LooseCommandFlagDefinition[]
+>();
 
 function toLooseFieldDefinitionType(fieldType: string): "string" | "number" | "boolean" {
   if (fieldType === "number") {
@@ -1006,7 +1011,10 @@ function addRuntimeFieldOption(command: Command, flagToken: string, description:
   command.option(`${longFlag} <value>`, helpText);
 }
 
-async function collectRuntimeFieldLooseFlagDefinitionsForCommand(commandPath: string, pmRoot: string): Promise<Array<Record<string, unknown>>> {
+async function collectRuntimeFieldLooseFlagDefinitionsForCommand(
+  commandPath: string,
+  pmRoot: string,
+): Promise<LooseCommandFlagDefinition[]> {
   const runtimeCommand = RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH[commandPath];
   if (!runtimeCommand) {
     return [];
@@ -1613,7 +1621,7 @@ async function runRequiredExtensionCommand(
   command: Command,
   options: Record<string, unknown>,
   globalOptions: GlobalOptions,
-  extensionFlagDefinitions: Array<Record<string, unknown>> = [],
+  extensionFlagDefinitions: LooseCommandFlagDefinition[] = [],
 ): Promise<unknown> {
   const commandPath = getCommandPath(command);
   let commandArgs = stripLooseCommandOptionTokens(command.args.map(String), extensionFlagDefinitions);
@@ -1664,9 +1672,21 @@ async function runRequiredExtensionCommand(
       const cause = extensionCommandResult.errorMessage?.trim();
       /* c8 ignore next */
       const causeSuffix = cause ? ` ${cause}` : "";
-      throw new PmCliError(`Command "${commandPath}" failed in extension handler (${warningCode}).${causeSuffix}`, EXIT_CODE.GENERIC_FAILURE);
+      throw new PmCliError(
+        `Command "${commandPath}" failed in extension handler (${warningCode}).${causeSuffix}`,
+        EXIT_CODE.GENERIC_FAILURE,
+        {
+          code: extensionCommandResult.errorCode ?? "command_failed",
+          nextSteps: extensionCommandResult.remediation
+            ? [extensionCommandResult.remediation]
+            : undefined,
+        },
+      );
     }
     throw new PmCliError(`Command "${commandPath}" is provided by extensions and is not currently available.`, EXIT_CODE.NOT_FOUND);
+  }
+  if (extensionCommandResult.exitCode !== undefined) {
+    process.exitCode = extensionCommandResult.exitCode;
   }
   setActiveCommandResult(extensionCommandResult.result);
   return extensionCommandResult.result;
@@ -1695,7 +1715,7 @@ function validateDynamicInvocationArgs(params: {
   activeRegistrations: ReturnType<typeof getActiveExtensionRegistrations>;
   commandPath: string;
   commandArgs: string[];
-  extensionFlagDefinitions: Array<Record<string, unknown>>;
+  extensionFlagDefinitions: LooseCommandFlagDefinition[];
 }): void {
   const dynamicDescriptor = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(params.commandPath));
   if (!dynamicDescriptor || !isImporterOrExporterCommandPath(params.activeRegistrations, params.commandPath)) {

@@ -761,7 +761,7 @@ describe("runClose", () => {
       const item = result.item as Record<string, unknown>;
       expect(item.status).toBe("closed");
       expect(result.warnings).toEqual([
-        `close_validation_missing_fields:${id}:resolution,expected_result,actual_result`,
+        `close_validation_missing_fields:${id}:resolution (--resolution),expected_result (--expected-result),actual_result (--actual-result)`,
       ]);
     });
   });

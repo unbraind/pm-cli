@@ -8,6 +8,7 @@ import type {
   RegisteredExtensionSchemaMigrationDefinition,
   RegisteredExtensionSearchProvider,
   RegisteredExtensionVectorStoreAdapter,
+  SchemaFieldDefinition,
 } from "./loader.js";
 
 function normalizeRegistrationName(value: unknown): string | null {
@@ -21,11 +22,11 @@ function normalizeRegistrationName(value: unknown): string | null {
 /** Implements collect registered item fields for the public runtime surface of this module. */
 export function collectRegisteredItemFields(
   registrations: ExtensionRegistrationRegistry | null,
-): Array<Record<string, unknown>> {
+): SchemaFieldDefinition[] {
   if (!registrations) {
     return [];
   }
-  const fields: Array<Record<string, unknown>> = [];
+  const fields: SchemaFieldDefinition[] = [];
   for (const registration of registrations.item_fields) {
     for (const field of registration.fields) {
       fields.push(field);

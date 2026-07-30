@@ -82,6 +82,11 @@ function parseFieldAssignment(raw: string): { key: string; value: string } {
   return { key, value };
 }
 
+/** Render the dedicated core CLI flag for one reserved metadata key. */
+function coreItemFieldFlag(fieldName: string): string {
+  return `--${fieldName.replaceAll("_", "-")}`;
+}
+
 function parseJsonFieldValue(
   raw: string,
   fieldName: string,
@@ -228,6 +233,25 @@ export function parseRegisteredItemFieldAssignments(
     const { key, value } = parseFieldAssignment(raw);
     const definition = definitions.get(key);
     if (!definition) {
+      if (RESERVED_ITEM_FIELD_NAMES.has(key)) {
+        const flag = coreItemFieldFlag(key);
+        throw new PmCliError(
+          `--field ${key} is a core item field, not an extension field`,
+          EXIT_CODE.USAGE,
+          {
+            code: "core_item_field_requires_dedicated_flag",
+            field: key,
+            recovery: {
+              provided_fields: [key],
+              suggested_flags: [flag],
+            },
+            nextSteps: [
+              `Set the core field with its dedicated flag: pm update <id> ${flag} <value>`,
+              `When closing an item, pm close <id> also accepts ${flag} <value>.`,
+            ],
+          },
+        );
+      }
       const known = [...definitions.keys()].sort((left, right) =>
         left.localeCompare(right),
       );

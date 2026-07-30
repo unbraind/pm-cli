@@ -171,6 +171,45 @@ describe("runCreate", () => {
     });
   });
 
+  it("serializes strict concurrent duplicate creation so exactly one item commits", async () => {
+    await withTempPmPath(async (context) => {
+      expect(
+        context.runCli([
+          "config",
+          "project",
+          "set",
+          "governance-duplicate-detection-mode",
+          "strict",
+        ]).code,
+      ).toBe(0);
+      const createEquivalent = () =>
+        runCreate(
+          {
+            title: "Atomic strict duplicate primitive",
+            description: "Equivalent concurrent create",
+            type: "Task",
+            status: "open",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+      const results = await Promise.allSettled([
+        createEquivalent(),
+        createEquivalent(),
+      ]);
+      expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(
+        1,
+      );
+      const rejected = results.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected",
+      );
+      expect(rejected?.reason).toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+    });
+  });
+
   it("rejects unknown keys in dep/file/doc/reminder/event/type-option seeds (GH-258)", async () => {
     await withTempPmPath(async (context) => {
       const seed = (overrides: Partial<CreateCommandOptions>): CreateCommandOptions => ({

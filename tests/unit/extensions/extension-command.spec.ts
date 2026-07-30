@@ -5567,11 +5567,56 @@ describe("extension command runtime", () => {
         root: sourceDir,
         name: "root-ext",
       });
+      await mkdir(path.join(sourceDir, "node_modules", "ignored"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(sourceDir, "node_modules", "ignored", "package.json"),
+        "{}\n",
+      );
+      await mkdir(
+        path.join(sourceDir, ".pm-extension-install-backup-old"),
+        { recursive: true },
+      );
       await mkdir(path.dirname(destinationDir), { recursive: true });
 
+      let destinationFilterCovered = false;
+      await extensionCommandTestOnly.copyExtensionDirectoryWithoutSelfNesting(
+        sourceDir,
+        destinationDir,
+        async (_source, _destination, options) => {
+          if (options?.filter) {
+            destinationFilterCovered =
+              options.filter(destinationDir) === false &&
+              options.filter(path.join(destinationDir, "child")) === false;
+          }
+        },
+      );
+      expect(destinationFilterCovered).toBe(true);
+
+      await copyExtensionDirectoryForInstall(sourceDir, destinationDir);
       await copyExtensionDirectoryForInstall(sourceDir, destinationDir);
 
       await expect(readFile(path.join(destinationDir, "manifest.json"), "utf8")).resolves.toContain("root-ext");
+      await expect(
+        readFile(
+          path.join(destinationDir, "node_modules", "ignored", "package.json"),
+          "utf8",
+        ),
+      ).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(
+        readFile(
+          path.join(
+            destinationDir,
+            ".agents",
+            "pm",
+            "extensions",
+            "root-ext",
+            "manifest.json",
+          ),
+          "utf8",
+        ),
+      ).rejects.toMatchObject({ code: "ENOENT" });
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
