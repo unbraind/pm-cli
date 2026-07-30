@@ -39,23 +39,38 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
     {
       command: "context",
       intent: "orient",
-      description: "Bounded active hierarchy, ownership, blockers, and recent progress.",
-      included_field_groups: ["summary", "focus", "hierarchy", "blockers", "activity"],
+      description:
+        "Bounded active hierarchy, ownership, blockers, and recent progress.",
+      included_field_groups: [
+        "summary",
+        "focus",
+        "hierarchy",
+        "blockers",
+        "activity",
+      ],
       token_budget: 2400,
       source: "core",
     },
     {
       command: "context",
       intent: "handoff",
-      description: "Active ownership, evidence, decisions, and immediate continuation context.",
-      included_field_groups: ["summary", "focus", "in_progress", "decisions", "activity"],
+      description:
+        "Active ownership, evidence, decisions, and immediate continuation context.",
+      included_field_groups: [
+        "summary",
+        "focus",
+        "in_progress",
+        "decisions",
+        "activity",
+      ],
       token_budget: 2200,
       source: "core",
     },
     {
       command: "get",
       intent: "inspect",
-      description: "Complete item metadata, relationships, evidence, and lifecycle state.",
+      description:
+        "Complete item metadata, relationships, evidence, and lifecycle state.",
       included_field_groups: ["item", "children", "claim_state", "linked"],
       token_budget: 3200,
       source: "core",
@@ -63,15 +78,22 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
     {
       command: "list",
       intent: "triage",
-      description: "Compact governance, ownership, priority, and blocker fields for triage.",
-      included_field_groups: ["identity", "governance", "ownership", "dependencies"],
+      description:
+        "Compact governance, ownership, priority, and blocker fields for triage.",
+      included_field_groups: [
+        "identity",
+        "governance",
+        "ownership",
+        "dependencies",
+      ],
       token_budget: 1800,
       source: "core",
     },
     {
       command: "next",
       intent: "execute",
-      description: "The highest-ranked actionable work with concise ranking evidence.",
+      description:
+        "The highest-ranked actionable work with concise ranking evidence.",
       included_field_groups: ["recommended"],
       token_budget: 1200,
       source: "core",
@@ -79,7 +101,8 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
     {
       command: "search",
       intent: "discover",
-      description: "Ranked canonical lineage candidates with compact match evidence.",
+      description:
+        "Ranked canonical lineage candidates with compact match evidence.",
       included_field_groups: ["identity", "status", "lineage", "match"],
       token_budget: 1800,
       source: "core",
@@ -196,17 +219,31 @@ export function resolveContextIntentContract(
   if (candidates.length === 0) return undefined;
   const suggestion = candidates
     .map((candidate) => {
-      const rows = Array.from({ length: normalizedIntent.length + 1 }, (_, index) => index);
-      for (let candidateIndex = 1; candidateIndex <= candidate.length; candidateIndex += 1) {
+      const rows = Array.from(
+        { length: normalizedIntent.length + 1 },
+        (_, index) => index,
+      );
+      for (
+        let candidateIndex = 1;
+        candidateIndex <= candidate.length;
+        candidateIndex += 1
+      ) {
         let previous = rows[0]!;
         rows[0] = candidateIndex;
-        for (let intentIndex = 1; intentIndex <= normalizedIntent.length; intentIndex += 1) {
+        for (
+          let intentIndex = 1;
+          intentIndex <= normalizedIntent.length;
+          intentIndex += 1
+        ) {
           const prior = rows[intentIndex]!;
           rows[intentIndex] = Math.min(
             rows[intentIndex]! + 1,
             rows[intentIndex - 1]! + 1,
             previous +
-              (candidate[candidateIndex - 1] === normalizedIntent[intentIndex - 1] ? 0 : 1),
+              (candidate[candidateIndex - 1] ===
+              normalizedIntent[intentIndex - 1]
+                ? 0
+                : 1),
           );
           previous = prior;
         }
@@ -223,7 +260,12 @@ export function resolveContextIntentContract(
   );
 }
 
-type BuiltInContextIntentCommand = "context" | "get" | "list" | "next" | "search";
+type BuiltInContextIntentCommand =
+  | "context"
+  | "get"
+  | "list"
+  | "next"
+  | "search";
 
 const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
   Record<
@@ -251,7 +293,8 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       projected.full === undefined &&
       projected.fields === undefined
     ) {
-      projected.brief = true;
+      projected.fields =
+        "id,title,status,type,priority,parent,assignee,reviewer,risk,confidence,sprint,release,blocked_by,blocked_reason,dependencies,updated_at";
     }
   },
   next: (projected) => {

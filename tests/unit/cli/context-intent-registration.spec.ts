@@ -20,7 +20,11 @@ describe("read command context intent registration", () => {
       applyContextIntentProjection("list", {
         for: "triage",
       }),
-    ).toMatchObject({ brief: true, tokenBudget: "1800" });
+    ).toMatchObject({
+      fields:
+        "id,title,status,type,priority,parent,assignee,reviewer,risk,confidence,sprint,release,blocked_by,blocked_reason,dependencies,updated_at",
+      tokenBudget: "1800",
+    });
     expect(
       applyContextIntentProjection("next", {
         for: "execute",
@@ -35,9 +39,7 @@ describe("read command context intent registration", () => {
 
   it("preserves explicit projection and token options", () => {
     const untouched = { limit: "2" };
-    expect(
-      applyContextIntentProjection("list", untouched),
-    ).toBe(untouched);
+    expect(applyContextIntentProjection("list", untouched)).toBe(untouched);
     expect(
       applyContextIntentProjection("next", {
         for: "execute",

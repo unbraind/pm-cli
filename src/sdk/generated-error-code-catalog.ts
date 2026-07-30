@@ -11,8 +11,9 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     code: "acceptance_criteria_semicolon_forbidden",
     meaning: "Acceptance criteria semicolon forbidden condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/item/parse.ts"],
   },
   {
@@ -20,71 +21,80 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Already claimed by condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/claim.ts"],
   },
   {
     code: "ambiguous_list_all",
     meaning: "Ambiguous list all condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-list-query.ts"],
   },
   {
     code: "ambiguous_option_combination",
     meaning: "Ambiguous option combination condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/plan.ts"],
   },
   {
     code: "annotation_flag_like_value",
     meaning: "Annotation flag like value condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/annotations.ts"],
   },
   {
     code: "annotation_message_without_text",
     meaning: "Annotation message without text condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/annotations.ts"],
   },
   {
     code: "append_empty_body",
     meaning: "Append empty body condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/append.ts"],
   },
   {
     code: "body_file_conflicts_with_body",
     meaning: "Body file conflicts with body condition.",
     stability: "stable",
-    exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/io/body-file.ts"],
   },
   {
     code: "body_file_missing_path",
     meaning: "Body file missing path condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/io/body-file.ts"],
   },
   {
     code: "body_file_unreadable",
     meaning: "Body file unreadable condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 3,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/io/body-file.ts"],
   },
   {
@@ -92,7 +102,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Bundle integrity torn install condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/bundle-integrity.ts"],
   },
   {
@@ -100,7 +111,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Capability undeclared condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
   },
   {
@@ -108,7 +120,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Capability unused condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
   },
   {
@@ -116,7 +129,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Child projection item bound exceeded condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/item-children.ts"],
   },
   {
@@ -124,23 +138,26 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Close reason required condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/close-many.ts","cli/commands/close.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/commands/close-many.ts", "cli/commands/close.ts"],
   },
   {
     code: "close_through_update",
     meaning: "Close through update condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/telemetry/observability.ts"],
   },
   {
     code: "close_validation_missing_fields",
     meaning: "Close validation missing fields condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/close.ts"],
   },
   {
@@ -148,7 +165,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Collected zero items condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
   },
   {
@@ -156,15 +174,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Command failed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
   },
   {
     code: "command_namespace",
     meaning: "Command namespace condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/contracts.ts"],
   },
   {
@@ -172,7 +192,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Command override conflict condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
   },
   {
@@ -180,7 +201,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Config duplicate condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -188,7 +210,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Config key unknown condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -196,15 +219,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Config value invalid condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
     code: "conflicting_lifecycle_owner",
     meaning: "Conflicting lifecycle owner condition.",
     stability: "stable",
-    exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-operations.ts"],
   },
   {
@@ -212,23 +237,26 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Context takes no item argument condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
   },
   {
     code: "create_positional_type_without_title",
     meaning: "Create positional type without title condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-mutation.ts"],
   },
   {
     code: "dependency_edge_not_allowed",
     meaning: "Dependency edge not allowed condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/dependency-flag-validation.ts"],
   },
   {
@@ -236,55 +264,53 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Duplicate command condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
-  },
-  {
-    code: "duplicate_edge",
-    meaning: "Duplicate edge condition.",
-    stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/graph/remediation.ts"],
   },
   {
     code: "duplicate_sweep_cost_limit",
     meaning: "Duplicate sweep cost limit condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 4,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/similarity.ts"],
   },
   {
     code: "duplicate_target_circular",
     meaning: "Duplicate target circular condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/close.ts"],
   },
   {
     code: "duplicate_target_is_duplicate",
     meaning: "Duplicate target is duplicate condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/close.ts"],
   },
   {
     code: "duplicate_target_missing",
     meaning: "Duplicate target missing condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/close.ts"],
   },
   {
     code: "duplicate_target_self",
     meaning: "Duplicate target self condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/close.ts"],
   },
   {
@@ -292,15 +318,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Empty surface condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
   },
   {
     code: "event_cursor_query_mismatch",
     meaning: "Event cursor query mismatch condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
   },
   {
@@ -308,15 +336,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Event index unavailable condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
   },
   {
     code: "extension_dependency_name_unsafe",
     meaning: "Extension dependency name unsafe condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
   },
   {
@@ -324,15 +354,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Extension dependency spec invalid condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
   },
   {
     code: "extension_dependency_version_unsafe",
     meaning: "Extension dependency version unsafe condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
   },
   {
@@ -340,31 +372,35 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Extension install soft failed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-setup.ts"],
   },
   {
     code: "extension_install_source_contains_destination",
     meaning: "Extension install source contains destination condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-runtime.ts"],
   },
   {
     code: "extension_item_field_reserved",
     meaning: "Extension item field reserved condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/item-fields.ts"],
   },
   {
     code: "extension_item_field_type_conflict",
     meaning: "Extension item field type conflict condition.",
     stability: "stable",
-    exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/item-fields.ts"],
   },
   {
@@ -372,7 +408,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Extension item field unknown condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/extensions/item-fields.ts"],
   },
   {
@@ -380,7 +417,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Extension update health partial coverage condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -388,7 +426,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Field duplicate condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -396,15 +435,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Field invalid condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
     code: "github_source_entry_unbuilt",
     meaning: "Github source entry unbuilt condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/shared.ts"],
   },
   {
@@ -412,7 +453,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "History drift chain mismatch condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -420,7 +462,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "History drift hash mismatch condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -428,7 +471,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "History drift missing stream condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -436,15 +480,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "History drift unreadable stream condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
     code: "history_merge_conflict_markers_detected",
     meaning: "History merge conflict markers detected condition.",
     stability: "stable",
-    exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 1,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/history/read.ts"],
   },
   {
@@ -452,7 +498,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "History stream over compact threshold condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -460,7 +507,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "History target out of range condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/history/projection.ts"],
   },
   {
@@ -468,31 +516,35 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "History unknown author events condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
     code: "init_existing_settings_requires_force",
     meaning: "Init existing settings requires force condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/init.ts"],
   },
   {
     code: "init_id_prefix_conflict",
     meaning: "Init id prefix conflict condition.",
     stability: "stable",
-    exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/init.ts"],
   },
   {
     code: "init_id_prefix_path_like",
     meaning: "Init id prefix path like condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/init.ts"],
   },
   {
@@ -500,7 +552,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Integrity history conflict marker condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -508,7 +561,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Integrity history invalid json condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -516,7 +570,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Integrity history unreadable condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -524,7 +579,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Integrity item ahead format version condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -532,7 +588,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Integrity item conflict marker condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -540,7 +597,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Integrity item outdated format version condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -548,7 +606,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Integrity item parse failed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -556,7 +615,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Integrity item unreadable condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -564,23 +624,30 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Invalid argument value condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/create.ts","cli/error-guidance.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: [
+      "cli/commands/create.ts",
+      "cli/error-guidance.ts",
+      "core/telemetry/observability.ts",
+    ],
   },
   {
     code: "invalid_command_usage",
     meaning: "Invalid command usage condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
   },
   {
     code: "invalid_event_cursor",
     meaning: "Invalid event cursor condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
   },
   {
@@ -588,7 +655,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Invalid event follow interval condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
   },
   {
@@ -596,7 +664,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Invalid event limit condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
   },
   {
@@ -604,7 +673,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Invalid event since condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-events.ts"],
   },
   {
@@ -612,15 +682,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Invalid query cursor condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/pagination.ts"],
   },
   {
     code: "item_document_invalid",
     meaning: "Item document invalid condition.",
     stability: "stable",
-    exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 1,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/item/item-format.ts"],
   },
   {
@@ -628,15 +700,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Item document roundtrip failed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/item/item-format.ts"],
   },
   {
     code: "item_id_collision",
     meaning: "Item id collision condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 4,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/copy.ts"],
   },
   {
@@ -644,15 +718,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Item not found condition.",
     stability: "stable",
     exit_code: 3,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
   },
   {
     code: "likely_duplicate",
     meaning: "Likely duplicate condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 4,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/similarity.ts"],
   },
   {
@@ -660,7 +736,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Linked test value not quoted condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
   },
   {
@@ -668,7 +745,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "List source incomplete condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/query/list.ts"],
   },
   {
@@ -676,7 +754,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Local source not found bare name condition.",
     stability: "stable",
     exit_code: 3,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
   },
   {
@@ -684,15 +763,21 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Lock conflict condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts","core/lock/lock.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: [
+      "cli/error-guidance.ts",
+      "core/lock/lock.ts",
+      "core/telemetry/observability.ts",
+    ],
   },
   {
     code: "locks_stale_count",
     meaning: "Locks stale count condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -700,15 +785,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Locks unreadable condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
     code: "malformed_plan_step_evidence",
     meaning: "Malformed plan step evidence condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/plan.ts"],
   },
   {
@@ -716,23 +803,26 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Manifest capabilities absent condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
   },
   {
     code: "merge_conflict_markers_detected",
     meaning: "Merge conflict markers detected condition.",
     stability: "stable",
-    exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 1,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/item/item-format.ts"],
   },
   {
     code: "merge_git_config_unwritable",
     meaning: "Merge git config unwritable condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 5,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/merge/install.ts"],
   },
   {
@@ -740,7 +830,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Merge root not found condition.",
     stability: "stable",
     exit_code: 3,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/merge/install.ts"],
   },
   {
@@ -748,15 +839,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Missing directory condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
     code: "missing_lifecycle_target",
     meaning: "Missing lifecycle target condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension.ts"],
   },
   {
@@ -764,31 +857,47 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Missing required argument condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts","cli/main.ts","cli/register-mutation.ts","core/telemetry/observability.ts","sdk/history-redact.ts","sdk/invocation-author.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: [
+      "cli/error-guidance.ts",
+      "cli/main.ts",
+      "cli/register-mutation.ts",
+      "core/telemetry/observability.ts",
+      "sdk/history-redact.ts",
+      "sdk/invocation-author.ts",
+    ],
   },
   {
     code: "missing_required_option",
     meaning: "Missing required option condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/create.ts","cli/commands/plan.ts","cli/error-guidance.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: [
+      "cli/commands/create.ts",
+      "cli/commands/plan.ts",
+      "cli/error-guidance.ts",
+      "core/telemetry/observability.ts",
+    ],
   },
   {
     code: "module_import_failed",
     meaning: "Module import failed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
   },
   {
     code: "multi_target_github_install_ambiguous",
     meaning: "Multi target github install ambiguous condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/register-setup.ts"],
   },
   {
@@ -796,15 +905,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Mutation author required condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-guard.ts"],
   },
   {
     code: "mutation_secret_guard_blocked",
     meaning: "Mutation secret guard blocked condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 4,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/mutation-guard.ts"],
   },
   {
@@ -812,7 +923,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "No matching tests condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
   },
   {
@@ -820,7 +932,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "No projects matched filters condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
   },
   {
@@ -828,7 +941,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "No test files found condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
   },
   {
@@ -836,7 +950,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "No tests found condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/test/execution.ts"],
   },
   {
@@ -844,15 +959,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "No update fields condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
   },
   {
     code: "npm_package_not_found",
     meaning: "Npm package not found condition.",
     stability: "stable",
     exit_code: 3,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension/install-sources.ts"],
   },
   {
@@ -860,15 +977,21 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Ownership conflict condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts","core/telemetry/observability.ts","sdk/annotations.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: [
+      "cli/error-guidance.ts",
+      "core/telemetry/observability.ts",
+      "sdk/annotations.ts",
+    ],
   },
   {
     code: "ownership_dependency_bypass_restricted_options",
     meaning: "Ownership dependency bypass restricted options condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/update.ts"],
   },
   {
@@ -876,7 +999,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Ownership metadata bypass restricted options condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/update.ts"],
   },
   {
@@ -884,7 +1008,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Package spec empty condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -892,7 +1017,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Profile name empty condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -900,7 +1026,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Profile name not normalized condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -908,7 +1035,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Profile summary empty condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -916,7 +1044,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Profile title empty condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -924,7 +1053,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Redundant edge condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/graph/remediation.ts"],
   },
   {
@@ -932,7 +1062,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Reindex already running condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/reindex.ts"],
   },
   {
@@ -940,7 +1071,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Reserved item field condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/compose.ts"],
   },
   {
@@ -948,7 +1080,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Schema migration input required condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/migration-gates.ts"],
   },
   {
@@ -956,7 +1089,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Settings read fs error condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -964,7 +1098,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Settings read invalid json condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -972,7 +1107,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Settings read invalid schema condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -980,7 +1116,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Settings read merge failed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -988,7 +1125,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Status duplicate condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -996,7 +1134,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Status invalid condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -1004,7 +1143,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Stdin json invalid condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/structured-mutations.ts"],
   },
   {
@@ -1012,7 +1152,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Stdin json unknown key condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/structured-mutations.ts"],
   },
   {
@@ -1020,7 +1161,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Telemetry endpoint probe failed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1028,7 +1170,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Telemetry endpoint probe http status condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1036,7 +1179,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Telemetry otel export failing condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1044,7 +1188,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Telemetry queue high retries condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1052,7 +1197,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Telemetry queue invalid rows condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1060,7 +1206,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Telemetry queue pending condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1068,7 +1215,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Telemetry schema version behind condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1076,7 +1224,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Telemetry state invalid json condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1084,15 +1233,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Template type unknown condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
     code: "terminal_plan_mutation",
     meaning: "Terminal plan mutation condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 4,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/plan.ts"],
   },
   {
@@ -1100,7 +1251,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Terminal state conflict condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/telemetry/observability.ts"],
   },
   {
@@ -1108,7 +1260,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Tracked runtime cache files condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1116,23 +1269,26 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Tracker not initialized condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
   },
   {
     code: "tracker_root_missing",
     meaning: "Tracker root missing condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 3,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/store/item-store.ts"],
   },
   {
     code: "tracker_root_not_directory",
     meaning: "Tracker root not directory condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/store/item-store.ts"],
   },
   {
@@ -1140,7 +1296,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Type duplicate condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -1148,7 +1305,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Type invalid condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -1156,23 +1314,30 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Unknown command condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/contracts.ts","cli/error-guidance.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: [
+      "cli/commands/contracts.ts",
+      "cli/error-guidance.ts",
+      "core/telemetry/observability.ts",
+    ],
   },
   {
     code: "unknown_error",
     meaning: "Unknown error condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
   },
   {
     code: "unknown_field",
     meaning: "Unknown field condition.",
     stability: "stable",
-    exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 3,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/schema.ts"],
   },
   {
@@ -1180,15 +1345,17 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Unknown field projection condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/get.ts","sdk/query/list.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/commands/get.ts", "sdk/query/list.ts"],
   },
   {
     code: "unknown_item_type",
     meaning: "Unknown item type condition.",
     stability: "stable",
-    exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 3,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/schema.ts"],
   },
   {
@@ -1196,7 +1363,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Unknown lifecycle action condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/extension.ts"],
   },
   {
@@ -1204,23 +1372,26 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Unknown option condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/error-guidance.ts","core/telemetry/observability.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/error-guidance.ts", "core/telemetry/observability.ts"],
   },
   {
     code: "unknown_plan_template",
     meaning: "Unknown plan template condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/plan.ts"],
   },
   {
     code: "unknown_status",
     meaning: "Unknown status condition.",
     stability: "stable",
-    exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 3,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/schema.ts"],
   },
   {
@@ -1228,15 +1399,21 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Unknown subcommand condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/register-mutation.ts","cli/register-operations.ts","sdk/telemetry.ts"],
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: [
+      "cli/register-mutation.ts",
+      "cli/register-operations.ts",
+      "sdk/telemetry.ts",
+    ],
   },
   {
     code: "unsupported_update_option",
     meaning: "Unsupported update option condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/error-guidance.ts"],
   },
   {
@@ -1244,7 +1421,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate command references stale pm ids condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1252,7 +1430,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate files missing linked paths condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1260,7 +1439,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate files orphaned paths condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1268,7 +1448,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate files tracked all strict forces pm internals condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1276,7 +1457,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate format version ahead items condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1284,7 +1466,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate format version outdated items condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1292,7 +1475,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate hierarchy parent cycle condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1300,7 +1484,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate hierarchy parent cycle error condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1308,7 +1493,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate history drift chain mismatches condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1316,7 +1502,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate history drift hash mismatches condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1324,7 +1511,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate history drift missing streams condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1332,7 +1520,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate history drift unreadable streams condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1340,7 +1529,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate history unknown author events condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1348,7 +1538,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate lifecycle active closure like metadata condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1356,7 +1547,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate lifecycle active terminal parent condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1364,7 +1556,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate lifecycle dependency cycles condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1372,7 +1565,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate lifecycle dependency cycles error condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1380,7 +1574,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate lifecycle stale blockers condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1388,15 +1583,18 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate merge fence drift condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
     code: "validate_metadata_custom_profile_missing_required_fields",
-    meaning: "Validate metadata custom profile missing required fields condition.",
+    meaning:
+      "Validate metadata custom profile missing required fields condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1404,7 +1602,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata duplicate issue codes condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1412,7 +1611,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata missing acceptance criteria condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1420,7 +1620,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata missing close reason condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1428,7 +1629,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata missing confidence condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1436,7 +1638,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata missing estimate condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1444,7 +1647,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata missing release condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1452,7 +1656,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata missing reviewer condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1460,7 +1665,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata missing risk condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1468,7 +1674,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate metadata missing sprint condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1476,7 +1683,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate resolution missing fields condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1484,7 +1692,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate storage duplicate item ids condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1492,7 +1701,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate storage history conflict markers condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1500,7 +1710,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate storage resurrected items condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1508,7 +1719,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate storage tracked runtime cache files condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1516,7 +1728,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate storage unparseable config condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1524,7 +1737,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate storage unparseable history condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1532,7 +1746,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Validate storage unreadable items condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1540,7 +1755,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Vectorization embedding identity changed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1548,7 +1764,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Vectorization stale items remaining condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
@@ -1556,7 +1773,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Workflow duplicate type condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -1564,7 +1782,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Workflow status unknown condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -1572,7 +1791,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Workflow transition malformed condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -1580,7 +1800,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Workflow type empty condition.",
     stability: "stable",
     exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -1588,7 +1809,8 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Workflow type unknown condition.",
     stability: "stable",
     exit_code: 2,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/profile/profile-lint.ts"],
   },
   {
@@ -1596,23 +1818,26 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     meaning: "Workspace history state conflict condition.",
     stability: "stable",
     exit_code: 4,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["core/history/workspace-history.ts"],
   },
   {
     code: "workspace_root_pm_path",
     meaning: "Workspace root pm path condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/init.ts"],
   },
   {
     code: "wrong_item_type",
     meaning: "Wrong item type condition.",
     stability: "stable",
-    exit_code: 1,
-    recovery: "Inspect the structured error guidance and retry the suggested command.",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
     sources: ["cli/commands/plan.ts"],
   },
 ]);

@@ -7,11 +7,45 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import ts from "typescript";
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
+
+const EXIT_CODE_VALUES = new Map([
+  ["SUCCESS", 0],
+  ["GENERIC_FAILURE", 1],
+  ["USAGE", 2],
+  ["NOT_FOUND", 3],
+  ["CONFLICT", 4],
+  ["DEPENDENCY_FAILED", 5],
+]);
+
+function resolveExplicitExitCode(property) {
+  const declaration = ts.findAncestor(
+    property,
+    (node) =>
+      ts.isNewExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "PmCliError",
+  );
+  if (!declaration || !ts.isNewExpression(declaration)) return undefined;
+  const expression = declaration.arguments?.[1];
+  if (expression && ts.isNumericLiteral(expression)) {
+    return Number(expression.text);
+  }
+  if (
+    expression &&
+    ts.isPropertyAccessExpression(expression) &&
+    ts.isIdentifier(expression.expression) &&
+    expression.expression.text === "EXIT_CODE"
+  ) {
+    return EXIT_CODE_VALUES.get(expression.name.text);
+  }
+  return undefined;
+}
 
 /** Generate or verify the exhaustive error vocabulary for one repository root. */
 export async function main(
@@ -19,7 +53,11 @@ export async function main(
   args = process.argv.slice(2),
 ) {
   const sourceRoot = path.join(root, "src");
-  const outputPath = path.join(sourceRoot, "sdk", "generated-error-code-catalog.ts");
+  const outputPath = path.join(
+    sourceRoot,
+    "sdk",
+    "generated-error-code-catalog.ts",
+  );
   const sourceFiles = [];
   const pendingDirectories = [sourceRoot];
   while (pendingDirectories.length > 0) {
@@ -41,18 +79,50 @@ export async function main(
   const sourcesByCode = new Map();
   for (const absolute of sourceFiles.sort()) {
     const content = await readFile(absolute, "utf8");
-    for (const match of content.matchAll(/\bcode:\s*["']([a-z][a-z0-9_]*)["']/g)) {
-      const sources = sourcesByCode.get(match[1]) ?? new Set();
-      sources.add(path.relative(sourceRoot, absolute).replaceAll(path.sep, "/"));
-      sourcesByCode.set(match[1], sources);
-    }
+    const sourceFile = ts.createSourceFile(
+      absolute,
+      content,
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const visit = (node) => {
+      if (
+        ts.isPropertyAssignment(node) &&
+        ((ts.isIdentifier(node.name) && node.name.text === "code") ||
+          (ts.isStringLiteral(node.name) && node.name.text === "code")) &&
+        ts.isStringLiteral(node.initializer) &&
+        /^[a-z][a-z0-9_]*$/.test(node.initializer.text)
+      ) {
+        const code = node.initializer.text;
+        const entry = sourcesByCode.get(code) ?? {
+          sources: new Set(),
+          explicitExitCodes: new Set(),
+        };
+        entry.sources.add(
+          path.relative(sourceRoot, absolute).replaceAll(path.sep, "/"),
+        );
+        const explicitExitCode = resolveExplicitExitCode(node);
+        if (explicitExitCode !== undefined) {
+          entry.explicitExitCodes.add(explicitExitCode);
+        }
+        sourcesByCode.set(code, entry);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
   }
 
   const rows = [...sourcesByCode.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([code, sources]) => {
+    .map(([code, entry]) => {
+      if (entry.explicitExitCodes.size > 1) {
+        throw new Error(
+          `Conflicting explicit exit codes for ${code}: ${[...entry.explicitExitCodes].sort((left, right) => left - right).join(", ")}`,
+        );
+      }
       const exitCode =
-        code.includes("not_found") || code.startsWith("missing_item")
+        [...entry.explicitExitCodes][0] ??
+        (code.includes("not_found") || code.startsWith("missing_item")
           ? 3
           : code.includes("conflict") || code.includes("already_")
             ? 4
@@ -63,7 +133,7 @@ export async function main(
                   code.includes("required") ||
                   code.includes("usage")
                 ? 2
-                : 1;
+                : 1);
       const meaning = `${code.replaceAll("_", " ")} condition.`;
       return [
         "  {",
@@ -72,7 +142,7 @@ export async function main(
         '    stability: "stable",',
         `    exit_code: ${exitCode},`,
         '    recovery: "Inspect the structured error guidance and retry the suggested command.",',
-        `    sources: ${JSON.stringify([...sources])},`,
+        `    sources: ${JSON.stringify([...entry.sources])},`,
         "  },",
       ].join("\n");
     });
@@ -104,7 +174,10 @@ ${rows.join("\n")}
 }
 
 /* c8 ignore start -- CLI auto-run guard; logic is covered through main(). */
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
