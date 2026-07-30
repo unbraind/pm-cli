@@ -222,6 +222,8 @@ export interface GraphImpactResult {
   count: number;
   /** Whether configured bounds omitted reachable work. */
   truncated: boolean;
+  /** Cursor resuming after the final returned affected item. */
+  next_cursor?: string;
   /** Query cost metadata. */
   cost: GraphQueryCost;
   /** Affected item rows ordered by discovery; absent with summary. */
@@ -618,6 +620,8 @@ interface GraphInvocation {
   saveBaseline: boolean;
   /** Whether row collections are suppressed. */
   summary: boolean;
+  /** Whether the caller explicitly requested an unbounded full impact result. */
+  unbounded: boolean;
 }
 
 /** Normalize repeatable or comma-separated id options into a flat list. */
@@ -783,20 +787,31 @@ function runGraphImpact(
   root: string,
   invocation: GraphInvocation,
 ): GraphImpactResult {
-  const analysis = analyzeGraphImpact(invocation.assembly.graph, root, {
-    direction: invocation.direction,
-    ...(invocation.kinds === undefined ? {} : { kinds: invocation.kinds }),
-    ...(invocation.maxDepth === undefined
-      ? {}
-      : { maxDepth: invocation.maxDepth }),
-    ...(invocation.limit === undefined ? {} : { limit: invocation.limit }),
-  });
+  let analysis;
+  try {
+    analysis = analyzeGraphImpact(invocation.assembly.graph, root, {
+      direction: invocation.direction,
+      ...(invocation.kinds === undefined ? {} : { kinds: invocation.kinds }),
+      ...(invocation.maxDepth === undefined
+        ? {}
+        : { maxDepth: invocation.maxDepth }),
+      ...(invocation.unbounded
+        ? {}
+        : { limit: invocation.limit ?? DEFAULT_SAMPLE_LIMIT }),
+      ...(invocation.after === undefined ? {} : { after: invocation.after }),
+    });
+  } catch (error) {
+    rethrowGraphUsage(error);
+  }
   return {
     subcommand: "impact",
     root,
     direction: invocation.direction,
     count: analysis.affected.length,
     truncated: analysis.truncated,
+    ...(analysis.nextCursor === undefined
+      ? {}
+      : { next_cursor: analysis.nextCursor }),
     cost: {
       visited_nodes: analysis.cost.visitedNodes,
       inspected_edges: analysis.cost.inspectedEdges,
@@ -1159,6 +1174,7 @@ function buildGraphQueryKey(
       ),
     ].sort(),
     summary: invocation.summary,
+    unbounded: invocation.unbounded,
   });
 }
 
@@ -1216,6 +1232,15 @@ function assertGraphFlagScope(
       "graph index accepts either --rebuild or --clear, not both.",
       EXIT_CODE.USAGE,
     );
+  if (
+    subcommand === "impact" &&
+    options.full === true &&
+    options.limit !== undefined
+  )
+    throw new PmCliError(
+      "graph impact accepts either --full or --limit, not both.",
+      EXIT_CODE.USAGE,
+    );
 }
 
 /**
@@ -1248,6 +1273,7 @@ async function runGraphIndex(
       exemptIsolateTypes: [],
       saveBaseline: false,
       summary: true,
+      unbounded: false,
     };
     for (const warm of ["analyze", "audit"] as const) {
       await persistDurableGraphResult(
@@ -1389,6 +1415,7 @@ export async function runGraph(
     exemptIsolateTypes: normalizeIdList(options.exemptIsolateType),
     saveBaseline: options.saveBaseline === true,
     summary: options.summary === true,
+    unbounded: options.full === true,
   };
   if (subcommand === "index") {
     return attachGraphProjection(

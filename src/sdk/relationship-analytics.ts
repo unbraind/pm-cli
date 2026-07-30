@@ -57,6 +57,8 @@ export interface RelationshipImpactAnalysis {
   exact: true;
   /** Whether configured traversal bounds omitted reachable work. */
   truncated: boolean;
+  /** Cursor resuming after the final returned impact row. */
+  nextCursor?: string;
   /** Query work retained for performance and explainability. */
   cost: { visitedNodes: number; inspectedEdges: number };
 }
@@ -97,6 +99,46 @@ export interface RelationshipSnapshotComparison {
 export interface RelationshipAnalyticsOptions {
   /** Registry used to interpret ordering direction and custom kinds. */
   registry?: RelationshipKindRegistry;
+}
+
+/** Impact-specific pagination layered onto the shared graph query controls. */
+export interface RelationshipImpactOptions extends RelationshipQueryOptions {
+  /** Resume emission after this previously returned affected node. */
+  after?: string;
+}
+
+interface RelationshipImpactTraversalState {
+  seen: Set<string>;
+  parents: Map<string, string>;
+  queue: Array<{ id: string; depth: number }>;
+  affected: RelationshipImpactRow[];
+  cursorFound: boolean;
+}
+
+function visitImpactNeighbor(
+  state: RelationshipImpactTraversalState,
+  id: string,
+  parent: { id: string; depth: number },
+  root: string,
+  after: string | undefined,
+  limit: number,
+): "continue" | "skip" | "truncate" {
+  if (state.seen.has(id)) return "skip";
+  if (state.cursorFound && state.affected.length >= limit) return "truncate";
+  state.seen.add(id);
+  state.parents.set(id, parent.id);
+  const depth = parent.depth + 1;
+  state.queue.push({ id, depth });
+  if (!state.cursorFound) {
+    state.cursorFound = id === after;
+    return "skip";
+  }
+  state.affected.push({
+    id,
+    distance: depth,
+    path: reconstructImpactPath(root, id, state.parents),
+  });
+  return "continue";
 }
 
 function appendNeighbor(
@@ -336,21 +378,25 @@ export function analyzeRelationshipExecution(
 export function analyzeGraphImpact(
   graph: RelationshipGraph,
   root: string,
-  options: RelationshipQueryOptions = {},
+  options: RelationshipImpactOptions = {},
 ): RelationshipImpactAnalysis {
   const direction = options.direction ?? "outgoing";
   const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
   const limit = options.limit ?? Number.POSITIVE_INFINITY;
-  const queue = [{ id: root, depth: 0 }];
-  const seen = new Set([root]);
-  const parents = new Map<string, string>();
-  const affected: RelationshipImpactRow[] = [];
+  const state: RelationshipImpactTraversalState = {
+    queue: [{ id: root, depth: 0 }],
+    seen: new Set([root]),
+    parents: new Map(),
+    affected: [],
+    cursorFound: options.after === undefined || options.after === root,
+  };
   let visitedNodes = 0;
   let inspectedEdges = 0;
   let truncated = false;
-  traversal: for (let index = 0; index < queue.length; index += 1) {
+  let rowLimitTruncated = false;
+  traversal: for (let index = 0; index < state.queue.length; index += 1) {
     options.signal?.throwIfAborted();
-    const current = queue[index]!;
+    const current = state.queue[index]!;
     visitedNodes += 1;
     const adjacent = graph.adjacency(current.id, {
       direction,
@@ -359,31 +405,36 @@ export function analyzeGraphImpact(
     });
     inspectedEdges += adjacent.meta.inspectedEdges;
     if (current.depth >= maxDepth) {
-      if (adjacent.value.some((id) => !seen.has(id))) truncated = true;
+      if (adjacent.value.some((id) => !state.seen.has(id))) truncated = true;
       continue;
     }
     for (const id of adjacent.value) {
-      if (seen.has(id)) continue;
-      if (affected.length >= limit) {
+      const outcome = visitImpactNeighbor(
+        state,
+        id,
+        current,
+        root,
+        options.after,
+        limit,
+      );
+      if (outcome === "truncate") {
         truncated = true;
+        rowLimitTruncated = true;
         break traversal;
       }
-      seen.add(id);
-      parents.set(id, current.id);
-      const depth = current.depth + 1;
-      affected.push({
-        id,
-        distance: depth,
-        path: reconstructImpactPath(root, id, parents),
-      });
-      queue.push({ id, depth });
     }
+  }
+  if (!state.cursorFound) {
+    throw new TypeError(`Unknown impact cursor: ${options.after}`);
   }
   return {
     root,
-    affected,
+    affected: state.affected,
     exact: true,
     truncated,
+    ...(rowLimitTruncated && state.affected.length > 0
+      ? { nextCursor: state.affected.at(-1)!.id }
+      : {}),
     cost: { visitedNodes, inspectedEdges },
   };
 }

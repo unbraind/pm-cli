@@ -333,6 +333,7 @@ describe("SDK author attribution primitives", () => {
       { path: pmRoot },
       {
         checkOnly: true,
+        full: true,
         skipIntegrity: true,
         skipDrift: true,
         skipVectors: true,

@@ -140,7 +140,10 @@ export function resolvePortableWorkspaceContext(
       ...(repoRoot ? { repo_root: repoRoot } : {}),
     };
   }
-  const relativePmRoot = path.relative(sourceWorkspaceRoot, path.resolve(pmRoot));
+  const relativePmRoot = path.relative(
+    sourceWorkspaceRoot,
+    path.resolve(pmRoot),
+  );
   const contained =
     relativePmRoot.length > 0 &&
     !relativePmRoot.startsWith(`..${path.sep}`) &&
@@ -295,6 +298,23 @@ export function setActiveCommandContext(
     return;
   }
   activeCommandContext = resolved;
+}
+
+/** Return a defensive snapshot of the current invocation's command context. */
+export function getActiveCommandContext(): Omit<
+  CommandOverrideContext,
+  "result"
+> | null {
+  const state = runtimeState();
+  const context = state ? state.commandContext : activeCommandContext;
+  return context
+    ? {
+        ...context,
+        args: [...context.args],
+        options: context.options ? { ...context.options } : {},
+        global: context.global ? { ...context.global } : undefined,
+      }
+    : null;
 }
 
 /** Implements set active command result for the public runtime surface of this module. */
@@ -476,12 +496,8 @@ export function runActiveCommandOverride(
   return runCommandOverride(commands, {
     command: commandContext.command,
     args: [...commandContext.args],
-    options: commandContext.options
-      ? { ...commandContext.options }
-      : {},
-    global: commandContext.global
-      ? { ...commandContext.global }
-      : undefined,
+    options: commandContext.options ? { ...commandContext.options } : {},
+    global: commandContext.global ? { ...commandContext.global } : undefined,
     pm_root: commandContext.pm_root,
     source_workspace_root: commandContext.source_workspace_root,
     repo_root: commandContext.repo_root,
@@ -579,12 +595,8 @@ export function runActiveRendererOverride(
     format,
     command: commandContext?.command,
     args: commandContext ? [...commandContext.args] : [],
-    options: commandContext?.options
-      ? { ...commandContext.options }
-      : {},
-    global: commandContext?.global
-      ? { ...commandContext.global }
-      : undefined,
+    options: commandContext?.options ? { ...commandContext.options } : {},
+    global: commandContext?.global ? { ...commandContext.global } : undefined,
     pm_root: commandContext?.pm_root,
     source_workspace_root: commandContext?.source_workspace_root,
     repo_root: commandContext?.repo_root,
@@ -600,12 +612,8 @@ function buildServiceContext(service: ExtensionServiceName, payload: unknown) {
     service,
     command: commandContext?.command,
     args: commandContext ? [...commandContext.args] : [],
-    options: commandContext?.options
-      ? { ...commandContext.options }
-      : {},
-    global: commandContext?.global
-      ? { ...commandContext.global }
-      : undefined,
+    options: commandContext?.options ? { ...commandContext.options } : {},
+    global: commandContext?.global ? { ...commandContext.global } : undefined,
     pm_root: commandContext?.pm_root,
     source_workspace_root: commandContext?.source_workspace_root,
     repo_root: commandContext?.repo_root,
@@ -628,10 +636,7 @@ export async function runActiveServiceOverride(
       warnings: [],
     };
   }
-  return runServiceOverride(
-    services,
-    buildServiceContext(service, payload),
-  );
+  return runServiceOverride(services, buildServiceContext(service, payload));
 }
 
 /** Implements run active service override sync for the public runtime surface of this module. */

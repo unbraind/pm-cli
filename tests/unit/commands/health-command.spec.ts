@@ -1497,7 +1497,7 @@ describe("runHealth", () => {
 
       const health = await runHealth(
         { path: context.pmPath },
-        { checkOnly: true },
+        { checkOnly: true, full: true },
       );
       expect(health.warnings).toEqual(
         expect.arrayContaining(["vectorization_embedding_identity_changed"]),
@@ -1543,6 +1543,7 @@ describe("runHealth", () => {
           { path: context.pmPath },
           {
             checkOnly: true,
+            full: true,
           },
         );
         expect(checkOnly.ok).toBe(false);
@@ -1610,6 +1611,7 @@ describe("runHealth", () => {
         { path: context.pmPath },
         {
           checkOnly: true,
+          full: true,
         },
       );
       const summaryVectorizationCheck = summaryResult.checks.find(
@@ -1651,6 +1653,7 @@ describe("runHealth", () => {
         { path: context.pmPath },
         {
           checkOnly: true,
+          full: true,
           verboseStaleItems: true,
         },
       );
@@ -1857,6 +1860,7 @@ describe("runHealth", () => {
         { path: context.pmPath },
         {
           checkOnly: true,
+          full: true,
           skipIntegrity: true,
           skipDrift: true,
           skipVectors: true,
@@ -1894,6 +1898,7 @@ describe("runHealth", () => {
         { path: context.pmPath },
         {
           checkOnly: true,
+          full: true,
           skipIntegrity: true,
           skipDrift: true,
           skipVectors: true,

@@ -964,7 +964,10 @@ describe("runInit", () => {
         "utf8",
       );
 
-      const before = await runHealth({ path: tempRoot }, { checkOnly: true });
+      const before = await runHealth(
+        { path: tempRoot },
+        { checkOnly: true, full: true },
+      );
       const beforeDirectories = before.checks.find(
         (check) => check.name === "directories",
       );
@@ -985,7 +988,10 @@ describe("runInit", () => {
         path.join(tempRoot, "types"),
       ]);
 
-      const after = await runHealth({ path: tempRoot }, { checkOnly: true });
+      const after = await runHealth(
+        { path: tempRoot },
+        { checkOnly: true, full: true },
+      );
       const afterDirectories = after.checks.find(
         (check) => check.name === "directories",
       );

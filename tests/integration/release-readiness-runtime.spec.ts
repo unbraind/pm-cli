@@ -1752,6 +1752,7 @@ describe("release readiness runtime coverage", () => {
         "missing_count",
         "tree",
         "projection",
+        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1768,6 +1769,7 @@ describe("release readiness runtime coverage", () => {
         "missing_count",
         "graph",
         "projection",
+        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1792,6 +1794,7 @@ describe("release readiness runtime coverage", () => {
         "edge_count",
         "missing_count",
         "projection",
+        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1827,6 +1830,7 @@ describe("release readiness runtime coverage", () => {
         "projection",
         "sorting",
         "now",
+        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1880,6 +1884,7 @@ describe("release readiness runtime coverage", () => {
         "blocked_fallback",
         "agenda",
         "applied_limit",
+        "row_contract",
         "omission_receipt",
       ]);
 
@@ -1897,6 +1902,7 @@ describe("release readiness runtime coverage", () => {
         "count",
         "applied_limit",
         "filters",
+        "row_contract",
         "omission_receipt",
       ]);
       expect((searchResult.json as { mode?: string }).mode).toBe("keyword");
@@ -1920,6 +1926,7 @@ describe("release readiness runtime coverage", () => {
         "item",
         "linked",
         "claim_state",
+        "row_contract",
         "omission_receipt",
       ]);
       const getJson = getResult.json as {
@@ -2144,6 +2151,7 @@ describe("release readiness runtime coverage", () => {
         "omission_receipt",
         "count",
         "limit",
+        "row_contract",
       ]);
 
       const activityResult = context.runCli(
@@ -2162,6 +2170,7 @@ describe("release readiness runtime coverage", () => {
         "omitted_count",
         "has_more",
         "applied_bound",
+        "row_contract",
       ]);
 
       const statsResult = context.runCli(["stats", "--json"], {
@@ -2173,6 +2182,7 @@ describe("release readiness runtime coverage", () => {
         "by_type",
         "by_status",
         "generated_at",
+        "row_contract",
       ]);
 
       const healthResult = context.runCli(["health", "--json"], {
@@ -2184,6 +2194,7 @@ describe("release readiness runtime coverage", () => {
         "checks",
         "warnings",
         "generated_at",
+        "row_contract",
         "omission_receipt",
       ]);
 
@@ -2615,7 +2626,7 @@ describe("release readiness runtime coverage", () => {
       "node scripts/release-version.mjs next",
     );
     expect(packageJson.scripts?.["quality:static"]).toBe(
-      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 130 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/token-budget-gate.mjs && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
+      "pnpm build && pnpm exec tsx scripts/release/static-quality-gate.mts --max-eslint-suppressions 129 --max-coverage-ignore-pragmas 477 --min-docstring-coverage 100 --min-exported-docstring-coverage 100 --min-member-docstring-coverage 100 && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/token-budget-gate.mjs && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check",
     );
     expect(packageJson.scripts?.["quality:token-budget"]).toBe(
       "node scripts/release/token-budget-gate.mjs",

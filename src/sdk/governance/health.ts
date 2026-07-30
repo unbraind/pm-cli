@@ -2447,7 +2447,14 @@ async function scanHealthDirectories(
 }
 
 function resolveHealthSkipPolicy(options: RunHealthOptions): HealthSkipPolicy {
-  const summaryMode = options.summary === true && options.full !== true;
+  const checkOnlyDefaultSummary =
+    options.checkOnly === true &&
+    options.brief !== true &&
+    options.summary !== true &&
+    options.full !== true;
+  const summaryMode =
+    (options.summary === true || checkOnlyDefaultSummary) &&
+    options.full !== true;
   const fastProjectionCheckOnly =
     options.checkOnly === true &&
     (options.brief === true || options.summary === true) &&
@@ -2922,10 +2929,7 @@ export async function runHealth(
   // surfaced in `warnings` and the telemetry check's own `warn` status.
   const blockingWarnings = normalizedWarnings.filter(
     (warning) =>
-      !isAdvisoryHealthWarning(
-        warning,
-        options.requireMergeDrivers === true,
-      ),
+      !isAdvisoryHealthWarning(warning, options.requireMergeDrivers === true),
   );
   const result: HealthResult = {
     ok: blockingWarnings.length === 0,
@@ -2951,7 +2955,9 @@ export const _testOnlyHealthCommand = {
   normalizeExtensionNameForMatch,
   parseTelemetryQueue,
   probeTelemetryEndpointHealth,
+  projectHealthResult,
   resolveActionableUnknownAuthorEventCount,
+  resolveHealthSkipPolicy,
   resolveUnknownAuthorEventCount,
   selectStaleItemDetail,
   summarizeHealthCheckDetails,

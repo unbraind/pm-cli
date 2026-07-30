@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1276,
+    "covered_symbols": 1280,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1277
+    "required_symbols": 1281
   },
   "breaking_acknowledgements": [
     {
@@ -341,6 +341,20 @@
       ],
       "package_version": "2026.7.29",
       "reason": "ContractsResult additive full-projection fields and context-intent schema parameters"
+    },
+    {
+      "changes": [
+        "signature ./sdk:_testOnlyHealthCommand",
+        "signature ./sdk:analyzeGraphImpact",
+        "signature ./sdk:GraphImpactResult",
+        "signature ./sdk:RelationshipImpactAnalysis",
+        "signature ./sdk/governance:_testOnlyHealthCommand",
+        "signature ./sdk/graph:analyzeGraphImpact",
+        "signature ./sdk/graph:GraphImpactResult",
+        "signature ./sdk/graph:RelationshipImpactAnalysis"
+      ],
+      "package_version": "2026.7.30",
+      "reason": "Additive optional cursor, row, intent, and health projection contracts; no existing callable behavior or required member was removed"
     }
   ],
   "entrypoints": {
@@ -363,7 +377,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "advanced_export",
@@ -609,7 +623,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "analyzeGraphImpact",
-          "signature": "(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions) => RelationshipImpactAnalysis | calls: (graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions) => RelationshipImpactAnalysis"
+          "signature": "(graph: RelationshipGraph, root: string, options?: RelationshipImpactOptions) => RelationshipImpactAnalysis | calls: (graph: RelationshipGraph, root: string, options?: RelationshipImpactOptions) => RelationshipImpactAnalysis"
         },
         {
           "classification": "supported",
@@ -1014,10 +1028,22 @@
           "signature": "export interface AtomicMutationControls { createCompensation?: \"close\" | \"delete\"; lockTtlSeconds?: number; lockWaitMs?: number; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "attachContextIntentReceipt",
+          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { context_intent?: PmContextIntentReceipt; } | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { context_intent?: PmContextIntentReceipt; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "attachOutputOmissionReceipt",
           "signature": "(command: string | undefined, result: unknown) => unknown | calls: (command: string | undefined, result: unknown) => unknown"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "attachReadOutputContracts",
+          "signature": "(command: string | undefined, options: Record<string, unknown>, result: unknown) => unknown | calls: (command: string | undefined, options: Record<string, unknown>, result: unknown) => unknown"
         },
         {
           "classification": "supported",
@@ -4293,7 +4319,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphImpactResult",
-          "signature": "export interface GraphImpactResult { subcommand: \"impact\"; root: string; direction: string; count: number; truncated: boolean; cost: GraphQueryCost; affected?: GraphImpactRow[]; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphImpactResult { subcommand: \"impact\"; root: string; direction: string; count: number; truncated: boolean; next_cursor?: string; cost: GraphQueryCost; affected?: GraphImpactRow[]; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -6786,6 +6812,18 @@
           "signature": "\"1.0.0\""
         },
         {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_READ_ROW_CONTRACTS",
+          "signature": "{ readonly context: { readonly row_keys: readonly [\"high_level\", \"low_level\"]; readonly fields: \"supported\"; }; readonly get: { readonly row_keys: readonly [\"children\"]; readonly fields: \"supported\"; }; readonly list: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly next: { readonly row_keys: readonly [\"recommended\", \"ready\", \"decision_needed\", \"blocked\", \"held_by_others\"]; readonly fields: \"unsupported\"; }; readonly search: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly activity: { readonly row_keys: readonly [\"compact_activity\", \"activity\"]; readonly fields: \"unsupported\"; }; readonly history: { readonly row_keys: readonly [\"compact_history\", \"history\"]; readonly fields: \"unsupported\"; }; readonly deps: { readonly row_keys: readonly []; readonly fields: \"unsupported\"; }; readonly health: { readonly row_keys: readonly [\"checks\"]; readonly fields: \"unsupported\"; }; readonly aggregate: { readonly row_keys: readonly [\"groups\"]; readonly fields: \"unsupported\"; }; readonly duplicates: { readonly row_keys: readonly [\"clusters\"]; readonly fields: \"unsupported\"; }; readonly stats: { readonly row_keys: readonly []; readonly fields: \"unsupported\"; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "PM_READ_ROW_JQ_SELECTOR",
+          "signature": "\".row_contract.row_keys[] as $key | .[$key][]?\""
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_ACTION_PARAMETER_CONTRACTS",
@@ -6964,6 +7002,12 @@
           "kind": "interface",
           "name": "PmContextIntentContract",
           "signature": "export interface PmContextIntentContract { command: PmContextIntentCommand; intent: string; description: string; included_field_groups: string[]; token_budget: number; source?: PmContextIntentSource; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmContextIntentReceipt",
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; }"
         },
         {
           "classification": "contract_data",
@@ -7630,6 +7674,12 @@
           "kind": "function",
           "name": "readRequiredString",
           "signature": "(args: Record<string, unknown>, key: string) => string | calls: (args: Record<string, unknown>, key: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ReadRowContract",
+          "signature": "export interface ReadRowContract { command: string; row_keys: string[]; fields: \"supported\" | \"unsupported\"; jq_selector: string; }"
         },
         {
           "classification": "advanced_export",
@@ -8313,7 +8363,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipImpactAnalysis",
-          "signature": "export interface RelationshipImpactAnalysis { root: string; affected: RelationshipImpactRow[]; exact: true; truncated: boolean; cost: { visitedNodes: number; inspectedEdges: number; }; }"
+          "signature": "export interface RelationshipImpactAnalysis { root: string; affected: RelationshipImpactRow[]; exact: true; truncated: boolean; nextCursor?: string; cost: { visitedNodes: number; inspectedEdges: number; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RelationshipImpactOptions",
+          "signature": "export interface RelationshipImpactOptions extends RelationshipQueryOptions { after?: string; }"
         },
         {
           "classification": "supported",
@@ -8860,6 +8916,12 @@
           "kind": "function",
           "name": "resolveQueryCursorStart",
           "signature": "<T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string) => number | calls: <T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string) => number"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveReadRowContract",
+          "signature": "(command: string, result: Record<string, unknown>) => ReadRowContract | undefined | calls: (command: string, result: Record<string, unknown>) => ReadRowContract | undefined"
         },
         {
           "classification": "advanced_export",
@@ -13034,6 +13096,18 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "attachContextIntentReceipt",
+          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { context_intent?: PmContextIntentReceipt; } | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => Result & { context_intent?: PmContextIntentReceipt; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "attachReadOutputContracts",
+          "signature": "(command: string | undefined, options: Record<string, unknown>, result: unknown) => unknown | calls: (command: string | undefined, options: Record<string, unknown>, result: unknown) => unknown"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "buildPmActionToolInputSchema",
           "signature": "(action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown> | calls: (action: PmToolAction, options?: PmActionToolInputSchemaOptions) => Record<string, unknown>"
         },
@@ -13726,6 +13800,12 @@
           "kind": "interface",
           "name": "PmContextIntentContract",
           "signature": "export interface PmContextIntentContract { command: PmContextIntentCommand; intent: string; description: string; included_field_groups: string[]; token_budget: number; source?: PmContextIntentSource; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmContextIntentReceipt",
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; }"
         },
         {
           "classification": "contract_data",
@@ -14949,7 +15029,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "supported",
@@ -15429,7 +15509,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "analyzeGraphImpact",
-          "signature": "(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions) => RelationshipImpactAnalysis | calls: (graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions) => RelationshipImpactAnalysis"
+          "signature": "(graph: RelationshipGraph, root: string, options?: RelationshipImpactOptions) => RelationshipImpactAnalysis | calls: (graph: RelationshipGraph, root: string, options?: RelationshipImpactOptions) => RelationshipImpactAnalysis"
         },
         {
           "classification": "supported",
@@ -15837,7 +15917,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphImpactResult",
-          "signature": "export interface GraphImpactResult { subcommand: \"impact\"; root: string; direction: string; count: number; truncated: boolean; cost: GraphQueryCost; affected?: GraphImpactRow[]; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphImpactResult { subcommand: \"impact\"; root: string; direction: string; count: number; truncated: boolean; next_cursor?: string; cost: GraphQueryCost; affected?: GraphImpactRow[]; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -16401,7 +16481,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipImpactAnalysis",
-          "signature": "export interface RelationshipImpactAnalysis { root: string; affected: RelationshipImpactRow[]; exact: true; truncated: boolean; cost: { visitedNodes: number; inspectedEdges: number; }; }"
+          "signature": "export interface RelationshipImpactAnalysis { root: string; affected: RelationshipImpactRow[]; exact: true; truncated: boolean; nextCursor?: string; cost: { visitedNodes: number; inspectedEdges: number; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RelationshipImpactOptions",
+          "signature": "export interface RelationshipImpactOptions extends RelationshipQueryOptions { after?: string; }"
         },
         {
           "classification": "supported",
@@ -20992,6 +21078,7 @@
     "type_duplicate",
     "type_invalid",
     "unknown_command",
+    "unknown_context_intent",
     "unknown_error",
     "unknown_field",
     "unknown_field_projection",

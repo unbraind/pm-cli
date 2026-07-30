@@ -541,6 +541,73 @@ describe("runGraph", () => {
       expect(bounded.count).toBe(1);
       expect(bounded.truncated).toBe(true);
       expect(bounded.affected).toBeUndefined();
+
+      for (let index = 0; index < 12; index += 1) {
+        createItem(context, `Impact fanout ${index}`, [
+          "--dep",
+          `id=${task},kind=blocked_by`,
+        ]);
+      }
+      const firstPage = (await runGraph(
+        "impact",
+        task,
+        undefined,
+        { direction: "both", kind: "blocked_by" },
+        { path: context.pmPath },
+      )) as GraphImpactResult;
+      expect(firstPage.count).toBe(10);
+      expect(firstPage.truncated).toBe(true);
+      expect(firstPage.next_cursor).toBeDefined();
+
+      const secondPage = (await runGraph(
+        "impact",
+        task,
+        undefined,
+        {
+          direction: "both",
+          kind: "blocked_by",
+          after: firstPage.next_cursor,
+        },
+        { path: context.pmPath },
+      )) as GraphImpactResult;
+      expect(secondPage.affected).not.toEqual([]);
+      expect(secondPage.affected).toEqual(
+        expect.not.arrayContaining(firstPage.affected!),
+      );
+
+      const complete = (await runGraph(
+        "impact",
+        task,
+        undefined,
+        { direction: "both", kind: "blocked_by", full: true },
+        { path: context.pmPath },
+      )) as GraphImpactResult;
+      expect(complete.count).toBeGreaterThan(firstPage.count);
+      expect(complete.truncated).toBe(false);
+      expect(complete.next_cursor).toBeUndefined();
+
+      await expect(
+        runGraph(
+          "impact",
+          task,
+          undefined,
+          { after: "pm-not-an-impact-cursor" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runGraph(
+          "impact",
+          task,
+          undefined,
+          { full: true, limit: "1" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
