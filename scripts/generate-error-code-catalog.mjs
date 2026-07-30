@@ -47,17 +47,27 @@ function resolveExplicitExitCode(property) {
   return undefined;
 }
 
-/** Generate or verify the exhaustive error vocabulary for one repository root. */
-export async function main(
-  root = repositoryRoot,
-  args = process.argv.slice(2),
-) {
-  const sourceRoot = path.join(root, "src");
-  const outputPath = path.join(
-    sourceRoot,
-    "sdk",
-    "generated-error-code-catalog.ts",
-  );
+function renderGeneratedStringProperty(name, value) {
+  const literal = JSON.stringify(value);
+  const oneLine = `    ${name}: ${literal},`;
+  return oneLine.length <= 80
+    ? [oneLine]
+    : [`    ${name}:`, `      ${literal},`];
+}
+
+function renderGeneratedStringArray(name, values) {
+  const literals = values.map((value) => JSON.stringify(value));
+  const oneLine = `    ${name}: [${literals.join(", ")}],`;
+  return oneLine.length <= 80
+    ? [oneLine]
+    : [
+        `    ${name}: [`,
+        ...literals.map((literal) => `      ${literal},`),
+        "    ],",
+      ];
+}
+
+async function discoverSourceFiles(sourceRoot, outputPath) {
   const sourceFiles = [];
   const pendingDirectories = [sourceRoot];
   while (pendingDirectories.length > 0) {
@@ -75,77 +85,108 @@ export async function main(
       }
     }
   }
+  return sourceFiles.sort();
+}
 
-  const sourcesByCode = new Map();
-  for (const absolute of sourceFiles.sort()) {
-    const content = await readFile(absolute, "utf8");
-    const sourceFile = ts.createSourceFile(
-      absolute,
-      content,
-      ts.ScriptTarget.Latest,
-      true,
-    );
-    const visit = (node) => {
-      if (
-        ts.isPropertyAssignment(node) &&
-        ((ts.isIdentifier(node.name) && node.name.text === "code") ||
-          (ts.isStringLiteral(node.name) && node.name.text === "code")) &&
-        ts.isStringLiteral(node.initializer) &&
-        /^[a-z][a-z0-9_]*$/.test(node.initializer.text)
-      ) {
-        const code = node.initializer.text;
-        const entry = sourcesByCode.get(code) ?? {
-          sources: new Set(),
-          explicitExitCodes: new Set(),
-        };
-        entry.sources.add(
-          path.relative(sourceRoot, absolute).replaceAll(path.sep, "/"),
-        );
-        const explicitExitCode = resolveExplicitExitCode(node);
-        if (explicitExitCode !== undefined) {
-          entry.explicitExitCodes.add(explicitExitCode);
-        }
-        sourcesByCode.set(code, entry);
+function collectSourceDeclarations(sourceFile, sourcePath, sourcesByCode) {
+  const visit = (node) => {
+    const property = ts.isPropertyAssignment(node) ? node : undefined;
+    const codeInitializer =
+      property && ts.isAsExpression(property.initializer)
+        ? property.initializer.expression
+        : property?.initializer;
+    const codeName =
+      property &&
+      ((ts.isIdentifier(property.name) && property.name.text === "code") ||
+        (ts.isStringLiteral(property.name) && property.name.text === "code"));
+    if (
+      property &&
+      codeName &&
+      codeInitializer &&
+      ts.isStringLiteral(codeInitializer) &&
+      /^[a-z][a-z0-9_]*$/.test(codeInitializer.text)
+    ) {
+      const code = codeInitializer.text;
+      const entry = sourcesByCode.get(code) ?? {
+        sources: new Set(),
+        explicitExitCodes: new Set(),
+      };
+      entry.sources.add(sourcePath);
+      const explicitExitCode = resolveExplicitExitCode(property);
+      if (explicitExitCode !== undefined) {
+        entry.explicitExitCodes.add(explicitExitCode);
       }
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
+      sourcesByCode.set(code, entry);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+}
+
+function resolveFallbackExitCode(code) {
+  if (code.includes("not_found") || code.startsWith("missing_item")) return 3;
+  if (code.includes("conflict") || code.includes("already_")) return 4;
+  if (code.includes("dependency_failed")) return 5;
+  if (
+    code.includes("invalid") ||
+    code.includes("unknown") ||
+    code.includes("required") ||
+    code.includes("usage")
+  ) {
+    return 2;
+  }
+  return 1;
+}
+
+function renderCatalogRow(code, entry) {
+  if (entry.explicitExitCodes.size > 1) {
+    throw new Error(
+      `Conflicting explicit exit codes for ${code}: ${[...entry.explicitExitCodes].sort((left, right) => left - right).join(", ")}`,
+    );
+  }
+  const exitCode =
+    [...entry.explicitExitCodes][0] ?? resolveFallbackExitCode(code);
+  const meaning = `${code.replaceAll("_", " ")} condition.`;
+  return [
+    "  {",
+    `    code: ${JSON.stringify(code)},`,
+    ...renderGeneratedStringProperty(
+      "meaning",
+      meaning[0].toUpperCase() + meaning.slice(1),
+    ),
+    '    stability: "stable",',
+    `    exit_code: ${exitCode},`,
+    "    recovery:",
+    '      "Inspect the structured error guidance and retry the suggested command.",',
+    ...renderGeneratedStringArray("sources", [...entry.sources]),
+    "  },",
+  ].join("\n");
+}
+
+/** Generate or verify the exhaustive error vocabulary for one repository root. */
+export async function main(
+  root = repositoryRoot,
+  args = process.argv.slice(2),
+) {
+  const sourceRoot = path.join(root, "src");
+  const outputPath = path.join(
+    sourceRoot,
+    "sdk",
+    "generated-error-code-catalog.ts",
+  );
+  const sourcesByCode = new Map();
+  for (const absolute of await discoverSourceFiles(sourceRoot, outputPath)) {
+    const content = await readFile(absolute, "utf8");
+    collectSourceDeclarations(
+      ts.createSourceFile(absolute, content, ts.ScriptTarget.Latest, true),
+      path.relative(sourceRoot, absolute).replaceAll(path.sep, "/"),
+      sourcesByCode,
+    );
   }
 
   const rows = [...sourcesByCode.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([code, entry]) => {
-      if (entry.explicitExitCodes.size > 1) {
-        throw new Error(
-          `Conflicting explicit exit codes for ${code}: ${[...entry.explicitExitCodes].sort((left, right) => left - right).join(", ")}`,
-        );
-      }
-      const exitCode =
-        [...entry.explicitExitCodes][0] ??
-        (code.includes("not_found") || code.startsWith("missing_item")
-          ? 3
-          : code.includes("conflict") || code.includes("already_")
-            ? 4
-            : code.includes("dependency_failed")
-              ? 5
-              : code.includes("invalid") ||
-                  code.includes("unknown") ||
-                  code.includes("required") ||
-                  code.includes("usage")
-                ? 2
-                : 1);
-      const meaning = `${code.replaceAll("_", " ")} condition.`;
-      return [
-        "  {",
-        `    code: ${JSON.stringify(code)},`,
-        `    meaning: ${JSON.stringify(meaning[0].toUpperCase() + meaning.slice(1))},`,
-        '    stability: "stable",',
-        `    exit_code: ${exitCode},`,
-        '    recovery: "Inspect the structured error guidance and retry the suggested command.",',
-        `    sources: ${JSON.stringify([...entry.sources])},`,
-        "  },",
-      ].join("\n");
-    });
+    .map(([code, entry]) => renderCatalogRow(code, entry));
 
   const generated = `/**
  * @module sdk/generated-error-code-catalog

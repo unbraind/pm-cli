@@ -21,12 +21,25 @@ describe("generate error code catalog", () => {
         'const f = new PmCliError("Ambiguous", EXIT_CODE.USAGE, { code: "ambiguous_list_all" });',
         'const g = new PmCliError("Protocol", 64, { "code": "protocol_failure" });',
         'const h = new PmCliError("Dynamic", error.exitCode, { code: "dynamic_failure" });',
+        'const typed = { code: "typed_failure" as const };',
+        'const long = { code: "validate_metadata_custom_profile_missing_required_fields" };',
         'const ignored = { code: dynamicCode, other: "value" };',
       ].join("\n"),
       "utf8",
     );
     await writeFile(
       path.join(root, "src", "cli", "nested", "more.ts"),
+      'const duplicate = { code: "item_not_found" };',
+      "utf8",
+    );
+    await writeFile(
+      path.join(
+        root,
+        "src",
+        "cli",
+        "nested",
+        "extremely-long-generated-runtime-error-declarations.ts",
+      ),
       'const duplicate = { code: "item_not_found" };',
       "utf8",
     );

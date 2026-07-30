@@ -9124,7 +9124,7 @@
   "error_codes": [
     {
       "code": "acceptance_criteria_semicolon_forbidden",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Acceptance criteria semicolon forbidden condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9144,7 +9144,7 @@
     },
     {
       "code": "ambiguous_list_all",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Ambiguous list all condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9154,7 +9154,7 @@
     },
     {
       "code": "ambiguous_option_combination",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Ambiguous option combination condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9164,7 +9164,7 @@
     },
     {
       "code": "annotation_flag_like_value",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Annotation flag like value condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9174,7 +9174,7 @@
     },
     {
       "code": "annotation_message_without_text",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Annotation message without text condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9184,7 +9184,7 @@
     },
     {
       "code": "append_empty_body",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Append empty body condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9194,7 +9194,7 @@
     },
     {
       "code": "body_file_conflicts_with_body",
-      "exit_code": 4,
+      "exit_code": 2,
       "meaning": "Body file conflicts with body condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9204,7 +9204,7 @@
     },
     {
       "code": "body_file_missing_path",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Body file missing path condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9214,7 +9214,7 @@
     },
     {
       "code": "body_file_unreadable",
-      "exit_code": 1,
+      "exit_code": 3,
       "meaning": "Body file unreadable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9285,7 +9285,7 @@
     },
     {
       "code": "close_validation_missing_fields",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Close validation missing fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9315,7 +9315,7 @@
     },
     {
       "code": "command_namespace",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Command namespace condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9365,7 +9365,7 @@
     },
     {
       "code": "conflicting_lifecycle_owner",
-      "exit_code": 4,
+      "exit_code": 2,
       "meaning": "Conflicting lifecycle owner condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9385,7 +9385,7 @@
     },
     {
       "code": "create_positional_type_without_title",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Create positional type without title condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9395,7 +9395,7 @@
     },
     {
       "code": "dependency_edge_not_allowed",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Dependency edge not allowed condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9425,7 +9425,7 @@
     },
     {
       "code": "duplicate_sweep_cost_limit",
-      "exit_code": 1,
+      "exit_code": 4,
       "meaning": "Duplicate sweep cost limit condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9435,7 +9435,7 @@
     },
     {
       "code": "duplicate_target_circular",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Duplicate target circular condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9445,7 +9445,7 @@
     },
     {
       "code": "duplicate_target_is_duplicate",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Duplicate target is duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9455,7 +9455,7 @@
     },
     {
       "code": "duplicate_target_missing",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Duplicate target missing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9465,7 +9465,7 @@
     },
     {
       "code": "duplicate_target_self",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Duplicate target self condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9485,7 +9485,7 @@
     },
     {
       "code": "event_cursor_query_mismatch",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Event cursor query mismatch condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9505,7 +9505,7 @@
     },
     {
       "code": "extension_dependency_name_unsafe",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Extension dependency name unsafe condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9525,7 +9525,7 @@
     },
     {
       "code": "extension_dependency_version_unsafe",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Extension dependency version unsafe condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9545,7 +9545,7 @@
     },
     {
       "code": "extension_install_source_contains_destination",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Extension install source contains destination condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9555,7 +9555,7 @@
     },
     {
       "code": "extension_item_field_reserved",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Extension item field reserved condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9565,7 +9565,7 @@
     },
     {
       "code": "extension_item_field_type_conflict",
-      "exit_code": 4,
+      "exit_code": 2,
       "meaning": "Extension item field type conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9615,7 +9615,7 @@
     },
     {
       "code": "github_source_entry_unbuilt",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Github source entry unbuilt condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9665,7 +9665,7 @@
     },
     {
       "code": "history_merge_conflict_markers_detected",
-      "exit_code": 4,
+      "exit_code": 1,
       "meaning": "History merge conflict markers detected condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9705,7 +9705,7 @@
     },
     {
       "code": "init_existing_settings_requires_force",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Init existing settings requires force condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9715,7 +9715,7 @@
     },
     {
       "code": "init_id_prefix_conflict",
-      "exit_code": 4,
+      "exit_code": 2,
       "meaning": "Init id prefix conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9725,7 +9725,7 @@
     },
     {
       "code": "init_id_prefix_path_like",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Init id prefix path like condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9888,7 +9888,7 @@
     },
     {
       "code": "item_document_invalid",
-      "exit_code": 2,
+      "exit_code": 1,
       "meaning": "Item document invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9908,7 +9908,7 @@
     },
     {
       "code": "item_id_collision",
-      "exit_code": 1,
+      "exit_code": 4,
       "meaning": "Item id collision condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -9929,7 +9929,7 @@
     },
     {
       "code": "likely_duplicate",
-      "exit_code": 1,
+      "exit_code": 4,
       "meaning": "Likely duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10001,7 +10001,7 @@
     },
     {
       "code": "malformed_plan_step_evidence",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Malformed plan step evidence condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10021,7 +10021,7 @@
     },
     {
       "code": "merge_conflict_markers_detected",
-      "exit_code": 4,
+      "exit_code": 1,
       "meaning": "Merge conflict markers detected condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10031,7 +10031,7 @@
     },
     {
       "code": "merge_git_config_unwritable",
-      "exit_code": 1,
+      "exit_code": 5,
       "meaning": "Merge git config unwritable condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10061,7 +10061,7 @@
     },
     {
       "code": "missing_lifecycle_target",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Missing lifecycle target condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10109,7 +10109,7 @@
     },
     {
       "code": "multi_target_github_install_ambiguous",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Multi target github install ambiguous condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10129,7 +10129,7 @@
     },
     {
       "code": "mutation_secret_guard_blocked",
-      "exit_code": 1,
+      "exit_code": 4,
       "meaning": "Mutation secret guard blocked condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10492,7 +10492,7 @@
     },
     {
       "code": "terminal_plan_mutation",
-      "exit_code": 1,
+      "exit_code": 4,
       "meaning": "Terminal plan mutation condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10533,7 +10533,7 @@
     },
     {
       "code": "tracker_root_missing",
-      "exit_code": 1,
+      "exit_code": 3,
       "meaning": "Tracker root missing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10543,7 +10543,7 @@
     },
     {
       "code": "tracker_root_not_directory",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Tracker root not directory condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10595,7 +10595,7 @@
     },
     {
       "code": "unknown_field",
-      "exit_code": 2,
+      "exit_code": 3,
       "meaning": "Unknown field condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10616,7 +10616,7 @@
     },
     {
       "code": "unknown_item_type",
-      "exit_code": 2,
+      "exit_code": 3,
       "meaning": "Unknown item type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -10657,7 +10657,7 @@
     },
     {
       "code": "unknown_status",
-      "exit_code": 2,
+      "exit_code": 3,
       "meaning": "Unknown status condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -11139,7 +11139,7 @@
     },
     {
       "code": "workspace_root_pm_path",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Workspace root pm path condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -11149,7 +11149,7 @@
     },
     {
       "code": "wrong_item_type",
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Wrong item type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [

@@ -269,6 +269,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["sdk/compose.ts"],
   },
   {
+    code: "duplicate_edge",
+    meaning: "Duplicate edge condition.",
+    stability: "stable",
+    exit_code: 1,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/graph/remediation.ts"],
+  },
+  {
     code: "duplicate_sweep_cost_limit",
     meaning: "Duplicate sweep cost limit condition.",
     stability: "stable",
