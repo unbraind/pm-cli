@@ -4,7 +4,7 @@ Tracker references: [pm-p258tx](../.agents/pm/features/pm-p258tx.toon),
 [pm-cyrfjq](../.agents/pm/issues/pm-cyrfjq.toon), and
 [pm-qhnq6t](../.agents/pm/issues/pm-qhnq6t.toon). The universal row and
 intent-budget contracts are tracked by
-[pm-sb0tns](../.agents/pm/features/pm-sb0tns.toon),
+[pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon),
 [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), and
 [pm-5t33or](../.agents/pm/features/pm-5t33or.toon).
 
@@ -145,8 +145,11 @@ Use `context --for orient|handoff`, `get --for inspect`,
 `list --for triage`, `next --for execute`, or
 `search --for discover`. Explicit caller projection options win over intent
 defaults, while the intent ceiling still applies. If a selected result exceeds
-its budget, nested collections and long explanatory strings are compacted
-deterministically; the receipt records `recursive_budget_compaction`. Calls
+its budget, long explanatory strings are compacted deterministically without
+dropping rows. If the complete row set still cannot fit, the result is replaced
+by a `budget_receipt_only` envelope instead of retaining stale counts or
+pagination cursors. The receipt's `token_budget` is the effective ceiling after
+any explicit caller override. Calls
 without `--for` remain byte-compatible with the ordinary projection path apart
 from the universal row contract.
 

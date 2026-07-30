@@ -206,6 +206,33 @@ describe("context intent contracts", () => {
       context_intent: { command: "list", intent: "triage" },
     });
     expect(
+      attachContextIntentReceipt(
+        "next",
+        { for: "execute", tokenBudget: 2400 },
+        { recommended: [] },
+      ),
+    ).toMatchObject({
+      context_intent: { token_budget: 2400 },
+    });
+    expect(
+      attachContextIntentReceipt(
+        "next",
+        { for: "execute", tokenBudget: "2401" },
+        { recommended: [] },
+      ),
+    ).toMatchObject({
+      context_intent: { token_budget: 2401 },
+    });
+    expect(
+      attachContextIntentReceipt(
+        "next",
+        { for: "execute", tokenBudget: "invalid" },
+        { recommended: [] },
+      ),
+    ).toMatchObject({
+      context_intent: { token_budget: 1200 },
+    });
+    expect(
       attachContextIntentReceipt("package-report", { for: "release" }, {}),
     ).toEqual({});
   });
@@ -232,5 +259,27 @@ describe("context intent contracts", () => {
     expect(projected.context_intent!.estimated_tokens).toBeLessThanOrEqual(
       projected.context_intent!.token_budget,
     );
+  });
+
+  it("never drops result rows while compacting explanatory strings", () => {
+    const recommended = Array.from({ length: 20 }, (_, index) => ({
+      id: `pm-${index}`,
+      explanation: "x".repeat(2_000),
+    }));
+    const projected = attachContextIntentReceipt(
+      "next",
+      { for: "execute" },
+      { recommended, count: recommended.length, has_more: false },
+    );
+    expect(projected).toMatchObject({
+      budget_exceeded: { omitted_result: true },
+      context_intent: {
+        degradation: "budget_receipt_only",
+        within_budget: true,
+      },
+    });
+    expect(projected).not.toHaveProperty("recommended");
+    expect(projected).not.toHaveProperty("count");
+    expect(projected).not.toHaveProperty("has_more");
   });
 });

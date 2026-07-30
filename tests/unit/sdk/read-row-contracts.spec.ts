@@ -46,6 +46,12 @@ describe("read row contracts", () => {
       resolveReadRowContract("stats", { action: "stats" }),
     ).toBeUndefined();
     expect(resolveReadRowContract("graph", {})).toBeUndefined();
+    expect(
+      resolveReadRowContract("graph", {
+        subcommand: "package-report",
+        rows: [],
+      }),
+    ).toBeUndefined();
   });
 
   it("preserves an existing row declaration without replacing it", () => {

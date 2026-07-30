@@ -6,6 +6,11 @@
  */
 import type { RelationshipSnapshot } from "./relationship-history.js";
 import {
+  createQueryFingerprint,
+  decodeQueryCursor,
+  encodeQueryCursor,
+} from "./pagination.js";
+import {
   RelationshipGraph,
   RelationshipKindRegistry,
   createRelationshipKindRegistry,
@@ -103,7 +108,7 @@ export interface RelationshipAnalyticsOptions {
 
 /** Impact-specific pagination layered onto the shared graph query controls. */
 export interface RelationshipImpactOptions extends RelationshipQueryOptions {
-  /** Resume emission after this previously returned affected node. */
+  /** Resume emission from an opaque cursor bound to the traversal semantics. */
   after?: string;
 }
 
@@ -139,6 +144,28 @@ function visitImpactNeighbor(
     path: reconstructImpactPath(root, id, state.parents),
   });
   return "continue";
+}
+
+/** Bind an optional impact continuation cursor to the complete traversal contract. */
+function resolveImpactCursor(
+  root: string,
+  options: RelationshipImpactOptions,
+  direction: NonNullable<RelationshipQueryOptions["direction"]>,
+  maxDepth: number,
+): { fingerprint: string; after: string | undefined } {
+  const fingerprint = createQueryFingerprint("graph impact", {
+    root,
+    direction,
+    kinds: [...(options.kinds ?? [])].sort(),
+    max_depth: Number.isFinite(maxDepth) ? maxDepth : "unbounded",
+  });
+  return {
+    fingerprint,
+    after:
+      options.after === undefined
+        ? undefined
+        : decodeQueryCursor(options.after, fingerprint),
+  };
 }
 
 function appendNeighbor(
@@ -383,12 +410,18 @@ export function analyzeGraphImpact(
   const direction = options.direction ?? "outgoing";
   const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
   const limit = options.limit ?? Number.POSITIVE_INFINITY;
+  const { fingerprint: cursorFingerprint, after } = resolveImpactCursor(
+    root,
+    options,
+    direction,
+    maxDepth,
+  );
   const state: RelationshipImpactTraversalState = {
     queue: [{ id: root, depth: 0 }],
     seen: new Set([root]),
     parents: new Map(),
     affected: [],
-    cursorFound: options.after === undefined || options.after === root,
+    cursorFound: after === undefined || after === root,
   };
   let visitedNodes = 0;
   let inspectedEdges = 0;
@@ -414,7 +447,7 @@ export function analyzeGraphImpact(
         id,
         current,
         root,
-        options.after,
+        after,
         limit,
       );
       if (outcome === "truncate") {
@@ -425,7 +458,7 @@ export function analyzeGraphImpact(
     }
   }
   if (!state.cursorFound) {
-    throw new TypeError(`Unknown impact cursor: ${options.after}`);
+    throw new TypeError(`Unknown impact cursor item: ${after}`);
   }
   return {
     root,
@@ -433,7 +466,12 @@ export function analyzeGraphImpact(
     exact: true,
     truncated,
     ...(rowLimitTruncated && state.affected.length > 0
-      ? { nextCursor: state.affected.at(-1)!.id }
+      ? {
+          nextCursor: encodeQueryCursor(
+            cursorFingerprint,
+            state.affected.at(-1)!.id,
+          ),
+        }
       : {}),
     cost: { visitedNodes, inspectedEdges },
   };

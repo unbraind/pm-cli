@@ -46,7 +46,7 @@ export interface PmContextIntentReceipt {
   source: PmContextIntentSource;
   /** Field groups the selected intent promises to retain. */
   included_field_groups: string[];
-  /** Resolved default token ceiling. */
+  /** Effective token ceiling after an explicit caller override is applied. */
   token_budget: number;
   /** Deterministic JSON-size estimate for the result including this receipt. */
   estimated_tokens: number;
@@ -389,10 +389,10 @@ const CONTEXT_INTENT_DEGRADATIONS: Readonly<
   search: "bounded_ranked_rows",
 };
 
-/** Bound nested collections and explanatory strings without changing field names. */
+/** Bound explanatory strings without dropping rows or invalidating pagination metadata. */
 function compactContextIntentValue(value: unknown): unknown {
   if (Array.isArray(value)) {
-    return value.slice(0, 1).map(compactContextIntentValue);
+    return value.map(compactContextIntentValue);
   }
   if (value !== null && typeof value === "object") {
     return Object.fromEntries(
@@ -405,6 +405,19 @@ function compactContextIntentValue(value: unknown): unknown {
   return typeof value === "string" && value.length > 240
     ? `${value.slice(0, 240)}…`
     : value;
+}
+
+function resolveIntentTokenBudget(
+  value: unknown,
+  declaredBudget: number,
+): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && /^\d+$/u.test(value.trim())
+        ? Number(value)
+        : Number.NaN;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : declaredBudget;
 }
 
 /** Attach budget and degradation evidence for a selected built-in read intent. */
@@ -425,7 +438,10 @@ export function attachContextIntentReceipt<
     intent: contract.intent,
     source: contract.source as PmContextIntentSource,
     included_field_groups: [...contract.included_field_groups],
-    token_budget: contract.token_budget,
+    token_budget: resolveIntentTokenBudget(
+      options.tokenBudget,
+      contract.token_budget,
+    ),
     estimated_tokens: 0,
     within_budget: true,
     degradation: CONTEXT_INTENT_DEGRADATIONS[builtInCommand],

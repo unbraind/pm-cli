@@ -249,9 +249,11 @@ export function resolveReadRowContract(
     const subcommand =
       typeof result.subcommand === "string" ? result.subcommand : "";
     if (subcommand.length === 0) return undefined;
+    const rowKeys = GRAPH_ROW_KEYS[subcommand];
+    if (rowKeys === undefined) return undefined;
     return {
       command: "graph",
-      row_keys: [...(GRAPH_ROW_KEYS[subcommand] ?? [])],
+      row_keys: rowKeys.filter((key) => Array.isArray(result[key])),
       fields: "unsupported",
       jq_selector: PM_READ_ROW_JQ_SELECTOR,
     };

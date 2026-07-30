@@ -336,8 +336,19 @@ describe("core/extensions runtime wrappers", () => {
         global: {},
         pm_root: "/tmp/request-local",
       });
+      const commandContext = getActiveCommandContext()!;
+      expect(commandContext).toMatchObject({
+        command: "list",
+        pm_root: "/tmp/request-local",
+      });
+      commandContext.args.push("mutated");
+      commandContext.options.mutated = true;
+      commandContext.global!.quiet = true;
       expect(getActiveCommandContext()).toMatchObject({
         command: "list",
+        args: [],
+        options: {},
+        global: {},
         pm_root: "/tmp/request-local",
       });
       expect(runActiveCommandOverride({ ok: true })).toEqual({

@@ -25,6 +25,10 @@ import {
   setActiveExtensionRegistrations,
 } from "../../../../src/core/extensions/index.js";
 import { resetWorkspaceGraphCache } from "../../../../src/sdk/graph/cache.js";
+import {
+  createQueryFingerprint,
+  encodeQueryCursor,
+} from "../../../../src/sdk/pagination.js";
 import { activateExtensionForTest } from "../../../../src/sdk/testing.js";
 import {
   withTempPmPath,
@@ -574,6 +578,47 @@ describe("runGraph", () => {
       expect(secondPage.affected).toEqual(
         expect.not.arrayContaining(firstPage.affected!),
       );
+      await expect(
+        runGraph(
+          "impact",
+          task,
+          undefined,
+          {
+            direction: "outgoing",
+            kind: "blocked_by",
+            after: firstPage.next_cursor,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        code: "invalid_query_cursor",
+        exitCode: EXIT_CODE.USAGE,
+      });
+      const missingItemCursor = encodeQueryCursor(
+        createQueryFingerprint("graph impact", {
+          root: task,
+          direction: "both",
+          kinds: ["blocked_by"],
+          max_depth: "unbounded",
+        }),
+        "pm-missing-impact-item",
+      );
+      await expect(
+        runGraph(
+          "impact",
+          task,
+          undefined,
+          {
+            direction: "both",
+            kind: "blocked_by",
+            after: missingItemCursor,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Unknown impact cursor item"),
+      });
 
       const complete = (await runGraph(
         "impact",

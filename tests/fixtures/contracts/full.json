@@ -10584,6 +10584,16 @@
       "stability": "stable"
     },
     {
+      "code": "unknown_context_intent",
+      "exit_code": 2,
+      "meaning": "Unknown context intent condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/context-intent-contracts.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "unknown_error",
       "exit_code": 2,
       "meaning": "Unknown error condition.",

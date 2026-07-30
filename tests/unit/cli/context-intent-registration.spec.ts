@@ -123,7 +123,7 @@ describe("read command context intent registration", () => {
     });
   });
 
-  it("compacts oversized intent results to their declared budget", () => {
+  it("omits oversized row sets instead of returning false pagination metadata", () => {
     const result = attachContextIntentReceipt(
       "next",
       { for: "execute" },
@@ -135,11 +135,14 @@ describe("read command context intent registration", () => {
       },
     );
     expect(result.context_intent).toMatchObject({
-      degradation: "recursive_budget_compaction",
+      degradation: "budget_receipt_only",
       within_budget: true,
     });
     expect(result.context_intent!.estimated_tokens).toBeLessThanOrEqual(1_200);
-    expect(result.recommended).toHaveLength(1);
+    expect(result).not.toHaveProperty("recommended");
+    expect(result).toMatchObject({
+      budget_exceeded: { omitted_result: true },
+    });
   });
 
   it("executes every declared CLI intent and returns one usage contract for unknown values", async () => {

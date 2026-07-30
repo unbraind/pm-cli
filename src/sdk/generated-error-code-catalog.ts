@@ -1332,6 +1332,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     ],
   },
   {
+    code: "unknown_context_intent",
+    meaning: "Unknown context intent condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/context-intent-contracts.ts"],
+  },
+  {
     code: "unknown_error",
     meaning: "Unknown error condition.",
     stability: "stable",
