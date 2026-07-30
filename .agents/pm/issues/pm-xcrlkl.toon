@@ -1,0 +1,41 @@
+id: pm-xcrlkl
+title: CodeFactor fixed-only success payload blocks exact-head release gate
+description: "The immutable hosted-analysis release gate accepts only a CodeFactor title of No issues found, but the provider now emits a successful completed check titled 1 issue fixed. with zero annotations after clearing the PR finding. This makes the strict local release gate fail on an otherwise green exact reviewed head."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:ci","area:quality",codefactor,regression,release-gate
+created_at: "2026-07-30T12:30:28.665Z"
+updated_at: "2026-07-30T12:34:40.780Z"
+closed_at: "2026-07-30T12:34:37.722Z"
+completed_at: "2026-07-30T12:34:37.722Z"
+author: "harness:codex"
+acceptance_criteria: "A regression test covers the live successful fixed-only payload and fails before the implementation change.; CodeFactor success is accepted only with completed success, zero annotations, and an explicit no-issues or fixed-only terminal title.; Ambiguous titles, missing/nonzero annotations, pending and failed runs remain fail-closed."
+parent: pm-92if
+risk: medium
+confidence: high
+severity: high
+environment: PR #829 exact head 408c958f654d300d78cdf93a36d34918684a6c52
+repro_steps: "Run pnpm release:gates after CodeFactor completes successfully with output.title=1 issue fixed. and annotations_count=0."
+resolution: fixed
+expected_result: "The exact-head hosted-analysis gate accepts CodeFactor only when the run is completed and successful, output annotations are exactly zero, and the terminal title explicitly says no issues or fixed-only results."
+actual_result: "The validator now accepts the live successful 1 issue fixed. payload only alongside output.annotations_count=0, reports zero outstanding annotations, and retains fail-closed coverage for every ambiguous, missing, nonzero, pending, failed, or malformed state."
+affected_version: 2026.7.30
+fixed_version: next release after 2026.7.30
+regression: true
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-39cqqx,related_to,"2026-07-30T12:30:28.665Z","harness:codex","cli:create:dep",detected
+  pm-xspd,related_to,"2026-07-30T12:30:28.665Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-07-30T12:30:28.665Z","harness:codex","Duplicate check: searched all statuses for hosted analysis, CodeFactor, release gate, fixed, and no issues found. Closed pm-39cqqx is the shipped canonical gate; this new regression records provider payload drift observed live on PR #829 rather than rewriting its completed historical result."
+  "2026-07-30T12:34:10.800Z","harness:codex","TDD evidence: the live fixed-only CodeFactor payload regression first failed 1/56 while all prior cases passed. The implementation now requires completed success, output.annotations_count exactly 0, and an explicit no-issues or numeric fixed-only title. Focused hosted-analysis plus release-runner tests pass 66/66; pnpm lint and pnpm typecheck pass. Live exact-head acceptance passes for 408c958f654d300d78cdf93a36d34918684a6c52 with DeepScan 0 new, CodeFactor title 1 issue fixed., zero outstanding annotations, and strict protected-main requirements."
+files[2]{path,scope,note}:
+  scripts/release/hosted-analysis-gate.mjs,project,Accept explicit zero-annotation fixed-only CodeFactor success evidence
+  tests/unit/scripts/release/hosted-analysis-gate.spec.ts,project,Live-payload regression and fail-closed annotation/title coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts,project,180
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/hosted-analysis-gate.spec.ts tests/unit/scripts/release/run-gates.spec.ts,project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms7hwu6k-vg8wyc,test,passed,"2026-07-30T12:34:11.737Z","2026-07-30T12:34:24.332Z","2026-07-30T12:34:24.332Z",2,0,0
+close_reason: "Fixed the CodeFactor provider-payload drift with TDD, explicit zero-annotation proof, live exact-head acceptance, 66/66 focused tests, lint, and typecheck."
+body: ""
