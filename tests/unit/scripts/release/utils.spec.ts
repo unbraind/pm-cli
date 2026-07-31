@@ -115,12 +115,14 @@ describe("scripts/release/utils: runCommand", () => {
     utils.runCommand("pm", ["json-ok"], {
       capture: true,
       input: "request body",
+      timeout: 60_000,
     });
     expect(spawnSync).toHaveBeenLastCalledWith(
       "pm",
       ["json-ok"],
       expect.objectContaining({
         input: "request body",
+        timeout: 60_000,
         stdio: ["pipe", "pipe", "pipe"],
       }),
     );
@@ -134,6 +136,23 @@ describe("scripts/release/utils: runCommand", () => {
     vi.doMock("node:child_process", () => ({ spawnSync: vi.fn(() => ({ status: 0, stdout: "out", stderr: "err" })) }));
     const utils = await loadUtils("utilsRunNoCapture");
     expect(utils.runCommand("echo", ["hi"])).toEqual({ status: 0, stdout: "", stderr: "" });
+  });
+
+  it("rejects input when capture is disabled", async () => {
+    const spawnSync = vi.fn();
+    vi.doMock("node:child_process", () => ({ spawnSync }));
+    const utils = await loadUtils("utilsRunInputWithoutCapture");
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const exitSpy = harness.mockProcessExit();
+    expect(() => utils.runCommand("pm", [], { input: "request" })).toThrow(
+      "EXIT:1",
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      "runCommand input requires capture: true.",
+    );
+    expect(spawnSync).not.toHaveBeenCalled();
+    exitSpy.mockRestore();
+    errorSpy.mockRestore();
   });
 
   it("fails with captured stderr detail when status is null", async () => {

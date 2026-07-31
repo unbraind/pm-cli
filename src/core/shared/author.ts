@@ -385,6 +385,16 @@ function resolveAgentProvenanceObservation(
   descriptor: NormalizedHarnessSignalDescriptor | undefined,
 ): AgentProvenanceObservation | undefined {
   const overrideKey = `PM_AGENT_${dimension.toUpperCase().replaceAll("-", "_")}`;
+  const hostResolvedDimensions = new Set([
+    ...AGENT_PROVENANCE_DIMENSIONS,
+    ...Object.keys(descriptor?.provenance_environment_keys ?? {}),
+  ]);
+  let overrideValue: string | undefined;
+  let argvValue: string | undefined;
+  if (hostResolvedDimensions.has(dimension)) {
+    overrideValue = nonBlank(env[overrideKey])?.slice(0, 256);
+    argvValue = provenanceFromArgv(signals.argv ?? [], dimension);
+  }
   const environmentKeys =
     dimension === "model"
       ? descriptor?.model_environment_keys
@@ -394,7 +404,7 @@ function resolveAgentProvenanceObservation(
     source: AgentModelSource;
   }> = [
     {
-      value: nonBlank(env[overrideKey])?.slice(0, 256),
+      value: overrideValue,
       source: "override",
     },
     {
@@ -414,7 +424,7 @@ function resolveAgentProvenanceObservation(
       source: "host",
     },
     {
-      value: provenanceFromArgv(signals.argv ?? [], dimension),
+      value: argvValue,
       source: "argv",
     },
   ];

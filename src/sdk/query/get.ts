@@ -651,18 +651,24 @@ export async function runGet(
     result.claim_state = claimState;
   }
   attachGetSchedule(result, context, projection.fields, includeSchedule);
-  result.children = await buildGetChildrenRollup(
+  const children = await buildGetChildrenRollup(
     context,
     includeChildren,
     projection.fieldProjection,
     projection.fieldProjection || projection.depth === "deep",
   );
-  result.tree = await buildGetTree(
+  if (children !== undefined) {
+    result.children = children;
+  }
+  const tree = await buildGetTree(
     context,
     options,
     projection.treeDepth,
     global,
   );
+  if (tree !== undefined) {
+    result.tree = tree;
+  }
   if (context.historical) {
     result.reconstructed = true;
     result.as_of_version = context.historical.as_of_version;

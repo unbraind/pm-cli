@@ -19,6 +19,7 @@ async function runAcceptance(options: RunOptions) {
   vi.resetModules();
   vi.doUnmock("node:fs");
   vi.doUnmock(UTILS_SPECIFIER);
+  process.env.PM_VERIFY_SLEEP_MS = "0";
   if (options.npmPackage === undefined) delete process.env.NPM_PACKAGE;
   else process.env.NPM_PACKAGE = options.npmPackage;
   const fsMocks = {
@@ -135,6 +136,12 @@ describe("verify-installed-agent-session", () => {
       "/tmp/installed-agent-test",
       { recursive: true, force: true },
     );
+    expect(
+      result.runCommand.mock.calls.some(
+        ([command, args]) =>
+          command === "bun" && args.includes("--ignore-scripts"),
+      ),
+    ).toBe(true);
   });
 
   it("uses an explicit package override and prints the text success form", async () => {
@@ -170,6 +177,11 @@ describe("verify-installed-agent-session", () => {
     expect(String(installFailure.failure)).toContain(
       "bun exact-package installation failed: registry unavailable",
     );
+    expect(
+      installFailure.runCommand.mock.calls.filter(
+        ([command, args]) => command === "bun" && args[0] === "add",
+      ),
+    ).toHaveLength(3);
   });
 
   it("reports the exact failing agent step, malformed output, and output budget", async () => {

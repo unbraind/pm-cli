@@ -164,6 +164,47 @@ describe("MCP protocol handshake", () => {
     expect(mcpServerTestOnly.getMcpClientInfo()).toEqual({
       name: "empty-provenance-test",
     });
+    const inheritedProvenance = Object.assign(
+      Object.create({ inherited: "must-not-be-retained" }) as Record<
+        string,
+        string
+      >,
+      Object.fromEntries(
+        Array.from({ length: 40 }, (_, index) => [
+          `dimension-${index}`,
+          `value-${index}`,
+        ]),
+      ),
+    );
+    expect(mcpServerTestOnly.boundMcpClientProvenance(undefined)).toEqual({});
+    expect(
+      mcpServerTestOnly.boundMcpClientProvenance(
+        Object.create({ inherited: "must-not-be-retained" }) as Record<
+          string,
+          string
+        >,
+      ),
+    ).toEqual({});
+    expect(
+      mcpServerTestOnly.boundMcpClientProvenance(inheritedProvenance),
+    ).not.toHaveProperty("inherited");
+    await handleRequest({
+      jsonrpc: "2.0",
+      id: 13,
+      method: "initialize",
+      params: {
+        clientInfo: {
+          name: "bounded-provenance-test",
+          provenance: inheritedProvenance,
+        },
+      },
+    });
+    expect(
+      Object.keys(mcpServerTestOnly.getMcpClientInfo()?.provenance ?? {}),
+    ).toHaveLength(32);
+    expect(mcpServerTestOnly.getMcpClientInfo()?.provenance).not.toHaveProperty(
+      "inherited",
+    );
     await handleRequest({
       jsonrpc: "2.0",
       id: 12,

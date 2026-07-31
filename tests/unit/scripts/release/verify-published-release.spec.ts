@@ -209,6 +209,11 @@ describe("scripts/release/verify-published-release: success path", () => {
     expect(json.package.executors.npx["pm-mcp"].ok).toBe(true);
     expect(json.package.executors.bunx.pm.ok).toBe(true);
     expect(json.package.executors.bunx["pm-mcp"].ok).toBe(true);
+    for (const call of runCommand.mock.calls.filter((entry) =>
+      entry[1].includes("pm-mcp"),
+    )) {
+      expect(call[2]).toMatchObject({ timeout: 60_000 });
+    }
     expect(json.package.bin_coverage).toEqual({
       covered_bins: ["pm", "pm-cli", "pm-mcp"],
       distinct_entrypoints: ["dist/cli.js", "dist/mcp/server.js"],
@@ -454,6 +459,9 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     expect(String(uncovered.failure)).toContain(
       "Published package bins lack executable coverage: pm-extra",
     );
+    expect(uncovered.runCommand).toHaveBeenCalledTimes(1);
+    expect(uncovered.runCommand.mock.calls[0]?.[0]).toBe("npm");
+    expect(uncovered.runCommand.mock.calls[0]?.[1]?.[0]).toBe("view");
   });
 });
 

@@ -219,6 +219,26 @@ describe("agent runtime SDK primitives", () => {
     });
   });
 
+  it("keeps unknown client provenance data-only instead of resolving host overrides", () => {
+    expect(
+      detectAgentIdentity({
+        env: {
+          CODEX_HOME: "/tmp/codex",
+          PM_AGENT_SECRET: "host-secret-must-not-persist",
+        },
+        argv: ["codex", "--agent-secret", "argv-secret-must-not-persist"],
+        client_info: {
+          name: "codex",
+          provenance: { secret: "client-supplied-label" },
+        },
+      }),
+    ).toMatchObject({
+      provenance: {
+        secret: { source: "mcp_client", value: "client-supplied-label" },
+      },
+    });
+  });
+
   it("appends declarative harness descriptors with collision-safe cleanup", () => {
     const descriptor = {
       harness: "synthetic-agent",

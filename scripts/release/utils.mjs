@@ -25,6 +25,15 @@ function formatCommandFailure(command, args, result, capture) {
   return `Command failed: ${command} ${args.join(" ")}${detail}`;
 }
 
+function resolveSpawnStdio(input, capture) {
+  if (input !== undefined && !capture) {
+    fail("runCommand input requires capture: true.");
+  }
+  return capture
+    ? [input === undefined ? "ignore" : "pipe", "pipe", "pipe"]
+    : "inherit";
+}
+
 export function runCommand(command, args, options = {}) {
   const {
     cwd = repoRoot,
@@ -32,6 +41,7 @@ export function runCommand(command, args, options = {}) {
     input,
     capture = false,
     allowFailure = false,
+    timeout,
   } = options;
   const mergedEnv = { ...process.env, ...env };
 
@@ -39,10 +49,9 @@ export function runCommand(command, args, options = {}) {
     cwd,
     env: mergedEnv,
     input,
+    timeout,
     encoding: "utf8",
-    stdio: capture
-      ? [input === undefined ? "ignore" : "pipe", "pipe", "pipe"]
-      : "inherit",
+    stdio: resolveSpawnStdio(input, capture),
   });
 
   const status = result.status ?? 1;

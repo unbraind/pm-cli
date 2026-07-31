@@ -170,26 +170,46 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv) {
 function installAndRun(manager, packageSpec, root, publicRegistryEnv) {
   const installRoot = path.join(root, `${manager}-install`);
   mkdirSync(installRoot, { recursive: true });
-  const installResult =
-    manager === "npm"
-      ? runCommand(
-          commandFor("npm"),
-          ["install", "--prefix", installRoot, "--ignore-scripts", "--no-audit", "--no-fund", packageSpec],
-          { capture: true, allowFailure: true, env: publicRegistryEnv },
-        )
-      : (() => {
-          writeFileSync(
-            path.join(installRoot, "package.json"),
-            JSON.stringify({ private: true }),
-            "utf8",
+  if (manager === "bun") {
+    writeFileSync(
+      path.join(installRoot, "package.json"),
+      JSON.stringify({ private: true }),
+      "utf8",
+    );
+  }
+  let installResult;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    installResult =
+      manager === "npm"
+        ? runCommand(
+            commandFor("npm"),
+            ["install", "--prefix", installRoot, "--ignore-scripts", "--no-audit", "--no-fund", packageSpec],
+            { capture: true, allowFailure: true, env: publicRegistryEnv },
+          )
+        : runCommand(
+            commandFor("bun"),
+            ["add", "--silent", "--ignore-scripts", packageSpec],
+            {
+              cwd: installRoot,
+              capture: true,
+              allowFailure: true,
+              env: publicRegistryEnv,
+            },
           );
-          return runCommand(commandFor("bun"), ["add", "--silent", packageSpec], {
-            cwd: installRoot,
-            capture: true,
-            allowFailure: true,
-            env: publicRegistryEnv,
-          });
-        })();
+    if (installResult.status === 0) {
+      break;
+    }
+    if (attempt < 3) {
+      console.error(
+        `Waiting for ${manager} registry availability (attempt ${attempt}/3)...`,
+      );
+      const override = Number(process.env.PM_VERIFY_SLEEP_MS);
+      /* c8 ignore next -- production uses the real 10s registry backoff; tests set PM_VERIFY_SLEEP_MS=0 to avoid blocking the worker */
+      const delay =
+        Number.isFinite(override) && override >= 0 ? override : 10_000;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delay);
+    }
+  }
   if (installResult.status !== 0) {
     fail(
       `${manager} exact-package installation failed: ${installResult.stderr.trim() || "installer exited non-zero"}`,

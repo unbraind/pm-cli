@@ -23,6 +23,7 @@ const INITIALIZE_REQUEST = `${JSON.stringify({
     clientInfo: { name: "published-artifact-verifier", version: "1.0.0" },
   },
 })}\n`;
+const MCP_INITIALIZE_TIMEOUT_MS = 60_000;
 
 function usage() {
   console.log(`Usage:
@@ -120,7 +121,7 @@ function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   });
 }
 
-function verifyExecutor(name, args, attempts, tempRoot, publicRegistryEnv, assertion, input) {
+function verifyExecutor(name, args, attempts, tempRoot, publicRegistryEnv, assertion, input, timeout) {
   return runWithRetries(name, attempts, 10000, () => {
     const result = runCommand(args[0], args.slice(1), {
       cwd: tempRoot,
@@ -128,6 +129,7 @@ function verifyExecutor(name, args, attempts, tempRoot, publicRegistryEnv, asser
       allowFailure: true,
       env: publicRegistryEnv,
       input,
+      timeout,
     });
     if (result.status !== 0) {
       return {
@@ -145,7 +147,7 @@ function verifyExecutor(name, args, attempts, tempRoot, publicRegistryEnv, asser
   });
 }
 
-function verifyRequiredExecutor(label, args, attempts, tempRoot, publicRegistryEnv, assertion, input) {
+function verifyRequiredExecutor(label, args, attempts, tempRoot, publicRegistryEnv, assertion, input, timeout) {
   const result = verifyExecutor(
     label,
     args,
@@ -154,6 +156,7 @@ function verifyRequiredExecutor(label, args, attempts, tempRoot, publicRegistryE
     publicRegistryEnv,
     assertion,
     input,
+    timeout,
   );
   if (!result.ok) {
     fail(`${label} verification failed: ${result.reason}`);
@@ -224,6 +227,14 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
     }
 
     const packageSpec = `${NPM_PACKAGE}@${version}`;
+    const binEntries = Object.entries(PACKAGE_BINS);
+    const coveredEntrypoints = new Set([PACKAGE_BINS.pm, PACKAGE_BINS["pm-mcp"]]);
+    const uncoveredBins = binEntries
+      .filter(([, entrypoint]) => !coveredEntrypoints.has(entrypoint))
+      .map(([bin]) => bin);
+    if (uncoveredBins.length > 0) {
+      fail(`Published package bins lack executable coverage: ${uncoveredBins.join(", ")}`);
+    }
     const npxPm = verifyRequiredExecutor(
       "npx-pm",
       [commandFor("npx"), "--yes", "--package", packageSpec, "--", "pm", "--json", "--no-extensions", "contracts", "--summary"],
@@ -240,6 +251,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       publicRegistryEnv,
       assertMcpInitialize,
       INITIALIZE_REQUEST,
+      MCP_INITIALIZE_TIMEOUT_MS,
     );
     const bunxPm = verifyRequiredExecutor(
       "bunx-pm",
@@ -257,6 +269,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       publicRegistryEnv,
       assertMcpInitialize,
       INITIALIZE_REQUEST,
+      MCP_INITIALIZE_TIMEOUT_MS,
     );
     const negativeControls = {
       npx: verifyMissingBinControl(
@@ -272,14 +285,6 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
         publicRegistryEnv,
       ),
     };
-    const binEntries = Object.entries(PACKAGE_BINS);
-    const coveredEntrypoints = new Set([PACKAGE_BINS.pm, PACKAGE_BINS["pm-mcp"]]);
-    const uncoveredBins = binEntries
-      .filter(([, entrypoint]) => !coveredEntrypoints.has(entrypoint))
-      .map(([bin]) => bin);
-    if (uncoveredBins.length > 0) {
-      fail(`Published package bins lack executable coverage: ${uncoveredBins.join(", ")}`);
-    }
     return {
       npm: npmMetadata,
       executors: {
