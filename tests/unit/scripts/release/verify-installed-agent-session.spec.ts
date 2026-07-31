@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
@@ -154,7 +155,9 @@ describe("verify-installed-agent-session", () => {
     const escaped = await runAcceptance({
       argv: ["--version", "2026.7.31", "--manager", "npm"],
       realpath: (value) =>
-        value.includes("node_modules/.bin") ? "/outside/pm" : value,
+        value.includes(`${path.sep}.bin${path.sep}`)
+          ? path.join(path.parse(value).root, "outside", "pm")
+          : value,
     });
     expect(String(escaped.failure)).toContain("escaped its package root");
     const installFailure = await runAcceptance({
