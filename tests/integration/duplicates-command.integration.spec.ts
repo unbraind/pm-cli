@@ -15,6 +15,9 @@ describe("duplicates command integration", () => {
             "Task",
             "--status",
             status,
+            ...(status === "closed"
+              ? ["--message", "seed closed duplicate fixture"]
+              : []),
             "--create-mode",
             "progressive",
             "--allow-duplicate",

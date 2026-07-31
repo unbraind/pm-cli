@@ -720,16 +720,22 @@ describe("runUpdate", () => {
     });
   });
 
-  it("auto-routes pm update --status closed without a reason using a derived default (never blocks agents)", async () => {
+  it("refuses a reasonless auto-routed terminal transition under required-reason governance", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "auto-route-close-no-reason");
-      const result = await runUpdate(id, { status: "closed" }, { path: context.pmPath });
-      expect(result.warnings).toContain("auto_routed_from_update_to_close");
-      expect(result.warnings).toContain("close_reason_defaulted");
-      const item = result.item as { status: string; close_reason: string; closed_at: string };
-      expect(item.status).toBe("closed");
-      expect(item.close_reason).toBe("Closed via pm update");
-      expect(Number.isFinite(Date.parse(item.closed_at))).toBe(true);
+      await expect(
+        runUpdate(id, { status: "closed" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "close_reason_required" }),
+      });
+      const persisted = context.runCli(["get", id, "--json"], {
+        expectJson: true,
+      });
+      expect(persisted.code).toBe(0);
+      expect(
+        (persisted.json as { item: { status: string } }).item.status,
+      ).toBe("open");
     });
   });
 

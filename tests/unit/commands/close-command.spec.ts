@@ -1001,7 +1001,7 @@ describe("runClose", () => {
     });
   });
 
-  it("clears stale blocked_by metadata and dependency edge on terminal close (C4)", async () => {
+  it("clears transient blocked state while preserving the predecessor edge on close", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createTask(context, "close-c4-blocker");
       const blockedId = createTask(context, "close-c4-blocked");
@@ -1016,9 +1016,12 @@ describe("runClose", () => {
       expect(item.status).toBe("closed");
       expect(item.blocked_by).toBeUndefined();
       expect(item.blocked_reason).toBeUndefined();
-      expect(item.dependencies).toBeUndefined();
-      expect(result.changed_fields).toEqual(expect.arrayContaining(["blocked_by", "blocked_reason", "dependencies"]));
-      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+      expect(item.dependencies).toEqual([
+        expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+      ]);
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["blocked_by", "blocked_reason"]));
+      expect(result.changed_fields).not.toContain("dependencies");
+      expect(result.warnings).toContain(`closed_preserved_predecessors:${blockedId}:${blockerId}`);
     });
   });
 
@@ -1175,7 +1178,7 @@ describe("runClose", () => {
     });
   });
 
-  it("clears an orphan blocked_by dependency edge on close even without the scalar (C4)", async () => {
+  it("preserves a predecessor dependency edge on close even without the scalar", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createTask(context, "close-c4-orphan-blocker");
       const blockedId = createTask(context, "close-c4-orphan-blocked");
@@ -1188,13 +1191,68 @@ describe("runClose", () => {
 
       const result = await runClose(blockedId, "done, drop orphan edge", {}, { path: context.pmPath });
       const item = result.item as Record<string, unknown>;
-      expect(item.dependencies).toBeUndefined();
-      expect(result.changed_fields).toContain("dependencies");
-      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+      expect(item.dependencies).toEqual([
+        expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+      ]);
+      expect(result.changed_fields).not.toContain("dependencies");
+      expect(result.warnings).toContain(`closed_preserved_predecessors:${blockedId}:${blockerId}`);
     });
   });
 
-  it("keeps non-blocking dependency edges when clearing stale blocked_by edge on close (C4)", async () => {
+  it("preserves predecessor history across a close, reopen, and reclose cycle", async () => {
+    await withTempPmPath(async (context) => {
+      const blockerId = createTask(context, "close-cycle-blocker");
+      const dependentId = createTask(context, "close-cycle-dependent");
+      expect(
+        context.runCli(
+          [
+            "update",
+            dependentId,
+            "--dep",
+            `id=${blockerId},kind=blocked_by`,
+            "--json",
+          ],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+
+      await runClose(
+        dependentId,
+        "first terminal transition",
+        {},
+        { path: context.pmPath },
+      );
+      expect(
+        context.runCli(
+          [
+            "update",
+            dependentId,
+            "--status",
+            "open",
+            "--message",
+            "reopen for regression verification",
+            "--json",
+          ],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+      const reclosed = await runClose(
+        dependentId,
+        "second terminal transition",
+        {},
+        { path: context.pmPath },
+      );
+
+      expect(reclosed.item.dependencies).toEqual([
+        expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+      ]);
+      expect(reclosed.warnings).toContain(
+        `closed_preserved_predecessors:${dependentId}:${blockerId}`,
+      );
+    });
+  });
+
+  it("keeps predecessor and non-blocking dependency edges on close", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createTask(context, "close-c4-mixed-blocker");
       const relatedId = createTask(context, "close-c4-mixed-related");
@@ -1215,9 +1273,14 @@ describe("runClose", () => {
 
       const result = await runClose(blockedId, "done, keep related edge", {}, { path: context.pmPath });
       const item = result.item as { dependencies?: Array<{ id: string; kind: string }> };
-      expect(item.dependencies).toEqual([expect.objectContaining({ id: relatedId, kind: "related" })]);
-      expect(result.changed_fields).toContain("dependencies");
-      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+      expect(item.dependencies).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+          expect.objectContaining({ id: relatedId, kind: "related" }),
+        ]),
+      );
+      expect(result.changed_fields).not.toContain("dependencies");
+      expect(result.warnings).toContain(`closed_preserved_predecessors:${blockedId}:${blockerId}`);
     });
   });
 

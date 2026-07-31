@@ -457,6 +457,7 @@ export * from "./context-intent-contracts.js";
 export * from "./context-signal-store.js";
 export * from "./workspace-memory.js";
 export * from "./lifecycle-completion.js";
+export * from "./lifecycle-policy.js";
 export * from "./output-projection.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";
@@ -912,6 +913,7 @@ export {
   analyzeSdkActionCoverage,
   ensurePmGitignore,
   getPmGitignoreBlock,
+  closeItem,
   runAggregate,
   runClose,
   runContext,

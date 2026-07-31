@@ -19,6 +19,7 @@ const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
 const CONFIG_SDK_MODULE = "../../../src/sdk/config.js";
 const DEPENDENCIES_SDK_MODULE = "../../../src/sdk/dependencies.js";
 const GRAPH_RUN_SDK_MODULE = "../../../src/sdk/graph/run.js";
+const LIFECYCLE_CLOSE_SDK_MODULE = "../../../src/sdk/lifecycle/close.js";
 const DOCS_SDK_MODULE = "../../../src/sdk/docs.js";
 const FILES_SDK_MODULE = "../../../src/sdk/files.js";
 const HISTORY_COMPACT_SDK_MODULE = "../../../src/sdk/history-compact.js";
@@ -127,6 +128,12 @@ async function importServerWithCommandMocks(
       typeof import("../../../src/sdk/graph/run.js")
     >(GRAPH_RUN_SDK_MODULE);
     return { ...actual, runGraph: commandMocks.runGraph };
+  });
+  vi.doMock(LIFECYCLE_CLOSE_SDK_MODULE, async () => {
+    const actual = await vi.importActual<
+      typeof import("../../../src/sdk/lifecycle/close.js")
+    >(LIFECYCLE_CLOSE_SDK_MODULE);
+    return { ...actual, runClose: commandMocks.runClose };
   });
   vi.doMock(CONFIG_SDK_MODULE, () => ({ runConfig: commandMocks.runConfig }));
   vi.doMock(DOCS_SDK_MODULE, () => ({ runDocs: commandMocks.runDocs }));

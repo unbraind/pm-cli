@@ -88,7 +88,6 @@ import {
   runAppend,
   runClaim,
   runClaimNext,
-  runClose,
   runCloseMany,
   runComments,
   runContext,
@@ -110,6 +109,7 @@ import {
   type UpgradeCommandOptions,
   type UpgradeResult,
 } from "../cli/commands/index.js";
+import { runClose } from "./lifecycle/close.js";
 import {
   runGc,
   type GcCommandOptions,
@@ -209,7 +209,7 @@ import type {
   ClaimResult,
   ReleaseResult,
 } from "../cli/commands/claim.js";
-import type { CloseResult } from "../cli/commands/close.js";
+import type { CloseResult } from "./lifecycle/close.js";
 import {
   runContracts,
   type ContractsCommandOptions,
@@ -489,7 +489,24 @@ export {
   type ListTreeMetadata,
   type ListVerboseResult,
 } from "./query/list.js";
-export { runClose, type CloseCommandOptions } from "../cli/commands/close.js";
+export {
+  closeItem,
+  runClose,
+  type CloseCommandOptions,
+} from "./lifecycle/close.js";
+export {
+  DEFAULT_TERMINAL_TRANSITION_POLICY,
+  applyTerminalOrderingPolicy,
+  requireTerminalReason,
+  resolveTerminalReason,
+  type CloseOperationOptions,
+  type CloseOperationResult,
+  type TerminalOrderingMutation,
+  type TerminalReasonInput,
+  type TerminalReasonResolution,
+  type TerminalReasonSource,
+  type TerminalTransitionPolicy,
+} from "./lifecycle-policy.js";
 export {
   runUpdate,
   type UpdateCommandOptions,

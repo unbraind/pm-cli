@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1281,
+    "covered_symbols": 1293,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1282
+    "required_symbols": 1294
   },
   "breaking_acknowledgements": [
     {
@@ -882,6 +882,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "applyTerminalOrderingPolicy",
+          "signature": "(metadata: ItemMetadata, policy: Pick<TerminalTransitionPolicy, \"orderingEdges\">) => TerminalOrderingMutation | calls: (metadata: ItemMetadata, policy: Pick<TerminalTransitionPolicy, \"orderingEdges\">) => TerminalOrderingMutation"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "artifactKey",
           "signature": "(value: Pick<LinkedArtifact, \"path\" | \"scope\">) => string | calls: (value: Pick<LinkedArtifact, \"path\" | \"scope\">) => string"
         },
@@ -1580,6 +1586,24 @@
           "kind": "interface",
           "name": "CloseCommandOptions",
           "signature": "export interface CloseCommandOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; completedAt?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "closeItem",
+          "signature": "(id: string, closeReasonText: string | undefined, options: CloseOperationOptions, global: GlobalOptions) => Promise<CloseOperationResult> | calls: (id: string, closeReasonText: string | undefined, options: CloseOperationOptions, global: GlobalOptions) => Promise<CloseOperationResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CloseOperationOptions",
+          "signature": "export interface CloseOperationOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; completedAt?: string; lifecyclePolicy?: Partial<TerminalTransitionPolicy>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CloseOperationResult",
+          "signature": "export interface CloseOperationResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -2612,6 +2636,12 @@
           "kind": "value",
           "name": "DEFAULT_EVAL_QUERIES_RELATIVE_PATH",
           "signature": "string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "DEFAULT_TERMINAL_TRANSITION_POLICY",
+          "signature": "Readonly<TerminalTransitionPolicy>"
         },
         {
           "classification": "supported",
@@ -8728,6 +8758,12 @@
           "signature": "(document: ReplayDocument) => ItemDocument | calls: (document: ReplayDocument) => ItemDocument"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "requireTerminalReason",
+          "signature": "(input: TerminalReasonInput, required: boolean) => TerminalReasonResolution | calls: (input: TerminalReasonInput, required: boolean) => TerminalReasonResolution"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "RESERVED_ITEM_FIELD_NAMES",
@@ -9092,6 +9128,12 @@
           "kind": "function",
           "name": "resolveTelemetryErrorCategory",
           "signature": "(errorCode: string | undefined) => TelemetryErrorCategory | calls: (errorCode: string | undefined) => TelemetryErrorCategory"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveTerminalReason",
+          "signature": "(input: TerminalReasonInput) => TerminalReasonResolution | calls: (input: TerminalReasonInput) => TerminalReasonResolution"
         },
         {
           "classification": "advanced_export",
@@ -10910,6 +10952,36 @@
           "kind": "interface",
           "name": "TemplatesShowResult",
           "signature": "export interface TemplatesShowResult { name: string; source: TemplateSource; created_at: string; updated_at: string; path: string; options: CreateTemplateOptions; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalOrderingMutation",
+          "signature": "export interface TerminalOrderingMutation { changedFields: string[]; warnings: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalReasonInput",
+          "signature": "export interface TerminalReasonInput { explicit?: string; duplicateOf?: string; resolution?: string; message?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalReasonResolution",
+          "signature": "export interface TerminalReasonResolution { closeReason?: string; source: TerminalReasonSource; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "TerminalReasonSource",
+          "signature": "export type TerminalReasonSource = \"explicit\" | \"duplicate\" | \"resolution\" | \"message\" | \"none\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalTransitionPolicy",
+          "signature": "export interface TerminalTransitionPolicy { requireCloseReason: boolean; orderingEdges: \"preserve\" | \"remove\"; }"
         },
         {
           "classification": "contract_data",
@@ -18172,6 +18244,12 @@
           "signature": "export interface AppendResult { item: Record<string, unknown>; appended: string; changed_fields: string[]; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "applyTerminalOrderingPolicy",
+          "signature": "(metadata: ItemMetadata, policy: Pick<TerminalTransitionPolicy, \"orderingEdges\">) => TerminalOrderingMutation | calls: (metadata: ItemMetadata, policy: Pick<TerminalTransitionPolicy, \"orderingEdges\">) => TerminalOrderingMutation"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "BASELINE_ITEM_FORMAT_VERSION",
@@ -18254,6 +18332,24 @@
           "kind": "interface",
           "name": "CloseCommandOptions",
           "signature": "export interface CloseCommandOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; completedAt?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "closeItem",
+          "signature": "(id: string, closeReasonText: string | undefined, options: CloseOperationOptions, global: GlobalOptions) => Promise<CloseOperationResult> | calls: (id: string, closeReasonText: string | undefined, options: CloseOperationOptions, global: GlobalOptions) => Promise<CloseOperationResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CloseOperationOptions",
+          "signature": "export interface CloseOperationOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; completedAt?: string; lifecyclePolicy?: Partial<TerminalTransitionPolicy>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CloseOperationResult",
+          "signature": "export interface CloseOperationResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -18446,6 +18542,12 @@
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
           "signature": "1"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "DEFAULT_TERMINAL_TRANSITION_POLICY",
+          "signature": "Readonly<TerminalTransitionPolicy>"
         },
         {
           "classification": "supported",
@@ -19572,6 +19674,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "requireTerminalReason",
+          "signature": "(input: TerminalReasonInput, required: boolean) => TerminalReasonResolution | calls: (input: TerminalReasonInput, required: boolean) => TerminalReasonResolution"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveCalendarOutputFormat",
           "signature": "(options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat | calls: (options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat"
         },
@@ -19610,6 +19718,12 @@
           "kind": "function",
           "name": "resolveRuntimeStatusRegistry",
           "signature": "(schema: RuntimeSchemaSettings) => RuntimeStatusRegistry | calls: (schema: RuntimeSchemaSettings) => RuntimeStatusRegistry"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveTerminalReason",
+          "signature": "(input: TerminalReasonInput) => TerminalReasonResolution | calls: (input: TerminalReasonInput) => TerminalReasonResolution"
         },
         {
           "classification": "supported",
@@ -20210,6 +20324,36 @@
           "kind": "interface",
           "name": "TemplatesShowResult",
           "signature": "export interface TemplatesShowResult { name: string; source: TemplateSource; created_at: string; updated_at: string; path: string; options: CreateTemplateOptions; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalOrderingMutation",
+          "signature": "export interface TerminalOrderingMutation { changedFields: string[]; warnings: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalReasonInput",
+          "signature": "export interface TerminalReasonInput { explicit?: string; duplicateOf?: string; resolution?: string; message?: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalReasonResolution",
+          "signature": "export interface TerminalReasonResolution { closeReason?: string; source: TerminalReasonSource; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "TerminalReasonSource",
+          "signature": "export type TerminalReasonSource = \"explicit\" | \"duplicate\" | \"resolution\" | \"message\" | \"none\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TerminalTransitionPolicy",
+          "signature": "export interface TerminalTransitionPolicy { requireCloseReason: boolean; orderingEdges: \"preserve\" | \"remove\"; }"
         },
         {
           "classification": "advanced_export",

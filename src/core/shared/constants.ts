@@ -67,7 +67,7 @@ export const PM_DIRNAME = ".agents/pm";
 /** Public contract for settings filename, shared by SDK and presentation-layer consumers. */
 export const SETTINGS_FILENAME = "settings.json";
 
-/** GH-249: placeholder close reason recorded when `pm create --status closed` lands an item directly in the close status under `governance.require_close_reason` and no --message/--resolution text is available. Mirrors `pm update --status closed`'s "Closed via pm update" default so all three closure paths record a reason. */
+/** @deprecated Terminal transitions no longer synthesize reasons; retained for SDK source compatibility. */
 export const CREATE_DIRECT_CLOSE_REASON_DEFAULT =
   "Closed at creation via pm create";
 

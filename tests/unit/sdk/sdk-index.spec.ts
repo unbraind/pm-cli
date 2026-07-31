@@ -1211,6 +1211,7 @@ console.log(JSON.stringify(payload));`,
         title: "SDK duplicate discovery",
         type: "Task",
         status: "closed",
+        message: "seed closed duplicate fixture",
         createMode: "progressive",
         allowDuplicate: true,
       });

@@ -270,11 +270,11 @@ describe("runDedupeMerge", () => {
         },
       );
       vi.doMock(
-        "../../../src/cli/commands/close.js",
+        "../../../src/sdk/lifecycle/close.js",
         async (importOriginal) => {
           const actual =
             await importOriginal<
-              typeof import("../../../src/cli/commands/close.js")
+              typeof import("../../../src/sdk/lifecycle/close.js")
             >();
           let closeCalls = 0;
           return {

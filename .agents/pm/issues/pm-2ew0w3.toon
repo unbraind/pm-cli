@@ -2,21 +2,47 @@ id: pm-2ew0w3
 title: "One governance rule, two terminal-transition paths, opposite answers: pm close refuses a reasonless close while pm update --status closed invents a reason and writes it into the immutable record unmarked"
 description: "governance.require_close_reason is a declared workspace control, and only one of the two paths that reach the closed state honours it. Reproduced at HEAD in an isolated sandbox. pm close <id> with no reason is refused outright with close_reason_required and the detail names the governance key. pm update <id> --status closed with no message is accepted: it auto-routes to close, stamps closed_at, synthesizes close_reason as the literal Closed via pm update, and reports two warnings, auto_routed_from_update_to_close and close_reason_defaulted. The item is now terminal with a governance field the governance rule was supposed to require and nobody supplied. The record is worse than the response. The history entry for that transition carries op close, message null, and a patch that adds /metadata/close_reason with the synthesized literal. The close_reason_defaulted warning exists only on the ephemeral command response, so once the entry is written there is no way to distinguish a machine-invented reason from an author-supplied one, and the entry cannot be rewritten. Two live items and three history streams in this tracker already carry that literal. This is a defect escape rather than a new discovery. pm-4a1p closed the identical bypass on the create path under GH-249, and pm-12ib shipped the auto-route this path uses, so the class was known, fixed once, and reintroduced through a second route with no gate asserting that every path into a terminal state answers the same governance question. It is not the reopen direction, which is pm-83cz0o, and it is not transition legality, which is pm-mj42og."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: conformance,governance,history
 created_at: "2026-07-30T17:08:54.465Z"
-updated_at: "2026-07-30T17:09:10.522Z"
+updated_at: "2026-07-31T15:48:29.848Z"
+closed_at: "2026-07-31T15:26:58.644Z"
+completed_at: "2026-07-31T15:26:58.644Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every path that reaches a terminal state evaluates the same governance preconditions, proved by a table test that enumerates the paths and asserts one verdict per rule; A required close reason is never synthesized, so the reasonless path is refused with the same error code on every route; If a value is ever defaulted by the tool rather than supplied by the author, the immutable entry records that provenance so a later reader can tell them apart without consulting an ephemeral warning; The two live items and three history streams carrying the existing synthesized literal are dispositioned explicitly, either repaired through the audited redaction path or documented as historical with a stated reason; A negative control proves the table test fails when a new terminal route is added without evaluating the rule set"
 parent: pm-33cw
 risk: high
 confidence: high
+resolution: Removed the update-route default and centralized author-controlled close-reason precedence plus close_reason_required enforcement in SDK lifecycle policy.
+expected_result: Every terminal route accepts only author-controlled evidence and refuses a reasonless transition with one stable error code.
+actual_result: Table-driven and route tests plus isolated compiled-CLI acceptance prove reasonless update is refused with close_reason_required; historical synthesized values remain documented provenance.
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-4a1p,discovered_from,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
   pm-83cz0o,related,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
   pm-pj2isb,related,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
   pm-rtn5h6,related,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-07-31T14:40:32.555Z","harness:codex","Bundled with pm-z5pmf8 and pm-xm0id4: one SDK-owned terminal-transition policy will govern reason provenance and ordering semantics across surfaces."
+  "2026-07-31T15:21:33.493Z","harness:codex","Historical disposition: pm-8fx3 and pm-1p2u retain the literal close_reason Closed via pm update, and pm-j2ig retains it in immutable history. These entries faithfully record the previously shipped behavior; rewriting them would falsify provenance, so they remain explicitly documented historical evidence. New create, update, close, SDK, and MCP terminal routes now resolve author-controlled reason sources through one policy and refuse reasonless transitions with close_reason_required. Isolated compiled-CLI acceptance confirmed exit 2 and that error code; full coverage passed 6,610 tests at 100/100/100/100."
+  "2026-07-31T15:48:29.847Z","harness:codex","Release-gate evidence: build, typecheck, docs/skills, static quality, SDK/package parity, token/retrieval evaluations, 6,610-test coverage at 100/100/100/100, secrets scan, packed npx smoke, and 88-command dogfood all passed from /var/tmp. Sentry/telemetry gate passed with critical=0, high=0 over 14 days and best-effort telemetry. The only pre-push hosted gate result was DeepScan status missing for the uncommitted base SHA; hosted exact-head verification follows on the PR."
+learnings[1]{created_at,author,text}:
+  "2026-07-31T15:21:34.261Z","harness:codex","A governance rule belongs at the shared lifecycle operation boundary, not in individual argument parsers. Author-controlled precedence can reuse explicit reason, duplicate target, resolution, or message without ever inventing immutable evidence."
+files[6]{path,scope,note}:
+  src/cli/commands/create.ts,project,direct terminal create uses shared SDK governance
+  src/cli/commands/update.ts,project,update route delegates without synthesized reason
+  src/sdk/lifecycle-policy.ts,project,shared author-controlled terminal reason enforcement
+  tests/integration/release-readiness-runtime.spec.ts,project,terminal route release gate
+  tests/unit/commands/create-command.spec.ts,project,terminal create governance parity
+  tests/unit/commands/update-command.spec.ts,project,reasonless update governance regression
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle-policy.spec.ts tests/unit/commands/update-command.spec.ts tests/unit/commands/create-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms93h9cb-5b1brm,test,passed,"2026-07-31T15:25:35.635Z","2026-07-31T15:25:55.211Z","2026-07-31T15:25:55.211Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_LIFECYCLE.md,project,uniform terminal reason contract
+close_reason: "Delivered one SDK-owned terminal-reason governance rule across create, update, close, CLI, MCP, and SDK routes; no route synthesizes immutable closure evidence."
 body: ""

@@ -130,6 +130,8 @@ describe("MCP dynamic package actions", () => {
         "Task",
         "--status",
         "closed",
+        "--message",
+        "seed terminal close-many target",
         "--priority",
         "1",
         "--tags",
