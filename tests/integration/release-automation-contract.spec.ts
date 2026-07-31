@@ -493,6 +493,15 @@ describe("release automation contract", () => {
     );
     expect(workflow).toContain('npm_config_cache="${PUBLIC_NPM_CACHE}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");
+    expect(workflow).toContain(
+      "github.event.repository.default_branch || github.ref",
+    );
+    expect(workflow).toContain(
+      'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
+    );
+    expect(workflow).toMatch(
+      /if \[ "\$\{GITHUB_EVENT_NAME\}" = "workflow_dispatch" \]; then[\s\S]*?else\s+node scripts\/release-version\.mjs check --tag "\$\{RELEASE_TAG\}"\s+fi/u,
+    );
   });
 
   it("executes the npm publication guard and stabilizes exact-tag recovery", async () => {

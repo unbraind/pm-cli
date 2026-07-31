@@ -431,7 +431,7 @@ describe("GitHub workflow contract", () => {
       "name: release",
       "RELEASE_TAG:",
       PINNED_ACTIONS.checkout,
-      "ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}",
+      "ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || github.ref }}",
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
@@ -511,15 +511,25 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expect(releaseWorkflow).not.toContain("@unbrained/pm-cli");
-    expect(
-      releaseWorkflow.indexOf(
-        'elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
-      ),
-    ).toBeLessThan(
-      releaseWorkflow.indexOf(
-        'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
-      ),
+    const accessRecoveryIndex = releaseWorkflow.indexOf(
+      'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
     );
+    const exactVersionProbeIndex = releaseWorkflow.indexOf(
+      'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
+    );
+    const publicationRefusalIndex = releaseWorkflow.indexOf(
+      'elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
+    );
+    const packageProbeIndex = releaseWorkflow.indexOf(
+      'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
+    );
+    expect(accessRecoveryIndex).toBeGreaterThanOrEqual(0);
+    expect(exactVersionProbeIndex).toBeGreaterThanOrEqual(0);
+    expect(publicationRefusalIndex).toBeGreaterThanOrEqual(0);
+    expect(packageProbeIndex).toBeGreaterThanOrEqual(0);
+    expect(accessRecoveryIndex).toBeLessThan(exactVersionProbeIndex);
+    expect(exactVersionProbeIndex).toBeLessThan(publicationRefusalIndex);
+    expect(publicationRefusalIndex).toBeLessThan(packageProbeIndex);
     expect("if should_publish; then npm publish --access public; fi").toMatch(
       untaggedNpmPublish,
     );
