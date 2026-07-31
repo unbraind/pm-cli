@@ -1,0 +1,33 @@
+id: pm-1wiugq
+title: The provenance coverage instrument is reachable only from its own unit test while corpus model coverage sits at zero percent
+description: "src/sdk/provenance.ts exports two analyzers built specifically to detect a declared identity signal that never fires: analyzeAgentProvenanceDescriptorCoverage reports which harnesses can supply each dimension, and summarizeAgentModelProvenance reports per-harness model coverage and sets an inert flag when a sampled declared signal produced only unavailable values. Both are re-exported publicly through src/sdk/core-governance.ts and from there through src/sdk/index.ts and src/sdk/core.ts.\n\nNothing consumes them. A repository-wide search for either symbol outside src/sdk/provenance.ts returns exactly two files: src/sdk/core-governance.ts, which re-exports them, and tests/unit/sdk/provenance.spec.ts, which calls them on hand-built fixtures. No CLI command, no pm health check, no pm validate check, no CI gate and no release gate points either analyzer at the actual history corpus.\n\nWhat the instrument would report if it were run, measured over all 44,408 entries on 2026-07-31: 8,150 entries carry a detected harness (claude-code 4,772, codex 3,223, opencode 155). 2,814 carry a model key and every single one is an explicit null, so observed is 0 and coverage is 0.00 for every harness present. summarizeAgentModelProvenance's own inert predicate - explicit >= minimumExplicitSample and observed === 0 - is therefore true for all three harnesses simultaneously, which is the maximal signal the analyzer is capable of emitting. It has never emitted it, because nothing calls it on real data.\n\nThe declared-but-never-populated set is wider than model. codex declares effort via CODEX_REASONING_EFFORT and CODEX_EFFORT and role via CODEX_SESSION_ROLE; across 3,223 codex-attributed entries neither dimension appears once. Only claude-code has ever produced an effort observation, 471 of them, all after 2026-07-27T12:46. role has zero observations corpus-wide from any harness.\n\nThis is the instrument-integrity pattern that pm-9sui7t and pm-b2hc4x established for token and eval gates, applied to identity: the measurement exists, is correct, is unit-tested, and is pointed at fixtures instead of at the corpus it was written to judge."
+type: Issue
+status: open
+priority: 2
+tags[5]: gates,identity,instrument-integrity,observability,provenance
+created_at: "2026-07-31T14:11:14.755Z"
+updated_at: "2026-07-31T14:28:51.005Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "A pm surface reports provenance coverage over the real history corpus - a pm health check, a pm validate check, or an ops verb - so the inert condition becomes observable without writing code; The report distinguishes a dimension no harness declares from a dimension declared by some harness and never observed, using the descriptor coverage analyzer rather than only the model summarizer; A gate fails, or at minimum warns with a recorded threshold, when a declared dimension is inert across a bounded recent window, so a signal that stops working is caught rather than silently degrading; The gate is proved capable of failing by a negative control, following the pattern pm-b2hc4x established, so it cannot join the set of gates that are structurally unable to fail; The measurement is bounded and resumable over the history streams so it stays inside token and latency budgets at million-item scale"
+parent: pm-5oj5
+risk: medium
+confidence: 96
+expected_result: The analyzer that detects inert identity signals runs against the corpus and reports that model coverage is zero and role has never been observed.
+actual_result: It runs only inside its own unit test against hand-built fixtures; the corpus condition it was written to detect has been true for every entry ever written and has never been reported.
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0zcwz6,discovered_from,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
+  pm-33cw,related,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
+  pm-5oj5,implements,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
+  pm-9sui7t,related,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
+  pm-b2hc4x,related,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
+  pm-ffz0a9,related,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,verifies,"2026-07-31T14:20:40.565Z","harness:claude-code","cli:update:dep",detected
+learnings[1]{created_at,author,text}:
+  "2026-07-31T14:28:51.005Z","harness:claude-code",An analyzer whose only caller is its own unit test is indistinguishable from an unimplemented feature at the level that matters. Grepping for a symbol outside its defining module and its spec is a two-second check that should accompany any claim that a governance capability exists.
+files[2]{path,scope,note}:
+  src/sdk/core-governance.ts,project,re-exports the analyzers into the public surface at lines 29-30 without wiring a consumer
+  src/sdk/provenance.ts,project,both analyzers live here and have no consumer outside their own spec
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- provenance,project,300
+body: ""

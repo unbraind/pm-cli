@@ -1,0 +1,28 @@
+id: pm-scbr0s
+title: "The close-time blocker-clear warning names one deleted ordering edge out of N, so silent multi-blocker data loss is indistinguishable from single-blocker clearing"
+description: "clearClosedBlockerSignals in src/cli/commands/close.ts selects the reported blocker with existingDeps.find((dep) => dep.kind === \"blocked_by\") at line 607 and then deletes rows with existingDeps.filter((dep) => dep.kind !== \"blocked_by\") at line 626. find returns one row, filter removes all of them, and the emitted warning at line 641 is built from the single found id: closed_cleared_blocked_by:<item>:<blocker>.\n\nVerified in an isolated sandbox 2026-07-31. Item D held three blocked_by rows to A, B and C, all three still open. Closing D produced exactly one warning, closed_cleared_blocked_by:ord4-fohw:ord4-hbaz, naming the alphabetically first blocker in storage order. Two ordering edges were deleted with no mention in the output, no count, and no aggregate. An operator or agent reading the close result cannot tell a one-edge clear from a three-edge clear, and the warning string carries no cardinality field that a downstream consumer could check.\n\nThis is separable from the deletion defect itself, tracked as pm-xm0id4. Even if the retention semantics change so that ordering edges survive close, any transition that does remove edges must report every edge it removed, because the warning is the only signal a caller receives and it is currently a sample of size one presented as a complete statement. It is also the reason the deletion went unnoticed long enough to reach a 1-of-1900 corpus signature: the product announced each clearing once, in a form that understated how much it removed."
+type: Issue
+status: open
+priority: 2
+tags[4]: data-loss,graph,lifecycle,observability
+created_at: "2026-07-31T14:09:54.466Z"
+updated_at: "2026-07-31T14:28:13.394Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "The close result reports every ordering edge it removes, with the removed count, so a caller can distinguish a one-edge clear from an N-edge clear without re-reading history; A test closes an item holding three blocked_by rows and asserts that all three appear in the emitted warnings or in one warning carrying an explicit count; The warning shape stays parseable by existing consumers, or the change to its shape is recorded as a contract change with the consumers updated in the same tranche; The reported set is derived from the same collection that the removal operates on, so find and filter can no longer disagree about scope"
+parent: pm-96h7
+risk: medium
+confidence: 97
+expected_result: A close that removes three ordering edges reports three removals.
+actual_result: "It reports one: the warning is built from a find while the deletion is built from a filter over the same array."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,related,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
+  pm-96h7,implements,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
+  pm-jkbqt8,related,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,verifies,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
+  pm-xm0id4,discovered_from,"2026-07-31T14:20:37.376Z","harness:claude-code","cli:update:dep",detected
+files[1]{path,scope,note}:
+  src/cli/commands/close.ts,project,find at line 607 selects the reported blocker while filter at line 626 removes all of them; warning built at line 641
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- close,project,300
+body: ""

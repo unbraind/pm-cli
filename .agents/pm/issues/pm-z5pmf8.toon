@@ -1,0 +1,33 @@
+id: pm-z5pmf8
+title: "The public SDK's item-lifecycle surface re-exports CLI command modules, so lifecycle policy cannot be expressed, inspected, or overridden through the SDK"
+description: "pm-usfg states the target as pm CLI and MCP becoming thin layers over a complete public pm SDK. Measured on 2026-07-31 the dependency direction is overwhelmingly correct and fails precisely at the item lifecycle.\n\n86 files under src/cli import from src/sdk, which is the intended direction. In the other direction, 3 files under src/sdk carry 36 import statements from src/cli, and the modules they reach for are not peripheral: commands/close, commands/create, commands/update, commands/update-many, commands/delete, commands/get, commands/context, commands/next, commands/plan, commands/copy, commands/restore, commands/focus, commands/init, commands/notes, commands/learnings, commands/profile, commands/reindex, commands/guide, commands/index and registration-helpers. src/sdk/runtime.ts:492 is representative: export { runClose, type CloseCommandOptions } from \"../cli/commands/close.js\".\n\nSo the public SDK's lifecycle surface is a facade over the CLI implementation rather than the substrate the CLI is built on. By file count the inversion is small; by capability it covers create, read, update, close, delete, restore and the whole context and planning path, which is the entire mutation core the SDK exists to provide.\n\nThe concrete cost is visible in the defect filed as pm-xm0id4. clearClosedBlockerSignals - the policy that decides whether closing an item destroys its ordering edges - is a private function inside src/cli/commands/close.ts. It is not exported, not named in any SDK type, and not parameterized. An SDK consumer building a domain tool on pm primitives inherits the behaviour with no way to read it, test it in isolation, or choose differently; and a fix has to be made in the CLI layer even though it changes SDK semantics. Every lifecycle rule reachable this way has the same shape.\n\nThis is the binding constraint on two milestones. pm-9rgaal requires every CLI and MCP capability to be reachable from the public SDK, which a re-export technically satisfies while defeating its purpose. pm-t4d7nz requires non-PM systems to be buildable on SDK primitives alone, which is not achievable while the primitives are CLI command entry points carrying CLI-shaped options types - CloseCommandOptions is the SDK's public close contract, named for the command rather than the operation.\n\nScope is to move the lifecycle core into src/sdk and leave src/cli/commands as argument parsing plus presentation over it, with the transaction, validation and policy steps addressable individually so a consumer can compose them. It is mechanical but wide, and it needs a check that prevents regrowth, because the inversion is currently invisible: no gate fails when an SDK module imports from the CLI."
+type: Issue
+status: open
+priority: 1
+tags[4]: architecture,contracts,lifecycle,sdk
+created_at: "2026-07-31T14:12:15.320Z"
+updated_at: "2026-07-31T14:28:52.008Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "No module under src/sdk imports from src/cli, enforced by a check that fails the build on a new such import, so the constraint stops depending on review; The lifecycle core - create, update, close, delete, restore, get, context, next, plan, copy, focus - lives under src/sdk with the CLI command modules reduced to parsing, flag contracts and presentation; Lifecycle policy currently private to CLI modules, including the close-time ordering-edge handling in pm-xm0id4, is addressable SDK surface: readable, individually testable, and selectable by an SDK consumer; Public SDK option types are named for operations rather than for commands, and the rename is recorded through the SDK surface snapshot as a semantic change with migration notes; The SDK surface snapshot and package-sdk-contract-parity gate both pass, and an example under docs/examples builds a working close path from SDK primitives alone without importing anything under src/cli; MCP routes to the SDK rather than to CLI command modules, so the three surfaces share one implementation of every lifecycle rule"
+parent: pm-usfg
+risk: high
+confidence: 95
+expected_result: "The SDK owns the lifecycle and the CLI is a thin layer over it, so lifecycle policy is public, testable and selectable SDK surface."
+actual_result: "src/sdk/runtime.ts re-exports runClose and 35 other symbols from src/cli/commands, and lifecycle policy such as clearClosedBlockerSignals stays private to the CLI layer where no SDK consumer can reach it."
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5k4v,related,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
+  pm-9rgaal,verifies,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
+  pm-mpbb,related,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
+  pm-n7rr,related,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
+  pm-nfrhf0,related,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
+  pm-t4d7nz,verifies,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
+  pm-usfg,implements,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
+  pm-xm0id4,related,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
+learnings[1]{created_at,author,text}:
+  "2026-07-31T14:28:52.007Z","harness:claude-code","Counting import directions between two layers gives a precise answer to an architectural question that usually gets a qualitative one. Here 86 CLI-to-SDK imports against 36 SDK-to-CLI imports across 3 files reads as nearly-done until the 36 are enumerated and turn out to be the entire item lifecycle - so the useful metric is which capabilities flow the wrong way, not how many files do."
+files[1]{path,scope,note}:
+  src/sdk/runtime.ts,project,line 492 re-exports runClose and CloseCommandOptions from ../cli/commands/close.js; representative of 36 such imports
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/sdk-surface-snapshot.mjs --check,project,300
+body: ""

@@ -6,14 +6,14 @@ status: open
 priority: 2
 tags[5]: context-management,economics,multi-agent,scale-out,token-budget
 created_at: "2026-07-28T22:32:42.182Z"
-updated_at: "2026-07-30T17:03:18.240Z"
+updated_at: "2026-07-31T14:26:28.225Z"
 author: "harness:claude-code"
 estimated_minutes: 1200
 acceptance_criteria: "A context assembly separates its state-derived part from its asker-derived part, and the state-derived part is addressed by a fingerprint over every input that can change it, enumerated in contract data rather than in code comments; Two agents issuing the same request against an unchanged workspace receive byte-identical shared assemblies and the second is served from the cache, proven by a test asserting one computation and two served results; The fingerprint is proven complete by a negative-control fixture per declared input: changing that input alone must change the address, so a stale assembly can never be served as fresh; The cache is a keyed store rather than a single slot, so distinct legitimate request shapes coexist instead of evicting each other, directly refuting the failure mode pm-77okxr records; A fleet-level token budget is declarable and observable: aggregate context spend across agents is reported over a window, and exceeding the target degrades deterministically by the same declared ladder a single command uses; Every served assembly carries its attestation, so a consumer can verify the shared part was produced by the inputs it claims without recomputing it; Amortization degenerates exactly to today's behaviour for a single agent on a small workspace, adding no cache lookup cost that a one-agent workspace can measure; Assemblies are invalidated by recorded workspace change rather than by wall-clock expiry, so correctness does not depend on a timeout"
 parent: pm-9rxu
 risk: high
 confidence: medium
-dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-4k6b,related,"2026-07-28T22:32:42.182Z","harness:claude-code","cli:create:dep",detected
   pm-5t33or,related,"2026-07-28T22:32:42.182Z","harness:claude-code","cli:create:dep",detected
   pm-77okxr,discovered_from,"2026-07-28T22:32:42.182Z","harness:claude-code","cli:create:dep",detected
@@ -21,4 +21,5 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-8bgeye,blocked_by,"2026-07-28T22:32:42.182Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-07-28T22:32:42.182Z","harness:claude-code","cli:create:dep",detected
   pm-bab3gb,blocked_by,"2026-07-30T17:03:18.021Z","harness:claude-code","cli:update:dep",detected
+  pm-klxax7,implements,"2026-07-31T14:26:28.019Z","harness:claude-code","cli:update:dep",detected
 body: ""

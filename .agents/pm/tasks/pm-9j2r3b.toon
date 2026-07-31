@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-25T20:40:33.139Z"
-updated_at: "2026-07-27T00:28:51.733Z"
+updated_at: "2026-07-31T14:23:59.324Z"
 closed_at: "2026-07-27T00:28:49.685Z"
 author: "harness:claude-code"
 estimated_minutes: 480
@@ -17,16 +17,16 @@ confidence: 75
 resolution: "pm merge reconcile now records receipt-backed merge_reconcile events for drifted and clean item streams, preserving replayable merged state with privacy-safe provenance; workspace settings/schema replay is explicitly deferred to pm-klo8."
 expected_result: "Every field-aware item merge becomes an addressable, verifiable history state; workspace-scope handling is either implemented or explicitly routed to its canonical lineage."
 actual_result: "The driver previously produced an unrecorded merged item state; settings/schema restore remains outside the shipped pm-klo8 workspace-history scope, while relationship streams already merge append-only."
-dependencies[8]{id,kind,created_at,author,source_kind}:
-  pm-2sbj8p,related,"2026-07-25T20:40:33.139Z",null,null
-  pm-76dnfg,related,"2026-07-25T20:40:33.139Z",null,null
-  pm-9yfo,related,"2026-07-25T20:40:33.139Z",null,null
-  pm-o79o,related,"2026-07-25T20:40:33.139Z",null,null
-  pm-szv11n,implements,"2026-07-25T20:40:33.139Z",null,null
-  pm-w7ccmv,verifies,"2026-07-25T20:40:33.139Z",null,null
-  pm-wlqxg3,related,"2026-07-25T20:40:33.139Z",null,null
-  pm-10l1vm,related,"2026-07-26T10:52:03.450Z",null,null
-comments[9]{created_at,author,text}:
+dependencies[8]{id,kind,created_at}:
+  pm-2sbj8p,related,"2026-07-25T20:40:33.139Z"
+  pm-76dnfg,related,"2026-07-25T20:40:33.139Z"
+  pm-9yfo,related,"2026-07-25T20:40:33.139Z"
+  pm-o79o,related,"2026-07-25T20:40:33.139Z"
+  pm-szv11n,implements,"2026-07-25T20:40:33.139Z"
+  pm-w7ccmv,verifies,"2026-07-25T20:40:33.139Z"
+  pm-wlqxg3,related,"2026-07-25T20:40:33.139Z"
+  pm-10l1vm,related,"2026-07-26T10:52:03.450Z"
+comments[10]{created_at,author,text}:
   "2026-07-26T06:05:38.614Z","harness:claude-code","Live reproduction 2026-07-26 on the shipped 2026.7.26 build, recorded as evidence for the acceptance clause 'a clean merge leaves pm validate with zero history-drift warnings'. Scratch repository, pm merge install applied, two branches diverging on one item: agentA adds a comment and sets priority=1, agentB adds a different comment and sets estimated_minutes=60. git merge exits 0 with no conflict; the field-aware driver reports fields_from_theirs=[estimated_minutes], union_fields=[comments], history strategy=union_reanchor entries_total=5; the merged item correctly carries priority 1, estimated_minutes 60, and both comments. Immediately afterwards pm history <id> --verify returns ok:false with errors [verify_failed:current_item_hash_mismatch], latest_after_hash f6b6065e... against current_item_hash a1c9cbfb..., and pm validate --check-history-drift reports drifted_items_count 1 with hash_mismatches 1. So a correct, conflict-free merge leaves the workspace failing its own integrity check with no warning at merge time. Filed pm-pdr8t1 for the detection half: CI's merge-safety step verifies one history stream of 2,058 and omits --check-history-drift entirely, so this drift would not be seen in CI even after it happens."
   "2026-07-26T11:46:22.561Z","harness:codex","Start evidence 2026-07-26: selected after live all-status review of 2,081 items (1,780 closed, 288 open, 13 canceled; zero pre-existing in-progress), full item metadata and shipped lineage review, and GitHub/security/dependency inventory. This item is actively implemented in the cohesive public SDK plus safe agent-fleet PR; container epics and unrelated backlog remain open and unclaimed."
   "2026-07-26T12:11:36.910Z","harness:codex","Investigation evidence: reviewed merge driver, three-way history union, reconcile, and history-repair contracts. The existing explicit reconcile path can append a replay-addressable repair event, but automatic post-merge coordination requires a hook/provenance design beyond this branch; no code was attributed to this item."
@@ -36,6 +36,7 @@ comments[9]{created_at,author,text}:
   "2026-07-26T23:49:53.867Z","harness:codex","Final local verification: linked PM tests pass; full sandboxed suite passes 376 files and 6,437 tests at exact 100% statements (44,398/44,398), branches (31,515/31,515), functions (9,082/9,082), and lines (43,135/43,135). Lint, zero-duplicate scan, 100% docstring/static quality, SDK surface/import/transport ratchets, docs/skills, secret scan, npm audit, compatibility, packed npx, 88-command package-first dogfood, and Sentry 14-day zero-critical/zero-high gate pass. Live tracker strict validation checked 2,117 items and 2,128 history streams with zero drift, duplicate IDs, config errors, driver drift, or pending receipts. Telemetry successfully flushed to the configured endpoint at 2026-07-26T23:49:30.656Z."
   "2026-07-27T00:27:29.566Z","harness:codex","Acceptance scope decision after exact-head review: the workspace-scope settings/schema point-in-time equivalent is explicitly deferred to canonical shipped lineage pm-klo8, whose append-only workspace history intentionally deferred workspace restore/replay. Extending that restore contract is distinct future work and duplicating it here would split canonical lineage. Relationship artifacts already are append-only event streams that the merge fence unions and reanchors, so they have no parallel item-state snapshot to synthesize. This PR covers item history and receipt-bearing clean streams completely."
   "2026-07-27T00:28:43.199Z","harness:codex","Review-fix verification: linked reconciliation/history suite passes 31/31, including changed and skipped-clean receipt-only outcomes. Full sandboxed repository suite passes 376 files and 6,437 tests at exact 100% statements (44,401/44,401), branches (31,515/31,515), functions (9,082/9,082), and lines (43,138/43,138). All static and performance ratchets pass."
+  "2026-07-31T14:23:59.324Z","harness:claude-code","Follow-on finding 2026-07-31, filed as pm-aka8m7. No reopen proposed: this item's resolution - receipt-backed merge_reconcile events making merged state replay-addressable - is delivered and holds.\n\nThe adjacent property it does not cover is provenance of the merge inputs. reanchorHistoryEntries overwrites each entry's before_hash and after_hash in place at src/core/history/replay.ts:365-370 and retains the prior pair nowhere. So after a union merge the merged chain verifies internally while no verifier can confirm that a given entry was written against the state its author observed, because the anchor the author committed to has been replaced by one computed from the merged ordering. Addressability of the result and verifiability of the inputs are separate guarantees, and pm-w7ccmv promises both."
 notes[1]{created_at,author,text}:
   "2026-07-26T11:29:38.858Z","harness:claude-code","Post-merge drift reproduced on the shipped 2026.7.26 build, 2026-07-26, isolated sandbox.\n\nTwo branches mutated the same item (A: comment + priority; B: comment + tag). git merge auto-merged both artifacts and the merge driver's own output reported reanchored: true, then immediately emitted guidance to run pm validate --check-history-drift and pm history-repair --all. pm validate directly after the merge reported validate_history_drift_hash_mismatches:1. pm history-repair --all then returned repaired: 1, skipped_clean: 0, failed: 0, and validate came back clean.\n\nTwo things worth separating on this item.\n\nThe driver reports a reanchor it has not finished. reanchored: true and a hash mismatch one command later are contradictory as read by an agent: the operation announced success, and the very next verification says the chain is wrong. Whatever the internal distinction is between re-anchoring the stream and reconciling the item hash, the merge output does not carry it, so the honest state after a merge is unrepresented.\n\nThe remedy is a manual second step on a path that is otherwise fully automatic. A merge that resolves cleanly at the git level leaves the tracker in a state that fails its own validation until a human or an agent remembers to run a separate repair. Every branch merge in a multi-agent workflow hits this, and nothing in the git flow forces the second command.\n\nNote the contrast with the behaviour recorded on this item earlier: there, history-repair correctly declined with entries_rehashed: 0 because the merged field set had no entry to anchor to. Here repair succeeded. Both outcomes leave the same user-visible signature — a green merge followed by a red validate — which is an argument for the fix being in what the merge records rather than in what repair can recover."
 learnings[1]{created_at,author,text}:

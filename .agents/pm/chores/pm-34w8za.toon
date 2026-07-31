@@ -6,17 +6,19 @@ status: open
 priority: 3
 tags[5]: "area:quality","area:sdk",history,refactor,simplification
 created_at: "2026-07-25T21:38:53.550Z"
-updated_at: "2026-07-26T05:56:15.226Z"
+updated_at: "2026-07-31T14:23:58.574Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "One SDK primitive owns the load, verify, transform, re-anchor, reconcile and report pipeline for item history streams, and redact, repair and compact are expressed as transforms handed to it. cli/commands/copy.ts and cli/commands/restore.ts consume that primitive rather than re-implementing stream handling. The externally observable behaviour of every history command — flags, dry-run plans, applied reports, exit codes — is unchanged, asserted by the existing suites passing without modification. A jscpd run at 12 lines and 60 tokens reports no remaining clone pair inside the history family."
 parent: pm-o2kc
 risk: medium
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-9yfo,related,"2026-07-25T21:38:53.550Z",null,null
-  pm-usfg,related,"2026-07-25T21:38:53.550Z",null,null
-  pm-xspd,related,"2026-07-25T21:38:53.550Z",null,null
-  pm-yh8r,related,"2026-07-25T21:38:53.550Z",null,null
-  pm-o2kc,implements,"2026-07-26T05:56:14.981Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-9yfo,related,"2026-07-25T21:38:53.550Z"
+  pm-usfg,related,"2026-07-25T21:38:53.550Z"
+  pm-xspd,related,"2026-07-25T21:38:53.550Z"
+  pm-yh8r,related,"2026-07-25T21:38:53.550Z"
+  pm-o2kc,implements,"2026-07-26T05:56:14.981Z"
+comments[1]{created_at,author,text}:
+  "2026-07-31T14:23:58.574Z","harness:claude-code","Scope input 2026-07-31 from pm-aka8m7. This chore consolidates the load, verify, rewrite, re-anchor, report pipeline across redact, repair and compact, and that consolidation is the right and only place to add one thing all three paths currently omit.\n\nreanchorHistoryEntries at src/core/history/replay.ts:365-370 overwrites before_hash and after_hash in place and retains the prior values nowhere - the result carries an entriesRehashed count and a per-entry rehashed boolean. Every one of the three commands this chore unifies therefore destroys the anchors its inputs committed to, and so does every union merge, since src/sdk/merge/three-way.ts:57 documents reanchored as true for every union. Adding retention per command would mean writing it three times and would leave the merge driver's own path a fourth; adding it at the unified pipeline covers all four at once.\n\nRecommend widening this chore's acceptance criteria to include the retention hook - the shared pipeline emits the original anchor pair for each rewritten entry to whichever durable sink the owning command chooses - without taking on the storage-location decision, which belongs to pm-aka8m7. That keeps this chore mechanical while making the fix a one-site change afterwards rather than a four-site one."
 body: ""

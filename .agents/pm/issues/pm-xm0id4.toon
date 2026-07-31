@@ -1,0 +1,38 @@
+id: pm-xm0id4
+title: "Closing an item deletes its ordering edges, so the historical ordering graph is structurally unable to exist"
+description: "clearClosedBlockerSignals in src/cli/commands/close.ts:600-644 removes every dependency row whose kind is blocked_by when an item is closed: existingDeps.filter((dep) => dep.kind !== \"blocked_by\") at line 626. The filter is unconditional. It does not check whether the blocker is still open, it does not check how many blocked_by rows exist, and it runs on the close of the DEPENDENT item, which is the exact moment the ordering fact becomes historical rather than actionable.\n\nVerified in an isolated sandbox (PM_PATH and PM_GLOBAL_PATH overridden, 2026-07-31). Item D was given three blocked_by rows to A, B and C plus one related row to A, and all three blockers were left OPEN. pm deps D reported edge_count 1 and pm graph analyze reported layer_count 2 with frontier_count 1, so the ordering was recorded and the analyzer agreed. Closing D with an unchanged blocker set left exactly one dependency row: the related edge. All three ordering edges to still-unsatisfied prerequisites were deleted. A second sandbox run isolated the trigger to the dependent's own close rather than the blocker's: closing the blocker A left the edge intact and pm deps still reported edge_count 1; closing the dependent B dropped edge_count to 0 and moved component_count from 1 to 2.\n\nThe immutable record proves both the edge and its deletion. The close history entry lists dependencies among its changed_fields, and pm get <id> --at 2 reconstructs the blocked_by row with reconstructed true. The information is therefore recoverable from history and absent from every projection that graph analytics, readiness and scheduling read, which are all built on current item state.\n\nCorpus measurement over every tracked item file, 2026-07-31, gives the population-level signature of the deletion. Of 1,900 closed items exactly ONE retains a blocked_by row; 91 of 318 open items hold one. The reverse spelling of the same relation, blocks, is not touched by this code path because blocker resolution only matches the blocked_by literal, and it shows the mirror-image distribution: 189 closed items hold a blocks row against 4 open ones. The same real prerequisite therefore survives closure roughly 200 times more often when it happens to be written from the blocker endpoint.\n\nThis reframes pm-gxs55a. That item measures frontier_count 1845 of 2104 ordered nodes and attributes the flat ordering graph to a corpus that records what work belongs to what and almost never what had to happen before what. The measurement is right and the attribution is not: ordering WAS authored, at least a few hundred times over the project's life, and the close path deleted it every time on the endpoint the scheduler can see. This is a deletion defect, not an authoring-discipline gap.\n\nIt also makes pm-ye46ns unshippable as specified. That tranche recovers sequence edges for TERMINAL work from explicit prerequisite statements and writes them as blocked_by. Every such write lands on a closed item, so it is one lifecycle transition away from being deleted again, and re-closing after any reopen erases the recovered tranche silently.\n\nThe product is left with no way to record an ordering constraint that is both actionable while open and durable after close. blocked_by is visible to readiness and destroyed at close. blocks survives close and is invisible to readiness, which is what pm-jkbqt8 proves. Whichever endpoint an author picks, exactly one of the two properties is lost."
+type: Issue
+status: open
+priority: 1
+tags[5]: data-loss,graph,history,lifecycle,ordering
+created_at: "2026-07-31T14:09:25.469Z"
+updated_at: "2026-07-31T14:28:48.218Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Closing a dependent item preserves its ordering edges in item state, or converts them to a durable historical form that graph traversal and pm graph analyze read, so a closed item can name what preceded it; The deletion is never applied to a blocker that is still open, and any retained clearing behaviour is conditioned on the blocker's terminal state rather than on the dependent's; Ordering edges recovered for terminal work by pm-ye46ns survive a subsequent close and reopen-close cycle, proved by a test that closes, reopens and recloses an item carrying recovered edges; predecessor coverage on the real corpus is re-measured after the fix and reported alongside the 1-of-1900 versus 189-of-1900 baseline recorded here; A regression test asserts the corpus-level invariant directly: closed items may hold ordering edges, and the blocked_by survival rate across closed items is no longer two orders of magnitude below the blocks survival rate; The chosen semantics are stated once and shared by CLI, SDK and MCP close paths, with a check that fails if one path clears ordering edges and another does not"
+parent: pm-96h7
+risk: high
+confidence: 98
+expected_result: "An ordering constraint recorded on the dependent endpoint remains queryable after the dependent closes, so pm graph predecessors over a fully closed corpus returns a sequence rather than a frontier."
+actual_result: "Closing the dependent deletes every blocked_by row it holds, including rows pointing at still-open blockers, leaving 1 of 1900 closed items with any recorded predecessor while the untouched reverse spelling survives on 189."
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4020c5,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-6olc95,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-96h7,implements,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-g8t7b9,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-gxs55a,discovered_from,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-jkbqt8,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-lnrk,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-scbr0s,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,verifies,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+  pm-z5pmf8,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
+learnings[1]{created_at,author,text}:
+  "2026-07-31T14:28:48.217Z","harness:claude-code","A population-level survival split is the cheapest way to separate a deletion defect from an authoring gap, and it needs no code reading. Two spellings of one relation existed in this corpus - blocked_by, which the close path clears, and blocks, which it does not - and their distribution across 1,900 closed items was 1 versus 189. If under-authoring were the cause, both spellings would be scarce. The asymmetry between two encodings of the same fact is the signal; the absolute count of either one is not."
+files[3]{path,scope,note}:
+  src/cli/commands/close.ts,project,clearClosedBlockerSignals at lines 600-644; the unconditional blocked_by filter is line 626
+  src/core/item/actionability.ts,project,collectBlockedByIds is the readiness consumer whose single source of truth the close path empties
+  src/sdk/graph/assembly.ts,project,"blocked_by is one of three dependency reference sources feeding the graph,so the deletion removes the edge from every analytic at once"
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- close,project,300
+  node scripts/run-tests.mjs test -- graph,project,300
+body: ""
