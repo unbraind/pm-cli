@@ -26,6 +26,7 @@ import {
   nowIso,
   resolveIsoOrRelative,
 } from "../../../../src/core/shared/time.js";
+import { withIsolatedHarnessEnvironment } from "../../../helpers/withIsolatedHarnessEnvironment.js";
 
 describe("core/shared/author: resolveAuthor", () => {
   it("returns the candidate when provided", () => {
@@ -50,38 +51,22 @@ describe("core/shared/author: resolveAuthor", () => {
     }
   });
 
-  it("falls back to the fallback string when candidate and PM_AUTHOR are absent", () => {
-    const prev = process.env.PM_AUTHOR;
-    try {
-      delete process.env.PM_AUTHOR;
+  it("falls back to the fallback string when candidate and PM_AUTHOR are absent", async () => {
+    await withIsolatedHarnessEnvironment({}, () => {
       expect(resolveAuthor(undefined, "settings-author")).toBe(
         "settings-author",
       );
-    } finally {
-      if (prev !== undefined) {
-        process.env.PM_AUTHOR = prev;
-      }
-    }
+    });
   });
 
-  it("detects the harness after empty configured input while explicit blank stays unknown", () => {
-    const prev = process.env.PM_AUTHOR;
-    const previousCodexThread = process.env.CODEX_THREAD_ID;
-    try {
-      delete process.env.PM_AUTHOR;
-      process.env.CODEX_THREAD_ID = "test-thread";
-      expect(resolveAuthor(undefined, "   ")).toBe("harness:codex");
-      expect(resolveAuthor("  ", "  ")).toBe("unknown");
-    } finally {
-      if (prev !== undefined) {
-        process.env.PM_AUTHOR = prev;
-      }
-      if (previousCodexThread === undefined) {
-        delete process.env.CODEX_THREAD_ID;
-      } else {
-        process.env.CODEX_THREAD_ID = previousCodexThread;
-      }
-    }
+  it("detects the harness after empty configured input while explicit blank stays unknown", async () => {
+    await withIsolatedHarnessEnvironment(
+      { CODEX_THREAD_ID: "test-thread" },
+      () => {
+        expect(resolveAuthor(undefined, "   ")).toBe("harness:codex");
+        expect(resolveAuthor("  ", "  ")).toBe("unknown");
+      },
+    );
   });
 
   it("derives history provenance when no matching active resolution exists", () => {

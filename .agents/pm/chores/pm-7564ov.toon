@@ -1,0 +1,39 @@
+id: pm-7564ov
+title: Refresh compatible Sentry 10.69 and Greptile 3.3 dependencies
+description: "Adopt the current compatible Sentry runtime and Greptile review CLI minors in the universal SDK/CLI contract bundle, with audit, coverage, package-consumer, hosted-analysis, and telemetry proof."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-07-31T07:57:37.866Z"
+updated_at: "2026-07-31T08:32:00.737Z"
+closed_at: "2026-07-31T08:31:40.267Z"
+completed_at: "2026-07-31T08:31:40.267Z"
+author: "harness:codex"
+acceptance_criteria: Package and lockfile use @sentry/node 10.69.x and greptile 3.3.x; pnpm audit is clean; complete 100/100/100/100 coverage and release gates pass; packed consumer and hosted review integrations remain operational.
+parent: pm-doxj
+resolution: Upgraded to packed-consumer-safe @sentry/node 10.69 and Greptile 3.3 with clean audit and observability gates.
+expected_result: "Compatible current dependency minors pass repository, packed-consumer, security, hosted-review, Sentry, and telemetry gates."
+actual_result: "All local and live gates passed; Sentry 10.68 declaration incompatibility was avoided by ratcheting 10.69, and the only transient failure was isolated runner tmpfs inode pressure."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4dz7,related_to,"2026-07-31T07:57:37.866Z","harness:codex","cli:create:dep",detected
+  pm-tll8,related_to,"2026-07-31T07:57:37.866Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-07-31T07:57:37.866Z","harness:codex","Duplicate check: all-status searches for Sentry 10.69 and Greptile 3.3 found only prior closed refresh lineages and broader quality parents; this date-specific compatible refresh is new work. npm-package-arg 14 remains canonically tracked by pm-ksr40d and TypeScript 7 by pm-do5b."
+  "2026-07-31T08:18:38.723Z","harness:codex","Packed consumer proof: an unrelated fresh npm project installed the repository tarball plus TypeScript 6 and Node declarations, compiled a strict NodeNext SDK import with no emit, and resolved the packaged pm executable. This proves Sentry 10.69 declaration compatibility after the known 10.68 regression."
+  "2026-07-31T08:29:31.910Z","harness:codex","Sentry/release-gate evidence: PM-CLI-2T (event 90400f0e8ae34b7f9c86440a19005757) is a single handled write failure at 2026-07-31T07:42:37Z from the current v2026.7.31 checkout. Host diagnostics showed /tmp at 89% inode utilization during the earlier acceptance/release-gate run. The packed consumer and full 6,585-test coverage suite subsequently passed with home-backed temporary storage. This is a bounded runner resource-exhaustion incident, not a product or dependency regression; resolve the isolated event and re-run the live Sentry/telemetry release gate."
+  "2026-07-31T08:31:36.136Z","harness:codex","Final evidence: @sentry/node 10.69 and Greptile 3.3 passed clean audit, packed strict NodeNext consumer compilation, executable containment, 407-file/6,585-test exact 100/100/100/100 coverage, and the live Sentry/telemetry gate with 0 blocking issues."
+learnings[1]{created_at,author,text}:
+  "2026-07-31T08:31:36.898Z","harness:codex","Dependency compatibility must be proven from a packed unrelated TypeScript consumer, not only the repository build. Transient package-manager write failures under tmpfs inode pressure should be separated from declaration regressions with home-backed acceptance."
+files[3]{path,scope,note}:
+  package.json,project,compatible Sentry runtime and Greptile review CLI versions
+  pnpm-lock.yaml,project,resolved dependency graph for compatible minor refresh
+  tests/unit/packages/package-manifest.spec.ts,project,ratchets the packed-consumer-safe Sentry declaration release
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry/instrument.spec.ts tests/unit/scripts/release/sentry-telemetry-gate.spec.ts tests/unit/scripts/release/greptile-review-gate.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts,project,240
+  pnpm audit --audit-level high,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms8nwlrb-tnxc64,test,passed,"2026-07-31T08:09:47.577Z","2026-07-31T08:09:57.287Z","2026-07-31T08:09:57.287Z",2,0,0
+close_reason: "Delivered compatible Sentry and Greptile refresh with audit, declaration ratchet, isolated packed-consumer proof, complete coverage/release gates, and clean live observability."
+body: ""

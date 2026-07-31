@@ -1,6 +1,6 @@
 # Relationship graph semantics
 
-Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), and [pm-m2il](../.agents/pm/chores/pm-m2il.toon).
+Tracked by [pm-4jqm](../.agents/pm/decisions/pm-4jqm.toon), [pm-ju83](../.agents/pm/features/pm-ju83.toon), [pm-8xr8](../.agents/pm/stories/pm-8xr8.toon), [pm-m2il](../.agents/pm/chores/pm-m2il.toon), and [pm-jiusod](../.agents/pm/issues/pm-jiusod.toon).
 
 ## Decision
 
@@ -173,6 +173,13 @@ items or history.
 `analyzeRelationshipExecution` runs exact deterministic topological layering and longest-path analysis only over kinds registered with `ordering: true`. It reports the ready frontier, prerequisite depth, critical path, and genuine strongly connected ordering cycles separately from associative cycles. `analyzeGraphImpact` returns a bounded affected set with an exact shortest explanation path per returned node. `analyzeKnowledgeGraph` reports weak and strong components, intentional-or-unreviewed isolates, and unique-neighbor hubs without assigning an opaque authority score. `compareRelationshipSnapshots` exposes exact temporal edge additions and removals.
 
 Every analytics result identifies its algorithm and edge family. Exact algorithms stay exact when a result is bounded: `truncated` means additional rows exist, not that returned paths or distances are estimates. Future approximations must add their method, seed, freshness, and confidence or error bounds rather than reuse the exact envelope.
+
+Every result that publishes `edge_count` also publishes `edge_basis`.
+Workspace analysis and dependency projections use `deduplicated_directed`;
+centrality uses `simple_undirected` because its adjacency intentionally
+collapses reciprocal and parallel edges to unique endpoint pairs; generated
+scale fixtures use `fixture_generated`. Counts with different bases describe
+different graph projections and must not be compared as evidence of edge loss.
 
 ## Bounded agent context
 

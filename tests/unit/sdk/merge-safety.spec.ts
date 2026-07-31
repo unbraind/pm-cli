@@ -671,6 +671,9 @@ describe("public merge-safety SDK primitives", () => {
         expect(preview.gitattributes.patterns).toContain(
           '".agents/pm/tasks/*.toon" merge=pm-item-toon',
         );
+        expect(preview.gitattributes.patterns).toContain(
+          '".agents/pm/**/*.toon" merge=pm-item-toon',
+        );
 
         const gitConfigLock = path.join(
           context.tempRoot,
@@ -815,6 +818,18 @@ describe("public merge-safety SDK primitives", () => {
               "merge",
               "--",
               "Project Docs/pm/tasks/pm-space.toon",
+            ],
+            { cwd: context.tempRoot, encoding: "utf8" },
+          ),
+        ).toContain("merge: pm-item-toon");
+        expect(
+          execFileSync(
+            "git",
+            [
+              "check-attr",
+              "merge",
+              "--",
+              "Project Docs/pm/package-defined/pm-custom.toon",
             ],
             { cwd: context.tempRoot, encoding: "utf8" },
           ),

@@ -33,6 +33,7 @@ import {
 } from "../../../src/sdk/runtime-primitives.js";
 import type { ItemDocument } from "../../../src/types.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { withIsolatedHarnessEnvironment } from "../../helpers/withIsolatedHarnessEnvironment.js";
 
 const tempRoots: string[] = [];
 const originalSourceWorkspaceRoot = process.env.PM_SOURCE_WORKSPACE_ROOT;
@@ -168,39 +169,30 @@ describe("agent runtime SDK primitives", () => {
     });
   });
 
-  it("uses ambient signals by default and records extensible effort and role provenance", () => {
-    const previousThread = process.env.CODEX_THREAD_ID;
-    const previousModel = process.env.PM_AGENT_MODEL;
-    const previousEffort = process.env.PM_AGENT_EFFORT;
-    const previousRole = process.env.PM_AGENT_ROLE;
-    process.env.CODEX_THREAD_ID = "ambient-thread";
-    process.env.PM_AGENT_MODEL = "ambient-model";
-    process.env.PM_AGENT_EFFORT = "xhigh";
-    process.env.PM_AGENT_ROLE = "reviewer";
-    try {
-      expect(detectAgentIdentity()).toEqual({
-        harness: "codex",
-        instance: expect.any(String),
-        model: "ambient-model",
-        model_source: "override",
-        provenance: {
-          effort: { source: "override", value: "xhigh" },
-          model: { source: "override", value: "ambient-model" },
-          role: { source: "override", value: "reviewer" },
-        },
-        session: "ambient-thread",
-      });
-      expect(detectHarnessIdentity()).toBe("codex");
-    } finally {
-      if (previousThread === undefined) delete process.env.CODEX_THREAD_ID;
-      else process.env.CODEX_THREAD_ID = previousThread;
-      if (previousModel === undefined) delete process.env.PM_AGENT_MODEL;
-      else process.env.PM_AGENT_MODEL = previousModel;
-      if (previousEffort === undefined) delete process.env.PM_AGENT_EFFORT;
-      else process.env.PM_AGENT_EFFORT = previousEffort;
-      if (previousRole === undefined) delete process.env.PM_AGENT_ROLE;
-      else process.env.PM_AGENT_ROLE = previousRole;
-    }
+  it("uses ambient signals by default and records extensible effort and role provenance", async () => {
+    await withIsolatedHarnessEnvironment(
+      {
+        CODEX_THREAD_ID: "ambient-thread",
+        PM_AGENT_MODEL: "ambient-model",
+        PM_AGENT_EFFORT: "xhigh",
+        PM_AGENT_ROLE: "reviewer",
+      },
+      () => {
+        expect(detectAgentIdentity()).toEqual({
+          harness: "codex",
+          instance: expect.any(String),
+          model: "ambient-model",
+          model_source: "override",
+          provenance: {
+            effort: { source: "override", value: "xhigh" },
+            model: { source: "override", value: "ambient-model" },
+            role: { source: "override", value: "reviewer" },
+          },
+          session: "ambient-thread",
+        });
+        expect(detectHarnessIdentity()).toBe("codex");
+      },
+    );
   });
 
   it("retains explicit default provenance overrides without requiring a harness marker", () => {
@@ -273,9 +265,9 @@ describe("agent runtime SDK primitives", () => {
         runWithWorkspaceHarnessSignalDescriptors([descriptor], () => undefined),
       ).toThrowError(/Harness signal descriptor collision.*synthetic-agent/u);
       disposers[0]!();
-      expect(
-        detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } }),
-      ).toBe("synthetic-agent");
+      expect(detectHarnessIdentity({ env: { SYNTHETIC_AGENT: "1" } })).toBe(
+        "synthetic-agent",
+      );
       disposers[0]!();
       disposers[1]!();
       expect(
@@ -436,32 +428,27 @@ describe("agent runtime SDK primitives", () => {
       const id = (created.json as { item: { id: string } }).item.id;
       const settings = await readSettings(context.pmPath);
       await writeSettings(context.pmPath, { ...settings, author_default: "" });
-      const previousCodexThreadId = process.env.CODEX_THREAD_ID;
-      delete process.env.PM_AUTHOR;
-      process.env.CODEX_THREAD_ID = "runtime-mutation-parity";
-      try {
-        await runUpdate(
-          id,
-          { description: "Updated through detected harness identity" },
-          { path: context.pmPath },
-        );
-        await runClose(
-          id,
-          "Closed through detected harness identity",
-          {
-            resolution: "Harness attribution is preserved",
-            expectedResult: "Update and close use the shared resolver",
-            actualResult: "Both history entries record detected Codex identity",
-          },
-          { path: context.pmPath },
-        );
-      } finally {
-        if (previousCodexThreadId === undefined) {
-          delete process.env.CODEX_THREAD_ID;
-        } else {
-          process.env.CODEX_THREAD_ID = previousCodexThreadId;
-        }
-      }
+      await withIsolatedHarnessEnvironment(
+        { CODEX_THREAD_ID: "runtime-mutation-parity" },
+        async () => {
+          await runUpdate(
+            id,
+            { description: "Updated through detected harness identity" },
+            { path: context.pmPath },
+          );
+          await runClose(
+            id,
+            "Closed through detected harness identity",
+            {
+              resolution: "Harness attribution is preserved",
+              expectedResult: "Update and close use the shared resolver",
+              actualResult:
+                "Both history entries record detected Codex identity",
+            },
+            { path: context.pmPath },
+          );
+        },
+      );
 
       const history = (
         await readFile(
@@ -552,7 +539,9 @@ describe("agent runtime SDK primitives", () => {
       source_workspace_root: nonRepositoryRoot,
     });
     expect(
-      resolvePortableWorkspaceContext(path.join(nonRepositoryRoot, ".agents", "pm")),
+      resolvePortableWorkspaceContext(
+        path.join(nonRepositoryRoot, ".agents", "pm"),
+      ),
     ).toEqual({
       source_workspace_root: nonRepositoryRoot,
       pm_root_rel: ".agents/pm",

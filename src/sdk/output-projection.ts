@@ -38,17 +38,19 @@ export interface OutputProjectionDeclaration {
 export interface ReadRowContract {
   /** Canonical read command that owns the result. */
   command: string;
-  /** Top-level array keys containing iterable result rows. */
+  /** Whether the result exposes iterable collections or intentionally has none. */
+  row_kind: "collection" | "none";
+  /** Dot-delimited paths to array or object-map collections containing iterable result rows. */
   row_keys: string[];
   /** Whether the command accepts an explicit row-field projection. */
   fields: "supported" | "unsupported";
-  /** Universal jq expression that iterates every declared top-level row. */
-  jq_selector: string;
+  /** Universal jq expression that iterates every declared collection path. */
+  jq_selector?: string;
 }
 
 /** Universal selector for results carrying a {@link ReadRowContract}. */
 export const PM_READ_ROW_JQ_SELECTOR =
-  ".row_contract.row_keys[] as $key | .[$key][]?";
+  '.row_contract.row_keys[] as $key | getpath($key | split(".")) | if type == "array" then .[] else if type == "object" then to_entries[] else empty end end';
 
 /** Static row declarations shared by CLI, SDK, MCP, and package consumers. */
 export const PM_READ_ROW_CONTRACTS = {
@@ -71,11 +73,14 @@ export const PM_READ_ROW_CONTRACTS = {
     fields: "unsupported",
   },
   history: { row_keys: ["compact_history", "history"], fields: "unsupported" },
-  deps: { row_keys: [], fields: "unsupported" },
+  deps: {
+    row_keys: ["graph.nodes", "graph.edges", "context.nodes", "context.edges"],
+    fields: "unsupported",
+  },
   health: { row_keys: ["checks"], fields: "unsupported" },
   aggregate: { row_keys: ["groups"], fields: "unsupported" },
   duplicates: { row_keys: ["clusters"], fields: "unsupported" },
-  stats: { row_keys: [], fields: "unsupported" },
+  stats: { row_keys: ["by_type", "by_status"], fields: "unsupported" },
 } as const satisfies Readonly<
   Record<
     string,
@@ -204,14 +209,18 @@ export function isReadRowContract(value: unknown): value is ReadRowContract {
     isRecord(value) &&
     typeof value.command === "string" &&
     value.command.trim().length > 0 &&
+    (value.row_kind === "collection" || value.row_kind === "none") &&
     Array.isArray(value.row_keys) &&
     value.row_keys.every(
       (key): key is string => typeof key === "string" && key.length > 0,
     ) &&
     new Set(value.row_keys).size === value.row_keys.length &&
     (value.fields === "supported" || value.fields === "unsupported") &&
-    typeof value.jq_selector === "string" &&
-    value.jq_selector.trim().length > 0
+    (value.row_kind === "collection"
+      ? value.row_keys.length > 0 &&
+        typeof value.jq_selector === "string" &&
+        value.jq_selector.trim().length > 0
+      : value.row_keys.length === 0 && value.jq_selector === undefined)
   );
 }
 
@@ -253,7 +262,7 @@ const READ_RESULT_SENTINEL_KEYS: Readonly<Record<string, readonly string[]>> = {
   stats: ["totals", "by_type", "by_status"],
 };
 
-/** Resolve one command's canonical top-level row collection declaration. */
+/** Resolve one command's canonical row collection declaration. */
 export function resolveReadRowContract(
   command: string,
   result: Record<string, unknown>,
@@ -268,11 +277,17 @@ export function resolveReadRowContract(
     if (subcommand.length === 0) return undefined;
     const rowKeys = GRAPH_ROW_KEYS[subcommand];
     if (rowKeys === undefined) return undefined;
+    const activeRowKeys = rowKeys.filter(
+      (key) => Array.isArray(result[key]) || isRecord(result[key]),
+    );
     return {
       command: "graph",
-      row_keys: rowKeys.filter((key) => Array.isArray(result[key])),
+      row_kind: activeRowKeys.length > 0 ? "collection" : "none",
+      row_keys: activeRowKeys,
       fields: "unsupported",
-      jq_selector: PM_READ_ROW_JQ_SELECTOR,
+      ...(activeRowKeys.length > 0
+        ? { jq_selector: PM_READ_ROW_JQ_SELECTOR }
+        : {}),
     };
   }
   const declaration = (
@@ -291,14 +306,27 @@ export function resolveReadRowContract(
     sentinelKeys === undefined ||
     !sentinelKeys.some((key) => Object.hasOwn(result, key))
     ? undefined
-    : {
-        command: rootCommand,
-        row_keys: declaration.row_keys.filter((key) =>
-          Array.isArray(result[key]),
-        ),
-        fields: declaration.fields,
-        jq_selector: PM_READ_ROW_JQ_SELECTOR,
-      };
+    : (() => {
+        const rowKeys = declaration.row_keys.filter((key) => {
+          const value = key
+            .split(".")
+            .reduce<unknown>(
+              (current, segment) =>
+                isRecord(current) ? current[segment] : undefined,
+              result,
+            );
+          return Array.isArray(value) || isRecord(value);
+        });
+        return {
+          command: rootCommand,
+          row_kind: rowKeys.length > 0 ? "collection" : "none",
+          row_keys: rowKeys,
+          fields: declaration.fields,
+          ...(rowKeys.length > 0
+            ? { jq_selector: PM_READ_ROW_JQ_SELECTOR }
+            : {}),
+        };
+      })();
 }
 
 function resolveDeclaredProjectionReceipt(

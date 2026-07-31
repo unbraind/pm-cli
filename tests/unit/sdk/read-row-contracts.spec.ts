@@ -12,6 +12,7 @@ describe("read row contracts", () => {
       resolveReadRowContract("list-open", { items: [{ id: "pm-a" }] }),
     ).toEqual({
       command: "list",
+      row_kind: "collection",
       row_keys: ["items"],
       fields: "supported",
       jq_selector: PM_READ_ROW_JQ_SELECTOR,
@@ -23,6 +24,7 @@ describe("read row contracts", () => {
       }),
     ).toMatchObject({
       command: "next",
+      row_kind: "collection",
       row_keys: ["recommended", "ready"],
       fields: "unsupported",
     });
@@ -36,7 +38,19 @@ describe("read row contracts", () => {
       }),
     ).toMatchObject({
       command: "graph",
+      row_kind: "collection",
       row_keys: ["affected"],
+      fields: "unsupported",
+    });
+    expect(
+      resolveReadRowContract("graph", {
+        subcommand: "centrality",
+        projection: { mode: "summary" },
+      }),
+    ).toEqual({
+      command: "graph",
+      row_kind: "none",
+      row_keys: [],
       fields: "unsupported",
     });
   });
@@ -58,6 +72,7 @@ describe("read row contracts", () => {
   it("preserves an existing row declaration without replacing it", () => {
     const rowContract = {
       command: "package-list",
+      row_kind: "collection" as const,
       row_keys: ["rows"],
       fields: "unsupported" as const,
       jq_selector: ".rows[]",
@@ -123,6 +138,7 @@ describe("read row contracts", () => {
     expect(
       isReadRowContract({
         command: "package-list",
+        row_kind: "collection",
         row_keys: ["rows"],
         fields: "unsupported",
         jq_selector: ".rows[]",
@@ -131,9 +147,9 @@ describe("read row contracts", () => {
     expect(
       isReadRowContract({
         command: "package-summary",
+        row_kind: "none",
         row_keys: [],
         fields: "unsupported",
-        jq_selector: PM_READ_ROW_JQ_SELECTOR,
       }),
     ).toBe(true);
     expect(
@@ -144,6 +160,7 @@ describe("read row contracts", () => {
     ).toMatchObject({
       row_contract: {
         command: "list",
+        row_kind: "collection",
         row_keys: ["items"],
         fields: "supported",
         jq_selector: PM_READ_ROW_JQ_SELECTOR,
@@ -155,6 +172,50 @@ describe("read row contracts", () => {
         row_contract: {},
       }),
     ).toEqual({ rows: [] });
+  });
+
+  it("names array and map collections but omits selectors from scalar results", () => {
+    expect(
+      resolveReadRowContract("deps", {
+        graph: {
+          nodes: [{ id: "pm-a" }],
+          edges: [{ source: "pm-a", target: "pm-b" }],
+        },
+      }),
+    ).toMatchObject({
+      row_kind: "collection",
+      row_keys: ["graph.nodes", "graph.edges"],
+      jq_selector: PM_READ_ROW_JQ_SELECTOR,
+    });
+    expect(
+      resolveReadRowContract("deps", {
+        tree: { id: "pm-a", dependencies: [] },
+      }),
+    ).toMatchObject({
+      row_kind: "none",
+      row_keys: [],
+    });
+    expect(
+      resolveReadRowContract("stats", {
+        totals: { all: 2 },
+        by_type: { Task: 2 },
+        by_status: { open: 2 },
+      }),
+    ).toMatchObject({
+      row_kind: "collection",
+      row_keys: ["by_type", "by_status"],
+      jq_selector: PM_READ_ROW_JQ_SELECTOR,
+    });
+    expect(
+      resolveReadRowContract("get", {
+        item: { id: "pm-a" },
+      }),
+    ).toEqual({
+      command: "get",
+      row_kind: "none",
+      row_keys: [],
+      fields: "supported",
+    });
   });
 
   it("attaches row metadata alongside omission evidence without changing rows", () => {
@@ -172,6 +233,7 @@ describe("read row contracts", () => {
     expect(result).toMatchObject({
       items,
       row_contract: {
+        row_kind: "collection",
         row_keys: ["items"],
         fields: "supported",
       },

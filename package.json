@@ -197,7 +197,7 @@
     }
   },
   "dependencies": {
-    "@sentry/node": "10.67.0",
+    "@sentry/node": "10.69.0",
     "@toon-format/toon": "^4.1.0",
     "@types/node": ">=22",
     "commander": "^15.0.0",
@@ -217,7 +217,7 @@
     "eslint-plugin-sonarjs": "^4.2.0",
     "eslint-plugin-unicorn": "^72.0.0",
     "fast-check": "^4.9.0",
-    "greptile": "^3.2.3",
+    "greptile": "^3.3.1",
     "jscpd": "^5.0.14",
     "tsx": "^4.23.1",
     "typescript": "^6.0.3",

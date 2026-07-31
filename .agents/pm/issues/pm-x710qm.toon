@@ -2,11 +2,13 @@ id: pm-x710qm
 title: "Four read surfaces publish a jq_selector that is guaranteed to return nothing: the self-describing row contract is present, vacuous, and indistinguishable from an empty result"
 description: "deps, stats, aggregate and get emit the universal jq_selector with row_keys empty, so the documented extraction one-liner silently yields zero rows on surfaces that demonstrably have rows."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ergonomics,composability,contracts,pm-cli,token-efficiency
 created_at: "2026-07-31T06:03:48.007Z"
-updated_at: "2026-07-31T06:15:31.336Z"
+updated_at: "2026-07-31T08:31:57.469Z"
+closed_at: "2026-07-31T08:31:05.236Z"
+completed_at: "2026-07-31T08:31:05.236Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: No read surface publishes a jq_selector that cannot return the rows its envelope contains; Surfaces with row collections populate row_keys with the real key names even when --fields is unsupported; A gate evaluates each read command envelope against its own published selector and asserts the returned row count matches the envelope contents; Surfaces that emit no envelope at all (the NDJSON event stream) are declared as such in the contract documentation rather than discovered by a parser returning null
@@ -16,6 +18,7 @@ parent: pm-mpbb
 risk: low
 confidence: high
 severity: medium
+resolution: Implemented truthful collection and no-row contracts with nested-path jq selection; validated every published selector against real envelopes.
 expected_result: "If a read surface publishes jq_selector, evaluating it returns the rows the envelope contains."
 actual_result: "deps (18 edges), stats, aggregate and get publish the selector with row_keys empty; it returns zero rows on all four."
 component: cli/read-surfaces
@@ -28,10 +31,37 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-psy1,related,"2026-07-31T06:09:23.018Z","harness:claude-code","cli:update:dep",detected
   pm-sb0tns,related,"2026-07-31T06:09:23.018Z","harness:claude-code","cli:update:dep",detected
   pm-xgcp18,verifies,"2026-07-31T06:09:23.018Z","harness:claude-code","cli:update:dep",detected
-files[1]{path,scope,note}:
-  src/sdk/dependencies.ts,project,deps envelope publishes jq_selector with row_keys empty while carrying node and edge collections
-tests[1]{command,scope,timeout_seconds}:
-  pm deps pm-doxj --json,project,240
-docs[1]{path,scope,note}:
+comments[5]{created_at,author,text}:
+  "2026-07-31T07:05:59.450Z","harness:codex","Implementation correction: get is not universally defective. A leaf get is a scalar envelope and now declares row_kind=none without jq_selector; get with requested children declares a real children collection. deps exposes nodes/edges and stats exposes object-map rows. The integration gate executes the published selector through jq for every static declaration."
+  "2026-07-31T07:41:26.053Z","harness:codex","Acceptance evidence: a packed install in a fresh unrelated git repository resolved its executable inside the consumer root, emitted nested graph.nodes/graph.edges row paths, and executed the published universal jq selector over the real deps envelope."
+  "2026-07-31T08:07:47.611Z","harness:codex","TDD guard evidence: the first linked PM read correctly failed closed under schema-only sandbox context. The stored test now declares tracker context explicitly; product tests were already green."
+  "2026-07-31T08:10:36.633Z","harness:codex","Linked real-command discovery: graph summary output previously formed an invalid collection contract with zero row keys. The resolver now emits row_kind=none and omits jq_selector whenever the selected graph projection carries no row collection."
+  "2026-07-31T08:30:58.690Z","harness:codex","Final evidence: full release gates passed through 407 source files and 6,585 tests at exact 100/100/100/100 coverage; static docstring, clone, boundary, token, SDK surface and package gates all passed. Live Sentry/telemetry gate then passed with 0 critical/high issues, 0 missing error-code rows, and 0.97% finish error rate."
+learnings[1]{created_at,author,text}:
+  "2026-07-31T08:30:59.523Z","harness:codex",A universal row selector must resolve dot-delimited paths and must be omitted for scalar or summary envelopes; publishing a selector with no iterable row paths makes an empty result indistinguishable from a broken contract.
+files[6]{path,scope,note}:
+  sdk/public-surface.json,project,reviewed read row contract correction
+  src/sdk/dependencies.ts,project,dependency graph and context expose truthful nested iterable row paths
+  src/sdk/output-projection.ts,project,truthful array map and scalar row contracts
+  tests/integration/read-row-selector.integration.spec.ts,project,real jq selector conformance
+  tests/unit/sdk/output-projection.spec.ts,project,Preserves row contracts through omission receipt attachment
+  tests/unit/sdk/read-row-contracts.spec.ts,project,row contract unit coverage
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/read-row-selector.integration.spec.ts tests/unit/sdk/read-row-contracts.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts
+    scope: project
+    timeout_seconds: 240
+  - command: pm deps pm-doxj --json
+    scope: project
+    timeout_seconds: 240
+    pm_context_mode: tracker
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms8ntgys-2hkvjx,test,failed,"2026-07-31T08:07:17.389Z","2026-07-31T08:07:31.108Z","2026-07-31T08:07:31.108Z",2,1,0
+  test-local-ms8nu7vw-7x5ims,test,passed,"2026-07-31T08:07:48.357Z","2026-07-31T08:08:05.995Z","2026-07-31T08:08:05.995Z",3,0,0
+docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,command reference is where the published extraction one-liner must be stated and kept executable
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,selector and no-row semantics
+close_reason: "Delivered truthful universal SDK/CLI read-row contracts, nested path extraction, scalar/no-row semantics, real jq conformance, packed-consumer acceptance, and complete release-gate evidence."
 body: "## Measured 2026-07-31 at HEAD across nineteen read surfaces\n\nThe published extraction contract is `.row_contract.jq_selector`, whose value on every surface that emits it is:\n\n```\n.row_contract.row_keys[] as $key | .[$key][]?\n```\n\nThat expression is a pure function of `row_keys`. When `row_keys` is empty or absent, it yields nothing — always, regardless of what the envelope actually contains.\n\n| class | surfaces | count |\n|---|---|---|\n| contract usable (`row_keys` populated) | list, search, history, activity, health, next, context | 7 |\n| contract present but vacuous (`row_keys: []` or absent, selector still published) | deps, stats, aggregate, get | 4 |\n| no `row_contract` at all | comments, notes, files, docs, graph, contracts, validate | 7 |\n| no envelope (NDJSON stream, no contract possible) | events | 1 |\n\n## The defect this item owns\n\nThe middle class. `pm deps pm-doxj --json` emits:\n\n```\n\"row_contract\": {\"command\":\"deps\",\"row_keys\":[],\"fields\":\"unsupported\",\n                 \"jq_selector\":\".row_contract.row_keys[] as $key | .[$key][]?\"}\n```\n\nThe item has 18 dependency edges. The published selector returns zero rows. `pm stats --json` behaves identically while carrying `by_type` and `by_status` collections.\n\nA missing contract fails loudly: the agent sees `null`, knows the surface is not covered, and special-cases it. A vacuous contract fails silently: the agent runs the documented one-liner, gets an empty stream, and cannot distinguish \"this surface never populates row_keys\" from \"the query matched nothing\". Silence is the worse failure because it is indistinguishable from a legitimate empty result, and every downstream count, loop and guard reads zero.\n\n## Relationship to the general row-contract programme\n\n`pm-sb0tns` owns the general problem — that no single shell or jq expression works across pm — and its acceptance criteria already require a documented one-liner exercised by a test, and require surfaces that cannot project fields to state why. This item is the narrow, immediately fixable subset: a surface that declares `fields: \"unsupported\"` and carries no row keys must not also publish a selector that is guaranteed to return nothing. Either it names its real row collection, or it omits `jq_selector` so the absence is visible.\n\nThis is not a request to make every surface projectable. It is a request that the self-describing contract never describe itself falsely.\n\n## Minimal correct shape\n\n- A surface that has row collections populates `row_keys` with their real key names, even when `--fields` is unsupported. `deps` has `nodes` and `edges`; `stats` has its count maps; `aggregate` has its groups.\n- A surface with genuinely no row collection omits `jq_selector` entirely, or sets it to a value the contract defines as \"no rows on this surface\".\n- A gate asserts the invariant directly: for every read command, if `row_contract.jq_selector` is present then evaluating it against the same envelope must return the same row count the envelope actually contains. That is checkable without knowing anything about the individual command."

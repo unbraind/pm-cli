@@ -2,11 +2,13 @@ id: pm-631t9p
 title: "Harness-detection specs inherit the ambient harness, so four tests fail under Claude Code and pass in CI on the same commit: the local verdict depends on which agent ran it"
 description: "Four specs set one harness signal without clearing others; the detector prefers claude-code, so a pristine tree is red locally under Claude Code and green on runners that carry no harness variables."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: ci,harness-detection,hermeticity,local-hosted-parity,pm-cli,testing
 created_at: "2026-07-31T06:27:13.527Z"
-updated_at: "2026-07-31T06:28:28.432Z"
+updated_at: "2026-07-31T08:31:59.905Z"
+closed_at: "2026-07-31T08:31:32.444Z"
+completed_at: "2026-07-31T08:31:32.444Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "Harness-detection specs clear every environment key named in the detector registry before setting the keys under test, with the clear-list derived from the registry rather than hardcoded; The suite produces identical results under at least two synthetic harness environments, asserted by running it twice in CI rather than by inspection; A gate detects specs that read an environment variable they did not set, so a newly registered harness cannot reintroduce the hazard; The hosted pipeline exercises at least one non-empty harness environment, so this class stops being invisible to CI"
@@ -19,6 +21,7 @@ confidence: high
 severity: high
 environment: "HEAD at 2026.7.31, Linux, node scripts/run-tests.mjs test, ambient CLAUDECODE=1"
 repro_steps: node scripts/run-tests.mjs test  => 4 failed / 6579 passed; then env -u CLAUDECODE -u CLAUDE_CODE -u CLAUDE_CODE_SESSION_ID -u CLAUDE_CODE_ENTRYPOINT node scripts/run-tests.mjs test -- tests/unit/core/shared/shared-helpers.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts  => 65 passed
+resolution: Introduced registry-derived harness environment isolation and mandatory Claude Code/Codex hosted negative-control runs.
 expected_result: The test verdict for a commit is identical regardless of which harness runs the suite.
 actual_result: "Four harness-detection specs fail under Claude Code and pass under codex and on bare CI runners, on the same commit with no source changes."
 component: tests/harness-detection
@@ -33,13 +36,27 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-xp1xsw,implements,"2026-07-31T06:27:34.005Z","harness:claude-code","cli:update:dep",detected
   pm-z9x1r2,discovered_from,"2026-07-31T06:27:34.005Z","harness:claude-code","cli:update:dep",detected
   pm-zlv8jl,related,"2026-07-31T06:27:34.005Z","harness:claude-code","cli:update:dep",detected
-learnings[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
+  "2026-07-31T07:41:28.805Z","harness:codex","Acceptance evidence: local Claude Code and Codex host-signal runs passed with the shared derived isolation helper; CI registers both as mandatory negative-control gates."
+  "2026-07-31T08:31:28.359Z","harness:codex","Final evidence: registry-derived isolation passed under synthetic Claude Code and Codex host environments; both hosted gates are mandatory, and the full 6,585-test suite passed exact 100/100/100/100 coverage."
+learnings[2]{created_at,author,text}:
   "2026-07-31T06:28:28.432Z","harness:claude-code","A detector and its test cannot share an input. The harness-detection specs set one harness signal and inherit the rest of the environment, so they verify that detection responds to the ambient environment — the exact variable they are trying to control. The failure is invisible on CI because runners have no harness variables, which means the strictest-looking gate is running in the weakest environment available. When a feature reads the environment, its tests must construct the whole environment, and the clear-list must be derived from the same registry the feature reads so a new entry cannot reintroduce the hazard."
-files[4]{path,scope,note}:
+  "2026-07-31T08:31:29.117Z","harness:codex",Environment-derived behavior must be tested against a fully constructed environment. Deriving cleared variables from the detector registry prevents a newly added harness signal from silently invalidating the oracle.
+files[8]{path,scope,note}:
+  .github/workflows/ci.yml,project,two hosted harness gates
+  scripts/release/gate-registry.json,project,mandatory harness isolation gate owner and failure taxonomy
   src/core/shared/author.ts,project,detector registry declaring claude-code ahead of codex; the clear-list must be derived from this registry
+  tests/helpers/withIsolatedHarnessEnvironment.ts,project,registry-derived harness isolation
+  tests/integration/ci-workflow-contract.spec.ts,project,Verifies both hosted harness isolation gates remain mandatory
   tests/unit/commands/claim-command.spec.ts,project,same hazard in the claim ownership detection test
   tests/unit/core/shared/shared-helpers.spec.ts,project,sets CODEX_THREAD_ID without clearing ambient claude-code signals
   tests/unit/sdk/agent-runtime-primitives.spec.ts,project,two ambient-signal tests in the SDK agent runtime primitives suite
-tests[1]{command,scope,timeout_seconds}:
+tests[4]{command,scope,timeout_seconds}:
+  CLAUDECODE=1 node scripts/run-tests.mjs test -- tests/unit/core/shared/shared-helpers.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+  CODEX_THREAD_ID=hosted-codex node scripts/run-tests.mjs test -- tests/unit/core/shared/shared-helpers.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/core/shared/shared-helpers.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,600
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms8nwdld-ydl1ke,test,passed,"2026-07-31T08:09:00.024Z","2026-07-31T08:09:46.705Z","2026-07-31T08:09:46.705Z",4,0,0
+close_reason: "Delivered registry-derived harness isolation, mandatory dual-host CI gates, focused and full-suite proof, and complete release-gate evidence."
 body: "## Reproduced 2026-07-31 at HEAD, zero source changes\n\n`node scripts/run-tests.mjs test` on a clean tree: **4 failed, 6,579 passed**.\n\n```\ntests/unit/core/shared/shared-helpers.spec.ts\n  x detects the harness after empty configured input while explicit blank stays unknown\n    Expected: \"harness:codex\"   Received: \"harness:claude-code\"\ntests/unit/commands/claim-command.spec.ts\n  x uses detected harness ownership when PM_AUTHOR and configured author are absent\n    Expected: \"harness:codex\"   Received: \"harness:claude-code\"\ntests/unit/sdk/agent-runtime-primitives.spec.ts\n  x uses ambient signals by default and records extensible effort and role provenance\n  x attributes update and close mutations to the detected harness\n```\n\nSame three spec files, same commit, with the ambient Claude Code signal removed:\n\n```\nenv -u CLAUDECODE -u CLAUDE_CODE -u CLAUDE_CODE_SESSION_ID -u CLAUDE_CODE_ENTRYPOINT \\\n  node scripts/run-tests.mjs test -- <the three spec files>\n=> Test Files 3 passed (3), Tests 65 passed (65)\n```\n\n## Mechanism\n\n`src/core/shared/author.ts` declares harness detectors in priority order; claude-code (`CLAUDE_CODE`, `CLAUDECODE`) is declared ahead of codex (`CODEX_HOME`, `CODEX_CI`, `CODEX_THREAD_ID`).\n\nThe tests set the signal for the harness they want:\n\n```ts\nprocess.env.CODEX_THREAD_ID = \"test-thread\";\nexpect(resolveAuthor(undefined, \"   \")).toBe(\"harness:codex\");\n```\n\nThey do not neutralise the signals of every other harness. Under any harness declared **above** codex the ambient variable wins and the assertion fails. Under any harness declared below it, or under no harness at all, it passes.\n\n## Why this matters more than four red tests\n\n**The verdict on a commit depends on which agent ran the tests.** This repository is developed by a fleet of agents across several harnesses, and the local gate is the first thing each of them runs. An agent operating under Claude Code sees four failures on a pristine checkout and must decide whether it broke something; an agent under a lower-priority harness sees green on the identical tree.\n\n**The hosted pipeline is structurally blind to this class.** GitHub Actions runners carry no harness environment variables, so codex is the only signal present and every one of these tests passes in CI. The failure exists only where humans and agents actually work, and the gate that is supposed to be the stricter one cannot observe it. This is the inverse of the usual local-green/CI-red asymmetry and it is worse, because the passing signal is the one that gets published.\n\n**It falsifies a claim the tests are making.** These specs exist to prove that harness auto-detection is correct. They currently prove that detection responds to the ambient environment, which is what they are trying to control for. A test for environment-derived behaviour that inherits the environment is not testing the behaviour.\n\n## Fix shape\n\nHarness-detection specs must construct the full environment they assert against, not mutate one variable of an inherited one. Concretely: a helper that clears every key named in the detector registry, then sets exactly the keys under test, restoring afterwards. Deriving the clear-list from the registry rather than hardcoding it means a newly registered harness cannot silently reintroduce the hazard.\n\nThe general rule is stronger and belongs in the gate: no spec may read an environment variable it did not set. That is checkable — run the suite twice under two synthetic harness environments and require byte-identical results.\n\n## Relationship to adjacent owners\n\nNot the flake ratchet: this is fully deterministic given the environment, so a re-run never turns it green and quarantine is the wrong remedy. Not the harness provenance defect, which is about model and session fields being inexpressible rather than about detection precedence. It is a concrete instance of the local-versus-hosted parity gap, and it is a concrete instance of the self-verification limit: the harness identity detector is verified by tests running under a harness, so the detector and its oracle share an input."

@@ -251,7 +251,14 @@ export function buildMergeAttributePatterns(
 ): string[] {
   const prefix =
     trackerRelativeRoot.length > 0 ? `${trackerRelativeRoot}/` : "";
-  const patterns: string[] = [];
+  // Package-owned types can register folders at runtime, and a branch can
+  // contain their items before the receiving branch has installed the package.
+  // Fence every tracker TOON/Markdown item first; the explicit per-type rows
+  // below remain useful diagnostics for registry drift and override nothing.
+  const patterns: string[] = [
+    `${quoteGitAttributePattern(`${prefix}**/*.toon`)} merge=pm-item-toon`,
+    `${quoteGitAttributePattern(`${prefix}**/*.md`)} merge=pm-item-markdown`,
+  ];
   for (const folder of typeFolders) {
     patterns.push(
       `${quoteGitAttributePattern(`${prefix}${folder}/*.toon`)} merge=pm-item-toon`,

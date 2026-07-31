@@ -335,6 +335,7 @@ describe("relationship graph scale fixtures", () => {
       idPrefix: "item",
       kind: "implements",
     });
+    expect(star.edge_basis).toBe("fixture_generated");
     expect(star.edge_count).toBe(2);
     expect([...star.edges]).toEqual([
       { source: "item-0", target: "item-2", kind: "implements" },

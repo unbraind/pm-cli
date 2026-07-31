@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Harness-detection specs inherit the ambient harness, so four tests fail under Claude Code and pass in CI on the same commit: the local verdict depends on which agent ran it ([pm-631t9p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-631t9p.toon))
+- Extension-registered item types are created, stored and versioned like any other item but are invisible to the merge fence and its drift detector, which reports the fence clean ([pm-5rexki](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5rexki.toon))
+- Four edge-counting conventions publish under one edge_count field: graph analyze reports 10046 and graph centrality 7351 for the same graph at the same cache fingerprint ([pm-jiusod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jiusod.toon))
+- Four read surfaces publish a jq_selector that is guaranteed to return nothing: the self-describing row contract is present, vacuous, and indistinguishable from an empty result ([pm-x710qm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x710qm.toon))
+
+### Other
+
+- Refresh compatible Sentry 10.69 and Greptile 3.3 dependencies ([pm-7564ov](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7564ov.toon))
+
 ## 2026.7.31 - 2026-07-31
 
 ### Fixed

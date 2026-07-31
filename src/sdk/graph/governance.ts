@@ -74,6 +74,8 @@ export interface RelationshipCoverageProfile {
   nodes: number;
   /** Total deduplicated indexed edges. */
   edges: number;
+  /** Counting convention used by edges and edges_by_kind. */
+  edge_basis: "deduplicated_directed";
   /** Deterministic per-kind edge counts. */
   edges_by_kind: Record<string, number>;
   /** Nodes whose lifecycle status is active (non-terminal, non-missing). */
@@ -741,6 +743,7 @@ function collectCoverageReport(
     profile: {
       nodes: assembly.graph.nodes().length,
       edges: assembly.graph.edges().length,
+      edge_basis: "deduplicated_directed",
       edges_by_kind: Object.fromEntries(
         Object.entries(edgesByKind).sort(([left], [right]) =>
           left.localeCompare(right),

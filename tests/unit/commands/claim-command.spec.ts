@@ -14,10 +14,7 @@ import {
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import {
-  detectHarnessIdentity,
-  runWithHarnessDetectionSignals,
-} from "../../../src/core/shared/author.js";
+import { runWithHarnessDetectionSignals } from "../../../src/core/shared/author.js";
 import { getHistoryPath } from "../../../src/core/store/paths.js";
 import {
   readSettings,
@@ -27,6 +24,7 @@ import {
   withTempPmPath,
   type TempPmContext,
 } from "../../helpers/withTempPmPath.js";
+import { withIsolatedHarnessEnvironment } from "../../helpers/withIsolatedHarnessEnvironment.js";
 
 function createTask(
   context: TempPmContext,
@@ -199,12 +197,14 @@ describe("runClaim/runRelease", () => {
         forced: false,
         skipped: true,
       });
-      const unknown = await claimNextFromRecommendations(
-        [recommendation],
-        false,
-        {},
-        { ifAvailable: true },
-        claimRunner,
+      const unknown = await withIsolatedHarnessEnvironment({}, () =>
+        claimNextFromRecommendations(
+          [recommendation],
+          false,
+          {},
+          { ifAvailable: true },
+          claimRunner,
+        ),
       );
       process.env.PM_AUTHOR = "environment-author";
       const environment = await claimNextFromRecommendations(
@@ -222,13 +222,9 @@ describe("runClaim/runRelease", () => {
         claimRunner,
       );
 
-      const detectedHarness = detectHarnessIdentity({
-        env: process.env,
-        argv: [process.execPath, ...process.argv],
-      });
       expect(unknown).toMatchObject({
         available: false,
-        claimed_by: detectedHarness ? `harness:${detectedHarness}` : "unknown",
+        claimed_by: "unknown",
         skipped: true,
         attempts: 1,
         recommendation: null,
@@ -583,17 +579,14 @@ describe("runClaim/runRelease", () => {
       const released = await runRelease(id, false, {
         path: context.pmPath,
       });
-      const afterHistory = context.runCli(
-        ["history", id, "--json", "--full"],
-        { expectJson: true },
-      );
+      const afterHistory = context.runCli(["history", id, "--json", "--full"], {
+        expectJson: true,
+      });
 
       expect(released.previous_assignee).toBeNull();
       expect(released.item.assignee).toBeUndefined();
       expect(released.item.claim_principal).toBeUndefined();
-      expect(
-        (afterHistory.json as { history: unknown[] }).history.length,
-      ).toBe(
+      expect((afterHistory.json as { history: unknown[] }).history.length).toBe(
         (beforeHistory.json as { history: unknown[] }).history.length + 1,
       );
     });
@@ -675,30 +668,20 @@ describe("runClaim/runRelease", () => {
       });
       const settings = await readSettings(context.pmPath);
       await writeSettings(context.pmPath, { ...settings, author_default: "" });
-      const previousAuthor = process.env.PM_AUTHOR;
-      const previousCodexThread = process.env.CODEX_THREAD_ID;
-      delete process.env.PM_AUTHOR;
-      process.env.CODEX_THREAD_ID = "claim-test-thread";
-      try {
-        const claimResult = await runClaim(id, false, { path: context.pmPath });
-        expect(claimResult.item.assignee).toBe("harness:codex");
+      await withIsolatedHarnessEnvironment(
+        { CODEX_THREAD_ID: "claim-test-thread" },
+        async () => {
+          const claimResult = await runClaim(id, false, {
+            path: context.pmPath,
+          });
+          expect(claimResult.item.assignee).toBe("harness:codex");
 
-        const releaseResult = await runRelease(id, false, {
-          path: context.pmPath,
-        });
-        expect(releaseResult.item.assignee).toBeUndefined();
-      } finally {
-        if (previousAuthor === undefined) {
-          delete process.env.PM_AUTHOR;
-        } else {
-          process.env.PM_AUTHOR = previousAuthor;
-        }
-        if (previousCodexThread === undefined) {
-          delete process.env.CODEX_THREAD_ID;
-        } else {
-          process.env.CODEX_THREAD_ID = previousCodexThread;
-        }
-      }
+          const releaseResult = await runRelease(id, false, {
+            path: context.pmPath,
+          });
+          expect(releaseResult.item.assignee).toBeUndefined();
+        },
+      );
     });
   });
 

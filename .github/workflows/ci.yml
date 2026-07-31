@@ -219,6 +219,20 @@ jobs:
           pnpm dogfood:package-first
           node scripts/smoke-claude-plugin.mjs
 
+      - name: Verify test isolation inside a Claude Code host
+        if: matrix.gate == 'smokes'
+        env:
+          CLAUDECODE: "1"
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/unit/core/shared/shared-helpers.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts
+
+      - name: Verify test isolation inside a Codex host
+        if: matrix.gate == 'smokes'
+        env:
+          CODEX_THREAD_ID: "hosted-ci-contract"
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/unit/core/shared/shared-helpers.spec.ts tests/unit/commands/claim-command.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts
+
       - name: Run advisory search eval harness
         if: matrix.gate == 'smokes'
         continue-on-error: true

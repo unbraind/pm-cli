@@ -50,6 +50,10 @@ describe("SDK and CLI context-integrity primitives", () => {
 
   it("fences current and future authoritative nested JSON documents", () => {
     const patterns = buildMergeAttributePatterns(".agents/pm", ["tasks"]);
+    expect(patterns).toContain('".agents/pm/**/*.toon" merge=pm-item-toon');
+    expect(patterns).toContain(
+      '".agents/pm/**/*.md" merge=pm-item-markdown',
+    );
     expect(patterns).toContain('".agents/pm/**/*.json" merge=pm-json');
   });
 

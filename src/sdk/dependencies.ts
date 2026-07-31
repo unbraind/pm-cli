@@ -178,6 +178,8 @@ export interface DepsResult {
   node_count: number;
   /** Number of edge entries represented by this result. */
   edge_count: number;
+  /** Counting convention used by edge_count. */
+  edge_basis: "deduplicated_directed";
   /**
    * Number of missing entries represented by this result.
    *
@@ -618,7 +620,10 @@ function countDependencyGraph(
   rootId: string,
   index: Map<string, IndexedItem>,
   maxDepth: number | undefined,
-): Pick<DepsResult, "node_count" | "edge_count" | "missing_count"> {
+): Pick<
+  DepsResult,
+  "node_count" | "edge_count" | "edge_basis" | "missing_count"
+> {
   const nodeIds = new Set<string>();
   const edgeKeys = new Set<string>();
   const missingIds = new Set<string>();
@@ -651,6 +656,7 @@ function countDependencyGraph(
   return {
     node_count: nodeIds.size,
     edge_count: edgeKeys.size,
+    edge_basis: "deduplicated_directed",
     missing_count: missingIds.size,
   };
 }
@@ -820,6 +826,7 @@ function createContextDepsResult(params: {
     format: "context",
     node_count: context.nodes.length + 1,
     edge_count: context.edges.length,
+    edge_basis: "deduplicated_directed",
     missing_count: missingCount,
     missing_scope: "traversal",
     missing_reference_count: missingReferences.length,
@@ -1150,6 +1157,7 @@ function buildTreeOrGraphDepsResult(
       format,
       node_count: graph.nodes.length,
       edge_count: graph.edges.length,
+      edge_basis: "deduplicated_directed" as const,
       missing_count: graph.missing_ids.length,
       ...(truncation ? { truncation } : {}),
     };

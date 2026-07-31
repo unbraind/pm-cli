@@ -55,6 +55,27 @@
       }
     },
     {
+      "id": "harness-environment-isolation",
+      "owner": "pm-631t9p",
+      "pipelines": [
+        "ci.yml#Verify test isolation inside a Claude Code host",
+        "ci.yml#Verify test isolation inside a Codex host"
+      ],
+      "failure_taxonomy": [
+        "ambient_harness_leak",
+        "author_attribution_mismatch",
+        "claim_identity_mismatch"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Harness-sensitive tests must produce the same verdict inside every supported agent host."
+      },
+      "negative_control": {
+        "test": "tests/unit/sdk/agent-runtime-primitives.spec.ts",
+        "assertion": "attributes update and close mutations to the detected harness"
+      }
+    },
+    {
       "id": "static-quality",
       "owner": "pm-k6t4yb",
       "pipelines": [

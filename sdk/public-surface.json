@@ -374,6 +374,34 @@
       ],
       "package_version": "2026.7.30",
       "reason": "Close extension authoring metadata contracts to reject misspelled properties and add explicit structured failure and required-lock fields."
+    },
+    {
+      "changes": [
+        "signature ./sdk:DepsResult",
+        "signature ./sdk:GraphAnalyzeResult",
+        "signature ./sdk:GraphCentralityResult",
+        "signature ./sdk:PM_READ_ROW_CONTRACTS",
+        "signature ./sdk:PM_READ_ROW_JQ_SELECTOR",
+        "signature ./sdk:ReadRowContract",
+        "signature ./sdk:RelationshipCoverageProfile",
+        "signature ./sdk:RelationshipGraphScaleFixture",
+        "signature ./sdk/core:DepsResult",
+        "signature ./sdk/graph:GraphAnalyzeResult",
+        "signature ./sdk/graph:GraphCentralityResult",
+        "signature ./sdk/graph:RelationshipCoverageProfile",
+        "signature ./sdk/graph:RelationshipGraphScaleFixture",
+        "signature ./sdk/runtime:DepsResult"
+      ],
+      "package_version": "2026.7.31",
+      "reason": "Read-row selectors now distinguish scalar envelopes from iterable collections, and every edge count declares its counting basis."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_READ_ROW_CONTRACTS",
+        "signature ./sdk:PM_READ_ROW_JQ_SELECTOR"
+      ],
+      "package_version": "2026.7.31",
+      "reason": "Read-row selectors now distinguish scalar envelopes from iterable collections, resolve nested dependency paths, and every edge count declares its counting basis."
     }
   ],
   "entrypoints": {
@@ -2832,7 +2860,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "advanced_export",
@@ -4230,7 +4258,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAnalyzeResult",
-          "signature": "export interface GraphAnalyzeResult { subcommand: \"analyze\"; node_count: number; edge_count: number; sample_limit: number; execution: GraphExecutionSummary; knowledge: GraphKnowledgeSummary; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAnalyzeResult { subcommand: \"analyze\"; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; sample_limit: number; execution: GraphExecutionSummary; knowledge: GraphKnowledgeSummary; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -4272,7 +4300,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphCentralityResult",
-          "signature": "export interface GraphCentralityResult { subcommand: \"centrality\"; node_count: number; edge_count: number; truncated: boolean; cost: GraphQueryCost; rows?: GraphCentralityRow[]; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphCentralityResult { subcommand: \"centrality\"; node_count: number; edge_count: number; edge_basis: \"simple_undirected\"; truncated: boolean; cost: GraphQueryCost; rows?: GraphCentralityRow[]; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -6846,13 +6874,13 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_READ_ROW_CONTRACTS",
-          "signature": "{ readonly context: { readonly row_keys: readonly [\"high_level\", \"low_level\"]; readonly fields: \"supported\"; }; readonly get: { readonly row_keys: readonly [\"children\"]; readonly fields: \"supported\"; }; readonly list: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly next: { readonly row_keys: readonly [\"recommended\", \"ready\", \"decision_needed\", \"blocked\", \"held_by_others\"]; readonly fields: \"unsupported\"; }; readonly search: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly activity: { readonly row_keys: readonly [\"compact_activity\", \"activity\"]; readonly fields: \"unsupported\"; }; readonly history: { readonly row_keys: readonly [\"compact_history\", \"history\"]; readonly fields: \"unsupported\"; }; readonly deps: { readonly row_keys: readonly []; readonly fields: \"unsupported\"; }; readonly health: { readonly row_keys: readonly [\"checks\"]; readonly fields: \"unsupported\"; }; readonly aggregate: { readonly row_keys: readonly [\"groups\"]; readonly fields: \"unsupported\"; }; readonly duplicates: { readonly row_keys: readonly [\"clusters\"]; readonly fields: \"unsupported\"; }; readonly stats: { readonly row_keys: readonly []; readonly fields: \"unsupported\"; }; }"
+          "signature": "{ readonly context: { readonly row_keys: readonly [\"high_level\", \"low_level\"]; readonly fields: \"supported\"; }; readonly get: { readonly row_keys: readonly [\"children\"]; readonly fields: \"supported\"; }; readonly list: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly next: { readonly row_keys: readonly [\"recommended\", \"ready\", \"decision_needed\", \"blocked\", \"held_by_others\"]; readonly fields: \"unsupported\"; }; readonly search: { readonly row_keys: readonly [\"items\"]; readonly fields: \"supported\"; }; readonly activity: { readonly row_keys: readonly [\"compact_activity\", \"activity\"]; readonly fields: \"unsupported\"; }; readonly history: { readonly row_keys: readonly [\"compact_history\", \"history\"]; readonly fields: \"unsupported\"; }; readonly deps: { readonly row_keys: readonly [\"graph.nodes\", \"graph.edges\", \"context.nodes\", \"context.edges\"]; readonly fields: \"unsupported\"; }; readonly health: { readonly row_keys: readonly [\"checks\"]; readonly fields: \"unsupported\"; }; readonly aggregate: { readonly row_keys: readonly [\"groups\"]; readonly fields: \"unsupported\"; }; readonly duplicates: { readonly row_keys: readonly [\"clusters\"]; readonly fields: \"unsupported\"; }; readonly stats: { readonly row_keys: readonly [\"by_type\", \"by_status\"]; readonly fields: \"unsupported\"; }; }"
         },
         {
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_READ_ROW_JQ_SELECTOR",
-          "signature": "\".row_contract.row_keys[] as $key | .[$key][]?\""
+          "signature": "\".row_contract.row_keys[] as $key | getpath($key | split(\\\".\\\")) | if type == \\\"array\\\" then .[] else if type == \\\"object\\\" then to_entries[] else empty end end\""
         },
         {
           "classification": "contract_data",
@@ -7710,7 +7738,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ReadRowContract",
-          "signature": "export interface ReadRowContract { command: string; row_keys: string[]; fields: \"supported\" | \"unsupported\"; jq_selector: string; }"
+          "signature": "export interface ReadRowContract { command: string; row_kind: \"collection\" | \"none\"; row_keys: string[]; fields: \"supported\" | \"unsupported\"; jq_selector?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -8178,7 +8206,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edges_by_kind: Record<string, number>; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
         },
         {
           "classification": "supported",
@@ -8364,7 +8392,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipGraphScaleFixture",
-          "signature": "export interface RelationshipGraphScaleFixture { node_count: number; edge_count: number; nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; }"
+          "signature": "export interface RelationshipGraphScaleFixture { node_count: number; edge_count: number; edge_basis: \"fixture_generated\"; nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; }"
         },
         {
           "classification": "supported",
@@ -14556,7 +14584,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "supported",
@@ -15840,7 +15868,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphAnalyzeResult",
-          "signature": "export interface GraphAnalyzeResult { subcommand: \"analyze\"; node_count: number; edge_count: number; sample_limit: number; execution: GraphExecutionSummary; knowledge: GraphKnowledgeSummary; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphAnalyzeResult { subcommand: \"analyze\"; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; sample_limit: number; execution: GraphExecutionSummary; knowledge: GraphKnowledgeSummary; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -15882,7 +15910,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GraphCentralityResult",
-          "signature": "export interface GraphCentralityResult { subcommand: \"centrality\"; node_count: number; edge_count: number; truncated: boolean; cost: GraphQueryCost; rows?: GraphCentralityRow[]; cache?: GraphCacheMetadata; }"
+          "signature": "export interface GraphCentralityResult { subcommand: \"centrality\"; node_count: number; edge_count: number; edge_basis: \"simple_undirected\"; truncated: boolean; cost: GraphQueryCost; rows?: GraphCentralityRow[]; cache?: GraphCacheMetadata; }"
         },
         {
           "classification": "supported",
@@ -16296,7 +16324,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipCoverageProfile",
-          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edges_by_kind: Record<string, number>; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
+          "signature": "export interface RelationshipCoverageProfile { nodes: number; edges: number; edge_basis: \"deduplicated_directed\"; edges_by_kind: Record<string, number>; active_nodes: number; missing_nodes: number; isolated_active_nodes: number; degree_leq_one_active_nodes: number; coverage_by_type: Record<string, RelationshipCoverageTypeProfile>; }"
         },
         {
           "classification": "supported",
@@ -16482,7 +16510,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RelationshipGraphScaleFixture",
-          "signature": "export interface RelationshipGraphScaleFixture { node_count: number; edge_count: number; nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; }"
+          "signature": "export interface RelationshipGraphScaleFixture { node_count: number; edge_count: number; edge_basis: \"fixture_generated\"; nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; }"
         },
         {
           "classification": "supported",
@@ -18420,7 +18448,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DepsResult",
-          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
+          "signature": "export interface DepsResult { id: string; format: DepsFormat; node_count: number; edge_count: number; edge_basis: \"deduplicated_directed\"; missing_count: number; missing_scope?: \"traversal\"; missing_reference_count?: number; missing_references?: DanglingDependencyReference[]; truncation?: { reasons: Array<\"max_depth\" | \"node_limit\" | \"edge_limit\" | \"token_budget\">; limits: { max_depth: number; node_limit: number; edge_limit: number; token_budget: number; }; estimated_tokens: number; total_node_count: number; total_edge_count: number; omitted_node_count: number; omitted_edge_count: number; }; tree?: DepsTreeNode; graph?: DepsGraphResult; context?: RelationshipContextResult; projection: OutputProjectionDeclaration; }"
         },
         {
           "classification": "supported",
