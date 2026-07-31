@@ -167,13 +167,17 @@ const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   },
   files: { "--note": "addNote" },
   docs: { "--note": "addNote" },
+  notes: { "--file": "text" },
   gc: { "--scope": "gcScope" },
   contracts: { "--action": "contractAction" },
   schema: {
     "--no-allow-unset": "allowUnset",
     "--type": "fieldTypeScope",
   },
-  "history-author-acknowledge": { "--event": "historyEvent" },
+  "history-author-acknowledge": {
+    "--event": "historyEvent",
+    "--all-actionable": "allActionable",
+  },
   "extension-init": { "--capability": "capability" },
   "package-init": { "--capability": "capability" },
   "extension-install": { "--gh": "github" },

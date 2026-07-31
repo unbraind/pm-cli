@@ -24,6 +24,7 @@ import {
   TOOLS,
   type ToolDefinition,
 } from "./tool-definitions.js";
+import type { RuntimeFieldType } from "../types/index.js";
 
 /** Environment configuration accepted by the MCP profile resolver. */
 export interface McpProfileEnvironment {
@@ -157,9 +158,15 @@ export function selectMcpExtensionActions(
 }
 
 function fieldProperty(
-  type: "string" | "number" | "boolean" | "string_array",
+  type: RuntimeFieldType,
   description: string | undefined,
 ): Record<string, unknown> {
+  if (type === "array") {
+    return { type: "array", items: {}, description };
+  }
+  if (type === "object") {
+    return { type: "object", additionalProperties: true, description };
+  }
   const scalar: Record<string, unknown> = {
     type: type === "string_array" ? "string" : type,
     description,

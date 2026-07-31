@@ -467,6 +467,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["sdk/extension/shared.ts"],
   },
   {
+    code: "history_author_acknowledge_selector_required",
+    meaning: "History author acknowledge selector required condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/register-history-author.ts"],
+  },
+  {
     code: "history_drift_chain_mismatch",
     meaning: "History drift chain mismatch condition.",
     stability: "stable",
@@ -1174,6 +1183,51 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/structured-mutations.ts"],
+  },
+  {
+    code: "structured_event_immutable",
+    meaning: "Structured event immutable condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/annotations.ts"],
+  },
+  {
+    code: "structured_event_input_conflict",
+    meaning: "Structured event input conflict condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/commands/notes.ts"],
+  },
+  {
+    code: "structured_event_json_empty",
+    meaning: "Structured event json empty condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/commands/notes.ts"],
+  },
+  {
+    code: "structured_event_json_invalid",
+    meaning: "Structured event json invalid condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/commands/notes.ts"],
+  },
+  {
+    code: "structured_event_since_invalid",
+    meaning: "Structured event since invalid condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/commands/notes.ts"],
   },
   {
     code: "telemetry_endpoint_probe_failed",

@@ -2,11 +2,13 @@ id: pm-1bmeta
 title: "GH-831: actionable unknown-author health evidence is truncated without a complete disposition selector"
 description: "Track the GitHub report that health exposes only 20 actionable unknown-author event coordinates while the acknowledgement command requires the complete item-id:line set."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T07:01:38.129Z"
-updated_at: "2026-07-31T10:15:11.751Z"
+updated_at: "2026-07-31T12:54:38.626Z"
+closed_at: "2026-07-31T12:54:23.785Z"
+completed_at: "2026-07-31T12:54:23.785Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Health declares actionable-event truncation and a continuation or complete projection; acknowledgement supports an evidence-backed bulk selector without weakening reviewer, reason, or append-only audit requirements; SDK, CLI, MCP, docs, and large-workspace tests share one contract"
@@ -14,6 +16,7 @@ parent: pm-5oj5
 risk: medium
 confidence: high
 severity: high
+resolution: "Health exposes truncation and optional complete actionable coordinates; SDK, CLI, and MCP can append one audited disposition for the full actionable set without weakening reviewer or reason requirements."
 expected_result: "Agents can retrieve and disposition the complete actionable event set in one bounded, evidence-backed workflow with explicit truncation metadata."
 actual_result: "Health reports the full actionable count but exposes only 20 coordinates, and the acknowledgement command accepts only individually enumerated events."
 component: governance/author-attribution
@@ -21,7 +24,21 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-zqpnte,related_to,"2026-07-31T07:01:38.129Z","harness:codex","cli:create:dep",detected
   pm-5oj5,implements,"2026-07-31T10:15:09.727Z","harness:codex","cli:update:dep",detected
   pm-h90s,discovered_from,"2026-07-31T10:15:10.733Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-31T07:01:38.129Z","harness:codex","Duplicate check evidence: searched all statuses for history-author-acknowledge and actionable_unknown_event_count; pm-zqpnte is the completed single-event surface, while GH-831 is the distinct large-workspace completeness gap. Source: https://github.com/unbraind/pm-cli/issues/831"
   "2026-07-31T10:15:11.751Z","harness:codex","Organization rationale 2026-07-31: moved from the portfolio root to pm-5oj5 because this is a bounded health evidence-projection defect, not a new roadmap program. Estimate 120m, medium risk, high confidence. pm-h90s is retained as provenance for the author-enforcement lineage; GH-831 remains the external source."
+  "2026-07-31T11:44:42.192Z","harness:codex","Implementation evidence: health reports sample truncation and can emit complete actionable coordinates; SDK/CLI/MCP support one audited --all-actionable disposition selector while retaining reviewer/reason requirements. Full repository coverage passed at 100/100/100/100 (6,594 tests)."
+  "2026-07-31T12:19:19.024Z","harness:codex","Acceptance evidence: complete actionable-event scan, samples_truncated, health verbose projection, explicit selector exclusivity, SDK client, CLI, MCP, and append-only bulk disposition all pass focused and full release coverage. Hosted-analysis gate is the only pre-push unavailable stage because it requires the exact pushed commit."
+  "2026-07-31T12:20:15.009Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/845 implements this item in initial implementation commit ee6c69e28fbc0f7f70106224d9466cc58410ac77; final reviewed head will be recorded after review convergence."
+  "2026-07-31T12:53:50.588Z","harness:codex","Review remediation evidence: non-verbose author scans no longer allocate complete actionable coordinate arrays, while verbose/bulk paths retain the complete projection; selector validation now directly compares positive booleans. The public SDK signature remains unchanged. Sentry/telemetry gate is current and healthy: 0 critical, 0 high in the bounded 14-day Sentry window, 0.97% telemetry finish error rate, and 0 failure rows missing error codes."
+files[4]{path,scope,note}:
+  src/cli/register-history-author.ts,project,exclusive explicit-or-bulk author acknowledgment selectors
+  src/sdk/author-attribution.ts,project,complete actionable event projection and bulk audited disposition
+  src/sdk/governance/health.ts,project,verbose complete author-event health evidence
+  tests/unit/sdk/author-attribution.spec.ts,project,bounded actionable coordinate collection regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/author-attribution.spec.ts tests/unit/commands/health-command.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,complete health evidence and bulk acknowledgment operator workflow
+close_reason: "Delivered complete actionable unknown-author evidence and audited bulk disposition across SDK, CLI, MCP, and health, with bounded non-verbose allocation, 100% coverage, and healthy Sentry/telemetry in PR #845."
 body: ""

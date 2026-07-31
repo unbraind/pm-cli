@@ -5037,7 +5037,14 @@ function inMemoryLoadResult(
 
 describe("item field type validation (pm-oll8)", () => {
   it("exposes the canonical coercion kinds", () => {
-    expect(KNOWN_ITEM_FIELD_TYPES).toEqual(["string", "number", "boolean", "array", "object"]);
+    expect(KNOWN_ITEM_FIELD_TYPES).toEqual([
+      "string",
+      "number",
+      "boolean",
+      "string_array",
+      "array",
+      "object",
+    ]);
   });
 
   it("normalizes known field types case-insensitively and rejects unknown ones", () => {

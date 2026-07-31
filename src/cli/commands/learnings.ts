@@ -58,6 +58,7 @@ export async function runLearnings(
     editOp: "learning_edit",
     deleteOp: "learning_delete",
     parseText: (raw) => parseAnnotationTextInput(raw),
+    createEntry: (entry) => entry,
     bypassOwnershipConflict: Boolean(
       options.edit === undefined && options.delete === undefined &&
         (options as LearningsCommandOptions & {

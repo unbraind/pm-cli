@@ -162,6 +162,8 @@ export interface RunHealthOptions {
   refreshVectors?: boolean;
   /** Value that configures or reports verbose stale items for this contract. */
   verboseStaleItems?: boolean;
+  /** Include the complete actionable unknown-author coordinate list. */
+  verboseAuthorEvents?: boolean;
   /** Value that configures or reports skip vectors for this contract. */
   skipVectors?: boolean;
   /** Value that configures or reports skip integrity for this contract. */
@@ -2830,7 +2832,11 @@ export async function runHealth(
     settings.history.compact_policy,
     await listStoredItemDocumentIds(pmRoot),
   );
-  const authorAttribution = await scanHistoryAuthorAttribution(pmRoot);
+  const authorAttribution = await scanHistoryAuthorAttribution(
+    pmRoot,
+    20,
+    options.verboseAuthorEvents === true,
+  );
   const actionableUnknownAuthorEventCount =
     resolveActionableUnknownAuthorEventCount(authorAttribution);
   const authorAttributionWarnings =

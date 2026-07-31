@@ -1328,6 +1328,7 @@ edit/delete semantics, ownership guidance, history mutation metadata, and stable
 list pagination. MCP tool actions intentionally omit file input to prevent host
 filesystem access. Package authors can build custom annotation presentation
 layers without importing CLI modules.
+`PmClient.notes` also accepts `addJson` for a validated structured context event. The persisted entry remains backward-readable through canonical `text` while exposing typed `format: "json"`, `data`, and `event_type` fields. `since`, `eventType`, `limit`, and `includeMeta` form the bounded query contract; the collection continues to use field-aware union merge semantics for concurrent branches.
 
 Customization convenience methods are the SDK baseline for project-specific pm
 tools. `pm.init` stages a tracker, `pm.config` reads/writes settings,
@@ -1342,7 +1343,7 @@ and `PmClient` continue to share the same validation, locking, persistence, and
 result contracts.
 `pm.init` accepts `workspace` to initialize `<workspace>/.agents/pm`; path-target
 calls retain tracker-root semantics. `InitResult.target` exposes the resolved
-mode, tracker root, and optional workspace root, while every explicit-target
+mode, tracker root, optional workspace root, discovery provenance, invocation directory, and safe current-directory tracker suggestion, while every explicit-target
 `next_steps` command carries `--pm-path` so embedded tools can display runnable
 recovery without depending on the caller's current directory.
 
@@ -2079,8 +2080,11 @@ decline and emit a deprecation warning instead of accidentally claiming the
 payload. Migrate those callbacks to `{ handled: false }` (or the exported
 `declineServiceOverride()` helper) so intent does not depend on object identity.
 
-`registerItemFields` validates each declared field `type` against the canonical
-coercion kinds (`string`, `number`, `boolean`, `array`, `object`) at activation.
+`registerItemFields` and persisted runtime schema fields share one exported type
+union (`string`, `number`, `boolean`, `string_array`, `array`, `object`). The
+`string_array` kind is a repeatable string collection; `array` and `object`
+preserve validated JSON containers. Extension declarations are compile-time
+closed for TypeScript authors and validated again at activation for JavaScript.
 A typo fails activation with a did-you-mean hint (e.g. `type: "strnig"` →
 `Did you mean "string"?`) instead of silently passing and failing opaquely at use
 time.

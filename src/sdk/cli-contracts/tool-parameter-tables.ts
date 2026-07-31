@@ -286,7 +286,13 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     ],
   },
   tail: { anyOf: [{ type: "string" }, { type: "number" }] },
-  addJson: { type: "array", items: { type: "string" } },
+  addJson: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
+  eventType: { type: "string" },
+  includeMeta: { type: "boolean" },
+  allActionable: { type: "boolean" },
+  verboseAuthorEvents: { type: "boolean" },
   match: { type: "string" },
   onlyIndex: { anyOf: [{ type: "string" }, { type: "number" }] },
   onlyLast: { type: "boolean" },
@@ -1121,12 +1127,24 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   addJson: {
     description:
-      "Repeatable JSON object or array input for adding linked-test entries without CSV escaping loss.",
+      "JSON input: one structured context event for notes, or repeatable linked-test entries for test.",
     examples: [
       [
         `{"command":"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts","timeout_seconds":240}`,
       ],
     ],
+  },
+  eventType: {
+    description:
+      "For notes action, return structured context events whose top-level type matches this value.",
+  },
+  includeMeta: {
+    description:
+      "Include structured-event counts for notes reads; filtered reads also include total, returned, limit, and has-more metadata.",
+  },
+  allActionable: {
+    description:
+      "For history-author-acknowledge, select every currently actionable undispositioned event.",
   },
   match: {
     description:
@@ -1340,6 +1358,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   verboseStaleItems: {
     description:
       "For health action, include full stale-item arrays in vectorization details.",
+  },
+  verboseAuthorEvents: {
+    description:
+      "For health action, include every actionable unknown-author event coordinate.",
   },
   skipVectors: {
     description:
@@ -1708,6 +1730,13 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  notes: {
+    since: {
+      description:
+        "Inclusive ISO 8601 creation timestamp lower bound for structured note event filtering.",
+      examples: ["2026-01-01T00:00:00.000Z"],
+    },
+  },
   next: {
     tag: {
       description: "Only recommend items carrying this exact tag.",

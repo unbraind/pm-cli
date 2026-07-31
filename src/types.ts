@@ -57,6 +57,8 @@ export const RUNTIME_FIELD_TYPE_VALUES = [
   "number",
   "boolean",
   "string_array",
+  "array",
+  "object",
 ] as const;
 /** Restricts runtime field type values accepted by command, SDK, and storage contracts. */
 export type RuntimeFieldType = (typeof RUNTIME_FIELD_TYPE_VALUES)[number];
@@ -290,6 +292,29 @@ export interface LogNote {
   author: string;
   /** Value that configures or reports text for this contract. */
   text: string;
+  /** Structured payload format marker; absent entries remain ordinary text notes. */
+  format?: "json";
+  /** Validated JSON payload for merge-safe machine-authored context events. */
+  data?: StructuredJsonValue;
+  /** Optional event discriminator projected from a top-level `type` property. */
+  event_type?: string;
+}
+
+/** JSON value accepted by structured context-event annotations. */
+export type StructuredJsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | StructuredJsonValue[]
+  | { [key: string]: StructuredJsonValue };
+
+/** Machine-readable, append-only context event stored in the union-merged notes collection. */
+export interface StructuredLogEvent extends LogNote {
+  /** Discriminates structured events from free-text notes. */
+  format: "json";
+  /** Validated JSON payload. */
+  data: StructuredJsonValue;
 }
 
 /** Documents the linked file payload exchanged by command, SDK, and package integrations. */

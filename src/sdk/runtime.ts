@@ -1237,9 +1237,10 @@ export class PmClient {
     options: AcknowledgeUnknownAuthorEventsOptions,
   ): Promise<{ acknowledged: number; history_path: string }> {
     return this.runTyped("history-author-acknowledge", {
-      historyEvent: options.events.map(
+      historyEvent: (options.events ?? []).map(
         (event) => `${event.item_id}:${String(event.line)}`,
       ),
+      allActionable: options.all_actionable === true,
       attributedAuthor: options.attributed_author,
       reviewer: options.reviewer,
       reason: options.reason,
@@ -3638,6 +3639,8 @@ function runMcpHistoryAuthorAcknowledgeAction(
     resolvePmRoot(process.cwd(), ctx.global.path),
     {
       events,
+      all_actionable:
+        merged.allActionable === true || merged.all_actionable === true,
       attributed_author:
         readString(merged, "attributedAuthor") ??
         readString(merged, "attributed_author") ??

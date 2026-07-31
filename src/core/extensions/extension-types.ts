@@ -34,6 +34,7 @@ import type {
   CommitWorkspaceTransactionOptions,
   WorkspaceTransactionCommitResult,
 } from "../../sdk/workspace-transaction.js";
+import type { KnownItemFieldType } from "./item-field-types.js";
 
 /** Public contract for known extension capabilities, shared by SDK and presentation-layer consumers. */
 export const KNOWN_EXTENSION_CAPABILITIES = [
@@ -800,8 +801,8 @@ export interface FlagDefinition {
 export interface SchemaFieldDefinition {
   /** Value that configures or reports name for this contract. */
   name: string;
-  /** Schema type that determines the shape and validation rules for this value. */
-  type: string;
+  /** Canonical persisted field type shared with `pm schema add-field`. */
+  type: KnownItemFieldType;
   /** Value that configures or reports optional for this contract. */
   optional?: boolean;
   /** Default metadata value applied when the field is absent. */

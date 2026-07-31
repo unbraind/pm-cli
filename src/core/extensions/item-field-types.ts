@@ -4,6 +4,10 @@
  * Implements extension runtime contracts and governance for Item Field Types.
  */
 import { levenshteinDistanceWithinLimit } from "../shared/levenshtein.js";
+import {
+  RUNTIME_FIELD_TYPE_VALUES,
+  type RuntimeFieldType,
+} from "../../types/index.js";
 
 /**
  * Canonical coercion kinds accepted for extension-registered custom item fields.
@@ -12,15 +16,9 @@ import { levenshteinDistanceWithinLimit } from "../shared/levenshtein.js";
  * value is later coerced by that kind (see `coerceRegisteredFieldValue`). Keep
  * this list in lock-step with the coercion switch in `item-fields.ts`.
  */
-export const KNOWN_ITEM_FIELD_TYPES = [
-  "string",
-  "number",
-  "boolean",
-  "array",
-  "object",
-] as const;
+export const KNOWN_ITEM_FIELD_TYPES = RUNTIME_FIELD_TYPE_VALUES;
 /** Restricts known item field type values accepted by command, SDK, and storage contracts. */
-export type KnownItemFieldType = (typeof KNOWN_ITEM_FIELD_TYPES)[number];
+export type KnownItemFieldType = RuntimeFieldType;
 
 /** Normalize a declared field type to its canonical kind, or `null` when the value is not a known type. Matching is trim- and case-insensitive. */
 export function normalizeItemFieldType(

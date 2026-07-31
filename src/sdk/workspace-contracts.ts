@@ -8,6 +8,7 @@ import {
   runtimeFieldOptionTarget,
   type RuntimeFieldDefinitionResolved,
 } from "../core/schema/runtime-schema.js";
+import type { RuntimeFieldType } from "../types/index.js";
 
 /** Runtime custom-field metadata exposed to SDK and MCP consumers. */
 export interface WorkspaceFieldContract {
@@ -18,7 +19,7 @@ export interface WorkspaceFieldContract {
   /** Persisted metadata key. */
   metadataKey: string;
   /** JSON-compatible field value type. */
-  type: "string" | "number" | "boolean" | "string_array";
+  type: RuntimeFieldType;
   /** Actions on which the field is accepted. */
   commands: string[];
   /** Whether the action accepts more than one value. */

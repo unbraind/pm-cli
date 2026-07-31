@@ -64,6 +64,7 @@ compatible, and supplying both forms is accepted only when they normalize to the
 same prefix; conflicting values fail with `init_id_prefix_conflict` instead of
 silently choosing one.
 Use `pm init --workspace <dir>` when `<dir>` is a project root; it creates `<dir>/.agents/pm`. A path-like positional remains the advanced tracker-root form and writes tracker files directly at that path. Both explicit target forms return `target.mode`, `target.tracker_root`, and tracker-scoped executable `next_steps` so agents can run the suggestions from any working directory.
+Implicit init discovery also reports whether the selected tracker is local or was found in an ancestor. If `pm init <name>` would change an ancestor tracker, the refusal names both directories and gives the safe current-directory retry: `pm init <name> --pm-path "$PWD/.agents/pm" --defaults`.
 `pm init --agent-guidance ask` is the default behavior: prompt in TTY only when AGENTS/CLAUDE guidance is missing and no decline is recorded.
 Fresh Git-backed trackers also install the semantic merge fence and clone-local
 drivers automatically. `--no-merge-fence` opts out; non-Git targets remain
@@ -443,7 +444,11 @@ pm update <id> --status in_progress --message "Start implementation"
 pm update <id> --priority medium --deadline +1d --estimate 120
 pm update <id> --parent <parent-id>
 pm append <id> --body "Detailed implementation notes."
+pm notes <id> --add-json '{"type":"step.completed","step":7,"ok":true}'
+pm notes <id> --event-type step.completed --since 2026-07-31T00:00:00Z --include-meta
 ```
+
+`append` mutates the scalar Markdown body and is not a concurrency-safe event log. `notes --add` stores union-merged text entries; `notes --add-json` stores a validated JSON payload plus timestamp and author in that same merge-safe collection. Structured events retain canonical JSON text for older readers and expose `format: json`, `data`, and optional `event_type` to SDK/CLI/MCP consumers. `--since`, `--event-type`, `--limit`, and `--include-meta` provide bounded reads without client-side free-text parsing.
 
 can make non-lifecycle metadata updates and append comments, linked files, and linked
 docs in one audited history entry. It is intentionally append-only for evidence:
@@ -909,6 +914,8 @@ For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` bloc
 `history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.
 `history-repair --all` (mutually exclusive with `<id>`) runs the same drift scan `pm health` uses and applies the audited single-stream repair (ownership check, lock, post-repair no-drift verification, `--message` audit marker, per-stream `--force`) to every drifted stream in one pass. One failing stream never aborts the rest: the result lists one compact row per drifted stream (`repaired` / `skipped_clean` / `failed`) plus `totals`, and the command exits non-zero only if any stream failed.
 
+`pm health --verbose-author-events --json` includes the complete actionable unknown-author coordinate list and an explicit `samples_truncated` marker. After evidence review, `pm history-author-acknowledge --all-actionable --attributed-author <principal> --reviewer <reviewer> --reason <evidence>` records one append-only disposition for the current complete set. `--all-actionable` and repeatable `--event <item-id:line>` are mutually exclusive; reviewer, attributed author, and reason remain mandatory.
+
 The maintenance engines are public SDK primitives rather than CLI-only implementations. `PmClient.historyRedact`, `historyRepair`, `historyRepairAll`, `historyCompact`, and `historyCompactBulk` return the same structured results shown here; the CLI commands are presentation shims over those SDK-owned engines.
 
 ## Custom Item Types
@@ -954,7 +961,7 @@ pm create Spike "Investigate retry backoff"
 - `apply-preset <agile|ops|research>` batch-registers a domain type preset into an already-initialized project (the same vocabulary `pm init --type-preset` seeds); it is idempotent (re-running reports `replaced` entries) and shares its definitions with init.
 - `add-type --infer` scans existing item titles for stable `PREFIX-`/`PREFIX:` conventions and proposes them as custom types. It previews candidates by default (dry-run); pass `--apply` to register the non-shadowing candidates and `--min-count <n>` to tune the per-prefix threshold (default 10). Candidates whose name resolves to a built-in type are reported and skipped.
 - `rename-type`, `rename-field`, and `remap-status` are lossless migration verbs. The runtime derives a deterministic workspace-and-request-bound migration id for resumable retries; `--migration-id` remains an optional authoritative override for external orchestration. Start with `--dry-run --json` to inspect the derived id, fingerprint, affected count, and ordered per-item changes without persisting a plan. Execution stages the target definition, writes immutable history on every affected item and the workspace stream, then retires the source. A field rename refuses any item that already has the target key; `--type <Type>` optionally restricts a field rename.
-- Field flags (`add-field`): `--type <string|number|boolean|string_array>`, `--commands <list>` (repeatable/comma; defaults to create,update), `--cli-flag <flag>`, `--alias <flag>` (extra CLI flag aliases), `--required`, `--required-on-create`, `--no-allow-unset`, `--required-types <list>`.
+- Field flags (`add-field`): `--type <string|number|boolean|string_array|array|object>`, `--commands <list>` (repeatable/comma; defaults to create,update), `--cli-flag <flag>`, `--alias <flag>` (extra CLI flag aliases), `--required`, `--required-on-create`, `--no-allow-unset`, `--required-types <list>`. `array` and `object` accept validated JSON; `string_array` remains the repeatable comma/newline/list-oriented string collection.
 - Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), `--role <value>` (repeatable; add-status), `--order <n>` (add-status), migration `--to` / `--migration-id` / `--dry-run`, plus `--author`/`--force` governance flags. Add `--json` for the machine envelope.
 - When `pm create`/`pm update` reject an unknown type, the error now points back here: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).`
 

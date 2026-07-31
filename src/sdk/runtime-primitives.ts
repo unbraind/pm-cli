@@ -167,6 +167,7 @@ export { resolveTypeSynonym } from "../core/item/type-synonyms.js";
 export { acquireLock } from "../core/lock/lock.js";
 export { printError, printResult, writeStdout } from "../core/output/output.js";
 export { renderRowsAsCsv, renderRowsAsTable } from "../core/output/tabular.js";
+export { parseLimit } from "../core/shared/numeric-parsers.js";
 export {
   resolveConfiguredPmPackageRoot,
   resolvePmCliVersion,
@@ -304,7 +305,10 @@ export {
   toNonEmptyStringOrUndefined,
 } from "../core/shared/primitives.js";
 export { createSerialQueue } from "../core/shared/serial-queue.js";
-export { stableValueEquals } from "../core/shared/serialization.js";
+export {
+  stableStringify,
+  stableValueEquals,
+} from "../core/shared/serialization.js";
 export { splitCommaList } from "../core/shared/split-comma-list.js";
 export {
   compareTimestampStrings,

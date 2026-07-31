@@ -200,6 +200,7 @@ export async function runComments(
     editOp: "comment_edit",
     deleteOp: "comment_delete",
     parseText: (raw) => raw,
+    createEntry: (entry) => entry as Comment,
     bypassOwnershipConflict: Boolean(
       commentInput.mode === "add" &&
         (options as CommentsCommandOptions & {

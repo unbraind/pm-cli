@@ -90,6 +90,19 @@ describe("SDK author attribution primitives", () => {
         { item_id: "pm-memory", line: 2 },
         { item_id: "pm-memory", line: 3 },
       ],
+      samples_truncated: false,
+      actionable_events: [],
+    });
+  });
+
+  it("collects complete actionable coordinates only when requested", () => {
+    const raw = JSON.stringify({
+      ts: "2026-07-31T00:00:00.000Z",
+      author: "unknown",
+    });
+    expect(inspectHistoryAuthorStream("pm-memory", raw)).toMatchObject({
+      actionable_unknown_event_count: 1,
+      actionable_events: [],
     });
   });
 
@@ -129,6 +142,7 @@ describe("SDK author attribution primitives", () => {
         { item_id: "pm-a", line: 1 },
         { item_id: "pm-a", line: 2 },
       ],
+      samples_truncated: true,
     });
     expect((await scanHistoryAuthorAttribution(pmRoot, -1)).samples).toEqual(
       [],
@@ -147,6 +161,7 @@ describe("SDK author attribution primitives", () => {
       acknowledged_actionable_event_count: 0,
       affected_item_ids: [],
       samples: [],
+      samples_truncated: false,
     });
   });
 
@@ -372,6 +387,7 @@ describe("SDK author attribution primitives", () => {
       { path: pmRoot },
       {
         checkOnly: true,
+        full: true,
         skipIntegrity: true,
         skipDrift: true,
         skipVectors: true,
@@ -381,6 +397,24 @@ describe("SDK author attribution primitives", () => {
       "history_unknown_author_events:1",
     );
     expect(actionableHealth.ok).toBe(false);
+    const verboseHealth = await runHealth(
+      { path: pmRoot },
+      {
+        checkOnly: true,
+        full: true,
+        skipIntegrity: true,
+        skipDrift: true,
+        skipVectors: true,
+        verboseAuthorEvents: true,
+      },
+    );
+    expect(
+      verboseHealth.checks.find((check) => check.name === "storage")?.details,
+    ).toMatchObject({
+      author_attribution: {
+        actionable_events: [{ item_id: "pm-actionable", line: 1 }],
+      },
+    });
     expect((await runValidate({}, { path: pmRoot })).warnings).toContain(
       "validate_history_unknown_author_events:1",
     );
@@ -533,6 +567,111 @@ describe("SDK author attribution primitives", () => {
       actionable_unknown_event_count: 0,
       acknowledged_actionable_event_count: 1,
     });
+  });
+
+  it("bulk-acknowledges the complete actionable set through SDK and CLI selectors", async () => {
+    const tempRoot = await createTempRoot();
+    const pmRoot = path.join(tempRoot, ".agents", "pm");
+    await runInit(
+      undefined,
+      { path: pmRoot },
+      { defaults: true, agentGuidance: "skip" },
+    );
+    await writeFile(
+      path.join(pmRoot, "history", "pm-bulk.jsonl"),
+      [
+        JSON.stringify({
+          ts: "2026-07-15T10:00:00.000Z",
+          author: "unknown",
+        }),
+        JSON.stringify({
+          ts: "2026-07-14T10:00:00.000Z",
+          author: "unknown",
+        }),
+        "",
+      ].join("\n"),
+    );
+
+    await expect(
+      scanHistoryAuthorAttribution(pmRoot, 0, true),
+    ).resolves.toMatchObject({
+      actionable_unknown_event_count: 1,
+      samples: [],
+      samples_truncated: true,
+      actionable_events: [{ item_id: "pm-bulk", line: 1 }],
+    });
+    await expect(
+      new PmClient({ pmRoot, noExtensions: true }).historyAuthorAcknowledge({
+        all_actionable: true,
+        attributed_author: "bulk-agent",
+        reviewer: "maintainer",
+        reason: "Reviewed every actionable event.",
+      }),
+    ).resolves.toMatchObject({ acknowledged: 1 });
+    await expect(scanHistoryAuthorAttribution(pmRoot)).resolves.toMatchObject({
+      actionable_unknown_event_count: 0,
+      legacy_unknown_event_count: 1,
+      acknowledged_actionable_event_count: 1,
+    });
+    await expect(
+      acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+        events: [{ item_id: "pm-bulk", line: 1 }],
+        all_actionable: true,
+        attributed_author: "bulk-agent",
+        reviewer: "maintainer",
+        reason: "Invalid mixed selectors.",
+      }),
+    ).rejects.toThrow("either explicit events or all_actionable");
+    await expect(
+      acknowledgeUnknownAuthorHistoryEvents(pmRoot, {
+        attributed_author: "bulk-agent",
+        reviewer: "maintainer",
+        reason: "Missing selector.",
+      }),
+    ).rejects.toThrow(
+      "requires events, reviewer, attributed_author, and reason",
+    );
+
+    const program = createPmCliProgram("1.0.0");
+    registerMutationCommands(program);
+    await expect(
+      program.parseAsync(
+        [
+          "--pm-path",
+          pmRoot,
+          "history-author-acknowledge",
+          "--all-actionable",
+          "--event",
+          "pm-bulk:1",
+          "--attributed-author",
+          "bulk-agent",
+          "--reviewer",
+          "maintainer",
+          "--reason",
+          "Invalid mixed selectors.",
+        ],
+        { from: "user" },
+      ),
+    ).rejects.toThrow("Specify exactly one selector");
+
+    const missingSelectorProgram = createPmCliProgram("1.0.0");
+    registerMutationCommands(missingSelectorProgram);
+    await expect(
+      missingSelectorProgram.parseAsync(
+        [
+          "--pm-path",
+          pmRoot,
+          "history-author-acknowledge",
+          "--attributed-author",
+          "bulk-agent",
+          "--reviewer",
+          "maintainer",
+          "--reason",
+          "Missing selector.",
+        ],
+        { from: "user" },
+      ),
+    ).rejects.toThrow("Specify exactly one selector");
   });
 
   it("exposes unknown-author disposition through CLI and MCP action surfaces", async () => {

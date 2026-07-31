@@ -142,6 +142,42 @@ describe("coerceRuntimeFieldValue repeatable / array paths", () => {
     const field = makeField({ type: "string_array" as RuntimeFieldType, repeatable: true });
     expect(coerceRuntimeFieldValue(field, [7])).toEqual(["7"]);
   });
+
+  it("parses JSON array and object field values without flattening their contents", () => {
+    const arrayField = makeField({ type: "array", repeatable: true });
+    const objectField = makeField({ type: "object" });
+    expect(coerceRuntimeFieldValue(arrayField, '[1,{"step":"done"}]')).toEqual([
+      1,
+      { step: "done" },
+    ]);
+    expect(coerceRuntimeFieldValue(objectField, '{"owner":"agent"}')).toEqual({
+      owner: "agent",
+    });
+  });
+
+  it("accepts already-parsed containers and the last repeated CLI value", () => {
+    const arrayField = makeField({ type: "array" });
+    const objectField = makeField({ type: "object" });
+    expect(coerceRuntimeFieldValue(arrayField, [["first"], '["last"]'])).toEqual([
+      "last",
+    ]);
+    expect(coerceRuntimeFieldValue(objectField, { nested: true })).toEqual({
+      nested: true,
+    });
+  });
+
+  it("rejects invalid JSON and mismatched container shapes", () => {
+    expect(() =>
+      coerceRuntimeFieldValue(makeField({ type: "array" }), '{"not":"array"}'),
+    ).toThrow("must be valid JSON array");
+    expect(() =>
+      coerceRuntimeFieldValue(makeField({ type: "object" }), "not-json"),
+    ).toThrow("must be valid JSON object");
+    expect(() =>
+      coerceRuntimeFieldValue(makeField({ type: "object" }), "null"),
+    ).toThrow("must be valid JSON object");
+    expect(coerceRuntimeFieldValue(makeField({ type: "array" }), undefined)).toBeUndefined();
+  });
 });
 
 describe("parseBooleanValue branches via repeatable boolean coerce", () => {
