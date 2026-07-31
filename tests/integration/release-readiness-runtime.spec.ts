@@ -3,6 +3,7 @@ import { access, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import {
   expectJsonErrorEnvelope,
   parseJsonErrorEnvelope,
@@ -2507,13 +2508,30 @@ describe("release readiness runtime coverage", () => {
       expect(createResult.code).toBe(0);
       const createdId = (createResult.json as { item: { id: string } }).item.id;
 
-      // pm update --status closed must never block agents: it auto-routes to the
-      // auditable close workflow with a derived close reason when none is given.
-      const autoRouteCloseResult = context.runCli(
+      // Every terminal route enforces the same reason governance and never
+      // invents immutable closure evidence.
+      const reasonlessCloseResult = context.runCli(
         ["update", createdId, "--status", "closed", "--json"],
         {
           expectJson: true,
         },
+      );
+      expect(reasonlessCloseResult.code).toBe(EXIT_CODE.USAGE);
+      expect(reasonlessCloseResult.stderr).toContain(
+        "close_reason_required",
+      );
+
+      const autoRouteCloseResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--status",
+          "closed",
+          "--message",
+          "close through update with author evidence",
+          "--json",
+        ],
+        { expectJson: true },
       );
       expect(autoRouteCloseResult.code).toBe(0);
       const autoRouteJson = autoRouteCloseResult.json as {
@@ -2521,12 +2539,13 @@ describe("release readiness runtime coverage", () => {
         warnings: string[];
       };
       expect(autoRouteJson.item.status).toBe("closed");
-      expect(autoRouteJson.warnings).toEqual(
-        expect.arrayContaining([
-          "auto_routed_from_update_to_close",
-          "close_reason_defaulted",
-        ]),
+      expect(autoRouteJson.item.close_reason).toBe(
+        "close through update with author evidence",
       );
+      expect(autoRouteJson.warnings).toContain(
+        "auto_routed_from_update_to_close",
+      );
+      expect(autoRouteJson.warnings).not.toContain("close_reason_defaulted");
 
       const closeResult = context.runCli(
         [

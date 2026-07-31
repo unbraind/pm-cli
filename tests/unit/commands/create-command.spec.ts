@@ -4076,21 +4076,23 @@ describe("repeatable metadata parser helpers", () => {
   });
 
   describe("GH-249: create --status closed honors governance.require_close_reason", () => {
-    it("defaults the close reason and warns when no message/resolution is supplied", async () => {
+    it("refuses direct terminal creation without an author-controlled reason", async () => {
       await withTempPmPath(async (context) => {
-        const result = await runCreate(
-          {
-            title: "direct-closed-default",
-            description: "created directly closed without a reason",
-            type: "Task",
-            status: "closed",
-            createMode: "progressive",
-          },
-          { path: context.pmPath },
-        );
-        expect(result.item.status).toBe("closed");
-        expect(result.item.close_reason).toBe("Closed at creation via pm create");
-        expect(result.warnings).toContain("close_reason_defaulted");
+        await expect(
+          runCreate(
+            {
+              title: "direct-closed-default",
+              description: "created directly closed without a reason",
+              type: "Task",
+              status: "closed",
+              createMode: "progressive",
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+          context: expect.objectContaining({ code: "close_reason_required" }),
+        });
       });
     });
 

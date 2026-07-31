@@ -11,7 +11,7 @@
  * `PmClient.run` remains the deliberately wide escape hatch.
  */
 import type { ToolOptionFlagContract } from "./flag-contracts.js";
-import type { CloseCommandOptions } from "../../cli/commands/close.js";
+import type { CloseCommandOptions } from "../lifecycle/close.js";
 import type { CreateCommandOptions } from "../../cli/commands/create.js";
 import type { UpdateCommandOptions } from "../../cli/commands/update.js";
 import type {

@@ -30,7 +30,6 @@ import {
   resolvePriority,
   getFocusedItem,
   normalizeStatusInput,
-  CREATE_DIRECT_CLOSE_REASON_DEFAULT,
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
   type ItemTypeRegistry,
@@ -73,6 +72,7 @@ import {
   readSettings,
   resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
+import { requireTerminalReason } from "../../sdk/lifecycle-policy.js";
 import {
   evaluateSimilarityGovernance,
   similarityAdvisoryWarnings,
@@ -2330,7 +2330,7 @@ function resolveCreateOrder(
   return order;
 }
 
-/** Resolve the close reason for an item created directly in the close status (GH-249): honor `governance.require_close_reason` like `pm close`, deriving it from `--message` > `--resolution` and falling back to a stable placeholder, warning `close_reason_defaulted` when neither was supplied. Returns `undefined` (and no warnings) when the item is not being created closed or the policy is off. */
+/** Resolve an author-controlled reason for an item created directly in the close status. */
 function resolveCreateCloseReason(
   status: ItemStatus,
   statusRegistry: RuntimeStatusRegistry,
@@ -2344,19 +2344,13 @@ function resolveCreateCloseReason(
   ) {
     return { closeReason: undefined, warnings: [] };
   }
-  const messageText =
-    typeof resolvedOptions.message === "string"
-      ? resolvedOptions.message.trim()
-      : "";
-  const resolutionText =
-    typeof resolution === "string" ? resolution.trim() : "";
-  const closeReason =
-    messageText || resolutionText || CREATE_DIRECT_CLOSE_REASON_DEFAULT;
-  const warnings =
-    messageText.length === 0 && resolutionText.length === 0
-      ? ["close_reason_defaulted"]
-      : [];
-  return { closeReason, warnings };
+  return {
+    closeReason: requireTerminalReason(
+      { explicit: resolvedOptions.message, resolution },
+      true,
+    ).closeReason,
+    warnings: [],
+  };
 }
 
 /** Commit a freshly built item under its per-id lock: write the serialized document, append the create history entry (rolling back the item file if the history append throws), run the item + history `onWrite` hooks, and record the after-command affected item. Returns the collected hook warnings; the lock is always released. */

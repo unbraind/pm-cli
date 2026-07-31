@@ -140,7 +140,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/close-many.ts", "cli/commands/close.ts"],
+    sources: ["cli/commands/close-many.ts", "sdk/lifecycle-policy.ts"],
   },
   {
     code: "close_through_update",
@@ -158,7 +158,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/close.ts"],
+    sources: ["sdk/lifecycle/close.ts"],
   },
   {
     code: "collected_zero_items",
@@ -302,7 +302,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/close.ts"],
+    sources: ["sdk/lifecycle/close.ts"],
   },
   {
     code: "duplicate_target_is_duplicate",
@@ -311,7 +311,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/close.ts"],
+    sources: ["sdk/lifecycle/close.ts"],
   },
   {
     code: "duplicate_target_missing",
@@ -320,7 +320,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/close.ts"],
+    sources: ["sdk/lifecycle/close.ts"],
   },
   {
     code: "duplicate_target_self",
@@ -329,7 +329,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/close.ts"],
+    sources: ["sdk/lifecycle/close.ts"],
   },
   {
     code: "empty_surface",

@@ -992,7 +992,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       await mkdir(path.dirname(globalSettingsPath), { recursive: true });
       await writeFile(globalSettingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
-      const closedIssue = context.runCli(["create", "--title", "Telemetry validation finding", "--type", "Issue", "--status", "closed", "--json"], {
+      const closedIssue = context.runCli(["create", "--title", "Telemetry validation finding", "--type", "Issue", "--status", "closed", "--message", "seed terminal validation fixture", "--json"], {
         expectJson: true,
       });
       expect(closedIssue.code).toBe(0);

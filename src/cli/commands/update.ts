@@ -63,7 +63,7 @@ import {
   readSettings,
   resolveAuthor,
 } from "../../sdk/runtime-primitives.js";
-import { runClose } from "./close.js";
+import { runClose } from "../../sdk/lifecycle/close.js";
 import {
   normalizeRiskInput,
   normalizeSeverityInput,
@@ -1899,19 +1899,9 @@ async function routeCloseStatusUpdate(
     routeWarnings.push(...preUpdate.warnings);
   }
 
-  const explicitReason =
-    typeof context.options.closeReason === "string"
-      ? context.options.closeReason.trim()
-      : "";
-  const fallbackMessage =
-    typeof context.options.message === "string"
-      ? context.options.message.trim()
-      : "";
-  const closeReason =
-    explicitReason || fallbackMessage || "Closed via pm update";
   const closeResult = await runClose(
     context.id,
-    closeReason,
+    context.options.closeReason,
     {
       author: context.options.author,
       message: context.options.message,
@@ -1927,9 +1917,6 @@ async function routeCloseStatusUpdate(
     ...closeResult.warnings,
     "auto_routed_from_update_to_close",
   ];
-  if (explicitReason.length === 0 && fallbackMessage.length === 0) {
-    warnings.push("close_reason_defaulted");
-  }
   return {
     item: closeResult.item,
     changed_fields: [...preChangedFields, ...closeResult.changed_fields],

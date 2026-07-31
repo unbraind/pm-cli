@@ -841,14 +841,14 @@ describe("runClose", () => {
     });
   });
 
-  it("fails when --validate-close strict is enabled and active child items remain", async () => {
+  it("uses the canonical parent id when strict-close input omits the prefix", async () => {
     await withTempPmPath(async (context) => {
       const parentId = createTask(context, "close-strict-active-child-parent");
       const childId = createTask(context, "close-strict-active-child", { parent: parentId });
 
       await expect(
         runClose(
-          parentId,
+          parentId.replace(/^pm-/, ""),
           "close with strict child validation",
           {
             validateClose: "strict",
@@ -861,6 +861,18 @@ describe("runClose", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining(childId),
+      });
+
+      await expect(
+        runClose(
+          parentId.replace(/^pm-/, ""),
+          "invalid self duplicate",
+          { duplicateOf: parentId },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_self" }),
       });
     });
   });
@@ -1001,7 +1013,7 @@ describe("runClose", () => {
     });
   });
 
-  it("clears stale blocked_by metadata and dependency edge on terminal close (C4)", async () => {
+  it("clears transient blocked state while preserving the predecessor edge on close", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createTask(context, "close-c4-blocker");
       const blockedId = createTask(context, "close-c4-blocked");
@@ -1016,9 +1028,12 @@ describe("runClose", () => {
       expect(item.status).toBe("closed");
       expect(item.blocked_by).toBeUndefined();
       expect(item.blocked_reason).toBeUndefined();
-      expect(item.dependencies).toBeUndefined();
-      expect(result.changed_fields).toEqual(expect.arrayContaining(["blocked_by", "blocked_reason", "dependencies"]));
-      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+      expect(item.dependencies).toEqual([
+        expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+      ]);
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["blocked_by", "blocked_reason"]));
+      expect(result.changed_fields).not.toContain("dependencies");
+      expect(result.warnings).toContain(`closed_preserved_predecessors:${blockedId}:${blockerId}`);
     });
   });
 
@@ -1144,7 +1159,7 @@ describe("runClose", () => {
     });
   });
 
-  it("clears stale close_reason when close reasons are optional and no reason is provided", async () => {
+  it("preserves existing close_reason when an optional-reason reclose supplies none", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-clear-stale-reason");
       const settingsPath = path.join(context.pmPath, "settings.json");
@@ -1165,17 +1180,46 @@ describe("runClose", () => {
         undefined,
         {
           validateClose: "off",
-          message: "Close without reason after disabling reason governance",
         },
         { path: context.pmPath },
       );
 
-      expect(result.item.close_reason).toBeUndefined();
+      expect(result.item.close_reason).toBe("stale previous reason");
+      expect(result.changed_fields).not.toContain("close_reason");
+    });
+  });
+
+  it("records an author message as the reason even when reason governance is optional", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-optional-message-reason");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        governance?: { require_close_reason?: boolean };
+      };
+      settings.governance = {
+        ...settings.governance,
+        require_close_reason: false,
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const result = await runClose(
+        id,
+        undefined,
+        {
+          validateClose: "off",
+          message: "Author supplied optional close evidence",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.item.close_reason).toBe(
+        "Author supplied optional close evidence",
+      );
       expect(result.changed_fields).toContain("close_reason");
     });
   });
 
-  it("clears an orphan blocked_by dependency edge on close even without the scalar (C4)", async () => {
+  it("preserves a predecessor dependency edge on close even without the scalar", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createTask(context, "close-c4-orphan-blocker");
       const blockedId = createTask(context, "close-c4-orphan-blocked");
@@ -1188,13 +1232,145 @@ describe("runClose", () => {
 
       const result = await runClose(blockedId, "done, drop orphan edge", {}, { path: context.pmPath });
       const item = result.item as Record<string, unknown>;
-      expect(item.dependencies).toBeUndefined();
-      expect(result.changed_fields).toContain("dependencies");
-      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+      expect(item.dependencies).toEqual([
+        expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+      ]);
+      expect(result.changed_fields).not.toContain("dependencies");
+      expect(result.warnings).toContain(`closed_preserved_predecessors:${blockedId}:${blockerId}`);
     });
   });
 
-  it("keeps non-blocking dependency edges when clearing stale blocked_by edge on close (C4)", async () => {
+  it("preserves predecessor history across a close, reopen, and reclose cycle", async () => {
+    await withTempPmPath(async (context) => {
+      const blockerId = createTask(context, "close-cycle-blocker");
+      const dependentId = createTask(context, "close-cycle-dependent");
+      expect(
+        context.runCli(
+          [
+            "update",
+            dependentId,
+            "--dep",
+            `id=${blockerId},kind=blocked_by`,
+            "--json",
+          ],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+
+      const firstClose = context.runCli(
+        [
+          "update",
+          dependentId,
+          "--status",
+          "closed",
+          "--message",
+          "first terminal transition through update",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(firstClose.code).toBe(0);
+      const firstCloseJson = firstClose.json as {
+        item: { dependencies: Array<{ id: string; kind: string }> };
+        warnings: string[];
+      };
+      expect(firstCloseJson.item.dependencies).toEqual([
+        expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+      ]);
+      expect(firstCloseJson.warnings).toContain(
+        `closed_preserved_predecessors:${dependentId}:${blockerId}`,
+      );
+      expect(
+        context.runCli(
+          [
+            "update",
+            dependentId,
+            "--status",
+            "open",
+            "--message",
+            "reopen for regression verification",
+            "--json",
+          ],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+      const reclosed = await runClose(
+        dependentId,
+        "second terminal transition",
+        {},
+        { path: context.pmPath },
+      );
+
+      expect(reclosed.item.dependencies).toEqual([
+        expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+      ]);
+      expect(reclosed.warnings).toContain(
+        `closed_preserved_predecessors:${dependentId}:${blockerId}`,
+      );
+    });
+  });
+
+  it("keeps both ordering-edge spellings in a representative closed corpus", async () => {
+    await withTempPmPath(async (context) => {
+      const prerequisiteId = createTask(context, "corpus-prerequisite");
+      const dependentId = createTask(context, "corpus-dependent");
+      const reverseOwnerId = createTask(context, "corpus-reverse-owner");
+      expect(
+        context.runCli(
+          [
+            "update",
+            dependentId,
+            "--dep",
+            `id=${prerequisiteId},kind=blocked_by`,
+            "--json",
+          ],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+      expect(
+        context.runCli(
+          [
+            "update",
+            reverseOwnerId,
+            "--dep",
+            `id=${dependentId},kind=blocks`,
+            "--json",
+          ],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+
+      const closedCorpus = [
+        await runClose(dependentId, "close dependent endpoint", {}, {
+          path: context.pmPath,
+        }),
+        await runClose(reverseOwnerId, "close blocker endpoint", {}, {
+          path: context.pmPath,
+        }),
+      ];
+      const survivalByKind = new Map(
+        ["blocked_by", "blocks"].map((kind) => [
+          kind,
+          closedCorpus.filter((result) =>
+            (
+              result.item.dependencies as
+                | Array<{ kind: string }>
+                | undefined
+            )?.some((dependency) => dependency.kind === kind),
+          ).length,
+        ]),
+      );
+
+      expect(survivalByKind).toEqual(
+        new Map([
+          ["blocked_by", 1],
+          ["blocks", 1],
+        ]),
+      );
+    });
+  });
+
+  it("keeps predecessor and non-blocking dependency edges on close", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createTask(context, "close-c4-mixed-blocker");
       const relatedId = createTask(context, "close-c4-mixed-related");
@@ -1215,9 +1391,14 @@ describe("runClose", () => {
 
       const result = await runClose(blockedId, "done, keep related edge", {}, { path: context.pmPath });
       const item = result.item as { dependencies?: Array<{ id: string; kind: string }> };
-      expect(item.dependencies).toEqual([expect.objectContaining({ id: relatedId, kind: "related" })]);
-      expect(result.changed_fields).toContain("dependencies");
-      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+      expect(item.dependencies).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+          expect.objectContaining({ id: relatedId, kind: "related" }),
+        ]),
+      );
+      expect(result.changed_fields).not.toContain("dependencies");
+      expect(result.warnings).toContain(`closed_preserved_predecessors:${blockedId}:${blockerId}`);
     });
   });
 

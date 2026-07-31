@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- One governance rule, two terminal-transition paths, opposite answers: pm close refuses a reasonless close while pm update --status closed invents a reason and writes it into the immutable record unmarked ([pm-2ew0w3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ew0w3.toon))
+- Closing an item deletes its ordering edges, so the historical ordering graph is structurally unable to exist ([pm-xm0id4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xm0id4.toon))
 - GH-831: actionable unknown-author health evidence is truncated without a complete disposition selector ([pm-1bmeta](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1bmeta.toon))
 - GH-841: init ancestor discovery obscures the selected workspace and safe current-directory target ([pm-ipbwcq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ipbwcq.toon))
 - GH-840: annotation primitives lack a merge-safe structured event append and query contract ([pm-09rdni](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-09rdni.toon))
