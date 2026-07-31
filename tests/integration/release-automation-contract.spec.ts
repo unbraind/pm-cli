@@ -479,10 +479,12 @@ describe("release automation contract", () => {
     );
     expect(
       workflow.indexOf(
-        'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
+        'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
       ),
     ).toBeLessThan(
-      workflow.indexOf("npm access set status=public"),
+      workflow.indexOf(
+        'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
+      ),
     );
     expect(workflow).not.toContain("@unbrained/pm-cli");
     expect(workflow).toContain('env -u NODE_AUTH_TOKEN -u NPM_TOKEN');
@@ -493,7 +495,7 @@ describe("release automation contract", () => {
     expect(workflow).toContain("--max-critical 0 --max-high 0");
   });
 
-  it("executes the npm publication guard without mutating access for a public package", async () => {
+  it("executes the npm publication guard and stabilizes exact-tag recovery", async () => {
     const workflow = await readFile(
       path.join(repoRoot, ".github/workflows/release.yml"),
       "utf8",
@@ -561,6 +563,7 @@ esac
             RELEASE_TAG: "v2026.7.27",
             RELEASE_VERSION: "2026.7.27",
             RUNNER_TEMP: tempRoot,
+            GITHUB_EVENT_NAME: "push",
             NPM_PACKAGE: "@unbrained/pm-cli",
             NPM_FAKE_LOG: npmLog,
             ACCESS_MARKER: accessMarker,
@@ -598,6 +601,28 @@ esac
       invocations = await readFile(npmLog, "utf8");
       expect(invocations).not.toContain("publish --access public");
       expect(invocations).not.toContain("access set status=public");
+
+      await writeFile(npmLog, "", "utf8");
+      await rm(accessMarker, { force: true });
+      const exactTagRecovery = runScenario({
+        GITHUB_EVENT_NAME: "workflow_dispatch",
+        TARGET_VERSION_STATUS: "0",
+        ACCESS_STATUS: "0",
+        ACCESS_OUTPUT: "access restored",
+        POST_RECOVERY_TARGET_STATUS: "0",
+      });
+      expect(exactTagRecovery.status).toBe(0);
+      expect(exactTagRecovery.stdout).toContain(
+        "Exact-tag recovery restored public access for @unbrained/pm-cli.",
+      );
+      invocations = await readFile(npmLog, "utf8");
+      expect(invocations).toContain(
+        "access set status=public @unbrained/pm-cli",
+      );
+      expect(invocations).toContain(
+        "view @unbrained/pm-cli@2026.7.27 version --json",
+      );
+      expect(invocations).not.toContain("publish --access public");
 
       await writeFile(npmLog, "", "utf8");
       await rm(accessMarker, { force: true });

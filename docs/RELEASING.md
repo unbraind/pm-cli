@@ -300,6 +300,10 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 - If an immutable published package contains a defect that cannot be repaired
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.
+- A manual exact-tag `workflow_dispatch` recovery reasserts public npm package
+  access before consulting anonymous registry metadata. This prevents a stale
+  public cache hit from bypassing access repair; an already-visible immutable
+  version is still verified and never republished.
 - Record failure evidence and remediation in the release `pm` item.
 
 ### Silent skip debugging

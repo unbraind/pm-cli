@@ -477,6 +477,9 @@ describe("GitHub workflow contract", () => {
       "${NPM_PACKAGE} is publicly available but ${VERSION} is not; publishing.",
       "npm publish --access public --provenance --tag latest",
       "is publicly available; skipping npm publish.",
+      "Exact-tag recovery is restoring public package access before anonymous probes.",
+      'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
+      "Exact-tag recovery restored public access for ${NPM_PACKAGE}.",
       "attempting access recovery before immutable publication.",
       'npm access set status=public "${NPM_PACKAGE}"',
       "grep -Eq 'E404|404 Not Found|Package not found'",
@@ -499,10 +502,12 @@ describe("GitHub workflow contract", () => {
     expect(releaseWorkflow).not.toMatch(untaggedNpmPublish);
     expect(
       releaseWorkflow.indexOf(
-        'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
+        'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
       ),
     ).toBeLessThan(
-      releaseWorkflow.indexOf("npm access set status=public"),
+      releaseWorkflow.indexOf(
+        'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
+      ),
     );
     expect(releaseWorkflow).not.toContain("@unbrained/pm-cli");
     expect("if should_publish; then npm publish --access public; fi").toMatch(
