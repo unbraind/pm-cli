@@ -113,6 +113,36 @@ function parseNumberValue(raw: unknown, label: string): number {
   return parsed;
 }
 
+function parseJsonContainerValue(
+  raw: unknown,
+  label: string,
+  expectedType: "array" | "object",
+): unknown {
+  const parsed =
+    typeof raw === "string"
+      ? (() => {
+          try {
+            return JSON.parse(raw) as unknown;
+          } catch {
+            return undefined;
+          }
+        })()
+      : raw;
+  if (
+    (expectedType === "array" && Array.isArray(parsed)) ||
+    (expectedType === "object" &&
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed))
+  ) {
+    return parsed;
+  }
+  throw new PmCliError(
+    `${label} must be valid JSON ${expectedType}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
 /** Implements coerce runtime field value for the public runtime surface of this module. */
 export function coerceRuntimeFieldValue(
   definition: RuntimeFieldDefinitionResolved,
@@ -120,6 +150,15 @@ export function coerceRuntimeFieldValue(
   labelOverride?: string,
 ): unknown {
   const label = labelOverride ?? `--${definition.cli_flag}`;
+  if (definition.type === "array" || definition.type === "object") {
+    const containerRaw = Array.isArray(rawValue)
+      ? rawValue[rawValue.length - 1]
+      : rawValue;
+    if (containerRaw === undefined) {
+      return undefined;
+    }
+    return parseJsonContainerValue(containerRaw, label, definition.type);
+  }
   if (definition.repeatable || definition.type === "string_array") {
     const values = normalizeStringArrayValue(rawValue);
     if (definition.type === "number") {

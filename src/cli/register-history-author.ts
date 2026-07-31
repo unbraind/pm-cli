@@ -22,7 +22,24 @@ async function runHistoryAuthorAcknowledgeAction(
   command: Command,
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
-  const rawEvents = options.event as string[];
+  const rawEvents = Array.isArray(options.event)
+    ? (options.event as string[])
+    : [];
+  const allActionable = options.allActionable === true;
+  if ((rawEvents.length === 0) === !allActionable) {
+    throw new PmCliError(
+      "Specify exactly one selector: repeat --event or pass --all-actionable.",
+      EXIT_CODE.USAGE,
+      {
+        code: "history_author_acknowledge_selector_required",
+        required: "Exactly one of --event or --all-actionable",
+        examples: [
+          'pm history-author-acknowledge --event pm-a1b2:4 --attributed-author agent --reviewer maintainer --reason "Verified provenance"',
+          'pm history-author-acknowledge --all-actionable --attributed-author import-agent --reviewer maintainer --reason "Reviewed the complete actionable set"',
+        ],
+      },
+    );
+  }
   const events = rawEvents.map((value) => {
     const separator = value.lastIndexOf(":");
     const itemId = value.slice(0, separator).trim();
@@ -44,7 +61,11 @@ async function runHistoryAuthorAcknowledgeAction(
     resolvePmRoot(process.cwd(), globalOptions.path),
     {
       events,
-      attributed_author: readOptionString(options, "attributedAuthor") as string,
+      all_actionable: allActionable,
+      attributed_author: readOptionString(
+        options,
+        "attributedAuthor",
+      ) as string,
       reviewer: readOptionString(options, "reviewer") as string,
       reason: readOptionString(options, "reason") as string,
     },
@@ -58,19 +79,20 @@ export function registerHistoryAuthorAcknowledgeCommand(
 ): void {
   program
     .command("history-author-acknowledge")
-    .requiredOption(
+    .option(
       "--event <item-id:line>",
-      "Actionable unknown-author history event (repeatable)",
+      "Unknown-author event coordinate (repeatable)",
       collect,
     )
+    .option("--all-actionable", "Select all actionable events")
     .requiredOption(
       "--attributed-author <value>",
-      "Principal attributed by evidence-backed maintainer review",
+      "Reviewed principal attribution",
     )
-    .requiredOption("--reviewer <value>", "Reviewer recording the disposition")
-    .requiredOption("--reason <value>", "Evidence-backed review rationale")
+    .requiredOption("--reviewer <value>", "Disposition reviewer")
+    .requiredOption("--reason <value>", "Review evidence")
     .description(
-      "Disposition immutable post-baseline unknown-author events through an append-only workspace audit event.",
+      "Append audited dispositions for immutable unknown-author events.",
     )
     .action(runHistoryAuthorAcknowledgeAction);
 }

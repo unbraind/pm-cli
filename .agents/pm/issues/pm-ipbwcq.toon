@@ -1,0 +1,37 @@
+id: pm-ipbwcq
+title: "GH-841: init ancestor discovery obscures the selected workspace and safe current-directory target"
+description: Make initialization resolve and report creation targets explicitly so nested package bootstrapping cannot mistake an ancestor tracker for the intended current-directory workspace.
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-07-31T10:41:51.338Z"
+updated_at: "2026-07-31T12:19:18.258Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
+author: "harness:codex"
+estimated_minutes: 150
+acceptance_criteria: Return typed workspace-target provenance from the SDK init resolution path; CLI diagnostics identify ancestor discovery and give a safe current-directory --pm-path recovery; Preserve explicit paths and existing tracker safety while covering POSIX and Windows spellings; Verify nested temporary-directory and packed CLI behavior
+parent: pm-mpbb
+risk: medium
+confidence: high
+reporter: github
+severity: medium
+environment: "pm-cli 2026.7.29, Node 22, nested workspace"
+expected_result: "Init distinguishes ancestor discovery from a local tracker, offers the exact safe current-directory command, and exposes identical resolution through SDK contracts."
+actual_result: "pm init walks to an ancestor tracker, emits a generic existing-settings refusal, and omits the --pm-path current-directory recovery."
+component: CLI and SDK workspace initialization
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-kd9n,discovered_from,"2026-07-31T10:41:51.338Z","harness:codex","cli:create:dep",detected
+  pm-mpbb,implements,"2026-07-31T10:41:51.338Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-07-31T10:41:51.338Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-841, init ancestor discovery, tracker target safety, current-directory initialization, pm-path, and exact/fuzzy titles. Prior init-safety work is closed and protects existing roots; no item owns this distinct target-provenance and remediation gap. Source: https://github.com/unbraind/pm-cli/issues/841"
+  "2026-07-31T11:44:41.301Z","harness:codex","Implementation evidence: init now distinguishes current versus ancestor discovery, exposes typed target provenance, refuses ambiguous ancestor settings rewrites, and supplies the exact safe current-directory tracker command. Unit, integration, manual temp-directory, and full 100/100/100/100 coverage gates passed."
+  "2026-07-31T12:19:18.258Z","harness:codex","Acceptance evidence: fresh nested temp workspace reproduced ancestor selection, emitted current-versus-ancestor provenance and exact safe --pm-path guidance, while explicit/current targets remain idempotent. Full release coverage and packed CLI tests passed."
+files[1]{path,scope,note}:
+  src/sdk/init.ts,project,typed current-versus-ancestor init target provenance and safe recovery
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,nested init target safety and explicit pm-path recovery
+body: ""

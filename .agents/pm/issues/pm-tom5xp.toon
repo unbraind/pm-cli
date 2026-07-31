@@ -1,0 +1,42 @@
+id: pm-tom5xp
+title: "GH-839: extension field declarations accept types the persisted schema cannot validate"
+description: Unify extension-registered custom field types with the authoritative persisted schema field vocabulary so unsupported declarations fail at authoring or registration rather than later mutation.
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-07-31T10:41:24.544Z"
+updated_at: "2026-07-31T12:19:16.754Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Export a documented closed custom-field type union through the public SDK; Reject unsupported extension field declarations at registration with actionable diagnostics; Document persistence and union-merge behavior for every supported field type; Cover type-level, runtime, CLI, package-author, and packed-consumer behavior"
+parent: pm-8jdc
+risk: medium
+confidence: high
+reporter: github
+severity: medium
+environment: "pm-cli 2026.7.29, Node 22"
+expected_result: "SDK types, runtime registration, CLI schema commands, merge semantics, and documentation expose one authoritative custom-field type contract."
+actual_result: "SchemaFieldDefinition.type is unconstrained while pm schema add-field accepts only string, number, boolean, and string_array."
+component: SDK extension schema contracts
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8jdc,implements,"2026-07-31T10:41:24.544Z","harness:codex","cli:create:dep",detected
+  pm-t0yd,discovered_from,"2026-07-31T10:41:24.544Z","harness:codex","cli:create:dep",detected
+  pm-vhbf,discovered_from,"2026-07-31T10:41:24.544Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-07-31T10:41:24.544Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-839, extension registered field types, schema add-field, string_array/object declarations, registerItemFields validation, and exact/fuzzy titles. Closed pm-vhbf and pm-t0yd are prerequisite lineage; neither owns this SDK/CLI contract mismatch. Source: https://github.com/unbraind/pm-cli/issues/839"
+  "2026-07-31T11:44:39.478Z","harness:codex","Implementation evidence: unified SDK, extension, workspace, CLI completion, MCP, and persisted schema types around string|number|boolean|string_array|array|object; added real coercion/schema projection coverage. Full repository coverage passed at 100/100/100/100 (6,594 tests)."
+  "2026-07-31T12:19:16.754Z","harness:codex","Delivery evidence: release gates passed build, typecheck, docstrings 100%, SDK/package boundary, contracts, token budgets, context/retrieval evaluation, 6,594-test coverage at 100/100/100/100, version sync, secret scan, packed npx, and package-first dogfood. npm audit and GitHub Dependabot/code/secret scanning report zero open vulnerabilities; npm-package-arg 14 and TypeScript 7 remain intentionally deferred in canonical pm-ksr40d and pm-do5b."
+files[4]{path,scope,note}:
+  src/core/extensions/item-fields.ts,project,extension assignment validation and persistence parity
+  src/core/schema/runtime-field-values.ts,project,authoritative custom-field type and coercion contract
+  src/mcp/runtime-capabilities.ts,project,runtime field schema projection across MCP tools
+  src/sdk/workspace-contracts.ts,project,public SDK workspace field contract
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/core/schema/runtime-field-values.spec.ts tests/unit/extensions/extensions-item-fields.spec.ts tests/unit/mcp/runtime-capabilities.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package-author field type and persistence guidance
+  docs/SDK.md,project,public SDK customization contract
+body: ""

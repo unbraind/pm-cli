@@ -116,7 +116,7 @@ function parseJsonFieldValue(
 
 function coerceRegisteredFieldValue(
   fieldName: string,
-  fieldType: "string" | "number" | "boolean" | "array" | "object",
+  fieldType: KnownItemFieldType,
   raw: string,
 ): unknown {
   if (fieldType === "string") {
@@ -152,6 +152,12 @@ function coerceRegisteredFieldValue(
       EXIT_CODE.USAGE,
     );
   }
+  if (fieldType === "string_array") {
+    return raw
+      .split(/[\n,|]/u)
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
   return parseJsonFieldValue(raw, fieldName, fieldType);
 }
 
@@ -159,11 +165,11 @@ function collectRegisteredFieldDefinitions(
   registrations: ExtensionRegistrationRegistry | null,
 ): Map<
   string,
-  { name: string; type: "string" | "number" | "boolean" | "array" | "object" }
+  { name: string; type: KnownItemFieldType }
 > {
   const definitions = new Map<
     string,
-    { name: string; type: "string" | "number" | "boolean" | "array" | "object" }
+    { name: string; type: KnownItemFieldType }
   >();
   if (!registrations) {
     return definitions;
@@ -282,7 +288,7 @@ export function parseRegisteredItemFieldAssignments(
 
 function isValidFieldType(
   value: unknown,
-  expectedType: "string" | "number" | "boolean" | "array" | "object",
+  expectedType: KnownItemFieldType,
 ): boolean {
   if (expectedType === "string") {
     return typeof value === "string";
@@ -293,7 +299,7 @@ function isValidFieldType(
   if (expectedType === "boolean") {
     return typeof value === "boolean";
   }
-  if (expectedType === "array") {
+  if (expectedType === "array" || expectedType === "string_array") {
     return Array.isArray(value);
   }
   return typeof value === "object" && value !== null && !Array.isArray(value);

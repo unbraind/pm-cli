@@ -497,7 +497,7 @@ Fields live in `.agents/pm/schema/fields.json` with the shape `{ "fields": [Runt
   "fields": [
     {
       "key": "component", // required: canonical field name (snake_case)
-      "type": "string", // string | number | boolean | string_array (default string)
+      "type": "string", // string | number | boolean | string_array | array | object (default string)
       "metadata_key": "component", // item metadata key (defaults to `key`)
       "cli_flag": "component", // long flag, used as --component (defaults to key)
       "cli_aliases": ["comp"], // extra accepted flag spellings (--comp)
@@ -515,7 +515,7 @@ Fields live in `.agents/pm/schema/fields.json` with the shape `{ "fields": [Runt
 `RuntimeFieldDefinition` properties:
 
 - `key` (**required**) — canonical field name. Empty/invalid keys are dropped.
-- `type` — `string` (default), `number`, `boolean`, or `string_array`. A `string_array` field is repeatable (accepts the flag multiple times).
+- `type` — `string` (default), `number`, `boolean`, `string_array`, `array`, or `object`. A `string_array` field is repeatable and union-merged as a collection. `array` and `object` accept validated JSON containers and retain their JSON shape in item metadata.
 - `metadata_key` — the item metadata key written/read. Defaults to `key`.
 - `cli_flag` — the long flag name (rendered as `--<cli_flag>`). Defaults to a normalized form of `key`.
 - `cli_aliases` — additional flag spellings; duplicates of `cli_flag` are ignored.

@@ -87,7 +87,10 @@ export interface OwnershipConflictGuidance {
 }
 
 /** Domain configuration for one annotation collection primitive. */
-export interface AnnotationCommandConfig<TKey extends string> {
+export interface AnnotationCommandConfig<
+  TKey extends string,
+  TEntry extends AnnotationEntry = AnnotationEntry,
+> {
   /** Normalized annotation operation. */
   input: AnnotationInput;
   /** Metadata collection that stores this annotation family. */
@@ -104,6 +107,12 @@ export interface AnnotationCommandConfig<TKey extends string> {
   bypassOwnershipConflict: boolean;
   /** Recovery guidance for ownership conflicts. */
   conflictGuidance: OwnershipConflictGuidance;
+  /** Entry factory that preserves or enriches the collection's typed annotation shape. */
+  createEntry: (input: {
+    created_at: string;
+    author: string;
+    text: string;
+  }) => TEntry;
 }
 
 /** Structured result returned by an annotation primitive. */
@@ -308,7 +317,7 @@ function annotationStdinHint(collectionKey: string): string {
 
 function assertAnnotationAddValueIsNotFlagLike(
   raw: string,
-  config: AnnotationCommandConfig<string>,
+  config: AnnotationCommandConfig<string, AnnotationEntry>,
 ): void {
   const emptyFlag = config.input.emptyFlag ?? "--add";
   if (emptyFlag !== "--add") {
@@ -345,7 +354,7 @@ function assertAnnotationAddValueIsNotFlagLike(
  * with the same structured recovery bundle.
  */
 function assertAnnotationMessageHasTextSource(
-  config: AnnotationCommandConfig<string>,
+  config: AnnotationCommandConfig<string, AnnotationEntry>,
   options: AnnotationCommandOptions,
 ): void {
   if (config.input.mode !== "list" || options.message === undefined) {
@@ -374,7 +383,7 @@ export async function runAnnotationCommand<
   id: string,
   options: AnnotationCommandOptions,
   global: GlobalOptions,
-  config: AnnotationCommandConfig<TKey>,
+  config: AnnotationCommandConfig<TKey, TEntry>,
 ): Promise<AnnotationCommandResult<TKey, TEntry>> {
   assertAnnotationMessageHasTextSource(config, options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -537,11 +546,8 @@ export async function runAnnotationCommand<
           document.metadata,
           config.collectionKey,
         );
-        entries.push({
-          created_at: nowIso(),
-          author,
-          text,
-        } as TEntry);
+        const entryInput = { created_at: nowIso(), author, text };
+        entries.push(config.createEntry(entryInput));
         document.metadata[config.collectionKey] = entries as never;
         return { changedFields: [config.collectionKey] };
       },

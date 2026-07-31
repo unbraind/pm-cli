@@ -248,14 +248,36 @@ describe("init tracker-path guardrails", () => {
 
       const nested = path.join(workspaceRoot, "nested");
       await mkdir(nested, { recursive: true });
-      const nestedInit = context.runCli(["init", "--json", "--yes"], {
+      const bareEnv = { ...context.env };
+      delete bareEnv.PM_PATH;
+      const nestedInit = runDirectDistCli(["init", "--json", "--yes"], {
         expectJson: true,
         cwd: nested,
+        env: bareEnv,
       });
       expect(nestedInit.code).toBe(0);
       await expect(
         readFile(path.join(nested, ".gitignore"), "utf8"),
       ).rejects.toMatchObject({ code: "ENOENT" });
+
+      const unsafeAncestorUpdate = runDirectDistCli(
+        ["init", "nested", "--json", "--yes"],
+        { cwd: nested, env: bareEnv },
+      );
+      expect(unsafeAncestorUpdate.code).toBe(2);
+      const ancestorEnvelope = expectJsonErrorEnvelope(
+        unsafeAncestorUpdate.stderr,
+        {
+          code: "init_existing_settings_requires_force",
+          exit_code: 2,
+        },
+      );
+      expect(ancestorEnvelope.detail).toContain(
+        `No tracker exists in ${nested}; pm init found an ancestor tracker at ${trackerRoot}`,
+      );
+      expect(ancestorEnvelope.next_steps).toContain(
+        'To create a new tracker in the current directory, rerun with --pm-path "$PWD/.agents/pm".',
+      );
     });
   });
 

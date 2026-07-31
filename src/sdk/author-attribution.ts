@@ -52,6 +52,10 @@ export interface HistoryAuthorAttributionScan {
   affected_item_ids: string[];
   /** Bounded examples suitable for diagnostic output. */
   samples: UnknownAuthorHistoryEvent[];
+  /** Whether additional undispositioned unknown-author examples were omitted. */
+  samples_truncated: boolean;
+  /** Complete actionable coordinates when explicitly requested by a trusted caller. */
+  actionable_events?: UnknownAuthorHistoryEvent[];
 }
 
 /** Classifies one parsed history event by author provenance and baseline age. */
@@ -82,8 +86,11 @@ export const inspectHistoryAuthorStream = (
   | "actionable_unknown_event_count"
   | "acknowledged_actionable_event_count"
   | "samples"
+  | "samples_truncated"
+  | "actionable_events"
 > => {
   const samples: UnknownAuthorHistoryEvent[] = [];
+  const actionableEvents: UnknownAuthorHistoryEvent[] = [];
   const unknownCounts = {
     legacy_unknown: 0,
     actionable_unknown: 0,
@@ -113,6 +120,9 @@ export const inspectHistoryAuthorStream = (
       continue;
     }
     unknownCounts[classification] += 1;
+    if (classification === "actionable_unknown") {
+      actionableEvents.push({ item_id: itemId, line: index + 1 });
+    }
     if (samples.length < boundedSampleLimit) {
       samples.push({ item_id: itemId, line: index + 1 });
     }
@@ -124,6 +134,10 @@ export const inspectHistoryAuthorStream = (
     actionable_unknown_event_count: unknownCounts.actionable_unknown,
     acknowledged_actionable_event_count: acknowledgedActionableEvents,
     samples,
+    samples_truncated:
+      unknownCounts.legacy_unknown + unknownCounts.actionable_unknown >
+      samples.length,
+    actionable_events: actionableEvents,
   };
 };
 
@@ -176,6 +190,7 @@ function collectAcknowledgedUnknownEvents(raw: string): Set<string> {
 export const scanHistoryAuthorAttribution = async (
   pmRoot: string,
   sampleLimit = 20,
+  includeActionableEvents = false,
 ): Promise<HistoryAuthorAttributionScan> => {
   const historyDirectory = path.join(pmRoot, "history");
   let fileNames: string[];
@@ -188,6 +203,7 @@ export const scanHistoryAuthorAttribution = async (
   }
   const affectedItemIds = new Set<string>();
   const samples: UnknownAuthorHistoryEvent[] = [];
+  const actionableEvents: UnknownAuthorHistoryEvent[] = [];
   let checkedStreams = 0;
   let checkedEvents = 0;
   let unknownEventCount = 0;
@@ -233,7 +249,14 @@ export const scanHistoryAuthorAttribution = async (
       affectedItemIds.add(itemId);
     }
     samples.push(...inspected.samples);
+    if (includeActionableEvents) {
+      actionableEvents.push(
+        ...(inspected.actionable_events as UnknownAuthorHistoryEvent[]),
+      );
+    }
   }
+  const undispositionedUnknownEventCount =
+    legacyUnknownEventCount + actionableUnknownEventCount;
   return {
     checked_streams: checkedStreams,
     checked_events: checkedEvents,
@@ -245,13 +268,17 @@ export const scanHistoryAuthorAttribution = async (
       left.localeCompare(right),
     ),
     samples,
+    samples_truncated: undispositionedUnknownEventCount > samples.length,
+    ...(includeActionableEvents ? { actionable_events: actionableEvents } : {}),
   };
 };
 
 /** Parameters for append-only disposition of immutable unknown-author events. */
 export interface AcknowledgeUnknownAuthorEventsOptions {
   /** Events identified by item id and one-based history line. */
-  events: UnknownAuthorHistoryEvent[];
+  events?: UnknownAuthorHistoryEvent[];
+  /** Select every currently actionable, undispositioned event in the tracker. */
+  all_actionable?: boolean;
   /** Principal attributed by maintainer review. */
   attributed_author: string;
   /** Reviewer appending the disposition event. */
@@ -271,21 +298,35 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
   const reviewer = options.reviewer.trim();
   const attributedAuthor = options.attributed_author.trim();
   const reason = options.reason.trim();
-  if (
-    options.events.length === 0 ||
-    !reviewer ||
-    reviewer.toLowerCase() === "unknown" ||
-    !attributedAuthor ||
-    attributedAuthor.toLowerCase() === "unknown" ||
-    !reason
-  ) {
+  const explicitEvents = options.events ?? [];
+  const selectorCount =
+    Number(options.all_actionable === true) + Number(explicitEvents.length > 0);
+  if (selectorCount > 1) {
+    throw new TypeError(
+      "Author acknowledgment accepts either explicit events or all_actionable, not both.",
+    );
+  }
+  const selectedEvents =
+    options.all_actionable === true
+      ? ((await scanHistoryAuthorAttribution(pmRoot, 0, true))
+          .actionable_events as UnknownAuthorHistoryEvent[])
+      : explicitEvents;
+  const requiredValuesMissing = [
+    selectedEvents.length > 0,
+    reviewer.length > 0,
+    reviewer.toLowerCase() !== "unknown",
+    attributedAuthor.length > 0,
+    attributedAuthor.toLowerCase() !== "unknown",
+    reason.length > 0,
+  ].includes(false);
+  if (requiredValuesMissing) {
     throw new TypeError(
       "Author acknowledgment requires events, reviewer, attributed_author, and reason.",
     );
   }
   const uniqueEvents = [
     ...new Map(
-      options.events.map((event) => [
+      selectedEvents.map((event) => [
         `${event.item_id}:${event.line}`,
         { item_id: event.item_id, line: event.line },
       ]),
@@ -295,11 +336,12 @@ export async function acknowledgeUnknownAuthorHistoryEvents(
       left.item_id.localeCompare(right.item_id) || left.line - right.line,
   );
   for (const event of uniqueEvents) {
-    if (
-      !/^[a-z0-9][a-z0-9-]*$/i.test(event.item_id) ||
-      !Number.isSafeInteger(event.line) ||
-      event.line < 1
-    ) {
+    const invalidCoordinate = [
+      /^[a-z0-9][a-z0-9-]*$/i.test(event.item_id),
+      Number.isSafeInteger(event.line),
+      event.line >= 1,
+    ].includes(false);
+    if (invalidCoordinate) {
       throw new TypeError(
         `Unknown-author acknowledgment target ${event.item_id}:${event.line} is not readable.`,
       );

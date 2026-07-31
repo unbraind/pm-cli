@@ -41,12 +41,20 @@ describe("runtime MCP capabilities", () => {
     expect(resolveMcpToolProfile({})).toBe("core");
     expect(resolveMcpToolProfile({ PM_MCP_PROFILE: "   " })).toBe("core");
     const core = await resolveMcpToolSurface(TOOLS, {}, {});
-    const standard = await resolveMcpToolSurface(TOOLS, {}, {
-      PM_MCP_PROFILE: "standard",
-    });
-    const full = await resolveMcpToolSurface(TOOLS, {}, {
-      PM_MCP_PROFILE: "full",
-    });
+    const standard = await resolveMcpToolSurface(
+      TOOLS,
+      {},
+      {
+        PM_MCP_PROFILE: "standard",
+      },
+    );
+    const full = await resolveMcpToolSurface(
+      TOOLS,
+      {},
+      {
+        PM_MCP_PROFILE: "full",
+      },
+    );
     expect(core.tools.length).toBeLessThan(standard.tools.length);
     expect(standard.tools.length).toBeLessThan(full.tools.length);
     expect(full.tools).toHaveLength(TOOLS.length);
@@ -112,11 +120,11 @@ describe("runtime MCP capabilities", () => {
     expect(buildPmActionToolInputSchema("close").properties).toMatchObject({
       text: { description: expect.stringContaining("close reason") },
     });
-    expect(
-      buildPmActionToolInputSchema("close-task").properties,
-    ).toMatchObject({
-      text: { description: expect.stringContaining("active assignment") },
-    });
+    expect(buildPmActionToolInputSchema("close-task").properties).toMatchObject(
+      {
+        text: { description: expect.stringContaining("active assignment") },
+      },
+    );
     const transportKeys = new Set(Object.keys(TOOL_SCHEMA_BASE.properties));
     for (const [toolName, action] of Object.entries(NARROW_TOOL_ACTIONS)) {
       const actual = TOOLS.find((tool) => tool.name === toolName);
@@ -219,22 +227,30 @@ describe("runtime MCP capabilities", () => {
       resolveMcpToolSurface(TOOLS, {}, { PM_MCP_PROFILE: "custom" }),
     ).rejects.toThrow("requires a non-empty PM_MCP_TOOLS");
     await expect(
-      resolveMcpToolSurface(TOOLS, {}, {
-        PM_MCP_PROFILE: "custom",
-        PM_MCP_TOOLS: "pm_context,pm_missing",
-      }),
+      resolveMcpToolSurface(
+        TOOLS,
+        {},
+        {
+          PM_MCP_PROFILE: "custom",
+          PM_MCP_TOOLS: "pm_context,pm_missing",
+        },
+      ),
     ).rejects.toThrow("unknown tools: pm_missing");
-    const custom = await resolveMcpToolSurface(TOOLS, {}, {
-      PM_MCP_PROFILE: "custom",
-      PM_MCP_TOOLS: " ,pm_context,pm_get,,",
-    });
+    const custom = await resolveMcpToolSurface(
+      TOOLS,
+      {},
+      {
+        PM_MCP_PROFILE: "custom",
+        PM_MCP_TOOLS: " ,pm_context,pm_get,,",
+      },
+    );
     expect(custom.tools.map((tool) => tool.name)).toEqual([
       "pm_context",
       "pm_get",
     ]);
-    expect(() =>
-      resolveMcpToolProfile({ PM_MCP_PROFILE: "enormous" }),
-    ).toThrow("expected core, standard, full, or custom");
+    expect(() => resolveMcpToolProfile({ PM_MCP_PROFILE: "enormous" })).toThrow(
+      "expected core, standard, full, or custom",
+    );
   });
 
   it("advertises resources and renders canonical workflow prompts", async () => {
@@ -293,14 +309,19 @@ describe("runtime MCP capabilities", () => {
     await expect(
       resolveMcpToolAccess(TOOLS, "pm_context", {}, {}),
     ).resolves.toEqual({ profile: "core", available: true });
-    await expect(resolveMcpToolAccess(TOOLS, "pm_run", {}, {})).resolves.toEqual(
-      { profile: "core", available: false },
-    );
     await expect(
-      resolveMcpToolAccess(TOOLS, "pm_run", {}, {
-        PM_MCP_PROFILE: "custom",
-        PM_MCP_TOOLS: "pm_context",
-      }),
+      resolveMcpToolAccess(TOOLS, "pm_run", {}, {}),
+    ).resolves.toEqual({ profile: "core", available: false });
+    await expect(
+      resolveMcpToolAccess(
+        TOOLS,
+        "pm_run",
+        {},
+        {
+          PM_MCP_PROFILE: "custom",
+          PM_MCP_TOOLS: "pm_context",
+        },
+      ),
     ).resolves.toEqual({ profile: "custom", available: false });
   });
 
@@ -319,6 +340,23 @@ describe("runtime MCP capabilities", () => {
         "--json",
       ]);
       expect(addField.code).toBe(0);
+      for (const [name, type] of [
+        ["portfolio-list", "array"],
+        ["portfolio-map", "object"],
+      ] as const) {
+        expect(
+          context.runCli([
+            "schema",
+            "add-field",
+            name,
+            "--type",
+            type,
+            "--commands",
+            "create,update",
+            "--json",
+          ]).code,
+        ).toBe(0);
+      }
       for (const collision of [
         "cwd",
         "path",
@@ -345,12 +383,13 @@ describe("runtime MCP capabilities", () => {
       );
       const create = surface.tools.find((tool) => tool.name === "pm_create");
       expect(
-        (
-          create?.inputSchema.properties as
-            | Record<string, unknown>
-            | undefined
-        )?.portfolioSignal,
+        (create?.inputSchema.properties as Record<string, unknown> | undefined)
+          ?.portfolioSignal,
       ).toMatchObject({ type: "string" });
+      expect(create?.inputSchema.properties).toMatchObject({
+        portfolioList: { type: "array", items: {} },
+        portfolioMap: { type: "object", additionalProperties: true },
+      });
       const canonicalCreate = TOOLS.find((tool) => tool.name === "pm_create");
       if (!canonicalCreate) {
         throw new Error("Expected the canonical pm_create tool definition");
@@ -456,9 +495,7 @@ describe("runtime MCP capabilities", () => {
         (tool) => tool.name === "pm_create",
       );
       expect(refreshedCreate).toBeDefined();
-      expect(
-        refreshedCreate?.inputSchema.properties,
-      ).toMatchObject({
+      expect(refreshedCreate?.inputSchema.properties).toMatchObject({
         deliveryMarkers: {
           type: "array",
           items: { type: "string" },

@@ -31,6 +31,7 @@ import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
 import { registerStructuredMutationCommands } from "./register-structured-mutation.js";
 import { registerHistoryAuthorAcknowledgeCommand } from "./register-history-author.js";
 import { PLAN_SUBCOMMANDS, runPlan } from "./commands/plan.js";
+import { runNotes } from "./commands/notes.js";
 import {
   isPureSnakeCaseAlias,
   looksLikeSchemaSubcommandTypo,
@@ -766,7 +767,8 @@ function assertCreatePositionalTypeHasTitle(
 }
 
 const STRUCTURED_STDIN_CONFLICT_KEYS = [
-  "body", "description",
+  "body",
+  "description",
   "dep",
   "depRemove",
   "comment",
@@ -836,7 +838,8 @@ async function runCreateAction(
     typeof positionals.positionalTitle === "string" &&
     positionals.positionalTitle.length > 0 &&
     options.title === undefined
-  ) options.title = positionals.positionalTitle;
+  )
+    options.title = positionals.positionalTitle;
   await resolveDescriptionStdin(options);
   if (typeof options.bodyFile === "string") {
     options.body = await resolveBodyFileContent(
@@ -1871,16 +1874,19 @@ async function runNotesAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const add = resolveSingleTextSource("note", text, options);
-  const { runNotes } = await import("./commands/notes.js");
   const result = await runNotes(
     id,
     {
       add,
+      addJson: readOptionString(options, "addJson"),
       stdin: options.stdin === true,
       file: readOptionString(options, "file"),
       edit: typeof options.edit === "number" ? options.edit : undefined,
       delete: typeof options.delete === "number" ? options.delete : undefined,
       limit: readOptionString(options, "limit"),
+      since: readOptionString(options, "since"),
+      eventType: readOptionString(options, "eventType"),
+      includeMeta: options.includeMeta === true,
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
       ownershipAppendBypass: options.ownershipAppendBypass === true,
@@ -1890,6 +1896,7 @@ async function runNotesAction(
   );
   if (
     typeof add === "string" ||
+    typeof options.addJson === "string" ||
     options.stdin === true ||
     typeof options.file === "string" ||
     typeof options.edit === "number" ||
@@ -2711,16 +2718,15 @@ export function registerMutationCommands(
   program
     .command("append")
     .argument("<id>", "Item id")
-    .argument(
-      "[text]",
-      "Optional body text shorthand (equivalent to --body; use - for stdin)",
-    )
+    .argument("[text]", "Body text; same as --body (- reads stdin)")
     .option("--body <value>", "Text to append to body (or - for stdin)")
     .option("--text <value>", "Alias for --body")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Mutation message")
     .option("--force", "Force ownership override")
-    .description("Append text to an item's body.")
+    .description(
+      "Append text to an item's body. For concurrent writes, use pm notes.",
+    )
     .action(runAppendAction);
 
   program
@@ -3214,7 +3220,7 @@ export function registerMutationCommands(
     .option("--order <n>", "Display/sort order for a custom status")
     .option(
       "--type <type>",
-      "Value type for a custom field (add-field): string, number, boolean, string_array",
+      "Value type for a custom field (add-field): string, number, boolean, string_array, array, object",
     )
     .option(
       "--commands <list>",
@@ -3348,21 +3354,13 @@ export function registerMutationCommands(
       "[text]",
       "Optional note text shorthand (equivalent to --add; use - for stdin)",
     )
-    .option(
-      "--add <text>",
-      "Add one note entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
-    )
-    .option(
-      "--stdin",
-      "Read note text from stdin (supports multiline markdown)",
-    )
-    .option(
-      "--file <path>",
-      "Read note text from file (supports multiline markdown)",
-    )
+    .option("--add <text>", "Add a text note (- reads stdin)")
+    .option("--add-json <json>", "Append a merge-safe JSON event")
+    .option("--stdin", "Read note text from stdin")
+    .option("--file <path>", "Read note text from a UTF-8 file")
     .option(
       "--edit <index>",
-      "Replace the note at 1-based <index> (replacement text from positional [text], --add, --stdin, or --file)",
+      "Replace a 1-based note using the selected text input",
       parsePositiveIntOption("--edit"),
     )
     .option(
@@ -3371,13 +3369,13 @@ export function registerMutationCommands(
       parsePositiveIntOption("--delete"),
     )
     .option("--limit <n>", "Return only latest n notes")
-    .option(
-      "--author [value]",
-      "Note author (optional; falls back to PM_AUTHOR/settings)",
-    )
+    .option("--since <timestamp>", "Filter JSON events from this ISO time")
+    .option("--event-type <value>", "Filter JSON events by top-level type")
+    .option("--include-meta", "Include count and truncation metadata")
+    .option("--author [value]", "Author; defaults to PM_AUTHOR/settings")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
-    .description("List, add, edit, or delete notes for an item.")
+    .description("Manage merge-safe text notes and JSON context events.")
     .action(runNotesAction);
 
   program

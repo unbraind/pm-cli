@@ -562,7 +562,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       oneOfRequired: [["id"], ["all"]],
     },
     "history-author-acknowledge": {
-      required: ["historyEvent", "attributedAuthor", "reviewer", "reason"],
+      required: ["attributedAuthor", "reviewer", "reason"],
+      optional: ["historyEvent", "allActionable"],
+      oneOfRequired: [["historyEvent"], ["allActionable"]],
     },
     "history-compact": {
       // Single-id mode (`id` + optional `before`) or bulk mode (any of `ids` /
@@ -756,10 +758,14 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       optional: [
         "text",
         "add",
+        "addJson",
         "stdin",
         "edit",
         "delete",
         "limit",
+        "since",
+        "eventType",
+        "includeMeta",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
     },
@@ -948,6 +954,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "noRefresh",
         "refreshVectors",
         "verboseStaleItems",
+        "verboseAuthorEvents",
         "brief",
         "summary",
         "skipVectors",

@@ -402,6 +402,39 @@
       ],
       "package_version": "2026.7.31",
       "reason": "Read-row selectors now distinguish scalar envelopes from iterable collections, resolve nested dependency paths, and every edge count declares its counting basis."
+    },
+    {
+      "changes": [
+        "signature ./sdk:AcknowledgeUnknownAuthorEventsOptions",
+        "signature ./sdk:AnnotationCommandConfig",
+        "signature ./sdk:HistoryAuthorAttributionScan",
+        "signature ./sdk:InitTargetResolution",
+        "signature ./sdk:inspectHistoryAuthorStream",
+        "signature ./sdk:LogNote",
+        "signature ./sdk:NotesCommandOptions",
+        "signature ./sdk:NotesResult",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk:runAnnotationCommand",
+        "signature ./sdk:RunHealthOptions",
+        "signature ./sdk:scanHistoryAuthorAttribution",
+        "signature ./sdk:SchemaFieldDefinition",
+        "signature ./sdk:WorkspaceFieldContract",
+        "signature ./sdk/authoring:SchemaFieldDefinition",
+        "signature ./sdk/core:NotesCommandOptions",
+        "signature ./sdk/core:NotesResult",
+        "signature ./sdk/governance:AcknowledgeUnknownAuthorEventsOptions",
+        "signature ./sdk/governance:HistoryAuthorAttributionScan",
+        "signature ./sdk/governance:inspectHistoryAuthorStream",
+        "signature ./sdk/governance:RunHealthOptions",
+        "signature ./sdk/governance:scanHistoryAuthorAttribution",
+        "signature ./sdk/runtime:LogNote",
+        "signature ./sdk/runtime:NotesCommandOptions",
+        "signature ./sdk/runtime:NotesResult",
+        "signature ./sdk/runtime:RunHealthOptions",
+        "signature ./sdk/runtime:WorkspaceFieldContract"
+      ],
+      "package_version": "2026.7.31",
+      "reason": "Expand universal SDK context primitives with typed runtime containers, merge-safe structured events, init target provenance, and actionable author diagnostics."
     }
   ],
   "entrypoints": {
@@ -478,7 +511,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AcknowledgeUnknownAuthorEventsOptions",
-          "signature": "export interface AcknowledgeUnknownAuthorEventsOptions { events: UnknownAuthorHistoryEvent[]; attributed_author: string; reviewer: string; reason: string; }"
+          "signature": "export interface AcknowledgeUnknownAuthorEventsOptions { events?: UnknownAuthorHistoryEvent[]; all_actionable?: boolean; attributed_author: string; reviewer: string; reason: string; }"
         },
         {
           "classification": "supported",
@@ -712,7 +745,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "AnnotationCommandConfig",
-          "signature": "export interface AnnotationCommandConfig<TKey extends string> { input: AnnotationInput; collectionKey: TKey; op: Parameters<typeof mutateItem>[0][\"op\"]; editOp?: Parameters<typeof mutateItem>[0][\"op\"]; deleteOp?: Parameters<typeof mutateItem>[0][\"op\"]; parseText: (raw: string) => string; bypassOwnershipConflict: boolean; conflictGuidance: OwnershipConflictGuidance; }"
+          "signature": "export interface AnnotationCommandConfig<TKey extends string, TEntry extends AnnotationEntry = AnnotationEntry> { input: AnnotationInput; collectionKey: TKey; op: Parameters<typeof mutateItem>[0][\"op\"]; editOp?: Parameters<typeof mutateItem>[0][\"op\"]; deleteOp?: Parameters<typeof mutateItem>[0][\"op\"]; parseText: (raw: string) => string; bypassOwnershipConflict: boolean; conflictGuidance: OwnershipConflictGuidance; createEntry: (input: { created_at: string; author: string; text: string; }) => TEntry; }"
         },
         {
           "classification": "advanced_export",
@@ -4642,7 +4675,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryAuthorAttributionScan",
-          "signature": "export interface HistoryAuthorAttributionScan { checked_streams: number; checked_events: number; unknown_event_count: number; legacy_unknown_event_count: number; actionable_unknown_event_count: number; acknowledged_actionable_event_count: number; affected_item_ids: string[]; samples: UnknownAuthorHistoryEvent[]; }"
+          "signature": "export interface HistoryAuthorAttributionScan { checked_streams: number; checked_events: number; unknown_event_count: number; legacy_unknown_event_count: number; actionable_unknown_event_count: number; acknowledged_actionable_event_count: number; affected_item_ids: string[]; samples: UnknownAuthorHistoryEvent[]; samples_truncated: boolean; actionable_events?: UnknownAuthorHistoryEvent[]; }"
         },
         {
           "classification": "advanced_export",
@@ -4900,7 +4933,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "InitTargetResolution",
-          "signature": "export interface InitTargetResolution { mode: \"workspace-discovery\" | \"tracker-path\" | \"workspace-path\"; tracker_root: string; workspace_root?: string; }"
+          "signature": "export interface InitTargetResolution { mode: \"workspace-discovery\" | \"tracker-path\" | \"workspace-path\"; tracker_root: string; workspace_root?: string; discovery?: \"current\" | \"ancestor\"; requested_cwd?: string; suggested_current_tracker_root?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -4912,7 +4945,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "inspectHistoryAuthorStream",
-          "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\">"
+          "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_events\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples_truncated\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\" | \"samples_truncated\" | \"actionable_events\">"
         },
         {
           "classification": "supported",
@@ -5620,7 +5653,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LogNote",
-          "signature": "export interface LogNote { created_at: string; author: string; text: string; }"
+          "signature": "export interface LogNote { created_at: string; author: string; text: string; format?: \"json\"; data?: StructuredJsonValue; event_type?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -6064,13 +6097,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; }"
         },
         {
           "classification": "supported",
@@ -7006,7 +7039,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; format?: string; format_version?: number; type?: string; required?: string; why?: string; examples?: string[]; nextSteps?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; reason?: string; field?: string; format?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -9220,7 +9253,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runAnnotationCommand",
-          "signature": "<TKey extends string, TEntry extends AnnotationEntry>(id: string, options: AnnotationCommandOptions, global: GlobalOptions, config: AnnotationCommandConfig<TKey>) => Promise<AnnotationCommandResult<TKey, TEntry>> | calls: <TKey extends string, TEntry extends AnnotationEntry>(id: string, options: AnnotationCommandOptions, global: GlobalOptions, config: AnnotationCommandConfig<TKey>) => Promise<AnnotationCommandResult<TKey, TEntry>>"
+          "signature": "<TKey extends string, TEntry extends AnnotationEntry>(id: string, options: AnnotationCommandOptions, global: GlobalOptions, config: AnnotationCommandConfig<TKey, TEntry>) => Promise<AnnotationCommandResult<TKey, TEntry>> | calls: <TKey extends string, TEntry extends AnnotationEntry>(id: string, options: AnnotationCommandOptions, global: GlobalOptions, config: AnnotationCommandConfig<TKey, TEntry>) => Promise<AnnotationCommandResult<TKey, TEntry>>"
         },
         {
           "classification": "advanced_export",
@@ -9346,7 +9379,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -9772,7 +9805,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "scanHistoryAuthorAttribution",
-          "signature": "(pmRoot: string, sampleLimit?: number) => Promise<HistoryAuthorAttributionScan> | calls: (pmRoot: string, sampleLimit?: number) => Promise<HistoryAuthorAttributionScan>"
+          "signature": "(pmRoot: string, sampleLimit?: number, includeActionableEvents?: boolean) => Promise<HistoryAuthorAttributionScan> | calls: (pmRoot: string, sampleLimit?: number, includeActionableEvents?: boolean) => Promise<HistoryAuthorAttributionScan>"
         },
         {
           "classification": "advanced_export",
@@ -9928,7 +9961,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SchemaFieldDefinition",
-          "signature": "export interface SchemaFieldDefinition { name: string; type: string; optional?: boolean; default?: unknown; values?: unknown[]; }"
+          "signature": "export interface SchemaFieldDefinition { name: string; type: KnownItemFieldType; optional?: boolean; default?: unknown; values?: unknown[]; }"
         },
         {
           "classification": "advanced_export",
@@ -10601,6 +10634,12 @@
           "kind": "function",
           "name": "splitFrontMatter",
           "signature": "(content: string) => { frontMatter: string; body: string; } | calls: (content: string) => { frontMatter: string; body: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "stableStringify",
+          "signature": "(value: unknown) => string | calls: (value: unknown) => string"
         },
         {
           "classification": "advanced_export",
@@ -11542,7 +11581,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceFieldContract",
-          "signature": "export interface WorkspaceFieldContract { key: string; optionName: string; metadataKey: string; type: \"string\" | \"number\" | \"boolean\" | \"string_array\"; commands: string[]; repeatable: boolean; requiredOnCreate: boolean; description?: string; }"
+          "signature": "export interface WorkspaceFieldContract { key: string; optionName: string; metadataKey: string; type: RuntimeFieldType; commands: string[]; repeatable: boolean; requiredOnCreate: boolean; description?: string; }"
         },
         {
           "classification": "supported",
@@ -12952,7 +12991,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SchemaFieldDefinition",
-          "signature": "export interface SchemaFieldDefinition { name: string; type: string; optional?: boolean; default?: unknown; values?: unknown[]; }"
+          "signature": "export interface SchemaFieldDefinition { name: string; type: KnownItemFieldType; optional?: boolean; default?: unknown; values?: unknown[]; }"
         },
         {
           "classification": "supported",
@@ -14866,13 +14905,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; }"
         },
         {
           "classification": "supported",
@@ -15106,7 +15145,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "AcknowledgeUnknownAuthorEventsOptions",
-          "signature": "export interface AcknowledgeUnknownAuthorEventsOptions { events: UnknownAuthorHistoryEvent[]; attributed_author: string; reviewer: string; reason: string; }"
+          "signature": "export interface AcknowledgeUnknownAuthorEventsOptions { events?: UnknownAuthorHistoryEvent[]; all_actionable?: boolean; attributed_author: string; reviewer: string; reason: string; }"
         },
         {
           "classification": "supported",
@@ -15244,7 +15283,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryAuthorAttributionScan",
-          "signature": "export interface HistoryAuthorAttributionScan { checked_streams: number; checked_events: number; unknown_event_count: number; legacy_unknown_event_count: number; actionable_unknown_event_count: number; acknowledged_actionable_event_count: number; affected_item_ids: string[]; samples: UnknownAuthorHistoryEvent[]; }"
+          "signature": "export interface HistoryAuthorAttributionScan { checked_streams: number; checked_events: number; unknown_event_count: number; legacy_unknown_event_count: number; actionable_unknown_event_count: number; acknowledged_actionable_event_count: number; affected_item_ids: string[]; samples: UnknownAuthorHistoryEvent[]; samples_truncated: boolean; actionable_events?: UnknownAuthorHistoryEvent[]; }"
         },
         {
           "classification": "supported",
@@ -15256,7 +15295,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "inspectHistoryAuthorStream",
-          "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\">"
+          "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_events\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples_truncated\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\" | \"samples_truncated\" | \"actionable_events\">"
         },
         {
           "classification": "supported",
@@ -15370,7 +15409,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "supported",
@@ -15382,7 +15421,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "scanHistoryAuthorAttribution",
-          "signature": "(pmRoot: string, sampleLimit?: number) => Promise<HistoryAuthorAttributionScan> | calls: (pmRoot: string, sampleLimit?: number) => Promise<HistoryAuthorAttributionScan>"
+          "signature": "(pmRoot: string, sampleLimit?: number, includeActionableEvents?: boolean) => Promise<HistoryAuthorAttributionScan> | calls: (pmRoot: string, sampleLimit?: number, includeActionableEvents?: boolean) => Promise<HistoryAuthorAttributionScan>"
         },
         {
           "classification": "supported",
@@ -19054,7 +19093,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LogNote",
-          "signature": "export interface LogNote { created_at: string; author: string; text: string; }"
+          "signature": "export interface LogNote { created_at: string; author: string; text: string; format?: \"json\"; data?: StructuredJsonValue; event_type?: string; }"
         },
         {
           "classification": "supported",
@@ -19150,13 +19189,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NotesCommandOptions",
-          "signature": "export interface NotesCommandOptions { add?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface NotesCommandOptions { add?: string; addJson?: string; stdin?: boolean; file?: string; edit?: number; delete?: number; limit?: string; since?: string; eventType?: string; includeMeta?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "NotesResult",
-          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; }"
+          "signature": "export interface NotesResult { id: string; notes: LogNote[]; count: number; total_count?: number; returned_count?: number; has_more?: boolean; limit?: number; structured_event_count?: number; }"
         },
         {
           "classification": "supported",
@@ -19660,7 +19699,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunHealthOptions",
-          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+          "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
           "classification": "supported",
@@ -20410,7 +20449,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceFieldContract",
-          "signature": "export interface WorkspaceFieldContract { key: string; optionName: string; metadataKey: string; type: \"string\" | \"number\" | \"boolean\" | \"string_array\"; commands: string[]; repeatable: boolean; requiredOnCreate: boolean; description?: string; }"
+          "signature": "export interface WorkspaceFieldContract { key: string; optionName: string; metadataKey: string; type: RuntimeFieldType; commands: string[]; repeatable: boolean; requiredOnCreate: boolean; description?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -21050,6 +21089,7 @@
     "field_duplicate",
     "field_invalid",
     "github_source_entry_unbuilt",
+    "history_author_acknowledge_selector_required",
     "history_drift_chain_mismatch",
     "history_drift_hash_mismatch",
     "history_drift_missing_stream",
@@ -21126,6 +21166,10 @@
     "status_invalid",
     "stdin_json_invalid",
     "stdin_json_unknown_key",
+    "structured_event_input_conflict",
+    "structured_event_json_empty",
+    "structured_event_json_invalid",
+    "structured_event_since_invalid",
     "telemetry_endpoint_probe_failed",
     "telemetry_endpoint_probe_http_status",
     "telemetry_otel_export_failing",

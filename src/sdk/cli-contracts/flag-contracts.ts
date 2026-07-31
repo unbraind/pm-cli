@@ -295,7 +295,15 @@ function withCursorSemantics(
 /** Public contract for notes flag contracts, shared by SDK and presentation-layer consumers. */
 export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add", aliases: ["--note"] },
+  { flag: "--add-json" },
+  { flag: "--stdin" },
+  { flag: "--file" },
+  { flag: "--edit" },
+  { flag: "--delete" },
   { flag: "--limit" },
+  { flag: "--since" },
+  { flag: "--event-type" },
+  { flag: "--include-meta" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -386,6 +394,7 @@ export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for append-only unknown-author acknowledgment flags. */
 export const HISTORY_AUTHOR_ACKNOWLEDGE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--event", repeatable: true },
+  { flag: "--all-actionable" },
   { flag: "--attributed-author", aliases: ["--attributed_author"] },
   { flag: "--reviewer" },
   { flag: "--reason" },
@@ -1023,6 +1032,7 @@ export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--no-refresh" },
   { flag: "--refresh-vectors" },
   { flag: "--verbose-stale-items" },
+  { flag: "--verbose-author-events" },
   { flag: "--brief" },
   { flag: "--summary" },
   { flag: "--skip-vectors" },

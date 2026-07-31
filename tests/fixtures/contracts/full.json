@@ -2702,6 +2702,9 @@
           "flag": "--verbose-stale-items"
         },
         {
+          "flag": "--verbose-author-events"
+        },
+        {
           "flag": "--brief"
         },
         {
@@ -2766,6 +2769,9 @@
         {
           "flag": "--event",
           "repeatable": true
+        },
+        {
+          "flag": "--all-actionable"
         },
         {
           "aliases": [
@@ -4892,7 +4898,31 @@
           "flag": "--add"
         },
         {
+          "flag": "--add-json"
+        },
+        {
+          "flag": "--stdin"
+        },
+        {
+          "flag": "--file"
+        },
+        {
+          "flag": "--edit"
+        },
+        {
+          "flag": "--delete"
+        },
+        {
           "flag": "--limit"
+        },
+        {
+          "flag": "--since"
+        },
+        {
+          "flag": "--event-type"
+        },
+        {
+          "flag": "--include-meta"
         },
         {
           "flag": "--author"
@@ -9634,6 +9664,16 @@
       "stability": "stable"
     },
     {
+      "code": "history_author_acknowledge_selector_required",
+      "exit_code": 2,
+      "meaning": "History author acknowledge selector required condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-history-author.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "history_drift_chain_mismatch",
       "exit_code": 1,
       "meaning": "History drift chain mismatch condition.",
@@ -10408,6 +10448,46 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/structured-mutations.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "structured_event_input_conflict",
+      "exit_code": 2,
+      "meaning": "Structured event input conflict condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/notes.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "structured_event_json_empty",
+      "exit_code": 2,
+      "meaning": "Structured event json empty condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/notes.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "structured_event_json_invalid",
+      "exit_code": 2,
+      "meaning": "Structured event json invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/notes.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "structured_event_since_invalid",
+      "exit_code": 2,
+      "meaning": "Structured event since invalid condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/commands/notes.ts"
       ],
       "stability": "stable"
     },
@@ -14501,6 +14581,10 @@
             ],
             "type": "number"
           },
+          "verboseAuthorEvents": {
+            "description": "For health action, include every actionable unknown-author event coordinate.",
+            "type": "boolean"
+          },
           "verboseStaleItems": {
             "description": "For health action, include full stale-item arrays in vectorization details.",
             "type": "boolean"
@@ -15398,6 +15482,25 @@
             },
             "type": "array"
           },
+          "addJson": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "JSON input: one structured context event for notes, or repeatable linked-test entries for test.",
+            "examples": [
+              [
+                "{\"command\":\"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts\",\"timeout_seconds\":240}"
+              ]
+            ]
+          },
           "author": {
             "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
             "type": "string"
@@ -15416,6 +15519,10 @@
             "minimum": 1,
             "type": "integer"
           },
+          "eventType": {
+            "description": "For notes action, return structured context events whose top-level type matches this value.",
+            "type": "string"
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -15423,6 +15530,10 @@
           "id": {
             "description": "pm item id, for example pm-abc1.",
             "type": "string"
+          },
+          "includeMeta": {
+            "description": "Include total, returned, truncation, and structured-event counts for notes reads.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -15478,6 +15589,14 @@
           "quiet": {
             "description": "Suppress stdout payload output.",
             "type": "boolean"
+          },
+          "since": {
+            "description": "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
+            "examples": [
+              "2026-01-01T00:00:00.000Z"
+            ],
+            "format": "date-time",
+            "type": "string"
           },
           "stdin": {
             "description": "For comments, notes, and learnings actions, read annotation text from piped stdin (supports multiline markdown).",
@@ -17411,16 +17530,23 @@
             "type": "array"
           },
           "addJson": {
-            "description": "Repeatable JSON object or array input for adding linked-test entries without CSV escaping loss.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "JSON input: one structured context event for notes, or repeatable linked-test entries for test.",
             "examples": [
               [
                 "{\"command\":\"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts\",\"timeout_seconds\":240}"
               ]
-            ],
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
+            ]
           },
           "author": {
             "description": "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
@@ -29035,10 +29161,44 @@
       },
       {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "allActionable"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "historyEvent"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "historyEvent"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "allActionable"
+            ]
+          }
+        ],
         "properties": {
           "action": {
             "const": "history-author-acknowledge",
             "description": "Tool action to execute."
+          },
+          "allActionable": {
+            "description": "For history-author-acknowledge, select every currently actionable undispositioned event.",
+            "type": "boolean"
           },
           "attributedAuthor": {
             "description": "Principal attributed to the immutable unknown-author history events after review.",
@@ -29114,7 +29274,6 @@
         },
         "required": [
           "action",
-          "historyEvent",
           "attributedAuthor",
           "reviewer",
           "reason"
@@ -32810,6 +32969,25 @@
             },
             "type": "array"
           },
+          "addJson": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "JSON input: one structured context event for notes, or repeatable linked-test entries for test.",
+            "examples": [
+              [
+                "{\"command\":\"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts\",\"timeout_seconds\":240}"
+              ]
+            ]
+          },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
@@ -32824,6 +33002,10 @@
             "minimum": 1,
             "type": "integer"
           },
+          "eventType": {
+            "description": "For notes action, return structured context events whose top-level type matches this value.",
+            "type": "string"
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -32834,6 +33016,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "includeMeta": {
+            "description": "Include total, returned, truncation, and structured-event counts for notes reads.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -32889,6 +33075,14 @@
           "quiet": {
             "description": "Suppress stdout payload output.",
             "type": "boolean"
+          },
+          "since": {
+            "description": "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
+            "examples": [
+              "2026-01-01T00:00:00.000Z"
+            ],
+            "format": "date-time",
+            "type": "string"
           },
           "stdin": {
             "description": "For comments, notes, and learnings actions, read annotation text from piped stdin (supports multiline markdown).",
@@ -33791,16 +33985,23 @@
             "type": "array"
           },
           "addJson": {
-            "description": "Repeatable JSON object or array input for adding linked-test entries without CSV escaping loss.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "JSON input: one structured context event for notes, or repeatable linked-test entries for test.",
             "examples": [
               [
                 "{\"command\":\"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts\",\"timeout_seconds\":240}"
               ]
-            ],
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
+            ]
           },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
@@ -34481,6 +34682,10 @@
               120000
             ],
             "type": "number"
+          },
+          "verboseAuthorEvents": {
+            "description": "For health action, include every actionable unknown-author event coordinate.",
+            "type": "boolean"
           },
           "verboseStaleItems": {
             "description": "For health action, include full stale-item arrays in vectorization details.",

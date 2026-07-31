@@ -425,6 +425,7 @@ async function runHealthAction(
     noRefresh: Boolean(options.noRefresh),
     refreshVectors: Boolean(options.refreshVectors),
     verboseStaleItems: Boolean(options.verboseStaleItems),
+    verboseAuthorEvents: Boolean(options.verboseAuthorEvents),
     brief: Boolean(options.brief),
     summary: Boolean(options.summary),
     skipVectors: Boolean(options.skipVectors),
@@ -1044,6 +1045,10 @@ export function registerOperationCommands(program: Command): void {
     .option(
       "--verbose-stale-items",
       "Include full stale vectorization ID lists in health output",
+    )
+    .option(
+      "--verbose-author-events",
+      "Include every actionable unknown-author event coordinate for review or disposition",
     )
     .option("--brief", "Emit compact health details for low-token agent checks")
     .option(

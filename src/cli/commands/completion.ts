@@ -792,7 +792,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--add --body --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    notes)",
-    `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-json --stdin --file --edit --delete --limit --since --event-type --include-meta --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    learnings)",
     `      COMPREPLY=(${compgen("--add --stdin --file --edit --delete --limit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -832,6 +832,9 @@ export function generateBashScript(
     "      ;;",
     "    history-compact)",
     `      COMPREPLY=(${compgen("--before --ids --all-over --closed --all-streams --min-entries --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    "      ;;",
+    "    history-author-acknowledge)",
+    `      COMPREPLY=(${compgen("--event --all-actionable --attributed-author --reviewer --reason --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    get)",
     `      COMPREPLY=(${compgen(GET_FLAGS)})`,
@@ -1367,6 +1370,16 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        history-author-acknowledge)
+          _arguments \\
+            '*--event[Actionable unknown-author event]:item_and_line' \\
+            '--all-actionable[Select every currently actionable event]' \\
+            '--attributed-author[Principal attributed by maintainer review]:author' \\
+            '--reviewer[Reviewer recording the disposition]:reviewer' \\
+            '--reason[Evidence-backed review rationale]:reason' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         get)
           _arguments \\
             '--depth[Detail depth]:(brief standard deep full)' \\
@@ -1408,7 +1421,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--alias[Alias for the custom type, status, or field flag (repeatable)]:name' \\
             '--role[Lifecycle role for a custom status (repeatable)]:role' \\
             '--order[Display/sort order for a custom status]:n' \\
-            '--type[Value type for a custom field]:type:(string number boolean string_array)' \\
+            '--type[Value type for a custom field]:type:(string number boolean string_array array object)' \\
             '--commands[Commands a custom field is wired onto (repeatable)]:commands' \\
             '--cli-flag[Override the auto-derived CLI flag for a custom field]:flag' \\
             '--required[Mark a custom field as always required]' \\
@@ -1522,11 +1535,15 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         notes)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--add-json[Append one validated JSON context event]:json' \\
             '--stdin[Read entry text from stdin]' \\
             '--file[Read entry text from file]:path' \\
             '--edit[Replace the entry at a 1-based index]:index' \\
             '--delete[Delete the entry at a 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
+            '--since[Return structured events at or after an ISO timestamp]:timestamp' \\
+            '--event-type[Return structured events with this top-level type]:event_type' \\
+            '--include-meta[Include result counts and truncation metadata]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -1776,6 +1793,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--no-refresh[Disable automatic vector refresh attempts during health checks]' \\
             '--refresh-vectors[Explicitly enable vector refresh attempts during health checks]' \\
             '--verbose-stale-items[Include full stale vectorization ID lists in health output]' \\
+            '--verbose-author-events[Include complete actionable unknown-author coordinates]' \\
             '--brief[Emit compact health details for low-token agent checks]' \\
             '--summary[Emit one-line-style health status with check names and warning count]' \\
             '--strict-exit[Return non-zero exit when health warnings are present]' \\
@@ -2407,6 +2425,11 @@ complete -c pm -n '__fish_seen_subcommand_from history-compact' -l dry-run -d 'P
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-compact' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l event -d 'Actionable unknown-author event' -r
+complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l all-actionable -d 'Select every currently actionable event'
+complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l attributed-author -d 'Principal attributed by maintainer review' -r
+complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l reviewer -d 'Reviewer recording the disposition' -r
+complete -c pm -n '__fish_seen_subcommand_from history-author-acknowledge' -l reason -d 'Evidence-backed review rationale' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l literal -d 'Literal string matcher to redact from history/item payloads' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l regex -d 'Regex matcher to redact (/pattern/flags or raw pattern)' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l replacement -d 'Replacement text (defaults to [redacted])' -r
@@ -2426,7 +2449,7 @@ complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage fol
 complete -c pm -n '__fish_seen_subcommand_from schema' -l alias -d 'Alias for the custom type, status, or field flag (repeatable)' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l role -d 'Lifecycle role for a custom status (repeatable)' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l order -d 'Display/sort order for a custom status' -r
-complete -c pm -n '__fish_seen_subcommand_from schema' -l type -d 'Value type for a custom field' -r -a 'string number boolean string_array'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l type -d 'Value type for a custom field' -r -a 'string number boolean string_array array object'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l commands -d 'Commands a custom field is wired onto (repeatable)' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l cli-flag -d 'Override the auto-derived CLI flag for a custom field' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l required -d 'Mark a custom field as always required'
@@ -2508,10 +2531,18 @@ complete -c pm -n '__fish_seen_subcommand_from graph' -l summary -d 'Return coun
 
 # comments / notes / learnings flags
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r
+complete -c pm -n '__fish_seen_subcommand_from notes' -l add-json -d 'Append one validated JSON context event' -r
+complete -c pm -n '__fish_seen_subcommand_from notes' -l since -d 'Return structured events at or after an ISO timestamp' -r
+complete -c pm -n '__fish_seen_subcommand_from notes' -l event-type -d 'Return structured events with this top-level type' -r
+complete -c pm -n '__fish_seen_subcommand_from notes' -l include-meta -d 'Include result counts and truncation metadata'
 complete -c pm -n '__fish_seen_subcommand_from comments' -l stdin -d 'Read comment text from stdin (supports multiline markdown)'
 complete -c pm -n '__fish_seen_subcommand_from comments' -l file -d 'Read comment text from file (supports multiline markdown)' -r
 complete -c pm -n '__fish_seen_subcommand_from comments' -l edit -d 'Replace the comment at 1-based index (text from positional/--add/--stdin/--file)' -r
 complete -c pm -n '__fish_seen_subcommand_from comments' -l delete -d 'Delete the comment at 1-based index' -r
+complete -c pm -n '__fish_seen_subcommand_from notes' -l stdin -d 'Read entry text from stdin'
+complete -c pm -n '__fish_seen_subcommand_from notes' -l file -d 'Read entry text from file' -r
+complete -c pm -n '__fish_seen_subcommand_from notes' -l edit -d 'Replace the entry at a 1-based index' -r
+complete -c pm -n '__fish_seen_subcommand_from notes' -l delete -d 'Delete the entry at a 1-based index' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r
@@ -2725,6 +2756,7 @@ complete -c pm -n '__fish_seen_subcommand_from health' -l check-only -d 'Run rea
 complete -c pm -n '__fish_seen_subcommand_from health' -l no-refresh -d 'Disable automatic vector refresh attempts during health checks'
 complete -c pm -n '__fish_seen_subcommand_from health' -l refresh-vectors -d 'Explicitly enable vector refresh attempts during health checks'
 complete -c pm -n '__fish_seen_subcommand_from health' -l verbose-stale-items -d 'Include full stale vectorization ID lists in health output'
+complete -c pm -n '__fish_seen_subcommand_from health' -l verbose-author-events -d 'Include complete actionable unknown-author coordinates'
 complete -c pm -n '__fish_seen_subcommand_from health' -l brief -d 'Emit compact health details for low-token agent checks'
 complete -c pm -n '__fish_seen_subcommand_from health' -l summary -d 'Emit one-line-style health status with check names and warning count'
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return non-zero exit when health warnings are present'

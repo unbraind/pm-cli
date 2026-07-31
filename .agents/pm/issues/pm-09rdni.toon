@@ -1,0 +1,41 @@
+id: pm-09rdni
+title: "GH-840: annotation primitives lack a merge-safe structured event append and query contract"
+description: "Add a validated, append-only structured event facet that preserves notes' union-merge safety while providing SDK/CLI/MCP encoding, filtering, and provenance contracts."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-07-31T10:41:38.295Z"
+updated_at: "2026-07-31T12:19:17.518Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: "Add a typed public SDK structured-event primitive backed by a union-merged item collection; Expose equivalent CLI and MCP mutation/read contracts with deterministic JSON validation and bounded filtering; Warn in append help that body appends are scalar and direct concurrent agents to the merge-safe event surface; Prove multi-branch merge preservation, malformed-input rejection, projections, and packed-consumer behavior"
+parent: pm-usfg
+risk: medium
+confidence: high
+reporter: github
+severity: medium
+environment: "pm-cli 2026.7.29, Node 22, concurrent git branches"
+expected_result: Agents append validated structured events through one SDK-first contract and query bounded event ranges without parsing free-text notes.
+actual_result: "pm append mutates scalar body text and notes accept only free text, forcing ad hoc JSON encoding and full client-side scans."
+component: SDK annotations and merge-safe context events
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-g5sx,discovered_from,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
+  pm-zwpp,discovered_from,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-07-31T10:41:38.295Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-840, structured append/events, JSON notes, annotation primitives, merge union behavior, and exact/fuzzy titles. Closed pm-zwpp owns existing free-text annotation facades and pm-g5sx owns merge infrastructure; neither provides structured event storage or bounded event reads. Source: https://github.com/unbraind/pm-cli/issues/840"
+  "2026-07-31T11:44:40.346Z","harness:codex","Implementation evidence: added typed merge-safe JSON note events with stable serialization, event-type/time filtering, bounded metadata, SDK/CLI/MCP parity, and scalar body-append concurrency guidance. Full repository coverage passed at 100/100/100/100 (6,594 tests)."
+  "2026-07-31T12:19:17.517Z","harness:codex","Installed-consumer evidence: a fresh unrelated temp prefix installed the packed tarball, resolved its pm shim inside that prefix, and passed direct CLI, npm exec --offline, bunx --no-install, plus public SDK stable serialization/limit primitives. Help surfaces remain below the pre-change token budgets after adding the JSON event options."
+files[3]{path,scope,note}:
+  src/cli/commands/notes.ts,project,merge-safe structured event CLI encoding and filtering
+  src/cli/register-mutation.ts,project,CLI and SDK action registration for structured notes
+  src/sdk/annotations.ts,project,typed structured annotation append and query primitives
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/notes-learnings-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,240
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,structured event workflow and scalar append concurrency warning
+  docs/SDK.md,project,SDK structured context event examples
+body: ""

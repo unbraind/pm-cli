@@ -96,6 +96,12 @@ export interface InitTargetResolution {
   tracker_root: string;
   /** Value that configures or reports workspace root for this contract. */
   workspace_root?: string;
+  /** How workspace discovery related the invocation directory to the selected tracker. */
+  discovery?: "current" | "ancestor";
+  /** Directory from which workspace discovery was requested. */
+  requested_cwd?: string;
+  /** Explicit tracker root that creates a new workspace in the invocation directory. */
+  suggested_current_tracker_root?: string;
 }
 
 /** Documents the init result payload exchanged by command, SDK, and package integrations. */
@@ -396,6 +402,10 @@ function resolveInitInvocation(
     };
   }
   const pmRoot = resolvePmRoot(cwd, global.path);
+  const currentTrackerRoot = path.join(path.resolve(cwd), ".agents", "pm");
+  const discoveredWorkspaceRoot = path.dirname(path.dirname(pmRoot));
+  const discovery =
+    path.resolve(pmRoot) === currentTrackerRoot ? "current" : "ancestor";
   return {
     pmRoot,
     prefixArg,
@@ -404,7 +414,12 @@ function resolveInitInvocation(
         ? {
             mode: "workspace-discovery",
             tracker_root: pmRoot,
-            workspace_root: cwd,
+            workspace_root: discoveredWorkspaceRoot,
+            discovery,
+            requested_cwd: path.resolve(cwd),
+            ...(discovery === "ancestor"
+              ? { suggested_current_tracker_root: currentTrackerRoot }
+              : {}),
           }
         : { mode: "tracker-path", tracker_root: pmRoot },
   };
@@ -787,24 +802,39 @@ function assertExistingSettingsUpdateAllowed(
   settingsPath: string,
   pendingChanges: string[],
   force: boolean,
+  target: InitTargetResolution,
 ): void {
   if (pendingChanges.length === 0 || force) {
     return;
   }
+  const ancestorDiscovery = target.discovery === "ancestor";
   throw new PmCliError(
-    `Refusing to update existing tracker settings at ${settingsPath} without --force.`,
+    `${ancestorDiscovery ? `No tracker exists in ${target.requested_cwd}; pm init found an ancestor tracker at ${target.tracker_root}. ` : ""}Refusing to update existing tracker settings at ${settingsPath} without --force.`,
     EXIT_CODE.USAGE,
     {
       code: "init_existing_settings_requires_force",
       type: "urn:pm-cli:error:init_existing_settings_requires_force",
       required: `--force for ${pendingChanges.join(", ")}`,
-      why: "pm init is safe to rerun, but changing id prefix, governance preset, or default author on an existing tracker can corrupt long-lived project context when an agent meant to initialize a sandbox path.",
+      why: ancestorDiscovery
+        ? "Ancestor discovery is useful for normal commands, but init must make the selected existing workspace explicit before changing its identity or policy settings."
+        : "pm init is safe to rerun, but changing id prefix, governance preset, or default author on an existing tracker can corrupt long-lived project context when an agent meant to initialize a sandbox path.",
+      resolved_path: target.tracker_root,
+      requested_path: target.requested_cwd,
+      suggested_path: target.suggested_current_tracker_root,
       examples: [
         "pm init --yes",
         "pm init ./sandbox-pm --yes",
+        ...(ancestorDiscovery
+          ? ['pm init <name> --yes --pm-path "$PWD/.agents/pm"']
+          : []),
         "pm init acme --yes --force",
       ],
       nextSteps: [
+        ...(ancestorDiscovery
+          ? [
+              'To create a new tracker in the current directory, rerun with --pm-path "$PWD/.agents/pm".',
+            ]
+          : []),
         "If you meant to initialize a sandbox tracker, pass a path-like positional such as ./sandbox-pm or /tmp/pm-test.",
         "If you intentionally want to rewrite this existing tracker's init-managed settings, rerun with --force.",
       ],
@@ -858,6 +888,7 @@ async function loadExistingInitSettings(params: {
   options: InitCommandOptions;
   normalizedOptions: InitNormalizedOptions;
   warnings: string[];
+  target: InitTargetResolution;
 }): Promise<InitSettingsResolution> {
   const settings = await readSettings(params.pmRoot);
   params.warnings.push(`already_exists:${params.settingsPath}`);
@@ -872,6 +903,7 @@ async function loadExistingInitSettings(params: {
     params.settingsPath,
     pendingChanges,
     params.options.force === true,
+    params.target,
   );
   if (
     applyExistingSettingsUpdates({
@@ -946,6 +978,7 @@ async function resolveInitSettings(params: {
   options: InitCommandOptions;
   normalizedOptions: InitNormalizedOptions;
   warnings: string[];
+  target: InitTargetResolution;
 }): Promise<InitSettingsResolution> {
   if (params.settingsExists) {
     return await loadExistingInitSettings(params);
@@ -1221,6 +1254,7 @@ export async function runInit(
     options,
     normalizedOptions,
     warnings,
+    target: invocation.target,
   });
   let { settings } = settingsResolution;
 

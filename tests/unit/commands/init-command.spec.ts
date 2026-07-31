@@ -148,7 +148,10 @@ describe("runInit", () => {
     );
     expect(discoveryInvocation).toMatchObject({
       prefixArg: "acme",
-      target: { mode: "workspace-discovery", workspace_root: "/repo" },
+      target: {
+        mode: "workspace-discovery",
+        workspace_root: path.dirname(path.dirname(discoveryInvocation.pmRoot)),
+      },
     });
     expect(discoveryInvocation.target.tracker_root).toBe(
       discoveryInvocation.pmRoot,
@@ -319,6 +322,55 @@ describe("runInit", () => {
       expect(settings.author_default).toBe("second-agent");
       expect(result.warnings).toContain("updated:author_default:second-agent");
     } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("distinguishes current and ancestor tracker discovery before settings updates", async () => {
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-init-discovery-provenance-"),
+    );
+    const workspaceRoot = path.join(tempRoot, "workspace");
+    const pmRoot = path.join(workspaceRoot, ".agents", "pm");
+    const nestedRoot = path.join(workspaceRoot, "nested");
+    const originalCwd = process.cwd();
+    const originalPmPath = process.env.PM_PATH;
+    try {
+      await mkdir(nestedRoot, { recursive: true });
+      await runInit("pm", { path: pmRoot }, { defaults: true });
+      delete process.env.PM_PATH;
+
+      process.chdir(workspaceRoot);
+      await expect(
+        runInit("pm", {}, { defaults: true, agentGuidance: "skip" }),
+      ).resolves.toMatchObject({
+        target: { discovery: "current", tracker_root: pmRoot },
+      });
+
+      process.chdir(nestedRoot);
+      await expect(
+        runInit("nested", {}, { defaults: true, agentGuidance: "skip" }),
+      ).rejects.toMatchObject<PmCliError>({
+        context: expect.objectContaining({
+          code: "init_existing_settings_requires_force",
+          requested_path: nestedRoot,
+          resolved_path: pmRoot,
+          suggested_path: path.join(nestedRoot, ".agents", "pm"),
+          examples: expect.arrayContaining([
+            'pm init <name> --yes --pm-path "$PWD/.agents/pm"',
+          ]),
+          nextSteps: expect.arrayContaining([
+            'To create a new tracker in the current directory, rerun with --pm-path "$PWD/.agents/pm".',
+          ]),
+        }),
+      });
+    } finally {
+      process.chdir(originalCwd);
+      if (originalPmPath === undefined) {
+        delete process.env.PM_PATH;
+      } else {
+        process.env.PM_PATH = originalPmPath;
+      }
       await rm(tempRoot, { recursive: true, force: true });
     }
   });

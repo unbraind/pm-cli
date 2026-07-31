@@ -51,6 +51,12 @@ export interface PmCliErrorContext {
   required?: string;
   /** Value that configures or reports why for this contract. */
   why?: string;
+  /** Filesystem path selected by target resolution, when relevant. */
+  resolved_path?: string;
+  /** Filesystem path from which target resolution began, when relevant. */
+  requested_path?: string;
+  /** Safer explicit filesystem target suggested for recovery. */
+  suggested_path?: string;
   /** Value that configures or reports examples for this contract. */
   examples?: string[];
   /** Value that configures or reports next steps for this contract. */
