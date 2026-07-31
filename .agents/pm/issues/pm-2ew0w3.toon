@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: conformance,governance,history
 created_at: "2026-07-30T17:08:54.465Z"
-updated_at: "2026-07-31T15:48:29.848Z"
+updated_at: "2026-07-31T16:10:54.962Z"
 closed_at: "2026-07-31T15:26:58.644Z"
 completed_at: "2026-07-31T15:26:58.644Z"
 author: "harness:claude-code"
@@ -24,10 +24,11 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-pj2isb,related,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
   pm-rtn5h6,related,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-07-30T17:09:10.304Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-31T14:40:32.555Z","harness:codex","Bundled with pm-z5pmf8 and pm-xm0id4: one SDK-owned terminal-transition policy will govern reason provenance and ordering semantics across surfaces."
   "2026-07-31T15:21:33.493Z","harness:codex","Historical disposition: pm-8fx3 and pm-1p2u retain the literal close_reason Closed via pm update, and pm-j2ig retains it in immutable history. These entries faithfully record the previously shipped behavior; rewriting them would falsify provenance, so they remain explicitly documented historical evidence. New create, update, close, SDK, and MCP terminal routes now resolve author-controlled reason sources through one policy and refuse reasonless transitions with close_reason_required. Isolated compiled-CLI acceptance confirmed exit 2 and that error code; full coverage passed 6,610 tests at 100/100/100/100."
   "2026-07-31T15:48:29.847Z","harness:codex","Release-gate evidence: build, typecheck, docs/skills, static quality, SDK/package parity, token/retrieval evaluations, 6,610-test coverage at 100/100/100/100, secrets scan, packed npx smoke, and 88-command dogfood all passed from /var/tmp. Sentry/telemetry gate passed with critical=0, high=0 over 14 days and best-effort telemetry. The only pre-push hosted gate result was DeepScan status missing for the uncommitted base SHA; hosted exact-head verification follows on the PR."
+  "2026-07-31T16:10:54.962Z","harness:codex","Review follow-up: optional governance now still records an author message, reasonless force-reclose preserves existing evidence, canonical ids protect duplicate checks, and runtime acceptance asserts author-supplied close_reason with no defaulted warning. Full coverage passes 6,613 tests at 100/100/100/100."
 learnings[1]{created_at,author,text}:
   "2026-07-31T15:21:34.261Z","harness:codex","A governance rule belongs at the shared lifecycle operation boundary, not in individual argument parsers. Author-controlled precedence can reuse explicit reason, duplicate target, resolution, or message without ever inventing immutable evidence."
 files[6]{path,scope,note}:

@@ -163,6 +163,7 @@ export function applyTerminalOrderingPolicy(
 ): TerminalOrderingMutation {
   const previousBlockedBy =
     typeof metadata.blocked_by === "string" ? metadata.blocked_by.trim() : "";
+  const hadBlockedBy = metadata.blocked_by !== undefined;
   const dependencies = metadata.dependencies ?? [];
   const predecessorEdges = dependencies.filter(
     (dependency) => dependency.kind === "blocked_by",
@@ -170,7 +171,7 @@ export function applyTerminalOrderingPolicy(
   const hadBlockedReason = metadata.blocked_reason !== undefined;
   const changedFields: string[] = [];
 
-  if (previousBlockedBy) {
+  if (hadBlockedBy) {
     delete metadata.blocked_by;
     changedFields.push("blocked_by");
   }

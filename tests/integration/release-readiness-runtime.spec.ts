@@ -2539,9 +2539,13 @@ describe("release readiness runtime coverage", () => {
         warnings: string[];
       };
       expect(autoRouteJson.item.status).toBe("closed");
+      expect(autoRouteJson.item.close_reason).toBe(
+        "close through update with author evidence",
+      );
       expect(autoRouteJson.warnings).toContain(
         "auto_routed_from_update_to_close",
       );
+      expect(autoRouteJson.warnings).not.toContain("close_reason_defaulted");
 
       const closeResult = context.runCli(
         [

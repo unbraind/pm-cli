@@ -841,14 +841,14 @@ describe("runClose", () => {
     });
   });
 
-  it("fails when --validate-close strict is enabled and active child items remain", async () => {
+  it("uses the canonical parent id when strict-close input omits the prefix", async () => {
     await withTempPmPath(async (context) => {
       const parentId = createTask(context, "close-strict-active-child-parent");
       const childId = createTask(context, "close-strict-active-child", { parent: parentId });
 
       await expect(
         runClose(
-          parentId,
+          parentId.replace(/^pm-/, ""),
           "close with strict child validation",
           {
             validateClose: "strict",
@@ -861,6 +861,18 @@ describe("runClose", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining(childId),
+      });
+
+      await expect(
+        runClose(
+          parentId.replace(/^pm-/, ""),
+          "invalid self duplicate",
+          { duplicateOf: parentId },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_self" }),
       });
     });
   });
@@ -1147,7 +1159,7 @@ describe("runClose", () => {
     });
   });
 
-  it("clears stale close_reason when close reasons are optional and no reason is provided", async () => {
+  it("preserves existing close_reason when an optional-reason reclose supplies none", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-clear-stale-reason");
       const settingsPath = path.join(context.pmPath, "settings.json");
@@ -1168,12 +1180,41 @@ describe("runClose", () => {
         undefined,
         {
           validateClose: "off",
-          message: "Close without reason after disabling reason governance",
         },
         { path: context.pmPath },
       );
 
-      expect(result.item.close_reason).toBeUndefined();
+      expect(result.item.close_reason).toBe("stale previous reason");
+      expect(result.changed_fields).not.toContain("close_reason");
+    });
+  });
+
+  it("records an author message as the reason even when reason governance is optional", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-optional-message-reason");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        governance?: { require_close_reason?: boolean };
+      };
+      settings.governance = {
+        ...settings.governance,
+        require_close_reason: false,
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const result = await runClose(
+        id,
+        undefined,
+        {
+          validateClose: "off",
+          message: "Author supplied optional close evidence",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.item.close_reason).toBe(
+        "Author supplied optional close evidence",
+      );
       expect(result.changed_fields).toContain("close_reason");
     });
   });
@@ -1216,11 +1257,28 @@ describe("runClose", () => {
         ).code,
       ).toBe(0);
 
-      await runClose(
-        dependentId,
-        "first terminal transition",
-        {},
-        { path: context.pmPath },
+      const firstClose = context.runCli(
+        [
+          "update",
+          dependentId,
+          "--status",
+          "closed",
+          "--message",
+          "first terminal transition through update",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(firstClose.code).toBe(0);
+      const firstCloseJson = firstClose.json as {
+        item: { dependencies: Array<{ id: string; kind: string }> };
+        warnings: string[];
+      };
+      expect(firstCloseJson.item.dependencies).toEqual([
+        expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+      ]);
+      expect(firstCloseJson.warnings).toContain(
+        `closed_preserved_predecessors:${dependentId}:${blockerId}`,
       );
       expect(
         context.runCli(
@@ -1248,6 +1306,66 @@ describe("runClose", () => {
       ]);
       expect(reclosed.warnings).toContain(
         `closed_preserved_predecessors:${dependentId}:${blockerId}`,
+      );
+    });
+  });
+
+  it("keeps both ordering-edge spellings in a representative closed corpus", async () => {
+    await withTempPmPath(async (context) => {
+      const prerequisiteId = createTask(context, "corpus-prerequisite");
+      const dependentId = createTask(context, "corpus-dependent");
+      const reverseOwnerId = createTask(context, "corpus-reverse-owner");
+      expect(
+        context.runCli(
+          [
+            "update",
+            dependentId,
+            "--dep",
+            `id=${prerequisiteId},kind=blocked_by`,
+            "--json",
+          ],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+      expect(
+        context.runCli(
+          [
+            "update",
+            reverseOwnerId,
+            "--dep",
+            `id=${dependentId},kind=blocks`,
+            "--json",
+          ],
+          { expectJson: true },
+        ).code,
+      ).toBe(0);
+
+      const closedCorpus = [
+        await runClose(dependentId, "close dependent endpoint", {}, {
+          path: context.pmPath,
+        }),
+        await runClose(reverseOwnerId, "close blocker endpoint", {}, {
+          path: context.pmPath,
+        }),
+      ];
+      const survivalByKind = new Map(
+        ["blocked_by", "blocks"].map((kind) => [
+          kind,
+          closedCorpus.filter((result) =>
+            (
+              result.item.dependencies as
+                | Array<{ kind: string }>
+                | undefined
+            )?.some((dependency) => dependency.kind === kind),
+          ).length,
+        ]),
+      );
+
+      expect(survivalByKind).toEqual(
+        new Map([
+          ["blocked_by", 1],
+          ["blocks", 1],
+        ]),
       );
     });
   });

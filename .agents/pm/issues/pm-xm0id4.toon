@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: data-loss,graph,history,lifecycle,ordering
 created_at: "2026-07-31T14:09:25.469Z"
-updated_at: "2026-07-31T15:48:29.088Z"
+updated_at: "2026-07-31T16:10:54.274Z"
 closed_at: "2026-07-31T15:26:52.138Z"
 completed_at: "2026-07-31T15:26:52.138Z"
 author: "harness:claude-code"
@@ -29,10 +29,11 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-scbr0s,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,verifies,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
   pm-z5pmf8,related,"2026-07-31T14:20:36.322Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-31T14:40:28.597Z","harness:codex","Bundled with pm-z5pmf8 and pm-2ew0w3: preserve historical predecessor context while making the close policy shared by CLI, SDK, and MCP."
   "2026-07-31T15:21:31.897Z","harness:codex","Evidence: the full real-corpus snapshot contains 1,900 closed items; 6 currently retain blocked_by predecessor rows and 185 retain blocks rows, compared with the recorded 1 versus 189 baseline. This change is forward-preserving rather than a provenance-destroying historical backfill. Isolated compiled-CLI acceptance proved blocked_by survives close, reopen, and reclose. Full coverage passed 6,610 tests at 100% statements, branches, functions, and lines."
   "2026-07-31T15:48:29.086Z","harness:codex","Release-gate evidence: build, typecheck, docs/skills, static quality, SDK/package parity, token/retrieval evaluations, 6,610-test coverage at 100/100/100/100, secrets scan, packed npx smoke, and 88-command dogfood all passed from /var/tmp. Sentry/telemetry gate passed with critical=0, high=0 over 14 days and best-effort telemetry. The only pre-push hosted gate result was DeepScan status missing for the uncommitted base SHA; hosted exact-head verification follows on the PR."
+  "2026-07-31T16:10:54.273Z","harness:codex","Review follow-up: added update --status closed predecessor survival, representative closed-corpus parity for blocked_by and blocks, whitespace-only scalar cleanup, canonical-id child validation, and a single-scan close path. Full coverage passes 6,613 tests at 100/100/100/100."
 learnings[2]{created_at,author,text}:
   "2026-07-31T14:28:48.217Z","harness:claude-code","A population-level survival split is the cheapest way to separate a deletion defect from an authoring gap, and it needs no code reading. Two spellings of one relation existed in this corpus - blocked_by, which the close path clears, and blocks, which it does not - and their distribution across 1,900 closed items was 1 versus 189. If under-authoring were the cause, both spellings would be scarce. The asymmetry between two encodings of the same fact is the signal; the absolute count of either one is not."
   "2026-07-31T15:21:32.729Z","harness:codex","Lifecycle state and graph provenance are different concerns: terminal transition should clear transient blocked-state scalars while preserving the dependency row that explains historical ordering. Making that distinction an SDK policy prevents presentation routes from silently choosing different semantics."

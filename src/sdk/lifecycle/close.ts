@@ -271,20 +271,11 @@ async function assertDuplicateTargetExists(
   return target.id;
 }
 
-async function findActiveChildIds(
-  pmRoot: string,
-  settings: Awaited<ReturnType<typeof readSettings>>,
+function findActiveChildIds(
+  items: ItemMetadata[],
   parentId: string,
   statusRegistry: RuntimeStatusRegistry,
-): Promise<string[]> {
-  const typeRegistry = resolveItemTypeRegistry(settings);
-  const items = await listAllItemMetadataLight(
-    pmRoot,
-    settings.item_format,
-    typeRegistry.type_to_folder,
-    undefined,
-    settings.schema,
-  );
+): string[] {
   return items
     .filter(
       (item) =>
@@ -295,20 +286,11 @@ async function findActiveChildIds(
     .sort((left, right) => left.localeCompare(right));
 }
 
-async function findAutoUnblockCandidates(
-  pmRoot: string,
-  settings: Awaited<ReturnType<typeof readSettings>>,
+function findAutoUnblockCandidates(
+  items: ItemMetadata[],
   closedId: string,
   statusRegistry: RuntimeStatusRegistry,
-): Promise<AutoUnblockCandidate[]> {
-  const typeRegistry = resolveItemTypeRegistry(settings);
-  const items = await listAllItemMetadataLight(
-    pmRoot,
-    settings.item_format,
-    typeRegistry.type_to_folder,
-    undefined,
-    settings.schema,
-  );
+): AutoUnblockCandidate[] {
   const itemsById = new Map(items.map((item) => [item.id, item]));
   const blockedStatuses = statusRegistry.blocked_statuses;
   return items
@@ -317,6 +299,9 @@ async function findAutoUnblockCandidates(
     .filter(({ blockerIds }) => blockerIds.includes(closedId))
     .filter(({ blockerIds }) =>
       blockerIds.every((blockerId) => {
+        if (blockerId === closedId) {
+          return true;
+        }
         const blocker = itemsById.get(blockerId);
         return (
           blocker !== undefined &&
@@ -331,16 +316,12 @@ async function findAutoUnblockCandidates(
 async function autoUnblockResolvedDependents(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
+  items: ItemMetadata[],
   closedId: string,
   author: string,
   statusRegistry: RuntimeStatusRegistry,
 ): Promise<string[]> {
-  const candidates = await findAutoUnblockCandidates(
-    pmRoot,
-    settings,
-    closedId,
-    statusRegistry,
-  );
+  const candidates = findAutoUnblockCandidates(items, closedId, statusRegistry);
   const warnings: string[] = [];
   for (const candidate of candidates) {
     try {
@@ -523,10 +504,6 @@ function applyCloseReason(
     metadata.close_reason = closeReason;
     return ["close_reason"];
   }
-  if (metadata.close_reason !== undefined) {
-    delete metadata.close_reason;
-    return ["close_reason"];
-  }
   return [];
 }
 
@@ -658,7 +635,7 @@ export async function closeItem(
     pmRoot,
     settings,
     options.duplicateOf,
-    id,
+    located.id,
   );
   // pm-7x8d / pm-9hry / GH-204: when no explicit positional/--reason text is given, derive
   // the close reason from the next-best closure signal instead of hard-blocking
@@ -679,9 +656,7 @@ export async function closeItem(
       explicit: closeReasonText,
       duplicateOf,
       resolution: options.resolution,
-      message: lifecyclePolicy.requireCloseReason
-        ? options.message
-        : undefined,
+      message: options.message,
     },
     lifecyclePolicy.requireCloseReason,
   ).closeReason;
@@ -691,10 +666,16 @@ export async function closeItem(
   // C3 (pm-fu5d): scan for active children even under minimal governance so
   // closing a parent is never silently orphaning — off mode emits an
   // informational note instead of the warn/strict validation warning.
-  const activeChildIds = await findActiveChildIds(
+  const trackerItems = await listAllItemMetadataLight(
     pmRoot,
-    settings,
-    id,
+    settings.item_format,
+    typeToFolder,
+    undefined,
+    settings.schema,
+  );
+  const activeChildIds = findActiveChildIds(
+    trackerItems,
+    located.id,
     statusRegistry,
   );
 
@@ -710,7 +691,7 @@ export async function closeItem(
   const result = await mutateItem({
     pmRoot,
     settings,
-    id,
+    id: located.id,
     op: "close",
     author,
     message: options.message,
@@ -739,6 +720,7 @@ export async function closeItem(
       ...(await autoUnblockResolvedDependents(
         pmRoot,
         settings,
+        trackerItems,
         located.id,
         author,
         statusRegistry,

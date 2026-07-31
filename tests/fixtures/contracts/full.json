@@ -9299,7 +9299,7 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/commands/close-many.ts",
-        "cli/commands/close.ts"
+        "sdk/lifecycle-policy.ts"
       ],
       "stability": "stable"
     },
@@ -9319,7 +9319,7 @@
       "meaning": "Close validation missing fields condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/close.ts"
+        "sdk/lifecycle/close.ts"
       ],
       "stability": "stable"
     },
@@ -9479,7 +9479,7 @@
       "meaning": "Duplicate target circular condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/close.ts"
+        "sdk/lifecycle/close.ts"
       ],
       "stability": "stable"
     },
@@ -9489,7 +9489,7 @@
       "meaning": "Duplicate target is duplicate condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/close.ts"
+        "sdk/lifecycle/close.ts"
       ],
       "stability": "stable"
     },
@@ -9499,7 +9499,7 @@
       "meaning": "Duplicate target missing condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/close.ts"
+        "sdk/lifecycle/close.ts"
       ],
       "stability": "stable"
     },
@@ -9509,7 +9509,7 @@
       "meaning": "Duplicate target self condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/close.ts"
+        "sdk/lifecycle/close.ts"
       ],
       "stability": "stable"
     },

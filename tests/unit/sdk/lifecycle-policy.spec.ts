@@ -83,6 +83,23 @@ describe("SDK terminal lifecycle policy", () => {
     expect(metadata.dependencies).toHaveLength(3);
   });
 
+  it("clears a present whitespace-only blocked_by scalar", () => {
+    const metadata: ItemMetadata = {
+      id: "pm-dependent",
+      title: "Dependent",
+      type: "Task",
+      status: "blocked",
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-01T00:00:00.000Z",
+      blocked_by: "   ",
+    };
+
+    expect(
+      applyTerminalOrderingPolicy(metadata, { orderingEdges: "preserve" }),
+    ).toEqual({ changedFields: ["blocked_by"], warnings: [] });
+    expect(metadata.blocked_by).toBeUndefined();
+  });
+
   it("supports an explicit SDK policy that removes predecessor edges", () => {
     const metadata: ItemMetadata = {
       id: "pm-dependent",
