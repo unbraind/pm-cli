@@ -2,29 +2,34 @@ id: pm-t310hx
 title: Exact-tag npm recovery must stabilize public package access before verification
 description: "A workflow_dispatch rerun for an immutable published tag can observe stale anonymous public metadata, skip npm access recovery, pass isolated verification, and leave the package private seconds later. Harden exact-tag recovery so public access is explicitly restored before anonymous package/version probes and remains verified without republishing or moving the tag."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T00:05:13.668Z"
-updated_at: "2026-07-31T00:47:04.626Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#7f20991b66ba03ca99c800a0"
+updated_at: "2026-07-31T01:03:17.733Z"
+closed_at: "2026-07-31T01:03:14.623Z"
+completed_at: "2026-07-31T01:03:14.623Z"
 author: "harness:codex"
 acceptance_criteria: "workflow_dispatch recovery explicitly sets @unbrained/pm-cli public before anonymous probes; existing immutable versions are never republished or retagged; executable workflow contracts cover recovery ordering and failure behavior; the existing v2026.7.30 tag is recovered and independently verifies through npm, npx, and bunx"
 parent: pm-7zs0
 risk: high
 severity: high
-expected_result: "An exact-tag recovery explicitly restores the public access invariant before probing the immutable version, skips republishing an existing version, and verifies npm, npx, and bunx anonymously."
-actual_result: "Release run 30591621395 saw v2026.7.30 publicly through its clean caches and skipped publication, but independent anonymous metadata returned E404 26 seconds later and npm access status reported private."
+resolution: fixed
+expected_result: "Exact-tag recovery restores public access from a reviewed main dispatch SHA, never republishes an immutable version, and verifies npm, npx, and bunx anonymously."
+actual_result: "Merged PRs #834 and #835; release run 30594784895 restored and verified v2026.7.30 from main in 9m41s; an independent token-free clean-cache verifier passed npm metadata, direct/package npx, bunx, and GitHub release checks on the first attempt."
+fixed_version: 2026.7.30
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-2z9263,related_to,"2026-07-31T00:05:39.600Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-31T00:05:13.668Z","harness:codex","Duplicate check searched all statuses for stale anonymous registry visibility,workflow-dispatch access stabilization,hidden-package recovery,and npm private state. pm-7zs0 is the recurring release-health parent; closed pm-2z9263 fixed identity drift and conditional recovery but does not own post-verification visibility regression. No duplicate implementation item was found."
   "2026-07-31T00:10:17.205Z","harness:codex","Implementation evidence: workflow_dispatch exact-tag recovery now calls the authenticated public-access repair before anonymous metadata probes; E404 remains a guarded first-publication path, non-404 access failures stop, normal tag-push behavior is unchanged, and existing immutable versions skip publication. Linked executable fake-registry and workflow contracts pass 30/30. Typecheck, ESLint, jscpd zero clones, static/docstrings 100%, package boundary/parity, token budgets, SDK surface/import-cost/transport floors, docs/skills, and diff checks pass."
   "2026-07-31T00:31:48.707Z","harness:codex","Live post-merge evidence: exact-tag recovery run 30593451032 checked out immutable v2026.7.30 and stopped before npm mutation because that historical source contains the now-expired July 1 context-eval feedback timestamp (6539/6540 tests passed). Recovery must execute the reviewed current main workflow/source while treating the existing version as immutable and refusing dispatch-time publication if it is absent."
   "2026-07-31T00:34:53.824Z","harness:codex","Second-stage correction evidence: manual exact-tag recovery now checks out the reviewed dispatch SHA from main rather than historical tag source, while RELEASE_TAG remains the immutable verification target. Dispatch restores access first and then refuses publication if the exact public version is absent; original tag-push runs retain first-publication behavior. Executable publication guard and workflow contracts pass 30/30; typecheck, docs/skills, ESLint, zero clones, 100% static/docstrings, package/SDK/token/gate registry/surface/import/transport gates pass. Local actionlint is unavailable, so the pinned hosted actionlint check remains the YAML validator."
   "2026-07-31T00:41:13.178Z","harness:codex","Review-fix evidence for PR #835: Greptile correctly identified that github.sha follows the UI-selected dispatch ref and that unconditional source-version equality blocks older-tag recovery. Dispatch now hard-selects repository default branch, validates tag shape while retaining source-version equality only for tag pushes, and still cannot publish. CodeRabbit's ordering concern is fixed with fail-closed presence assertions and explicit access-repair < exact-version-probe < dispatch-refusal < package-probe ordering. Focused executable/workflow contracts remain 30/30; typecheck and docs/skills pass."
   "2026-07-31T00:47:04.626Z","harness:codex","Second Greptile loop found a valid dispatch race: checking out the default-branch name could advance after dispatch. Fixed by pinning workflow_dispatch checkout to github.sha and adding an early fail-closed guard that requires GITHUB_REF_NAME to equal the repository default branch. This simultaneously prevents non-main dispatch and preserves exact dispatch-time source. Focused contracts 30/30, typecheck, and docs/skills pass."
+  "2026-07-31T01:03:08.208Z","harness:codex","Closure evidence: PR #834 merged at 0c21300bd and PR #835 merged at 93ce58920 after all exact-head checks; four actionable bot findings across the recovery loops were up-voted, answered inline, fixed, resolved, and re-reviewed with zero open threads. Main recovery run 30594784895 passed every gate and restored v2026.7.30. Independent clean-cache verification with NPM_TOKEN/NODE_AUTH_TOKEN unset passed npm metadata/integrity, direct npx, package npx, bunx, and GitHub release on attempt 1."
+learnings[1]{created_at,author,text}:
+  "2026-07-31T01:03:07.466Z","harness:codex","Exact-tag access recovery must separate workflow source provenance from immutable artifact identity: pin reviewed default-branch dispatch SHA, keep the requested tag only as the verification target, bypass historical source-version equality only for non-publishing dispatch, and refuse recovery if the exact version is absent."
 files[3]{path,scope,note}:
   .github/workflows/release.yml,project,Reassert exact-tag public npm access before anonymous probes
   tests/integration/ci-workflow-contract.spec.ts,project,Release workflow policy and ordering contract
@@ -35,4 +40,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-ms86oai1-ybitg0,test,passed,"2026-07-31T00:07:26.222Z","2026-07-31T00:07:35.977Z","2026-07-31T00:07:35.977Z",1,0,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Exact-tag public-access recovery operator contract
+close_reason: "Fixed by #834 and #835 with green exact-head CI, live main-only immutable recovery run 30594784895, and independent anonymous npm/npx/bunx proof."
 body: ""
