@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli","area:extensions",simplification
 created_at: "2026-07-05T04:53:32.408Z"
-updated_at: "2026-07-31T06:08:49.020Z"
+updated_at: "2026-07-31T10:15:14.544Z"
 assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 240
@@ -14,7 +14,7 @@ acceptance_criteria: pm package covers the full extension/install/upgrade verb s
 parent: pm-n7rr
 risk: medium
 confidence: medium
-dependencies[6]:
+dependencies[7]:
   - id: pm-0z7n
     kind: blocked_by
     created_at: "2026-07-05T04:55:00.508Z"
@@ -34,6 +34,12 @@ dependencies[6]:
     kind: blocked_by
     created_at: "2026-07-31T06:08:48.780Z"
     author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-6z0wzf
+    kind: blocked_by
+    created_at: "2026-07-31T10:15:14.323Z"
+    author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[3]{created_at,author,text}:

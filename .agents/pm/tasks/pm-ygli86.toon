@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,install,quality,release,testing
 created_at: "2026-07-25T12:31:34.837Z"
-updated_at: "2026-07-26T10:52:27.948Z"
+updated_at: "2026-07-31T10:16:01.253Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Acceptance installs the exact published artifact from the registry into a clean environment rather than building from the repository; A scripted agent session exercises the full cold-start loop — init, orient, create, claim, annotate, link evidence, close, validate, read context — asserting outcomes and bounded output at each step; The matrix covers the supported operating systems and the supported package managers, including the global-install path that has produced field defects; A failure blocks release advertisement and produces a report identifying the failing step, not merely a failing job; The acceptance session's token cost is recorded so cold-start cost is tracked release over release; The same session runs against the previous release to prove the harness itself is not the cause when a failure appears"
@@ -18,22 +18,58 @@ outcome: Install-shaped defects are caught before publication rather than report
 parent: pm-u9d0
 risk: medium
 confidence: 70
-dependencies[15]{id,kind,created_at,author,source_kind}:
-  pm-8pnj,related,"2026-07-25T12:31:34.837Z",null,null
-  pm-998juj,related,"2026-07-25T12:31:34.837Z",null,null
-  pm-feecbs,related,"2026-07-25T12:31:34.837Z",null,null
-  pm-ir9vqy,related,"2026-07-25T12:31:34.837Z",null,null
-  pm-pae3wo,related,"2026-07-25T12:31:34.837Z",null,null
-  pm-sqf7,related,"2026-07-25T12:31:34.837Z",null,null
-  pm-k6t4yb,related,"2026-07-25T12:35:37.084Z",null,null
-  pm-o8um,related,"2026-07-25T12:35:37.084Z",null,null
-  pm-tll8,related,"2026-07-25T12:35:37.084Z",null,null
-  pm-xp1xsw,related,"2026-07-25T12:35:37.084Z",null,null
-  pm-z3ez,related,"2026-07-25T12:35:37.084Z",null,null
-  pm-xp1xsw,verifies,"2026-07-25T20:44:56.737Z",null,null
-  pm-u9d0,verifies,"2026-07-26T05:50:07.948Z",null,null
-  pm-u9d0,implements,"2026-07-26T05:55:40.992Z",null,null
-  pm-lpqln4,related,"2026-07-26T10:52:27.706Z",null,null
+dependencies[16]:
+  - id: pm-8pnj
+    kind: related
+    created_at: "2026-07-25T12:31:34.837Z"
+  - id: pm-998juj
+    kind: related
+    created_at: "2026-07-25T12:31:34.837Z"
+  - id: pm-feecbs
+    kind: related
+    created_at: "2026-07-25T12:31:34.837Z"
+  - id: pm-ir9vqy
+    kind: related
+    created_at: "2026-07-25T12:31:34.837Z"
+  - id: pm-pae3wo
+    kind: related
+    created_at: "2026-07-25T12:31:34.837Z"
+  - id: pm-sqf7
+    kind: related
+    created_at: "2026-07-25T12:31:34.837Z"
+  - id: pm-k6t4yb
+    kind: related
+    created_at: "2026-07-25T12:35:37.084Z"
+  - id: pm-o8um
+    kind: related
+    created_at: "2026-07-25T12:35:37.084Z"
+  - id: pm-tll8
+    kind: related
+    created_at: "2026-07-25T12:35:37.084Z"
+  - id: pm-xp1xsw
+    kind: related
+    created_at: "2026-07-25T12:35:37.084Z"
+  - id: pm-z3ez
+    kind: related
+    created_at: "2026-07-25T12:35:37.084Z"
+  - id: pm-xp1xsw
+    kind: verifies
+    created_at: "2026-07-25T20:44:56.737Z"
+  - id: pm-u9d0
+    kind: verifies
+    created_at: "2026-07-26T05:50:07.948Z"
+  - id: pm-u9d0
+    kind: implements
+    created_at: "2026-07-26T05:55:40.992Z"
+  - id: pm-lpqln4
+    kind: related
+    created_at: "2026-07-26T10:52:27.706Z"
+  - id: pm-q91qyd
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:01.001Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 notes[1]{created_at,author,text}:
   "2026-07-26T10:48:39.250Z","harness:claude-code","Measured 2026-07-26 against the published 2026.7.26: post-publish verification covers execution only. verify-published-release.mjs runs npx --yes <pkg> --version, npx --yes --package <pkg> -- pm --version, and bunx --bun <pkg> pm --version. No install path is exercised for any manager — not npm install -g, not a project install, not bun add, not pnpm add — so packaging omissions and binary-link defects reach users through a green pipeline. Confirmed working by hand and therefore available as a starting fixture: bun add @unbrained/pm-cli@2026.7.26 links pm, pm-cli, and pm-mcp, and pm init, pm create, and pm list all succeed under the Bun runtime. The third check's invocation shape is separately defective and is owned by pm-lpqln4."
 body: ""

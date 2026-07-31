@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[7]: digital-twin,extensibility,"horizon:far",milestone,outcome,sdk,universal-tool
 created_at: "2026-07-24T23:44:02.049Z"
-updated_at: "2026-07-29T21:24:22.687Z"
+updated_at: "2026-07-31T10:16:16.909Z"
 deadline: "2028-06-30T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 12000
@@ -20,7 +20,7 @@ why_now: The first two exemplars (a git-like VCS and a temporal digital twin) al
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[22]:
+dependencies[24]:
   - id: pm-dijg
     kind: related
     created_at: "2026-07-24T23:44:02.049Z"
@@ -87,6 +87,18 @@ dependencies[22]:
   - id: pm-8jdc
     kind: blocked_by
     created_at: "2026-07-29T21:24:21.636Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-li2fj5
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:15.755Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-nfrhf0
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:16.698Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected

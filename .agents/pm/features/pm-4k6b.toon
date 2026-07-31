@@ -6,14 +6,14 @@ status: open
 priority: 1
 tags[3]: context,relevance,scale
 created_at: "2026-07-06T23:18:52.486Z"
-updated_at: "2026-07-31T06:12:41.171Z"
+updated_at: "2026-07-31T10:17:25.529Z"
 author: maintainer-agent
 estimated_minutes: 960
 acceptance_criteria: SDK exposes a documented pluggable context-scoring interface with the built-in multi-signal scorer as default; pm context/pm next accept a token-budget bound and pack results by score with graceful projection degradation; json output can include a per-signal score breakdown; ranking is deterministic for a fixed workspace state; hot path stays index-backed (no full scan) and meets pm-9rxu latency targets on the 100k and 1M benchmark workspaces; on small workspaces default ordering remains stable (golden tests); extension can replace the scorer end-to-end (exemplar test)
 parent: pm-9rxu
 risk: medium
 confidence: medium
-dependencies[19]:
+dependencies[21]:
   - id: pm-801d
     kind: related
     created_at: "2026-07-06T23:18:52.486Z"
@@ -80,7 +80,19 @@ dependencies[19]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[14]{created_at,author,text}:
+  - id: pm-atfm
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:12.892Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-g8t7b9
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:13.861Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[15]{created_at,author,text}:
   "2026-07-06T23:51:07.660Z",codex-agent,"Planning evidence 2026-07-07: all-status duplicate checks showed pm-4k6b is the canonical adaptive context engine parent; no focused child existed for signal extraction, scorer contract, or token-budget packing. Added non-duplicate implementation slices: pm-3hps (derived signal feature store), pm-h3no (pluggable SDK scorer contract), and pm-55ra (diversity-aware token-budget packer). Algorithm sketch: build an index-backed candidate set from focus/claim/query/dependency windows; compute normalized signal vectors for recency, activity density, graph proximity, priority/risk/deadline pressure, semantic similarity, knowledge density, author affinity, and continuity deltas; combine them through a deterministic default scorer with extension override; pack by marginal utility per token while preserving required anchors and degrading projection depth before dropping items; expose score breakdowns for explainability and pm-atfm evaluation.\n"
   "2026-07-09T18:58:16.013Z",codex-root-20260709,"Implementation bundle: activating the canonical parent because pm-h3no, pm-atfm, pm-lixy, and pm-xmp5 deliver the first SDK-first adaptive relevance tranche across scorer contracts, context/next integration, golden judgments, and regression evaluation. Blocked index-backed signal store pm-3hps and token packer pm-55ra remain dependency-gated and are not falsely claimed."
   "2026-07-09T19:10:26.630Z",codex-root-20260709,"Progress evidence: wave-one adaptive relevance delivers the public scorer contract, deterministic weighted default, extension replacement path, context/next integration, explanations, and quality harness while preserving dependency gates for index-backed signals and token packing."
@@ -95,6 +107,7 @@ comments[14]{created_at,author,text}:
   "2026-07-22T05:15:04.495Z",codex-root-20260722,"Progress evidence 2026-07-22: context and next now consume the shared cursor-bound SDK signal store, expose feature-store provenance only on explained output, accept explicit positive token budgets across CLI/SDK/MCP contracts, and retain separate projection namespaces. Focused compiler, lint, contract, and TDD checks are underway before full coverage."
   "2026-07-22T05:38:56.897Z",codex-root-20260722,"Verification evidence 2026-07-22: shared context/next ranking and packing pass exact 100/100/100/100 coverage and the five-scenario relevance gate at perfect NDCG, reciprocal rank, required recall, continuity coverage, and token adherence. A fresh 10k scale run measured context p95 583ms CLI and 207ms SDK with 1,300/892 estimated tokens, inside product targets. The overall scale gate remains red only for the already-reproduced unrelated get token baselines (CLI 1,042>322; SDK 701>288), so the rolling 100k/1M parent remains open."
   "2026-07-22T05:38:58.139Z",codex-root-20260722,"Release-gate note: every local release stage through build, typecheck, docs, strict static/docstring quality, exact coverage, version policy, secret scan, packed smoke, package-first dogfood, compatibility, Sentry, and telemetry passed. The final Greptile-only local gate correctly refused before a committed diff existed; it will be executed against the pushed PR head in the required review loop."
+  "2026-07-31T10:17:25.528Z","harness:codex","Algorithm governance checkpoint 2026-07-31: the existing catalog and pm-g8t7b9 remain the canonical home for proposed scoring/memory mechanisms; no parallel algorithm item was created. Completion is explicitly gated on the independent pm-atfm evaluator and the portfolio disposition registry. Candidate generation, multi-signal scoring, diversity-aware marginal utility per token, omission costs, uncertainty/trust disclosure, deterministic packing, feedback, counterfactual replay, and million-item index execution must remain separable SDK contracts so extensions can replace one layer without forking context assembly."
 notes[48]:
   - created_at: "2026-07-07T15:12:12.161Z"
     author: maintainer-agent

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: concurrency,context-management,"horizon:long",milestone,outcome,performance,scale
 created_at: "2026-07-24T23:43:41.928Z"
-updated_at: "2026-07-29T21:24:16.967Z"
+updated_at: "2026-07-31T10:16:12.202Z"
 deadline: "2027-09-30T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 9600
@@ -20,7 +20,7 @@ why_now: The read path still scans item files; every capability added before the
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[20]:
+dependencies[24]:
   - id: pm-4k6b
     kind: related
     created_at: "2026-07-24T23:43:41.928Z"
@@ -81,6 +81,30 @@ dependencies[20]:
   - id: pm-9rxu
     kind: blocked_by
     created_at: "2026-07-29T21:24:15.730Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-2sbj8p
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:08.962Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-atfm
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:09.958Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-tch9cs
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:10.920Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-4k6b
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:11.966Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected

@@ -6,16 +6,22 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-07-31T07:01:38.129Z"
-updated_at: "2026-07-31T07:01:38.129Z"
+updated_at: "2026-07-31T10:15:11.751Z"
 author: "harness:codex"
+estimated_minutes: 120
 acceptance_criteria: "Health declares actionable-event truncation and a continuation or complete projection; acknowledgement supports an evidence-backed bulk selector without weakening reviewer, reason, or append-only audit requirements; SDK, CLI, MCP, docs, and large-workspace tests share one contract"
-parent: pm-doxj
+parent: pm-5oj5
+risk: medium
+confidence: high
 severity: high
 expected_result: "Agents can retrieve and disposition the complete actionable event set in one bounded, evidence-backed workflow with explicit truncation metadata."
 actual_result: "Health reports the full actionable count but exposes only 20 coordinates, and the acknowledgement command accepts only individually enumerated events."
 component: governance/author-attribution
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-zqpnte,related_to,"2026-07-31T07:01:38.129Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-5oj5,implements,"2026-07-31T10:15:09.727Z","harness:codex","cli:update:dep",detected
+  pm-h90s,discovered_from,"2026-07-31T10:15:10.733Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-07-31T07:01:38.129Z","harness:codex","Duplicate check evidence: searched all statuses for history-author-acknowledge and actionable_unknown_event_count; pm-zqpnte is the completed single-event surface, while GH-831 is the distinct large-workspace completeness gap. Source: https://github.com/unbraind/pm-cli/issues/831"
+  "2026-07-31T10:15:11.751Z","harness:codex","Organization rationale 2026-07-31: moved from the portfolio root to pm-5oj5 because this is a bounded health evidence-projection defect, not a new roadmap program. Estimate 120m, medium risk, high confidence. pm-h90s is retained as provenance for the author-enforcement lineage; GH-831 remains the external source."
 body: ""

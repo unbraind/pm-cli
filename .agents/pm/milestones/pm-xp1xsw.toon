@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: contract,ga,"horizon:gate",milestone,outcome,semver,stability
 created_at: "2026-07-24T23:44:20.858Z"
-updated_at: "2026-07-29T21:24:19.787Z"
+updated_at: "2026-07-31T10:16:07.260Z"
 deadline: "2027-12-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 3600
@@ -20,7 +20,7 @@ why_now: "Deferred deliberately: freezing before grammar consolidation and SDK c
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[15]:
+dependencies[19]:
   - id: pm-0mox
     kind: related
     created_at: "2026-07-24T23:44:20.858Z"
@@ -66,6 +66,30 @@ dependencies[15]:
   - id: pm-o87av6
     kind: blocked_by
     created_at: "2026-07-29T21:24:18.742Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-zclzll
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:04.120Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-rtn5h6
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:05.153Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-pae3wo
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:06.135Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-ygli86
+    kind: blocked_by
+    created_at: "2026-07-31T10:16:07.067Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
