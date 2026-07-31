@@ -461,6 +461,9 @@ describe("release automation contract", () => {
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
     );
     expect(workflow).toContain(
+      'node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json',
+    );
+    expect(workflow).toContain(
       'NPM_PACKAGE="$(node -p \'require("./package.json").name\')"',
     );
     expect(workflow).toContain("export NPM_PACKAGE");

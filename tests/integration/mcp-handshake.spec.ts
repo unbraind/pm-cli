@@ -106,7 +106,11 @@ describe("MCP protocol handshake", () => {
       params: {
         protocolVersion: "2025-06-18",
         capabilities: {},
-        clientInfo: { name: "handshake-test", version: "1.0.0" },
+        clientInfo: {
+          name: "handshake-test",
+          version: "1.0.0",
+          provenance: { effort: "xhigh", role: "implementation" },
+        },
       },
     })) as {
       protocolVersion?: string;
@@ -138,11 +142,39 @@ describe("MCP protocol handshake", () => {
     expect(mcpServerTestOnly.getMcpClientInfo()).toEqual({
       name: "handshake-test",
       version: "1.0.0",
+      provenance: { effort: "xhigh", role: "implementation" },
     });
     expect(result.capabilities).toMatchObject({
       tools: { listChanged: true },
       resources: { listChanged: true },
       prompts: { listChanged: true },
+    });
+
+    await handleRequest({
+      jsonrpc: "2.0",
+      id: 11,
+      method: "initialize",
+      params: {
+        clientInfo: {
+          name: "empty-provenance-test",
+          provenance: { Invalid: "value", effort: "   " },
+        },
+      },
+    });
+    expect(mcpServerTestOnly.getMcpClientInfo()).toEqual({
+      name: "empty-provenance-test",
+    });
+    await handleRequest({
+      jsonrpc: "2.0",
+      id: 12,
+      method: "initialize",
+      params: {
+        clientInfo: {
+          name: "handshake-test",
+          version: "1.0.0",
+          provenance: { effort: "xhigh", role: "implementation" },
+        },
+      },
     });
   });
 

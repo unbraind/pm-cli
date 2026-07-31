@@ -450,8 +450,8 @@ function resolveAgentProvenance(
     );
     if (observed) {
       observations[dimension] = observed;
-    } else if (dimension === "model" && descriptor) {
-      observations.model = null;
+    } else if (descriptor) {
+      observations[dimension] = null;
     }
   }
   return observations;

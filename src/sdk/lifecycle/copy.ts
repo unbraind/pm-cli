@@ -1,0 +1,364 @@
+/**
+ * @module sdk/lifecycle/copy
+ *
+ * Implements the SDK-owned copy lifecycle operation shared by every surface.
+ */
+import {
+  pathExists,
+  removeFileIfExists,
+  writeFileAtomic,
+  appendHistoryEntry,
+  createHistoryEntry,
+  generateItemId,
+  canonicalDocument,
+  serializeItemDocument,
+  acquireLock,
+  getActiveExtensionRegistrations,
+  projectAfterCommandItemSnapshot,
+  recordAfterCommandAffectedItem,
+  runActiveOnWriteHooks,
+  collectRegisteredItemFieldNames,
+  resolveRuntimeStatusRegistry,
+  EXIT_CODE,
+  ITEM_METADATA_KEY_ORDER,
+  type GlobalOptions,
+  nowIso,
+  PmCliError,
+  resolveItemTypeRegistry,
+  buildItemNotFoundError,
+  locateItem,
+  readLocatedItem,
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  resolvePmRoot,
+  readSettings,
+  resolveAuthor,
+} from "../runtime-primitives.js";
+import {
+  evaluateSimilarityGovernance,
+  similarityAdvisoryWarnings,
+  type SimilarityAdvisory,
+} from "../similarity.js";
+import {
+  acquireItemMetadataDerivedIndexLock,
+  refreshItemMetadataDerivedIndex,
+} from "../item-metadata-index.js";
+import type { ItemDocument, ItemMetadata } from "../../types/index.js";
+
+/** Documents the copy options payload exchanged by command, SDK, and package integrations. */
+export interface CopyOptions {
+  /** Value that configures or reports title for this contract. */
+  title?: string;
+  /** Value that configures or reports author for this contract. */
+  author?: string;
+  /** Human-readable explanation suitable for logs and agent-facing output. */
+  message?: string;
+  /** Explicitly permit a likely duplicate when strict governance is enabled. */
+  allowDuplicate?: boolean;
+}
+
+/** Documents the copy result payload exchanged by command, SDK, and package integrations. */
+export interface CopyResult {
+  /** Value that configures or reports source id for this contract. */
+  source_id: string;
+  /** Value that configures or reports item for this contract. */
+  item: ItemMetadata;
+  /** Value that configures or reports changed fields for this contract. */
+  changed_fields: string[];
+  /** Value that configures or reports warnings for this contract. */
+  warnings: string[];
+  /** Likely existing items found before the mutation committed. */
+  similarity_advisory?: SimilarityAdvisory;
+}
+
+function buildChangedFields(
+  itemMetadata: ItemMetadata,
+  body: string,
+): string[] {
+  const changed = [
+    ...new Set([
+      ...ITEM_METADATA_KEY_ORDER.filter(
+        (key) => itemMetadata[key] !== undefined,
+      ),
+      ...Object.keys(itemMetadata).filter(
+        (key) => itemMetadata[key] !== undefined,
+      ),
+      ...(body.length > 0 ? ["body"] : []),
+    ]),
+  ];
+  return changed.sort((left, right) => left.localeCompare(right));
+}
+
+function buildCopyMessage(
+  sourceId: string,
+  message: string | undefined,
+): string {
+  const suffix = `copied_from=${sourceId}`;
+  if (!message) {
+    return suffix;
+  }
+  const trimmed = message.trim();
+  return trimmed.length > 0 ? `${trimmed} | ${suffix}` : suffix;
+}
+
+/** Implements run copy for the public runtime surface of this module. */
+export async function runCopy(
+  sourceId: string,
+  options: CopyOptions,
+  global: GlobalOptions,
+): Promise<CopyResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(
+      `Tracker is not initialized at ${pmRoot}. Run pm init first.`,
+      EXIT_CODE.NOT_FOUND,
+    );
+  }
+
+  const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const located = await locateItem(
+    pmRoot,
+    sourceId,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
+  if (!located) {
+    throw await buildItemNotFoundError(
+      pmRoot,
+      sourceId,
+      settings.id_prefix,
+      typeRegistry.type_to_folder,
+    );
+  }
+  const sourceLoaded = await readLocatedItem(located, {
+    schema: settings.schema,
+  });
+  const sourceMetadata = sourceLoaded.document.metadata;
+  const copiedAt = nowIso();
+  const author = resolveAuthor(options.author, settings.author_default);
+  const newId = await generateItemId(pmRoot, settings.id_prefix, {
+    tokenLength: settings.ids.token_length,
+    typeToFolder: typeRegistry.type_to_folder,
+    probeExisting: false,
+  });
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const titleOverride = options.title?.trim();
+  if (titleOverride !== undefined && titleOverride.length === 0) {
+    throw new PmCliError("Copy --title must not be empty", EXIT_CODE.USAGE);
+  }
+
+  const copiedMetadata: ItemMetadata = {
+    ...(sourceMetadata as Record<string, unknown>),
+    id: newId,
+    title: titleOverride ?? sourceMetadata.title,
+    status: statusRegistry.open_status,
+    created_at: copiedAt,
+    updated_at: copiedAt,
+  } as ItemMetadata;
+  delete copiedMetadata.closed_at;
+  delete copiedMetadata.completed_at;
+  delete copiedMetadata.close_reason;
+  delete copiedMetadata.test_runs;
+
+  const extensionFieldNames = collectRegisteredItemFieldNames(
+    getActiveExtensionRegistrations(),
+  );
+  const copiedDocument = canonicalDocument(
+    {
+      metadata: copiedMetadata,
+      body: sourceLoaded.document.body,
+    },
+    {
+      schema: settings.schema,
+      extensionFieldNames,
+    },
+  );
+  const similarityAdvisory = await evaluateSimilarityGovernance(
+    {
+      title: copiedDocument.metadata.title,
+      description: copiedDocument.metadata.description,
+      body: copiedDocument.body,
+      excludeIds: [located.id],
+    },
+    {
+      pmRoot,
+      mode:
+        settings.governance.duplicate_detection_mode === "strict" &&
+        options.allowDuplicate !== true
+          ? "off"
+          : settings.governance.duplicate_detection_mode,
+      threshold: settings.governance.duplicate_detection_threshold,
+      limit: settings.governance.duplicate_detection_limit,
+      allowDuplicate: options.allowDuplicate,
+    },
+  );
+  const changedFields = buildChangedFields(
+    copiedDocument.metadata,
+    copiedDocument.body,
+  );
+  const itemPath = getItemPath(
+    pmRoot,
+    copiedDocument.metadata.type,
+    newId,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
+  const historyPath = getHistoryPath(pmRoot, newId);
+  const lockRelease = await acquireLock(
+    pmRoot,
+    newId,
+    settings.locks.ttl_seconds,
+    author,
+    false,
+    settings.governance.force_required_for_stale_lock,
+    settings.locks.wait_ms,
+  );
+  const beforeDocument: ItemDocument = {
+    metadata: {} as ItemMetadata,
+    body: "",
+  };
+
+  let hookWarnings: string[];
+  let derivedIndexWarnings: string[];
+  try {
+    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+      pmRoot,
+      author,
+      {
+        required:
+          settings.governance.duplicate_detection_mode === "strict" &&
+          options.allowDuplicate !== true,
+      },
+    );
+    try {
+      if (
+        settings.governance.duplicate_detection_mode === "strict" &&
+        options.allowDuplicate !== true
+      ) {
+        await evaluateSimilarityGovernance(
+          {
+            title: copiedDocument.metadata.title,
+            description: copiedDocument.metadata.description,
+            body: copiedDocument.body,
+            excludeIds: [located.id],
+          },
+          {
+            pmRoot,
+            mode: "strict",
+            threshold: settings.governance.duplicate_detection_threshold,
+            limit: settings.governance.duplicate_detection_limit,
+            allowDuplicate: false,
+          },
+        );
+      }
+      const collision = await locateItem(
+        pmRoot,
+        newId,
+        settings.id_prefix,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+      );
+      if (collision) {
+        throw new PmCliError(
+          `Cannot copy to ${newId}: an item with that id already exists at ${collision.itemPath}. Retry the copy to allocate a new id.`,
+          EXIT_CODE.CONFLICT,
+          {
+            code: "item_id_collision",
+            why: `Allocated id ${newId} already exists at ${collision.itemPath}.`,
+            recovery: {
+              suggested_retry: `pm copy ${located.id}`,
+            },
+          },
+        );
+      }
+      await writeFileAtomic(
+        itemPath,
+        serializeItemDocument(copiedDocument, {
+          format: settings.item_format,
+          schema: settings.schema,
+          extensionFieldNames,
+        }),
+      );
+      try {
+        const historyEntry = createHistoryEntry({
+          nowIso: copiedAt,
+          author,
+          op: "create",
+          before: beforeDocument,
+          after: copiedDocument,
+          message: buildCopyMessage(located.id, options.message),
+        });
+        await appendHistoryEntry(historyPath, historyEntry);
+      } catch (error: unknown) {
+        await removeFileIfExists(itemPath);
+        throw error;
+      }
+      derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+        pmRoot,
+        preferredFormat: settings.item_format,
+        typeToFolder: typeRegistry.type_to_folder,
+        schema: settings.schema,
+        itemPath,
+        document: copiedDocument,
+      });
+    } finally {
+      await releaseDerivedIndexLock();
+    }
+
+    hookWarnings = [
+      ...(await runActiveOnWriteHooks({
+        path: itemPath,
+        scope: "project",
+        op: "create",
+        item_id: copiedDocument.metadata.id,
+        item_type: copiedDocument.metadata.type,
+        before: beforeDocument,
+        after: copiedDocument,
+        changed_fields: changedFields,
+      })),
+      ...(await runActiveOnWriteHooks({
+        path: historyPath,
+        scope: "project",
+        op: "create:history",
+        item_id: copiedDocument.metadata.id,
+        item_type: copiedDocument.metadata.type,
+        before: beforeDocument,
+        after: copiedDocument,
+        changed_fields: changedFields,
+      })),
+    ];
+    recordAfterCommandAffectedItem({
+      id: copiedDocument.metadata.id,
+      op: "create",
+      item_type: copiedDocument.metadata.type,
+      status: copiedDocument.metadata.status,
+      current: projectAfterCommandItemSnapshot(
+        copiedDocument.metadata,
+        changedFields,
+      ),
+      changed_fields: changedFields,
+    });
+  } finally {
+    await lockRelease();
+  }
+
+  return {
+    source_id: located.id,
+    item: structuredClone(copiedDocument.metadata),
+    changed_fields: changedFields,
+    warnings: [
+      ...similarityAdvisoryWarnings(similarityAdvisory),
+      ...derivedIndexWarnings,
+      ...hookWarnings,
+    ],
+    ...(similarityAdvisory === undefined
+      ? {}
+      : { similarity_advisory: similarityAdvisory }),
+  };
+}

@@ -256,7 +256,16 @@ git push origin v<version>
 - post-publish npm/npx/bunx verification through
   `scripts/release/verify-published-release.mjs`, using isolated empty npm and
   Bun caches plus an empty npm user config so maintainer credentials and cached
-  metadata cannot mask a public-registry outage
+  metadata cannot mask a public-registry outage. The verifier dispatches a real
+  `pm contracts` command, performs a JSON-RPC initialize handshake against the
+  symlink-resolved `pm-mcp` bin under both npx and bunx, derives bin coverage
+  from `package.json`, and proves missing-bin controls fail.
+- exact-package installed acceptance through
+  `scripts/release/verify-installed-agent-session.mjs`. Separate npm and Bun
+  install roots must contain the resolved executable, then each drives the
+  cold-start `init -> context -> create -> claim -> annotate -> files -> close
+  -> validate -> get -> context` loop. The structured report identifies the
+  failing step and records per-step output ceilings and estimated token cost.
 - GitHub Release creation
 - GitHub Release metadata verification through the same local verification script
 
@@ -271,8 +280,9 @@ gh run watch <run-id> --exit-status
 
 ```bash
 npm view @unbrained/pm-cli@<version> version dist.integrity dist.unpackedSize --json
-npx --yes --package @unbrained/pm-cli@<version> -- pm --version
-bunx --bun @unbrained/pm-cli@<version> pm --version
+npx --yes --package @unbrained/pm-cli@<version> -- pm --json --no-extensions contracts --summary
+bunx --silent --bun --package @unbrained/pm-cli@<version> pm --json --no-extensions contracts --summary
+pnpm release:verify-installed-agent -- --version <version> --manager both --json
 gh release view v<version> --json tagName,name,isDraft,isPrerelease,url
 pnpm release:verify-published -- --version <version>
 ```

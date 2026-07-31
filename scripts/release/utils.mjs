@@ -29,6 +29,7 @@ export function runCommand(command, args, options = {}) {
   const {
     cwd = repoRoot,
     env = {},
+    input,
     capture = false,
     allowFailure = false,
   } = options;
@@ -37,8 +38,11 @@ export function runCommand(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd,
     env: mergedEnv,
+    input,
     encoding: "utf8",
-    stdio: capture ? ["ignore", "pipe", "pipe"] : "inherit",
+    stdio: capture
+      ? [input === undefined ? "ignore" : "pipe", "pipe", "pipe"]
+      : "inherit",
   });
 
   const status = result.status ?? 1;

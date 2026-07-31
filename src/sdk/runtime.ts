@@ -91,17 +91,12 @@ import {
   runCloseMany,
   runComments,
   runContext,
-  runCopy,
   runCreate,
-  runDelete,
-  runFocus,
-  runGet,
   runHistory,
   runLearnings,
   runNext,
   runNotes,
   runPlan,
-  runRestore,
   runRelease,
   runUpdate,
   runUpdateMany,
@@ -110,6 +105,21 @@ import {
   type UpgradeResult,
 } from "../cli/commands/index.js";
 import { runClose } from "./lifecycle/close.js";
+import { runCopy, type CopyResult } from "./lifecycle/copy.js";
+import {
+  runDelete,
+  type DeleteResult,
+} from "./lifecycle/delete.js";
+import {
+  runRestore,
+  type RestoreResult,
+} from "./lifecycle/restore.js";
+import { runFocus, type FocusResult } from "./lifecycle/focus.js";
+import {
+  runGet,
+  type GetOptions,
+  type GetResult,
+} from "./query/get.js";
 import {
   runGc,
   type GcCommandOptions,
@@ -199,7 +209,6 @@ import {
 } from "./graph/run.js";
 import { runFiles, runFilesDiscover } from "./files.js";
 import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
-import type { GetOptions, GetResult } from "../cli/commands/get.js";
 import type {
   AppendCommandOptions,
   AppendResult,
@@ -215,9 +224,7 @@ import {
   type ContractsCommandOptions,
   type ContractsResult,
 } from "../cli/commands/contracts.js";
-import type { CopyResult } from "../cli/commands/copy.js";
 import type { CreateResult } from "../cli/commands/create.js";
-import type { DeleteResult } from "../cli/commands/delete.js";
 import { runList, type ListOptions, type ListResult } from "./query/list.js";
 import type { NextOptions, NextResult } from "../cli/commands/next.js";
 import type {
@@ -244,8 +251,6 @@ import { runTelemetry } from "./telemetry.js";
 import { runTest } from "./test/execution.js";
 import { runTestAll } from "./test/batch.js";
 import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
-import type { FocusResult } from "../cli/commands/focus.js";
-import type { RestoreResult } from "../cli/commands/restore.js";
 import type { UpdateResult } from "../cli/commands/update.js";
 import type {
   CommentsCommandOptions,
@@ -327,12 +332,8 @@ import {
 export type {
   ClaimResult,
   CloseResult,
-  CopyResult,
   CreateResult,
-  DeleteResult,
-  FocusResult,
   ReleaseResult,
-  RestoreResult,
   UpdateResult,
 };
 
@@ -472,7 +473,7 @@ export {
   runGet,
   type GetOptions,
   type GetResult,
-} from "../cli/commands/get.js";
+} from "./query/get.js";
 export {
   runList,
   type ListFullResult,
@@ -494,6 +495,26 @@ export {
   runClose,
   type CloseCommandOptions,
 } from "./lifecycle/close.js";
+export {
+  runCopy,
+  type CopyOptions,
+  type CopyResult,
+} from "./lifecycle/copy.js";
+export {
+  runDelete,
+  type DeleteCommandOptions,
+  type DeleteResult,
+} from "./lifecycle/delete.js";
+export {
+  runFocus,
+  type FocusOptions,
+  type FocusResult,
+} from "./lifecycle/focus.js";
+export {
+  runRestore,
+  type RestoreCommandOptions,
+  type RestoreResult,
+} from "./lifecycle/restore.js";
 export {
   DEFAULT_TERMINAL_TRANSITION_POLICY,
   applyTerminalOrderingPolicy,

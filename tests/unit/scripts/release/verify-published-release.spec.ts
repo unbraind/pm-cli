@@ -13,11 +13,16 @@ type RunCommandResult = { status: number; stdout: string; stderr: string };
 interface ScenarioOptions {
   argv: string[];
   npmPackage?: string;
+  packageManifest?: Record<string, unknown>;
   runCommand?: (command: string, args: string[], call: number) => RunCommandResult;
   sleepMs?: string;
 }
 
 async function runVerify(options: ScenarioOptions) {
+  vi.restoreAllMocks();
+  vi.resetModules();
+  vi.doUnmock("node:fs");
+  vi.doUnmock(UTILS_SPECIFIER);
   process.env.PM_VERIFY_SLEEP_MS = options.sleepMs ?? "0";
   if (options.npmPackage === undefined) {
     delete process.env.NPM_PACKAGE;
@@ -27,7 +32,14 @@ async function runVerify(options: ScenarioOptions) {
 
   const mkdtempSync = vi.fn(() => "/tmp/pm-cli-published-verify-test");
   const readFileSync = vi.fn(() =>
-    JSON.stringify({ name: "@unbrained/pm-cli" }),
+    JSON.stringify(options.packageManifest ?? {
+      name: "@unbrained/pm-cli",
+      bin: {
+        pm: "dist/cli.js",
+        "pm-cli": "dist/cli.js",
+        "pm-mcp": "dist/mcp/server.js",
+      },
+    }),
   );
   const rmSync = vi.fn();
   const writeFileSync = vi.fn();
@@ -102,6 +114,31 @@ function npmViewResult(version: string): RunCommandResult {
   };
 }
 
+function successfulExecutorResult(args: string[]): RunCommandResult {
+  if (args.includes("pm-definitely-missing")) {
+    return { status: 127, stdout: "", stderr: "executable not found" };
+  }
+  if (args.includes("pm-mcp")) {
+    return {
+      status: 0,
+      stdout: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+          protocolVersion: "2025-06-18",
+          serverInfo: { name: "pm-mcp" },
+        },
+      }),
+      stderr: "",
+    };
+  }
+  return {
+    status: 0,
+    stdout: JSON.stringify({ summary: { command_count: 1 } }),
+    stderr: "",
+  };
+}
+
 describe("scripts/release/verify-published-release: usage and validation", () => {
   it("prints usage for --help and runs nothing", async () => {
     const { logs, runCommand } = await runVerify({ argv: ["--help"] });
@@ -148,7 +185,7 @@ describe("scripts/release/verify-published-release: success path", () => {
           return npmViewResult("2026.6.14");
         }
         if (command === "npx" || command === "bunx") {
-          return { status: 0, stdout: "2026.6.14\n", stderr: "" };
+          return successfulExecutorResult(args);
         }
         if (command === "gh") {
           return {
@@ -168,9 +205,15 @@ describe("scripts/release/verify-published-release: success path", () => {
     });
     expect(json.ok).toBe(true);
     expect(json.package.npm.ok).toBe(true);
-    expect(json.package.npx.direct.ok).toBe(true);
-    expect(json.package.npx.package.ok).toBe(true);
-    expect(json.package.bunx.ok).toBe(true);
+    expect(json.package.executors.npx.pm.ok).toBe(true);
+    expect(json.package.executors.npx["pm-mcp"].ok).toBe(true);
+    expect(json.package.executors.bunx.pm.ok).toBe(true);
+    expect(json.package.executors.bunx["pm-mcp"].ok).toBe(true);
+    expect(json.package.bin_coverage).toEqual({
+      covered_bins: ["pm", "pm-cli", "pm-mcp"],
+      distinct_entrypoints: ["dist/cli.js", "dist/mcp/server.js"],
+      uncovered_bins: [],
+    });
     expect(json.github_release.tagName).toBe("v2026.6.14");
     expect(runCommand.mock.calls[0]?.[1]?.[1]).toBe(
       "@unbrained/pm-cli@2026.6.14",
@@ -180,7 +223,7 @@ describe("scripts/release/verify-published-release: success path", () => {
       "",
       "utf8",
     );
-    for (const call of runCommand.mock.calls.slice(0, 4)) {
+    for (const call of runCommand.mock.calls.slice(0, 5)) {
       expect(call[2]).toMatchObject({
         env: {
           NODE_AUTH_TOKEN: "",
@@ -214,16 +257,19 @@ describe("scripts/release/verify-published-release: success path", () => {
     const { runCommand } = await runVerify({
       argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
       npmPackage: "@example/pm-cli",
-      runCommand: (command, args) =>
-        command === "npm" && args[0] === "view"
-          ? npmViewResult("2026.6.14")
-          : { status: 0, stdout: "2026.6.14\n", stderr: "" },
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view") {
+          return npmViewResult("2026.6.14");
+        }
+        return successfulExecutorResult(args);
+      },
     });
-    expect(runCommand.mock.calls.slice(0, 4).map((call) => call[1])).toEqual([
+    expect(runCommand.mock.calls.slice(0, 5).map((call) => call[1])).toEqual([
       ["view", "@example/pm-cli@2026.6.14", "version", "dist.integrity", "dist.unpackedSize", "--json"],
-      ["--yes", "@example/pm-cli@2026.6.14", "--version"],
-      ["--yes", "--package", "@example/pm-cli@2026.6.14", "--", "pm", "--version"],
-      ["--bun", "@example/pm-cli@2026.6.14", "pm", "--version"],
+      ["--yes", "--package", "@example/pm-cli@2026.6.14", "--", "pm", "--json", "--no-extensions", "contracts", "--summary"],
+      ["--yes", "--package", "@example/pm-cli@2026.6.14", "--", "pm-mcp"],
+      ["--silent", "--bun", "--package", "@example/pm-cli@2026.6.14", "pm", "--json", "--no-extensions", "contracts", "--summary"],
+      ["--silent", "--bun", "--package", "@example/pm-cli@2026.6.14", "pm-mcp"],
     ]);
   });
 });
@@ -239,7 +285,7 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
           return call === 0 ? { status: 1, stdout: "", stderr: "registry timeout" } : npmViewResult("2026.6.14");
         }
         if (command === "npx" || command === "bunx") {
-          return { status: 0, stdout: "2026.6.14\n", stderr: "" };
+          return successfulExecutorResult(args);
         }
         return { status: 0, stdout: "", stderr: "" };
       },
@@ -317,8 +363,8 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         return { status: 0, stdout: "", stderr: "" };
       },
     });
-    expect(String(failure ?? "")).toContain("npx-direct verification failed");
-    expect(String(failure ?? "")).toContain("npx-direct_version_mismatch:0.0.0");
+    expect(String(failure ?? "")).toContain("npx-pm verification failed");
+    expect(String(failure ?? "")).toContain("npx-pm_invalid_output");
   });
 
   it("reports the stderr/no_output fallback when an executor exits non-zero with empty stdout", async () => {
@@ -334,7 +380,7 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         return { status: 0, stdout: "", stderr: "" };
       },
     });
-    expect(String(failure ?? "")).toContain("npx-direct_version_mismatch:executor crashed");
+    expect(String(failure ?? "")).toContain("npx-pm_execution_failed:executor crashed");
   });
 
   it("reports no_output when an executor exits non-zero with empty stdout and stderr", async () => {
@@ -350,7 +396,64 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         return { status: 0, stdout: "", stderr: "" };
       },
     });
-    expect(String(failure ?? "")).toContain("npx-direct_version_mismatch:no_output");
+    expect(String(failure ?? "")).toContain("npx-pm_execution_failed:no_output");
+  });
+
+  it("rejects non-object CLI output and an invalid MCP initialize response", async () => {
+    const cli = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view") return npmViewResult("2026.6.14");
+        if (command === "npx") return { status: 0, stdout: "null", stderr: "" };
+        return successfulExecutorResult(args);
+      },
+    });
+    expect(String(cli.failure)).toContain("cli_dispatch_not_an_object");
+
+    const mcp = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view") return npmViewResult("2026.6.14");
+        if (command === "npx" && args.includes("pm-mcp")) {
+          return { status: 0, stdout: JSON.stringify({ id: 1, result: {} }), stderr: "" };
+        }
+        return successfulExecutorResult(args);
+      },
+    });
+    expect(String(mcp.failure)).toContain("mcp_initialize_response_invalid");
+  });
+
+  it("fails closed when missing-bin controls pass or a manifest bin is uncovered", async () => {
+    const negativeControl = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view") return npmViewResult("2026.6.14");
+        return successfulExecutorResult(args.includes("pm-definitely-missing") ? [] : args);
+      },
+    });
+    expect(String(negativeControl.failure)).toContain(
+      "negative control failed: a missing executable exited zero",
+    );
+
+    const uncovered = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      packageManifest: {
+        name: "@unbrained/pm-cli",
+        bin: {
+          pm: "dist/cli.js",
+          "pm-cli": "dist/cli.js",
+          "pm-mcp": "dist/mcp/server.js",
+          "pm-extra": "dist/extra.js",
+        },
+      },
+      runCommand: (command, args) =>
+        command === "npm" && args[0] === "view"
+          ? npmViewResult("2026.6.14")
+          : successfulExecutorResult(args),
+    });
+    expect(String(uncovered.failure)).toContain(
+      "Published package bins lack executable coverage: pm-extra",
+    );
   });
 });
 

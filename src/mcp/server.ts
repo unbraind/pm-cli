@@ -412,6 +412,21 @@ function readMcpClientInfo(
       result[key] = value.trim().slice(0, limit);
     }
   }
+  const provenance = asRecordClone(clientInfo.provenance);
+  const boundedProvenance = Object.fromEntries(
+    Object.entries(provenance)
+      .filter(
+        (entry): entry is [string, string] =>
+          /^[a-z][a-z0-9_-]{0,63}$/u.test(entry[0]) &&
+          typeof entry[1] === "string" &&
+          entry[1].trim().length > 0,
+      )
+      .slice(0, 32)
+      .map(([key, value]) => [key, value.trim().slice(0, 256)]),
+  );
+  if (Object.keys(boundedProvenance).length > 0) {
+    result.provenance = boundedProvenance;
+  }
   return result;
 }
 

@@ -19,6 +19,10 @@ const COMMANDS_MODULE = "../../../src/cli/commands/index.js";
 const CONFIG_SDK_MODULE = "../../../src/sdk/config.js";
 const DEPENDENCIES_SDK_MODULE = "../../../src/sdk/dependencies.js";
 const GRAPH_RUN_SDK_MODULE = "../../../src/sdk/graph/run.js";
+const QUERY_GET_SDK_MODULE = "../../../src/sdk/query/get.js";
+const LIFECYCLE_COPY_SDK_MODULE = "../../../src/sdk/lifecycle/copy.js";
+const LIFECYCLE_DELETE_SDK_MODULE = "../../../src/sdk/lifecycle/delete.js";
+const LIFECYCLE_FOCUS_SDK_MODULE = "../../../src/sdk/lifecycle/focus.js";
 const LIFECYCLE_CLOSE_SDK_MODULE = "../../../src/sdk/lifecycle/close.js";
 const DOCS_SDK_MODULE = "../../../src/sdk/docs.js";
 const FILES_SDK_MODULE = "../../../src/sdk/files.js";
@@ -129,6 +133,16 @@ async function importServerWithCommandMocks(
     >(GRAPH_RUN_SDK_MODULE);
     return { ...actual, runGraph: commandMocks.runGraph };
   });
+  vi.doMock(QUERY_GET_SDK_MODULE, () => ({ runGet: commandMocks.runGet }));
+  vi.doMock(LIFECYCLE_COPY_SDK_MODULE, () => ({
+    runCopy: commandMocks.runCopy,
+  }));
+  vi.doMock(LIFECYCLE_DELETE_SDK_MODULE, () => ({
+    runDelete: commandMocks.runDelete,
+  }));
+  vi.doMock(LIFECYCLE_FOCUS_SDK_MODULE, () => ({
+    runFocus: commandMocks.runFocus,
+  }));
   vi.doMock(LIFECYCLE_CLOSE_SDK_MODULE, async () => {
     const actual = await vi.importActual<
       typeof import("../../../src/sdk/lifecycle/close.js")
@@ -196,6 +210,10 @@ describe("mcp server branch residual coverage", () => {
     vi.doUnmock(COMMANDS_MODULE);
     vi.doUnmock(CONFIG_SDK_MODULE);
     vi.doUnmock(DEPENDENCIES_SDK_MODULE);
+    vi.doUnmock(QUERY_GET_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_COPY_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_DELETE_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_FOCUS_SDK_MODULE);
     vi.doUnmock(DOCS_SDK_MODULE);
     vi.doUnmock(FILES_SDK_MODULE);
     vi.doUnmock(HISTORY_COMPACT_SDK_MODULE);

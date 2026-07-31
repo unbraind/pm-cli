@@ -4,6 +4,7 @@ Tracker reference: [pm-oskdmu](../.agents/pm/decisions/pm-oskdmu.toon).
 Implementation lineage:
 [pm-itsjf0](../.agents/pm/features/pm-itsjf0.toon),
 [pm-0zcwz6](../.agents/pm/issues/pm-0zcwz6.toon),
+[pm-1zhfls](../.agents/pm/issues/pm-1zhfls.toon),
 [pm-pwq0g5](../.agents/pm/issues/pm-pwq0g5.toon), and
 [pm-te6elw](../.agents/pm/tasks/pm-te6elw.toon).
 
@@ -59,8 +60,14 @@ All new history fields are optional. Readers must accept:
 - legacy entries with no agent fields;
 - model-only entries using `agent_model` and `agent_model_source`;
 - new entries with `agent_provenance`;
-- an explicit `model: null` observation meaning unavailable for a detected
-  harness.
+- explicit `model: null`, `effort: null`, or `role: null` observations meaning
+  the dimension was declared but unavailable for a detected harness.
+
+MCP clients may supply a bounded `clientInfo.provenance` map during initialize.
+The server retains only valid dimension names and trimmed values, then resolves
+that map inside the invocation-scoped identity context for every mutation. A
+missing MCP signal is recorded as explicit `null`; it is never confused with a
+legacy entry that predates the dimension.
 
 Unknown provenance dimensions are preserved as data and do not change author
 resolution. Removing a dimension from a descriptor never rewrites existing

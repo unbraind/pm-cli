@@ -112,6 +112,19 @@ describe("scripts/release/utils: runCommand", () => {
       }),
     );
 
+    utils.runCommand("pm", ["json-ok"], {
+      capture: true,
+      input: "request body",
+    });
+    expect(spawnSync).toHaveBeenLastCalledWith(
+      "pm",
+      ["json-ok"],
+      expect.objectContaining({
+        input: "request body",
+        stdio: ["pipe", "pipe", "pipe"],
+      }),
+    );
+
     const allowedFailure = utils.runCommand("pm", ["allowed-failure"], { allowFailure: true, capture: true });
     expect(allowedFailure.status).toBe(5);
     expect(allowedFailure.stderr).toContain("allowed failure");
