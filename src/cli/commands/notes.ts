@@ -146,6 +146,7 @@ export async function runNotes(
     (value) => value !== undefined,
   );
   const sinceTimestamp = parseSinceTimestamp(options.since);
+  const limit = parseLimit(options.limit);
   const result = await runAnnotationCommand<"notes", LogNote>(
     id,
     {
@@ -218,7 +219,6 @@ export async function runNotes(
       [isStructured, matchesSince, matchesType].every(Boolean),
     ].includes(true);
   });
-  const limit = parseLimit(options.limit);
   const filtered = filteringEvents
     ? limitAnnotationEntries(matching, limit)
     : matching;

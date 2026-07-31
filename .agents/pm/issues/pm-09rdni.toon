@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T10:41:38.295Z"
-updated_at: "2026-07-31T12:54:36.958Z"
+updated_at: "2026-07-31T13:33:40.207Z"
 closed_at: "2026-07-31T12:54:11.001Z"
 completed_at: "2026-07-31T12:54:11.001Z"
 author: "harness:codex"
@@ -26,12 +26,13 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,discovered_from,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
   pm-zwpp,discovered_from,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-31T10:41:38.295Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-840, structured append/events, JSON notes, annotation primitives, merge union behavior, and exact/fuzzy titles. Closed pm-zwpp owns existing free-text annotation facades and pm-g5sx owns merge infrastructure; neither provides structured event storage or bounded event reads. Source: https://github.com/unbraind/pm-cli/issues/840"
   "2026-07-31T11:44:40.346Z","harness:codex","Implementation evidence: added typed merge-safe JSON note events with stable serialization, event-type/time filtering, bounded metadata, SDK/CLI/MCP parity, and scalar body-append concurrency guidance. Full repository coverage passed at 100/100/100/100 (6,594 tests)."
   "2026-07-31T12:19:17.517Z","harness:codex","Installed-consumer evidence: a fresh unrelated temp prefix installed the packed tarball, resolved its pm shim inside that prefix, and passed direct CLI, npm exec --offline, bunx --no-install, plus public SDK stable serialization/limit primitives. Help surfaces remain below the pre-change token budgets after adding the JSON event options."
   "2026-07-31T12:20:13.347Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/845 implements this item in initial implementation commit ee6c69e28fbc0f7f70106224d9466cc58410ac77; final reviewed head will be recorded after review convergence."
   "2026-07-31T12:53:48.848Z","harness:codex","Review remediation evidence: structured JSON events are now immutable after append; invalid --since is rejected before mutation; MCP schemas mirror every --add-json input conflict; action-scoped timestamp and metadata descriptions generate correctly; the public error catalog/surface are updated without a breaking SDK signature. Focused 95-test review suite, full 100% coverage gate, contracts, static quality, and token surfaces pass."
+  "2026-07-31T13:33:40.207Z","harness:codex","Final review remediation: CodeRabbit identified that --limit parsing could occur after note_add when structured event filters suppressed the storage-layer limit. Moved limit validation ahead of every awaited mutation and added a regression proving an invalid filtered limit persists nothing. Focused notes suite passes 29/29 and focused ESLint passes; full exact-head gates will run before republish."
 files[9]{path,scope,note}:
   sdk/public-surface.json,project,public structured event error surface
   src/cli/commands/notes.ts,project,merge-safe structured event CLI encoding and filtering

@@ -748,6 +748,17 @@ describe("structured note context events", () => {
       ).rejects.toMatchObject<PmCliError>({
         context: { code: "structured_event_since_invalid" },
       });
+      await expect(
+        runNotes(
+          id,
+          {
+            add: "must also not persist",
+            eventType: "step.completed",
+            limit: "not-a-number",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       expect(await runNotes(id, {}, { path: context.pmPath })).toMatchObject({
         count: 1,
       });
