@@ -493,8 +493,10 @@ describe("release automation contract", () => {
     );
     expect(workflow).toContain('npm_config_cache="${PUBLIC_NPM_CACHE}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");
+    expect(workflow).toContain("DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}");
+    expect(workflow).toContain("github.sha || github.ref");
     expect(workflow).toContain(
-      "github.event.repository.default_branch || github.ref",
+      'if [ "${GITHUB_REF_NAME}" != "${DEFAULT_BRANCH}" ]; then',
     );
     expect(workflow).toContain(
       'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',

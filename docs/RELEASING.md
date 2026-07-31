@@ -305,8 +305,9 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   access before consulting anonymous registry metadata. This prevents a stale
   public cache hit from bypassing access repair; an already-visible immutable
   version is still verified and never republished. Recovery checks out the
-  repository default branch (`main`), while `RELEASE_TAG` keeps the requested
-  immutable version as the verification target. Historical recovery validates
+  dispatch-time commit SHA and fails unless the dispatch ref is the repository
+  default branch (`main`), while `RELEASE_TAG` keeps the requested immutable
+  version as the verification target. Historical recovery validates
   the tag shape but intentionally does not require current `package.json` to
   equal that older version; dispatch cannot publish, so this does not weaken the
   original tag-push version guard.
