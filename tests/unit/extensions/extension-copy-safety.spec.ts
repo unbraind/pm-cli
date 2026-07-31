@@ -75,6 +75,45 @@ describe("extension install copy containment", () => {
     ).toBe("manifest\n");
   });
 
+  it("maps alias-spelled traversal paths into the canonical source namespace", async () => {
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "pm-extension-copy-filter-alias-"),
+    );
+    tempRoots.push(root);
+    const source = path.join(root, "source");
+    const sourceAlias = path.join(root, "source-alias");
+    const destination = path.join(
+      source,
+      ".agents",
+      "pm",
+      "extensions",
+      "demo",
+    );
+    await mkdir(path.dirname(destination), { recursive: true });
+    await symlink(
+      source,
+      sourceAlias,
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    let destinationFilterCovered = false;
+    const copyDirectory = vi.fn(async (_source, _destination, options) => {
+      if (options?.filter) {
+        destinationFilterCovered =
+          options.filter(
+            path.join(sourceAlias, ".agents", "pm", "extensions", "demo"),
+            "",
+          ) === false;
+      }
+    });
+
+    await _testOnly.copyExtensionDirectoryWithoutSelfNesting(
+      sourceAlias,
+      destination,
+      copyDirectory,
+    );
+    expect(destinationFilterCovered).toBe(true);
+  });
+
   it("canonicalizes a missing destination tree through its deepest existing ancestor", async () => {
     const root = await mkdtemp(
       path.join(os.tmpdir(), "pm-extension-copy-canonical-"),

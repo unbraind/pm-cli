@@ -169,7 +169,10 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
   }
 
   const shouldCopySourcePath = (sourcePath: string): boolean => {
-    const canonicalCandidate = path.resolve(sourcePath);
+    const canonicalCandidate = path.resolve(
+      canonicalSource,
+      path.relative(resolvedSource, path.resolve(sourcePath)),
+    );
     if (
       canonicalCandidate === canonicalDestination ||
       isPathWithinDirectory(canonicalDestination, canonicalCandidate)
@@ -192,7 +195,9 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
 
   const systemTempDirectory = await fs
     .realpath(path.resolve(temporaryDirectory))
-    .catch(() => resolveCanonicalExtensionInstallDestination(temporaryDirectory));
+    .catch(() =>
+      resolveCanonicalExtensionInstallDestination(temporaryDirectory),
+    );
   const stagingBase = isPathWithinDirectory(
     canonicalSource,
     systemTempDirectory,

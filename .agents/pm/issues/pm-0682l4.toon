@@ -6,9 +6,9 @@ status: closed
 priority: 0
 tags[5]: "area:packages",data-safety,github-intake,reliability,security
 created_at: "2026-07-30T11:28:35.807Z"
-updated_at: "2026-07-30T23:31:08.453Z"
-closed_at: "2026-07-30T22:52:52.365Z"
-completed_at: "2026-07-30T22:52:52.365Z"
+updated_at: "2026-07-31T09:20:27.138Z"
+closed_at: "2026-07-31T09:20:24.060Z"
+completed_at: "2026-07-31T09:20:24.060Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: "Install rejects or safely prunes destination-inside-source; tracker roots, backups, and node_modules cannot enter installed copies; repeated-install acceptance proves bounded size; failures never report ok true"
@@ -19,29 +19,40 @@ impact: Prevents exponential storage growth and ENOSPC failures in standard pack
 parent: pm-ugqx
 risk: high
 confidence: high
-resolution: fixed
-expected_result: "Repeated local installs remain bounded and never copy the destination, tracker, dependencies, or backups into the staged package."
-actual_result: "Traversal filters destination containment plus .agents, node_modules, and backup paths; repeated-install acceptance remains bounded."
+resolution: Map each lexical traversal path relative to resolvedSource onto canonicalSource before destination containment and exclusion checks.
+expected_result: "Repeated local installs remain bounded and exclude the destination, tracker, dependencies, and backups under canonical, symlinked, and Windows alternate path namespaces."
+actual_result: "The alias-spelled filter regression passes with all 6,586 tests at exact coverage; macOS and Windows nightly recurrence is ready for hosted confirmation."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-0fhw,related_to,"2026-07-30T11:28:35.807Z","harness:codex","cli:create:dep",detected
   pm-59gj,discovered_from,"2026-07-30T11:28:35.807Z","harness:codex","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-07-30T17:04:20.237Z","harness:claude-code","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-07-30T11:28:35.807Z","harness:codex","Duplicate check searched all statuses for local install self-nesting and destination containment; related historical guards do not own this standard-layout recursion. GitHub report: https://github.com/unbraind/pm-cli/issues/827"
   "2026-07-30T22:32:04.174Z","harness:codex","Verification evidence: repeated nested-source install staging excludes destination, .agents, node_modules, and backups; focused package suite and full 6584-test coverage passed at 100/100/100/100."
   "2026-07-30T22:51:29.330Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
   "2026-07-30T23:28:51.120Z","harness:codex","Final native-layout revalidation: the focused diff is 952 insertions and 97 deletions with no formatter churn; 406 files and 6,583 tests pass at 100% statements, branches, functions, and lines. Typecheck, ESLint, static quality, package boundary/parity, token budgets, SDK surface/import-cost/transport gates, docs, latest pm-changelog 2026.7.29-1 check mode, tracker health/history integrity, and fresh unrelated-workspace acceptance all pass."
   "2026-07-30T23:31:08.452Z","harness:codex","Publication evidence: broad SDK/CLI implementation is published for exact-head CI and AI review in https://github.com/unbraind/pm-cli/pull/833 at commit 89e52f2ce."
-learnings[1]{created_at,author,text}:
+  "2026-07-31T08:59:39.260Z","harness:codex","Recurrence evidence: scheduled Nightly run 30610704666 at 43c4b5cb failed the same destinationFilterCovered assertion on macOS Node 24 (GH-837) and Windows Node 24 (GH-838). The July 15 ancestor canonicalization remains correct; the July 30 shouldCopySourcePath filter reintroduced namespace asymmetry by using path.resolve(sourcePath) while comparing with canonicalDestination."
+  "2026-07-31T09:02:14.836Z","harness:codex","TDD evidence: source traversal paths are now mapped from the lexical source namespace into canonicalSource before destination containment and exclusion checks. The focused symlink-alias regression plus the full extension command suite pass: 2 files, 143 tests."
+  "2026-07-31T09:20:16.347Z","harness:codex","Final local correction evidence: 407 files and 6,586 tests pass at exact 100/100/100/100 coverage. TypeScript, ESLint, docs/skills, static quality, docstrings, package boundary/parity, token/context/retrieval gates, SDK surface/import/transport floors, secrets, packed npx smoke, and 88-command package-first dogfood all passed. Release gates stopped only at the expected pre-push Greptile lookup because no committed branch diff existed yet."
+learnings[2]{created_at,author,text}:
   "2026-07-30T22:51:30.413Z","harness:codex","Local install staging must filter tracker roots, dependency trees, backups, and the resolved destination during traversal because destination containment can otherwise recurse on repeated installs."
-files[2]{path,scope,note}:
+  "2026-07-31T09:20:17.081Z","harness:codex",Containment filters must compare every traversed source path in the same canonical namespace as both source and destination. Mapping lexical traversal-relative paths onto canonicalSource avoids async realpath calls and handles macOS symlink aliases plus Windows alternate path spellings.
+files[3]{path,scope,note}:
   src/sdk/extension/install-runtime.ts,project,containment-safe nested-source staging
   tests/unit/extensions/extension-command.spec.ts,project,repeated nested install acceptance
-tests[1]{command,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts,project,300,local install runtime coverage
+  tests/unit/extensions/extension-copy-safety.spec.ts,project,canonical alias traversal regression
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-command.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: local install runtime coverage
+  - command: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-copy-safety.spec.ts tests/unit/extensions/extension-command.spec.ts
+    scope: project
+    timeout_seconds: 300
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms83wu2m-l7vtwi,test,passed,"2026-07-30T22:49:48.818Z","2026-07-30T22:50:15.742Z","2026-07-30T22:50:15.742Z",1,0,0
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,local install containment contract
-close_reason: "Made local package install staging containment-safe against destination recursion, tracker data, dependencies, and backups; repeated-install tests, package dogfood, secrets scan, and full coverage passed."
+close_reason: "Corrected recursive-install filter namespace mapping with symlink-alias regression coverage, complete local gates, and explicit GH-837/GH-838 evidence."
 body: ""
