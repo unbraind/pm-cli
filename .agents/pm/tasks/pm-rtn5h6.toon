@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: ci,continuous-improvement,defect-detection,governance,process,quality-gate
 created_at: "2026-07-24T23:46:03.890Z"
-updated_at: "2026-07-31T10:16:03.263Z"
+updated_at: "2026-07-31T19:42:23.625Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: "A defined escape class taxonomy covers at minimum: production defect, nightly regression, scanner finding, and review-caught-late; Items of an escape class carry a structured gate-evidence field naming the gate added or strengthened, or a reviewed no-gate waiver; A governance check reports escaped-defect items closed without gate evidence, mapped to an owning item like every other warning; A periodic report shows escapes per class over time and the gates added, so the ratchet is visible rather than asserted"
@@ -19,7 +19,7 @@ why_now: "The workspace already records the raw material — resolution fields, 
 parent: pm-u9d0
 risk: low
 confidence: high
-dependencies[9]:
+dependencies[11]:
   - id: pm-33cw
     kind: related
     created_at: "2026-07-24T23:46:03.890Z"
@@ -50,4 +50,18 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-qtbc
+    kind: discovered_from
+    created_at: "2026-07-31T19:42:23.546Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-u0oz2k
+    kind: related
+    created_at: "2026-07-31T19:42:23.546Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+notes[1]{created_at,author,text}:
+  "2026-07-31T19:42:23.546Z","harness:claude-code","First worked example recorded 2026-07-31, offered as a concrete calibration case rather than as a change of scope.\n\nThis task states the ratchet as policy: every escaped defect must land a gate that would have caught it. What it has lacked is an instance where the policy is checked against history and found to have been violated, which is what makes the ratchet worth building rather than merely agreeing with.\n\nThe instance is pm-qtbc, closed with resolution \"Fixed pm-mcp main-module detection by realpath-resolving symlinked npm bin argv paths.\" It is an ideal test case for three reasons.\n\nIt genuinely escaped. The defect reached a published artifact and was found by dogfooding, per its dogfood-2026-06-12 tag, not by any gate.\n\nIt landed no gate. grep -rn \"pm-mcp\" over scripts/release/ and .github/workflows/ returns zero matches at HEAD b7651d793, so the entrypoint that shipped dead is still executed by nothing in the pipeline. A regression would ship green today. That absence is now filed as pm-u0oz2k.\n\nIt is the hard case for gate design, not the easy one. The failure was a silent exit 0 with no output, reachable only under a symlinked argv[1] - so it is invisible from an in-repo run and invisible to an exit-code or --version probe. A ratchet that only asks \"was a test added\" would have accepted a unit test that could never have caught this. The requirement the ratchet needs to express is stronger: the gate must fail on a reconstruction of the original defect, which is a negative control rather than a coverage delta.\n\nTwo suggestions for this task's acceptance criteria follow from that, both cheap.\n\nFirst, the ratchet should demand a negative control, not a gate. \"A gate exists\" is satisfiable by a gate that cannot fail - which is exactly the live condition pm-lpqln4 documents for the bunx probe, where an arbitrary token passes. Confirmed again today: node dist/cli.js ZZZ_NOT_A_COMMAND --version prints the version and exits 0.\n\nSecond, the ratchet should apply retroactively to already-closed defects as a bounded backfill, because the population of escaped-and-ungated defects is finite and enumerable from resolution text plus closed_at. Applying it only to future escapes leaves the existing holes permanently unmeasured, and pm-qtbc shows those holes sit on the agent-facing surface rather than in peripheral code."
 body: "## Problem\nThis repository has a deep gate stack — coverage, static quality, complexity, contracts snapshot, changelog drift, boundary ratchet, five external analyzers, nightly matrix. Despite that, defects still escape to nightly and to users, and the recurring pattern in the history is a class of defect that escapes, gets fixed at one site, and then escapes again at a second site months later.\n\n## Approach\nMake the gate the deliverable, not the fix. Every escape closes with a named gate. Class-level fixes are already the informal norm in this workspace; this makes the norm checkable.\n\n## Precedent in the history\nRepeated multi-site classes — path canonicalization asymmetry, POSIX-only assertions in specs, silent-zero filter validation, capability-blind hint rendering — each escaped two or more times before a class-level fix landed. Every one of them would have been caught once by a gate written at first escape.\n\n## Boundary\nNot blame attribution. Not a mandatory postmortem document. One structured field and one governance check."

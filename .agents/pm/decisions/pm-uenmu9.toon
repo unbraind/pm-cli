@@ -6,20 +6,28 @@ status: open
 priority: 2
 tags[4]: ci,policy,release,versioning
 created_at: "2026-07-31T14:13:07.836Z"
-updated_at: "2026-07-31T14:28:29.014Z"
+updated_at: "2026-07-31T19:41:38.351Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "One option is accepted and recorded in this decision with its rationale, and the rejected options are retained with the reason so the question is not reopened from scratch; docs/RELEASING.md states what a manual workflow_dispatch does when a release already exists for the current UTC day, and names the supported recovery path for a partial failure; If the ratify option is accepted, the unconditional evaluation of the same-day guard is documented as intentional at the call site so it is not later read as a bug and made dispatch-conditional; If the ordinal option is accepted, every version-parsing and version-comparison site is enumerated before any change lands, including the padded-versus-unpadded comparison that previously skipped releases silently; The decision records the live verification captured here - one successful scheduled run, one release, npm latest and both npx and bunx resolving it - as the baseline the policy is being decided against"
 parent: pm-u9d0
 risk: medium
 confidence: 92
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,related,"2026-07-31T14:20:56.077Z","harness:claude-code","cli:update:dep",detected
   pm-9gxi,related,"2026-07-31T14:20:56.077Z","harness:claude-code","cli:update:dep",detected
   pm-m2u1,related,"2026-07-31T14:20:56.077Z","harness:claude-code","cli:update:dep",detected
   pm-ot8r,related,"2026-07-31T14:20:56.077Z","harness:claude-code","cli:update:dep",detected
   pm-u9d0,implements,"2026-07-31T14:20:56.077Z","harness:claude-code","cli:update:dep",detected
   pm-xp1xsw,verifies,"2026-07-31T14:20:56.077Z","harness:claude-code","cli:update:dep",detected
+  pm-44u3wt,related,"2026-07-31T19:41:38.272Z","harness:claude-code","cli:update:dep",detected
+  pm-e70zh5,related,"2026-07-31T19:41:38.272Z","harness:claude-code","cli:update:dep",detected
+  pm-ki67py,related,"2026-07-31T19:41:38.272Z","harness:claude-code","cli:update:dep",detected
+  pm-lpqln4,related,"2026-07-31T19:41:38.272Z","harness:claude-code","cli:update:dep",detected
+  pm-q91qyd,related,"2026-07-31T19:41:38.272Z","harness:claude-code","cli:update:dep",detected
+  pm-u0oz2k,related,"2026-07-31T19:41:38.272Z","harness:claude-code","cli:update:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-07-31T19:41:38.272Z","harness:claude-code","Evidence base attached 2026-07-31. This decision was reachable from its capability parent and from the GA milestone, but from none of the six items that measure the thing it rules on, so a graph walk from the ADR could not find the evidence and a walk from any defect could not find the ADR.\n\nWhat the attached items establish, and why each bears on the ruling rather than merely sharing a topic:\n\npm-ki67py is the guard itself, and it is now recorded as blocked_by this decision because the defect admits two different correct repairs depending on which way this rules. That is the sharpest reason to decide: the fix cannot be written until the ruling exists.\n\npm-44u3wt establishes that all 84 scheduled runs fired 2.5-4 hours after the declared cron time. The cron in .github/workflows/auto-release.yml is 35 2 * * *, so the effective release instant is roughly 05:00-06:30 UTC. A one-release-per-UTC-day rule whose trigger sits within a few hours of a UTC boundary is a rule whose day assignment is decided by queue latency. If this decision keeps the UTC day as the unit, it should say what happens when drift pushes a run across midnight, because that is the case that produces either two releases in one calendar day or none.\n\npm-e70zh5 establishes a 32-of-84 failure rate. That matters here because the retry path is the only mechanism that can produce a same-day second attempt, so a chronically failing scheduled path is precisely the condition that exercises the question this ADR is asking.\n\npm-q91qyd establishes that the three release ledgers disagree in both directions - six published npm artifacts with no changelog section, seven git tags never published. A one-per-day invariant is only checkable against a ledger that agrees with itself; whichever ledger this decision names as authoritative for what already released that day is a substantive part of the ruling, not an implementation detail.\n\npm-lpqln4 and pm-u0oz2k establish that the post-publish verification cannot currently prove a release works: the bunx probe accepts an inert token, and the pm-mcp entrypoint is never executed at all. They bear on this decision because a same-day manual re-release is a recovery operation, and a recovery path is only worth authorising if the pipeline can tell a recovered release from a broken one."
 files[1]{path,scope,note}:
   scripts/release/run-release-pipeline.mjs,project,resolveVersion lines 103-112 pins target to the UTC date key; maybeSkipForSameDayRelease lines 263-279 evaluated unconditionally at 423
 docs[1]{path,scope,note}:

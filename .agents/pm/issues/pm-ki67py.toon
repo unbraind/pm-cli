@@ -6,19 +6,22 @@ status: open
 priority: 2
 tags[3]: ci,core,release
 created_at: "2026-07-28T02:58:02.043Z"
-updated_at: "2026-07-30T09:21:21.674Z"
+updated_at: "2026-07-31T19:41:25.332Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "The same-day release check compares parsed date fields or a zero-padded canonical key rather than a prefix glob, so no tag from a different day can ever satisfy it; A negative-control fixture proves the guard skips when a same-day tag exists and does NOT skip when only a later-day tag from the same month exists; Days 1 through 9 of a month are covered explicitly by regression tests, including the case where a two-digit-day tag from the same month already exists; The skip envelope's tags_today list contains only tags whose own date equals the run's date key; The unpadded date key is either padded canonically or documented as intentional with every consumer audited for prefix-matching"
 parent: pm-u9d0
 risk: medium
 confidence: 93
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-44u3wt,related,"2026-07-28T02:58:02.043Z","harness:claude-code","cli:create:dep",detected
   pm-7zs0,discovered_from,"2026-07-28T02:58:02.043Z","harness:claude-code","cli:create:dep",detected
   pm-k6t4yb,related,"2026-07-28T02:58:02.043Z","harness:claude-code","cli:create:dep",detected
   pm-q91qyd,related,"2026-07-28T02:58:02.043Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-07-28T02:58:02.043Z","harness:claude-code","cli:create:dep",detected
-notes[1]{created_at,author,text}:
+  pm-u0oz2k,related,"2026-07-31T19:41:25.247Z","harness:claude-code","cli:update:dep",detected
+  pm-uenmu9,blocked_by,"2026-07-31T19:41:25.247Z","harness:claude-code","cli:update:dep",detected
+notes[2]{created_at,author,text}:
   "2026-07-30T09:21:21.674Z","harness:claude-code","First day the collision operand pair actually exists in the tag set. git tag --list \"v2026.7.3*\" now returns TWO tags: v2026.7.3 (July 3) and v2026.7.30 (July 30). The unpadded utcDateKey plus the v-prefix glob is therefore no longer a hypothetical pairing - the corpus now contains a real tag whose name is a strict prefix of another real tag in the same series.\n\nThe honest scope of this item still holds and must not be widened: on 2026-07-03 the key was 2026.7.3 and v2026.7.30 did not yet exist, so the glob could not have matched it; on 2026-07-30 the key is 2026.7.30 and the glob matches only itself. The guard remains correct by accident of forward-moving time, not by logic. What changed today is that the reachability argument no longer needs a hypothetical tag - it needs only a clock that is not monotonic (a re-run against an older ref, a backfilled tag, or a manual dispatch keyed to a past date)."
+  "2026-07-31T19:41:25.247Z","harness:claude-code","Sequencing edge recorded 2026-07-31: this defect is now blocked_by pm-uenmu9 rather than merely adjacent to it.\n\nThe reason is that the correct fix is not determined by the defect. The guard compares a prefix glob against unpadded date keys, so it is wrong in a way that has two different correct repairs depending on a policy question nobody has answered: if one release per UTC day is an architectural invariant, the guard should be an exact-match assertion that refuses a second same-day version outright; if a manually triggered same-day release is a supported operation, the guard must distinguish scheduled from dispatched invocations and permit the latter while still refusing an accidental duplicate from the former. Those are different comparisons over different key spaces, and implementing either one before the ruling means implementing it twice.\n\nThe workflow already contains a partial answer that the ADR has not ratified. The issues-triggered retry path in .github/workflows/auto-release.yml computes an unpadded today_version, checks git tag --list for an exact v<version> match, and on a hit reruns the existing tag's Release workflow instead of creating a replacement version - with an inline comment stating it never creates a replacement same-day version. So the retry path behaves as though one-per-day is architectural, while the scheduled path's guard lives in run-release-pipeline.mjs and is the one this defect describes. Two paths, one undocumented assumption, no ruling.\n\nThis edge makes that dependency traversable instead of leaving it as prose in two separate items."
 body: ""
