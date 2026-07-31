@@ -493,6 +493,17 @@ describe("release automation contract", () => {
     );
     expect(workflow).toContain('npm_config_cache="${PUBLIC_NPM_CACHE}"');
     expect(workflow).toContain("--max-critical 0 --max-high 0");
+    expect(workflow).toContain("DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}");
+    expect(workflow).toContain("github.sha || github.ref");
+    expect(workflow).toContain(
+      'if [ "${GITHUB_REF_NAME}" != "${DEFAULT_BRANCH}" ]; then',
+    );
+    expect(workflow).toContain(
+      'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
+    );
+    expect(workflow).toMatch(
+      /if \[ "\$\{GITHUB_EVENT_NAME\}" = "workflow_dispatch" \]; then[\s\S]*?else\s+node scripts\/release-version\.mjs check --tag "\$\{RELEASE_TAG\}"\s+fi/u,
+    );
   });
 
   it("executes the npm publication guard and stabilizes exact-tag recovery", async () => {
@@ -622,6 +633,21 @@ esac
       expect(invocations).toContain(
         "view @unbrained/pm-cli@2026.7.27 version --json",
       );
+      expect(invocations).not.toContain("publish --access public");
+
+      await writeFile(npmLog, "", "utf8");
+      await rm(accessMarker, { force: true });
+      const missingExactTagRecovery = runScenario({
+        GITHUB_EVENT_NAME: "workflow_dispatch",
+        ACCESS_STATUS: "0",
+        ACCESS_OUTPUT: "access restored",
+        POST_RECOVERY_PACKAGE_STATUS: "0",
+      });
+      expect(missingExactTagRecovery.status).not.toBe(0);
+      expect(missingExactTagRecovery.stderr).toContain(
+        "refusing to publish different source under an immutable tag",
+      );
+      invocations = await readFile(npmLog, "utf8");
       expect(invocations).not.toContain("publish --access public");
 
       await writeFile(npmLog, "", "utf8");

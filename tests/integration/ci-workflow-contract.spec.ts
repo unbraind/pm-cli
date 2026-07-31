@@ -431,7 +431,11 @@ describe("GitHub workflow contract", () => {
       "name: release",
       "RELEASE_TAG:",
       PINNED_ACTIONS.checkout,
-      "ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}",
+      "DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}",
+      "ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}",
+      "name: Validate exact-tag recovery source",
+      'if [ "${GITHUB_REF_NAME}" != "${DEFAULT_BRANCH}" ]; then',
+      "Exact-tag recovery must be dispatched from ${DEFAULT_BRANCH}; received ${GITHUB_REF_NAME}.",
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
@@ -480,6 +484,7 @@ describe("GitHub workflow contract", () => {
       "Exact-tag recovery is restoring public package access before anonymous probes.",
       'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
       "Exact-tag recovery restored public access for ${NPM_PACKAGE}.",
+      "Exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag.",
       "attempting access recovery before immutable publication.",
       'npm access set status=public "${NPM_PACKAGE}"',
       "grep -Eq 'E404|404 Not Found|Package not found'",
@@ -510,6 +515,25 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expect(releaseWorkflow).not.toContain("@unbrained/pm-cli");
+    const accessRecoveryIndex = releaseWorkflow.indexOf(
+      'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
+    );
+    const exactVersionProbeIndex = releaseWorkflow.indexOf(
+      'if anonymous_npm_view "${NPM_PACKAGE}@${VERSION}" version; then',
+    );
+    const publicationRefusalIndex = releaseWorkflow.indexOf(
+      'elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
+    );
+    const packageProbeIndex = releaseWorkflow.indexOf(
+      'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
+    );
+    expect(accessRecoveryIndex).toBeGreaterThanOrEqual(0);
+    expect(exactVersionProbeIndex).toBeGreaterThanOrEqual(0);
+    expect(publicationRefusalIndex).toBeGreaterThanOrEqual(0);
+    expect(packageProbeIndex).toBeGreaterThanOrEqual(0);
+    expect(accessRecoveryIndex).toBeLessThan(exactVersionProbeIndex);
+    expect(exactVersionProbeIndex).toBeLessThan(publicationRefusalIndex);
+    expect(publicationRefusalIndex).toBeLessThan(packageProbeIndex);
     expect("if should_publish; then npm publish --access public; fi").toMatch(
       untaggedNpmPublish,
     );
