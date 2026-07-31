@@ -626,6 +626,21 @@ esac
 
       await writeFile(npmLog, "", "utf8");
       await rm(accessMarker, { force: true });
+      const missingExactTagRecovery = runScenario({
+        GITHUB_EVENT_NAME: "workflow_dispatch",
+        ACCESS_STATUS: "0",
+        ACCESS_OUTPUT: "access restored",
+        POST_RECOVERY_PACKAGE_STATUS: "0",
+      });
+      expect(missingExactTagRecovery.status).not.toBe(0);
+      expect(missingExactTagRecovery.stderr).toContain(
+        "refusing to publish different source under an immutable tag",
+      );
+      invocations = await readFile(npmLog, "utf8");
+      expect(invocations).not.toContain("publish --access public");
+
+      await writeFile(npmLog, "", "utf8");
+      await rm(accessMarker, { force: true });
       const recoveredExistingVersion = runScenario({
         PACKAGE_STATUS: "1",
         ACCESS_STATUS: "0",

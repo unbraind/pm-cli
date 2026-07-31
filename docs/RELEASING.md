@@ -225,7 +225,7 @@ git push origin v<version>
 `.github/workflows/release.yml` runs on `v*.*.*` tags and handles:
 
 - full-history checkout
-- manual `workflow_dispatch` by tag for automation handoff or recovery when a tag already exists
+- manual `workflow_dispatch` by tag for recovery when an immutable npm version already exists; the reviewed current `main` source runs the gates so a historical tag cannot be blocked by an expired external fixture
 - pnpm install with frozen lockfile
 - version policy and tag guard
 - secret scan
@@ -292,9 +292,10 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   ordinal recovery version. Rerun `.github/workflows/release.yml` with
   `workflow_dispatch` and `tag=v<version>` (or close the current bot-created
   blocker once to trigger the guarded exact-run recovery). The workflow skips
-  duplicate npm publication for an anonymously visible version, publishes
-  directly when the package is public but that version is absent, and attempts
-  protected access recovery only when anonymous clients cannot see the package.
+  duplicate npm publication for an anonymously visible version and attempts
+  protected access recovery before anonymous probes. A dispatch refuses to
+  publish when that immutable version is absent; first publication remains owned
+  by the original tag-push run.
   Authenticated metadata is not used as the existence oracle because a hidden
   immutable version can return 404 there as well.
 - If an immutable published package contains a defect that cannot be repaired
@@ -303,7 +304,9 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 - A manual exact-tag `workflow_dispatch` recovery reasserts public npm package
   access before consulting anonymous registry metadata. This prevents a stale
   public cache hit from bypassing access repair; an already-visible immutable
-  version is still verified and never republished.
+  version is still verified and never republished. Recovery checks out the
+  reviewed `main` SHA that supplied the workflow, while `RELEASE_TAG` keeps the
+  requested immutable version as the verification target.
 - Record failure evidence and remediation in the release `pm` item.
 
 ### Silent skip debugging

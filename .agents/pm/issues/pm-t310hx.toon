@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-07-31T00:05:13.668Z"
-updated_at: "2026-07-31T00:10:17.205Z"
+updated_at: "2026-07-31T00:34:53.824Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7f20991b66ba03ca99c800a0"
 author: "harness:codex"
@@ -18,9 +18,11 @@ expected_result: "An exact-tag recovery explicitly restores the public access in
 actual_result: "Release run 30591621395 saw v2026.7.30 publicly through its clean caches and skipped publication, but independent anonymous metadata returned E404 26 seconds later and npm access status reported private."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-2z9263,related_to,"2026-07-31T00:05:39.600Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-31T00:05:13.668Z","harness:codex","Duplicate check searched all statuses for stale anonymous registry visibility,workflow-dispatch access stabilization,hidden-package recovery,and npm private state. pm-7zs0 is the recurring release-health parent; closed pm-2z9263 fixed identity drift and conditional recovery but does not own post-verification visibility regression. No duplicate implementation item was found."
   "2026-07-31T00:10:17.205Z","harness:codex","Implementation evidence: workflow_dispatch exact-tag recovery now calls the authenticated public-access repair before anonymous metadata probes; E404 remains a guarded first-publication path, non-404 access failures stop, normal tag-push behavior is unchanged, and existing immutable versions skip publication. Linked executable fake-registry and workflow contracts pass 30/30. Typecheck, ESLint, jscpd zero clones, static/docstrings 100%, package boundary/parity, token budgets, SDK surface/import-cost/transport floors, docs/skills, and diff checks pass."
+  "2026-07-31T00:31:48.707Z","harness:codex","Live post-merge evidence: exact-tag recovery run 30593451032 checked out immutable v2026.7.30 and stopped before npm mutation because that historical source contains the now-expired July 1 context-eval feedback timestamp (6539/6540 tests passed). Recovery must execute the reviewed current main workflow/source while treating the existing version as immutable and refusing dispatch-time publication if it is absent."
+  "2026-07-31T00:34:53.824Z","harness:codex","Second-stage correction evidence: manual exact-tag recovery now checks out the reviewed dispatch SHA from main rather than historical tag source, while RELEASE_TAG remains the immutable verification target. Dispatch restores access first and then refuses publication if the exact public version is absent; original tag-push runs retain first-publication behavior. Executable publication guard and workflow contracts pass 30/30; typecheck, docs/skills, ESLint, zero clones, 100% static/docstrings, package/SDK/token/gate registry/surface/import/transport gates pass. Local actionlint is unavailable, so the pinned hosted actionlint check remains the YAML validator."
 files[3]{path,scope,note}:
   .github/workflows/release.yml,project,Reassert exact-tag public npm access before anonymous probes
   tests/integration/ci-workflow-contract.spec.ts,project,Release workflow policy and ordering contract

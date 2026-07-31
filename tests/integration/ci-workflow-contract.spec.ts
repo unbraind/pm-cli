@@ -431,7 +431,7 @@ describe("GitHub workflow contract", () => {
       "name: release",
       "RELEASE_TAG:",
       PINNED_ACTIONS.checkout,
-      "ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}",
+      "ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}",
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
       PINNED_ACTIONS.setupNode,
@@ -480,6 +480,7 @@ describe("GitHub workflow contract", () => {
       "Exact-tag recovery is restoring public package access before anonymous probes.",
       'if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
       "Exact-tag recovery restored public access for ${NPM_PACKAGE}.",
+      "Exact-tag recovery requires an existing public ${NPM_PACKAGE}@${VERSION}; refusing to publish different source under an immutable tag.",
       "attempting access recovery before immutable publication.",
       'npm access set status=public "${NPM_PACKAGE}"',
       "grep -Eq 'E404|404 Not Found|Package not found'",
@@ -510,6 +511,15 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expect(releaseWorkflow).not.toContain("@unbrained/pm-cli");
+    expect(
+      releaseWorkflow.indexOf(
+        'elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then',
+      ),
+    ).toBeLessThan(
+      releaseWorkflow.indexOf(
+        'elif anonymous_npm_view "${NPM_PACKAGE}" name; then',
+      ),
+    );
     expect("if should_publish; then npm publish --access public; fi").toMatch(
       untaggedNpmPublish,
     );
