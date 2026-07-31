@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Exact-tag npm recovery must stabilize public package access before verification ([pm-t310hx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t310hx.toon))
 - GH-830: duplicate-safe creation must require explicit bypass before persistence ([pm-35w9l2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-35w9l2.toon))
 - GH-828: init status registries must expose one coherent alias contract ([pm-62n4kk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-62n4kk.toon))
 - GH-826: extension commands need structured failure results and preserved remediation ([pm-ye9v2t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ye9v2t.toon))
