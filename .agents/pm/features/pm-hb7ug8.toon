@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ergonomics,cli-grammar,contracts,pm-cli,simplification,token-efficiency
 created_at: "2026-07-31T06:07:31.733Z"
-updated_at: "2026-07-31T06:15:34.572Z"
+updated_at: "2026-07-31T07:02:32.347Z"
 author: "harness:claude-code"
 estimated_minutes: 960
 acceptance_criteria: "One declared bounding dimension set (include, how much, cost, encoding) is available identically on every read surface, or the contract states per surface why a dimension is inapplicable; Pairwise availability disagreement between any two read surfaces over the dimension set is zero, asserted by a contract test rather than reviewed; No read surface supports zero bounding dimensions; files, docs, stats and aggregate gain the set; A declared precedence algebra states which dimension wins when two are supplied, and get --depth deep --for inspect has a contract-defined result; Every one of the 18 current spellings continues to work as a hidden alias with a one-line migration hint; no invocation in any recorded transcript breaks; A gate fails when a new read command or a new bounding flag is added outside the declared set, so the growth trend stops rather than being periodically re-measured"
@@ -33,6 +33,8 @@ dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-srns,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
   pm-x710qm,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
   pm-yekkvt,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-31T07:02:30.950Z","harness:codex","Scope decision: this PR delivers four independently complete SDK/CLI context-integrity contracts. The universal four-dimension runtime flag algebra requires command-wide registration and execution changes beyond a truthful additive contract table, so it remains canonical follow-up work rather than being falsely closed by metadata-only implementation."
 files[2]{path,scope,note}:
   src/cli/commands/contracts.ts,project,surface that must render the declared dimension set and its inapplicability reasons
   src/sdk/cli-contracts.ts,project,contract table is where the four bounding dimensions and their per-command applicability must be declared once

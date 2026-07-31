@@ -2,11 +2,13 @@ id: pm-5rexki
 title: "Extension-registered item types are created, stored and versioned like any other item but are invisible to the merge fence and its drift detector, which reports the fence clean"
 description: "An item of an extension-contributed type is written to an unfenced folder, so concurrent branch edits fall back to git line-based merge on a TOON document while merge install reports changed:false."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: customization,data-durability,extensions,merge-safety,multi-agent,pm-cli
 created_at: "2026-07-31T06:03:14.126Z"
-updated_at: "2026-07-31T06:28:29.627Z"
+updated_at: "2026-07-31T08:31:59.144Z"
+closed_at: "2026-07-31T08:31:24.531Z"
+completed_at: "2026-07-31T08:31:24.531Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "An item of an extension-registered type is covered by the field-aware TOON/markdown merge driver in a clean clone after pm merge install; The committed fence remains a deterministic function of persisted project state, so local default validation never recommends a change the CI gate reverts (pm-mkzw1x property preserved); Where coverage is genuinely absent, health or validate names the unfenced folder and the extension that registered its type, instead of reporting clean; A merge conformance test drives two branches editing different fields of one extension-typed item and asserts no field is lost"
@@ -19,6 +21,7 @@ confidence: high
 severity: high
 environment: "HEAD 2026.7.30, clean sandbox git repo, pm-digital-twin installed --project; also reproduced against this repository workspace"
 repro_steps: git init && pm init; pm install packages/pm-digital-twin --project; pm create --title X --type TwinAsset; pm merge install --dry-run | grep -c twin  =>  0
+resolution: Added tracker-wide TOON and Markdown merge attributes ahead of type-specific patterns so extension-contributed item folders inherit field-aware merging.
 expected_result: "Any folder that can hold an item document is covered by the field-aware merge driver, or a diagnostic names it as unprotected."
 actual_result: "twin-assets/, twin-facilities/, cards/, changesets/, refs/ hold item documents with no merge attribute; merge install --dry-run reports changed:false and no diagnostic mentions them."
 component: sdk/merge
@@ -34,13 +37,23 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-szv11n,implements,"2026-07-31T06:09:21.901Z","harness:claude-code","cli:update:dep",detected
   pm-t4d7nz,implements,"2026-07-31T06:09:21.901Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,implements,"2026-07-31T06:09:21.901Z","harness:claude-code","cli:update:dep",detected
-learnings[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
+  "2026-07-31T07:41:27.850Z","harness:codex","Acceptance evidence: a fresh unrelated repository installed merge drivers and git check-attr resolved a package-defined custom .toon item to pm-item-toon before package registry installation."
+  "2026-07-31T08:31:17.774Z","harness:codex","Final evidence: tracker-wide TOON and Markdown merge-fence rules protect built-in and extension-registered item types before type-specific rules; drift tests, compiled acceptance, 100% coverage and release gates passed."
+learnings[2]{created_at,author,text}:
   "2026-07-31T06:28:29.626Z","harness:claude-code","Two capabilities can each be individually correct and jointly false. Scoping the merge fence to persisted project schema was the right fix for a real local-versus-CI disagreement, and registering item types through extensions is the mechanism by which the product claims to serve any domain. Composed, they mean that using the customization capability silently disables the durability capability, and the drift detector reports clean because it is asking whether the fence matches the schema rather than whether every item document is covered. Coverage questions should be asked about the population, not about the declaration."
-files[2]{path,scope,note}:
+  "2026-07-31T08:31:18.579Z","harness:codex",A customizable tracker cannot derive merge safety solely from today's built-in schema. Tracker-wide data patterns must establish the invariant before registry-specific patterns add precision.
+files[4]{path,scope,note}:
   .gitattributes,project,"committed fence: twelve built-in folders plus stories,with jsonl and json catch-alls but no toon catch-all"
   src/sdk/merge/install.ts,project,buildMergeAttributePatterns receives project-schema type folders only; extension-contributed type folders never reach it
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/sdk/context-integrity-primitives.spec.ts,project,broad fence pattern contract
+  tests/unit/sdk/merge-safety.spec.ts,project,package folder attribute conformance
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-integrity-primitives.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,240
   pm merge install --dry-run --json,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms8nvd14-qh8m3y,test,passed,"2026-07-31T08:08:38.851Z","2026-07-31T08:08:59.320Z","2026-07-31T08:08:59.320Z",2,0,0
 docs[1]{path,scope,note}:
   docs/MERGE_SAFETY.md,project,documents the field-aware merge guarantee whose coverage this gap breaks for extension-typed items
+close_reason: "Delivered extension-safe tracker merge fencing, ordering/drift verification, documentation, packed acceptance, and complete release-gate proof."
 body: "## Reproduced 2026-07-31 in a clean sandbox at HEAD\n\n```\ngit init; pm init\npm install <repo>/packages/pm-digital-twin --project      # registers TwinAsset / TwinFacility\npm create --title \"Pump A\" --type TwinAsset --status open  # -> pm-2d6j\nls .agents/pm/                                             # twin-assets/ twin-facilities/ now exist\npm merge install --dry-run | grep -c twin                  # 0\n```\n\nThe item is written to `.agents/pm/twin-assets/pm-2d6j.toon`. `pm merge install --dry-run` emits 28 patterns covering the twelve built-in type folders plus the JSONL/JSON catch-alls, and **zero** patterns matching `twin-assets` or `twin-facilities`. It reports `changed: false`, i.e. the drift detector considers the fence complete.\n\nThe same hole is present in this repository right now. Five item directories exist on disk with no fence coverage: `cards`, `changesets`, `twin-assets`, `twin-facilities`, `refs` — the folders for Card, Changeset, TwinAsset, TwinFacility and VcsRef, all of which `pm stats` enumerates under `by_type`. `pm merge install --dry-run` against the live workspace declines to add any of them and reports clean.\n\nBy contrast `stories` — a **project-schema** custom type registered in `.agents/pm/schema/types.json` — is fenced. So the generator does read project-schema types. It does not read extension-contributed types.\n\n## Why the gap exists\n\n`buildMergeAttributePatterns` (`src/sdk/merge/install.ts:247`) takes `typeFolders` as an argument and its own doc comment states it is \"the single coverage contract shared by pm merge install and the validate merge-fence-drift detection ... so schema-added custom types can never silently diverge from the installed fence without a warning.\" The caller now supplies **only persisted project schema folders**, by design: pm-mkzw1x deliberately separated project merge-type resolution from active extension registrations so that default validation would stop recommending a change the required CI gate reverses.\n\nThat determinism fix was correct and should not be reverted. But pm-mkzw1x closed with the acceptance clause \"tests cover tracked project profiles and optional runtime-only profiles **without weakening custom item merge protection**\", and that clause is not satisfied: extension-typed items now have no merge protection at all, and the detector reports clean rather than reporting a gap.\n\n## Consequence\n\nThe two capabilities the product leads with cancel each other. Universal customization says any project models its own domain by registering item types through an extension. Multi-agent branch safety says concurrent agents merge their tracker writes field-aware and lose nothing. The moment a project uses the first, its items fall back to git default line-based merge on a TOON document for the second. Two branches that each edit a different field of the same twin asset produce a conflicted or silently mis-merged file, which is exactly the failure the driver exists to prevent — and no diagnostic anywhere says the protection is absent.\n\nThe fence has `**/*.jsonl` and `**/*.json` catch-alls. It has no `**/*.toon` catch-all, which is why item documents alone are exposed.\n\n## Candidate fix that preserves the determinism property\n\nAdd a tracker-wide `\"<root>/**/*.toon\" merge=pm-item-toon` pattern (and the matching `**/*.md`) ahead of the per-folder rules. Git applies last-match-wins, so the explicit per-folder rules still take precedence and the committed fence stays a pure function of the project schema — no extension state enters it — while any folder an extension creates is protected by default. Coverage then does not depend on knowing the type set in advance, which is the property a universal tool needs.\n\nAlternative, if a catch-all is judged too broad: keep the fence project-scoped but make the absence loud — `pm health` and `pm validate` report unfenced item folders that contain items, naming the extension that registered each type."

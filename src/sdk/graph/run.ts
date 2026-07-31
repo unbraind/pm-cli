@@ -276,6 +276,8 @@ export interface GraphAnalyzeResult {
   node_count: number;
   /** Total deduplicated graph edges. */
   edge_count: number;
+  /** Counting convention used by edge_count. */
+  edge_basis: "deduplicated_directed";
   /** Bound applied to every sample collection. */
   sample_limit: number;
   /** Execution-order analytics over registered ordering kinds. */
@@ -492,6 +494,8 @@ export interface GraphCentralityResult {
   node_count: number;
   /** Simple undirected edge count over selected kinds. */
   edge_count: number;
+  /** Counting convention used by edge_count. */
+  edge_basis: "simple_undirected";
   /** Whether the row limit omitted ranked nodes. */
   truncated: boolean;
   /** Query cost metadata. */
@@ -832,6 +836,7 @@ function runGraphAnalyze(invocation: GraphInvocation): GraphAnalyzeResult {
     subcommand: "analyze",
     node_count: graph.nodes().length,
     edge_count: graph.edges().length,
+    edge_basis: "deduplicated_directed",
     sample_limit: sampleLimit,
     execution: {
       acyclic: execution.acyclic,
@@ -1058,6 +1063,7 @@ function runGraphCentrality(
     subcommand: "centrality",
     node_count: analysis.nodeCount,
     edge_count: analysis.edgeCount,
+    edge_basis: "simple_undirected",
     truncated: analysis.rows.length > limit,
     cost: {
       visited_nodes: result.meta.visitedNodes,

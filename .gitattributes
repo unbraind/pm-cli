@@ -12,6 +12,8 @@
 * text=auto eol=lf
 
 # pm-cli:merge-drivers:start
+".agents/pm/**/*.toon" merge=pm-item-toon
+".agents/pm/**/*.md" merge=pm-item-markdown
 ".agents/pm/chores/*.toon" merge=pm-item-toon
 ".agents/pm/chores/*.md" merge=pm-item-markdown
 ".agents/pm/decisions/*.toon" merge=pm-item-toon

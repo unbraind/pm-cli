@@ -6,7 +6,9 @@ Tracker references: [pm-p258tx](../.agents/pm/features/pm-p258tx.toon),
 intent-budget contracts are tracked by
 [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon),
 [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), and
-[pm-5t33or](../.agents/pm/features/pm-5t33or.toon).
+[pm-5t33or](../.agents/pm/features/pm-5t33or.toon). Trustworthy collection
+selectors are tracked by
+[pm-x710qm](../.agents/pm/issues/pm-x710qm.toon).
 
 ## Agent Quick Context
 
@@ -58,26 +60,35 @@ rows:
 {
   "row_contract": {
     "command": "list",
+    "row_kind": "collection",
     "row_keys": ["items"],
     "fields": "supported",
-    "jq_selector": ".row_contract.row_keys[] as $key | .[$key][]?"
+    "jq_selector": ".row_contract.row_keys[] as $key | getpath($key | split(\".\")) | if type == \"array\" then .[] else if type == \"object\" then to_entries[] else empty end end"
   }
 }
 ```
 
-The selector is identical for list aliases, context, get, next, search,
+The selector is identical for list aliases, context, next, search,
 activity, history, graph, health, aggregate, duplicates, and stats. Commands
-with several top-level collections declare every active key. Commands without
-a top-level row collection declare an empty `row_keys` array. `fields` is
-always explicit, so an agent can distinguish a supported `--fields`
-projection from a command that intentionally owns a fixed row shape.
+with several collections declare every active dot-delimited path. This keeps
+nested dependency graph and relationship-context rows addressable as
+`graph.nodes`, `graph.edges`, `context.nodes`, and `context.edges` without
+duplicating them at the envelope root. Array collections produce their
+elements; object maps such as stats counts produce jq `to_entries` rows.
+Commands without a row collection, including a dependency tree or leaf `get`,
+declare `row_kind: "none"`, an empty `row_keys` array, and omit `jq_selector`.
+The absence is therefore distinguishable from a legitimate empty collection.
+`fields` is always explicit, so an agent can distinguish a supported
+`--fields` projection from a command that intentionally owns a fixed row
+shape. NDJSON event streams do not carry an envelope and therefore do not
+publish a row contract.
 
 SDK and package authors can import `PM_READ_ROW_CONTRACTS`,
 `PM_READ_ROW_JQ_SELECTOR`, and `resolveReadRowContract` from
 `@unbrained/pm-cli/sdk`. Existing package declarations are preserved only
-when `command`, `row_keys`, `fields`, and `jq_selector` form a structurally
-valid row contract; malformed declarations are replaced by the canonical
-built-in contract when one applies.
+when `command`, `row_kind`, `row_keys`, `fields`, and the conditional
+`jq_selector` form a structurally valid row contract; malformed declarations
+are replaced by the canonical built-in contract when one applies.
 
 ## Self-Describing SDK Projections
 

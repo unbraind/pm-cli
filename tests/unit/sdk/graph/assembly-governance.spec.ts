@@ -379,6 +379,7 @@ describe("relationship graph governance", () => {
       profile: {
         nodes: 0,
         edges: 0,
+        edge_basis: "deduplicated_directed",
         edges_by_kind: {},
         active_nodes: 0,
         missing_nodes: 0,

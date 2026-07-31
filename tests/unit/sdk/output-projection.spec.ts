@@ -256,9 +256,9 @@ describe("output projection omission contracts", () => {
       totals: {},
       row_contract: {
         command: "stats",
+        row_kind: "none",
         row_keys: [],
         fields: "unsupported",
-        jq_selector: ".row_contract.row_keys[] as $key | .[$key][]?",
       },
     });
     expect(
@@ -270,9 +270,9 @@ describe("output projection omission contracts", () => {
       item: { id: "pm-1" },
       row_contract: {
         command: "get",
+        row_kind: "none",
         row_keys: [],
         fields: "supported",
-        jq_selector: ".row_contract.row_keys[] as $key | .[$key][]?",
       },
       omission_receipt: { has_omissions: false },
     });

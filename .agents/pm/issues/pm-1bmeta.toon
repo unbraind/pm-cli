@@ -1,0 +1,21 @@
+id: pm-1bmeta
+title: "GH-831: actionable unknown-author health evidence is truncated without a complete disposition selector"
+description: "Track the GitHub report that health exposes only 20 actionable unknown-author event coordinates while the acknowledgement command requires the complete item-id:line set."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-31T07:01:38.129Z"
+updated_at: "2026-07-31T07:01:38.129Z"
+author: "harness:codex"
+acceptance_criteria: "Health declares actionable-event truncation and a continuation or complete projection; acknowledgement supports an evidence-backed bulk selector without weakening reviewer, reason, or append-only audit requirements; SDK, CLI, MCP, docs, and large-workspace tests share one contract"
+parent: pm-doxj
+severity: high
+expected_result: "Agents can retrieve and disposition the complete actionable event set in one bounded, evidence-backed workflow with explicit truncation metadata."
+actual_result: "Health reports the full actionable count but exposes only 20 coordinates, and the acknowledgement command accepts only individually enumerated events."
+component: governance/author-attribution
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-zqpnte,related_to,"2026-07-31T07:01:38.129Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-31T07:01:38.129Z","harness:codex","Duplicate check evidence: searched all statuses for history-author-acknowledge and actionable_unknown_event_count; pm-zqpnte is the completed single-event surface, while GH-831 is the distinct large-workspace completeness gap. Source: https://github.com/unbraind/pm-cli/issues/831"
+body: ""

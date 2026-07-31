@@ -41,6 +41,8 @@ export interface RelationshipGraphScaleFixture {
   node_count: number;
   /** Exact generated edge count. */
   edge_count: number;
+  /** Counting convention used by edge_count. */
+  edge_basis: "fixture_generated";
   /** Reiterable lazy node identifiers. */
   nodes: Iterable<string>;
   /** Reiterable lazy relationship edges. */
@@ -76,6 +78,7 @@ export function createRelationshipGraphScaleFixture(
   return {
     node_count: nodeCount,
     edge_count: edgeCount,
+    edge_basis: "fixture_generated",
     nodes: {
       *[Symbol.iterator](): Iterator<string> {
         for (let index = 0; index < nodeCount; index += 1)

@@ -1,0 +1,22 @@
+id: pm-6z0wzf
+title: "GH-832: package command namespace ownership and collision diagnostics are not discoverable"
+description: "Track the public-package collision with the bundled private pm-vcs exemplar and define deterministic, inspectable command namespace ownership for extension authors and operators."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-31T07:01:54.979Z"
+updated_at: "2026-07-31T07:01:54.979Z"
+author: "harness:codex"
+acceptance_criteria: Expose command-path and alias ownership through SDK and contracts; fail closed or resolve collisions by a documented deterministic policy naming all claimants; report collisions in health; namespace bundled exemplars without breaking existing invocations; cover scope-preserving package identity and dual-package activation
+parent: pm-tnud
+severity: high
+expected_result: "Package authors can preflight command and alias ownership, activation resolves collisions deterministically, and diagnostics name every claimant without silently dropping sibling commands."
+actual_result: A private bundled exemplar and a public package independently claim vcs aliases and command paths; fresh workspaces cannot discover ownership or the collision outcome.
+component: extensions/command-registry
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4vwcvq,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
+  pm-v1yo,related_to,"2026-07-31T07:01:54.979Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-31T07:01:54.979Z","harness:codex","Duplicate check evidence: searched all statuses for VCS alias, command registration, and collision claimants; pm-v1yo covers core-group aliases and pm-4vwcvq covers partial activation, while GH-832 is the distinct package-to-package namespace ownership gap. Source: https://github.com/unbraind/pm-cli/issues/832"
+body: ""

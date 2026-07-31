@@ -671,6 +671,7 @@ describe("runGraph", () => {
       expect(analyze.sample_limit).toBe(10);
       expect(analyze.node_count).toBeGreaterThanOrEqual(6);
       expect(analyze.edge_count).toBeGreaterThanOrEqual(4);
+      expect(analyze.edge_basis).toBe("deduplicated_directed");
       expect(analyze.execution.acyclic).toBe(true);
       expect(analyze.execution.cycle_count).toBe(0);
       expect(analyze.execution.frontier).not.toContain(follower);
@@ -925,6 +926,7 @@ describe("runGraph", () => {
       // epic-feat-task-{follower,ghost} tree over 5 nodes and 4 edges.
       expect(centrality.node_count).toBe(5);
       expect(centrality.edge_count).toBe(4);
+      expect(centrality.edge_basis).toBe("simple_undirected");
       expect(centrality.truncated).toBe(false);
       expect(centrality.cost.visited_nodes).toBeGreaterThan(0);
       // task is the most central broker with degree 3.
@@ -1267,6 +1269,7 @@ describe("runGraph", () => {
         0,
       );
       expect(audit.profile).toBeDefined();
+      expect(audit.profile.edge_basis).toBe("deduplicated_directed");
 
       // Exempting the isolate (single comma-separated string spelling, with
       // blank fragments dropped) suppresses its isolation finding.
