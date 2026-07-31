@@ -152,20 +152,21 @@ async function seedUsageFeedback(definition, idByKey, pmRoot) {
     if (!id) fail(`Context evaluation usage_feedback references unknown item key: ${key}`);
     return id;
   });
+  const touchedAt = new Date();
   await recordContextUsageServing({
     pmRoot,
     author: "context-eval-agent",
     surface: definition.surface,
     profile: definition.surface,
     rows: servedIds.map((id, index) => ({ id, rank: index + 1, included: true })),
-    now: "2026-07-01T00:00:00.000Z",
+    now: new Date(touchedAt.getTime() - 60_000).toISOString(),
   });
   await recordContextUsageTouches({
     pmRoot,
     author: "context-eval-agent",
     itemIds: touchedIds,
     intent: "update",
-    now: "2026-07-01T00:01:00.000Z",
+    now: touchedAt.toISOString(),
   });
 }
 

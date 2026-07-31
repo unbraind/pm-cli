@@ -2,11 +2,13 @@ id: pm-lixy
 title: "Context judgment corpus: small, real-shaped, scale, and returning-agent continuity scenarios for pm context/next"
 description: Create the graded scenario corpus that defines what good context assembly means across workspace size and time-gap dimensions.
 type: Task
-status: open
+status: in_progress
 priority: 2
 tags[4]: context,eval,quality-gate,relevance
 created_at: "2026-07-06T23:50:40.432Z"
-updated_at: "2026-07-29T04:58:00.315Z"
+updated_at: "2026-07-31T00:19:44.634Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7f20991b66ba03ca99c800a0"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "Corpus includes a tiny scratch workspace, a real-shaped medium workspace, synthetic pm-mi2x scale fixtures, and continuity cases from pm-bwyw; each scenario records focus/query/claim state, expected item grades, token budget, and rationale; corpus format is documented and reviewable; phase-1 judgments baseline current structural context behavior before pm-4k6b changes ranking."
@@ -38,12 +40,15 @@ dependencies[6]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-06T23:50:40.432Z",codex-agent,"Duplicate check: searched all statuses for context eval corpus/golden workspace/continuity judgments; only pm-atfm and closed search-eval work matched."
   "2026-07-09T19:10:24.967Z",codex-root-20260709,"Progress evidence: committed four-scenario corpus covers tiny scratch, real-shaped hierarchy, 100-item synthetic scale, and returning-agent continuity with explicit judgments, budgets, and rationales; accepted baseline is versioned."
   "2026-07-09T19:50:42.298Z",codex-root-20260709,"Verification: committed four-scenario corpus is stable through isolated SDK-backed trackers; tiny, real-shaped, synthetic scale, and returning-agent continuity scenarios all score 1.0 for NDCG, reciprocal rank, recall, continuity, and token adherence. Scale packet is 695 estimated tokens."
   "2026-07-09T23:53:30.023Z",codex-root-20260709,"Handoff after PR #487: the initial deterministic corpus and gate are merged and green. Item remains in_progress because its required representative 10k/100k corpus expansion and threshold calibration remain future work."
-files[2]{path,scope,note}:
+  "2026-07-31T00:18:13.858Z","harness:codex","Duplicate check and incident evidence: all-status search found this existing canonical corpus task plus parent pm-atfm and closed usage-feedback implementation pm-uwfs. PR #834 CI run 30592851802 failed the context gate on Linux and Windows after the fixed 2026-07-01 served/touched timestamps aged outside the usage-signal retention window; no new item was created."
+  "2026-07-31T00:19:44.634Z","harness:codex","Fix evidence: the usage-feedback scenario now derives a single current touch instant and records serving exactly one minute earlier, preserving causal ordering while preventing retention expiry. Focused runner tests pass 5/5; the full required context-quality chain restores 1.0 nDCG/MRR/recall/continuity/token adherence and passes retrieval negative control, retrieval baseline, and all 91 token surfaces."
+files[3]{path,scope,note}:
+  scripts/release/context-eval-gate.mjs,project,Keep served/touched evaluation feedback fresh relative to each isolated run
   tests/context-eval/baseline.json,project,Committed accepted context-quality baseline
   tests/context-eval/golden-scenarios.json,project,"Versioned scratch,real-shaped,scale,and continuity judgment corpus"
 tests[1]{command,scope,timeout_seconds}:
