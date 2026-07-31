@@ -6,14 +6,14 @@ status: open
 priority: 3
 tags[3]: "area:cli","area:schema",cli-simplification
 created_at: "2026-07-06T21:57:44.898Z"
-updated_at: "2026-07-29T04:57:56.386Z"
+updated_at: "2026-07-31T06:08:56.682Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "ADR pm-pbyu's grammar table gains an explicit mapping for init, config, schema, and profile (kept, merged, or verb-moved) with rationale; overlaps are resolved on paper (schema presets vs profile archetypes vs config keys); if any spelling moves, follow-up wiring items are filed under pm-n7rr with alias shims per pm-0z7n"
 parent: pm-n7rr
 risk: medium
 confidence: medium
-dependencies[5]:
+dependencies[6]:
   - id: pm-kl19
     kind: related
     created_at: "2026-07-25T06:29:17.322Z"
@@ -29,6 +29,12 @@ dependencies[5]:
   - id: pm-pbyu
     kind: implements
     created_at: "2026-07-29T04:57:56.188Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-hb7ug8
+    kind: blocked_by
+    created_at: "2026-07-31T06:08:56.482Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected

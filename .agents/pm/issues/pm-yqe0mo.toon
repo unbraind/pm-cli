@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,"area:cli",diagnostics,error-contract,recovery-bundle
 created_at: "2026-07-26T05:40:48.321Z"
-updated_at: "2026-07-26T06:08:39.921Z"
+updated_at: "2026-07-31T06:14:43.873Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The cross-command candidate list is relevance-ranked before any cap is applied, so a binding cap retains the best candidates rather than the first-enumerated ones; when the cap binds, both the rendered prose and the structured recovery bundle declare truncation using this repository's existing truncation vocabulary; the structured bundle carries the full candidate set under its own bounded ceiling independent of what fits the prose sentence; a regression test asserts that --add on a non-accepting command enumerates files, docs and test among candidates or declares truncation; the closed-world phrasing 'if you meant one of those' is only emitted when the set is genuinely complete"
@@ -17,12 +17,14 @@ why_now: "Reproduced live on the shipped 2026.7.26 build while probing the annot
 parent: pm-mpbb
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-8nyc,discovered_from,"2026-07-26T05:40:48.321Z",null,null
-  pm-cha95z,related,"2026-07-26T05:40:48.321Z",null,null
-  pm-gdi7,related,"2026-07-26T05:40:48.321Z",null,null
-  pm-rtn5h6,related,"2026-07-26T05:40:48.321Z",null,null
-  pm-1kxs,implements,"2026-07-26T05:49:59.573Z",null,null
+dependencies[5]{id,kind,created_at}:
+  pm-8nyc,discovered_from,"2026-07-26T05:40:48.321Z"
+  pm-cha95z,related,"2026-07-26T05:40:48.321Z"
+  pm-gdi7,related,"2026-07-26T05:40:48.321Z"
+  pm-rtn5h6,related,"2026-07-26T05:40:48.321Z"
+  pm-1kxs,implements,"2026-07-26T05:49:59.573Z"
+comments[1]{created_at,author,text}:
+  "2026-07-31T06:14:43.873Z","harness:claude-code","Reproduced at HEAD 2026-07-31 on a different flag than the original report. `pm context --limit 10 --summary` recovery bundle states \"--summary is a valid option on: graph, deps, health\" — three commands. A direct sweep of --help across nineteen read commands finds four that accept --summary: deps, graph, health and contracts. The hint reads as exhaustive and omits one, on a flag whose whole purpose is reducing output."
 files[2]{path,scope,note}:
   src/cli/commander-usage.ts,project,findOtherCommandsForFlag slices the cross-command candidate list to 3 with no truncation marker and no ranking (line ~445)
   src/cli/error-guidance.ts,project,"renders the capped list as a closed set: 'is a valid option on: ... If you meant one of those' (line ~1232)"

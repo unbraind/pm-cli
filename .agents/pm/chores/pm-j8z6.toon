@@ -6,16 +6,26 @@ status: open
 priority: 2
 tags[3]: context-management,linked-files,review
 created_at: "2026-06-25T05:01:04.319Z"
-updated_at: "2026-07-30T17:16:30.643Z"
+updated_at: "2026-07-31T06:16:31.166Z"
 author: codex-ecosystem-auditor
 estimated_minutes: 180
 acceptance_criteria: "Historical linked-file ownership debt is reconciled in a dedicated tracker-only migration without polluting a product release changelog; pm validate --check-files residual rows are grouped by deleted, moved, and unowned current paths with owner candidates; no broad historical PM mutations are bundled into unrelated code PRs.; A linked file path that is generated or ignored is refused at write time, so a link whose target is reconstructed by a build cannot be created and the missing-path count cannot be permanently non-zero for that reason"
 parent: pm-33cw
 risk: medium
 confidence: medium
-dependencies[2]{id,kind,created_at}:
-  pm-kb5h,related,"2026-07-14T17:05:10.148Z"
-  pm-33cw,implements,"2026-07-26T05:56:13.587Z"
+dependencies[3]:
+  - id: pm-kb5h
+    kind: related
+    created_at: "2026-07-14T17:05:10.148Z"
+  - id: pm-33cw
+    kind: implements
+    created_at: "2026-07-26T05:56:13.587Z"
+  - id: pm-wrbe
+    kind: blocked_by
+    created_at: "2026-07-31T06:16:30.945Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[20]:
   - created_at: "2026-06-25T05:01:11.314Z"
     author: codex-ecosystem-auditor

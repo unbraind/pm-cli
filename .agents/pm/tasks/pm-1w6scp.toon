@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:graph",backfill,context-management,history,relationships,timeline
 created_at: "2026-07-26T17:06:25.188Z"
-updated_at: "2026-07-28T22:38:32.664Z"
+updated_at: "2026-07-31T06:08:31.817Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The duplicated milestone encoding is dispositioned explicitly as either two views of one programme or two distinct programmes, and the disposition is recorded on the items rather than inferred; The original milestones carry their delivery order as typed edges so a traversal can reconstruct the sequence without parsing titles; The v1 programme is joined to the post-v0.1 roadmap by a typed edge whose direction states which era succeeded which; Every parentless terminal item either gains a programme lineage or appears on a recorded residual list with the reason it has none; No item is retyped, renamed, or merged to achieve the join, and every edge added cites the durable evidence it came from; A graph query from the newest outcome milestone reaches the oldest v1 milestone, and the path is reported as evidence"
@@ -19,7 +19,7 @@ why_now: "The terminal relationship backfill has just made every other closed it
 parent: pm-96h7
 risk: medium
 confidence: medium
-dependencies[14]:
+dependencies[15]:
   - id: pm-3j6it6
     kind: discovered_from
     created_at: "2026-07-26T17:06:25.188Z"
@@ -71,6 +71,12 @@ dependencies[14]:
   - id: pm-vk7zek
     kind: blocked_by
     created_at: "2026-07-28T22:38:32.448Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-wrbe
+    kind: blocked_by
+    created_at: "2026-07-31T06:08:31.557Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected

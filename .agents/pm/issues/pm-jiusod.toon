@@ -1,0 +1,39 @@
+id: pm-jiusod
+title: "Four edge-counting conventions publish under one edge_count field: graph analyze reports 10046 and graph centrality 7351 for the same graph at the same cache fingerprint"
+description: "pm graph subcommands emit directed, undirected, deduplicated, and fixture edge counts under one undeclared field name, so cross-subcommand comparison reports phantom edge loss."
+type: Issue
+status: open
+priority: 2
+tags[5]: contracts,data-quality,graph,observability,pm-cli
+created_at: "2026-07-31T06:02:33.984Z"
+updated_at: "2026-07-31T06:15:25.228Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "Every graph subcommand emitting edge_count also emits the basis that produced it; A contract test asserts basis presence and cross-subcommand agreement within a basis for one cache fingerprint; The unconditional degreeSum/2 halving is either justified by an asserted undirected adjacency or made conditional on the directed flag already in scope; graph audit profile totals reconcile against a directly derived stored-edge count, or the canonicalization it applies is declared"
+value: Makes graph size a trustworthy measurement so enrichment waves can be verified rather than believed.
+why_now: The tracker is entering a deliberate graph enrichment programme; edge_count is the before/after measure and it currently has four meanings.
+parent: pm-96h7
+risk: medium
+confidence: high
+severity: medium
+expected_result: "Every pm graph subcommand that emits edge_count declares the counting convention it used, and two subcommands sharing a convention agree for one fingerprint."
+actual_result: "analyze emits 10046 (directed stored edges), centrality emits 7351 (degreeSum/2, undirected), audit profile emits 10046 against 10499 raw stored edges; no envelope names its basis."
+component: sdk/graph
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4k6b,related,"2026-07-31T06:09:20.839Z","harness:claude-code","cli:update:dep",detected
+  pm-6olc95,related,"2026-07-31T06:09:20.839Z","harness:claude-code","cli:update:dep",detected
+  pm-6x7o,implements,"2026-07-31T06:09:20.839Z","harness:claude-code","cli:update:dep",detected
+  pm-a8zm,related,"2026-07-31T06:09:20.839Z","harness:claude-code","cli:update:dep",detected
+  pm-bzmeaa,related,"2026-07-31T06:09:20.839Z","harness:claude-code","cli:update:dep",detected
+  pm-rggtvd,related,"2026-07-31T06:09:20.839Z","harness:claude-code","cli:update:dep",detected
+  pm-sb0tns,related,"2026-07-31T06:09:20.839Z","harness:claude-code","cli:update:dep",detected
+  pm-w7ccmv,verifies,"2026-07-31T06:09:20.839Z","harness:claude-code","cli:update:dep",detected
+files[4]{path,scope,note}:
+  src/sdk/dependencies.ts,project,"fourth convention: edges deduplicated by source::target::kind key"
+  src/sdk/graph/centrality.ts,project,"centrality emits edge_count as degreeSum/2 (undirected) unconditionally,ignoring the directed flag already in scope"
+  src/sdk/graph/conformance.ts,project,"third edge_count convention: fixture-declared count"
+  src/sdk/graph/run.ts,project,graph analyze emits edge_count as graph.edges().length (directed stored edges) at the analyze subcommand
+tests[2]{command,scope,timeout_seconds}:
+  pm graph analyze --summary --json,project,240
+  pm graph centrality --summary --json,project,240
+body: "## Measured 2026-07-31 at HEAD\n\nTwo subcommands of `pm graph`, run back to back against the same workspace and reporting the same cache fingerprint `d9ffaeb9eaa5`, disagree about how large the graph is:\n\n- `pm graph analyze --json` -> `edge_count: 10046`\n- `pm graph centrality --json` -> `edge_count: 7351`\n\nSame field name, same command, same node_count of 2222, same fingerprint, 26.8 percent apart. Nothing in either envelope names the convention it used.\n\n## Root cause\n\n`src/sdk/graph/run.ts:834` emits `graph.edges().length` — the directed count of stored edges.\n`src/sdk/graph/centrality.ts:273` emits `edgeCount: degreeSum / 2` — an undirected count derived by halving the adjacency degree sum.\n\nBoth values are individually correct for their own analytic. Neither is labelled. A `directed` flag is already in scope at the centrality call site and is passed to `centralityRow`, but the halving is applied unconditionally, so on a genuinely directed adjacency the reported value is not a count of anything.\n\n## Why this matters beyond cosmetics\n\n`edge_count` is the field an agent uses to decide whether a traversal is affordable and whether a graph enrichment wave changed anything. Two conventions under one name make every cross-subcommand comparison wrong in a way that reads as data loss: an agent that reads centrality after analyze concludes 2,695 edges disappeared. It is also the exact shape of defect the cross-channel-disagreement catalog entry on the relevance engine describes — two channels that should agree about one fact, with no predicate stating which is authoritative.\n\n## The general form\n\nThe graph command family has at least three independent edge-counting sites: the two above plus `src/sdk/graph/conformance.ts:74` (fixture-declared) and `src/sdk/dependencies.ts:653` (deduplicated by `source::target::kind` key). The audit profile reports 10046 while a direct read of the stored `dependencies[]` arrays plus parent-field edges totals 10499, so a fourth canonicalization is applied somewhere in the audit path. Four counting conventions, one field name, zero declarations.\n\n## Minimal correct shape\n\n`edge_count` declares its convention in the envelope (`edge_basis: directed | undirected | deduplicated`), or the field is renamed per convention so no two subcommands publish different semantics under one key. Whichever is chosen, a contract test asserts that every subcommand of `pm graph` that emits `edge_count` also emits its basis, and that two subcommands sharing a basis report the same number for the same fingerprint."

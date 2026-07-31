@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",author,identity,provenance,token-efficiency
 created_at: "2026-07-24T23:45:04.396Z"
-updated_at: "2026-07-26T17:30:52.946Z"
+updated_at: "2026-07-31T06:27:58.014Z"
 closed_at: "2026-07-25T02:36:59.000Z"
 author: maintainer-agent
 estimated_minutes: 900
@@ -24,22 +24,23 @@ release: v2026.7.25
 resolution: Implemented and merged harness-aware author resolution and immutable source provenance through the public SDK and CLI runtime.
 expected_result: "Agent mutations require no PM_AUTHOR boilerplate while retaining deterministic, provenanced author identity."
 actual_result: "All supported harnesses resolve through the shared primitive; create, update, and close produce no unknown author, with focused and packed-style temporary acceptance plus 6,291-test full coverage at 100/100/100/100."
-dependencies[11]{id,kind,created_at,author,source_kind}:
-  pm-cpja,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-dj98,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-fbyu,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-h90s,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-j82fd3,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-u14c,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-usfg,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-w7ccmv,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-xc68,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-z3ez,related,"2026-07-24T23:45:04.396Z",null,null
-  pm-mpbb,implements,"2026-07-26T17:30:52.732Z",null,null
-comments[3]{created_at,author,text}:
+dependencies[11]{id,kind,created_at}:
+  pm-cpja,related,"2026-07-24T23:45:04.396Z"
+  pm-dj98,related,"2026-07-24T23:45:04.396Z"
+  pm-fbyu,related,"2026-07-24T23:45:04.396Z"
+  pm-h90s,related,"2026-07-24T23:45:04.396Z"
+  pm-j82fd3,related,"2026-07-24T23:45:04.396Z"
+  pm-u14c,related,"2026-07-24T23:45:04.396Z"
+  pm-usfg,related,"2026-07-24T23:45:04.396Z"
+  pm-w7ccmv,related,"2026-07-24T23:45:04.396Z"
+  pm-xc68,related,"2026-07-24T23:45:04.396Z"
+  pm-z3ez,related,"2026-07-24T23:45:04.396Z"
+  pm-mpbb,implements,"2026-07-26T17:30:52.732Z"
+comments[4]{created_at,author,text}:
   "2026-07-25T02:02:06.258Z","harness:codex","Evidence: implemented public SDK runtime primitives for deterministic author resolution and harness detection (Codex, Claude Code, pi, OpenCode, Cursor, Aider, Gemini, CI), explicit/env/configured/harness precedence, provenance propagation through history, and portable source-workspace roots for sandboxed linked tests. Verified by the full 6,290-test coverage run at 100/100/100/100 and an anonymous packed-package consumer where PM_AUTHOR was unset and mutations recorded harness:codex."
   "2026-07-25T02:27:16.123Z",codex-root,"Regression evidence: on merged main 3a0c570c with PM_AUTHOR unset, pm close and pm update wrote author=unknown/author_source=unknown while comments, files, release, and other migrated paths wrote harness:codex. Health rose to 32 actionable unknown events. Scope is now every remaining direct PM_AUTHOR/default fallback in mutation-capable CLI/SDK paths, plus acknowledgements for the events generated during closeout."
   "2026-07-25T02:36:58.133Z","harness:codex","Post-merge remediation evidence: close.ts and update.ts now call the shared resolveAuthor primitive; focused test, typecheck, strict lint/static/docstring gates, and full coverage all pass. Full suite: 361 files, 6,291 tests, 100% statements 43,249/43,249, branches 30,704/30,704, functions 8,791/8,791, lines 42,030/42,030. Global installed acceptance recorded create as detected and later update/close as configured harness:codex after init persisted the detected default; the real repository update recorded detected harness:codex. All 32 bypass-generated closeout events were append-only acknowledged with evidence, restoring actionable_unknown_event_count=0 and health ok:true."
+  "2026-07-31T06:27:58.014Z","harness:claude-code","Verification note 2026-07-31 (create-only, no status change): harness auto-detection continues to work end to end — this pass ran with no PM_AUTHOR and no --author, and every history entry records author harness:claude-code with author_source detected, agent_harness claude-code, an agent_instance identifier, and agent_provenance.effort {value: xhigh, source: environment}. Model remains null, owned by pm-ffz0a9. Separately, the specs that verify this feature are not hermetic: they set one harness signal without clearing the others, so they fail under Claude Code and pass on bare CI runners. Filed as pm-631t9p and recorded here as discovered_from, because the detector and its oracle share an input."
 learnings[1]{created_at,author,text}:
   "2026-07-25T02:02:06.885Z","harness:codex","Agent identity belongs in a deterministic SDK primitive: explicit, environment, configured, detected harness, then unknown. Harness detection must inspect bounded process metadata only and must never require a user-authored environment variable."
 files[18]{path,scope,note}:

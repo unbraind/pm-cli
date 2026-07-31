@@ -6,17 +6,33 @@ status: open
 priority: 2
 tags[4]: agent-ux,"area:cli","area:lifecycle",simplification
 created_at: "2026-07-05T04:53:33.295Z"
-updated_at: "2026-07-26T05:55:54.442Z"
+updated_at: "2026-07-31T06:08:51.982Z"
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: claim/release/close gain the equivalent flags; start-task/pause-task/close-task alias-shimmed with identical output incl. status transitions and claim records; contracts/MCP/completions/docs regenerated; lifecycle-transition specs pass via aliases
 parent: pm-n7rr
 risk: low
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-0z7n,blocked_by,"2026-07-05T04:55:00.982Z",null,null
-  pm-ik19,related,"2026-07-25T06:29:09.604Z",null,null
-  pm-ugld,related,"2026-07-25T06:29:09.604Z",null,null
-  pm-0z7n,verifies,"2026-07-26T05:50:27.884Z",null,null
-  pm-n7rr,implements,"2026-07-26T05:55:54.199Z",null,null
+dependencies[6]:
+  - id: pm-0z7n
+    kind: blocked_by
+    created_at: "2026-07-05T04:55:00.982Z"
+  - id: pm-ik19
+    kind: related
+    created_at: "2026-07-25T06:29:09.604Z"
+  - id: pm-ugld
+    kind: related
+    created_at: "2026-07-25T06:29:09.604Z"
+  - id: pm-0z7n
+    kind: verifies
+    created_at: "2026-07-26T05:50:27.884Z"
+  - id: pm-n7rr
+    kind: implements
+    created_at: "2026-07-26T05:55:54.199Z"
+  - id: pm-hb7ug8
+    kind: blocked_by
+    created_at: "2026-07-31T06:08:51.736Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:release",ci,observability,reliability,slo
 created_at: "2026-07-27T04:05:41.511Z"
-updated_at: "2026-07-27T13:01:11.067Z"
+updated_at: "2026-07-31T06:14:42.055Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "Release automation reliability is expressed as a measured rate over a stated window, not as the conclusion of the latest run; A degradation in that rate is detectable without reading the raw run list, and the detection survives the blocker-issue recovery path closing its own evidence; A skipped run caused by the same-day guard is distinguishable in the reliability measure from a run that had nothing to release and from a run that failed; The measure names the failing stage, so a publish-step regression and a build-step regression are not aggregated into one opaque number"
@@ -30,6 +30,7 @@ dependencies[7]{id,kind,created_at}:
   pm-44u3wt,blocked_by,"2026-07-27T04:21:29.909Z"
   pm-9gxi,related,"2026-07-27T04:21:29.909Z"
   pm-xp1xsw,implements,"2026-07-27T04:21:29.909Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-07-27T13:01:11.067Z","harness:claude-code","Observation 2026-07-27 on the denominator used to compute the failure rate.\n\nThe Auto Release workflow has three triggers and they produce wildly different run volumes. The schedule fires once a day, which is the 84 runs this item measures. The workflow_dispatch fires on demand. The issues trigger fires on every issue closure in the repository, and because there is no concurrency key that collapses them, closing several issues at once produces a burst of near-simultaneous runs: four runs within one second at 12:09:44Z today, six at 08:45 on 2026-07-26, five at 08:54 today with one of them cancelled.\n\nThey are all correctly filtered at job level by the if condition that restricts issues-triggered runs to the bot-authored blocker recovery, so they skip in seconds and cannot cut a release. Two things still follow. The workflow run history is dominated by runs that were never going to do anything, which makes the pipeline look far busier and far healthier than the scheduled path actually is, and any rate computed over all runs rather than over event equals schedule will be wrong by an order of magnitude. And one of today's burst runs shows conclusion cancelled rather than skipped, which is the cancel-in-progress pattern that this project has already learned masks red gates elsewhere.\n\nNeither changes the 32 of 84 scheduled figure this item owns, which was measured on the schedule event alone. Recording it so the denominator is not silently recomputed the easy way later."
+  "2026-07-31T06:14:42.055Z","harness:claude-code","Rate sample refreshed 2026-07-31: of the last eleven completed scheduled Auto Release runs, three concluded failure (2026-07-21, 2026-07-23, 2026-07-24) — 27 percent. Consistent with the 32-of-84 lifetime figure. Today's run succeeded and published 2026.7.31; npm latest, npx direct, npx --package and bunx --bun all resolve and execute the published artifact under bun 1.3.11. One scheduled cut today, so the one-release-per-day property held on this run."
 body: ""

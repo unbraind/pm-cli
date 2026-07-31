@@ -6,17 +6,33 @@ status: open
 priority: 1
 tags[4]: agent-ux,"area:cli","area:history",simplification
 created_at: "2026-07-05T04:53:05.215Z"
-updated_at: "2026-07-26T05:55:18.431Z"
+updated_at: "2026-07-31T06:08:50.089Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: pm history gains redact/repair/compact/activity/restore subcommands with flag parity; old top-level spellings alias-shimmed with identical output; default pm history <id> view unchanged; contracts/MCP/completions/docs regenerated; existing history-* specs pass via aliases
 parent: pm-n7rr
 risk: medium
 confidence: high
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-0z7n,blocked_by,"2026-07-05T04:55:00.104Z",null,null
-  pm-3z0k,related,"2026-07-25T06:29:07.463Z",null,null
-  pm-9yfo,related,"2026-07-25T06:29:07.463Z",null,null
-  pm-o79o,related,"2026-07-25T06:29:07.463Z",null,null
-  pm-n7rr,implements,"2026-07-26T05:55:18.193Z",null,null
+dependencies[6]:
+  - id: pm-0z7n
+    kind: blocked_by
+    created_at: "2026-07-05T04:55:00.104Z"
+  - id: pm-3z0k
+    kind: related
+    created_at: "2026-07-25T06:29:07.463Z"
+  - id: pm-9yfo
+    kind: related
+    created_at: "2026-07-25T06:29:07.463Z"
+  - id: pm-o79o
+    kind: related
+    created_at: "2026-07-25T06:29:07.463Z"
+  - id: pm-n7rr
+    kind: implements
+    created_at: "2026-07-26T05:55:18.193Z"
+  - id: pm-hb7ug8
+    kind: blocked_by
+    created_at: "2026-07-31T06:08:49.823Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""
