@@ -6,9 +6,9 @@ status: closed
 priority: 0
 tags[5]: "area:packages",data-safety,github-intake,reliability,security
 created_at: "2026-07-30T11:28:35.807Z"
-updated_at: "2026-07-31T09:34:44.898Z"
-closed_at: "2026-07-31T09:20:24.060Z"
-completed_at: "2026-07-31T09:20:24.060Z"
+updated_at: "2026-07-31T09:41:37.396Z"
+closed_at: "2026-07-31T09:41:04.530Z"
+completed_at: "2026-07-31T09:41:04.530Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: "Install rejects or safely prunes destination-inside-source; tracker roots, backups, and node_modules cannot enter installed copies; repeated-install acceptance proves bounded size; failures never report ok true"
@@ -19,14 +19,14 @@ impact: Prevents exponential storage growth and ENOSPC failures in standard pack
 parent: pm-ugqx
 risk: high
 confidence: high
-resolution: Map each lexical traversal path relative to resolvedSource onto canonicalSource before destination containment and exclusion checks.
+resolution: "Reject traversal callbacks outside resolvedSource, then map each in-root lexical path onto canonicalSource before destination containment and exclusion checks."
 expected_result: "Repeated local installs remain bounded and exclude the destination, tracker, dependencies, and backups under canonical, symlinked, and Windows alternate path namespaces."
-actual_result: "The alias-spelled filter regression passes with all 6,586 tests at exact coverage; macOS and Windows nightly recurrence is ready for hosted confirmation."
+actual_result: "Alias-spelled and out-of-root filter regressions pass; all 6,586 tests retain exact coverage; current Nightly passes on macOS, Windows, and Ubuntu at the remediation head."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-0fhw,related_to,"2026-07-30T11:28:35.807Z","harness:codex","cli:create:dep",detected
   pm-59gj,discovered_from,"2026-07-30T11:28:35.807Z","harness:codex","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-07-30T17:04:20.237Z","harness:claude-code","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-07-30T11:28:35.807Z","harness:codex","Duplicate check searched all statuses for local install self-nesting and destination containment; related historical guards do not own this standard-layout recursion. GitHub report: https://github.com/unbraind/pm-cli/issues/827"
   "2026-07-30T22:32:04.174Z","harness:codex","Verification evidence: repeated nested-source install staging excludes destination, .agents, node_modules, and backups; focused package suite and full 6584-test coverage passed at 100/100/100/100."
   "2026-07-30T22:51:29.330Z","harness:codex","Final local evidence: all six linked test commands passed through pm test with sandbox isolation; pnpm release:gates passed static quality, docs, SDK surface/parity, token and context evaluation, 6,584 tests at 100/100/100/100, secrets scan, packed npx smoke, and 88-command package-first dogfood. The only remaining gate is hosted analysis for the exact commit, which is unavailable until this branch is pushed. Fresh unrelated-workspace acceptance also proved strict duplicate refusal is atomic, explicit bypass and copy succeed, and core-field recovery performs no write."
@@ -37,6 +37,7 @@ comments[10]{created_at,author,text}:
   "2026-07-31T09:20:16.347Z","harness:codex","Final local correction evidence: 407 files and 6,586 tests pass at exact 100/100/100/100 coverage. TypeScript, ESLint, docs/skills, static quality, docstrings, package boundary/parity, token/context/retrieval gates, SDK surface/import/transport floors, secrets, packed npx smoke, and 88-command package-first dogfood all passed. Release gates stopped only at the expected pre-push Greptile lookup because no committed branch diff existed yet."
   "2026-07-31T09:24:30.946Z","harness:codex","Hosted remediation published: PR https://github.com/unbraind/pm-cli/pull/843 at exact commit 0ccae28ae. Current cross-platform Nightly and exact-head CI/review are the remaining verification gates."
   "2026-07-31T09:34:44.898Z","harness:codex","Hosted cross-platform confirmation: Nightly run https://github.com/unbraind/pm-cli/actions/runs/30619827419 passed at exact head 0ccae28ae on Windows Node 24, macOS Node 24, and Ubuntu Node 22/24/25. Ubuntu Node 24 also passed the full 100% coverage, static quality, compatibility, version, and secret gates; this directly clears the GH-837/GH-838 recurrence."
+  "2026-07-31T09:40:59.535Z","harness:codex","Hosted review hardening implemented: unexpected filter callback paths outside resolvedSource now fail closed before canonical projection; focused alias and out-of-root coverage plus the full 143-test extension suites and TypeScript all pass. CHANGELOG.md is now explicitly linked as package-owned generated documentation."
 learnings[2]{created_at,author,text}:
   "2026-07-30T22:51:30.413Z","harness:codex","Local install staging must filter tracker roots, dependency trees, backups, and the resolved destination during traversal because destination containment can otherwise recurse on repeated installs."
   "2026-07-31T09:20:17.081Z","harness:codex",Containment filters must compare every traversed source path in the same canonical namespace as both source and destination. Mapping lexical traversal-relative paths onto canonicalSource avoids async realpath calls and handles macOS symlink aliases plus Windows alternate path spellings.
@@ -54,7 +55,8 @@ tests[2]:
     timeout_seconds: 300
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms83wu2m-l7vtwi,test,passed,"2026-07-30T22:49:48.818Z","2026-07-30T22:50:15.742Z","2026-07-30T22:50:15.742Z",1,0,0
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,package-owned generated security changelog
   docs/EXTENSIONS.md,project,local install containment contract
-close_reason: "Corrected recursive-install filter namespace mapping with symlink-alias regression coverage, complete local gates, and explicit GH-837/GH-838 evidence."
+close_reason: "Addressed hosted review with fail-closed out-of-root copy filtering, explicit changelog linkage, and passing focused/type verification"
 body: ""

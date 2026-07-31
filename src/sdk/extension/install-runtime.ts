@@ -169,9 +169,16 @@ export const copyExtensionDirectoryWithoutSelfNesting = async (
   }
 
   const shouldCopySourcePath = (sourcePath: string): boolean => {
+    const resolvedCandidate = path.resolve(sourcePath);
+    if (
+      resolvedCandidate !== resolvedSource &&
+      !isPathWithinDirectory(resolvedSource, resolvedCandidate)
+    ) {
+      return false;
+    }
     const canonicalCandidate = path.resolve(
       canonicalSource,
-      path.relative(resolvedSource, path.resolve(sourcePath)),
+      path.relative(resolvedSource, resolvedCandidate),
     );
     if (
       canonicalCandidate === canonicalDestination ||

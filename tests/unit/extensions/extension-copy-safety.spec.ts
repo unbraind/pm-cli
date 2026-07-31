@@ -96,6 +96,7 @@ describe("extension install copy containment", () => {
       process.platform === "win32" ? "junction" : "dir",
     );
     let destinationFilterCovered = false;
+    let outsideFilterCovered = false;
     const copyDirectory = vi.fn(async (_source, _destination, options) => {
       if (options?.filter) {
         destinationFilterCovered =
@@ -103,6 +104,8 @@ describe("extension install copy containment", () => {
             path.join(sourceAlias, ".agents", "pm", "extensions", "demo"),
             "",
           ) === false;
+        outsideFilterCovered =
+          options.filter(path.join(root, "outside"), "") === false;
       }
     });
 
@@ -112,6 +115,7 @@ describe("extension install copy containment", () => {
       copyDirectory,
     );
     expect(destinationFilterCovered).toBe(true);
+    expect(outsideFilterCovered).toBe(true);
   });
 
   it("canonicalizes a missing destination tree through its deepest existing ancestor", async () => {
