@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-07-31T07:01:38.129Z"
-updated_at: "2026-07-31T12:19:19.024Z"
+updated_at: "2026-07-31T12:20:15.009Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
 author: "harness:codex"
@@ -23,11 +23,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-zqpnte,related_to,"2026-07-31T07:01:38.129Z","harness:codex","cli:create:dep",detected
   pm-5oj5,implements,"2026-07-31T10:15:09.727Z","harness:codex","cli:update:dep",detected
   pm-h90s,discovered_from,"2026-07-31T10:15:10.733Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-31T07:01:38.129Z","harness:codex","Duplicate check evidence: searched all statuses for history-author-acknowledge and actionable_unknown_event_count; pm-zqpnte is the completed single-event surface, while GH-831 is the distinct large-workspace completeness gap. Source: https://github.com/unbraind/pm-cli/issues/831"
   "2026-07-31T10:15:11.751Z","harness:codex","Organization rationale 2026-07-31: moved from the portfolio root to pm-5oj5 because this is a bounded health evidence-projection defect, not a new roadmap program. Estimate 120m, medium risk, high confidence. pm-h90s is retained as provenance for the author-enforcement lineage; GH-831 remains the external source."
   "2026-07-31T11:44:42.192Z","harness:codex","Implementation evidence: health reports sample truncation and can emit complete actionable coordinates; SDK/CLI/MCP support one audited --all-actionable disposition selector while retaining reviewer/reason requirements. Full repository coverage passed at 100/100/100/100 (6,594 tests)."
   "2026-07-31T12:19:19.024Z","harness:codex","Acceptance evidence: complete actionable-event scan, samples_truncated, health verbose projection, explicit selector exclusivity, SDK client, CLI, MCP, and append-only bulk disposition all pass focused and full release coverage. Hosted-analysis gate is the only pre-push unavailable stage because it requires the exact pushed commit."
+  "2026-07-31T12:20:15.009Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/845 implements this item in initial implementation commit ee6c69e28fbc0f7f70106224d9466cc58410ac77; final reviewed head will be recorded after review convergence."
 files[3]{path,scope,note}:
   src/cli/register-history-author.ts,project,exclusive explicit-or-bulk author acknowledgment selectors
   src/sdk/author-attribution.ts,project,complete actionable event projection and bulk audited disposition

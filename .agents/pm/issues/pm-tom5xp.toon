@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-07-31T10:41:24.544Z"
-updated_at: "2026-07-31T12:19:16.754Z"
+updated_at: "2026-07-31T12:20:12.607Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
 author: "harness:codex"
@@ -25,10 +25,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-8jdc,implements,"2026-07-31T10:41:24.544Z","harness:codex","cli:create:dep",detected
   pm-t0yd,discovered_from,"2026-07-31T10:41:24.544Z","harness:codex","cli:create:dep",detected
   pm-vhbf,discovered_from,"2026-07-31T10:41:24.544Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-31T10:41:24.544Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-839, extension registered field types, schema add-field, string_array/object declarations, registerItemFields validation, and exact/fuzzy titles. Closed pm-vhbf and pm-t0yd are prerequisite lineage; neither owns this SDK/CLI contract mismatch. Source: https://github.com/unbraind/pm-cli/issues/839"
   "2026-07-31T11:44:39.478Z","harness:codex","Implementation evidence: unified SDK, extension, workspace, CLI completion, MCP, and persisted schema types around string|number|boolean|string_array|array|object; added real coercion/schema projection coverage. Full repository coverage passed at 100/100/100/100 (6,594 tests)."
   "2026-07-31T12:19:16.754Z","harness:codex","Delivery evidence: release gates passed build, typecheck, docstrings 100%, SDK/package boundary, contracts, token budgets, context/retrieval evaluation, 6,594-test coverage at 100/100/100/100, version sync, secret scan, packed npx, and package-first dogfood. npm audit and GitHub Dependabot/code/secret scanning report zero open vulnerabilities; npm-package-arg 14 and TypeScript 7 remain intentionally deferred in canonical pm-ksr40d and pm-do5b."
+  "2026-07-31T12:20:12.606Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/845 implements this item in initial implementation commit ee6c69e28fbc0f7f70106224d9466cc58410ac77; final reviewed head will be recorded after review convergence."
 files[4]{path,scope,note}:
   src/core/extensions/item-fields.ts,project,extension assignment validation and persistence parity
   src/core/schema/runtime-field-values.ts,project,authoritative custom-field type and coercion contract

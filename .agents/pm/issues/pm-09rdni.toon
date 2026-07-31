@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-07-31T10:41:38.295Z"
-updated_at: "2026-07-31T12:19:17.518Z"
+updated_at: "2026-07-31T12:20:13.347Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
 author: "harness:codex"
@@ -25,10 +25,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,discovered_from,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
   pm-zwpp,discovered_from,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-31T10:41:38.295Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-840, structured append/events, JSON notes, annotation primitives, merge union behavior, and exact/fuzzy titles. Closed pm-zwpp owns existing free-text annotation facades and pm-g5sx owns merge infrastructure; neither provides structured event storage or bounded event reads. Source: https://github.com/unbraind/pm-cli/issues/840"
   "2026-07-31T11:44:40.346Z","harness:codex","Implementation evidence: added typed merge-safe JSON note events with stable serialization, event-type/time filtering, bounded metadata, SDK/CLI/MCP parity, and scalar body-append concurrency guidance. Full repository coverage passed at 100/100/100/100 (6,594 tests)."
   "2026-07-31T12:19:17.517Z","harness:codex","Installed-consumer evidence: a fresh unrelated temp prefix installed the packed tarball, resolved its pm shim inside that prefix, and passed direct CLI, npm exec --offline, bunx --no-install, plus public SDK stable serialization/limit primitives. Help surfaces remain below the pre-change token budgets after adding the JSON event options."
+  "2026-07-31T12:20:13.347Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/845 implements this item in initial implementation commit ee6c69e28fbc0f7f70106224d9466cc58410ac77; final reviewed head will be recorded after review convergence."
 files[3]{path,scope,note}:
   src/cli/commands/notes.ts,project,merge-safe structured event CLI encoding and filtering
   src/cli/register-mutation.ts,project,CLI and SDK action registration for structured notes

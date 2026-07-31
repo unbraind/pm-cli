@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-07-31T10:41:51.338Z"
-updated_at: "2026-07-31T12:19:18.258Z"
+updated_at: "2026-07-31T12:20:14.112Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
 author: "harness:codex"
@@ -24,10 +24,11 @@ component: CLI and SDK workspace initialization
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-kd9n,discovered_from,"2026-07-31T10:41:51.338Z","harness:codex","cli:create:dep",detected
   pm-mpbb,implements,"2026-07-31T10:41:51.338Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-31T10:41:51.338Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-841, init ancestor discovery, tracker target safety, current-directory initialization, pm-path, and exact/fuzzy titles. Prior init-safety work is closed and protects existing roots; no item owns this distinct target-provenance and remediation gap. Source: https://github.com/unbraind/pm-cli/issues/841"
   "2026-07-31T11:44:41.301Z","harness:codex","Implementation evidence: init now distinguishes current versus ancestor discovery, exposes typed target provenance, refuses ambiguous ancestor settings rewrites, and supplies the exact safe current-directory tracker command. Unit, integration, manual temp-directory, and full 100/100/100/100 coverage gates passed."
   "2026-07-31T12:19:18.258Z","harness:codex","Acceptance evidence: fresh nested temp workspace reproduced ancestor selection, emitted current-versus-ancestor provenance and exact safe --pm-path guidance, while explicit/current targets remain idempotent. Full release coverage and packed CLI tests passed."
+  "2026-07-31T12:20:14.112Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/845 implements this item in initial implementation commit ee6c69e28fbc0f7f70106224d9466cc58410ac77; final reviewed head will be recorded after review convergence."
 files[1]{path,scope,note}:
   src/sdk/init.ts,project,typed current-versus-ancestor init target provenance and safe recovery
 tests[1]{command,scope,timeout_seconds}:
