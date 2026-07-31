@@ -164,6 +164,13 @@ describe("extensions item field runtime wiring", () => {
 
     expect(() =>
       applyRegisteredItemFieldDefaultsAndValidation(
+        { labels: ["valid", 1] },
+        withFields([{ name: "labels", type: "string_array" }]),
+      ),
+    ).toThrow('Item field "labels" must be of type string_array');
+
+    expect(() =>
+      applyRegisteredItemFieldDefaultsAndValidation(
         { ext_status: "blocked" },
         withFields([
           { name: "ext_status", type: "string", values: ["open", "closed"] },

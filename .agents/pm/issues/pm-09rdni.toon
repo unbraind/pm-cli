@@ -2,13 +2,13 @@ id: pm-09rdni
 title: "GH-840: annotation primitives lack a merge-safe structured event append and query contract"
 description: "Add a validated, append-only structured event facet that preserves notes' union-merge safety while providing SDK/CLI/MCP encoding, filtering, and provenance contracts."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T10:41:38.295Z"
-updated_at: "2026-07-31T12:20:13.347Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
+updated_at: "2026-07-31T12:54:36.958Z"
+closed_at: "2026-07-31T12:54:11.001Z"
+completed_at: "2026-07-31T12:54:11.001Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: "Add a typed public SDK structured-event primitive backed by a union-merged item collection; Expose equivalent CLI and MCP mutation/read contracts with deterministic JSON validation and bounded filtering; Warn in append help that body appends are scalar and direct concurrent agents to the merge-safe event surface; Prove multi-branch merge preservation, malformed-input rejection, projections, and packed-consumer behavior"
@@ -18,6 +18,7 @@ confidence: high
 reporter: github
 severity: medium
 environment: "pm-cli 2026.7.29, Node 22, concurrent git branches"
+resolution: "Notes provide canonical append-only structured JSON events with SDK, CLI, and MCP parity, deterministic validation, bounded time/type filtering, metadata, and immutable post-append behavior."
 expected_result: Agents append validated structured events through one SDK-first contract and query bounded event ranges without parsing free-text notes.
 actual_result: "pm append mutates scalar body text and notes accept only free text, forcing ad hoc JSON encoding and full client-side scans."
 component: SDK annotations and merge-safe context events
@@ -25,18 +26,26 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-g5sx,discovered_from,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
   pm-zwpp,discovered_from,"2026-07-31T10:41:38.295Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-31T10:41:38.295Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-840, structured append/events, JSON notes, annotation primitives, merge union behavior, and exact/fuzzy titles. Closed pm-zwpp owns existing free-text annotation facades and pm-g5sx owns merge infrastructure; neither provides structured event storage or bounded event reads. Source: https://github.com/unbraind/pm-cli/issues/840"
   "2026-07-31T11:44:40.346Z","harness:codex","Implementation evidence: added typed merge-safe JSON note events with stable serialization, event-type/time filtering, bounded metadata, SDK/CLI/MCP parity, and scalar body-append concurrency guidance. Full repository coverage passed at 100/100/100/100 (6,594 tests)."
   "2026-07-31T12:19:17.517Z","harness:codex","Installed-consumer evidence: a fresh unrelated temp prefix installed the packed tarball, resolved its pm shim inside that prefix, and passed direct CLI, npm exec --offline, bunx --no-install, plus public SDK stable serialization/limit primitives. Help surfaces remain below the pre-change token budgets after adding the JSON event options."
   "2026-07-31T12:20:13.347Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/845 implements this item in initial implementation commit ee6c69e28fbc0f7f70106224d9466cc58410ac77; final reviewed head will be recorded after review convergence."
-files[3]{path,scope,note}:
+  "2026-07-31T12:53:48.848Z","harness:codex","Review remediation evidence: structured JSON events are now immutable after append; invalid --since is rejected before mutation; MCP schemas mirror every --add-json input conflict; action-scoped timestamp and metadata descriptions generate correctly; the public error catalog/surface are updated without a breaking SDK signature. Focused 95-test review suite, full 100% coverage gate, contracts, static quality, and token surfaces pass."
+files[9]{path,scope,note}:
+  sdk/public-surface.json,project,public structured event error surface
   src/cli/commands/notes.ts,project,merge-safe structured event CLI encoding and filtering
   src/cli/register-mutation.ts,project,CLI and SDK action registration for structured notes
   src/sdk/annotations.ts,project,typed structured annotation append and query primitives
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,action-scoped event metadata descriptions
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP structured event conflict constraints
+  src/sdk/generated-error-code-catalog.ts,project,generated immutable event diagnostic catalog
+  tests/fixtures/contracts/full.json,project,generated notes action contract snapshot
+  tests/unit/commands/notes-learnings-command.spec.ts,project,structured event mutation and validation regressions
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/notes-learnings-command.spec.ts tests/unit/sdk/sdk-context-primitives.spec.ts,project,240
 docs[2]{path,scope,note}:
   docs/COMMANDS.md,project,structured event workflow and scalar append concurrency warning
   docs/SDK.md,project,SDK structured context event examples
+close_reason: "Delivered merge-safe typed JSON context events across SDK, CLI, and MCP with bounded filters, immutable append semantics, deterministic contracts, packed npm/Bun consumer proof, and 100% coverage in PR #845."
 body: ""

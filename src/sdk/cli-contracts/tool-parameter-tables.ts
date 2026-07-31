@@ -287,10 +287,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   },
   tail: { anyOf: [{ type: "string" }, { type: "number" }] },
   addJson: {
-    anyOf: [
-      { type: "string" },
-      { type: "array", items: { type: "string" } },
-    ],
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
   },
   eventType: { type: "string" },
   includeMeta: { type: "boolean" },
@@ -1143,7 +1140,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   includeMeta: {
     description:
-      "Include total, returned, truncation, and structured-event counts for notes reads.",
+      "Include structured-event counts for notes reads; filtered reads also include total, returned, limit, and has-more metadata.",
   },
   allActionable: {
     description:
@@ -1733,6 +1730,13 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  notes: {
+    since: {
+      description:
+        "Inclusive ISO 8601 creation timestamp lower bound for structured note event filtering.",
+      examples: ["2026-01-01T00:00:00.000Z"],
+    },
+  },
   next: {
     tag: {
       description: "Only recommend items carrying this exact tag.",

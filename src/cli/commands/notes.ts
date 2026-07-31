@@ -145,6 +145,7 @@ export async function runNotes(
   const filteringEvents = [options.since, options.eventType].some(
     (value) => value !== undefined,
   );
+  const sinceTimestamp = parseSinceTimestamp(options.since);
   const result = await runAnnotationCommand<"notes", LogNote>(
     id,
     {
@@ -198,7 +199,6 @@ export async function runNotes(
       },
     },
   );
-  const sinceTimestamp = parseSinceTimestamp(options.since);
   const eventType = options.eventType?.trim();
   const matching = result.notes.filter((note) => {
     const isStructured = [

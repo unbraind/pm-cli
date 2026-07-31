@@ -2,13 +2,13 @@ id: pm-ipbwcq
 title: "GH-841: init ancestor discovery obscures the selected workspace and safe current-directory target"
 description: Make initialization resolve and report creation targets explicitly so nested package bootstrapping cannot mistake an ancestor tracker for the intended current-directory workspace.
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-07-31T10:41:51.338Z"
-updated_at: "2026-07-31T12:20:14.112Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#7ca1a9dafe539b16ccac38b4"
+updated_at: "2026-07-31T12:54:37.804Z"
+closed_at: "2026-07-31T12:54:17.471Z"
+completed_at: "2026-07-31T12:54:17.471Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: Return typed workspace-target provenance from the SDK init resolution path; CLI diagnostics identify ancestor discovery and give a safe current-directory --pm-path recovery; Preserve explicit paths and existing tracker safety while covering POSIX and Windows spellings; Verify nested temporary-directory and packed CLI behavior
@@ -18,21 +18,26 @@ confidence: high
 reporter: github
 severity: medium
 environment: "pm-cli 2026.7.29, Node 22, nested workspace"
+resolution: "Initialization returns explicit target provenance, distinguishes ancestor discovery, provides exact current-directory recovery, and validates existing settings before any tracker directory mutation."
 expected_result: "Init distinguishes ancestor discovery from a local tracker, offers the exact safe current-directory command, and exposes identical resolution through SDK contracts."
 actual_result: "pm init walks to an ancestor tracker, emits a generic existing-settings refusal, and omits the --pm-path current-directory recovery."
 component: CLI and SDK workspace initialization
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-kd9n,discovered_from,"2026-07-31T10:41:51.338Z","harness:codex","cli:create:dep",detected
   pm-mpbb,implements,"2026-07-31T10:41:51.338Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-07-31T10:41:51.338Z","harness:codex","Duplicate check evidence: searched all 2,227 items across every status for GH-841, init ancestor discovery, tracker target safety, current-directory initialization, pm-path, and exact/fuzzy titles. Prior init-safety work is closed and protects existing roots; no item owns this distinct target-provenance and remediation gap. Source: https://github.com/unbraind/pm-cli/issues/841"
   "2026-07-31T11:44:41.301Z","harness:codex","Implementation evidence: init now distinguishes current versus ancestor discovery, exposes typed target provenance, refuses ambiguous ancestor settings rewrites, and supplies the exact safe current-directory tracker command. Unit, integration, manual temp-directory, and full 100/100/100/100 coverage gates passed."
   "2026-07-31T12:19:18.258Z","harness:codex","Acceptance evidence: fresh nested temp workspace reproduced ancestor selection, emitted current-versus-ancestor provenance and exact safe --pm-path guidance, while explicit/current targets remain idempotent. Full release coverage and packed CLI tests passed."
   "2026-07-31T12:20:14.112Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/845 implements this item in initial implementation commit ee6c69e28fbc0f7f70106224d9466cc58410ac77; final reviewed head will be recorded after review convergence."
-files[1]{path,scope,note}:
+  "2026-07-31T12:53:49.694Z","harness:codex","Review remediation evidence: existing settings are resolved and ancestor update safety is enforced before any required-directory creation; the regression proves an incomplete ancestor tracker remains untouched after rejection. src/core/shared/errors.ts is now linked through pm as requested. Focused 95-test review suite, full 100% coverage gate, contracts, static quality, and token surfaces pass."
+files[3]{path,scope,note}:
+  src/core/shared/errors.ts,project,init target provenance diagnostics and structured recovery error contract
   src/sdk/init.ts,project,typed current-versus-ancestor init target provenance and safe recovery
+  tests/unit/commands/init-command.spec.ts,project,ancestor rejection before directory mutation regression
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/commands/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,nested init target safety and explicit pm-path recovery
+close_reason: "Delivered typed current-versus-ancestor init provenance and exact safe recovery, with rejection before directory mutation proven in isolated nested workspaces and full gates in PR #845."
 body: ""

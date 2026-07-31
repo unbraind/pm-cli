@@ -163,10 +163,7 @@ function coerceRegisteredFieldValue(
 
 function collectRegisteredFieldDefinitions(
   registrations: ExtensionRegistrationRegistry | null,
-): Map<
-  string,
-  { name: string; type: KnownItemFieldType }
-> {
+): Map<string, { name: string; type: KnownItemFieldType }> {
   const definitions = new Map<
     string,
     { name: string; type: KnownItemFieldType }
@@ -299,8 +296,13 @@ function isValidFieldType(
   if (expectedType === "boolean") {
     return typeof value === "boolean";
   }
-  if (expectedType === "array" || expectedType === "string_array") {
+  if (expectedType === "array") {
     return Array.isArray(value);
+  }
+  if (expectedType === "string_array") {
+    return (
+      Array.isArray(value) && value.every((entry) => typeof entry === "string")
+    );
   }
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

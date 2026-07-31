@@ -375,6 +375,42 @@ describe("runInit", () => {
     }
   });
 
+  it("rejects ancestor settings before recreating missing tracker directories", async () => {
+    const tempRoot = await mkdtemp(
+      path.join(os.tmpdir(), "pm-init-ancestor-no-mutation-"),
+    );
+    const workspaceRoot = path.join(tempRoot, "workspace");
+    const pmRoot = path.join(workspaceRoot, ".agents", "pm");
+    const nestedRoot = path.join(workspaceRoot, "nested");
+    const missingDirectory = path.join(pmRoot, PM_REQUIRED_SUBDIRS[1]);
+    const originalCwd = process.cwd();
+    const originalPmPath = process.env.PM_PATH;
+    try {
+      await mkdir(nestedRoot, { recursive: true });
+      await runInit("pm", { path: pmRoot }, { defaults: true });
+      await rm(missingDirectory, { recursive: true });
+      delete process.env.PM_PATH;
+      process.chdir(nestedRoot);
+
+      await expect(
+        runInit("nested", {}, { defaults: true, agentGuidance: "skip" }),
+      ).rejects.toMatchObject<PmCliError>({
+        context: { code: "init_existing_settings_requires_force" },
+      });
+      await expect(stat(missingDirectory)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    } finally {
+      process.chdir(originalCwd);
+      if (originalPmPath === undefined) {
+        delete process.env.PM_PATH;
+      } else {
+        process.env.PM_PATH = originalPmPath;
+      }
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("summarizes package install details and guards workspace-root tracker paths", async () => {
     expect(
       initInternals.summarizeInstalledPackages({

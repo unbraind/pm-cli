@@ -21166,6 +21166,7 @@
     "status_invalid",
     "stdin_json_invalid",
     "stdin_json_unknown_key",
+    "structured_event_immutable",
     "structured_event_input_conflict",
     "structured_event_json_empty",
     "structured_event_json_invalid",

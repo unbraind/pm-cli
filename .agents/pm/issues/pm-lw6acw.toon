@@ -1,0 +1,28 @@
+id: pm-lw6acw
+title: "GH-844: local npm package archives are rejected as install sources"
+description: Accept bounded local npm package archives as first-class package install sources while preserving provenance and enforcing extraction safety before manifest and entrypoint validation.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-07-31T12:33:23.036Z"
+updated_at: "2026-07-31T12:33:23.036Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Accept npm .tgz and .tar.gz package archives through the public SDK and pm package install; Bound extracted entry count and bytes and reject traversal, escaping links, unsupported roots, and ambiguous manifests; Preserve original archive provenance in managed package metadata; Cover npm and Bun offline temp-workspace installation on POSIX and Windows-safe paths"
+parent: pm-tnud
+risk: high
+confidence: high
+reporter: github
+severity: medium
+environment: pm-cli 2026.7.31; npm pack tarball; offline fresh workspace
+expected_result: "pm package install accepts safe local .tgz and .tar.gz npm package archives, validates a bounded extraction, preserves archive provenance, and behaves consistently through SDK and CLI surfaces."
+actual_result: The local source validator requires a directory and rejects a standard npm package archive with Local extension source must be a directory.
+component: SDK and CLI package source installation
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-59gj,discovered_from,"2026-07-31T12:33:23.036Z","harness:codex","cli:create:dep",detected
+  pm-g072,related_to,"2026-07-31T12:33:23.036Z","harness:codex","cli:create:dep",detected
+  pm-vnjh,related_to,"2026-07-31T12:33:23.036Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-07-31T12:33:23.036Z","harness:codex","Duplicate check evidence: searched all 2,230 live items across every status for GH-844, local npm tarballs, npm pack, tgz package sources, archive extraction, traversal, and symlink safety. Closed pm-59gj owns the package-first baseline, closed pm-g072 owns dependency-spec injection safety, and closed pm-vnjh owns ecosystem smoke infrastructure; none accepts package archives. The open namespace consolidation pm-tnud is the canonical parent. Source: https://github.com/unbraind/pm-cli/issues/844"
+body: ""

@@ -72,12 +72,12 @@ export const classifyHistoryAuthorEvent = (
   return HISTORY_AUTHOR_EVENT_CLASSIFICATIONS[authorClass][timestampClass];
 };
 
-/** Inspect one readable JSONL stream without performing filesystem I/O. */
-export const inspectHistoryAuthorStream = (
+function inspectHistoryAuthorStreamWithActionableEvents(
   itemId: string,
   raw: string,
   sampleLimit = 20,
   acknowledgedEvents: ReadonlySet<string> = new Set<string>(),
+  includeActionableEvents = false,
 ): Pick<
   HistoryAuthorAttributionScan,
   | "checked_events"
@@ -88,7 +88,7 @@ export const inspectHistoryAuthorStream = (
   | "samples"
   | "samples_truncated"
   | "actionable_events"
-> => {
+> {
   const samples: UnknownAuthorHistoryEvent[] = [];
   const actionableEvents: UnknownAuthorHistoryEvent[] = [];
   const unknownCounts = {
@@ -120,7 +120,7 @@ export const inspectHistoryAuthorStream = (
       continue;
     }
     unknownCounts[classification] += 1;
-    if (classification === "actionable_unknown") {
+    if (includeActionableEvents && classification === "actionable_unknown") {
       actionableEvents.push({ item_id: itemId, line: index + 1 });
     }
     if (samples.length < boundedSampleLimit) {
@@ -139,7 +139,31 @@ export const inspectHistoryAuthorStream = (
       samples.length,
     actionable_events: actionableEvents,
   };
-};
+}
+
+/** Inspect one readable JSONL stream without performing filesystem I/O. */
+export const inspectHistoryAuthorStream = (
+  itemId: string,
+  raw: string,
+  sampleLimit = 20,
+  acknowledgedEvents: ReadonlySet<string> = new Set<string>(),
+): Pick<
+  HistoryAuthorAttributionScan,
+  | "checked_events"
+  | "unknown_event_count"
+  | "legacy_unknown_event_count"
+  | "actionable_unknown_event_count"
+  | "acknowledged_actionable_event_count"
+  | "samples"
+  | "samples_truncated"
+  | "actionable_events"
+> =>
+  inspectHistoryAuthorStreamWithActionableEvents(
+    itemId,
+    raw,
+    sampleLimit,
+    acknowledgedEvents,
+  );
 
 function collectAcknowledgedUnknownEvents(raw: string): Set<string> {
   const acknowledged = new Set<string>();
@@ -232,11 +256,12 @@ export const scanHistoryAuthorAttribution = async (
       continue;
     }
     const itemId = fileName.slice(0, -".jsonl".length);
-    const inspected = inspectHistoryAuthorStream(
+    const inspected = inspectHistoryAuthorStreamWithActionableEvents(
       itemId,
       raw,
       sampleLimit - samples.length,
       acknowledgedEvents,
+      includeActionableEvents,
     );
     checkedStreams += 1;
     checkedEvents += inspected.checked_events;

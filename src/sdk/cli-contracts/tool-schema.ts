@@ -768,6 +768,13 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "includeMeta",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
+      mutuallyExclusive: [
+        ["addJson", "add"],
+        ["addJson", "stdin"],
+        ["addJson", "file"],
+        ["addJson", "edit"],
+        ["addJson", "delete"],
+      ],
     },
     learnings: {
       required: ["id"],

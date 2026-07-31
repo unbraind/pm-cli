@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- GH-831: actionable unknown-author health evidence is truncated without a complete disposition selector ([pm-1bmeta](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1bmeta.toon))
+- GH-841: init ancestor discovery obscures the selected workspace and safe current-directory target ([pm-ipbwcq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ipbwcq.toon))
+- GH-840: annotation primitives lack a merge-safe structured event append and query contract ([pm-09rdni](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-09rdni.toon))
+- GH-839: extension field declarations accept types the persisted schema cannot validate ([pm-tom5xp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tom5xp.toon))
 - Harness-detection specs inherit the ambient harness, so four tests fail under Claude Code and pass in CI on the same commit: the local verdict depends on which agent ran it ([pm-631t9p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-631t9p.toon))
 - Extension-registered item types are created, stored and versioned like any other item but are invisible to the merge fence and its drift detector, which reports the fence clean ([pm-5rexki](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5rexki.toon))
 - Four edge-counting conventions publish under one edge_count field: graph analyze reports 10046 and graph centrality 7351 for the same graph at the same cache fingerprint ([pm-jiusod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jiusod.toon))

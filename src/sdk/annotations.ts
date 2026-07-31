@@ -115,6 +115,25 @@ export interface AnnotationCommandConfig<
   }) => TEntry;
 }
 
+/** Reject mutation of canonical structured events while allowing ordinary annotations. */
+function assertAnnotationEntryMutable(
+  entry: unknown,
+  operation: "edited" | "deleted",
+): void {
+  if (
+    typeof entry === "object" &&
+    entry !== null &&
+    "format" in entry &&
+    entry.format === "json"
+  ) {
+    throw new PmCliError(
+      `Structured context events are append-only and cannot be ${operation}.`,
+      EXIT_CODE.USAGE,
+      { code: "structured_event_immutable" },
+    );
+  }
+}
+
 /** Structured result returned by an annotation primitive. */
 export type AnnotationCommandResult<
   TKey extends string,
@@ -450,6 +469,7 @@ export async function runAnnotationCommand<
             entries.length,
             config.collectionKey,
           );
+          assertAnnotationEntryMutable(entries[arrayIndex], "deleted");
           entries.splice(arrayIndex, 1);
           document.metadata[config.collectionKey] = entries as never;
           return { changedFields: [config.collectionKey] };
@@ -505,6 +525,7 @@ export async function runAnnotationCommand<
             config.collectionKey,
           );
           const existing = entries[arrayIndex];
+          assertAnnotationEntryMutable(existing, "edited");
           entries[arrayIndex] = {
             ...existing,
             text,

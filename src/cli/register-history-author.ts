@@ -26,7 +26,8 @@ async function runHistoryAuthorAcknowledgeAction(
     ? (options.event as string[])
     : [];
   const allActionable = options.allActionable === true;
-  if ((rawEvents.length === 0) === !allActionable) {
+  const hasExplicitEvents = rawEvents.length > 0;
+  if (hasExplicitEvents === allActionable) {
     throw new PmCliError(
       "Specify exactly one selector: repeat --event or pass --all-actionable.",
       EXIT_CODE.USAGE,

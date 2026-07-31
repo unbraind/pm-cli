@@ -740,6 +740,18 @@ describe("structured note context events", () => {
         runNotes(id, { since: "not-a-date" }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
+        runNotes(
+          id,
+          { add: "must not persist", since: "not-a-date" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        context: { code: "structured_event_since_invalid" },
+      });
+      expect(await runNotes(id, {}, { path: context.pmPath })).toMatchObject({
+        count: 1,
+      });
+      await expect(
         runNotes(id, { addJson: "not-json" }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
@@ -755,6 +767,37 @@ describe("structured note context events", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("rejects edits and deletes of append-only structured events", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "immutable-structured-note-event");
+      await runNotes(
+        id,
+        { addJson: '{"type":"decision.recorded","value":1}' },
+        { path: context.pmPath },
+      );
+
+      for (const mutation of [{ edit: 1, add: "replacement" }, { delete: 1 }]) {
+        await expect(
+          runNotes(id, mutation, { path: context.pmPath }),
+        ).rejects.toMatchObject<PmCliError>({
+          context: { code: "structured_event_immutable" },
+          exitCode: EXIT_CODE.USAGE,
+        });
+      }
+
+      expect(await runNotes(id, {}, { path: context.pmPath })).toMatchObject({
+        count: 1,
+        notes: [
+          {
+            data: { type: "decision.recorded", value: 1 },
+            format: "json",
+            text: '{"type":"decision.recorded","value":1}',
+          },
+        ],
+      });
     });
   });
 });

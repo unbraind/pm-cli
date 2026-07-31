@@ -95,6 +95,17 @@ describe("SDK author attribution primitives", () => {
     });
   });
 
+  it("collects complete actionable coordinates only when requested", () => {
+    const raw = JSON.stringify({
+      ts: "2026-07-31T00:00:00.000Z",
+      author: "unknown",
+    });
+    expect(inspectHistoryAuthorStream("pm-memory", raw)).toMatchObject({
+      actionable_unknown_event_count: 1,
+      actionable_events: [],
+    });
+  });
+
   it("scans valid events and bounds stable unknown-author samples", async () => {
     const pmRoot = await createTempRoot();
     const historyDirectory = path.join(pmRoot, "history");

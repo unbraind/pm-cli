@@ -1239,13 +1239,28 @@ export async function runInit(
   );
   const createdDirs: string[] = [];
   const warnings: string[] = [];
+  const settingsPath = path.join(pmRoot, "settings.json");
+  const settingsExists = await pathExists(settingsPath);
+  let settingsResolution: InitSettingsResolution | undefined;
+  if (settingsExists) {
+    settingsResolution = await resolveInitSettings({
+      pmRoot,
+      settingsPath,
+      settingsExists,
+      normalizedPrefix: normalizePrefix(prefixArg),
+      prefixArg,
+      options,
+      normalizedOptions,
+      warnings,
+      target: invocation.target,
+    });
+  }
+
   const baseDirs = await ensureInitDirectories(pmRoot, PM_REQUIRED_SUBDIRS);
   createdDirs.push(...baseDirs.createdDirs);
   warnings.push(...baseDirs.warnings);
 
-  const settingsPath = path.join(pmRoot, "settings.json");
-  const settingsExists = await pathExists(settingsPath);
-  const settingsResolution = await resolveInitSettings({
+  settingsResolution ??= await resolveInitSettings({
     pmRoot,
     settingsPath,
     settingsExists,

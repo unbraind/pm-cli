@@ -1185,6 +1185,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["sdk/structured-mutations.ts"],
   },
   {
+    code: "structured_event_immutable",
+    meaning: "Structured event immutable condition.",
+    stability: "stable",
+    exit_code: 2,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/annotations.ts"],
+  },
+  {
     code: "structured_event_input_conflict",
     meaning: "Structured event input conflict condition.",
     stability: "stable",

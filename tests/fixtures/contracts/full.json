@@ -10452,6 +10452,16 @@
       "stability": "stable"
     },
     {
+      "code": "structured_event_immutable",
+      "exit_code": 2,
+      "meaning": "Structured event immutable condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "structured_event_input_conflict",
       "exit_code": 2,
       "meaning": "Structured event input conflict condition.",
@@ -15474,6 +15484,48 @@
       "description": "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "add"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "stdin"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "file"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "edit"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "delete"
+              ]
+            }
+          }
+        ],
         "properties": {
           "add": {
             "description": "Add.",
@@ -15532,7 +15584,7 @@
             "type": "string"
           },
           "includeMeta": {
-            "description": "Include total, returned, truncation, and structured-event counts for notes reads.",
+            "description": "Include structured-event counts for notes reads; filtered reads also include total, returned, limit, and has-more metadata.",
             "type": "boolean"
           },
           "json": {
@@ -15591,7 +15643,7 @@
             "type": "boolean"
           },
           "since": {
-            "description": "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
+            "description": "Inclusive ISO 8601 creation timestamp lower bound for structured note event filtering.",
             "examples": [
               "2026-01-01T00:00:00.000Z"
             ],
@@ -32957,6 +33009,48 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "add"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "stdin"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "file"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "edit"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "addJson",
+                "delete"
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "notes",
@@ -33018,7 +33112,7 @@
             "type": "string"
           },
           "includeMeta": {
-            "description": "Include total, returned, truncation, and structured-event counts for notes reads.",
+            "description": "Include structured-event counts for notes reads; filtered reads also include total, returned, limit, and has-more metadata.",
             "type": "boolean"
           },
           "json": {
@@ -33077,7 +33171,7 @@
             "type": "boolean"
           },
           "since": {
-            "description": "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
+            "description": "Inclusive ISO 8601 creation timestamp lower bound for structured note event filtering.",
             "examples": [
               "2026-01-01T00:00:00.000Z"
             ],
