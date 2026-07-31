@@ -43,6 +43,7 @@ import {
   PM_MCP_RESOURCE_CONTRACTS,
 } from "../sdk/agent-capability-contracts.js";
 import { commitItemMutations } from "../sdk/item-transaction.js";
+import { isRuntimeRecord } from "../sdk/runtime-input.js";
 import { listMutationEvents } from "../sdk/mutation-events.js";
 import {
   parseAtomicMutationControls,
@@ -394,10 +395,33 @@ function errorContent(error: unknown): Record<string, unknown> {
   };
 }
 
+/** Retain at most 32 own, valid provenance values without cloning unbounded input. */
+function boundMcpClientProvenance(value: unknown): Record<string, string> {
+  const provenance = isRuntimeRecord(value) ? value : {};
+  const bounded: Record<string, string> = {};
+  let acceptedCount = 0;
+  for (const key in provenance) {
+    if (acceptedCount >= 32) break;
+    if (!Object.prototype.hasOwnProperty.call(provenance, key)) continue;
+    const entry = provenance[key];
+    if (
+      /^[a-z][a-z0-9_-]{0,63}$/u.test(key) &&
+      typeof entry === "string" &&
+      entry.trim().length > 0
+    ) {
+      bounded[key] = entry.trim().slice(0, 256);
+      acceptedCount += 1;
+    }
+  }
+  return bounded;
+}
+
 function readMcpClientInfo(
   params: Record<string, unknown> | undefined,
 ): AgentClientInfo | undefined {
-  const clientInfo = asRecordClone(params?.clientInfo);
+  const clientInfo = isRuntimeRecord(params?.clientInfo)
+    ? params.clientInfo
+    : {};
   const clientName =
     typeof clientInfo.name === "string" ? clientInfo.name.trim() : "";
   if (clientName.length === 0) return undefined;
@@ -411,6 +435,10 @@ function readMcpClientInfo(
     if (typeof value === "string" && value.trim().length > 0) {
       result[key] = value.trim().slice(0, limit);
     }
+  }
+  const boundedProvenance = boundMcpClientProvenance(clientInfo.provenance);
+  if (Object.keys(boundedProvenance).length > 0) {
+    result.provenance = boundedProvenance;
   }
   return result;
 }
@@ -769,6 +797,7 @@ function readRuntimeTestHook<Key extends RuntimeTestHookKey>(
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
+  boundMcpClientProvenance,
   get closeManyOptionsFromFlat() {
     return readRuntimeTestHook("closeManyOptionsFromFlat");
   },

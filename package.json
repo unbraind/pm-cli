@@ -161,6 +161,7 @@
     "release:pipeline": "node scripts/release/run-release-pipeline.mjs",
     "release:pipeline:dry-run": "node scripts/release/run-release-pipeline.mjs --dry-run",
     "release:verify-published": "node scripts/release/verify-published-release.mjs",
+    "release:verify-installed-agent": "node scripts/release/verify-installed-agent-session.mjs",
     "review:greptile": "greptile review --agent",
     "review:greptile:gate": "node scripts/release/greptile-review-gate.mjs",
     "security:scan": "node scripts/check-secrets.mjs",

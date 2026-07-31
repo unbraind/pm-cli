@@ -15,7 +15,8 @@ bundle [pm-qwuber](../.agents/pm/decisions/pm-qwuber.toon),
 amendment is tracked by [pm-oskdmu](../.agents/pm/decisions/pm-oskdmu.toon),
 [pm-itsjf0](../.agents/pm/features/pm-itsjf0.toon),
 [pm-0zcwz6](../.agents/pm/issues/pm-0zcwz6.toon), and
-[pm-pwq0g5](../.agents/pm/issues/pm-pwq0g5.toon).
+[pm-pwq0g5](../.agents/pm/issues/pm-pwq0g5.toon), with cross-surface parity
+tracked by [pm-1zhfls](../.agents/pm/issues/pm-1zhfls.toon).
 
 `pm` treats project management as context management. These primitives keep
 mutation provenance, source-workspace identity, extension flags, and bounded
@@ -75,9 +76,10 @@ signal object remains deterministic and isolated.
 `PM_AGENT_MODEL`, `PM_AGENT_EFFORT`, and `PM_AGENT_ROLE` are explicit
 observation overrides. Built-in harness-specific environment variables are
 evaluated next, followed by MCP client metadata, trusted host provenance, and
-bounded argv tokens. A detected harness with no model records
-`agent_provenance.model: null`, making unavailable model data distinguishable
-from legacy history written before the provenance contract.
+bounded argv tokens. A detected harness records every built-in dimension.
+Unobserved model, effort, and role values are explicit `null`, making
+surface-level unavailability distinguishable from legacy history written
+before the provenance contract.
 
 ## Custom harness descriptors
 
@@ -117,7 +119,9 @@ workspace. Registration performs no filesystem, process, or network access.
 MCP captures `clientInfo.name` and `clientInfo.version` during initialize and
 scopes all later tool calls to that client signal. Optional host-provided
 `model`, `session`, and `provenance` fields are supported, but version is not
-misclassified as a model or session. See
+misclassified as a model or session. Provenance keys must use the bounded
+lowercase dimension vocabulary; blank, malformed, and oversized data is
+discarded before mutation context is created. See
 [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) for precedence,
 privacy, compatibility, and coverage-report contracts.
 

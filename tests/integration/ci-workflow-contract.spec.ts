@@ -493,6 +493,7 @@ describe("GitHub workflow contract", () => {
       'npm_config_userconfig="${PUBLIC_NPMRC}"',
       'npm_config_cache="${PUBLIC_NPM_CACHE}"',
       "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-github-release --json",
+      "node scripts/release/verify-installed-agent-session.mjs --version \"${RELEASE_TAG#v}\" --manager both --json",
       "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-package --json",
       "uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228",
       "tag_name: ${{ env.RELEASE_TAG }}",

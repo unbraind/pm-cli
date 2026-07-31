@@ -9963,7 +9963,7 @@
       "meaning": "Item id collision condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/copy.ts"
+        "sdk/lifecycle/copy.ts"
       ],
       "stability": "stable"
     },
@@ -10720,7 +10720,7 @@
       "meaning": "Unknown field projection condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/get.ts",
+        "sdk/query/get.ts",
         "sdk/query/list.ts"
       ],
       "stability": "stable"

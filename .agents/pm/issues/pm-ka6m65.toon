@@ -1,0 +1,19 @@
+id: pm-ka6m65
+title: "GH-847: tighten managed built-in static SDK contracts and author guidance"
+description: "Track package-owned cleanup for managed built-in extension static SDK contracts: host-global author recovery guidance, a narrow Beads runtime SDK interface, and named Todos SDK imports. The generated managed artifacts must be updated through the pm-cli package workflow rather than downstream edits."
+type: Issue
+status: open
+priority: 2
+tags[3]: "area:packages","area:sdk","source:github"
+created_at: "2026-07-31T21:29:44.851Z"
+updated_at: "2026-07-31T21:29:44.851Z"
+author: "harness:codex"
+acceptance_criteria: "test-runs resume explains host-global --author placement in failure hints; Beads import runtime depends on a narrow structural SDK contract without a redundant namespace alias; Todos import/export runtime uses named SDK imports without module namespace aliasing; Managed artifacts, focused tests, package parity, and generated output are verified"
+parent: pm-usfg
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-vnk7ob,related_to,"2026-07-31T21:29:44.851Z","harness:codex",github,detected
+  pm-w7mqzt,related_to,"2026-07-31T21:29:44.851Z","harness:codex",github,detected
+  pm-z5pmf8,related_to,"2026-07-31T21:29:44.851Z","harness:codex",github,detected
+comments[1]{created_at,author,text}:
+  "2026-07-31T21:29:44.851Z","harness:codex","Duplicate check: searched every status for GH-847 and the full issue title plus Beads/Todos/test-runs SDK contract terms; no canonical item existed. GitHub source: https://github.com/unbraind/pm-cli/issues/847. Related edges continue pm-z5pmf8 and the completed pm-vnk7ob/pm-w7mqzt package-contract lineage."
+body: ""

@@ -10,6 +10,20 @@ const NPM_PACKAGE =
   JSON.parse(
     readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
   ).name;
+const PACKAGE_BINS = JSON.parse(
+  readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+).bin;
+const INITIALIZE_REQUEST = `${JSON.stringify({
+  jsonrpc: "2.0",
+  id: 1,
+  method: "initialize",
+  params: {
+    protocolVersion: "2025-06-18",
+    capabilities: {},
+    clientInfo: { name: "published-artifact-verifier", version: "1.0.0" },
+  },
+})}\n`;
+const MCP_INITIALIZE_TIMEOUT_MS = 60_000;
 
 function usage() {
   console.log(`Usage:
@@ -21,8 +35,9 @@ function usage() {
 
 Verifies the public release surfaces after publish:
 - npm registry metadata
-- npx package execution
-- bunx package execution
+- npx and bunx real CLI command dispatch
+- npx and bunx pm-mcp JSON-RPC initialization
+- package bin-to-entrypoint coverage and missing-bin negative controls
 - GitHub Release metadata
 `);
 }
@@ -57,11 +72,6 @@ function parsePositiveInteger(flags, key, fallback) {
     fail(`Invalid --${key} value "${raw}".`);
   }
   return parsed;
-}
-
-function lastNonEmptyLine(value) {
-  const lines = value.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
-  return lines.at(-1) ?? "";
 }
 
 function runWithRetries(label, attempts, delayMs, action) {
@@ -111,31 +121,88 @@ function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   });
 }
 
-function verifyExecutor(name, args, version, attempts, tempRoot, publicRegistryEnv) {
+function verifyExecutor(name, args, attempts, tempRoot, publicRegistryEnv, assertion, input, timeout) {
   return runWithRetries(name, attempts, 10000, () => {
     const result = runCommand(args[0], args.slice(1), {
       cwd: tempRoot,
       capture: true,
       allowFailure: true,
       env: publicRegistryEnv,
+      input,
+      timeout,
     });
-    const observed = lastNonEmptyLine(result.stdout);
-    if (result.status === 0 && observed === version) {
-      return { ok: true, version: observed };
+    if (result.status !== 0) {
+      return {
+        ok: false,
+        reason: `${name}_execution_failed:${result.stderr.trim() || "no_output"}`,
+      };
     }
-    return {
-      ok: false,
-      reason: `${name}_version_mismatch:${observed || result.stderr.trim() || "no_output"}`,
-    };
+    try {
+      return assertion(result.stdout);
+    } catch (error) {
+      /* c8 ignore next -- native JSON parsing/assertions throw Error instances; the String(error) fallback is defensive */
+      const message = error instanceof Error ? error.message : String(error);
+      return { ok: false, reason: `${name}_invalid_output:${message}` };
+    }
   });
 }
 
-function verifyRequiredExecutor(label, args, version, attempts, tempRoot, publicRegistryEnv) {
-  const result = verifyExecutor(label, args, version, attempts, tempRoot, publicRegistryEnv);
+function verifyRequiredExecutor(label, args, attempts, tempRoot, publicRegistryEnv, assertion, input, timeout) {
+  const result = verifyExecutor(
+    label,
+    args,
+    attempts,
+    tempRoot,
+    publicRegistryEnv,
+    assertion,
+    input,
+    timeout,
+  );
   if (!result.ok) {
     fail(`${label} verification failed: ${result.reason}`);
   }
   return result;
+}
+
+function assertCliDispatch(stdout) {
+  const parsed = JSON.parse(stdout.trim());
+  if (typeof parsed !== "object" || parsed === null) {
+    return { ok: false, reason: "cli_dispatch_not_an_object" };
+  }
+  return { ok: true, command: "contracts", output: "json" };
+}
+
+function assertMcpInitialize(stdout) {
+  const response = stdout
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .find((entry) => entry.id === 1);
+  if (
+    response?.result?.serverInfo?.name !== "pm-mcp" ||
+    typeof response.result.protocolVersion !== "string"
+  ) {
+    return { ok: false, reason: "mcp_initialize_response_invalid" };
+  }
+  return {
+    ok: true,
+    server_name: response.result.serverInfo.name,
+    protocol_version: response.result.protocolVersion,
+  };
+}
+
+function verifyMissingBinControl(label, args, tempRoot, publicRegistryEnv) {
+  const result = runCommand(args[0], args.slice(1), {
+    cwd: tempRoot,
+    capture: true,
+    allowFailure: true,
+    env: publicRegistryEnv,
+  });
+  if (result.status === 0) {
+    fail(`${label} negative control failed: a missing executable exited zero.`);
+  }
+  return { ok: true, observed_nonzero_status: result.status };
 }
 
 function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
@@ -159,34 +226,78 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       fail(`npm metadata verification failed: ${npmMetadata.reason}`);
     }
 
-    const npxDirect = verifyRequiredExecutor(
-      "npx-direct",
-      [commandFor("npx"), "--yes", `${NPM_PACKAGE}@${version}`, "--version"],
-      version,
+    const packageSpec = `${NPM_PACKAGE}@${version}`;
+    const binEntries = Object.entries(PACKAGE_BINS);
+    const coveredEntrypoints = new Set([PACKAGE_BINS.pm, PACKAGE_BINS["pm-mcp"]]);
+    const uncoveredBins = binEntries
+      .filter(([, entrypoint]) => !coveredEntrypoints.has(entrypoint))
+      .map(([bin]) => bin);
+    if (uncoveredBins.length > 0) {
+      fail(`Published package bins lack executable coverage: ${uncoveredBins.join(", ")}`);
+    }
+    const npxPm = verifyRequiredExecutor(
+      "npx-pm",
+      [commandFor("npx"), "--yes", "--package", packageSpec, "--", "pm", "--json", "--no-extensions", "contracts", "--summary"],
       executorAttempts,
       tempRoot,
       publicRegistryEnv,
+      assertCliDispatch,
     );
-
-    const npxPackage = verifyRequiredExecutor(
-      "npx-package",
-      [commandFor("npx"), "--yes", "--package", `${NPM_PACKAGE}@${version}`, "--", "pm", "--version"],
-      version,
+    const npxMcp = verifyRequiredExecutor(
+      "npx-pm-mcp",
+      [commandFor("npx"), "--yes", "--package", packageSpec, "--", "pm-mcp"],
       executorAttempts,
       tempRoot,
       publicRegistryEnv,
+      assertMcpInitialize,
+      INITIALIZE_REQUEST,
+      MCP_INITIALIZE_TIMEOUT_MS,
     );
-
-    const bunx = verifyRequiredExecutor(
-      "bunx",
-      [commandFor("bunx"), "--bun", `${NPM_PACKAGE}@${version}`, "pm", "--version"],
-      version,
+    const bunxPm = verifyRequiredExecutor(
+      "bunx-pm",
+      [commandFor("bunx"), "--silent", "--bun", "--package", packageSpec, "pm", "--json", "--no-extensions", "contracts", "--summary"],
       executorAttempts,
       tempRoot,
       publicRegistryEnv,
+      assertCliDispatch,
     );
-
-    return { npm: npmMetadata, npx: { direct: npxDirect, package: npxPackage }, bunx };
+    const bunxMcp = verifyRequiredExecutor(
+      "bunx-pm-mcp",
+      [commandFor("bunx"), "--silent", "--bun", "--package", packageSpec, "pm-mcp"],
+      executorAttempts,
+      tempRoot,
+      publicRegistryEnv,
+      assertMcpInitialize,
+      INITIALIZE_REQUEST,
+      MCP_INITIALIZE_TIMEOUT_MS,
+    );
+    const negativeControls = {
+      npx: verifyMissingBinControl(
+        "npx-missing-bin",
+        [commandFor("npx"), "--yes", "--package", packageSpec, "--", "pm-definitely-missing"],
+        tempRoot,
+        publicRegistryEnv,
+      ),
+      bunx: verifyMissingBinControl(
+        "bunx-missing-bin",
+        [commandFor("bunx"), "--silent", "--bun", "--package", packageSpec, "pm-definitely-missing"],
+        tempRoot,
+        publicRegistryEnv,
+      ),
+    };
+    return {
+      npm: npmMetadata,
+      executors: {
+        npx: { pm: npxPm, "pm-mcp": npxMcp },
+        bunx: { pm: bunxPm, "pm-mcp": bunxMcp },
+      },
+      negative_controls: negativeControls,
+      bin_coverage: {
+        covered_bins: binEntries.map(([bin]) => bin).sort(),
+        distinct_entrypoints: [...new Set(binEntries.map(([, entrypoint]) => entrypoint))].sort(),
+        uncovered_bins: uncoveredBins,
+      },
+    };
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }

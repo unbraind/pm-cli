@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1293,
+    "covered_symbols": 1301,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1294
+    "required_symbols": 1302
   },
   "breaking_acknowledgements": [
     {
@@ -2344,6 +2344,12 @@
           "signature": "CliFlagContract[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CopyOptions",
+          "signature": "export interface CopyOptions { title?: string; author?: string; message?: string; allowDuplicate?: boolean; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "CopyResult",
@@ -2822,6 +2828,12 @@
           "kind": "value",
           "name": "DELETE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "DeleteCommandOptions",
+          "signature": "export interface DeleteCommandOptions { author?: string; message?: string; force?: boolean; dryRun?: boolean; }"
         },
         {
           "classification": "supported",
@@ -4064,6 +4076,12 @@
           "kind": "value",
           "name": "FOCUS_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "FocusOptions",
+          "signature": "export interface FocusOptions { clear?: boolean; }"
         },
         {
           "classification": "supported",
@@ -9190,6 +9208,12 @@
           "signature": "(items: MutationCheckpointItem[], restore: CheckpointRestoreFn) => Promise<CheckpointRollbackResult> | calls: (items: MutationCheckpointItem[], restore: CheckpointRestoreFn) => Promise<CheckpointRollbackResult>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "RestoreCommandOptions",
+          "signature": "export interface RestoreCommandOptions { author?: string; message?: string; force?: boolean; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "RestoreResult",
@@ -9348,6 +9372,18 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "runCopy",
+          "signature": "(sourceId: string, options: CopyOptions, global: GlobalOptions) => Promise<CopyResult> | calls: (sourceId: string, options: CopyOptions, global: GlobalOptions) => Promise<CopyResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runDelete",
+          "signature": "(id: string, options: DeleteCommandOptions, global: GlobalOptions) => Promise<DeleteResult> | calls: (id: string, options: DeleteCommandOptions, global: GlobalOptions) => Promise<DeleteResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "runDeps",
           "signature": "(id: string, options: DepsCommandOptions, global: GlobalOptions) => Promise<DepsResult> | calls: (id: string, options: DepsCommandOptions, global: GlobalOptions) => Promise<DepsResult>"
         },
@@ -9386,6 +9422,12 @@
           "kind": "function",
           "name": "runFilesDiscover",
           "signature": "(id: string, options: FilesDiscoverOptions, global: GlobalOptions) => Promise<FilesDiscoverResult> | calls: (id: string, options: FilesDiscoverOptions, global: GlobalOptions) => Promise<FilesDiscoverResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runFocus",
+          "signature": "(id: string | undefined, options: FocusOptions, global: GlobalOptions) => Promise<FocusResult> | calls: (id: string | undefined, options: FocusOptions, global: GlobalOptions) => Promise<FocusResult>"
         },
         {
           "classification": "supported",
@@ -9668,6 +9710,12 @@
           "kind": "function",
           "name": "runReindex",
           "signature": "(options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult> | calls: (options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runRestore",
+          "signature": "(id: string, target: string, options: RestoreCommandOptions, global: GlobalOptions) => Promise<RestoreResult> | calls: (id: string, target: string, options: RestoreCommandOptions, global: GlobalOptions) => Promise<RestoreResult>"
         },
         {
           "classification": "advanced_export",
@@ -18496,6 +18544,12 @@
           "signature": "(id: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<CopyResult> | calls: (id: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<CopyResult>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "CopyOptions",
+          "signature": "export interface CopyOptions { title?: string; author?: string; message?: string; allowDuplicate?: boolean; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "CopyResult",
@@ -18548,6 +18602,12 @@
           "kind": "value",
           "name": "DEFAULT_TERMINAL_TRANSITION_POLICY",
           "signature": "Readonly<TerminalTransitionPolicy>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "DeleteCommandOptions",
+          "signature": "export interface DeleteCommandOptions { author?: string; message?: string; force?: boolean; dryRun?: boolean; }"
         },
         {
           "classification": "supported",
@@ -18746,6 +18806,12 @@
           "kind": "function",
           "name": "focus",
           "signature": "(id?: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<FocusResult> | calls: (id?: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<FocusResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "FocusOptions",
+          "signature": "export interface FocusOptions { clear?: boolean; }"
         },
         {
           "classification": "supported",
@@ -19732,6 +19798,12 @@
           "signature": "(id: string, target: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<RestoreResult> | calls: (id: string, target: string, options?: PmClientFullMutationOptions, clientOptions?: PmClientOptions) => Promise<RestoreResult>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "RestoreCommandOptions",
+          "signature": "export interface RestoreCommandOptions { author?: string; message?: string; force?: boolean; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "RestoreResult",
@@ -19792,10 +19864,28 @@
           "signature": "(options: ContextOptions, global: GlobalOptions) => Promise<ContextResult> | calls: (options: ContextOptions, global: GlobalOptions) => Promise<ContextResult>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runCopy",
+          "signature": "(sourceId: string, options: CopyOptions, global: GlobalOptions) => Promise<CopyResult> | calls: (sourceId: string, options: CopyOptions, global: GlobalOptions) => Promise<CopyResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runDelete",
+          "signature": "(id: string, options: DeleteCommandOptions, global: GlobalOptions) => Promise<DeleteResult> | calls: (id: string, options: DeleteCommandOptions, global: GlobalOptions) => Promise<DeleteResult>"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "runDuplicates",
           "signature": "(global: GlobalOptions, options?: DuplicatesCommandOptions) => Promise<DuplicatesResult> | calls: (global: GlobalOptions, options?: DuplicatesCommandOptions) => Promise<DuplicatesResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runFocus",
+          "signature": "(id: string | undefined, options: FocusOptions, global: GlobalOptions) => Promise<FocusResult> | calls: (id: string | undefined, options: FocusOptions, global: GlobalOptions) => Promise<FocusResult>"
         },
         {
           "classification": "advanced_export",
@@ -19832,6 +19922,12 @@
           "kind": "function",
           "name": "runReindex",
           "signature": "(options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult> | calls: (options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runRestore",
+          "signature": "(id: string, target: string, options: RestoreCommandOptions, global: GlobalOptions) => Promise<RestoreResult> | calls: (id: string, target: string, options: RestoreCommandOptions, global: GlobalOptions) => Promise<RestoreResult>"
         },
         {
           "classification": "advanced_export",

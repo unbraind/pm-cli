@@ -739,7 +739,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 4,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/copy.ts"],
+    sources: ["sdk/lifecycle/copy.ts"],
   },
   {
     code: "item_not_found",
@@ -1429,7 +1429,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/get.ts", "sdk/query/list.ts"],
+    sources: ["sdk/query/get.ts", "sdk/query/list.ts"],
   },
   {
     code: "unknown_item_type",
