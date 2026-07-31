@@ -9,6 +9,10 @@
 - Four edge-counting conventions publish under one edge_count field: graph analyze reports 10046 and graph centrality 7351 for the same graph at the same cache fingerprint ([pm-jiusod](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jiusod.toon))
 - Four read surfaces publish a jq_selector that is guaranteed to return nothing: the self-describing row contract is present, vacuous, and indistinguishable from an empty result ([pm-x710qm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x710qm.toon))
 
+### Security
+
+- GH-827: local package install must prevent recursive self-copy and disk exhaustion ([pm-0682l4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0682l4.toon))
+
 ### Other
 
 - Refresh compatible Sentry 10.69 and Greptile 3.3 dependencies ([pm-7564ov](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7564ov.toon))
@@ -28,10 +32,6 @@
 - GH-814: SDK metadata reads must distinguish missing and invalid tracker roots from an empty tracker ([pm-23xkss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-23xkss.toon))
 - The runtime contract enumeration is not closed over the surface it can resolve: 14 rendered commands, including the list-open that AGENTS.md mandates, are contract-backed by name yet absent from every enumeration ([pm-6j7r1a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6j7r1a.toon))
 - GH-817: machine-readable flag contracts need semantic invocation metadata and stdin capability ([pm-11phn1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-11phn1.toon))
-
-### Security
-
-- GH-827: local package install must prevent recursive self-copy and disk exhaustion ([pm-0682l4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0682l4.toon))
 
 ## 2026.7.30 - 2026-07-30
 
