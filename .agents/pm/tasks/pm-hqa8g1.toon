@@ -1,0 +1,22 @@
+id: pm-hqa8g1
+title: "Every command declares its exit-code set, and the code distinguishes applied from applied-to-nothing"
+description: "The exit code is the only part of a command result a shell reads without parsing, and it is the only part of a command result this product has never declared. Every other channel is contracted: the output envelope has a format grammar, read surfaces carry a row contract, error codes exist as an enumerated set of one hundred and ninety-five. Exit codes are assigned at each call site by convention and are described nowhere, so a script or an agent that branches on success cannot rely on success meaning anything in particular.\n\nEvidence taken 2026-08-01 against 2026.8.1, in an isolated sandbox. A bulk mutation that matched none of its requested ids exits 0. Specifically, update-many with two nonexistent ids exits 0, and close-many with one nonexistent id exits 0, both having changed nothing. A partially matched request, one real id and one bogus, also exits 0. Meanwhile a history verification failure is only detectable through an opt-in strict exit flag, and a read that omits its entire result under a budget constraint also exits 0. The same numeric result therefore covers applied, applied in part, applied to nothing, and served nothing.\n\nWhat a contract has to say. For every command: which codes it can return, what each means as a statement about effect rather than about internals, and which conditions are opt-in rather than default. At minimum the vocabulary needs to distinguish a request that succeeded and had an effect, a request that succeeded and deliberately had no effect, a request that was refused for bad input, a request that was refused for tracker state, and an internal failure. The distinction between the first two is the one that is missing today and the one that costs the most, because it is exactly the distinction a shell operator is asking about.\n\nWhere it is declared. In the same contract tables the flags and error codes already live in, so the surface can be generated and checked rather than documented and drifted, and so the published contracts output carries it for agents that read contracts before acting.\n\nHow it is enforced. A conformance check asserts that every command declares its exit-code set, that every declared code is reachable from at least one input in the replay corpus, and that no command returns an undeclared code. A negative control proves the check can fail.\n\nRelationship to adjacent work. The error-code taxonomy item owns the names and shapes of failures; this item owns the numeric channel and the effect semantics behind it, and the two must agree, which is why the taxonomy is a prerequisite here rather than a duplicate. The bulk selector item filed today carries the concrete instance of the missing distinction and depends on this contract for the general rule."
+type: Task
+status: open
+priority: 1
+tags[3]: ci-gates,composability,governance
+created_at: "2026-08-01T13:09:48.878Z"
+updated_at: "2026-08-01T13:09:48.878Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Every command declares its exit-code set in the same contract tables that already carry its flags and error codes, and the set is rendered by the contracts output; The vocabulary distinguishes succeeded with effect, succeeded with no effect, refused for input, refused for tracker state, and internal failure; A conformance check asserts no command returns an undeclared code and every declared code is reachable from the replay corpus, with a negative control; The scripting contract documents the exit-code semantics once, and no command describes its own numeric convention separately"
+parent: pm-33cw
+risk: medium
+confidence: 82
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-33cw,implements,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
+  pm-f05lsg,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
+  pm-psy1,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
+  pm-srns,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
+  pm-x4nn3z,blocked_by,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
+body: ""

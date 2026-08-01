@@ -1,0 +1,23 @@
+id: pm-rnl3sa
+title: "Both published bin names are refused as subcommands, so npx PKG pm init and bunx PKG pm init fail while the version probe that guards them passes"
+description: "Neither published bin name survives the executable position that npx and bunx put it in, so the invocation form every agent and reader reaches for first fails, and the only probe wired into the release verifier is the one form that cannot detect it.\n\nMeasured live on 2026-08-01 against the published 2026.8.1 artifact, in a clean temp workspace with PM_GLOBAL_PATH outside the repo:\n\n- npx --yes @unbrained/pm-cli@2026.8.1 pm init returns exit 2, \"Unknown command pm\", \"pm does not expose command path pm in current runtime configuration\".\n- npx --yes @unbrained/pm-cli@2026.8.1 pm-cli init returns exit 2, \"Unknown command pm-cli\".\n- bunx @unbrained/pm-cli@2026.8.1 pm init returns the identical exit 2 envelope.\n- npx --yes @unbrained/pm-cli@2026.8.1 init succeeds (ok true), and list-open succeeds. So the runtime is healthy; only the bin-name token is fatal.\n- npx --yes @unbrained/pm-cli@2026.8.1 pm --version prints 2026.8.1 and exits 0.\n\nCause: the package declares three bins (pm-cli, pm, pm-mcp) all pointing at dist/cli.js. Neither npx nor bunx dispatches by bin name in this position; both run the default bin and forward every remaining argument verbatim. The dispatcher then tries to resolve the literal token pm (or pm-cli) as a subcommand and refuses. The token pm is additionally still rendered in the root help output, so an agent reading help is actively invited to type the one form that fails.\n\nWhy it survived every prior verification: the last argument-position probe that runs in CI is scripts/release/verify-published-release.mjs, which always uses the disambiguated form (npx --yes --package SPEC -- pm ... and bunx --silent --bun --package SPEC pm ...). That form does route to the pm bin and works. Every ad-hoc verification recorded in the tracker used pm --version, which short-circuits before dispatch and therefore exits 0 on the broken form. This is the concrete realization of the failure mode that closed item pm-lpqln4 predicted in the abstract.\n\nScope: this is the dispatch behavior, not the error envelope. The shape of the refusal belongs to pm-185870. The fact that the token pm is enumerated in help but resolves nowhere is pm-1jrdri. This item owns making the invocation work.\n\nProposed resolution: absorb a leading positional that exactly matches one of the package's own declared bin names before subcommand resolution, so that pm pm init, npx PKG pm init and bunx PKG pm init all behave as pm init. Then remove the pm pseudo-command from the rendered help surface, and extend the release verifier with the short two-token forms as required legs, plus a negative control proving the leg can fail."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ergonomics,dispatch,release
+created_at: "2026-08-01T13:02:41.297Z"
+updated_at: "2026-08-01T13:10:36.377Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "npx --yes @unbrained/pm-cli@<version> pm init succeeds in a clean workspace and so does the bunx equivalent; A leading positional equal to any declared bin name of this package is absorbed before subcommand resolution, so pm pm init behaves as pm init; The pm pseudo-command no longer appears in rendered root help, and no help surface invites a form the dispatcher refuses; verify-published-release.mjs gains required npx and bunx legs using the two-token short form, and a negative control proves the leg fails when dispatch is broken; No leg of the published-artifact verification asserts only on a flag that short-circuits before dispatch"
+parent: pm-u9d0
+risk: medium
+confidence: 88
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-185870,related,"2026-08-01T13:02:41.297Z","harness:claude-code","cli:create:dep",detected
+  pm-1jrdri,related,"2026-08-01T13:02:41.297Z","harness:claude-code","cli:create:dep",detected
+  pm-lpqln4,discovered_from,"2026-08-01T13:02:41.297Z","harness:claude-code","cli:create:dep",detected
+  pm-u9d0,implements,"2026-08-01T13:02:41.297Z","harness:claude-code","cli:create:dep",detected
+  pm-ygli86,related,"2026-08-01T13:02:41.297Z","harness:claude-code","cli:create:dep",detected
+  pm-pbyu,related,"2026-08-01T13:10:36.161Z","harness:claude-code","cli:update:dep",detected
+body: ""
