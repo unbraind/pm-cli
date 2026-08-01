@@ -1594,7 +1594,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     examples: [20, "40"],
   },
   tokenBudget: {
-    description: "Maximum estimated output tokens for deps --format context.",
+    description: "Maximum estimated output tokens for the command output.",
     examples: [600, "1200"],
   },
   cursor: {
@@ -1730,6 +1730,12 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  deps: {
+    tokenBudget: {
+      description: "Maximum estimated output tokens for deps --format context.",
+      examples: [600, "1200"],
+    },
+  },
   notes: {
     since: {
       description:

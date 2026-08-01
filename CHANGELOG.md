@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Mutation echo parity reversed after pm-nilh closed: the MCP surface now returns 5.2x the CLI default for an identical create ([pm-awe3t6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-awe3t6.toon))
 - The bunx release gate passes with an arbitrary token in the executable position, so the only Bun coverage in the pipeline cannot fail for the reason it exists ([pm-lpqln4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lpqln4.toon))
 - The published-artifact gate never executes pm-mcp: two of three declared bins resolve to the same file and the third — which already shipped dead once — has zero release coverage ([pm-u0oz2k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u0oz2k.toon))
 - One governance rule, two terminal-transition paths, opposite answers: pm close refuses a reasonless close while pm update --status closed invents a reason and writes it into the immutable record unmarked ([pm-2ew0w3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2ew0w3.toon))

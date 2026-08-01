@@ -8,6 +8,10 @@ interface PageResult {
   next_cursor?: string;
   has_more?: boolean;
   truncated?: boolean;
+  continuation_contract?: {
+    fingerprint: string;
+    metadata: "reference";
+  };
 }
 
 function createPaginationItems(
@@ -75,6 +79,10 @@ describe("query cursor pagination", () => {
       );
       const secondList = secondListRun.json as PageResult;
       expect(secondListRun.code).toBe(0);
+      expect(secondList.continuation_contract).toMatchObject({
+        fingerprint: expect.any(String),
+        metadata: "reference",
+      });
       expect(
         secondList.items?.some((item) =>
           firstList.items?.some((first) => first.id === item.id),
@@ -102,6 +110,10 @@ describe("query cursor pagination", () => {
       );
       const secondSearch = secondSearchRun.json as PageResult;
       expect(secondSearchRun.code).toBe(0);
+      expect(secondSearch.continuation_contract).toMatchObject({
+        fingerprint: expect.any(String),
+        metadata: "reference",
+      });
       expect(
         secondSearch.items?.some((item) =>
           firstSearch.items?.some((first) => first.id === item.id),
@@ -130,6 +142,10 @@ describe("query cursor pagination", () => {
       );
       const secondContext = secondContextRun.json as PageResult;
       expect(secondContextRun.code).toBe(0);
+      expect(secondContext.continuation_contract).toMatchObject({
+        fingerprint: expect.any(String),
+        metadata: "reference",
+      });
       expect(
         focusIds(secondContext).some((id) => focusIds(firstContext).includes(id)),
       ).toBe(false);

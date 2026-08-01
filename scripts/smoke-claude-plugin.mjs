@@ -166,7 +166,17 @@ try {
       createMode: "progressive",
     },
   });
-  const id = created.item.id;
+  const createKeys = Object.keys(created).sort();
+  const expectedCreateKeys = ["changed_field_count", "id", "status"];
+  if (createKeys.join(",") !== expectedCreateKeys.join(",")) {
+    throw new Error(
+      `pm_create default must use the lean mutation envelope (${expectedCreateKeys.join(", ")}); got ${createKeys.join(", ")}`,
+    );
+  }
+  const id = created.id;
+  if (typeof id !== "string" || id.length === 0) {
+    throw new Error("pm_create lean mutation envelope is missing a non-empty id");
+  }
   console.log(`pm_create: ok (${id})`);
 
   await callTool("pm_claim", { cwd: tmpRoot, id, author: "claude-smoke" });

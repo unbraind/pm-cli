@@ -14,6 +14,8 @@ describe("read command context intent registration", () => {
     ).toMatchObject({
       depth: "standard",
       section: ["hierarchy", "blockers", "activity"],
+      limit: "3",
+      activityLimit: "3",
       tokenBudget: "2400",
     });
     expect(
@@ -27,9 +29,9 @@ describe("read command context intent registration", () => {
       }),
     ).toMatchObject({
       fields:
-        "id,title,status,type,priority,parent,assignee,reviewer,risk,confidence,sprint,release,blocked_by,blocked_reason,dependencies,updated_at",
-      limit: "2",
-      tokenBudget: "1800",
+        "id,title,status,type,priority,parent,assignee,risk,blocked_by",
+      limit: "20",
+      tokenBudget: "3200",
     });
     expect(
       applyContextIntentProjection("next", {
@@ -40,7 +42,7 @@ describe("read command context intent registration", () => {
       applyContextIntentProjection("search", {
         for: "discover",
       }),
-    ).toMatchObject({ compact: true, limit: "15", tokenBudget: "1800" });
+    ).toMatchObject({ compact: true, limit: "16", tokenBudget: "1800" });
   });
 
   it("preserves explicit projection and token options", () => {
@@ -112,7 +114,7 @@ describe("read command context intent registration", () => {
       context_intent: {
         command: "list",
         intent: "triage",
-        token_budget: 1800,
+        token_budget: 3200,
         within_budget: true,
         degradation: "bounded_fields_and_rows",
       },
@@ -136,7 +138,9 @@ describe("read command context intent registration", () => {
     );
     expect(result.context_intent).toMatchObject({
       degradation: "budget_receipt_only",
-      within_budget: true,
+      declaration_feasible: false,
+      result_omitted: true,
+      within_budget: false,
     });
     expect(result.context_intent!.estimated_tokens).toBeLessThanOrEqual(1_200);
     expect(result).not.toHaveProperty("recommended");

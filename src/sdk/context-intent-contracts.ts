@@ -57,10 +57,15 @@ export interface PmContextIntentReceipt {
     | "bounded_fields_and_rows"
     | "bounded_ranked_rows"
     | "bounded_sections"
+    | "budget_row_compaction"
     | "recursive_budget_compaction"
     | "budget_receipt_only"
     | "standard_item"
     | "none";
+  /** Whether the declared ceiling can carry at least one useful result row. */
+  declaration_feasible: boolean;
+  /** True only when no useful result survived the declared ceiling. */
+  result_omitted: boolean;
 }
 
 /** Built-in intent projections shared by CLI, SDK, MCP, and package authors. */
@@ -109,14 +114,14 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "list",
       intent: "triage",
       description:
-        "The first two compact governance, ownership, priority, and blocker rows for triage.",
+        "A budget-derived page of compact governance, ownership, priority, and blocker rows for triage.",
       included_field_groups: [
         "identity",
         "governance",
         "ownership",
         "dependencies",
       ],
-      token_budget: 1800,
+      token_budget: 3200,
       source: "core",
     },
     {
@@ -132,7 +137,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "search",
       intent: "discover",
       description:
-        "The first fifteen ranked canonical lineage candidates with compact match evidence.",
+        "A budget-derived page of ranked canonical lineage candidates with compact match evidence.",
       included_field_groups: ["identity", "status", "lineage", "match"],
       token_budget: 1800,
       source: "core",
@@ -331,13 +336,24 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
           ? ["activity", "progress", "blockers"]
           : ["hierarchy", "blockers", "activity"];
     }
+    const tokenBudget = resolveIntentTokenBudget(
+      projected.tokenBudget,
+      contract.token_budget,
+    );
+    const derivedLimit = String(
+      Math.max(1, Math.min(20, Math.floor((tokenBudget - 800) / 500))),
+    );
+    if (projected.limit === undefined) projected.limit = derivedLimit;
+    if (projected.activityLimit === undefined) {
+      projected.activityLimit = derivedLimit;
+    }
   },
   get: (projected) => {
     if (projected.depth === undefined && projected.fields === undefined) {
       projected.depth = "standard";
     }
   },
-  list: (projected) => {
+  list: (projected, contract) => {
     if (
       projected.brief === undefined &&
       projected.compact === undefined &&
@@ -345,14 +361,22 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       projected.fields === undefined
     ) {
       projected.fields =
-        "id,title,status,type,priority,parent,assignee,reviewer,risk,confidence,sprint,release,blocked_by,blocked_reason,dependencies,updated_at";
+        "id,title,status,type,priority,parent,assignee,risk,blocked_by";
     }
-    if (projected.limit === undefined) projected.limit = "2";
+    if (projected.limit === undefined) {
+      const tokenBudget = resolveIntentTokenBudget(
+        projected.tokenBudget,
+        contract.token_budget,
+      );
+      projected.limit = String(
+        Math.max(2, Math.min(100, Math.floor((tokenBudget - 520) / 128))),
+      );
+    }
   },
   next: (projected) => {
     if (projected.readyOnly === undefined) projected.readyOnly = true;
   },
-  search: (projected) => {
+  search: (projected, contract) => {
     if (
       projected.compact === undefined &&
       projected.full === undefined &&
@@ -360,7 +384,15 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
     ) {
       projected.compact = true;
     }
-    if (projected.limit === undefined) projected.limit = "15";
+    if (projected.limit === undefined) {
+      const tokenBudget = resolveIntentTokenBudget(
+        projected.tokenBudget,
+        contract.token_budget,
+      );
+      projected.limit = String(
+        Math.max(2, Math.min(100, Math.floor((tokenBudget - 480) / 80))),
+      );
+    }
   },
 };
 
@@ -369,9 +401,37 @@ export function applyContextIntentProjection(
   command: "context" | "get" | "list" | "next" | "search",
   options: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (typeof options.for !== "string") return options;
+  const tokenBudget = options.tokenBudget ?? options.token_budget;
+  if (typeof options.for !== "string") {
+    if (
+      tokenBudget !== undefined &&
+      (command === "get" || command === "list" || command === "search")
+    ) {
+      throw new PmCliError(
+        "--token-budget requires a declared context intent selected with --for",
+        EXIT_CODE.USAGE,
+        {
+          code: "missing_required_option",
+          field: "for",
+          required: "Select a context intent with --for when setting --token-budget.",
+          why: "A token-budget override has no projection contract to constrain without a selected intent.",
+          nextSteps: ["Retry with --for <intent> --token-budget <n>, or omit --token-budget."],
+        },
+      );
+    }
+    if (options.tokenBudget !== undefined || options.token_budget === undefined) {
+      return options;
+    }
+    const projected: Record<string, unknown> = { ...options, tokenBudget };
+    delete projected.token_budget;
+    return projected;
+  }
   const contract = resolveContextIntentContract(command, options.for)!;
   const projected = { ...options };
+  if (projected.tokenBudget === undefined && tokenBudget !== undefined) {
+    projected.tokenBudget = tokenBudget;
+  }
+  delete projected.token_budget;
   if (projected.tokenBudget === undefined) {
     projected.tokenBudget = String(contract.token_budget);
   }
@@ -455,6 +515,82 @@ function updateContextIntentEstimate(
   }
 }
 
+const CONTEXT_INTENT_ROW_KEYS: Readonly<
+  Record<BuiltInContextIntentCommand, readonly string[]>
+> = {
+  context: [
+    "high_level",
+    "low_level",
+    "blocked_fallback",
+    "recently_created",
+    "unparented",
+    "hierarchy",
+    "activity",
+    "blockers",
+  ],
+  get: ["children"],
+  list: ["items"],
+  next: ["ready", "decision_needed", "blocked", "held_by_others"],
+  search: ["items"],
+};
+
+/** Reduce root row collections deterministically while retaining at least one useful row. */
+function compactContextIntentRows(
+  command: BuiltInContextIntentCommand,
+  projected: Record<string, unknown>,
+  receipt: PmContextIntentReceipt,
+): boolean {
+  if (
+    command !== "next" ||
+    typeof projected.next_cursor === "string"
+  ) {
+    return false;
+  }
+  let compacted = false;
+  for (;;) {
+    updateContextIntentEstimate(projected, receipt);
+    if (receipt.estimated_tokens <= receipt.token_budget) return compacted;
+    const candidate = CONTEXT_INTENT_ROW_KEYS[command]
+      .map((key) => ({
+        key,
+        rows: Array.isArray(projected[key]) ? projected[key] : [],
+      }))
+      .filter(({ rows }) => rows.length > 0)
+      .sort(
+        (left, right) =>
+          right.rows.length - left.rows.length ||
+          left.key.localeCompare(right.key),
+      )[0];
+    if (candidate === undefined) return compacted;
+    const retainedTotal = CONTEXT_INTENT_ROW_KEYS[command].reduce(
+      (total, key) =>
+        total + (Array.isArray(projected[key]) ? projected[key].length : 0),
+      0,
+    );
+    if (retainedTotal <= 1) return compacted;
+    const removableRows = Math.min(
+      candidate.rows.length,
+      retainedTotal - 1,
+    );
+    const candidateBytes = Buffer.byteLength(
+      JSON.stringify(candidate.rows),
+      "utf8",
+    );
+    const estimatedBytesPerRow = Math.max(
+      1,
+      Math.ceil(candidateBytes / candidate.rows.length),
+    );
+    const excessBytes =
+      (receipt.estimated_tokens - receipt.token_budget) * 4;
+    const removalCount = Math.min(
+      removableRows,
+      Math.max(1, Math.ceil(excessBytes / estimatedBytesPerRow)),
+    );
+    candidate.rows.splice(-removalCount, removalCount);
+    compacted = true;
+  }
+}
+
 /** Attach budget and degradation evidence for a selected built-in read intent. */
 export function attachContextIntentReceipt<
   Result extends Record<string, unknown>,
@@ -480,6 +616,8 @@ export function attachContextIntentReceipt<
     estimated_tokens: 0,
     within_budget: true,
     degradation: CONTEXT_INTENT_DEGRADATIONS[builtInCommand],
+    declaration_feasible: true,
+    result_omitted: false,
   };
   let projected: Record<string, unknown> = {
     ...result,
@@ -494,21 +632,75 @@ export function attachContextIntentReceipt<
     };
     updateContextIntentEstimate(projected, receipt);
   }
+  if (
+    receipt.estimated_tokens > receipt.token_budget &&
+    compactContextIntentRows(builtInCommand, projected, receipt)
+  ) {
+    receipt.degradation = "budget_row_compaction";
+    updateContextIntentEstimate(projected, receipt);
+  }
   if (receipt.estimated_tokens > receipt.token_budget) {
     receipt.degradation = "budget_receipt_only";
+    receipt.declaration_feasible = false;
+    receipt.result_omitted = true;
+    receipt.within_budget = false;
     projected = {
       budget_exceeded: {
         omitted_result: true,
-        restore_with: "Repeat the original command without --for.",
+        reason: "declared_budget_infeasible",
+        restore_with:
+          "Increase --token-budget or narrow the request; the unprojected command may be larger.",
       },
       context_intent: receipt,
     };
     updateContextIntentEstimate(projected, receipt);
   }
-  receipt.within_budget = receipt.estimated_tokens <= receipt.token_budget;
-  updateContextIntentEstimate(projected, receipt);
-  receipt.within_budget = receipt.estimated_tokens <= receipt.token_budget;
   return projected as Result & { context_intent: PmContextIntentReceipt };
+}
+
+function collapseContinuationMetadata(
+  options: Record<string, unknown>,
+  result: Record<string, unknown>,
+): Record<string, unknown> {
+  if (typeof options.after !== "string" || options.after.length === 0) {
+    return result;
+  }
+  let fingerprint = "opaque_cursor";
+  try {
+    const decoded = JSON.parse(
+      Buffer.from(options.after, "base64url").toString("utf8"),
+    ) as { fingerprint?: unknown };
+    if (typeof decoded.fingerprint === "string") {
+      fingerprint = decoded.fingerprint;
+    }
+  } catch {
+    // Command-level cursor validation owns malformed cursors. The disclosure
+    // layer remains total for package-authored or opaque cursor formats.
+  }
+  const projected = { ...result };
+  for (const key of [
+    "applied_limit",
+    "completeness",
+    "context_intent",
+    "count",
+    "filters",
+    "has_more",
+    "now",
+    "omission_receipt",
+    "projection",
+    "row_contract",
+    "sorting",
+    "total",
+    "truncated",
+  ]) {
+    delete projected[key];
+  }
+  projected.continuation_contract = {
+    fingerprint,
+    metadata: "reference",
+    restore_with: "omit --after",
+  };
+  return projected;
 }
 
 /** Attach universal row, omission, and optional intent-budget contracts in rendering order. */
@@ -521,10 +713,13 @@ export function attachReadOutputContracts(
   return typeof disclosedResult === "object" &&
     disclosedResult !== null &&
     !Array.isArray(disclosedResult)
-    ? attachContextIntentReceipt(
-        command ?? "",
+    ? collapseContinuationMetadata(
         options,
-        disclosedResult as Record<string, unknown>,
+        attachContextIntentReceipt(
+          command ?? "",
+          options,
+          disclosedResult as Record<string, unknown>,
+        ),
       )
     : disclosedResult;
 }

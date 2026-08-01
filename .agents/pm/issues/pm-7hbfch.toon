@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts","area:sdk",conformance-gap,token-efficiency
 created_at: "2026-07-30T09:12:36.920Z"
-updated_at: "2026-07-30T17:13:52.692Z"
+updated_at: "2026-08-01T00:37:54.818Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Every declared intent budget is enforced at one response egress point rather than by a per-command flag, so no intent can overrun its own declaration; list, get and search either declare --token-budget or the intent layer refuses to claim a budget it cannot apply, with no silent third option; the response envelope of every intent-projected read carries the resolved budget, the measured estimate and the degradation actually applied, so a consumer can detect an overrun without measuring bytes itself; a negative-control test asserts that an intent whose command lacks budget enforcement fails the build rather than shipping; the published evidence table records observed versus declared tokens per intent on a corpus of at least the current tracker size"
@@ -29,18 +29,33 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-sb0tns,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-07-30T09:28:37.564Z","harness:claude-code","cli:update:dep",detected
   pm-yekkvt,blocked_by,"2026-07-30T17:03:17.017Z","harness:claude-code","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-07-30T10:27:23.385Z","harness:codex","Implementation evidence: every built-in intent now emits resolved budget, measured tokens, within-budget verdict, and degradation; oversized context/next results compact deterministically and all six live tracker probes remained within ceiling."
   "2026-07-30T11:24:13.871Z","harness:codex","Delivery boundary: enforced intent receipts and deterministic degradation are implemented and exact 100% coverage plus token-budget gates pass. The canonical issue remains open until the current-tracker per-intent observed-versus-declared evidence table is published and its negative control is explicitly tied to the release gate."
   "2026-07-30T11:30:54.844Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
   "2026-07-30T11:54:22.385Z","harness:codex","Review correction: intent receipts now honor the effective explicit tokenBudget override, and over-budget row sets fall back to a receipt-only envelope instead of dropping rows while retaining stale counts or cursors."
   "2026-07-30T17:13:52.692Z","harness:claude-code","Conformance re-measure 2026-07-30 (evening), at HEAD after the context-budget bundle merged at 14:33Z. Enforcement shipped and works. The three intents this item measured as 43.8x, 19.7x and 2.45x over their declared budgets are now inside them: list triage 1,045 of 1,800 tokens in 6,250 bytes, get inspect 1,208 of 3,200 in 6,565 bytes, search discover 1,300 of 1,800 in 7,219 bytes. The receipt now carries the resolved budget, the measured estimate and the applied degradation, which closes the envelope half of the acceptance criteria.\n\nTwo of this item's own criteria are still open, and one of them is now falsified rather than merely unmet.\n\nThe criterion that list, get and search either declare the budget flag or the intent layer refuses to claim a budget it cannot apply, with no silent third option, is falsified. All three still exit 2 with unknown_option on --token-budget. All three nevertheless claim a budget in the receipt and enforce it at egress. That is precisely the silent third option the criterion forbids: the budget is claimed and applied on a command that offers no way to adjust it. It is reachable today, not latent. pm list --limit 200 --for triage returns budget_receipt_only with zero rows, and pm get <id> --depth deep --for inspect does the same, and neither has any override.\n\nThe criterion that a negative control asserts an intent whose command lacks budget enforcement fails the build is still unmet, and the day showed the control was pointed at the wrong invariant. Enforcement presence was never the fragile part. Reachability of the declared number is, and that is now tracked separately as a blocking dependency on this item, since enforcement cannot honestly be called complete while three of five declared ceilings cannot be met by the commands that declare them.\n\nMethod note for whoever picks this up: measure with the flag on the two commands that accept it. The floor is only visible by raising the ceiling until rows appear. next execute yields nothing at 1200, nothing at 2000, and 1,438 tokens of content at 4000. context orient yields nothing at 2400, nothing at 8000, and 8,417 tokens at 40000."
-files[2]{path,scope,note}:
+  "2026-08-01T00:37:51.706Z","harness:codex","Delivery evidence 2026-08-01: list/get/search now expose --token-budget across CLI, SDK tool options, cursor semantics, contracts, and tool schema 4.3.0. The release gate checks 28 surfaces plus a 256-token infeasible declaration control. Live current-tracker receipts are delivered and within ceiling: context orient 1725/2400 with 11 useful rows; list triage 1703/3200 with 20 rows and a cursor; search discover 1562/1800 with 16 rows; next execute 1109/1200 with 3 ready rows; get inspect 2009/3200. Remaining acceptance before closure: add a generated corpus at least as large as the current tracker to the mandatory gate and a structural negative control that removes enforcement from one declared command."
+files[12]{path,scope,note}:
+  scripts/agent-token-surface-baseline.json,project,Regenerated package-owned token surface baseline after the list/get/search budget option and current command surface additions
+  scripts/release/token-budget-gate.mjs,project,Intent reachability release gate
+  scripts/release/token-budgets.json,project,Measured intent corpus baseline
+  sdk/public-surface.json,project,Tool schema 4.3.0 public surface snapshot
+  src/cli/register-list-query.ts,project,Cross-surface token-budget flag and schema parity
   src/sdk/cli-contracts.ts,project,"only next and context declare a --token-budget flag; list,get and search reject it as unknown"
+  src/sdk/cli-contracts/flag-contracts.ts,project,Cross-surface token-budget flag and schema parity
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,Cross-surface token-budget flag and schema parity
+  src/sdk/cli-contracts/tool-schema.ts,project,Cross-surface token-budget flag and schema parity
   src/sdk/context-intent-contracts.ts,project,applyContextIntentProjection writes the declared token_budget into projected.tokenBudget at line 323 for all five intent commands
-tests[2]{command,scope,timeout_seconds}:
+  tests/fixtures/contracts/full.json,project,Cross-surface token-budget flag and schema parity
+  tests/unit/cli/context-intent-registration.spec.ts,project,Cross-surface token-budget flag and schema parity
+tests[4]{command,scope,timeout_seconds}:
+  node scripts/release/token-budget-gate.mjs,project,300
   node scripts/run-tests.mjs test -- tests/unit/cli/context-intent-registration.spec.ts tests/unit/sdk/context-packing-usage.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/cli/context-intent-registration.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/context-intent-contracts.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms9mewok-jsmdpi,test,passed,"2026-08-01T00:15:13.819Z","2026-08-01T00:15:58.196Z","2026-08-01T00:15:58.196Z",4,0,0
 docs[1]{path,scope,note}:
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Budget enforcement and degradation contract
 body: ""

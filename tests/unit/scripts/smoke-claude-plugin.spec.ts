@@ -47,6 +47,7 @@ interface SmokeOverrides {
   pluginJson?: unknown;
   initResult?: unknown;
   tools?: string[];
+  createResult?: unknown;
   getResult?: unknown;
   existsSync?: () => boolean;
   execSync?: () => string;
@@ -64,7 +65,9 @@ function setupSmoke(overrides: SmokeOverrides = {}) {
     return {};
   });
   const callTool = vi.fn(async (toolName: string) => {
-    if (toolName === "pm_create") return { item: { id: "pm-claude-smoke" } };
+    if (toolName === "pm_create") {
+      return overrides.createResult ?? { id: "pm-claude-smoke", status: "open", changed_field_count: 10 };
+    }
     if (toolName === "pm_get") {
       return (
         overrides.getResult ?? {
@@ -156,6 +159,16 @@ describe("smoke-claude-plugin", () => {
       name: "tool count mismatch",
       overrides: { tools: [...REQUIRED_TOOLS, "pm_extra"] } as SmokeOverrides,
       expected: /tools but the smoke expects/,
+    },
+    {
+      name: "verbose create envelope",
+      overrides: { createResult: { item: { id: "pm-claude-smoke" } } } as SmokeOverrides,
+      expected: /pm_create default must use the lean mutation envelope/,
+    },
+    {
+      name: "create missing id",
+      overrides: { createResult: { id: "", status: "open", changed_field_count: 10 } } as SmokeOverrides,
+      expected: /missing a non-empty id/,
     },
     {
       name: "status not in_progress",

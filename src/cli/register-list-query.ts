@@ -345,6 +345,10 @@ function registerListCommand(
   }
   command
     .option("--for <intent>", "Apply a declared context intent projection")
+    .option(
+      "--token-budget <n>",
+      "Override the selected intent's maximum estimated output tokens",
+    )
     .option("--type <value>", "Filter by item type")
     .option(
       "--tag <value>",
@@ -474,6 +478,11 @@ function registerListCommand(
     "Alias for --assignee-filter",
   );
   addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
+  addHiddenOption(
+    command,
+    "--token_budget <n>",
+    "Alias for --token-budget",
+  );
   addHiddenOption(
     command,
     "--all",
@@ -1130,6 +1139,10 @@ export function registerListQueryCommands(
       )
       .option("--for <intent>", "Apply a declared context intent projection")
       .option(
+        "--token-budget <n>",
+        "Override the selected intent's maximum estimated output tokens",
+      )
+      .option(
         "--mode <value>",
         "Search mode: keyword|semantic|hybrid (default: keyword)",
       )
@@ -1226,6 +1239,11 @@ export function registerListQueryCommands(
     registerContentAndGovernanceFilters(searchCommand);
     searchCommand.action(runSearchAction);
     addHiddenOption(searchCommand, "--tags <value>", "Alias for --tag");
+    addHiddenOption(
+      searchCommand,
+      "--token_budget <n>",
+      "Alias for --token-budget",
+    );
   }
 
   if (shouldRegister("eval")) {
@@ -1258,6 +1276,10 @@ export function registerListQueryCommands(
       .argument("<id>", "Item id")
       .option("--for <intent>", "Apply a declared context intent projection")
       .option(
+        "--token-budget <n>",
+        "Override the selected intent's maximum estimated output tokens",
+      )
+      .option(
         "--depth <value>",
         "Detail depth: brief|standard|deep|full (full aliases deep; default: standard)",
       )
@@ -1282,6 +1304,11 @@ export function registerListQueryCommands(
       .description("Show item details by ID.")
       .action(runGetAction);
     addHiddenOption(getCommand, "--tree_depth <n>", "Alias for --tree-depth");
+    addHiddenOption(
+      getCommand,
+      "--token_budget <n>",
+      "Alias for --token-budget",
+    );
   }
 
   if (shouldRegister("history")) {

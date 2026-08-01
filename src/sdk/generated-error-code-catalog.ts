@@ -908,6 +908,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
       "cli/commands/plan.ts",
       "cli/error-guidance.ts",
       "core/telemetry/observability.ts",
+      "sdk/context-intent-contracts.ts",
     ],
   },
   {

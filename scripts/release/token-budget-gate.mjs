@@ -319,6 +319,46 @@ function commandCorpus(ids) {
       scale_tier: "medium",
       args: ["search", "status:all Alpha", "--json"],
     },
+    {
+      id: "context-intent-orient",
+      kind: "answer",
+      command: "context",
+      intent: true,
+      scale_tier: "medium",
+      args: ["context", "--for", "orient", "--json"],
+    },
+    {
+      id: "get-intent-inspect",
+      kind: "answer",
+      command: "get",
+      intent: true,
+      scale_tier: "linked",
+      args: ["get", ids.childId, "--for", "inspect", "--json"],
+    },
+    {
+      id: "list-intent-triage",
+      kind: "answer",
+      command: "list",
+      intent: true,
+      scale_tier: "medium",
+      args: ["list", "--for", "triage", "--json"],
+    },
+    {
+      id: "next-intent-execute",
+      kind: "answer",
+      command: "next",
+      intent: true,
+      scale_tier: "medium",
+      args: ["next", "--for", "execute", "--json"],
+    },
+    {
+      id: "search-intent-discover",
+      kind: "answer",
+      command: "search",
+      intent: true,
+      scale_tier: "medium",
+      args: ["search", "Alpha", "--for", "discover", "--json"],
+    },
   ];
 }
 
@@ -369,6 +409,9 @@ function measureCorpus(cliPath) {
           ? {}
           : { contract_max_estimated_tokens: contractMaxEstimatedTokens }),
         ...measureOutput(stdout),
+        ...(entry.intent
+          ? { intent_receipt: JSON.parse(stdout).context_intent }
+          : {}),
       };
     });
     const negativeControl = {
@@ -383,7 +426,12 @@ function measureCorpus(cliPath) {
       ),
       contract_max_estimated_tokens: contractBudgets.get("activity"),
     };
-    return { measurements, negativeControl };
+    const intentNegativeControl = runCliJson(
+      cliPath,
+      ["list", "--for", "triage", "--token-budget", "256", "--json"],
+      options,
+    ).context_intent;
+    return { measurements, negativeControl, intentNegativeControl };
   } finally {
     cleanupTempRoot(workspaceRoot);
   }
@@ -392,7 +440,9 @@ function measureCorpus(cliPath) {
 export function budgetForMeasurement(measurement, multiplier) {
   return {
     id: measurement.id,
-    args: measurement.args,
+    args: measurement.args.map((argument) =>
+      /^pm-[a-z0-9]+$/u.test(argument) ? "<fixture-item>" : argument,
+    ),
     kind: measurement.kind ?? "discovery",
     scale_tier: measurement.scale_tier ?? "static",
     baseline_bytes: measurement.bytes,
@@ -452,6 +502,21 @@ function isMalformedBudget(budget) {
 }
 
 function measurementViolation(measurement, budget) {
+  if (measurement.intent) {
+    const receipt = measurement.intent_receipt;
+    if (
+      !receipt ||
+      receipt.declaration_feasible !== true ||
+      receipt.result_omitted !== false ||
+      receipt.within_budget !== true ||
+      !Number.isFinite(receipt.estimated_tokens) ||
+      !Number.isFinite(receipt.token_budget) ||
+      measurement.estimated_tokens > receipt.token_budget ||
+      receipt.estimated_tokens > receipt.token_budget
+    ) {
+      return `${measurement.id}: intent receipt did not prove a feasible delivered result (${measurement.args.join(" ")})`;
+    }
+  }
   if (
     measurement.kind === "answer" &&
     measurement.estimated_tokens > measurement.contract_max_estimated_tokens
@@ -495,6 +560,29 @@ export function compareBudgets(measurements, manifest) {
   return violations;
 }
 
+/** Verify controls that prove bounded defaults differ from explicit escape hatches and infeasible declarations remain truthful. */
+function compareNegativeControls(negativeControl, intentNegativeControl) {
+  const violations = [];
+  if (
+    negativeControl.estimated_tokens <=
+    negativeControl.contract_max_estimated_tokens
+  ) {
+    violations.push(
+      `negative-control: explicit unbounded activity produced ${negativeControl.estimated_tokens} estimated tokens, expected more than its ${negativeControl.contract_max_estimated_tokens}-token default contract`,
+    );
+  }
+  if (
+    intentNegativeControl?.declaration_feasible !== false ||
+    intentNegativeControl?.result_omitted !== true ||
+    intentNegativeControl?.within_budget !== false
+  ) {
+    violations.push(
+      "intent-negative-control: infeasible 256-token list declaration did not return an explicit omitted-result receipt",
+    );
+  }
+  return violations;
+}
+
 export function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   const update = flags.has("update");
@@ -518,7 +606,8 @@ export function main() {
     );
   }
   const manifest = update ? undefined : readManifest(manifestPath);
-  const { measurements, negativeControl } = measureCorpus(cliPath);
+  const { measurements, negativeControl, intentNegativeControl } =
+    measureCorpus(cliPath);
   if (update) {
     const nextManifest = buildManifest(measurements, multiplier);
     writeFileSync(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
@@ -527,22 +616,17 @@ export function main() {
     );
     return;
   }
-  const violations = compareBudgets(measurements, manifest);
-  if (
-    negativeControl.estimated_tokens <=
-    negativeControl.contract_max_estimated_tokens
-  ) {
-    violations.push(
-      `negative-control: explicit unbounded activity produced ${negativeControl.estimated_tokens} estimated tokens, expected more than its ${negativeControl.contract_max_estimated_tokens}-token default contract`,
-    );
-  }
+  const violations = [
+    ...compareBudgets(measurements, manifest),
+    ...compareNegativeControls(negativeControl, intentNegativeControl),
+  ];
   if (violations.length > 0) {
     fail(
       `Token budget gate failed:\n${violations.join("\n")}\nRun node scripts/release/token-budget-gate.mjs --update after intentional output changes.`,
     );
   }
   console.log(
-    `Token budget gate passed (${measurements.length} surfaces checked; unbounded negative control ${negativeControl.estimated_tokens} tokens).`,
+    `Token budget gate passed (${measurements.length} surfaces checked; unbounded negative control ${negativeControl.estimated_tokens} tokens; infeasible intent receipt verified).`,
   );
 }
 

@@ -186,6 +186,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
   withCursorSemantics(
     [
       { flag: "--for", value_name: "intent" },
+      { flag: "--token-budget", aliases: ["--token_budget"] },
       { flag: "--status", list: true },
       { flag: "--type" },
       { flag: "--tag", aliases: ["--tags"] },
@@ -233,6 +234,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] =
     ],
     new Set([
       "--limit",
+      "--token-budget",
       "--offset",
       "--after",
       "--no-truncate",
@@ -1483,6 +1485,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
 /** Public contract for get flag contracts, shared by SDK and presentation-layer consumers. */
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--for", value_name: "intent" },
+  { flag: "--token-budget", aliases: ["--token_budget"] },
   { flag: "--depth" },
   { flag: "--full" },
   { flag: "--fields", list: true },
@@ -1577,6 +1580,7 @@ export const NEXT_FLAG_CONTRACTS: CliFlagContract[] = [
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
   [
     { flag: "--for", value_name: "intent" },
+    { flag: "--token-budget", aliases: ["--token_budget"] },
     { flag: "--mode" },
     { flag: "--semantic" },
     { flag: "--hybrid" },
@@ -1617,6 +1621,7 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
     "--fields",
     "--format",
     "--limit",
+    "--token-budget",
     "--after",
   ]),
 );

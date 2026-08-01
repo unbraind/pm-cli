@@ -17,6 +17,14 @@ type TokenBudgetMeasurement = {
   scale_tier?: string;
   command?: string;
   contract_max_estimated_tokens?: number;
+  intent?: boolean;
+  intent_receipt?: {
+    declaration_feasible: boolean;
+    result_omitted: boolean;
+    within_budget: boolean;
+    estimated_tokens: number;
+    token_budget: number;
+  };
 };
 
 type TokenBudgetManifest = {
@@ -89,6 +97,11 @@ const CORPUS_IDS = [
   "validate-counts",
   "search-inline-default",
   "search-inline-json",
+  "context-intent-orient",
+  "get-intent-inspect",
+  "list-intent-triage",
+  "next-intent-execute",
+  "search-intent-discover",
 ];
 
 function manifestForBudget(maxBytes: number): string {
@@ -110,6 +123,11 @@ function manifestForBudget(maxBytes: number): string {
     ["validate-counts", "validate"],
     ["search-inline-default", "search"],
     ["search-inline-json", "search"],
+    ["context-intent-orient", "context"],
+    ["get-intent-inspect", "get"],
+    ["list-intent-triage", "list"],
+    ["next-intent-execute", "next"],
+    ["search-intent-discover", "search"],
   ]);
   return JSON.stringify({
     version: 2,
@@ -160,6 +178,28 @@ function commandStdout(args: string[]): string {
   }
   if (joined.includes("activity --json --full --unbounded")) {
     return "x".repeat(20_000);
+  }
+  if (joined.includes("--for") && joined.includes("--token-budget 256")) {
+    return JSON.stringify({
+      context_intent: {
+        declaration_feasible: false,
+        result_omitted: true,
+        within_budget: false,
+        estimated_tokens: 280,
+        token_budget: 256,
+      },
+    });
+  }
+  if (joined.includes("--for")) {
+    return JSON.stringify({
+      context_intent: {
+        declaration_feasible: true,
+        result_omitted: false,
+        within_budget: true,
+        estimated_tokens: 100,
+        token_budget: 1_200,
+      },
+    });
   }
   return `output for ${joined}`;
 }
@@ -410,6 +450,127 @@ describe("scripts/release/token-budget-gate", () => {
     ).toEqual([
       "context-answer: 5 estimated tokens exceeds context contract 4 tokens (context)",
     ]);
+
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "context-intent",
+            args: ["context", "--for", "orient"],
+            kind: "answer",
+            command: "context",
+            contract_max_estimated_tokens: 4_000,
+            bytes: 400,
+            estimated_tokens: 100,
+            intent: true,
+            intent_receipt: {
+              declaration_feasible: false,
+              result_omitted: true,
+              within_budget: false,
+              estimated_tokens: 100,
+              token_budget: 2_400,
+            },
+          },
+        ],
+        {
+          ...manifest,
+          budgets: [
+            {
+              id: "context-intent",
+              args: ["context", "--for", "orient"],
+              kind: "answer",
+              scale_tier: "medium",
+              baseline_bytes: 400,
+              baseline_estimated_tokens: 100,
+              command: "context",
+              contract_max_estimated_tokens: 4_000,
+            },
+          ],
+        },
+      ),
+    ).toEqual([
+      "context-intent: intent receipt did not prove a feasible delivered result (context --for orient)",
+    ]);
+
+    const intentManifest = {
+      ...manifest,
+      budgets: [
+        {
+          id: "context-intent",
+          args: ["context", "--for", "orient"],
+          kind: "answer",
+          scale_tier: "medium",
+          baseline_bytes: 400,
+          baseline_estimated_tokens: 100,
+          command: "context",
+          contract_max_estimated_tokens: 4_000,
+        },
+      ],
+    };
+    for (const intentReceipt of [
+      {
+        declaration_feasible: true,
+        result_omitted: false,
+        within_budget: true,
+        estimated_tokens: "100",
+        token_budget: 2_400,
+      },
+      {
+        declaration_feasible: true,
+        result_omitted: false,
+        within_budget: true,
+        estimated_tokens: 100,
+        token_budget: Number.NaN,
+      },
+    ]) {
+      expect(
+        mod.compareBudgets(
+          [
+            {
+              id: "context-intent",
+              args: ["context", "--for", "orient"],
+              kind: "answer",
+              command: "context",
+              contract_max_estimated_tokens: 4_000,
+              bytes: 400,
+              estimated_tokens: 100,
+              intent: true,
+              intent_receipt: intentReceipt,
+            },
+          ],
+          intentManifest,
+        ),
+      ).toEqual([
+        "context-intent: intent receipt did not prove a feasible delivered result (context --for orient)",
+      ]);
+    }
+
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "context-intent",
+            args: ["context", "--for", "orient"],
+            kind: "answer",
+            command: "context",
+            contract_max_estimated_tokens: 4_000,
+            bytes: 10_000,
+            estimated_tokens: 2_500,
+            intent: true,
+            intent_receipt: {
+              declaration_feasible: true,
+              result_omitted: false,
+              within_budget: true,
+              estimated_tokens: 100,
+              token_budget: 2_400,
+            },
+          },
+        ],
+        intentManifest,
+      ),
+    ).toEqual([
+      "context-intent: intent receipt did not prove a feasible delivered result (context --for orient)",
+    ]);
   });
 
   it("runs direct update mode against a deterministic fixture corpus", async () => {
@@ -432,7 +593,7 @@ describe("scripts/release/token-budget-gate", () => {
       "scripts/release/token-budget-gate.mjs",
     );
 
-    expect(runtime.runCommand).toHaveBeenCalledTimes(65);
+    expect(runtime.runCommand).toHaveBeenCalledTimes(71);
     const runOptions = runtime.runCommand.mock.calls[0]?.[2] as
       | { env?: Record<string, string | undefined> }
       | undefined;
@@ -464,7 +625,7 @@ describe("scripts/release/token-budget-gate", () => {
     mod.main();
 
     expect(log).toHaveBeenCalledWith(
-      "Token budget gate passed (23 surfaces checked; unbounded negative control 5000 tokens).",
+      "Token budget gate passed (28 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
     );
   });
 
@@ -480,7 +641,7 @@ describe("scripts/release/token-budget-gate", () => {
       path.join("/repo", "scripts", "release", "token-budgets.json"),
     );
     expect(log).toHaveBeenCalledWith(
-      "Token budget gate passed (23 surfaces checked; unbounded negative control 5000 tokens).",
+      "Token budget gate passed (28 surfaces checked; unbounded negative control 5000 tokens; infeasible intent receipt verified).",
     );
   });
 
@@ -568,6 +729,25 @@ describe("scripts/release/token-budget-gate", () => {
     });
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
       "negative-control: explicit unbounded activity",
+    );
+  });
+
+  it("fails when the infeasible intent control claims success", async () => {
+    mockRuntime({
+      manifestText: manifestForBudget(10_000),
+      stdout: (args) =>
+        args.join(" ").includes("--for triage --token-budget 256")
+          ? JSON.stringify({
+              context_intent: {
+                declaration_feasible: true,
+                result_omitted: false,
+                within_budget: true,
+              },
+            })
+          : commandStdout(args),
+    });
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "intent-negative-control: infeasible 256-token list declaration",
     );
   });
 

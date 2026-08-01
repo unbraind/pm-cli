@@ -435,6 +435,16 @@
       ],
       "package_version": "2026.7.31",
       "reason": "Expand universal SDK context primitives with typed runtime containers, merge-safe structured events, init target provenance, and actionable author diagnostics."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PmContextIntentReceipt",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PmContextIntentReceipt"
+      ],
+      "package_version": "2026.7.31",
+      "reason": "Intent receipts now require truthful feasibility and omission state; tool schema 4.3.0 adds tokenBudget to list get and search"
     }
   ],
   "entrypoints": {
@@ -6991,7 +7001,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.2.0\""
+          "signature": "\"4.3.0\""
         },
         {
           "classification": "advanced_export",
@@ -7147,7 +7157,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmContextIntentReceipt",
-          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; }"
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; }"
         },
         {
           "classification": "contract_data",
@@ -13963,7 +13973,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.2.0\""
+          "signature": "\"4.3.0\""
         },
         {
           "classification": "contract_data",
@@ -14023,7 +14033,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmContextIntentReceipt",
-          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; }"
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; }"
         },
         {
           "classification": "contract_data",

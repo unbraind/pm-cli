@@ -506,7 +506,13 @@ Every transition into a terminal status stamps two distinct ISO timestamps: `clo
 
 When closing a blocker, `pm close` scans reverse `blocked_by` edges and auto-unblocks dependent items only when every resolvable blocker is now terminal. Each unblocked item is updated through the normal audited mutation path, gets an `unblock_note`, and the close result reports compact `auto_unblocked:<id>:resolved_blockers=<ids>` warnings. Items with another active blocker remain blocked.
 
-Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`/`pm_run` append/update-many) are compact by default; pass `fullChangedFields=true` to restore the full `changed_fields` delta, or `idOnly=true` for single-item id/status output.
+Over MCP, single-item mutations (`pm_create`, `pm_update`, `pm_close`, and
+`pm_run` append) default to the same lean result as the CLI: `id`, `status`,
+and `changed_field_count`. The MCP transport still wraps that result in
+`structuredContent.result`, as required by the protocol. Pass
+`fullChangedFields=true` to restore the full item echo and `changed_fields`
+delta, or `idOnly=true` for id/status output. Bulk mutations remain compact
+row summaries. See tracker item [pm-awe3t6](../.agents/pm/issues/pm-awe3t6.toon).
 
 ### Atomic heterogeneous mutation batches
 
