@@ -23,6 +23,7 @@ import {
 import {
   PM_TOOL_PARAMETER_PROPERTIES,
   PM_TOOL_PARAMETER_METADATA,
+  PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES,
   PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA,
   PLAN_ACTION_PARAMETER_PROPERTIES,
   PLAN_ACTION_PARAMETER_METADATA,
@@ -413,6 +414,26 @@ function managedLifecycleSchemaContracts(
   };
 }
 
+const SCHEDULING_ACTION_SCHEMA_CONTRACT: PmActionSchemaContract = {
+  required: ["title"],
+  optional: [
+    "start",
+    "duration",
+    "end",
+    "location",
+    "timezone",
+    "allDay",
+    "parent",
+    "allowMissingParent",
+    "tags",
+    "priority",
+    "body",
+    "description",
+    "author",
+    "message",
+  ],
+};
+
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
   {
     init: {
@@ -529,6 +550,58 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     search: {
       optional: SEARCH_CONTRACT_PARAMETER_KEYS,
       anyOfRequired: [["query"], ["keywords"]],
+    },
+    eval: { optional: ["mode", "k", "failUnder", "queries", "format"] },
+    events: {
+      optional: ["since", "type", "author", "item", "limit", "full"],
+    },
+    merge: {
+      required: ["subcommand"],
+      optional: [
+        "dryRun",
+        "author",
+        "message",
+        "force",
+        "includeReconciled",
+        "artifact",
+        "basePath",
+        "oursPath",
+        "theirsPath",
+        "output",
+        "outputPath",
+        "itemPath",
+        "prefer",
+      ],
+    },
+    workspace: {
+      required: ["subcommand", "snapshotAction"],
+      optional: [
+        "name",
+        "target",
+        "dryRun",
+        "force",
+        "author",
+        "message",
+        "lockTtlSeconds",
+        "lockWaitMs",
+      ],
+    },
+    meet: SCHEDULING_ACTION_SCHEMA_CONTRACT,
+    event: SCHEDULING_ACTION_SCHEMA_CONTRACT,
+    remind: {
+      required: ["title"],
+      optional: [
+        "at",
+        "text",
+        "parent",
+        "allowMissingParent",
+        "tags",
+        "priority",
+        "body",
+        "description",
+        "author",
+        "message",
+      ],
     },
     next: { optional: [...NEXT_CONTRACT_PARAMETER_KEYS, "for"] },
     reindex: { optional: ["mode", "progress"] },
@@ -1128,6 +1201,13 @@ function actionScopedToolParameterDefinition(
   action: PmToolAction,
   key: string,
 ): unknown {
+  const actionProperties = PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES[action];
+  if (
+    actionProperties &&
+    Object.prototype.hasOwnProperty.call(actionProperties, key)
+  ) {
+    return actionProperties[key];
+  }
   if (
     action === "plan" &&
     Object.prototype.hasOwnProperty.call(PLAN_ACTION_PARAMETER_PROPERTIES, key)

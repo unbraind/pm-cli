@@ -31,9 +31,7 @@ describe("context intent contracts", () => {
       ),
     ).toBeUndefined();
     expect(contextIntentRowId({ id: "pm-flat" })).toBe("pm-flat");
-    expect(contextIntentRowId({ item: { id: "pm-nested" } })).toBe(
-      "pm-nested",
-    );
+    expect(contextIntentRowId({ item: { id: "pm-nested" } })).toBe("pm-nested");
     expect(contextIntentRowId(null)).toBeUndefined();
     expect(contextIntentRowId({ item: { id: 42 } })).toBeUndefined();
   });
@@ -254,11 +252,57 @@ describe("context intent contracts", () => {
         for: "triage",
         tokenBudget: "3000",
       }),
-    ).toMatchObject({ limit: "100" });
+    ).toMatchObject({ limit: "155" });
+    expect(
+      applyContextIntentProjection("search", {
+        for: "discover",
+        tokenBudget: "8000",
+      }),
+    ).toMatchObject({ limit: "470" });
+    for (const invalidBudget of [
+      { tokenBudget: "invalid" },
+      { token_budget: "invalid" },
+    ]) {
+      const projected = applyContextIntentProjection("list", {
+        for: "triage",
+        ...invalidBudget,
+      });
+      expect(projected).toMatchObject({ limit: "100" });
+      expect(
+        attachContextIntentReceipt("list", projected, { items: [] }),
+      ).toMatchObject({
+        budget_derived_limit: 100,
+        context_intent: {
+          token_budget: 3200,
+          budget_derived_limit: 100,
+        },
+      });
+    }
     expect(
       attachContextIntentReceipt("list-open", { for: "triage" }, { items: [] }),
     ).toMatchObject({
-      context_intent: { command: "list", intent: "triage" },
+      budget_derived_limit: 100,
+      context_intent: {
+        command: "list",
+        intent: "triage",
+        budget_derived_limit: 100,
+        binding_constraint: "token_budget",
+        limit_reason: expect.stringContaining("token budget"),
+      },
+    });
+    expect(
+      attachContextIntentReceipt(
+        "list",
+        { for: "triage", tokenBudget: "8000" },
+        { items: [] },
+      ),
+    ).toMatchObject({
+      budget_derived_limit: 467,
+      context_intent: {
+        token_budget: 8000,
+        budget_derived_limit: 467,
+        binding_constraint: "token_budget",
+      },
     });
     expect(
       attachContextIntentReceipt(
@@ -569,7 +613,14 @@ describe("context intent contracts", () => {
     expect(projected.items.length).toBeLessThan(100);
     expect(projected.count).toBe(projected.items.length);
     expect(projected.applied_limit).toBe(projected.items.length);
-    expect(projected).not.toHaveProperty("budget_derived_limit");
+    expect(projected).toMatchObject({
+      budget_derived_limit: 100,
+      context_intent: {
+        budget_derived_limit: 100,
+        binding_constraint: "explicit_limit",
+        limit_reason: expect.stringContaining("explicit row limit"),
+      },
+    });
     const next = JSON.parse(
       Buffer.from(projected.next_cursor!, "base64url").toString("utf8"),
     );

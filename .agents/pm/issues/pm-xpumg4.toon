@@ -2,17 +2,22 @@ id: pm-xpumg4
 title: "The SDK boundary gate proves the CLI stopped importing private core and never proves the CLI only imports the published SDK, so ten private SDK modules carry our own commands"
 description: "The hard gate that enforces \"the CLI is a thin layer over the SDK\" checks the boundary the CLI has already stopped crossing, and does not check the boundary it still crosses. Both halves of the proof exist as separate artifacts and nothing joins them, so the claim is asserted by two measurements that never meet.\n\nMeasured live on 2026-08-01 at 2026.8.1 by static analysis of the source tree and of the emitted declaration files:\n\nWhat the gate does enforce, and it holds perfectly. static-quality-gate.mts hard-denies every src/cli and src/mcp import of a private src/core module, and denies sdk importing cli. Across the whole tree outside src/core and src/sdk there are zero core import sites: 81 files under src/cli, 77 of them importing the SDK across 100 import sites, and not one reaching into core. That invariant is genuinely clean and should be recorded as such.\n\nWhat nothing enforces. There is no rule preventing src/cli or src/mcp from importing an src/sdk module that no public entry point re-exports. Taking the transitive closure of every export-from edge starting at the five public entries (index, authoring, contracts, core, governance) gives 161 of the 200 SDK modules reachable; 39 are private. Our own CLI and MCP import ten of those private modules, and three of the symbols they take are absent from every emitted public declaration file: createExtensionCommandSdk from extension-command-context, isRuntimeRecord from runtime-input, and resolveStartTaskInProgressStatus from start-task-status. Each was checked against dist/sdk/index.d.ts, authoring.d.ts, contracts.d.ts, core.d.ts and governance.d.ts and appears in none of them.\n\nThe first of those three is the load-bearing one. createExtensionCommandSdk builds the SDK handle that every extension command receives. A third party who wants to build a domain-specific tracker on top of pm, which is the stated purpose of the SDK, cannot construct the same handle our own commands are given, because the factory is not published.\n\nWhy the existing artifacts do not catch it. scripts/sdk-surface-snapshot.mjs records the public surface from the emitted declarations, deliberately and correctly, and contains zero references to src/cli or src/mcp; it never asks what the CLI consumes. The static quality gate asks what the CLI consumes and never asks what is published. The join is the missing gate.\n\nScope fence. This is the direction of boundary enforcement and the missing join, not any individual promotion. The promotion slices remain with their owners (schema, config, profile and init under pm-3mna; governance and health under pm-oxrw; execution and diagnostics under pm-oslr). The public surface snapshot itself shipped under closed item pm-e6tm5c and the private-core ratchet under closed pm-9x6e. This item exists so that the next private dependency cannot accrue silently between promotions.\n\nProposed resolution: add a ratcheted rule to the same static gate that denies any src/cli or src/mcp import of an SDK module outside the public transitive closure, seeded with the current ten as an explicit shrinking allowlist, and prove the rule can fail with a negative control. Publish createExtensionCommandSdk, isRuntimeRecord and resolveStartTaskInProgressStatus through the appropriate entry point, or relocate their consumers."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: architecture,ci-gates,sdk-first
 created_at: "2026-08-01T13:05:16.303Z"
-updated_at: "2026-08-01T13:05:16.303Z"
+updated_at: "2026-08-01T19:38:07.849Z"
+closed_at: "2026-08-01T19:38:06.947Z"
+completed_at: "2026-08-01T19:38:06.947Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The static quality gate denies any src/cli or src/mcp import of an SDK module outside the transitive public export closure, seeded with a shrinking allowlist of the current ten; A negative control proves the new rule fails when a private SDK import is introduced; createExtensionCommandSdk, isRuntimeRecord and resolveStartTaskInProgressStatus are reachable from a public entry point or their consumers are relocated; The public surface snapshot and the consumer scan are joined by one check so the published surface and the consumed surface are compared rather than measured separately; The allowlist count is reported in the gate output so the ratchet direction is observable release over release"
 parent: pm-usfg
 risk: medium
 confidence: 88
+resolution: Published SDK closure is now joined to CLI/MCP consumption by a shrinking fail-closed static ratchet.
+expected_result: "CLI and MCP cannot add private SDK dependencies silently, and required SDK factories are publicly exported."
+actual_result: "The gate computes transitive public exports, rejects new or stale private imports, reports seven remaining ratchet entries, and negative controls plus full coverage pass."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-021kdp,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-9x6e,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
@@ -21,4 +26,21 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-usfg,implements,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-w89s,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-01T18:08:08.421Z","harness:codex","Implementation evidence: static quality now computes the published SDK export-declaration closure, rejects new CLI/MCP imports outside it, reports a seven-module shrinking allowlist, and fails stale entries. createExtensionCommandSdk, isRuntimeRecord, and resolveStartTaskInProgressStatus are public SDK exports. Negative-control tests passed."
+  "2026-08-01T18:54:32.598Z","harness:codex","Verification evidence: repo-wide lint and static quality passed with zero duplicate chunks, 100% source/export/member docstrings, no new or stale private-SDK boundary entries, and exact 100/100/100/100 coverage. Full suite: 414 files, 6,673 tests."
+  "2026-08-01T19:12:07.534Z","harness:codex","Review finding: Windows path identity breaks the export-closure fixture, and the global stale-allowlist completeness switch can suppress all stale entries. Reopened for cross-platform canonicalization and per-entry full/partial scan semantics."
+  "2026-08-01T19:38:03.228Z","harness:codex","Review-resolution evidence: canonicalized export-closure paths for Windows and replaced the global stale-allowlist switch with per-entry full/partial scan semantics. The exact CI shard now passes; repository-wide lint/static gates and 6,674 tests pass at exact 100/100/100/100 coverage."
+files[4]{path,scope,note}:
+  scripts/release/static-quality-gate.mts,project,public SDK export-closure boundary ratchet
+  sdk/public-surface.json,project,public export closure consumer surface proof
+  src/sdk/index.ts,project,public exports consumed by CLI and MCP
+  tests/unit/scripts/release/static-quality-gate.spec.ts,project,boundary negative control and report coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msaqdtpk-unb9l4,test,passed,"2026-08-01T18:54:44.651Z","2026-08-01T18:54:52.328Z","2026-08-01T18:54:52.328Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_ACTION_CONFORMANCE.md,project,public boundary conformance contract
+close_reason: "Implemented and verified the public SDK boundary ratchet, including Windows-safe closure resolution and fail-closed allowlist semantics."
 body: ""

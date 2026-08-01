@@ -181,6 +181,36 @@
       "requires_extension": false
     },
     {
+      "action": "eval",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "eval",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
+      "action": "event",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "event",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
+      "action": "events",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "events",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "extension",
       "available": true,
       "cli_exposed": true,
@@ -541,6 +571,26 @@
       "requires_extension": false
     },
     {
+      "action": "meet",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "meet",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
+      "action": "merge",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "merge",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "next",
       "available": true,
       "cli_exposed": true,
@@ -741,6 +791,16 @@
       "requires_extension": false
     },
     {
+      "action": "remind",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "remind",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "restore",
       "available": true,
       "cli_exposed": true,
@@ -859,6 +919,16 @@
       "invocable": true,
       "provider": "core",
       "requires_extension": false
+    },
+    {
+      "action": "workspace",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "workspace",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
     }
   ],
   "actions": [
@@ -880,6 +950,9 @@
     "deps",
     "docs",
     "duplicates",
+    "eval",
+    "event",
+    "events",
     "extension",
     "extension-activate",
     "extension-adopt",
@@ -916,6 +989,8 @@
     "list-draft",
     "list-in-progress",
     "list-open",
+    "meet",
+    "merge",
     "next",
     "notes",
     "package",
@@ -936,6 +1011,7 @@
     "plan",
     "profile",
     "release",
+    "remind",
     "restore",
     "schema",
     "search",
@@ -947,7 +1023,8 @@
     "update",
     "update-many",
     "upgrade",
-    "validate"
+    "validate",
+    "workspace"
   ],
   "command_aliases": [
     {
@@ -10894,6 +10971,7 @@
       "sources": [
         "cli/register-mutation.ts",
         "cli/register-operations.ts",
+        "sdk/runtime-extended-actions.ts",
         "sdk/telemetry.ts"
       ],
       "stability": "stable"
@@ -13896,18 +13974,59 @@
               }
             ]
           },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
           "limit": {
             "maximum": 1000,
             "minimum": 0,
             "type": "integer"
           },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "options": {
+            "additionalProperties": true,
+            "description": "Advanced command options forwarded to the selected pm action.",
+            "type": "object"
+          },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
           },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
           "since": {
             "description": "Durable event cursor or ISO timestamp lower bound.",
             "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
           },
           "type": {
             "anyOf": [
@@ -16310,8 +16429,19 @@
             "type": "array"
           },
           "reorderTo": {
-            "description": "New order for reorder-step.",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "New integer order for reorder-step.",
+            "examples": [
+              1,
+              "2"
+            ]
           },
           "reporter": {
             "description": "Reporter.",
@@ -16769,7 +16899,7 @@
         "additionalProperties": true,
         "properties": {
           "action": {
-            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, duplicates, next, history, history-redact, history-repair, history-compact, history-author-acknowledge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, graph, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions are available dynamically when their provider package is installed.",
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-describe, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-describe, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, focus, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, graph, search, duplicates, eval, next, history, events, history-redact, history-repair, history-compact, history-author-acknowledge, merge, schema, profile, activity, restore, update, update-many, close, close-many, delete, append, comments, notes, learnings, files, docs, deps, plan, test, test-all, telemetry, stats, health, validate, gc, workspace, contracts, claim, release, start-task, pause-task, close-task, meet, event, remind. Package-owned actions are available dynamically when their provider package is installed.",
             "enum": [
               "init",
               "config",
@@ -16818,14 +16948,18 @@
               "context",
               "ctx",
               "get",
+              "graph",
               "search",
               "duplicates",
+              "eval",
               "next",
               "history",
+              "events",
               "history-redact",
               "history-repair",
               "history-compact",
               "history-author-acknowledge",
+              "merge",
               "schema",
               "profile",
               "activity",
@@ -16837,13 +16971,12 @@
               "delete",
               "append",
               "comments",
-              "plan",
               "notes",
               "learnings",
               "files",
               "docs",
               "deps",
-              "graph",
+              "plan",
               "test",
               "test-all",
               "telemetry",
@@ -16851,12 +16984,16 @@
               "health",
               "validate",
               "gc",
+              "workspace",
               "contracts",
               "claim",
               "release",
               "start-task",
               "pause-task",
-              "close-task"
+              "close-task",
+              "meet",
+              "event",
+              "remind"
             ],
             "type": "string"
           },
@@ -28362,6 +28499,250 @@
       },
       {
         "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "graph",
+            "description": "Tool action to execute."
+          },
+          "after": {
+            "description": "Resume a hierarchy/ordering graph traversal after this previously returned node id.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
+          "clear": {
+            "description": "When true, delete the durable graph index (graph index only).",
+            "type": "boolean"
+          },
+          "direction": {
+            "description": "Edge orientation for graph paths/impact/dominators queries (\"outgoing\", \"incoming\", or \"both\"; default \"both\").",
+            "enum": [
+              "outgoing",
+              "incoming",
+              "both"
+            ],
+            "examples": [
+              "incoming"
+            ],
+            "type": "string"
+          },
+          "exemptIsolate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Item ids the graph audit treats as explicitly valid isolates (string, comma-separated, or array).",
+            "examples": [
+              "pm-x1y2",
+              [
+                "pm-x1y2",
+                "pm-a3b4"
+              ]
+            ]
+          },
+          "exemptIsolateType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Item types whose active isolates the graph audit treats as policy-valid (string, comma-separated, or array).",
+            "examples": [
+              "Reminder",
+              [
+                "Reminder",
+                "Event"
+              ]
+            ]
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Root item id for traversal, paths, impact, and dominators graph queries.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Registered relationship kinds narrowing the graph query (string, comma-separated, or array).",
+            "examples": [
+              "blocked_by",
+              [
+                "parent",
+                "related"
+              ]
+            ]
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum returned rows per bounded graph collection (traversal ids, impact rows, analyze/communities samples, redundancy rows, dominator bottlenecks).",
+            "examples": [
+              10,
+              "25"
+            ]
+          },
+          "maxDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum graph traversal depth (non-negative integer).",
+            "examples": [
+              2,
+              "4"
+            ]
+          },
+          "maxPaths": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum enumerated paths for graph paths queries.",
+            "examples": [
+              5,
+              "10"
+            ]
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "rebuild": {
+            "description": "When true, rebuild and warm the durable graph index (graph index only).",
+            "type": "boolean"
+          },
+          "sample": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum evidence sample entries per graph audit finding.",
+            "examples": [
+              10,
+              "25"
+            ]
+          },
+          "saveBaseline": {
+            "description": "When true, persist the graph audit census as the change-since-baseline comparison point (audit only).",
+            "type": "boolean"
+          },
+          "subcommand": {
+            "description": "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators|slack|centrality|articulation|plan|index. Traversals, paths, impact, and dominators require id; paths also requires target; slack reports critical-path float, centrality ranks betweenness/closeness/degree, articulation reports cut points and bridges; plan derives dry-run remediation proposals from the governance audit; index reports, rebuilds, or clears the durable cross-process graph index.",
+            "examples": [
+              "successors",
+              "audit"
+            ],
+            "type": "string"
+          },
+          "summary": {
+            "description": "When true, return counts-first graph envelopes without row collections.",
+            "type": "boolean"
+          },
+          "target": {
+            "description": "Target item id for graph paths queries.",
+            "examples": [
+              "pm-a3b4"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "subcommand"
+        ],
+        "title": "pm action \"graph\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
         "anyOf": [
           {
             "required": [
@@ -28866,6 +29247,106 @@
         "additionalProperties": false,
         "properties": {
           "action": {
+            "const": "eval",
+            "description": "Tool action to execute."
+          },
+          "failUnder": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Fail Under."
+          },
+          "format": {
+            "description": "Format.",
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "k": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "K."
+          },
+          "mode": {
+            "description": "Mode selector for search and reindex (keyword|semantic|hybrid).",
+            "enum": [
+              "keyword",
+              "semantic",
+              "hybrid"
+            ],
+            "examples": [
+              "keyword",
+              "hybrid"
+            ],
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "queries": {
+            "description": "Queries.",
+            "type": "string"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"eval\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
             "const": "next",
             "description": "Tool action to execute."
           },
@@ -29172,6 +29653,149 @@
           "id"
         ],
         "title": "pm action \"history\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "events",
+            "description": "Tool action to execute."
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Mutation author filter, supplied once or as a list.",
+            "examples": [
+              "agent-a",
+              [
+                "agent-a",
+                "agent-b"
+              ]
+            ]
+          },
+          "full": {
+            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "item": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Tracked item id filter, supplied once or as a list.",
+            "examples": [
+              "pm-a1b2",
+              [
+                "pm-a1b2",
+                "pm-c3d4"
+              ]
+            ]
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "Maximum mutation events returned, from 0 through 1000.",
+            "examples": [
+              0,
+              100
+            ],
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "since": {
+            "description": "Durable event cursor returned as next_cursor, or an inclusive event timestamp.",
+            "examples": [
+              "eyJmaW5nZXJwcmludCI6Ii4uLiJ9",
+              "2026-08-01T00:00:00.000Z"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Mutation event type filter, supplied once or as a list.",
+            "examples": [
+              "create",
+              [
+                "create",
+                "update"
+              ]
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "pm action \"events\" parameters",
         "type": "object"
       },
       {
@@ -29650,6 +30274,134 @@
           "reason"
         ],
         "title": "pm action \"history-author-acknowledge\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "merge",
+            "description": "Tool action to execute."
+          },
+          "artifact": {
+            "description": "Artifact.",
+            "enum": [
+              "item",
+              "history",
+              "relationship",
+              "json"
+            ],
+            "type": "string"
+          },
+          "author": {
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "basePath": {
+            "description": "Base Path.",
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
+          "force": {
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
+            "type": "boolean"
+          },
+          "includeReconciled": {
+            "description": "Include Reconciled.",
+            "type": "boolean"
+          },
+          "itemPath": {
+            "description": "Item Path.",
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "oursPath": {
+            "description": "Ours Path.",
+            "type": "string"
+          },
+          "output": {
+            "description": "File path for commands that write generated output, such as package/extension describe Markdown references.",
+            "examples": [
+              "docs/pm-package-reference.md"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputPath": {
+            "description": "Output Path.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "prefer": {
+            "description": "Prefer.",
+            "enum": [
+              "ours",
+              "theirs"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "subcommand": {
+            "description": "Subcommand selector for schema, profile, telemetry, and graph actions.",
+            "type": "string"
+          },
+          "theirsPath": {
+            "description": "Theirs Path.",
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "subcommand"
+        ],
+        "title": "pm action \"merge\" parameters",
         "type": "object"
       },
       {
@@ -32593,741 +33345,6 @@
       },
       {
         "additionalProperties": false,
-        "properties": {
-          "acceptanceCriteria": {
-            "description": "Acceptance criteria text.",
-            "type": "string"
-          },
-          "action": {
-            "const": "plan",
-            "description": "Tool action to execute."
-          },
-          "actualResult": {
-            "description": "Actual Result.",
-            "type": "string"
-          },
-          "affectedVersion": {
-            "description": "Affected Version.",
-            "type": "string"
-          },
-          "allowMultipleActive": {
-            "description": "Allow Multiple Active.",
-            "type": "boolean"
-          },
-          "assignee": {
-            "description": "Assignee identity.",
-            "type": "string"
-          },
-          "author": {
-            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
-            "type": "string"
-          },
-          "blockedBy": {
-            "description": "Blocked By.",
-            "type": "string"
-          },
-          "blockedReason": {
-            "description": "Blocked Reason.",
-            "type": "string"
-          },
-          "blocks": {
-            "description": "Blocks.",
-            "type": "string"
-          },
-          "body": {
-            "description": "Body.",
-            "type": "string"
-          },
-          "claim": {
-            "description": "Claim.",
-            "type": "boolean"
-          },
-          "comment": {
-            "description": "Comment.",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "component": {
-            "description": "Component.",
-            "type": "string"
-          },
-          "confidence": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "description": "Confidence."
-          },
-          "createMode": {
-            "description": "Create required-option policy mode.",
-            "enum": [
-              "strict",
-              "progressive"
-            ],
-            "examples": [
-              "strict",
-              "progressive"
-            ],
-            "type": "string"
-          },
-          "customerImpact": {
-            "description": "Customer Impact.",
-            "type": "string"
-          },
-          "deadline": {
-            "description": "ISO/date timestamp or relative offset (+6h/+1d/+2w/+6m).",
-            "examples": [
-              "2026-04-01T00:00:00.000Z",
-              "+1d"
-            ],
-            "type": "string"
-          },
-          "decision": {
-            "description": "Decision.",
-            "type": "string"
-          },
-          "decisionEvidence": {
-            "description": "Decision Evidence.",
-            "type": "string"
-          },
-          "decisionRationale": {
-            "description": "Decision Rationale.",
-            "type": "string"
-          },
-          "decisionText": {
-            "description": "Decision Text.",
-            "type": "string"
-          },
-          "definitionOfReady": {
-            "description": "Definition Of Ready.",
-            "type": "string"
-          },
-          "dependsOn": {
-            "description": "Depends On.",
-            "type": "string"
-          },
-          "depth": {
-            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
-            "enum": [
-              "brief",
-              "standard",
-              "deep",
-              "full"
-            ],
-            "examples": [
-              "brief",
-              "standard",
-              "deep",
-              "full"
-            ],
-            "type": "string"
-          },
-          "description": {
-            "description": "Item description text.",
-            "type": "string"
-          },
-          "discovery": {
-            "description": "Discovery.",
-            "type": "string"
-          },
-          "discoveryText": {
-            "description": "Discovery Text.",
-            "type": "string"
-          },
-          "doc": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "description": "Documentation link to attach while creating or materializing a Plan.",
-            "examples": [
-              "path=docs/SDK.md,note=public API reference"
-            ]
-          },
-          "environment": {
-            "description": "Environment.",
-            "type": "string"
-          },
-          "estimate": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "description": "Estimated effort in minutes.",
-            "examples": [
-              60,
-              "120"
-            ]
-          },
-          "event": {
-            "description": "Repeatable event seed entries start=<iso|relative> with end=<iso|relative> or duration=<relative|30min|PT30M>. Bare `m` remains months for backward compatibility.",
-            "examples": [
-              [
-                "start=2026-07-01T10:00:00Z,duration=2h,title=planning"
-              ],
-              [
-                "start=2026-07-01T10:00:00Z,duration=30min,title=standup"
-              ],
-              [
-                "start=2026-07-01T10:00:00Z,duration=PT30M,title=window"
-              ]
-            ],
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "expectedResult": {
-            "description": "Expected Result.",
-            "type": "string"
-          },
-          "field": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "description": "Field."
-          },
-          "fields": {
-            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
-            "examples": [
-              "id,title,status,parent,type",
-              "id,title,score,matched_fields",
-              "id,title,priority,deadline"
-            ],
-            "type": "string"
-          },
-          "file": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "description": "File link to attach while creating or materializing a Plan.",
-            "examples": [
-              "path=src/cli.ts,note=implementation surface"
-            ]
-          },
-          "fixedVersion": {
-            "description": "Fixed Version.",
-            "type": "string"
-          },
-          "force": {
-            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
-            "type": "boolean"
-          },
-          "fromSearch": {
-            "description": "From Search.",
-            "type": "string"
-          },
-          "goal": {
-            "description": "Goal.",
-            "type": "string"
-          },
-          "harness": {
-            "description": "Harness.",
-            "enum": [
-              "codex",
-              "claude-code",
-              "cursor",
-              "generic"
-            ],
-            "type": "string"
-          },
-          "id": {
-            "description": "Item identifier for read or mutation actions.",
-            "examples": [
-              "pm-a1b2"
-            ],
-            "type": "string"
-          },
-          "impact": {
-            "description": "Impact.",
-            "type": "string"
-          },
-          "json": {
-            "default": true,
-            "description": "Emit machine-readable JSON output.",
-            "type": "boolean"
-          },
-          "learning": {
-            "description": "Learning.",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "link": {
-            "description": "Link.",
-            "type": "string"
-          },
-          "linkKind": {
-            "description": "Link Kind.",
-            "enum": [
-              "related",
-              "blocks",
-              "blocked_by",
-              "depends_on",
-              "discovered_from",
-              "implements",
-              "verifies",
-              "supersedes"
-            ],
-            "type": "string"
-          },
-          "linkNote": {
-            "description": "Link Note.",
-            "type": "string"
-          },
-          "materializeParent": {
-            "description": "Materialize Parent.",
-            "type": "string"
-          },
-          "materializeTags": {
-            "description": "Materialize Tags.",
-            "type": "string"
-          },
-          "materializeType": {
-            "description": "Materialize Type.",
-            "type": "string"
-          },
-          "message": {
-            "description": "History message for mutation audit trail.",
-            "type": "string"
-          },
-          "mode": {
-            "description": "Plan lifecycle mode.",
-            "enum": [
-              "draft",
-              "research",
-              "review",
-              "approved",
-              "executing",
-              "paused",
-              "completed",
-              "superseded"
-            ],
-            "examples": [
-              "draft",
-              "research",
-              "approved"
-            ],
-            "type": "string"
-          },
-          "noExtensions": {
-            "description": "Disable extension loading for this invocation.",
-            "type": "boolean"
-          },
-          "noPager": {
-            "description": "Disable pager integration for help and long output.",
-            "type": "boolean"
-          },
-          "note": {
-            "description": "Note.",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "objective": {
-            "description": "Objective.",
-            "type": "string"
-          },
-          "order": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "description": "Planning order/rank value for create/update, or sort direction (asc|desc) for list-family sorting.",
-            "examples": [
-              0,
-              1,
-              "2",
-              "asc",
-              "desc"
-            ]
-          },
-          "outcome": {
-            "description": "Outcome.",
-            "type": "string"
-          },
-          "parent": {
-            "description": "Parent item ID filter for hierarchical list queries.",
-            "examples": [
-              "pm-epic01"
-            ],
-            "type": "string"
-          },
-          "path": {
-            "description": "Optional PM data root override for this invocation.",
-            "examples": [
-              ".agents/pm"
-            ],
-            "type": "string"
-          },
-          "pmExecutable": {
-            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
-            "examples": [
-              "pm",
-              "node dist/cli.js"
-            ],
-            "type": "string"
-          },
-          "priority": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "description": "Priority value in range 0..4.",
-            "examples": [
-              0,
-              1,
-              "2"
-            ]
-          },
-          "profile": {
-            "description": "Emit deterministic timing diagnostics to stderr.",
-            "type": "boolean"
-          },
-          "promoteToItemDep": {
-            "description": "Promote To Item Dep.",
-            "type": "boolean"
-          },
-          "quiet": {
-            "description": "Suppress stdout payload output.",
-            "type": "boolean"
-          },
-          "rank": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "pattern": "^-?\\d+$",
-                "type": "string"
-              }
-            ],
-            "description": "Rank."
-          },
-          "regression": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "description": "Regression."
-          },
-          "related": {
-            "description": "Related.",
-            "type": "string"
-          },
-          "release": {
-            "description": "Release.",
-            "type": "string"
-          },
-          "reminder": {
-            "description": "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
-            "examples": [
-              [
-                "at=+2d,text=Review PR"
-              ]
-            ],
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "reorderTo": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "description": "New integer order for reorder-step.",
-            "examples": [
-              1,
-              "2"
-            ]
-          },
-          "reporter": {
-            "description": "Reporter.",
-            "type": "string"
-          },
-          "reproSteps": {
-            "description": "Repro Steps.",
-            "type": "string"
-          },
-          "resolution": {
-            "description": "Resolution.",
-            "type": "string"
-          },
-          "resumeContext": {
-            "description": "Resume Context.",
-            "type": "string"
-          },
-          "reviewer": {
-            "description": "Reviewer.",
-            "type": "string"
-          },
-          "risk": {
-            "description": "Risk.",
-            "type": "string"
-          },
-          "scope": {
-            "description": "Short free-text scope statement describing what the Plan covers.",
-            "examples": [
-              "Release readiness audit",
-              "Search package migration"
-            ],
-            "type": "string"
-          },
-          "severity": {
-            "description": "Severity.",
-            "type": "string"
-          },
-          "sprint": {
-            "description": "Sprint.",
-            "type": "string"
-          },
-          "status": {
-            "description": "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",
-            "examples": [
-              "open",
-              "in_progress"
-            ],
-            "type": "string"
-          },
-          "step": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "description": "Ordered initial step titles for create (string or array, never comma-split; stepTitle, when also set, becomes the first step). For step subcommands a single value aliases stepTitle.",
-            "examples": [
-              [
-                "Read the code",
-                "Write the fix",
-                "Run the tests"
-              ]
-            ]
-          },
-          "stepBlockedReason": {
-            "description": "Step Blocked Reason.",
-            "type": "string"
-          },
-          "stepBody": {
-            "description": "Step Body.",
-            "type": "string"
-          },
-          "stepEvidence": {
-            "description": "Step Evidence.",
-            "type": "string"
-          },
-          "stepOwner": {
-            "description": "Step Owner.",
-            "type": "string"
-          },
-          "stepRef": {
-            "description": "Plan step id or order for step lifecycle subcommands.",
-            "examples": [
-              "plan-step-001",
-              "1"
-            ],
-            "type": "string"
-          },
-          "stepReplacement": {
-            "description": "Step Replacement.",
-            "type": "string"
-          },
-          "steps": {
-            "description": "Steps.",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "stepStatus": {
-            "description": "Step Status.",
-            "enum": [
-              "pending",
-              "in_progress",
-              "completed",
-              "blocked",
-              "skipped",
-              "superseded"
-            ],
-            "type": "string"
-          },
-          "stepTitle": {
-            "description": "Step Title.",
-            "type": "string"
-          },
-          "subcommand": {
-            "description": "Plan workflow operation to run.",
-            "enum": [
-              "create",
-              "show",
-              "add-step",
-              "update-step",
-              "complete-step",
-              "block-step",
-              "reorder-step",
-              "remove-step",
-              "link",
-              "unlink",
-              "decision",
-              "discovery",
-              "validation",
-              "resume",
-              "approve",
-              "materialize"
-            ],
-            "examples": [
-              "create",
-              "show",
-              "add-step",
-              "approve"
-            ],
-            "type": "string"
-          },
-          "tags": {
-            "description": "Comma-delimited tag list.",
-            "examples": [
-              "pm-cli,agent-ux"
-            ],
-            "type": "string"
-          },
-          "template": {
-            "description": "Template.",
-            "type": "string"
-          },
-          "test": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "description": "Test command link to attach while creating or materializing a Plan.",
-            "examples": [
-              "command=pnpm build,timeout_seconds=300"
-            ]
-          },
-          "timeoutMs": {
-            "description": "Tool execution timeout in milliseconds.",
-            "examples": [
-              120000
-            ],
-            "type": "number"
-          },
-          "title": {
-            "description": "Item title text.",
-            "type": "string"
-          },
-          "typeOption": {
-            "description": "Type Option.",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "unblockNote": {
-            "description": "Unblock Note.",
-            "type": "string"
-          },
-          "validation": {
-            "description": "Validation.",
-            "type": "string"
-          },
-          "validationCommand": {
-            "description": "Validation Command.",
-            "type": "string"
-          },
-          "validationExpected": {
-            "description": "Validation Expected.",
-            "type": "string"
-          },
-          "validationText": {
-            "description": "Validation Text.",
-            "type": "string"
-          },
-          "value": {
-            "description": "Value.",
-            "type": "string"
-          },
-          "whyNow": {
-            "description": "Why Now.",
-            "type": "string"
-          }
-        },
-        "required": [
-          "action",
-          "subcommand"
-        ],
-        "title": "pm action \"plan\" parameters",
-        "type": "object"
-      },
-      {
-        "additionalProperties": false,
         "allOf": [
           {
             "not": {
@@ -34142,34 +34159,153 @@
       {
         "additionalProperties": false,
         "properties": {
+          "acceptanceCriteria": {
+            "description": "Acceptance criteria text.",
+            "type": "string"
+          },
           "action": {
-            "const": "graph",
+            "const": "plan",
             "description": "Tool action to execute."
           },
-          "after": {
-            "description": "Resume a hierarchy/ordering graph traversal after this previously returned node id.",
-            "examples": [
-              "pm-x1y2"
-            ],
+          "actualResult": {
+            "description": "Actual Result.",
             "type": "string"
           },
-          "clear": {
-            "description": "When true, delete the durable graph index (graph index only).",
+          "affectedVersion": {
+            "description": "Affected Version.",
+            "type": "string"
+          },
+          "allowMultipleActive": {
+            "description": "Allow Multiple Active.",
             "type": "boolean"
           },
-          "direction": {
-            "description": "Edge orientation for graph paths/impact/dominators queries (\"outgoing\", \"incoming\", or \"both\"; default \"both\").",
+          "assignee": {
+            "description": "Assignee identity.",
+            "type": "string"
+          },
+          "author": {
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "blockedBy": {
+            "description": "Blocked By.",
+            "type": "string"
+          },
+          "blockedReason": {
+            "description": "Blocked Reason.",
+            "type": "string"
+          },
+          "blocks": {
+            "description": "Blocks.",
+            "type": "string"
+          },
+          "body": {
+            "description": "Body.",
+            "type": "string"
+          },
+          "claim": {
+            "description": "Claim.",
+            "type": "boolean"
+          },
+          "comment": {
+            "description": "Comment.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "component": {
+            "description": "Component.",
+            "type": "string"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Confidence."
+          },
+          "createMode": {
+            "description": "Create required-option policy mode.",
             "enum": [
-              "outgoing",
-              "incoming",
-              "both"
+              "strict",
+              "progressive"
             ],
             "examples": [
-              "incoming"
+              "strict",
+              "progressive"
             ],
             "type": "string"
           },
-          "exemptIsolate": {
+          "customerImpact": {
+            "description": "Customer Impact.",
+            "type": "string"
+          },
+          "deadline": {
+            "description": "ISO/date timestamp or relative offset (+6h/+1d/+2w/+6m).",
+            "examples": [
+              "2026-04-01T00:00:00.000Z",
+              "+1d"
+            ],
+            "type": "string"
+          },
+          "decision": {
+            "description": "Decision.",
+            "type": "string"
+          },
+          "decisionEvidence": {
+            "description": "Decision Evidence.",
+            "type": "string"
+          },
+          "decisionRationale": {
+            "description": "Decision Rationale.",
+            "type": "string"
+          },
+          "decisionText": {
+            "description": "Decision Text.",
+            "type": "string"
+          },
+          "definitionOfReady": {
+            "description": "Definition Of Ready.",
+            "type": "string"
+          },
+          "dependsOn": {
+            "description": "Depends On.",
+            "type": "string"
+          },
+          "depth": {
+            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
+            "enum": [
+              "brief",
+              "standard",
+              "deep",
+              "full"
+            ],
+            "examples": [
+              "brief",
+              "standard",
+              "deep",
+              "full"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "description": "Item description text.",
+            "type": "string"
+          },
+          "discovery": {
+            "description": "Discovery.",
+            "type": "string"
+          },
+          "discoveryText": {
+            "description": "Discovery Text.",
+            "type": "string"
+          },
+          "doc": {
             "anyOf": [
               {
                 "type": "string"
@@ -34181,16 +34317,53 @@
                 "type": "array"
               }
             ],
-            "description": "Item ids the graph audit treats as explicitly valid isolates (string, comma-separated, or array).",
+            "description": "Documentation link to attach while creating or materializing a Plan.",
             "examples": [
-              "pm-x1y2",
-              [
-                "pm-x1y2",
-                "pm-a3b4"
-              ]
+              "path=docs/SDK.md,note=public API reference"
             ]
           },
-          "exemptIsolateType": {
+          "environment": {
+            "description": "Environment.",
+            "type": "string"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Estimated effort in minutes.",
+            "examples": [
+              60,
+              "120"
+            ]
+          },
+          "event": {
+            "description": "Repeatable event seed entries start=<iso|relative> with end=<iso|relative> or duration=<relative|30min|PT30M>. Bare `m` remains months for backward compatibility.",
+            "examples": [
+              [
+                "start=2026-07-01T10:00:00Z,duration=2h,title=planning"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=30min,title=standup"
+              ],
+              [
+                "start=2026-07-01T10:00:00Z,duration=PT30M,title=window"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "expectedResult": {
+            "description": "Expected Result.",
+            "type": "string"
+          },
+          "field": {
             "anyOf": [
               {
                 "type": "string"
@@ -34202,24 +34375,69 @@
                 "type": "array"
               }
             ],
-            "description": "Item types whose active isolates the graph audit treats as policy-valid (string, comma-separated, or array).",
+            "description": "Field."
+          },
+          "fields": {
+            "description": "Comma-separated projection fields for get, search, list-family, or context outputs. Valid field names are command-specific (e.g. score/matched_fields apply to search; context projects focus-row fields such as priority/deadline/completion_pct).",
             "examples": [
-              "Reminder",
-              [
-                "Reminder",
-                "Event"
-              ]
+              "id,title,status,parent,type",
+              "id,title,score,matched_fields",
+              "id,title,priority,deadline"
+            ],
+            "type": "string"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "File link to attach while creating or materializing a Plan.",
+            "examples": [
+              "path=src/cli.ts,note=implementation surface"
             ]
           },
-          "full": {
-            "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+          "fixedVersion": {
+            "description": "Fixed Version.",
+            "type": "string"
+          },
+          "force": {
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
+          },
+          "fromSearch": {
+            "description": "From Search.",
+            "type": "string"
+          },
+          "goal": {
+            "description": "Goal.",
+            "type": "string"
+          },
+          "harness": {
+            "description": "Harness.",
+            "enum": [
+              "codex",
+              "claude-code",
+              "cursor",
+              "generic"
+            ],
+            "type": "string"
           },
           "id": {
-            "description": "Root item id for traversal, paths, impact, and dominators graph queries.",
+            "description": "Item identifier for read or mutation actions.",
             "examples": [
-              "pm-x1y2"
+              "pm-a1b2"
             ],
+            "type": "string"
+          },
+          "impact": {
+            "description": "Impact.",
             "type": "string"
           },
           "json": {
@@ -34227,72 +34445,69 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
-          "kind": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "description": "Registered relationship kinds narrowing the graph query (string, comma-separated, or array).",
-            "examples": [
+          "learning": {
+            "description": "Learning.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "link": {
+            "description": "Link.",
+            "type": "string"
+          },
+          "linkKind": {
+            "description": "Link Kind.",
+            "enum": [
+              "related",
+              "blocks",
               "blocked_by",
-              [
-                "parent",
-                "related"
-              ]
-            ]
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
+              "depends_on",
+              "discovered_from",
+              "implements",
+              "verifies",
+              "supersedes"
             ],
-            "description": "Maximum returned rows per bounded graph collection (traversal ids, impact rows, analyze/communities samples, redundancy rows, dominator bottlenecks).",
-            "examples": [
-              10,
-              "25"
-            ]
+            "type": "string"
           },
-          "maxDepth": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "description": "Maximum graph traversal depth (non-negative integer).",
-            "examples": [
-              2,
-              "4"
-            ]
+          "linkNote": {
+            "description": "Link Note.",
+            "type": "string"
           },
-          "maxPaths": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "minimum": 1,
-                "type": "integer"
-              }
+          "materializeParent": {
+            "description": "Materialize Parent.",
+            "type": "string"
+          },
+          "materializeTags": {
+            "description": "Materialize Tags.",
+            "type": "string"
+          },
+          "materializeType": {
+            "description": "Materialize Type.",
+            "type": "string"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "mode": {
+            "description": "Plan lifecycle mode.",
+            "enum": [
+              "draft",
+              "research",
+              "review",
+              "approved",
+              "executing",
+              "paused",
+              "completed",
+              "superseded"
             ],
-            "description": "Maximum enumerated paths for graph paths queries.",
             "examples": [
-              5,
-              "10"
-            ]
+              "draft",
+              "research",
+              "approved"
+            ],
+            "type": "string"
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -34301,6 +34516,46 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "note": {
+            "description": "Note.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "objective": {
+            "description": "Objective.",
+            "type": "string"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Planning order/rank value for create/update, or sort direction (asc|desc) for list-family sorting.",
+            "examples": [
+              0,
+              1,
+              "2",
+              "asc",
+              "desc"
+            ]
+          },
+          "outcome": {
+            "description": "Outcome.",
+            "type": "string"
+          },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -34317,56 +34572,270 @@
             ],
             "type": "string"
           },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Priority value in range 0..4.",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
           "profile": {
             "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "promoteToItemDep": {
+            "description": "Promote To Item Dep.",
             "type": "boolean"
           },
           "quiet": {
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
-          "rebuild": {
-            "description": "When true, rebuild and warm the durable graph index (graph index only).",
-            "type": "boolean"
+          "rank": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^-?\\d+$",
+                "type": "string"
+              }
+            ],
+            "description": "Rank."
           },
-          "sample": {
+          "regression": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Regression."
+          },
+          "related": {
+            "description": "Related.",
+            "type": "string"
+          },
+          "release": {
+            "description": "Release.",
+            "type": "string"
+          },
+          "reminder": {
+            "description": "Repeatable reminder seed entries at=<iso|relative>,text=<text>.",
+            "examples": [
+              [
+                "at=+2d,text=Review PR"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "reorderTo": {
             "anyOf": [
               {
                 "type": "string"
               },
               {
-                "minimum": 1,
-                "type": "integer"
+                "type": "number"
               }
             ],
-            "description": "Maximum evidence sample entries per graph audit finding.",
+            "description": "New integer order for reorder-step.",
             "examples": [
-              10,
-              "25"
+              1,
+              "2"
             ]
           },
-          "saveBaseline": {
-            "description": "When true, persist the graph audit census as the change-since-baseline comparison point (audit only).",
-            "type": "boolean"
+          "reporter": {
+            "description": "Reporter.",
+            "type": "string"
+          },
+          "reproSteps": {
+            "description": "Repro Steps.",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "Resolution.",
+            "type": "string"
+          },
+          "resumeContext": {
+            "description": "Resume Context.",
+            "type": "string"
+          },
+          "reviewer": {
+            "description": "Reviewer.",
+            "type": "string"
+          },
+          "risk": {
+            "description": "Risk.",
+            "type": "string"
+          },
+          "scope": {
+            "description": "Short free-text scope statement describing what the Plan covers.",
+            "examples": [
+              "Release readiness audit",
+              "Search package migration"
+            ],
+            "type": "string"
+          },
+          "severity": {
+            "description": "Severity.",
+            "type": "string"
+          },
+          "sprint": {
+            "description": "Sprint.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",
+            "examples": [
+              "open",
+              "in_progress"
+            ],
+            "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Ordered initial step titles for create (string or array, never comma-split; stepTitle, when also set, becomes the first step). For step subcommands a single value aliases stepTitle.",
+            "examples": [
+              [
+                "Read the code",
+                "Write the fix",
+                "Run the tests"
+              ]
+            ]
+          },
+          "stepBlockedReason": {
+            "description": "Step Blocked Reason.",
+            "type": "string"
+          },
+          "stepBody": {
+            "description": "Step Body.",
+            "type": "string"
+          },
+          "stepEvidence": {
+            "description": "Step Evidence.",
+            "type": "string"
+          },
+          "stepOwner": {
+            "description": "Step Owner.",
+            "type": "string"
+          },
+          "stepRef": {
+            "description": "Plan step id or order for step lifecycle subcommands.",
+            "examples": [
+              "plan-step-001",
+              "1"
+            ],
+            "type": "string"
+          },
+          "stepReplacement": {
+            "description": "Step Replacement.",
+            "type": "string"
+          },
+          "steps": {
+            "description": "Steps.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "stepStatus": {
+            "description": "Step Status.",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed",
+              "blocked",
+              "skipped",
+              "superseded"
+            ],
+            "type": "string"
+          },
+          "stepTitle": {
+            "description": "Step Title.",
+            "type": "string"
           },
           "subcommand": {
-            "description": "Graph query selector: ancestors|descendants|predecessors|successors|paths|impact|analyze|audit|communities|redundancy|dominators|slack|centrality|articulation|plan|index. Traversals, paths, impact, and dominators require id; paths also requires target; slack reports critical-path float, centrality ranks betweenness/closeness/degree, articulation reports cut points and bridges; plan derives dry-run remediation proposals from the governance audit; index reports, rebuilds, or clears the durable cross-process graph index.",
+            "description": "Plan workflow operation to run.",
+            "enum": [
+              "create",
+              "show",
+              "add-step",
+              "update-step",
+              "complete-step",
+              "block-step",
+              "reorder-step",
+              "remove-step",
+              "link",
+              "unlink",
+              "decision",
+              "discovery",
+              "validation",
+              "resume",
+              "approve",
+              "materialize"
+            ],
             "examples": [
-              "successors",
-              "audit"
+              "create",
+              "show",
+              "add-step",
+              "approve"
             ],
             "type": "string"
           },
-          "summary": {
-            "description": "When true, return counts-first graph envelopes without row collections.",
-            "type": "boolean"
-          },
-          "target": {
-            "description": "Target item id for graph paths queries.",
+          "tags": {
+            "description": "Comma-delimited tag list.",
             "examples": [
-              "pm-a3b4"
+              "pm-cli,agent-ux"
             ],
             "type": "string"
+          },
+          "template": {
+            "description": "Template.",
+            "type": "string"
+          },
+          "test": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Test command link to attach while creating or materializing a Plan.",
+            "examples": [
+              "command=pnpm build,timeout_seconds=300"
+            ]
           },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
@@ -34374,13 +34843,52 @@
               120000
             ],
             "type": "number"
+          },
+          "title": {
+            "description": "Item title text.",
+            "type": "string"
+          },
+          "typeOption": {
+            "description": "Type Option.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "unblockNote": {
+            "description": "Unblock Note.",
+            "type": "string"
+          },
+          "validation": {
+            "description": "Validation.",
+            "type": "string"
+          },
+          "validationCommand": {
+            "description": "Validation Command.",
+            "type": "string"
+          },
+          "validationExpected": {
+            "description": "Validation Expected.",
+            "type": "string"
+          },
+          "validationText": {
+            "description": "Validation Text.",
+            "type": "string"
+          },
+          "value": {
+            "description": "Value.",
+            "type": "string"
+          },
+          "whyNow": {
+            "description": "Why Now.",
+            "type": "string"
           }
         },
         "required": [
           "action",
           "subcommand"
         ],
-        "title": "pm action \"graph\" parameters",
+        "title": "pm action \"plan\" parameters",
         "type": "object"
       },
       {
@@ -35420,6 +35928,122 @@
       },
       {
         "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "workspace",
+            "description": "Tool action to execute."
+          },
+          "author": {
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
+          "force": {
+            "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
+            "type": "boolean"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "lockTtlSeconds": {
+            "description": "Lock Ttl Seconds.",
+            "type": "number"
+          },
+          "lockWaitMs": {
+            "description": "Lock Wait Ms.",
+            "type": "number"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Custom definition name, schema migration source name, or profile name.",
+            "examples": [
+              "Spike",
+              "review",
+              "component"
+            ],
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "snapshotAction": {
+            "description": "Snapshot Action.",
+            "enum": [
+              "create",
+              "list",
+              "inspect",
+              "restore",
+              "delete"
+            ],
+            "type": "string"
+          },
+          "subcommand": {
+            "description": "Subcommand selector for schema, profile, telemetry, and graph actions.",
+            "type": "string"
+          },
+          "target": {
+            "description": "Positional target argument for the selected action (ID, source, package source, or extension name).",
+            "examples": [
+              "pm-a1b2",
+              ".agents/pm/extensions/sample",
+              "sample-extension"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "subcommand",
+          "snapshotAction"
+        ],
+        "title": "pm action \"workspace\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
         "allOf": [
           {
             "not": {
@@ -36275,6 +36899,403 @@
           "id"
         ],
         "title": "pm action \"close-task\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "meet",
+            "description": "Tool action to execute."
+          },
+          "allDay": {
+            "description": "All Day.",
+            "type": "boolean"
+          },
+          "allowMissingParent": {
+            "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
+          "author": {
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "body": {
+            "description": "Body.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Item description text.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "Duration.",
+            "type": "string"
+          },
+          "end": {
+            "description": "End.",
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "location": {
+            "description": "Location.",
+            "type": "string"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Priority value in range 0..4.",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "Start.",
+            "type": "string"
+          },
+          "tags": {
+            "description": "Comma-delimited tag list.",
+            "examples": [
+              "pm-cli,agent-ux"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "timezone": {
+            "description": "Timezone.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Item title text.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "title"
+        ],
+        "title": "pm action \"meet\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "event",
+            "description": "Tool action to execute."
+          },
+          "allDay": {
+            "description": "All Day.",
+            "type": "boolean"
+          },
+          "allowMissingParent": {
+            "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
+          "author": {
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "body": {
+            "description": "Body.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Item description text.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "Duration.",
+            "type": "string"
+          },
+          "end": {
+            "description": "End.",
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "location": {
+            "description": "Location.",
+            "type": "string"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Priority value in range 0..4.",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "Start.",
+            "type": "string"
+          },
+          "tags": {
+            "description": "Comma-delimited tag list.",
+            "examples": [
+              "pm-cli,agent-ux"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "timezone": {
+            "description": "Timezone.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Item title text.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "title"
+        ],
+        "title": "pm action \"event\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "remind",
+            "description": "Tool action to execute."
+          },
+          "allowMissingParent": {
+            "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
+          "at": {
+            "description": "Reminder time as an ISO 8601 timestamp or supported relative expression.",
+            "examples": [
+              "2026-08-02T09:00:00+02:00",
+              "tomorrow 09:00"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "author": {
+            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "body": {
+            "description": "Body.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Item description text.",
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Override the pm executable used by actions that invoke or verify an external CLI process.",
+            "examples": [
+              "pm",
+              "node dist/cli.js"
+            ],
+            "type": "string"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Priority value in range 0..4.",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "tags": {
+            "description": "Comma-delimited tag list.",
+            "examples": [
+              "pm-cli,agent-ux"
+            ],
+            "type": "string"
+          },
+          "text": {
+            "description": "Text payload used by append, comment, note, or learning mutations.",
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "title": {
+            "description": "Item title text.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "title"
+        ],
+        "title": "pm action \"remind\" parameters",
         "type": "object"
       }
     ],

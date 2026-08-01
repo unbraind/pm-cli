@@ -67,6 +67,12 @@ export interface PmContextIntentReceipt {
   declaration_feasible: boolean;
   /** True only when no useful result survived the declared ceiling. */
   result_omitted: boolean;
+  /** Row ceiling calculated from the selected intent's effective token budget. */
+  budget_derived_limit?: number;
+  /** Constraint that selected the effective page size for row-oriented reads. */
+  binding_constraint?: "explicit_limit" | "token_budget";
+  /** Machine-readable explanation for the selected row ceiling. */
+  limit_reason?: string;
 }
 
 /** Built-in intent projections shared by CLI, SDK, MCP, and package authors. */
@@ -324,10 +330,11 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
     (
       projected: Record<string, unknown>,
       contract: PmContextIntentContract,
+      explicitTokenBudget: boolean,
     ) => void
   >
 > = {
-  context: (projected, contract) => {
+  context: (projected, contract, explicitTokenBudget) => {
     if (projected.depth === undefined) {
       projected.depth = contract.intent === "handoff" ? "deep" : "standard";
     }
@@ -341,8 +348,9 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       projected.tokenBudget,
       contract.token_budget,
     );
+    const calculatedLimit = Math.max(1, Math.floor((tokenBudget - 800) / 500));
     const derivedLimit = String(
-      Math.max(1, Math.min(20, Math.floor((tokenBudget - 800) / 500))),
+      explicitTokenBudget ? calculatedLimit : Math.min(20, calculatedLimit),
     );
     if (projected.limit === undefined) projected.limit = derivedLimit;
     if (projected.activityLimit === undefined) {
@@ -354,7 +362,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       projected.depth = "standard";
     }
   },
-  list: (projected, contract) => {
+  list: (projected, contract, explicitTokenBudget) => {
     if (
       projected.brief === undefined &&
       projected.compact === undefined &&
@@ -369,15 +377,16 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
         projected.tokenBudget,
         contract.token_budget,
       );
+      const calculatedLimit = Math.max(2, Math.floor((tokenBudget - 520) / 16));
       projected.limit = String(
-        Math.max(2, Math.min(100, Math.floor((tokenBudget - 520) / 16))),
+        explicitTokenBudget ? calculatedLimit : Math.min(100, calculatedLimit),
       );
     }
   },
   next: (projected) => {
     if (projected.readyOnly === undefined) projected.readyOnly = true;
   },
-  search: (projected, contract) => {
+  search: (projected, contract, explicitTokenBudget) => {
     if (
       projected.compact === undefined &&
       projected.full === undefined &&
@@ -390,8 +399,9 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
         projected.tokenBudget,
         contract.token_budget,
       );
+      const calculatedLimit = Math.max(2, Math.floor((tokenBudget - 480) / 16));
       projected.limit = String(
-        Math.max(2, Math.min(100, Math.floor((tokenBudget - 480) / 16))),
+        explicitTokenBudget ? calculatedLimit : Math.min(100, calculatedLimit),
       );
     }
   },
@@ -414,13 +424,19 @@ export function applyContextIntentProjection(
         {
           code: "missing_required_option",
           field: "for",
-          required: "Select a context intent with --for when setting --token-budget.",
+          required:
+            "Select a context intent with --for when setting --token-budget.",
           why: "A token-budget override has no projection contract to constrain without a selected intent.",
-          nextSteps: ["Retry with --for <intent> --token-budget <n>, or omit --token-budget."],
+          nextSteps: [
+            "Retry with --for <intent> --token-budget <n>, or omit --token-budget.",
+          ],
         },
       );
     }
-    if (options.tokenBudget !== undefined || options.token_budget === undefined) {
+    if (
+      options.tokenBudget !== undefined ||
+      options.token_budget === undefined
+    ) {
       return options;
     }
     const projected: Record<string, unknown> = { ...options, tokenBudget };
@@ -428,6 +444,8 @@ export function applyContextIntentProjection(
     return projected;
   }
   const contract = resolveContextIntentContract(command, options.for)!;
+  const explicitTokenBudget =
+    parsePositiveIntentTokenBudget(tokenBudget) !== undefined;
   const projected = { ...options };
   if (projected.tokenBudget === undefined && tokenBudget !== undefined) {
     projected.tokenBudget = tokenBudget;
@@ -436,7 +454,11 @@ export function applyContextIntentProjection(
   if (projected.tokenBudget === undefined) {
     projected.tokenBudget = String(contract.token_budget);
   }
-  CONTEXT_INTENT_DEFAULT_APPLIERS[command](projected, contract);
+  CONTEXT_INTENT_DEFAULT_APPLIERS[command](
+    projected,
+    contract,
+    explicitTokenBudget,
+  );
   return projected;
 }
 
@@ -470,17 +492,22 @@ function compactContextIntentValue(value: unknown): unknown {
     : value;
 }
 
-function resolveIntentTokenBudget(
-  value: unknown,
-  declaredBudget: number,
-): number {
+function parsePositiveIntentTokenBudget(value: unknown): number | undefined {
   const parsed =
     typeof value === "number"
       ? value
       : typeof value === "string" && /^\d+$/u.test(value.trim())
         ? Number(value)
         : Number.NaN;
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) return declaredBudget;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function resolveIntentTokenBudget(
+  value: unknown,
+  declaredBudget: number,
+): number {
+  const parsed = parsePositiveIntentTokenBudget(value);
+  if (parsed === undefined) return declaredBudget;
   if (parsed < MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET) {
     throw new PmCliError(
       `Context intent token budget must be at least ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET}`,
@@ -648,7 +675,6 @@ function compactPaginatedContextIntentRows(
   if (typeof projected.applied_limit === "number") {
     projected.applied_limit = rows.length;
   }
-  if (options.limit === undefined) projected.budget_derived_limit = rows.length;
   return true;
 }
 
@@ -662,10 +688,7 @@ function compactContextIntentRows(
   if (command === "list" || command === "search") {
     return compactPaginatedContextIntentRows(projected, receipt, options);
   }
-  if (
-    command !== "next" ||
-    typeof projected.next_cursor === "string"
-  ) {
+  if (command !== "next" || typeof projected.next_cursor === "string") {
     return false;
   }
   let compacted = false;
@@ -690,10 +713,7 @@ function compactContextIntentRows(
       0,
     );
     if (retainedTotal <= 1) return compacted;
-    const removableRows = Math.min(
-      candidate.rows.length,
-      retainedTotal - 1,
-    );
+    const removableRows = Math.min(candidate.rows.length, retainedTotal - 1);
     const candidateBytes = Buffer.byteLength(
       JSON.stringify(candidate.rows),
       "utf8",
@@ -702,8 +722,7 @@ function compactContextIntentRows(
       1,
       Math.ceil(candidateBytes / candidate.rows.length),
     );
-    const excessBytes =
-      (receipt.estimated_tokens - receipt.token_budget) * 4;
+    const excessBytes = (receipt.estimated_tokens - receipt.token_budget) * 4;
     const removalCount = Math.min(
       removableRows,
       Math.max(1, Math.ceil(excessBytes / estimatedBytesPerRow)),
@@ -732,7 +751,7 @@ export function attachContextIntentReceipt<
     source: contract.source!,
     included_field_groups: [...contract.included_field_groups],
     token_budget: resolveIntentTokenBudget(
-      options.tokenBudget,
+      options.tokenBudget ?? options.token_budget,
       contract.token_budget,
     ),
     estimated_tokens: 0,
@@ -741,15 +760,42 @@ export function attachContextIntentReceipt<
     declaration_feasible: true,
     result_omitted: false,
   };
+  const resultWithDiagnostics: Record<string, unknown> = { ...result };
+  if (builtInCommand === "list" || builtInCommand === "search") {
+    const overhead = builtInCommand === "list" ? 520 : 480;
+    const calculatedLimit = Math.max(
+      2,
+      Math.floor((receipt.token_budget - overhead) / 16),
+    );
+    const explicitTokenBudget =
+      parsePositiveIntentTokenBudget(
+        options.tokenBudget ?? options.token_budget,
+      ) !== undefined;
+    const budgetDerivedLimit = explicitTokenBudget
+      ? calculatedLimit
+      : Math.min(100, calculatedLimit);
+    const hasExplicitLimit = options.limit !== undefined;
+    receipt.budget_derived_limit = budgetDerivedLimit;
+    receipt.binding_constraint = hasExplicitLimit
+      ? "explicit_limit"
+      : "token_budget";
+    receipt.limit_reason = hasExplicitLimit
+      ? "The caller supplied an explicit row limit; the budget-derived limit remains diagnostic."
+      : "The selected intent token budget determines the row ceiling.";
+    resultWithDiagnostics.budget_derived_limit = budgetDerivedLimit;
+  }
   let projected: Record<string, unknown> = {
-    ...result,
+    ...resultWithDiagnostics,
     context_intent: receipt,
   };
   updateContextIntentEstimate(projected, receipt);
   if (receipt.estimated_tokens > receipt.token_budget) {
     receipt.degradation = "recursive_budget_compaction";
     projected = {
-      ...(compactContextIntentValue(result) as Record<string, unknown>),
+      ...(compactContextIntentValue(resultWithDiagnostics) as Record<
+        string,
+        unknown
+      >),
       context_intent: receipt,
     };
     updateContextIntentEstimate(projected, receipt);

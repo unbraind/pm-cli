@@ -412,6 +412,7 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
 }
 
 type BootstrapNormalizationReason =
+  | "executable_alias"
   | "legacy_extension_action"
   | "command_alias"
   | "flag_alias"
@@ -419,6 +420,34 @@ type BootstrapNormalizationReason =
   | "bare_key_value"
   | "list_merge";
 type BootstrapNormalizationConfidence = "high" | "medium";
+
+const CLI_EXECUTABLE_ALIASES = new Set(["pm", "pm-cli"]);
+
+/**
+ * Remove a package-runner-injected executable token from the command position.
+ * Both published CLI bin names are accepted so `npx <package> pm init` and
+ * `bunx <package> pm-cli init` behave like direct executable invocations.
+ */
+function stripLeadingExecutableAlias(
+  argv: string[],
+  trace: BootstrapNormalizationEvent[],
+): string[] {
+  const index = findCommandTokenIndex(argv);
+  if (index === undefined) {
+    return argv;
+  }
+  const token = argv[index];
+  if (!CLI_EXECUTABLE_ALIASES.has(token.trim().toLowerCase())) {
+    return argv;
+  }
+  trace.push({
+    from: token,
+    to: [],
+    reason: "executable_alias",
+    confidence: "high",
+  });
+  return [...argv.slice(0, index), ...argv.slice(index + 1)];
+}
 
 /** Executable command aliases: a leading command token here is rewritten to its canonical command BEFORE commander parses, so the alias actually runs instead of merely being suggested. These are the highest-frequency aliases real agents type (telemetry: `pm show <id>` alone is the single most common unknown-command) and each target takes the same positional/flags as the alias (with `--comment`/ `--note`/`--learning` flag-aliased to `--add` on the target command). Keeping this in one place means the alias is consistent across registration, commander dispatch, telemetry, and error handling — all of which read the normalized argv. */
 /**
@@ -1085,13 +1114,17 @@ export function normalizeBootstrapInvocation(
   argv: string[],
 ): BootstrapInvocationNormalizationResult {
   const trace: BootstrapNormalizationEvent[] = [];
-  const legacyNormalized = normalizeLegacyExtensionActionSyntax(argv);
+  const executableNormalized = stripLeadingExecutableAlias(argv, trace);
+  const legacyNormalized =
+    normalizeLegacyExtensionActionSyntax(executableNormalized);
   if (
-    legacyNormalized.length !== argv.length ||
-    legacyNormalized.some((token, index) => token !== argv[index])
+    legacyNormalized.length !== executableNormalized.length ||
+    legacyNormalized.some(
+      (token, index) => token !== executableNormalized[index],
+    )
   ) {
     trace.push({
-      from: argv.join(" "),
+      from: executableNormalized.join(" "),
       to: [...legacyNormalized],
       reason: "legacy_extension_action",
       confidence: "high",

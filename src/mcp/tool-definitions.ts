@@ -7,9 +7,7 @@ import {
   GRAPH_SUBCOMMAND_VALUES,
   PM_TOOL_ACTIONS,
 } from "../sdk/cli-contracts/enum-contracts.js";
-import {
-  buildPmActionToolInputSchema,
-} from "../sdk/cli-contracts/tool-schema.js";
+import { buildPmActionToolInputSchema } from "../sdk/cli-contracts/tool-schema.js";
 import type { PmToolAction } from "../sdk/cli-contracts/enum-contracts.js";
 import { RUNTIME_STATUS_ROLE_VALUES } from "../types.js";
 
@@ -769,7 +767,6 @@ const RAW_TOOLS: ToolDefinition[] = [
         type: "string",
         description: "Step id or order for step lifecycle subcommands.",
       },
-      reorderTo: { type: "number", description: "New order for reorder-step." },
       options: {
         type: "object",
         description:
@@ -792,6 +789,7 @@ export const NARROW_TOOL_ACTIONS: Readonly<Record<string, PmToolAction>> = {
   pm_create: "create",
   pm_deps: "deps",
   pm_docs: "docs",
+  pm_events: "events",
   pm_files: "files",
   pm_focus: "focus",
   pm_get: "get",

@@ -309,6 +309,51 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
 });
 
 describe("normalizeBootstrapInvocation", () => {
+  it("absorbs package-runner executable aliases without hiding real commands", () => {
+    expect(normalizeBootstrapInvocation(["pm", "init"])).toMatchObject({
+      argv: ["init"],
+      commandName: "init",
+      trace: [
+        {
+          from: "pm",
+          to: [],
+          reason: "executable_alias",
+          confidence: "high",
+        },
+      ],
+    });
+    expect(
+      normalizeBootstrapInvocation(["--json", "pm-cli", "contracts"]),
+    ).toMatchObject({
+      argv: ["--json", "contracts"],
+      commandName: "contracts",
+    });
+    expect(normalizeBootstrapInvocation(["pm-mcp", "init"])).toMatchObject({
+      argv: ["pm-mcp", "init"],
+      commandName: "pm-mcp",
+      trace: [],
+    });
+    expect(normalizeBootstrapInvocation(["pm", "pm", "init"])).toMatchObject({
+      argv: ["pm", "init"],
+      commandName: "pm",
+      trace: [expect.objectContaining({ reason: "executable_alias" })],
+    });
+  });
+
+  it("absorbs an executable alias before normalizing legacy extension syntax", () => {
+    const normalized = normalizeBootstrapInvocation([
+      "pm",
+      "extension",
+      "install",
+      "my-ext",
+    ]);
+    expect(normalized.argv).toEqual(["extension", "--install", "my-ext"]);
+    expect(normalized.trace.map(({ reason }) => reason)).toEqual([
+      "executable_alias",
+      "legacy_extension_action",
+    ]);
+  });
+
   it("normalizes legacy extension action syntax before parse", () => {
     const normalized = normalizeBootstrapInvocation([
       "extension",

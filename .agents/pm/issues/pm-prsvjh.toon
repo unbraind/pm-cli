@@ -2,17 +2,22 @@ id: pm-prsvjh
 title: "The intent budget binds downward and is inert upward: a sevenfold budget increase buys zero rows and the field that would reveal the clamp is omitted exactly when it applies"
 description: "The intent budget now works downward and is inert upward. An agent that has tokens to spend cannot spend them, the field that would reveal the clamp is present only when the clamp is not applied, and the envelope reports the truncated result as within budget with more available.\n\nMeasured live 2026-08-01 against 2026.8.1 on this tracker, 330 open items, using list with the triage intent and the json encoding.\n\nBudget binding downward, which is correct and is a real improvement over the state recorded on 2026-07-30. Budget 1200 yields 12 rows, applied_limit 12, budget_derived_limit 12, estimated_tokens 1145, within_budget true. Budget 3000 yields 38 rows, applied_limit 38, budget_derived_limit 38, estimated_tokens 3190. In both cases the derived limit is reported and the result honors the ceiling.\n\nBudget inert upward. Budget 8000 yields 100 rows and budget_derived_limit is absent. Budget 20000 yields 100 rows and 30,690 bytes, one byte different from the 8000 result. Budget 60000 yields 100 rows, estimated_tokens 7195, within_budget true, has_more true, and again no budget_derived_limit. Raising the budget by a factor of seven buys zero additional rows and produces no signal that it did nothing.\n\nThe clamp is escapable but only by a flag the agent has no reason to reach for. With an explicit row limit the budget governs again: triage with limit 200 and budget 20000 yields 200 rows and estimated_tokens 14014, and with limit 330 and budget 60000 it yields all 330 rows and estimated_tokens 22222. The same limit 200 without any budget yields 41 rows, because the intent's own default ceiling of 1800 binds. So the budget is capable of authorizing more than 100 rows and refuses to do so on its own.\n\nThe diagnostic field disappears exactly when it is needed. budget_derived_limit is emitted when the derived limit is below the default page cap and omitted when the derived limit is clamped by it. An agent watching that field sees the budget working, then sees the field vanish, and has nothing to distinguish a clamp from a budget that simply stopped binding. within_budget stays true throughout, which is accurate about the bytes and useless about the cause.\n\nWhy this is the opposite defect from the one already filed. The open floor item covers a declared budget that sits below the smallest projection the command can emit, so the command serves nothing. This item covers a budget that sits above what the command will serve, so the command serves a fixed fraction and the budget stops meaning anything. The two share the accounting surface and neither subsumes the other. The mild systematic under-estimate visible in every measurement here, where the emitted payload divided by four exceeds estimated_tokens by roughly seven percent in the same direction at every budget, belongs to the existing accounting item and is recorded there as evidence rather than duplicated.\n\nProposed resolution: let the derived limit exceed the default page cap when a budget is explicitly supplied, since the budget is the more specific instruction; always emit budget_derived_limit together with the reason it took its value, including clamped-by-page-cap; and when the budget is not the binding constraint, say which constraint is, so an agent can act on the difference instead of guessing."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[2]: agent-ergonomics,token-efficiency
 created_at: "2026-08-01T13:12:40.881Z"
-updated_at: "2026-08-01T13:12:40.881Z"
+updated_at: "2026-08-01T19:38:12.340Z"
+closed_at: "2026-08-01T19:38:11.033Z"
+completed_at: "2026-08-01T19:38:11.033Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "An explicitly supplied token budget raises the derived row limit above the default page cap, because the explicit budget is the more specific instruction; budget_derived_limit is emitted on every budgeted response, never omitted, and carries the reason it took its value including clamped-by-page-cap; When the budget is not the binding constraint the envelope names the constraint that is; A regression test asserts that raising the budget across the page-cap boundary changes the row count, with a negative control at a budget below the floor"
 parent: pm-5t33or
 risk: medium
 confidence: 90
+resolution: Explicit token budgets now raise collection limits and report the binding constraint deterministically.
+expected_result: Higher explicit budgets return more rows above default caps and every budgeted receipt explains its derived limit.
+actual_result: "List, search, and context bypass default caps for explicit budgets and emit budget_derived_limit, binding_constraint, and limit_reason with cursor-safe compaction."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-08-01T13:12:40.881Z","harness:claude-code","cli:create:dep",detected
   pm-7hbfch,related,"2026-08-01T13:12:40.881Z","harness:claude-code","cli:create:dep",detected
@@ -21,4 +26,20 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-sf31yl,related,"2026-08-01T13:12:40.881Z","harness:claude-code","cli:create:dep",detected
   pm-t2t709,related,"2026-08-01T13:12:40.881Z","harness:claude-code","cli:create:dep",detected
   pm-yekkvt,related,"2026-08-01T13:12:40.881Z","harness:claude-code","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-08-01T18:08:09.124Z","harness:codex","Implementation evidence: explicit token budgets now bypass default list/search/context page caps, emit budget_derived_limit plus binding_constraint and limit_reason, and retain cursor-safe compaction. High-budget and explicit-limit regression tests passed."
+  "2026-08-01T18:54:33.991Z","harness:codex","Verification evidence: token-budget and context-intent calibration gates passed across 28 surfaces and five intents, including full cursor walks; full suite passed 6,673 tests and exact 100/100/100/100 coverage."
+  "2026-08-01T19:12:12.505Z","harness:codex","Review finding accepted: option presence currently marks invalid budget overrides explicit. Reopened to derive explicitness from the validated positive-integer override and add negative controls."
+  "2026-08-01T19:38:05.038Z","harness:codex","Review-resolution evidence: an explicit intent budget is now recognized only from a syntactically valid positive integer; malformed camelCase and snake_case overrides fall back to the declared budget and default cap, while valid low legacy next/context budgets retain their existing projection behavior. Focused intent tests and the complete suite pass."
+files[3]{path,scope,note}:
+  sdk/public-surface.json,project,optional intent receipt diagnostics compatibility snapshot
+  src/sdk/context-intent-contracts.ts,project,explicit budget-derived limits and binding diagnostics
+  tests/unit/sdk/context-intent-contracts.spec.ts,project,high and low budget regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-intent-contracts.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msaqek7j-ywnqow,test,passed,"2026-08-01T18:55:20.048Z","2026-08-01T18:55:26.671Z","2026-08-01T18:55:26.671Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_ACTION_CONFORMANCE.md,project,intent budget diagnostics contract
+close_reason: "Implemented and verified explicit context-budget scaling, diagnostics, and malformed-override fallback semantics."
 body: ""
