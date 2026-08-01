@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:sdk",instrumentation,observability,token-efficiency
 created_at: "2026-07-25T12:28:07.388Z"
-updated_at: "2026-08-01T23:05:51.110Z"
+updated_at: "2026-08-01T23:26:58.084Z"
 closed_at: "2026-08-01T23:05:20.120Z"
 completed_at: "2026-08-01T23:05:20.120Z"
 author: "harness:claude-code"
@@ -36,8 +36,9 @@ dependencies[12]{id,kind,created_at}:
   pm-g3n00m,implements,"2026-07-25T20:44:28.425Z"
   pm-5t33or,verifies,"2026-07-26T05:50:22.649Z"
   pm-ez1dfg,verifies,"2026-07-26T05:59:46.996Z"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-01T23:05:01.566Z","harness:codex","Delivery evidence: added the opt-in --token-accounting contract across CLI, structured errors, MCP tool calls, and public SDK exports. Receipts count exact UTF-8 bytes before the receipt, use ceil(bytes/4), attribute result_rows/envelope/diagnostics/hints exactly to the total, measure their own bounded overhead, and exclude only token_accounting. Disabled-path corpus assertions prove no receipt or output-byte cost when off; independent rerender assertions prove reported totals cannot drift. The final sandboxed suite passed 6,688 tests with 100% statements, branches, functions, and lines. Contract snapshots, typecheck, static quality, duplicate detection, secrets scan, docs links, and context-eval gates passed. Packed npm and Bun consumers resolved their executable inside unrelated install roots; success and not-found output both carried accounting, and direct @unbrained/pm-cli/sdk imports returned receipts."
+  "2026-08-01T23:26:58.084Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/863 at exact implementation head 79e13819b755bd01a70c7e0e0284d376b525f0ad. Awaiting mandatory checks and bot review inventory before merge."
 files[21]{path,scope,note}:
   sdk/public-surface.json,project,Published SDK accounting surface
   src/cli/main.ts,project,Structured failure accounting
