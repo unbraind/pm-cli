@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: context-management,evaluation,rl,sdk,story,universal-platform,verifier
 created_at: "2026-07-26T22:04:31.606Z"
-updated_at: "2026-07-31T14:26:23.479Z"
+updated_at: "2026-08-01T09:56:23.901Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "An environment author can create an episode workspace from a declared seed and obtain byte-identical state across repeated runs, with identifiers, timestamps and ordering reproducible; the task an agent is given is a bounded pm projection of a real item, and the fields the grader uses are separable from the fields the agent may read; a verdict for an episode is computed from recorded workspace state by pm itself, with no environment-specific code in the grader, and is stable under replay; a worked exemplar runs end to end and is executable from the repository, covering a passing episode, a failing episode and an episode that fails for the wrong reason; the whole loop is reachable through the public SDK alone, with the CLI used only as a convenience, so an environment can embed pm without shelling out; the loop degrades to a single item and a single episode with no special path, and scales to concurrent episodes without shared mutable state"
@@ -18,7 +18,7 @@ why_now: "The immutable history, point-in-time reads, linked-test execution and 
 parent: pm-8jdc
 risk: medium
 confidence: medium
-dependencies[10]:
+dependencies[13]:
   - id: pm-g608fc
     kind: related
     created_at: "2026-07-26T22:04:31.606Z"
@@ -52,6 +52,24 @@ dependencies[10]:
   - id: pm-klxax7
     kind: implements
     created_at: "2026-07-31T14:26:23.216Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-e1vkee
+    kind: blocked_by
+    created_at: "2026-08-01T09:56:23.662Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-gd6vnn
+    kind: blocked_by
+    created_at: "2026-08-01T09:56:23.662Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-oqo9l2
+    kind: blocked_by
+    created_at: "2026-08-01T09:56:23.662Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected

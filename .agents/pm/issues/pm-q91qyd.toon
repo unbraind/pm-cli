@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: ci,governance,provenance,release,traceability
 created_at: "2026-07-27T12:46:06.729Z"
-updated_at: "2026-07-27T12:57:57.865Z"
+updated_at: "2026-08-01T09:53:06.977Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A reconciliation control compares the full declared release set (changelog sections and git tags) against the full delivered set (registry versions) across all history, not only the most recent cut; Each divergence class is reported separately and named: declared-but-never-delivered, delivered-but-undocumented, and tagged-but-unsectioned, because the three have different causes and different remedies; The current 18 divergences are dispositioned individually as either a real gap to backfill or a recorded historical exception with a reason, so the baseline is explained rather than merely frozen; The control runs on a schedule and fails loudly, so a divergence introduced by a partial release is visible the same week rather than at the next manual reconciliation; The reconciliation reads the registry through the same published-artifact path the acceptance stage uses, so it is proof of delivery and not proof of intent"
@@ -29,4 +29,6 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,verifies,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-ygli86,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-doxj,implements,"2026-07-27T12:57:57.598Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-01T09:53:06.976Z","harness:claude-code","Three-ledger reconciliation sampled live 2026-08-01 for the current release only, as a spot check rather than a re-run of the full divergence census. npm: @unbrained/pm-cli version 2026.8.1, dist-tags.latest 2026.8.1, time.modified 2026-08-01T02:43:26.931Z. GitHub releases: v2026.8.1 marked Latest, created 2026-08-01T02:44:13Z. Git tags: 82 total, all matching v20*, including the multi-release days v2026.7.24-2 and v2026.7.24-3 that the -N suffix scheme produces. For 2026.8.1 the three ledgers agree, and the npm publish precedes the GitHub release by 47 seconds, which is the expected ordering for the tag-push Release workflow."
 body: ""

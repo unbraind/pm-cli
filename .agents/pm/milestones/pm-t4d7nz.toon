@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[7]: digital-twin,extensibility,"horizon:far",milestone,outcome,sdk,universal-tool
 created_at: "2026-07-24T23:44:02.049Z"
-updated_at: "2026-07-31T10:16:16.909Z"
+updated_at: "2026-08-01T09:56:25.034Z"
 deadline: "2028-06-30T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 12000
@@ -20,7 +20,7 @@ why_now: The first two exemplars (a git-like VCS and a temporal digital twin) al
 parent: pm-doxj
 risk: high
 confidence: medium
-dependencies[24]:
+dependencies[25]:
   - id: pm-dijg
     kind: related
     created_at: "2026-07-24T23:44:02.049Z"
@@ -100,6 +100,12 @@ dependencies[24]:
     kind: blocked_by
     created_at: "2026-07-31T10:16:16.698Z"
     author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-t8a0x1
+    kind: blocked_by
+    created_at: "2026-08-01T09:56:24.771Z"
+    author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
 body: "## Outcome\npm SDK primitives — typed items, custom status graphs, a relationship registry, immutable event history, point-in-time reconstruction, transactional multi-item commits, and bounded graph queries — are sufficient to model domains that have nothing to do with software backlogs.\n\n## Evidence already recorded\nTwo exemplars landed and closed: a git-like version-control extension and a temporal digital-twin phase-2 exemplar. Their gap reports named the missing primitives; the transaction waiver has since been retired. This milestone tracks the remaining distance.\n\n## Delivery chain\npm-8jdc schema/config completion (incl. pm-z5nb, pm-dijg migrations) -> pm-xc68 policy roles -> pm-is1a federation -> a third foreign-domain exemplar with an empty gap ledger. Depends on the SDK-complete milestone being reached first.\n\n## Explicit non-goals\nNo domain-specific policy in core. Exemplars are conformance vehicles, not products."
