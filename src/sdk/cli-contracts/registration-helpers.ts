@@ -6,7 +6,6 @@
 import { Option, type Command } from "commander";
 import {
   pathExists,
-  normalizeStatusInput,
   refreshSearchArtifactsForMutation,
   shouldRunSearchRefreshInForeground,
   EXIT_CODE,
@@ -21,7 +20,6 @@ import {
   setActiveCommandResult,
   type GlobalOptions,
 } from "../runtime-primitives.js";
-import type { ItemStatus } from "../../types/index.js";
 import {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,

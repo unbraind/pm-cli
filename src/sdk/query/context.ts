@@ -2066,7 +2066,6 @@ function buildUnpaginatedContextListOptions(
 }
 
 async function loadContextCorpus(
-  options: ContextOptions,
   global: GlobalOptions,
   runtime: Omit<ContextRuntime, "tokenBudget">,
 ): Promise<ContextCorpus> {
@@ -2284,7 +2283,6 @@ function shouldPageContextFocus(
 }
 
 async function buildContextAgenda(
-  options: ContextOptions,
   global: GlobalOptions,
   runtime: ContextRuntime,
   subtreeIds: Set<string> | undefined,
@@ -2609,7 +2607,7 @@ export async function runContext(
 ): Promise<ContextResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const resolvedRuntime = await resolveContextRuntime(options, global);
-  const corpus = await loadContextCorpus(options, global, resolvedRuntime);
+  const corpus = await loadContextCorpus(global, resolvedRuntime);
   const scaledLimit = resolveContextLimitAtScale(
     resolvedRuntime.limit,
     corpus.fullCorpus.length,
@@ -2646,7 +2644,6 @@ export async function runContext(
     runtime.tokenBudget,
   );
   const agendaContext = await buildContextAgenda(
-    options,
     global,
     runtime,
     corpus.subtreeIds,

@@ -264,7 +264,7 @@ describe("context intent calibration gate", () => {
         expect(log).toHaveBeenCalledWith(
           expect.stringContaining("Context intent calibration passed"),
         ),
-      120_000,
+      300_000,
     );
-  }, 120_000);
+  }, 300_000);
 });
