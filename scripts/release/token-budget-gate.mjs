@@ -62,6 +62,8 @@ function seedFixture(cliPath, options) {
     cliPath,
     [
       "create",
+      "--id",
+      "pm-tbp0",
       "--title",
       "Alpha planning context",
       "--description",
@@ -81,6 +83,8 @@ function seedFixture(cliPath, options) {
     cliPath,
     [
       "create",
+      "--id",
+      "pm-tbb0",
       "--title",
       "Beta blocker",
       "--description",
@@ -97,6 +101,8 @@ function seedFixture(cliPath, options) {
     cliPath,
     [
       "create",
+      "--id",
+      "pm-tbc0",
       "--title",
       "Alpha implementation task",
       "--description",
@@ -130,6 +136,8 @@ function seedFixture(cliPath, options) {
       cliPath,
       [
         "create",
+        "--id",
+        `pm-tb${String(index + 1).padStart(2, "0")}`,
         "--title",
         `Scale fixture ${String(index + 1).padStart(2, "0")} shared planning context`,
         "--description",

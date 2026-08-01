@@ -145,6 +145,7 @@ describe("context intent calibration gate", () => {
     for (const measured of [
       { ...structuredClone(approved), version: 2 },
       { ...structuredClone(approved), tiers: [] },
+      { ...structuredClone(approved), tiers: [null] },
       {
         ...structuredClone(approved),
         tiers: [{ ...approved.tiers[0], item_count: 2 }],

@@ -349,10 +349,9 @@ function calibrationObjectKeys(value) {
 }
 
 function assertCalibrationTier(measuredTier, approvedTier) {
-  assertCalibrationCondition(
-    measuredTier !== null && typeof measuredTier === "object",
-    "calibration tier or intent shape changed",
-  );
+  if (measuredTier === null || typeof measuredTier !== "object") {
+    throw new Error("calibration tier or intent shape changed");
+  }
   const approvedCommands = calibrationObjectKeys(approvedTier.intents);
   const measuredCommands = calibrationObjectKeys(measuredTier.intents);
   assertCalibrationCondition(
