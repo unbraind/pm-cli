@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:packages","area:sdk","source:github"
 created_at: "2026-07-31T21:29:44.851Z"
-updated_at: "2026-08-01T05:28:25.908Z"
+updated_at: "2026-08-01T05:40:28.126Z"
 closed_at: "2026-08-01T05:28:08.746Z"
 completed_at: "2026-08-01T05:28:08.746Z"
 author: "harness:codex"
@@ -20,9 +20,10 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7mqzt,related_to,"2026-07-31T21:29:44.851Z","harness:codex",github,detected
   pm-z5pmf8,related_to,"2026-07-31T21:29:44.851Z","harness:codex",github,detected
   pm-z5pmf8,verifies,"2026-08-01T05:26:35.736Z","harness:codex",package_sdk_conformance,detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-07-31T21:29:44.851Z","harness:codex","Duplicate check: searched every status for GH-847 and the full issue title plus Beads/Todos/test-runs SDK contract terms; no canonical item existed. GitHub source: https://github.com/unbraind/pm-cli/issues/847. Related edges continue pm-z5pmf8 and the completed pm-vnk7ob/pm-w7mqzt package-contract lineage."
   "2026-08-01T05:27:15.710Z","harness:codex","GH847 delivery evidence 2026-08-01: Beads uses a narrow Pick-based SDK metadata contract without a redundant alias; Todos uses named SDK imports; linked-test adapters apply the author hint to resume only and keep status read-only. Package contract parity, focused package suites, 6,652-test exact full coverage, and isolated packed npm/Bun consumers all pass."
+  "2026-08-01T05:40:28.126Z","harness:codex","GitHub delivery evidence: GH-847 is implemented by PR #850 https://github.com/unbraind/pm-cli/pull/850 with the canonical PM link in the PR body; exact-head checks and reviews are pending."
 files[5]{path,scope,note}:
   packages/pm-beads/extensions/beads/runtime.ts,project,narrow SDK metadata contract and removal of redundant alias
   packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts,project,resume-only author propagation
