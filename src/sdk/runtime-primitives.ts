@@ -255,6 +255,14 @@ export {
   writeAuthorEnvironment,
 } from "../core/shared/author.js";
 export {
+  agentSessionEnvironment,
+  boundAgentEpisodeIdentity,
+  runWithAgentSessionContext,
+  resolveAgentSessionContextFromSignals,
+  type AgentEpisodeIdentity,
+  type AgentSessionContext,
+} from "../core/shared/agent-session-context.js";
+export {
   evaluateMutationGuard,
   isMutationAction,
   listMutationActions,

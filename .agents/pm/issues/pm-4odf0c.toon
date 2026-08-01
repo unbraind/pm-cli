@@ -1,0 +1,24 @@
+id: pm-4odf0c
+title: "Sentry PM-CLI-2S: resource-exhausted copy reports a high handled error without actionable storage guidance"
+description: "Sentry records three handled ENOSPC copy failures from release 2026.7.29. The event is system-frame-only and path-scrubbed, so operators can see resource exhaustion but cannot identify the bounded operation, required free space, or cleanup recovery from the issue alone. Duplicate check searched the exact Sentry key, ENOSPC copyfile, no-space copy, extension copy, and all-status telemetry lineages; no exact owner exists."
+type: Issue
+status: open
+priority: 2
+tags[4]: sentry,storage,telemetry,ux
+created_at: "2026-08-01T12:13:22.473Z"
+updated_at: "2026-08-01T12:13:22.473Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Copy operations classify ENOSPC with a bounded operation label and safe recovery guidance; expected resource exhaustion remains handled; tests prove paths and private topology stay scrubbed; Sentry telemetry classification no longer creates an unactionable high issue for the same handled outcome
+goal: project management = context management
+objective: Make production resource-exhaustion telemetry actionable without disclosing private paths
+value: Operators can distinguish an environmental storage limit from a pm correctness defect and recover safely
+why_now: The unresolved issue has three events and is the newest high Sentry group returned by the live seven-day query
+parent: pm-5oj5
+risk: low
+confidence: 90
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-nb08,related,"2026-08-01T12:13:22.473Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-01T12:13:22.473Z","harness:codex","Duplicate-check evidence: exact all-status searches found storage and Sentry precedents but no item owning PM-CLI-2S or this copy-resource classification. Live evidence is summarized without raw paths, entity identifiers, hostnames, or event payloads."
+body: ""

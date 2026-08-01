@@ -103,6 +103,7 @@ export {
   type UpdateResult,
 } from "./runtime.js";
 export * from "./core-governance.js";
+export * from "./agent-session-context.js";
 export type {
   ItemDocument,
   ItemMetadata,

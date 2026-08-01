@@ -27,8 +27,13 @@ export {
 } from "../core/shared/author.js";
 export {
   analyzeAgentProvenanceDescriptorCoverage,
+  groupHistoryByEpisode,
+  resolveHistoryEpisodeGroupIdentity,
+  summarizeAgentProvenance,
   summarizeAgentModelProvenance,
+  type AgentEpisodeGroup,
   type AgentModelProvenanceCoverage,
+  type AgentProvenanceDimensionCoverage,
   type AgentProvenanceDescriptorCoverage,
 } from "./provenance.js";
 export {

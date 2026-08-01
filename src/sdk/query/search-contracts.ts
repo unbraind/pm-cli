@@ -372,7 +372,7 @@ export function resolveHybridSemanticWeight(settings: unknown): number {
 export function resolveSearchTuning(settings: unknown): SearchTuning {
   const defaults: SearchTuning = {
     title_exact_bonus: 10,
-    title_weight: 8,
+    title_weight: 48,
     description_weight: 5,
     tags_weight: 6,
     status_weight: 2,

@@ -970,7 +970,8 @@ export interface HistoryEntry {
     | "environment"
     | "mcp_client"
     | "argv"
-    | "host";
+    | "host"
+    | "session";
   /** Privacy-safe fingerprint distinguishing concurrent harness invocations. */
   agent_instance?: string;
   /** Extensible local-only descriptive agent provenance; null means declared but unavailable. */
@@ -981,10 +982,25 @@ export interface HistoryEntry {
         /** Bounded descriptive value observed for this dimension. */
         value: string;
         /** Bounded signal class that supplied the value. */
-        source: "override" | "environment" | "mcp_client" | "argv" | "host";
+        source:
+          | "override"
+          | "environment"
+          | "mcp_client"
+          | "argv"
+          | "host"
+          | "session";
       } | null
     >
   >;
+  /** Stable declared episode identity; absent on legacy or undeclared events. */
+  agent_episode?: {
+    /** Stable caller-declared episode join key. */
+    id: string;
+    /** Human-readable episode purpose retained in local history. */
+    label?: string;
+    /** Parent episode key for delegated or nested work. */
+    parent_id?: string;
+  };
   /** Value that configures or reports op for this contract. */
   op: string;
   /** Value that configures or reports patch for this contract. */
@@ -1255,6 +1271,8 @@ export interface PmSettings {
       session_environment_keys?: string[];
       /** Extensible provenance dimensions mapped to ordered environment keys. */
       provenance_environment_keys?: Record<string, string[]>;
+      /** Dimensions intentionally unavailable from this harness environment. */
+      provenance_unavailable_dimensions?: string[];
       /** Literal executable or argument markers. */
       argv_markers?: string[];
       /** Literal MCP client-name markers. */

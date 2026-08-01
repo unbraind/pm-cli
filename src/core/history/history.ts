@@ -203,6 +203,9 @@ export function createHistoryEntry(params: {
     ...(agentIdentity.provenance
       ? { agent_provenance: agentIdentity.provenance }
       : {}),
+    ...(agentIdentity.episode
+      ? { agent_episode: agentIdentity.episode }
+      : {}),
     op: params.op,
     patch,
     before_hash: sha256Hex(stableStringify(beforeHashCanonical)),

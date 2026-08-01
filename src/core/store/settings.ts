@@ -1227,6 +1227,7 @@ function orderSerializedSettingsSections(
         "model_environment_keys",
         "session_environment_keys",
         "provenance_environment_keys",
+        "provenance_unavailable_dimensions",
         "argv_markers",
         "client_names",
       ]),

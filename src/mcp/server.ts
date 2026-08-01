@@ -24,6 +24,7 @@ import {
   runWithHarnessDetectionSignals,
   runWithWorkspaceHarnessSignalDescriptors,
   type AgentClientInfo,
+  boundAgentEpisodeIdentity,
 } from "../sdk/runtime-primitives.js";
 import { pmToolActionNestedOptionKeys } from "../sdk/cli-contracts/tool-schema.js";
 import {
@@ -90,15 +91,15 @@ let activeMcpClientInfo: AgentClientInfo | undefined;
 // top-level property keys for each tool and, on every tools/call, warn (without
 // rejecting) when an unexpected top-level key appears. The warning is surfaced
 // to stderr and additively in structuredContent.warnings.
-function declaredToolKeys(
-  tools = TOOLS,
-): Map<string, string[]> {
+function declaredToolKeys(tools = TOOLS): Map<string, string[]> {
   return new Map(
     tools.map((tool) => {
-    const schema = tool.inputSchema as { properties?: Record<string, unknown> };
-    const properties = schema.properties ?? {};
-    return [tool.name, Object.keys(properties)] as const;
-  }),
+      const schema = tool.inputSchema as {
+        properties?: Record<string, unknown>;
+      };
+      const properties = schema.properties ?? {};
+      return [tool.name, Object.keys(properties)] as const;
+    }),
   );
 }
 
@@ -440,6 +441,8 @@ function readMcpClientInfo(
   if (Object.keys(boundedProvenance).length > 0) {
     result.provenance = boundedProvenance;
   }
+  const episode = boundAgentEpisodeIdentity(clientInfo.episode, false);
+  if (episode !== undefined) result.episode = episode;
   return result;
 }
 
@@ -477,10 +480,7 @@ async function handleToolCall(
       // stored pm comments / notes / item bodies. Direct CLI calls are not
       // affected; decoding at the MCP boundary normalizes the agent path while
       // leaving normal text untouched.
-      const args = await normalizeWorkspaceToolArguments(
-        name,
-        requestedArgs,
-      );
+      const args = await normalizeWorkspaceToolArguments(name, requestedArgs);
       const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
       const pmRoot = resolvePmRoot(
         cwd,
@@ -497,11 +497,7 @@ async function handleToolCall(
           // pm-upi0 extends the same mechanism into the nested options object.
           const action = resolveInvokedAction(name, args);
           const warnings = [
-            ...detectUnexpectedTopLevelKeys(
-              name,
-              args,
-              declaredToolKeys(),
-            ),
+            ...detectUnexpectedTopLevelKeys(name, args, declaredToolKeys()),
             ...detectUnexpectedOptionKeys(name, action, args),
             ...(await collectMutationGuardWarnings(name, action, args)),
           ];
@@ -561,9 +557,7 @@ async function readWorkspaceResource(
         uri,
         mimeType: contract.mimeType,
         text:
-          typeof value === "string"
-            ? value
-            : JSON.stringify(value, null, 2),
+          typeof value === "string" ? value : JSON.stringify(value, null, 2),
       },
     ],
   };
@@ -639,10 +633,7 @@ export async function handleRequest(
   if (request.method === "tools/list") {
     return {
       tools: (
-        await resolveMcpToolSurface(
-          TOOLS,
-          requestWorkspaceArgs(request.params),
-        )
+        await resolveMcpToolSurface(TOOLS, requestWorkspaceArgs(request.params))
       ).tools,
     };
   }

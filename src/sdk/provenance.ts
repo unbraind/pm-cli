@@ -38,13 +38,78 @@ export interface AgentModelProvenanceCoverage {
   inert: boolean;
 }
 
+/** Availability coverage for one provenance dimension on one harness. */
+export interface AgentProvenanceDimensionCoverage extends AgentModelProvenanceCoverage {
+  /** Stable provenance dimension being summarized. */
+  dimension: string;
+}
+
+/** One declared or inferred episode group with deterministically nested children. */
+export interface AgentEpisodeGroup {
+  /** Stable declared or inferred group key. */
+  id: string;
+  /** Optional declared human-readable purpose. */
+  label?: string;
+  /** Optional declared parent episode key. */
+  parent_id?: string;
+  /** Whether the grouping key was recorded or reconstructed. */
+  source: "declared" | "inferred";
+  /** Chronologically ordered immutable history entries in this episode. */
+  entries: [HistoryEntry, ...HistoryEntry[]];
+  /** Deterministically ordered nested episodes. */
+  children: AgentEpisodeGroup[];
+}
+
+/** Resolve the declared or deterministic legacy identity for one history event. */
+export function resolveHistoryEpisodeGroupIdentity(
+  entry: HistoryEntry,
+): Pick<AgentEpisodeGroup, "id" | "source"> {
+  if (entry.agent_episode !== undefined) {
+    return { id: entry.agent_episode.id, source: "declared" };
+  }
+  return {
+    id: entry.agent_instance
+      ? `inferred:instance:${entry.agent_instance}`
+      : `inferred:author:${entry.author}:${entry.ts.slice(0, 13)}`,
+    source: "inferred",
+  };
+}
+
+function episodeParentIsAcyclic(
+  group: AgentEpisodeGroup,
+  parent: AgentEpisodeGroup,
+  declaredGroups: ReadonlyMap<string, AgentEpisodeGroup>,
+): boolean {
+  let cursor: AgentEpisodeGroup | undefined = parent;
+  const seen = new Set([group.id]);
+  while (cursor !== undefined && !seen.has(cursor.id)) {
+    seen.add(cursor.id);
+    cursor = cursor.parent_id
+      ? declaredGroups.get(cursor.parent_id)
+      : undefined;
+  }
+  return cursor === undefined;
+}
+
+function sortAgentEpisodeForest(roots: AgentEpisodeGroup[]): void {
+  const pending: AgentEpisodeGroup[][] = [roots];
+  while (pending.length > 0) {
+    const values = pending.pop() as AgentEpisodeGroup[];
+    values.sort(
+      (left, right) =>
+        left.entries[0].ts.localeCompare(right.entries[0].ts) ||
+        left.id.localeCompare(right.id),
+    );
+    pending.push(...values.map((value) => value.children));
+  }
+}
+
 /**
  * Derive dimension coverage from descriptor data. Optional inputs make this a
  * usable negative-control gate instead of a hard-coded assertion.
  */
 export function analyzeAgentProvenanceDescriptorCoverage(
-  descriptors: readonly HarnessSignalDescriptor[] =
-    BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
+  descriptors: readonly HarnessSignalDescriptor[] = BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
   dimensions: readonly string[] = AGENT_PROVENANCE_DIMENSIONS,
 ): AgentProvenanceDescriptorCoverage[] {
   return dimensions.map((dimension) => {
@@ -114,4 +179,116 @@ export function summarizeAgentModelProvenance(
       };
     })
     .sort((left, right) => left.harness.localeCompare(right.harness));
+}
+
+/**
+ * Summarize observed, explicitly unavailable, and legacy-missing values for
+ * every requested provenance dimension without consulting mutable state.
+ */
+export function summarizeAgentProvenance(
+  entries: readonly Pick<
+    HistoryEntry,
+    "agent_harness" | "agent_model" | "agent_provenance"
+  >[],
+  dimensions: readonly string[] = AGENT_PROVENANCE_DIMENSIONS,
+  minimumExplicitSample = 1,
+): AgentProvenanceDimensionCoverage[] {
+  const rows = new Map<
+    string,
+    Omit<AgentProvenanceDimensionCoverage, "coverage" | "inert">
+  >();
+  for (const entry of entries) {
+    if (!entry.agent_harness) continue;
+    for (const dimension of dimensions) {
+      const key = `${entry.agent_harness}\0${dimension}`;
+      const row = rows.get(key) ?? {
+        harness: entry.agent_harness,
+        dimension,
+        entries: 0,
+        observed: 0,
+        unavailable: 0,
+        legacy_missing: 0,
+      };
+      row.entries += 1;
+      const observation = entry.agent_provenance?.[dimension];
+      if (
+        observation !== undefined &&
+        observation !== null &&
+        observation.value.length > 0
+      ) {
+        row.observed += 1;
+      } else if (observation === null) {
+        row.unavailable += 1;
+      } else {
+        row.legacy_missing += 1;
+      }
+      rows.set(key, row);
+    }
+  }
+  return [...rows.values()]
+    .map((row) => {
+      const explicit = row.observed + row.unavailable;
+      return {
+        ...row,
+        coverage: explicit === 0 ? null : row.observed / explicit,
+        inert: explicit >= minimumExplicitSample && row.observed === 0,
+      };
+    })
+    .sort(
+      (left, right) =>
+        left.harness.localeCompare(right.harness) ||
+        left.dimension.localeCompare(right.dimension),
+    );
+}
+
+/**
+ * Group immutable history by declared episode keys. Legacy entries fall back
+ * to their privacy-safe agent instance, or to a deterministic author cohort.
+ */
+export function groupHistoryByEpisode(
+  entries: readonly HistoryEntry[],
+): AgentEpisodeGroup[] {
+  const sorted = [...entries].sort(
+    (left, right) =>
+      left.ts.localeCompare(right.ts) ||
+      left.author.localeCompare(right.author) ||
+      left.op.localeCompare(right.op) ||
+      left.before_hash.localeCompare(right.before_hash) ||
+      left.after_hash.localeCompare(right.after_hash),
+  );
+  const groups = new Map<string, AgentEpisodeGroup>();
+  const declaredGroups = new Map<string, AgentEpisodeGroup>();
+  for (const entry of sorted) {
+    const episode = entry.agent_episode;
+    const identity = resolveHistoryEpisodeGroupIdentity(entry);
+    const groupKey = `${identity.source}:${identity.id}`;
+    const existing = groups.get(groupKey);
+    if (existing) {
+      existing.entries.push(entry);
+      continue;
+    }
+    const group: AgentEpisodeGroup = {
+      id: identity.id,
+      ...(episode?.label === undefined ? {} : { label: episode.label }),
+      ...(episode?.parent_id === undefined
+        ? {}
+        : { parent_id: episode.parent_id }),
+      source: identity.source,
+      entries: [entry],
+      children: [],
+    };
+    groups.set(groupKey, group);
+    if (episode !== undefined) declaredGroups.set(identity.id, group);
+  }
+  const roots: AgentEpisodeGroup[] = [];
+  for (const group of groups.values()) {
+    const parent = group.parent_id
+      ? declaredGroups.get(group.parent_id)
+      : undefined;
+    if (parent && episodeParentIsAcyclic(group, parent, declaredGroups)) {
+      parent.children.push(group);
+    } else roots.push(group);
+  }
+  sortAgentEpisodeForest(roots);
+  return roots;
 }

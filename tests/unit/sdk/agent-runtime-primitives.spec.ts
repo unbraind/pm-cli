@@ -111,6 +111,7 @@ describe("agent runtime SDK primitives", () => {
           value: "gpt-5.6-sol",
         },
         role: null,
+        topic: null,
       },
       session: "thread-123",
     });
@@ -130,6 +131,7 @@ describe("agent runtime SDK primitives", () => {
           value: "operator-model",
         },
         role: null,
+        topic: null,
       },
     });
     expect(
@@ -154,6 +156,7 @@ describe("agent runtime SDK primitives", () => {
           value: "claude-opus",
         },
         role: null,
+        topic: null,
       },
       session: "mcp-session",
     });
@@ -173,6 +176,7 @@ describe("agent runtime SDK primitives", () => {
           value: "qwen-coder",
         },
         role: null,
+        topic: null,
       },
     });
   });
@@ -195,6 +199,7 @@ describe("agent runtime SDK primitives", () => {
             effort: { source: "override", value: "xhigh" },
             model: { source: "override", value: "ambient-model" },
             role: { source: "override", value: "reviewer" },
+            topic: null,
           },
           session: "ambient-thread",
         });
@@ -272,6 +277,7 @@ describe("agent runtime SDK primitives", () => {
             value: "test-model",
           },
           role: null,
+          topic: null,
         },
         session: "session-1",
       });
@@ -326,7 +332,7 @@ describe("agent runtime SDK primitives", () => {
       }),
     ).toEqual({
       harness: "codex",
-      provenance: { effort: null, model: null, role: null },
+      provenance: { effort: null, model: null, role: null, topic: null },
     });
     expect(
       detectAgentIdentity({ env: {}, argv: ["/home/pi/project", "status"] }),
@@ -366,6 +372,7 @@ describe("agent runtime SDK primitives", () => {
           value: "gpt-5.6-sol",
         },
         role: null,
+        topic: null,
       },
     });
     expect(
@@ -381,7 +388,7 @@ describe("agent runtime SDK primitives", () => {
       author: "configured",
       source: "configured",
       harness: "codex",
-      provenance: { effort: null, model: null, role: null },
+      provenance: { effort: null, model: null, role: null, topic: null },
     });
     expect(
       resolveAuthorIdentity(undefined, "", {
@@ -391,7 +398,7 @@ describe("agent runtime SDK primitives", () => {
       author: "harness:codex",
       source: "detected",
       harness: "codex",
-      provenance: { effort: null, model: null, role: null },
+      provenance: { effort: null, model: null, role: null, topic: null },
     });
     expect(resolveAuthorIdentity(undefined, "", { env: {} })).toEqual({
       author: "unknown",
@@ -436,6 +443,7 @@ describe("agent runtime SDK primitives", () => {
         effort: { source: "override", value: "high" },
         model: { source: "environment", value: "gpt-5.6-sol" },
         role: { source: "override", value: "implementation" },
+        topic: null,
       },
     });
     expect(author).toBe("configured-agent");
@@ -509,7 +517,12 @@ describe("agent runtime SDK primitives", () => {
           author_source: "detected",
           agent_harness: "codex",
           agent_instance: expect.any(String),
-          agent_provenance: { effort: null, model: null, role: null },
+          agent_provenance: {
+            effort: null,
+            model: null,
+            role: null,
+            topic: null,
+          },
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),
@@ -521,7 +534,12 @@ describe("agent runtime SDK primitives", () => {
           author_source: "detected",
           agent_harness: "codex",
           agent_instance: expect.any(String),
-          agent_provenance: { effort: null, model: null, role: null },
+          agent_provenance: {
+            effort: null,
+            model: null,
+            role: null,
+            topic: null,
+          },
           ts: expect.any(String),
           patch: expect.any(Array),
           before_hash: expect.any(String),

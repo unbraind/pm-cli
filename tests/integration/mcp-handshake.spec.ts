@@ -110,6 +110,11 @@ describe("MCP protocol handshake", () => {
           name: "handshake-test",
           version: "1.0.0",
           provenance: { effort: "xhigh", role: "implementation" },
+          episode: {
+            id: "mcp-episode",
+            label: "Boundary crossing",
+            parent_id: "sdk-episode",
+          },
         },
       },
     })) as {
@@ -143,6 +148,11 @@ describe("MCP protocol handshake", () => {
       name: "handshake-test",
       version: "1.0.0",
       provenance: { effort: "xhigh", role: "implementation" },
+      episode: {
+        id: "mcp-episode",
+        label: "Boundary crossing",
+        parent_id: "sdk-episode",
+      },
     });
     expect(result.capabilities).toMatchObject({
       tools: { listChanged: true },
@@ -158,6 +168,7 @@ describe("MCP protocol handshake", () => {
         clientInfo: {
           name: "empty-provenance-test",
           provenance: { Invalid: "value", effort: "   " },
+          episode: { id: "invalid episode id" },
         },
       },
     });

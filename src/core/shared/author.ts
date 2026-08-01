@@ -5,6 +5,11 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
+import {
+  resolveAgentSessionContextFromSignals,
+  type AgentEpisodeIdentity,
+  type AgentSessionContext,
+} from "./agent-session-context.js";
 
 /** Stable provenance categories recorded beside newly appended history authors. */
 export type AuthorSource = "asserted" | "configured" | "detected" | "unknown";
@@ -15,13 +20,15 @@ export type AgentModelSource =
   | "environment"
   | "mcp_client"
   | "argv"
-  | "host";
+  | "host"
+  | "session";
 
 /** Stable built-in provenance dimensions understood by the default runtime. */
 export const AGENT_PROVENANCE_DIMENSIONS = [
   "model",
   "effort",
   "role",
+  "topic",
 ] as const;
 
 /** One bounded provenance value and the signal class that supplied it. */
@@ -52,6 +59,8 @@ export interface AgentClientInfo {
   session?: string;
   /** Optional descriptive provenance supplied by an embedding host. */
   provenance?: Readonly<Record<string, string | undefined>>;
+  /** Optional episode declaration supplied by an embedding host. */
+  episode?: AgentEpisodeIdentity;
 }
 
 /** Declarative, side-effect-free signal definition for one agent harness. */
@@ -68,6 +77,8 @@ export interface HarnessSignalDescriptor {
   provenance_environment_keys?: Readonly<
     Record<string, readonly string[] | undefined>
   >;
+  /** Dimensions the harness is known not to expose through environment keys. */
+  provenance_unavailable_dimensions?: readonly string[];
   /** Literal, case-insensitive executable or argument markers. */
   argv_markers?: readonly string[];
   /** Literal, case-insensitive MCP client-name markers. */
@@ -90,6 +101,8 @@ export interface DetectedAgentIdentity {
   instance?: string;
   /** Extensible local-only descriptive provenance observations. */
   provenance?: AgentProvenance;
+  /** Stable declared episode identity when the session supplied one. */
+  episode?: AgentEpisodeIdentity;
 }
 
 /** Public, privacy-safe identity resolution result shared by CLI and SDK hosts. */
@@ -112,6 +125,8 @@ export interface HarnessDetectionSignals {
   client_info?: AgentClientInfo;
   /** Invocation metadata supplied directly by an embedding host. */
   provenance?: Readonly<Record<string, string | undefined>>;
+  /** Session-wide semantic context supplied by an embedding host. */
+  session_context?: AgentSessionContext;
   /** Invocation-local descriptors appended after built-in and package signals. */
   descriptors?: readonly HarnessSignalDescriptor[];
 }
@@ -134,6 +149,7 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       provenance_environment_keys: {
         effort: ["CLAUDE_EFFORT"],
       },
+      provenance_unavailable_dimensions: ["role", "topic"],
       argv_markers: ["claude", "claude-code"],
       client_names: ["claude", "claude-code", "claude code"],
     },
@@ -146,6 +162,7 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
         effort: ["CODEX_REASONING_EFFORT", "CODEX_EFFORT"],
         role: ["CODEX_SESSION_ROLE"],
       },
+      provenance_unavailable_dimensions: ["topic"],
       argv_markers: ["codex"],
       client_names: ["codex"],
     },
@@ -154,6 +171,7 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       environment_keys: ["PI_AGENT", "PI_CODING_AGENT"],
       model_environment_keys: ["PI_MODEL"],
       session_environment_keys: ["PI_SESSION_ID"],
+      provenance_unavailable_dimensions: ["effort", "role", "topic"],
       argv_markers: ["pi"],
       client_names: ["pi"],
     },
@@ -162,6 +180,7 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       environment_keys: ["OPENCODE", "OPENCODE_SESSION_ID"],
       model_environment_keys: ["OPENCODE_MODEL"],
       session_environment_keys: ["OPENCODE_SESSION_ID"],
+      provenance_unavailable_dimensions: ["effort", "role", "topic"],
       argv_markers: ["opencode"],
       client_names: ["opencode"],
     },
@@ -170,6 +189,7 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       environment_keys: ["CURSOR_AGENT", "CURSOR_TRACE_ID"],
       model_environment_keys: ["CURSOR_MODEL"],
       session_environment_keys: ["CURSOR_TRACE_ID"],
+      provenance_unavailable_dimensions: ["effort", "role", "topic"],
       argv_markers: ["cursor"],
       client_names: ["cursor"],
     },
@@ -178,6 +198,7 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       environment_keys: ["AIDER", "AIDER_MODEL"],
       model_environment_keys: ["AIDER_MODEL"],
       session_environment_keys: ["AIDER_SESSION_ID"],
+      provenance_unavailable_dimensions: ["effort", "role", "topic"],
       argv_markers: ["aider"],
       client_names: ["aider"],
     },
@@ -186,12 +207,14 @@ export const BUILTIN_HARNESS_SIGNAL_DESCRIPTORS: readonly HarnessSignalDescripto
       environment_keys: ["GEMINI_CLI", "GEMINI_CLI_HOME"],
       model_environment_keys: ["GEMINI_MODEL"],
       session_environment_keys: ["GEMINI_CLI_SESSION_ID"],
+      provenance_unavailable_dimensions: ["effort", "role", "topic"],
       argv_markers: ["gemini", "gemini-cli"],
       client_names: ["gemini", "gemini-cli", "gemini cli"],
     },
     {
       harness: "ci",
       environment_keys: ["CI", "GITHUB_ACTIONS", "BUILDKITE", "GITLAB_CI"],
+      provenance_unavailable_dimensions: ["model", "effort", "role", "topic"],
       argv_markers: [],
       client_names: [],
     },
@@ -251,11 +274,13 @@ function normalizeHarnessSignalDescriptor(
           dimension.trim().toLowerCase().slice(0, 64),
           boundedUniqueStrings(keys),
         ])
-        .filter(
-          ([dimension]) =>
-            HARNESS_NAMESPACE_PATTERN.test(dimension as string),
+        .filter(([dimension]) =>
+          HARNESS_NAMESPACE_PATTERN.test(dimension as string),
         ),
     ),
+    provenance_unavailable_dimensions: boundedUniqueStrings(
+      descriptor.provenance_unavailable_dimensions,
+    ).map((value) => value.toLowerCase()),
     argv_markers: boundedUniqueStrings(descriptor.argv_markers).map((value) =>
       value.toLowerCase(),
     ),
@@ -332,14 +357,19 @@ function provenanceFromArgv(
     if (acceptedFlags.includes(token)) {
       return nonBlank(tokens[index + 1])?.slice(0, 256);
     }
-    const prefix = acceptedFlags.find((flag) =>
-      token.startsWith(`${flag}=`),
-    );
+    const prefix = acceptedFlags.find((flag) => token.startsWith(`${flag}=`));
     if (prefix) {
       return nonBlank(token.slice(prefix.length + 1))?.slice(0, 256);
     }
   }
   return undefined;
+}
+
+function boundedProvenanceValue(
+  provenance: Readonly<Record<string, string | undefined>> | undefined,
+  dimension: string,
+): string | undefined {
+  return nonBlank(provenance?.[dimension])?.slice(0, 256);
 }
 
 function effectiveHarnessDetectionSignals(
@@ -383,6 +413,7 @@ function resolveAgentProvenanceObservation(
   signals: HarnessDetectionSignals,
   env: Readonly<Record<string, string | undefined>>,
   descriptor: NormalizedHarnessSignalDescriptor | undefined,
+  sessionContext: AgentSessionContext | undefined,
 ): AgentProvenanceObservation | undefined {
   const overrideKey = `PM_AGENT_${dimension.toUpperCase().replaceAll("-", "_")}`;
   const hostResolvedDimensions = new Set([
@@ -395,43 +426,38 @@ function resolveAgentProvenanceObservation(
     overrideValue = nonBlank(env[overrideKey])?.slice(0, 256);
     argvValue = provenanceFromArgv(signals.argv ?? [], dimension);
   }
-  const environmentKeys =
-    dimension === "model"
-      ? descriptor?.model_environment_keys
-      : descriptor?.provenance_environment_keys[dimension];
-  const candidates: Array<{
-    value: string | undefined;
-    source: AgentModelSource;
-  }> = [
-    {
-      value: overrideValue,
-      source: "override",
-    },
-    {
-      value: firstEnvironmentValue(env, environmentKeys),
-      source: "environment",
-    },
-    {
-      value: nonBlank(
-        dimension === "model"
-          ? signals.client_info?.model
-          : signals.client_info?.provenance?.[dimension],
-      )?.slice(0, 256),
-      source: "mcp_client",
-    },
-    {
-      value: nonBlank(signals.provenance?.[dimension])?.slice(0, 256),
-      source: "host",
-    },
-    {
-      value: argvValue,
-      source: "argv",
-    },
+  const environmentKeysByDimension: Readonly<
+    Record<string, readonly string[] | undefined>
+  > = {
+    ...descriptor?.provenance_environment_keys,
+    model: descriptor?.model_environment_keys,
+  };
+  const clientProvenance = {
+    ...signals.client_info?.provenance,
+    model: signals.client_info?.model,
+  };
+  const values = [
+    overrideValue,
+    boundedProvenanceValue(sessionContext?.provenance, dimension),
+    firstEnvironmentValue(env, environmentKeysByDimension[dimension]),
+    boundedProvenanceValue(clientProvenance, dimension),
+    boundedProvenanceValue(signals.provenance, dimension),
+    argvValue,
   ];
+  const sources: readonly AgentModelSource[] = [
+    "override",
+    "session",
+    "environment",
+    "mcp_client",
+    "host",
+    "argv",
+  ];
+  const candidates = sources.map((source, index) => ({
+    value: values[index],
+    source,
+  }));
   return candidates.find(
-    (
-      candidate,
-    ): candidate is { value: string; source: AgentModelSource } =>
+    (candidate): candidate is { value: string; source: AgentModelSource } =>
       candidate.value !== undefined,
   );
 }
@@ -440,6 +466,7 @@ function resolveAgentProvenance(
   signals: HarnessDetectionSignals,
   env: Readonly<Record<string, string | undefined>>,
   descriptor: NormalizedHarnessSignalDescriptor | undefined,
+  sessionContext: AgentSessionContext | undefined,
 ): AgentProvenance {
   const descriptorDimensions = Object.keys(
     descriptor?.provenance_environment_keys ?? {},
@@ -449,6 +476,7 @@ function resolveAgentProvenance(
     ...descriptorDimensions,
     ...Object.keys(signals.provenance ?? {}),
     ...Object.keys(signals.client_info?.provenance ?? {}),
+    ...Object.keys(sessionContext?.provenance ?? {}),
   ]);
   const observations: Record<string, AgentProvenanceObservation | null> = {};
   for (const dimension of dimensions) {
@@ -457,6 +485,7 @@ function resolveAgentProvenance(
       signals,
       env,
       descriptor,
+      sessionContext,
     );
     if (observed) {
       observations[dimension] = observed;
@@ -571,10 +600,15 @@ export function detectAgentIdentity(
   const descriptor = descriptors.find((candidate) =>
     descriptorMatchesSignals(candidate, env, labels, clientName),
   );
+  const sessionContext = resolveAgentSessionContextFromSignals(
+    effectiveSignals,
+    env,
+  );
   const provenance = resolveAgentProvenance(
     effectiveSignals,
     env,
     descriptor,
+    sessionContext,
   );
   const modelCandidate = provenance.model;
   const session = [
@@ -589,7 +623,10 @@ export function detectAgentIdentity(
           .slice(0, 24)
       : undefined;
   const entries: Array<
-    [keyof DetectedAgentIdentity, string | AgentProvenance | undefined]
+    [
+      keyof DetectedAgentIdentity,
+      string | AgentProvenance | AgentEpisodeIdentity | undefined,
+    ]
   > = [
     ["harness", descriptor?.harness],
     ["model", modelCandidate?.value],
@@ -597,6 +634,7 @@ export function detectAgentIdentity(
     ["session", session],
     ["instance", instance],
     ["provenance", Object.keys(provenance).length > 0 ? provenance : undefined],
+    ["episode", sessionContext.episode],
   ];
   return Object.fromEntries(
     entries.filter((entry) => entry[1] !== undefined),
@@ -694,6 +732,7 @@ export function resolveHistoryAgentIdentity(
     ...(active.session ? { session: active.session } : {}),
     ...(active.instance ? { instance: active.instance } : {}),
     ...(active.provenance ? { provenance: active.provenance } : {}),
+    ...(active.episode ? { episode: active.episode } : {}),
   };
 }
 
