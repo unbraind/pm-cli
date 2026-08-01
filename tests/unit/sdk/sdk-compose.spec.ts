@@ -81,6 +81,7 @@ function buildFullBlueprint(observed: { imperative: boolean }): ExtensionBluepri
     exporters: [{ name: "compose-export", exporter: () => ({ exported: true }) }],
     hooks: {
       beforeCommand: [() => undefined],
+      beforeMutation: [() => ({ allow: true })],
       afterCommand: [() => undefined],
       onWrite: [() => undefined],
       onRead: [() => undefined],
@@ -150,6 +151,7 @@ describe("sdk composeExtension", () => {
     expect(activation.renderer_override_count).toBe(1);
     expect(activation.hook_counts).toEqual({
       before_command: 1,
+      before_mutation: 1,
       after_command: 1,
       on_write: 1,
       on_read: 1,
@@ -187,6 +189,7 @@ describe("sdk composeExtension", () => {
     expect(activation.registration_counts).toMatchObject({ commands: 0, flags: 0, item_types: 0, item_fields: 0 });
     expect(activation.hook_counts).toEqual({
       before_command: 0,
+      before_mutation: 0,
       after_command: 0,
       on_write: 0,
       on_read: 0,
@@ -400,6 +403,7 @@ function buildParityBlueprint(): ExtensionBlueprint {
     ],
     hooks: {
       beforeCommand: [() => undefined],
+      beforeMutation: [() => ({ allow: true })],
       afterCommand: [() => undefined],
       onWrite: [() => undefined],
       onRead: [() => undefined],
@@ -447,7 +451,7 @@ describe("sdk describeExtensionBlueprint", () => {
         result_discriminator: true,
       },
     ]);
-    expect(summary.hooks).toEqual(["before_command", "after_command", "on_write", "on_read", "on_index"]);
+    expect(summary.hooks).toEqual(["before_command", "before_mutation", "after_command", "on_write", "on_read", "on_index"]);
     expect(summary.preflight_overrides).toBe(1);
   });
 

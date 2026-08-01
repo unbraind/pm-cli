@@ -1,0 +1,62 @@
+id: pm-wx2lr5
+title: "GH-853: extension command test harness must inject the real host-bound SDK"
+description: "The recommended extension activation and command-dispatch test harness omits CommandHandlerContext.sdk, so package authors cannot behavior-test commands that use context.sdk.client with host parity. Implement a default real host-bound SDK from pmRoot plus an explicit typed override seam, with public contracts, focused coverage, documentation, and installed-package acceptance."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:sdk","area:testing",authoring,extensions,gh-issue,host-parity
+created_at: "2026-08-01T13:27:06.241Z"
+updated_at: "2026-08-01T14:39:34.019Z"
+closed_at: "2026-08-01T14:39:33.261Z"
+completed_at: "2026-08-01T14:39:33.261Z"
+author: "harness:codex"
+acceptance_criteria: "Default test dispatch constructs a real host-bound SDK from pmRoot; A typed explicit SDK or factory override is supported without partial doubles; Public SDK tests, docs, package contracts, and isolated consumer acceptance cover the behavior"
+parent: pm-usfg
+severity: high
+repro_steps: Use createExtensionTestHarness with a registered command that reads context.sdk.client; runCommand throws because context.sdk is undefined
+expected_result: runCommand supplies the same host-bound ExtensionCommandSdk as installed dispatch and permits typed explicit injection
+actual_result: runCommand builds CommandHandlerContext without sdk and exposes no injection option
+affected_version: 2026.8.1
+component: sdk/testing
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jcyn,discovered_from,"2026-08-01T13:27:06.241Z","harness:codex","cli:create:dep",detected
+  pm-owm0,discovered_from,"2026-08-01T13:27:06.241Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-01T13:27:06.241Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-01T13:27:06.241Z","harness:codex","text=Duplicate check evidence: searched all statuses for GH-853, command harness, host-bound CommandHandlerContext SDK, runRegisteredCommandForTest, and createExtensionTestHarness. Closed pm-owm0 and pm-jcyn are foundations; neither injects the host SDK. Source: https://github.com/unbraind/pm-cli/issues/853"
+  "2026-08-01T14:37:33.856Z","harness:codex","Evidence: runRegisteredCommandForTest and createExtensionTestHarness now inject the production ExtensionCommandSdk for non-empty pmRoot, with typed sdk/sdkFactory seams and mutual-exclusion validation. An isolated packed consumer created consumer-sdk-created through context.sdk.client and npx/bunx resolved the packed executable. The intentional sdk/testing cold-import cost of loading native PmClient services is captured in the regenerated performance budget/table; the gate passes against the reviewed measurement."
+learnings[1]{created_at,author,text}:
+  "2026-08-01T14:37:34.559Z","harness:codex",Testing production-shaped extension command contexts requires loading the real native PmClient service graph; keep that cost isolated to the sdk/testing entrypoint and measure it explicitly rather than silently substituting a partial mock.
+files[4]{path,scope,note}:
+  scripts/bench/sdk-entrypoint-budgets.json,project,Host-bound extension command SDK harness and contract proof
+  sdk/public-surface.json,project,Host-bound extension command SDK harness and contract proof
+  src/sdk/testing.ts,project,Host-bound extension command SDK harness and contract proof
+  tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,project,Host-bound extension command SDK harness and contract proof
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,project,240
+test_runs[2]:
+  - run_id: test-all-local-msah1yx5-wxg83g
+    kind: test-all
+    status: passed
+    started_at: "2026-08-01T14:33:42.646Z"
+    finished_at: "2026-08-01T14:34:04.170Z"
+    recorded_at: "2026-08-01T14:34:04.170Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+  - run_id: test-local-msah2s2i-bnro03
+    kind: test
+    status: passed
+    started_at: "2026-08-01T14:34:09.986Z"
+    finished_at: "2026-08-01T14:34:20.442Z"
+    recorded_at: "2026-08-01T14:34:20.442Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Production-shaped host SDK test harness guidance
+  docs/performance/sdk-entrypoint-import-costs.md,project,Measured testing-entrypoint cost of production SDK parity
+close_reason: "Delivered production-shaped host-bound SDK injection and typed overrides in the extension command test harness, with packed consumer and measured import-cost proof."
+body: ""

@@ -33,6 +33,7 @@ export function captureExtensionActivationRollback(
 ): () => void {
   const lengths = {
     beforeCommand: state.hooks.beforeCommand.length,
+    beforeMutation: state.hooks.beforeMutation.length,
     afterCommand: state.hooks.afterCommand.length,
     onWrite: state.hooks.onWrite.length,
     onRead: state.hooks.onRead.length,
@@ -52,6 +53,7 @@ export function captureExtensionActivationRollback(
   };
   return () => {
     state.hooks.beforeCommand.length = lengths.beforeCommand;
+    state.hooks.beforeMutation.length = lengths.beforeMutation;
     state.hooks.afterCommand.length = lengths.afterCommand;
     state.hooks.onWrite.length = lengths.onWrite;
     state.hooks.onRead.length = lengths.onRead;

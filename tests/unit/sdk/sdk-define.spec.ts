@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   defineAfterCommandHook,
   defineBeforeCommandHook,
+  defineBeforeMutationHook,
   defineCommand,
   defineCommandOverride,
   defineExporter,
@@ -27,6 +28,7 @@ import {
 import {
   defineAfterCommandHook as defineAfterCommandHookFromBarrel,
   defineBeforeCommandHook as defineBeforeCommandHookFromBarrel,
+  defineBeforeMutationHook as defineBeforeMutationHookFromBarrel,
   defineCommand as defineCommandFromBarrel,
   defineCommandOverride as defineCommandOverrideFromBarrel,
   defineExporter as defineExporterFromBarrel,
@@ -125,6 +127,8 @@ describe("sdk define builders", () => {
     expect(defineExporter(exporter)).toBe(exporter);
     const beforeHook = () => undefined;
     expect(defineBeforeCommandHook(beforeHook)).toBe(beforeHook);
+    const mutationHook = () => ({ allow: true }) as const;
+    expect(defineBeforeMutationHook(mutationHook)).toBe(mutationHook);
     const afterHook = () => undefined;
     expect(defineAfterCommandHook(afterHook)).toBe(afterHook);
     const writeHook = () => undefined;
@@ -155,6 +159,7 @@ describe("sdk define builders", () => {
     expect(defineImporterFromBarrel).toBe(defineImporter);
     expect(defineExporterFromBarrel).toBe(defineExporter);
     expect(defineBeforeCommandHookFromBarrel).toBe(defineBeforeCommandHook);
+    expect(defineBeforeMutationHookFromBarrel).toBe(defineBeforeMutationHook);
     expect(defineAfterCommandHookFromBarrel).toBe(defineAfterCommandHook);
     expect(defineOnWriteHookFromBarrel).toBe(defineOnWriteHook);
     expect(defineOnReadHookFromBarrel).toBe(defineOnReadHook);

@@ -1,0 +1,40 @@
+id: pm-scga6k
+title: "GH-855: core mutation locators must honor extension-registered item types"
+description: "Active extensions can register custom item type folders that reads and create honor, while core mutation locators omit the active registry. Unify item resolution across close, update, annotations, delete/restore, bulk operations, and workspace transactions, then prove a non-persisted extension type through installed-package lifecycle acceptance."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:extensions","area:sdk",consistency,custom-types,gh-issue,item-lifecycle
+created_at: "2026-08-01T13:27:35.279Z"
+updated_at: "2026-08-01T14:39:35.613Z"
+closed_at: "2026-08-01T14:39:34.889Z"
+completed_at: "2026-08-01T14:39:34.889Z"
+author: "harness:codex"
+acceptance_criteria: "All core item and annotation mutation locators consume the active extension item-type registry; Installed-package end-to-end coverage exercises create, read, update, annotate, close, delete, restore, and bulk or transactional mutation for a non-persisted custom type; Public SDK and CLI behavior stay identical with no private package workaround"
+parent: pm-usfg
+severity: high
+repro_steps: "Install an extension registering Run in runs, create through context.sdk.client, then call client.close or pm update without persisting the type in schema/types.json"
+expected_result: Every read and mutation path resolves extension-contributed item folders from the same active registry
+actual_result: get/list/create find a registered custom type item while update and close return Item ID not found
+affected_version: 2026.8.1
+component: sdk/lifecycle/storage
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-iqq0,discovered_from,"2026-08-01T13:27:35.279Z","harness:codex","cli:create:dep",detected
+  pm-usfg,implements,"2026-08-01T13:27:35.279Z","harness:codex","cli:create:dep",detected
+  pm-z5nb,related,"2026-08-01T13:27:35.279Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-01T13:27:35.279Z","harness:codex","text=Duplicate check evidence: searched all statuses for GH-855, extension custom type locator, custom folders, mutation lookup, and schema registry. Closed pm-iqq0 and schema lineage provide registration/customization foundations; no item tracks mutation-path registry parity. Source: https://github.com/unbraind/pm-cli/issues/855"
+  "2026-08-01T14:37:35.198Z","harness:codex","Evidence: close lifecycle registry resolution now includes active extension registrations in both duplicate-target lookup and primary target lookup. Installed Run type acceptance covers create, update, comment annotation, atomic transaction update, close, delete, restore, and get from its non-persisted runs folder. Focused linked test passed and the full 6666-test 100/100/100/100 coverage gate passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-01T14:37:35.950Z","harness:codex",Every lifecycle locator must resolve the same built-in plus persisted plus active-extension type registry; one core-only close lookup was enough to make a package-defined type appear writable but not closable.
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/close.ts,project,Installed custom item-type lifecycle locator parity
+  tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,project,Installed custom item-type lifecycle locator parity
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-msah1yx5-wxg83g,test-all,passed,"2026-08-01T14:33:42.646Z","2026-08-01T14:34:04.135Z","2026-08-01T14:34:04.135Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Custom item-type lifecycle parity tracking
+close_reason: Delivered active extension item-type registry parity across close and full installed custom-type lifecycle acceptance.
+body: ""

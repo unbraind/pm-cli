@@ -106,6 +106,7 @@ export const KNOWN_EXTENSION_POLICY_SURFACES = [
   "commands.override",
   "commands.handler",
   "hooks.beforecommand",
+  "hooks.beforemutation",
   "hooks.aftercommand",
   "hooks.onwrite",
   "hooks.onread",
@@ -440,6 +441,45 @@ export interface OnWriteHookContext {
   changed_fields?: string[];
 }
 
+/** Read-only tracker services available while an extension evaluates a proposed mutation. */
+export interface ExtensionMutationGuardSdk {
+  /** Read one item from the guard's host-bound tracker, or return null when it is absent. */
+  get(id: string): Promise<{ item: ItemMetadata; body: string } | null>;
+  /** List item metadata from the guard's host-bound tracker. */
+  list(): Promise<ItemMetadata[]>;
+}
+
+/** Proposed item transition supplied before either the item or history artifact is persisted. */
+export interface BeforeMutationHookContext {
+  /** Tracker root owning the transaction. */
+  pm_root: string;
+  /** Stable mutation operation name such as create, update, close, delete, or restore. */
+  operation: string;
+  /** Canonical item state before the mutation, or null for create. */
+  before: ItemDocument | null;
+  /** Canonical proposed state after the mutation, or null for delete. */
+  after: ItemDocument | null;
+  /** Canonical fields the transaction proposes to change. */
+  changed_fields: readonly string[];
+  /** Host-bound read-only SDK services. */
+  sdk: ExtensionMutationGuardSdk;
+}
+
+/** Stable decision returned by a transactional extension mutation guard. */
+export type BeforeMutationHookDecision =
+  | { allow: true }
+  | {
+      allow: false;
+      code: string;
+      message?: string;
+      remediation: string;
+    };
+
+/** A fail-closed hook evaluated inside the item lock before persistence. */
+export type BeforeMutationHook = (
+  context: BeforeMutationHookContext,
+) => Promise<BeforeMutationHookDecision | void> | BeforeMutationHookDecision | void;
+
 /** Documents the on read hook context payload exchanged by command, SDK, and package integrations. */
 export interface OnReadHookContext {
   /** Filesystem path used for path resolution. */
@@ -524,6 +564,8 @@ export interface RegisteredExtensionHook<THook> {
 export interface ExtensionHookRegistry {
   /** Value that configures or reports before command for this contract. */
   beforeCommand: Array<RegisteredExtensionHook<BeforeCommandHook>>;
+  /** Transactional guards fired before item and history persistence. */
+  beforeMutation: Array<RegisteredExtensionHook<BeforeMutationHook>>;
   /** Value that configures or reports after command for this contract. */
   afterCommand: Array<RegisteredExtensionHook<AfterCommandHook>>;
   /** Value that configures or reports on write for this contract. */
@@ -1516,6 +1558,7 @@ export interface ExtensionApi {
   /** Value that configures or reports hooks for this contract. */
   hooks: {
     beforeCommand(hook: BeforeCommandHook): void;
+    beforeMutation(hook: BeforeMutationHook): void;
     afterCommand(hook: AfterCommandHook): void;
     onWrite(hook: OnWriteHook): void;
     onRead(hook: OnReadHook): void;
@@ -1580,6 +1623,7 @@ export interface ExtensionActivationResult {
   /** Value that configures or reports hook counts for this contract. */
   hook_counts: {
     before_command: number;
+    before_mutation: number;
     after_command: number;
     on_write: number;
     on_read: number;

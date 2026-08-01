@@ -10,8 +10,10 @@ import {
   projectAfterCommandItemSnapshot,
   recordAfterCommandAffectedItem,
   runActiveOnReadHooks,
+  runActiveBeforeMutationHooks,
   runActiveOnWriteHooks,
   runActiveServiceOverride,
+  type ExtensionMutationGuardSdk,
 } from "../extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import {
@@ -324,6 +326,38 @@ export async function listAllItemMetadataWithBody(
   }));
 }
 
+/** Build the minimal host-bound read-only SDK exposed to transactional extension guards. */
+export function createMutationGuardSdk(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  typeToFolder: Record<string, string>;
+}): ExtensionMutationGuardSdk {
+  return {
+    async get(id) {
+      const located = await locateItem(
+        params.pmRoot,
+        id,
+        params.settings.id_prefix,
+        params.settings.item_format,
+        params.typeToFolder,
+      );
+      if (!located) return null;
+      const { document } = await readLocatedItem(located, {
+        schema: params.settings.schema,
+      });
+      return { item: document.metadata, body: document.body };
+    },
+    list: () =>
+      listAllItemMetadata(
+        params.pmRoot,
+        params.settings.item_format,
+        params.typeToFolder,
+        undefined,
+        params.settings.schema,
+      ),
+  };
+}
+
 async function listKnownItemIds(
   pmRoot: string,
   typeToFolder: Record<string, string>,
@@ -632,16 +666,28 @@ export async function mutateItem(params: {
         warnings: [...parseWarnings, ...(mutation.warnings ?? [])],
       };
     }
+    mutableDocument.metadata.updated_at = nowIso();
+    const afterDocument = canonicalDocument(mutableDocument, {
+      schema: params.settings.schema,
+      extensionFieldNames: params.extensionFieldNames,
+    });
+    await runActiveBeforeMutationHooks({
+      pm_root: params.pmRoot,
+      operation: params.op,
+      before: beforeDocument,
+      after: afterDocument,
+      changed_fields: mutation.changedFields,
+      sdk: createMutationGuardSdk({
+        pmRoot: params.pmRoot,
+        settings: params.settings,
+        typeToFolder,
+      }),
+    });
     const historyPolicy = await enforceHistoryStreamPolicyForItem({
       pmRoot: params.pmRoot,
       settings: params.settings,
       itemId: located.id,
       commandLabel: params.op,
-    });
-    mutableDocument.metadata.updated_at = nowIso();
-    const afterDocument = canonicalDocument(mutableDocument, {
-      schema: params.settings.schema,
-      extensionFieldNames: params.extensionFieldNames,
     });
     const targetItemFormat: ItemFormat = "toon";
     const serializedAfter = serializeItemDocument(afterDocument, {
@@ -825,15 +871,26 @@ export async function deleteItem(params: {
   } = prepared;
 
   try {
+    const beforeDocument = canonicalDocument(document, {
+      schema: params.settings.schema,
+    });
+    await runActiveBeforeMutationHooks({
+      pm_root: params.pmRoot,
+      operation: "delete",
+      before: beforeDocument,
+      after: null,
+      changed_fields: ["deleted"],
+      sdk: createMutationGuardSdk({
+        pmRoot: params.pmRoot,
+        settings: params.settings,
+        typeToFolder: prepared.typeToFolder,
+      }),
+    });
     const historyPolicy = await enforceHistoryStreamPolicyForItem({
       pmRoot: params.pmRoot,
       settings: params.settings,
       itemId: located.id,
       commandLabel: "delete",
-    });
-
-    const beforeDocument = canonicalDocument(document, {
-      schema: params.settings.schema,
     });
     const deletionTimestamp = nowIso();
     const tombstoneDocument =

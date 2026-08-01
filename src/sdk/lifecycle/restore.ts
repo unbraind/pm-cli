@@ -29,7 +29,9 @@ import {
   projectAfterCommandItemSnapshot,
   recordAfterCommandAffectedItem,
   runActiveOnWriteHooks,
+  runActiveBeforeMutationHooks,
   locateItem,
+  createMutationGuardSdk,
   readLocatedItem,
   getHistoryPath,
   getItemPath,
@@ -417,6 +419,22 @@ export async function runRestore(
       enforcement: settings.governance.ownership_enforcement,
       resolvedId,
     });
+    const restoreChangedFields = changedFields(
+      currentState.document,
+      restoredDocument,
+    );
+    await runActiveBeforeMutationHooks({
+      pm_root: pmRoot,
+      operation: "restore",
+      before: currentState.document,
+      after: restoredDocument,
+      changed_fields: restoreChangedFields,
+      sdk: createMutationGuardSdk({
+        pmRoot,
+        settings,
+        typeToFolder: typeRegistry.type_to_folder,
+      }),
+    });
 
     const serializedRestore = serializeItemDocument(restoredDocument, {
       format: itemFormat,
@@ -471,10 +489,6 @@ export async function runRestore(
     } finally {
       await releaseDerivedIndexLock();
     }
-    const restoreChangedFields = changedFields(
-      currentState.document,
-      restoredDocument,
-    );
     const hookWarnings = await runRestoreWriteHooks({
       restoredItemPath,
       historyPath: subject.historyPath,

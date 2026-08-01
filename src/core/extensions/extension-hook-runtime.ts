@@ -13,6 +13,8 @@ import type {
   RegisteredExtensionHook,
   ExtensionHookRegistry,
   BeforeCommandHookContext,
+  BeforeMutationHook,
+  BeforeMutationHookContext,
   AfterCommandHookContext,
   OnWriteHookContext,
   OnReadHookContext,
@@ -38,6 +40,8 @@ import type {
   RendererOverrideResult,
 } from "./extension-types.js";
 import { stableValueEquals } from "../shared/serialization.js";
+import { EXIT_CODE } from "../shared/constants.js";
+import { PmCliError } from "../shared/errors.js";
 
 type HookName = keyof ExtensionHookRegistry;
 
@@ -67,6 +71,94 @@ export async function runBeforeCommandHooks(
   context: BeforeCommandHookContext,
 ): Promise<string[]> {
   return executeRegisteredHooks(hooks.beforeCommand, "beforeCommand", context);
+}
+
+/** Reject malformed or denied mutation-guard decisions with stable extension diagnostics. */
+function enforceMutationGuardDecision(
+  decision: unknown,
+  entry: RegisteredExtensionHook<BeforeMutationHook>,
+  operation: BeforeMutationHookContext["operation"],
+): void {
+  if (decision === undefined) return;
+  if (
+    typeof decision !== "object" ||
+    decision === null ||
+    !("allow" in decision) ||
+    (decision as { allow?: unknown }).allow !== true &&
+      (decision as { allow?: unknown }).allow !== false
+  ) {
+    throw new PmCliError(
+      `Extension mutation guard ${entry.name} returned an invalid decision.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "extension_mutation_guard_invalid_decision",
+        reason: `${entry.layer}:${entry.name}`,
+        nextSteps: ["Return { allow: true } or a structured denial from the guard."],
+      },
+    );
+  }
+  if ((decision as { allow: boolean }).allow) return;
+  const denial = decision as {
+    code?: unknown;
+    message?: unknown;
+    remediation?: unknown;
+  };
+  const code = typeof denial.code === "string" ? denial.code.trim() : "";
+  const remediation =
+    typeof denial.remediation === "string" ? denial.remediation.trim() : "";
+  if (code.length === 0 || remediation.length === 0) {
+    throw new PmCliError(
+      `Extension mutation guard ${entry.name} returned an invalid denial.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "extension_mutation_guard_invalid_denial",
+        reason: `${entry.layer}:${entry.name}`,
+        nextSteps: ["Return non-empty code and remediation fields from the guard."],
+      },
+    );
+  }
+  const message = typeof denial.message === "string" ? denial.message.trim() : "";
+  throw new PmCliError(
+    message || `Extension mutation guard ${entry.name} denied ${operation}.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code,
+      reason: `${entry.layer}:${entry.name}`,
+      nextSteps: [remediation],
+    },
+  );
+}
+
+/** Run every transactional mutation guard in registration order and fail closed on denial or failure. */
+export async function runBeforeMutationHooks(
+  hooks: ExtensionHookRegistry,
+  context: BeforeMutationHookContext,
+): Promise<void> {
+  for (const entry of hooks.beforeMutation ?? []) {
+    let decision;
+    try {
+      decision = await entry.run({
+        pm_root: context.pm_root,
+        operation: context.operation,
+        before: context.before === null ? null : cloneContextSnapshot(context.before),
+        after: context.after === null ? null : cloneContextSnapshot(context.after),
+        changed_fields: [...context.changed_fields],
+        sdk: context.sdk,
+      });
+    } catch (error: unknown) {
+      if (error instanceof PmCliError) throw error;
+      throw new PmCliError(
+        `Extension mutation guard ${entry.name} failed before ${context.operation}.`,
+        EXIT_CODE.CONFLICT,
+        {
+          code: "extension_mutation_guard_failed",
+          reason: `${entry.layer}:${entry.name}`,
+          nextSteps: ["Fix or disable the failing extension guard, then retry the mutation."],
+        },
+      );
+    }
+    enforceMutationGuardDecision(decision, entry, context.operation);
+  }
 }
 
 /** Implements run after command hooks for the public runtime surface of this module. */

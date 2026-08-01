@@ -2,48 +2,48 @@
   "schema_version": 1,
   "policy": "Upper bounds are ratchets: update only for a measured reduction or an explicitly reviewed platform correction.",
   "baseline": {
-    "max_import_ms": 98
+    "max_import_ms": 65
   },
   "entrypoints": {
     "./sdk": {
-      "max_import_ms": 522,
-      "max_peak_rss_bytes": 161751860
+      "max_import_ms": 337,
+      "max_peak_rss_bytes": 162155520
     },
     "./sdk/authoring": {
-      "max_import_ms": 131,
-      "max_peak_rss_bytes": 113633281
+      "max_import_ms": 103,
+      "max_peak_rss_bytes": 117415527
     },
     "./sdk/contracts": {
-      "max_import_ms": 100,
-      "max_peak_rss_bytes": 106627277
+      "max_import_ms": 118,
+      "max_peak_rss_bytes": 127689524
     },
     "./sdk/core": {
-      "max_import_ms": 526,
-      "max_peak_rss_bytes": 160231220
+      "max_import_ms": 345,
+      "max_peak_rss_bytes": 154812212
     },
     "./sdk/governance": {
-      "max_import_ms": 331,
-      "max_peak_rss_bytes": 133058765
+      "max_import_ms": 218,
+      "max_peak_rss_bytes": 135171072
     },
     "./sdk/graph": {
-      "max_import_ms": 176,
-      "max_peak_rss_bytes": 115590759
+      "max_import_ms": 118,
+      "max_peak_rss_bytes": 118936167
     },
     "./sdk/merge": {
-      "max_import_ms": 248,
-      "max_peak_rss_bytes": 125483213
+      "max_import_ms": 165,
+      "max_peak_rss_bytes": 128043418
     },
     "./sdk/query": {
-      "max_import_ms": 214,
-      "max_peak_rss_bytes": 117769421
+      "max_import_ms": 142,
+      "max_peak_rss_bytes": 121761793
     },
     "./sdk/runtime": {
-      "max_import_ms": 480,
-      "max_peak_rss_bytes": 159014708
+      "max_import_ms": 391,
+      "max_peak_rss_bytes": 158295860
     },
     "./sdk/testing": {
-      "max_import_ms": 129,
-      "max_peak_rss_bytes": 113644340
+      "max_import_ms": 415,
+      "max_peak_rss_bytes": 158544692
     }
   }
 }

@@ -17,6 +17,7 @@ import type {
 export function createEmptyExtensionHookRegistry(): ExtensionHookRegistry {
   return {
     beforeCommand: [],
+    beforeMutation: [],
     afterCommand: [],
     onWrite: [],
     onRead: [],

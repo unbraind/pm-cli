@@ -59,12 +59,14 @@ import {
   projectAfterCommandItemSnapshot,
   recordAfterCommandAffectedItem,
   runActiveCommandHandler,
+  runActiveBeforeMutationHooks,
   runActiveOnWriteHooks,
   collectRegisteredItemFieldNames,
   applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
   listAllItemMetadataLight,
   locateItem,
+  createMutationGuardSdk,
   getHistoryPath,
   getItemPath,
   getSettingsPath,
@@ -2433,6 +2435,18 @@ async function writeCreatedItem(params: {
     if (existing) {
       throw new PmCliError(`Item "${id}" already exists`, EXIT_CODE.CONFLICT);
     }
+    await runActiveBeforeMutationHooks({
+      pm_root: pmRoot,
+      operation: "create",
+      before: null,
+      after: afterDocument,
+      changed_fields: changedFields,
+      sdk: createMutationGuardSdk({
+        pmRoot,
+        settings,
+        typeToFolder: typeRegistry.type_to_folder,
+      }),
+    });
     const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
       pmRoot,
       author,
