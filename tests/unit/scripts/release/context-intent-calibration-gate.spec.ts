@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import {
   _testOnly,
@@ -255,7 +256,12 @@ describe("context intent calibration gate", () => {
   it("executes the real top-level entrypoint", async () => {
     process.argv = [
       process.execPath,
-      "/home/steve/GITHUB_RELEASE/pm-cli/scripts/release/context-intent-calibration-gate.mjs",
+      fileURLToPath(
+        new URL(
+          "../../../../scripts/release/context-intent-calibration-gate.mjs",
+          import.meta.url,
+        ),
+      ),
     ];
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     await harness.importModule(SCRIPT);
@@ -264,7 +270,7 @@ describe("context intent calibration gate", () => {
         expect(log).toHaveBeenCalledWith(
           expect.stringContaining("Context intent calibration passed"),
         ),
-      300_000,
+      120_000,
     );
-  }, 300_000);
+  }, 120_000);
 });
