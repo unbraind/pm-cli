@@ -509,6 +509,9 @@ function measurementViolation(measurement, budget) {
       receipt.declaration_feasible !== true ||
       receipt.result_omitted !== false ||
       receipt.within_budget !== true ||
+      !Number.isFinite(receipt.estimated_tokens) ||
+      !Number.isFinite(receipt.token_budget) ||
+      measurement.estimated_tokens > receipt.token_budget ||
       receipt.estimated_tokens > receipt.token_budget
     ) {
       return `${measurement.id}: intent receipt did not prove a feasible delivered result (${measurement.args.join(" ")})`;

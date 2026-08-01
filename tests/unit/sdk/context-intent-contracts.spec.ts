@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
@@ -216,6 +216,15 @@ describe("context intent contracts", () => {
     expect(
       applyContextIntentProjection("list", {
         for: "triage",
+        token_budget: "1800",
+      }),
+    ).toMatchObject({ limit: "10", tokenBudget: "1800" });
+    expect(
+      applyContextIntentProjection("context", { token_budget: "900" }),
+    ).toEqual({ tokenBudget: "900" });
+    expect(
+      applyContextIntentProjection("list", {
+        for: "triage",
         tokenBudget: "3000",
       }),
     ).toMatchObject({ limit: "19" });
@@ -254,6 +263,21 @@ describe("context intent contracts", () => {
     expect(
       attachContextIntentReceipt("package-report", { for: "release" }, {}),
     ).toEqual({});
+  });
+
+  it("rejects a token-budget override without a selected intent", () => {
+    for (const override of [
+      { tokenBudget: "1200" },
+      { token_budget: "1200" },
+    ]) {
+      expect(() => applyContextIntentProjection("list", override)).toThrow(
+        expect.objectContaining<Partial<PmCliError>>({
+          code: "missing_required_option",
+          exitCode: EXIT_CODE.USAGE,
+          context: expect.objectContaining({ field: "for" }),
+        }),
+      );
+    }
   });
 
   it("falls back to a bounded receipt when recursive compaction cannot fit", () => {
@@ -368,7 +392,63 @@ describe("context intent contracts", () => {
     expect(projected.recommended).toMatchObject({ id: "pm-0" });
     expect(projected.ready.length).toBeGreaterThanOrEqual(1);
     expect(projected.ready.length).toBeLessThan(recommended.length - 1);
-    expect(projected).toMatchObject({ truncated: true, has_more: true });
+    expect(projected).toMatchObject({ has_more: false });
+    expect(projected).not.toHaveProperty("truncated");
+    expect(projected).not.toHaveProperty("next_cursor");
+  });
+
+  it("batches large row compaction without serializing the full result once per removed row", () => {
+    const stringify = vi.spyOn(JSON, "stringify");
+    let projected: ReturnType<typeof attachContextIntentReceipt>;
+    try {
+      projected = attachContextIntentReceipt(
+        "next",
+        { for: "execute", tokenBudget: 1_200 },
+        {
+          recommended: { id: "pm-recommended" },
+          ready: Array.from({ length: 2_000 }, (_, index) => ({
+            id: `pm-${index}`,
+            title: `Item ${index}`,
+            status: "open",
+          })),
+          has_more: false,
+          truncated: false,
+        },
+      );
+      expect(stringify.mock.calls.length).toBeLessThan(20);
+    } finally {
+      stringify.mockRestore();
+    }
+    expect(projected.context_intent).toMatchObject({
+      degradation: "budget_row_compaction",
+      within_budget: true,
+    });
+    expect(projected.recommended).toEqual({ id: "pm-recommended" });
+    expect(projected.ready.length).toBeGreaterThanOrEqual(1);
+    expect(projected.ready.length).toBeLessThan(2_000);
+  });
+
+  it("never drops paginated command rows without a recovery cursor", () => {
+    const projected = attachContextIntentReceipt(
+      "list",
+      { for: "triage", tokenBudget: 1_200 },
+      {
+        items: Array.from({ length: 200 }, (_, index) => ({
+          id: `pm-${index}`,
+          title: `Item ${index}`,
+          status: "open",
+        })),
+      },
+    );
+    expect(projected).toMatchObject({
+      budget_exceeded: { omitted_result: true },
+      context_intent: {
+        degradation: "budget_receipt_only",
+        result_omitted: true,
+      },
+    });
+    expect(projected).not.toHaveProperty("items");
+    expect(projected).not.toHaveProperty("next_cursor");
   });
 
   it("does not drop rows behind an already-issued pagination cursor", () => {

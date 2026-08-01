@@ -137,7 +137,7 @@ export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
       command: "search",
       intent: "discover",
       description:
-        "The first fifteen ranked canonical lineage candidates with compact match evidence.",
+        "A budget-derived page of ranked canonical lineage candidates with compact match evidence.",
       included_field_groups: ["identity", "status", "lineage", "match"],
       token_budget: 1800,
       source: "core",
@@ -401,9 +401,37 @@ export function applyContextIntentProjection(
   command: "context" | "get" | "list" | "next" | "search",
   options: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (typeof options.for !== "string") return options;
+  const tokenBudget = options.tokenBudget ?? options.token_budget;
+  if (typeof options.for !== "string") {
+    if (
+      tokenBudget !== undefined &&
+      (command === "get" || command === "list" || command === "search")
+    ) {
+      throw new PmCliError(
+        "--token-budget requires a declared context intent selected with --for",
+        EXIT_CODE.USAGE,
+        {
+          code: "missing_required_option",
+          field: "for",
+          required: "Select a context intent with --for when setting --token-budget.",
+          why: "A token-budget override has no projection contract to constrain without a selected intent.",
+          nextSteps: ["Retry with --for <intent> --token-budget <n>, or omit --token-budget."],
+        },
+      );
+    }
+    if (options.tokenBudget !== undefined || options.token_budget === undefined) {
+      return options;
+    }
+    const projected: Record<string, unknown> = { ...options, tokenBudget };
+    delete projected.token_budget;
+    return projected;
+  }
   const contract = resolveContextIntentContract(command, options.for)!;
   const projected = { ...options };
+  if (projected.tokenBudget === undefined && tokenBudget !== undefined) {
+    projected.tokenBudget = tokenBudget;
+  }
+  delete projected.token_budget;
   if (projected.tokenBudget === undefined) {
     projected.tokenBudget = String(contract.token_budget);
   }
@@ -512,7 +540,12 @@ function compactContextIntentRows(
   projected: Record<string, unknown>,
   receipt: PmContextIntentReceipt,
 ): boolean {
-  if (typeof projected.next_cursor === "string") return false;
+  if (
+    command !== "next" ||
+    typeof projected.next_cursor === "string"
+  ) {
+    return false;
+  }
   let compacted = false;
   for (;;) {
     updateContextIntentEstimate(projected, receipt);
@@ -535,10 +568,26 @@ function compactContextIntentRows(
       0,
     );
     if (retainedTotal <= 1) return compacted;
-    candidate.rows.pop();
+    const removableRows = Math.min(
+      candidate.rows.length,
+      retainedTotal - 1,
+    );
+    const candidateBytes = Buffer.byteLength(
+      JSON.stringify(candidate.rows),
+      "utf8",
+    );
+    const estimatedBytesPerRow = Math.max(
+      1,
+      Math.ceil(candidateBytes / candidate.rows.length),
+    );
+    const excessBytes =
+      (receipt.estimated_tokens - receipt.token_budget) * 4;
+    const removalCount = Math.min(
+      removableRows,
+      Math.max(1, Math.ceil(excessBytes / estimatedBytesPerRow)),
+    );
+    candidate.rows.splice(-removalCount, removalCount);
     compacted = true;
-    projected.truncated = true;
-    projected.has_more = true;
   }
 }
 
@@ -606,13 +655,6 @@ export function attachContextIntentReceipt<
     };
     updateContextIntentEstimate(projected, receipt);
   }
-  receipt.within_budget =
-    !receipt.result_omitted &&
-    receipt.estimated_tokens <= receipt.token_budget;
-  updateContextIntentEstimate(projected, receipt);
-  receipt.within_budget =
-    !receipt.result_omitted &&
-    receipt.estimated_tokens <= receipt.token_budget;
   return projected as Result & { context_intent: PmContextIntentReceipt };
 }
 

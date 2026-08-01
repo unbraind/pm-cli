@@ -9208,7 +9208,7 @@
     },
     {
       "command": "search",
-      "description": "The first fifteen ranked canonical lineage candidates with compact match evidence.",
+      "description": "A budget-derived page of ranked canonical lineage candidates with compact match evidence.",
       "included_field_groups": [
         "identity",
         "status",
@@ -12562,7 +12562,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -14264,7 +14264,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -15252,7 +15252,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -17661,7 +17661,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -23720,7 +23720,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -24243,7 +24243,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -24766,7 +24766,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -25289,7 +25289,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -25812,7 +25812,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -26335,7 +26335,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -26858,7 +26858,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -27381,7 +27381,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -27862,7 +27862,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -28139,7 +28139,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -28284,7 +28284,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"
@@ -28694,7 +28694,7 @@
                 "type": "integer"
               }
             ],
-            "description": "Maximum estimated output tokens for deps --format context.",
+            "description": "Maximum estimated output tokens for the command output.",
             "examples": [
               600,
               "1200"

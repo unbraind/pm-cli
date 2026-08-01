@@ -491,6 +491,86 @@ describe("scripts/release/token-budget-gate", () => {
     ).toEqual([
       "context-intent: intent receipt did not prove a feasible delivered result (context --for orient)",
     ]);
+
+    const intentManifest = {
+      ...manifest,
+      budgets: [
+        {
+          id: "context-intent",
+          args: ["context", "--for", "orient"],
+          kind: "answer",
+          scale_tier: "medium",
+          baseline_bytes: 400,
+          baseline_estimated_tokens: 100,
+          command: "context",
+          contract_max_estimated_tokens: 4_000,
+        },
+      ],
+    };
+    for (const intentReceipt of [
+      {
+        declaration_feasible: true,
+        result_omitted: false,
+        within_budget: true,
+        estimated_tokens: "100",
+        token_budget: 2_400,
+      },
+      {
+        declaration_feasible: true,
+        result_omitted: false,
+        within_budget: true,
+        estimated_tokens: 100,
+        token_budget: Number.NaN,
+      },
+    ]) {
+      expect(
+        mod.compareBudgets(
+          [
+            {
+              id: "context-intent",
+              args: ["context", "--for", "orient"],
+              kind: "answer",
+              command: "context",
+              contract_max_estimated_tokens: 4_000,
+              bytes: 400,
+              estimated_tokens: 100,
+              intent: true,
+              intent_receipt: intentReceipt,
+            },
+          ],
+          intentManifest,
+        ),
+      ).toEqual([
+        "context-intent: intent receipt did not prove a feasible delivered result (context --for orient)",
+      ]);
+    }
+
+    expect(
+      mod.compareBudgets(
+        [
+          {
+            id: "context-intent",
+            args: ["context", "--for", "orient"],
+            kind: "answer",
+            command: "context",
+            contract_max_estimated_tokens: 4_000,
+            bytes: 10_000,
+            estimated_tokens: 2_500,
+            intent: true,
+            intent_receipt: {
+              declaration_feasible: true,
+              result_omitted: false,
+              within_budget: true,
+              estimated_tokens: 100,
+              token_budget: 2_400,
+            },
+          },
+        ],
+        intentManifest,
+      ),
+    ).toEqual([
+      "context-intent: intent receipt did not prove a feasible delivered result (context --for orient)",
+    ]);
   });
 
   it("runs direct update mode against a deterministic fixture corpus", async () => {

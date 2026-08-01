@@ -3494,7 +3494,7 @@ function runMcpStatsAction(ctx: McpActionDispatchContext): Promise<unknown> {
 async function runMcpAppendAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
-  const { changedFields, runnerOptions } = withMutationCompaction(
+  const { changedFields, idOnly, runnerOptions } = withMutationCompaction(
     ctx.args,
     ctx.options,
   );
@@ -3506,7 +3506,8 @@ async function runMcpAppendAction(
     ),
     {
       changedFields,
-      compactEnvelope: changedFields === "compact",
+      compactEnvelope: changedFields === "compact" && !idOnly,
+      idOnly,
     },
   );
 }

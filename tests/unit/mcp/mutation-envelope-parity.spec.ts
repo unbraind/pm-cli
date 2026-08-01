@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { handleRequest } from "../../../src/mcp/server.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 /** Verifies that the unavoidable MCP tool result uses the same lean mutation contract as the CLI default. */
 describe("MCP mutation envelope parity", () => {
   it("returns the CLI default create shape without an opt-in flag", async () => {
-    const server = await import("../../../src/mcp/server.js");
     await withTempPmPath(async (context) => {
       const cli = context.runCli(
         [
@@ -22,7 +22,7 @@ describe("MCP mutation envelope parity", () => {
       expect(cli.code).toBe(0);
       const cliResult = cli.json as Record<string, unknown>;
 
-      const response = (await server.handleRequest({
+      const response = (await handleRequest({
         jsonrpc: "2.0",
         id: 1,
         method: "tools/call",
@@ -56,9 +56,8 @@ describe("MCP mutation envelope parity", () => {
   });
 
   it("preserves the full mutation envelope only when explicitly requested", async () => {
-    const server = await import("../../../src/mcp/server.js");
     await withTempPmPath(async (context) => {
-      const response = (await server.handleRequest({
+      const response = (await handleRequest({
         jsonrpc: "2.0",
         id: 2,
         method: "tools/call",
@@ -82,6 +81,45 @@ describe("MCP mutation envelope parity", () => {
       expect(response.structuredContent.result).not.toHaveProperty(
         "changed_field_count",
       );
+    });
+  });
+
+  it("honors idOnly for append through the aggregated pm_run surface", async () => {
+    await withTempPmPath(async (context) => {
+      const created = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: {
+          name: "pm_create",
+          arguments: {
+            path: context.pmPath,
+            title: "Append id-only parity",
+            type: "Task",
+            status: "open",
+          },
+        },
+      })) as { structuredContent: { result: { id: string } } };
+      const response = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            action: "append",
+            path: context.pmPath,
+            id: created.structuredContent.result.id,
+            body: "Appended through pm_run.",
+            idOnly: true,
+          },
+        },
+      })) as { structuredContent: { result: Record<string, unknown> } };
+
+      expect(response.structuredContent.result).toEqual({
+        id: created.structuredContent.result.id,
+        status: "open",
+      });
     });
   });
 });
