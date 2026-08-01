@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1301,
+    "covered_symbols": 1348,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1302
+    "required_symbols": 1349
   },
   "breaking_acknowledgements": [
     {
@@ -458,10 +458,22 @@
           "signature": "{ applyLiteralRule: typeof applyLiteralRule; applyRegexRule: typeof applyRegexRule; buildRedactionRules: typeof buildRedactionRules; hasItemMetadata: typeof hasItemMetadata; normalizeRegexFlags: typeof normalizeRegexFlags; normalizeStringArrayInput: typeof normalizeStringArrayInput; parseRegexRule: typeof parseRegexRule; redactStringValue: typeof redactStringValue; redactUnknownValue: typeof redactUnknownValue; }"
         },
         {
+          "classification": "supported",
+          "kind": "value",
+          "name": "_testOnlyAggregateCommand",
+          "signature": "{ buildGroupKey: typeof buildGroupKey; compareAggregateRows: typeof compareAggregateRows; compareNullableGroupValue: typeof compareNullableGroupValue; completionPct: typeof completionPct; normalizeTagGroupValue: typeof normalizeTagGroupValue; parseGroupBy: typeof parseGroupBy; parseNumericAggregation: typeof parseNumericAggregation; parseStatus: typeof parseStatus; readNumericAggregateValue: typeof readNumericAggregateValue; resolveGroupValue: typeof resolveGroupValue; updateCompletionCounts: typeof updateCompletionCounts; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "_testOnlyConfigCommand",
           "signature": "{ hasGovernanceValidationMirrorChange: typeof hasGovernanceValidationMirrorChange; applyPositionalValue: typeof applyPositionalValue; normalizeAction: typeof normalizeAction; normalizeCriteria: typeof normalizeCriteria; normalizeGovernanceCloseValidationDefault: typeof normalizeGovernanceCloseValidationDefault; normalizeGovernanceCreateModeDefault: typeof normalizeGovernanceCreateModeDefault; normalizeGovernanceForceRequiredForStaleLockPolicy: typeof normalizeGovernanceForceRequiredForStaleLockPolicy; normalizeGovernanceOwnershipEnforcement: typeof normalizeGovernanceOwnershipEnforcement; normalizeGovernancePreset: typeof normalizeGovernancePreset; normalizeGovernanceRequireCloseReasonPolicy: typeof normalizeGovernanceRequireCloseReasonPolicy; normalizeGovernanceWorkflowEnforcement: typeof normalizeGovernanceWorkflowEnforcement; normalizeHistoryMissingStreamPolicy: typeof normalizeHistoryMissingStreamPolicy; normalizeItemFormat: typeof normalizeItemFormat; normalizeKey: typeof normalizeKey; normalizeMetadataRequiredFields: typeof normalizeMetadataRequiredFields; normalizePolicyForConflict: typeof normalizePolicyForConflict; normalizeScope: typeof normalizeScope; normalizeTelemetryTrackingPolicy: typeof normalizeTelemetryTrackingPolicy; normalizeTestResultTrackingPolicy: typeof normalizeTestResultTrackingPolicy; normalizeValidateMetadataProfile: typeof normalizeValidateMetadataProfile; normalizeWarnings: typeof normalizeWarnings; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "_testOnlyGetCommand",
+          "signature": "{ shouldAutoIncludeGetChildren: typeof shouldAutoIncludeGetChildren; }"
         },
         {
           "classification": "supported",
@@ -492,6 +504,12 @@
           "kind": "value",
           "name": "_testOnlyMutationEvents",
           "signature": "{ decodeMutationEventCursor: typeof decodeMutationEventCursor; encodeMutationEventCursor: typeof encodeMutationEventCursor; eventQueryFingerprint: typeof eventQueryFingerprint; isAbortError: typeof isAbortError; isMutationEventCursorEnvelope: typeof isMutationEventCursorEnvelope; parseMutationEventLimit: typeof parseMutationEventLimit; resolveMutationEventStart: typeof resolveMutationEventStart; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "_testOnlyNextCommand",
+          "signature": "{ partitionCallerOwnedReady: typeof partitionCallerOwnedReady; resolveNextCallerAuthor: (options: NextOptions, settingsAuthor: string) => string; }"
         },
         {
           "classification": "supported",
@@ -606,6 +624,24 @@
           "kind": "value",
           "name": "ACTIVITY_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ActivityCommandOptions",
+          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; compact?: boolean; unbounded?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ActivityEntry",
+          "signature": "export interface ActivityEntry extends HistoryEntry { id: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ActivityResult",
+          "signature": "export interface ActivityResult { activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; compact: boolean; projection: { mode: \"compact\" | \"full\"; row_key: \"compact_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; }"
         },
         {
           "classification": "advanced_export",
@@ -812,6 +848,12 @@
           "signature": "(historyPath: string, entry: HistoryEntry) => Promise<void> | calls: (historyPath: string, entry: HistoryEntry) => Promise<void>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "AppendOperationOptions",
+          "signature": "export type AppendOperationOptions = AppendCommandOptions;"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "AppendResult",
@@ -846,6 +888,12 @@
           "kind": "function",
           "name": "applyContextIntentProjection",
           "signature": "(command: \"context\" | \"get\" | \"list\" | \"next\" | \"search\", options: Record<string, unknown>) => Record<string, unknown> | calls: (command: \"context\" | \"get\" | \"list\" | \"next\" | \"search\", options: Record<string, unknown>) => Record<string, unknown>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "applyContextTagProjection",
+          "signature": "(result: ContextResult, noTags: boolean) => void | calls: (result: ContextResult, noTags: boolean) => void"
         },
         {
           "classification": "supported",
@@ -1184,7 +1232,7 @@
           "signature": "export interface BeforeCommandHookContext { command: string; args: string[]; options?: Record<string, unknown>; global?: GlobalOptions; pm_root: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "BlockerEntry",
           "signature": "export interface BlockerEntry { id: string; title: string; blocked_by: string | null; blocked_by_title: string | null; blocked_by_status: ItemStatus | null; blocked_reason: string | null; unblock_note: string | null; }"
@@ -1218,6 +1266,12 @@
           "kind": "value",
           "name": "BRIEF_LIST_FIELDS",
           "signature": "readonly [\"id\", \"status\", \"type\", \"title\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildChildrenByParent",
+          "signature": "(allItems: ItemMetadata[]) => Map<string, ItemMetadata[]> | calls: (allItems: ItemMetadata[]) => Map<string, ItemMetadata[]>"
         },
         {
           "classification": "supported",
@@ -1424,16 +1478,40 @@
           "signature": "CliFlagContract[]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CalendarDayBucket",
+          "signature": "export interface CalendarDayBucket { date: string; count: number; events: CalendarRow[]; }"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "CalendarOptions",
           "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
+          "kind": "type",
+          "name": "CalendarOutputFormat",
+          "signature": "export type CalendarOutputFormat = (typeof CALENDAR_OUTPUT_VALUES)[number];"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "CalendarResult",
           "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CalendarRow",
+          "signature": "export interface CalendarRow { at: string; date: string; kind: \"deadline\" | \"reminder\" | \"event\"; reminder_text: string | null; event_title: string | null; event_end: string | null; event_location: string | null; event_all_day: boolean | null; event_timezone: string | null; event_recurring: boolean | null; event_recurrence_rule: string | null; item_id: string; item_title: string; item_type: ItemType; item_status: ItemStatus; item_priority: number; item_assignee: string | null; item_deadline: string | null; item_tags: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "CalendarView",
+          "signature": "export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];"
         },
         {
           "classification": "supported",
@@ -1605,6 +1683,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "CloseManyOperationOptions",
+          "signature": "export type CloseManyOperationOptions = CloseManyCommandOptions;"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "CloseOperationOptions",
           "signature": "export interface CloseOperationOptions { author?: string; message?: string; validateClose?: string; force?: boolean; resolution?: string; expectedResult?: string; actualResult?: string; duplicateOf?: string; completedAt?: string; lifecyclePolicy?: Partial<TerminalTransitionPolicy>; }"
@@ -1722,6 +1806,12 @@
           "kind": "function",
           "name": "collectRuntimeUpdateFieldValues",
           "signature": "(options: Record<string, unknown>, fieldRegistry: RuntimeFieldRegistry, commands?: Array<\"update_many\" | \"update\"> | null | undefined) => Record<string, unknown> | calls: (options: Record<string, unknown>, fieldRegistry: RuntimeFieldRegistry, commands?: Array<\"update\" | \"update_many\"> | null | undefined) => Record<string, unknown>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "collectSubtreeIds",
+          "signature": "(corpus: ItemMetadata[], parentId: string) => { ids: Set<string>; found: boolean; } | calls: (corpus: ItemMetadata[], parentId: string) => { ids: Set<string>; found: boolean; }"
         },
         {
           "classification": "supported",
@@ -1868,10 +1958,22 @@
           "signature": "readonly [\"deadline\", \"estimatedMinutes\", \"acceptanceCriteria\", \"definitionOfReady\", \"order\", \"goal\", \"objective\", \"value\", \"impact\", \"outcome\", \"whyNow\", \"assignee\", \"parent\", \"reviewer\", \"risk\", \"confidence\", \"sprint\", \"release\", \"blockedBy\", \"blockedReason\", \"unblockNote\", \"reporter\", \"severity\", \"environment\", \"reproSteps\", \"resolution\", \"expectedResult\", \"actualResult\", \"affectedVersion\", \"fixedVersion\", \"component\", \"regression\", \"customerImpact\"]"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CompactActivityEntry",
+          "signature": "export interface CompactActivityEntry { id: string; op: string; ts: string; author: string; msg?: string; }"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "compactFlagAliasContracts",
           "signature": "(flagContracts: CliFlagContract[]) => CliFlagContract[] | calls: (flagContracts: CliFlagContract[]) => CliFlagContract[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "compareCriticalItems",
+          "signature": "(left: ItemMetadata, right: ItemMetadata, statusRegistry: RuntimeStatusRegistry) => number | calls: (left: ItemMetadata, right: ItemMetadata, statusRegistry: RuntimeStatusRegistry) => number"
         },
         {
           "classification": "supported",
@@ -2036,7 +2138,7 @@
           "signature": "CliFlagContract[]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_OUTPUT_VALUES",
           "signature": "readonly [\"markdown\", \"toon\", \"json\", \"ndjson\"]"
@@ -2070,6 +2172,12 @@
           "kind": "value",
           "name": "CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
           "signature": "1"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ContextAgendaEvent",
+          "signature": "export type ContextAgendaEvent = CalendarRow | (Pick<CalendarRow, \"at\" | \"date\" | \"kind\" | \"item_id\"> & { reference_only: true; reminder_text?: string | null; event_title?: string | null; event_recurring?: boolean | null; });"
         },
         {
           "classification": "supported",
@@ -2138,10 +2246,16 @@
           "signature": "export interface ContextEvaluationThresholds { ndcg: number; reciprocal_rank: number; required_recall: number; continuity_coverage: number; token_budget_adherence: number; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ContextFocusItem",
           "signature": "export interface ContextFocusItem { id: string; title: string; type: string; status: ItemStatus; priority: number; order: number | null; deadline: string | null; assignee: string | null; tags?: string[]; tags_inherited?: string; updated_at: string; parent: string | null; children_total?: number; children_closed?: number; completion_pct?: number; blocked?: true; blocker_ids?: string[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "contextIntentRowId",
+          "signature": "(row: unknown) => string | undefined | calls: (row: unknown) => string | undefined"
         },
         {
           "classification": "supported",
@@ -2150,7 +2264,7 @@
           "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "ContextOutputFormat",
           "signature": "export type ContextOutputFormat = (typeof CONTEXT_OUTPUT_VALUES)[number];"
@@ -2175,6 +2289,12 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "ContextPackingSummary",
+          "signature": "export type ContextPackingSummary = Omit<ContextPackingReport<unknown>, \"included\"> & { included: Array<{ id: string; projection: string; tokens: number; }>; };"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ContextProjectionCosts",
           "signature": "export interface ContextProjectionCosts { identity: number; summary: number; full: number; }"
@@ -2196,6 +2316,12 @@
           "kind": "interface",
           "name": "ContextRankingEvaluationInput",
           "signature": "export interface ContextRankingEvaluationInput { ranked_ids: string[]; judgments: Record<string, number>; required_ids?: string[]; continuity_ids?: string[]; actual_tokens: number; token_budget: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextRankingSummary",
+          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; }>; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
         },
         {
           "classification": "supported",
@@ -2481,6 +2607,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "CreateOperationOptions",
+          "signature": "export type CreateOperationOptions = CreateCommandOptions;"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "createOutputOmissionReceipt",
           "signature": "(declaredGroups: readonly OutputProjectionFieldGroup[], includedGroupNames?: ReadonlySet<string>) => OutputOmissionReceipt | calls: (declaredGroups: readonly OutputProjectionFieldGroup[], includedGroupNames?: ReadonlySet<string>) => OutputOmissionReceipt"
@@ -2604,6 +2736,12 @@
           "kind": "function",
           "name": "declineServiceOverride",
           "signature": "() => ServiceOverrideDecision | calls: () => ServiceOverrideDecision"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "decodeContextIntentCursor",
+          "signature": "(cursor: string) => ContextIntentCursorEnvelope | undefined | calls: (cursor: string) => ContextIntentCursorEnvelope | undefined"
         },
         {
           "classification": "advanced_export",
@@ -4670,7 +4808,7 @@
           "signature": "(graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]> | calls: (graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "HierarchyChild",
           "signature": "export interface HierarchyChild { id: string; title: string; type: string; status: ItemStatus; children_total: number; children_closed: number; }"
@@ -4682,7 +4820,7 @@
           "signature": "(graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]> | calls: (graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "HierarchyNode",
           "signature": "export interface HierarchyNode { id: string; title: string; type: string; status: ItemStatus; children_total: number; children_closed: number; children_open: number; children_in_progress: number; children_blocked: number; children: HierarchyChild[]; }"
@@ -4736,6 +4874,12 @@
           "signature": "export interface HistoryAuthorAttributionScan { checked_streams: number; checked_events: number; unknown_event_count: number; legacy_unknown_event_count: number; actionable_unknown_event_count: number; acknowledged_actionable_event_count: number; affected_item_ids: string[]; samples: UnknownAuthorHistoryEvent[]; samples_truncated: boolean; actionable_events?: UnknownAuthorHistoryEvent[]; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HistoryCommandOptions",
+          "signature": "export interface HistoryCommandOptions { limit?: string; diff?: boolean; field?: string; verify?: boolean; compact?: boolean; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "historyCompact",
@@ -4776,6 +4920,12 @@
           "kind": "interface",
           "name": "HistoryCompactResult",
           "signature": "export interface HistoryCompactResult { id: string; dry_run: boolean; changed: boolean; compact_boundary: { kind: HistoryCompactBoundaryKind; before: string | null; entries_compacted: number; entries_retained: number; first_retained_entry: number | null; }; history: { path: string; entries_scanned: number; entries_after: number; baseline_entry_added: boolean; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; }; item: { exists: boolean; path: string | null; matched_chain_before: boolean | null; }; warnings: string[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HistoryDiffEntry",
+          "signature": "export interface HistoryDiffEntry { index: number; ts: string; op: string; author: string; patch_ops: number; changed_fields: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -4864,6 +5014,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "HistoryResult",
+          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; compact: boolean; projection: { mode: \"compact\" | \"full\"; row_key: \"compact_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "HistoryStreamIntegrityRow",
           "signature": "export interface HistoryStreamIntegrityRow { id: string; path: string; line?: number; detail: string; }"
         },
@@ -4880,7 +5036,7 @@
           "signature": "export interface HistoryVerificationResult { ok: boolean; entries: number; errors: string[]; latest_after_hash?: string; current_item_hash?: string; current_matches_latest?: boolean; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "HotFile",
           "signature": "export interface HotFile { path: string; references: number; items: string[]; }"
@@ -5900,6 +6056,12 @@
           "signature": "(baseRaw: string, oursRaw: string, theirsRaw: string) => RelationshipStreamMergeResult | calls: (baseRaw: string, oursRaw: string, theirsRaw: string) => RelationshipStreamMergeResult"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "mergeSortedWarnings",
+          "signature": "(...warningGroups: Array<string[] | undefined>) => string[] | calls: (...warningGroups: Array<string[] | undefined>) => string[]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "migrateItemFilesToFormat",
@@ -5984,19 +6146,19 @@
           "signature": "CliFlagContract[]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "value",
           "name": "NEXT_OUTPUT_VALUES",
           "signature": "readonly [\"markdown\", \"toon\", \"json\"]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "NextActionableItem",
           "signature": "export interface NextActionableItem extends ContextFocusItem { rank: number; open_blocker_count: number; blockers: NextBlockerRef[]; unblocks: string[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "NextBlockerRef",
           "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; }"
@@ -6008,13 +6170,13 @@
           "signature": "export interface NextOptions { type?: string; tag?: string; priority?: string | number; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; parent?: string; limit?: string; blockedLimit?: string; readyOnly?: boolean; format?: string; explainRanking?: boolean; tokenBudget?: string | number; includeDecisions?: boolean; callerAuthor?: string; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "NextOutputFormat",
           "signature": "export type NextOutputFormat = (typeof NEXT_OUTPUT_VALUES)[number];"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "NextRecommendation",
           "signature": "export interface NextRecommendation extends NextActionableItem { reasons: string[]; }"
@@ -6382,6 +6544,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "packRankedContextItems",
+          "signature": "(report: ContextRelevanceReport<ItemMetadata>, tokenBudget: number, requiredIds?: ReadonlySet<string>, profile?: \"context\" | \"next\") => ContextPackingReport<ItemMetadata> | calls: (report: ContextRelevanceReport<ItemMetadata>, tokenBudget: number, requiredIds?: ReadonlySet<string>, profile?: \"context\" | \"next\") => ContextPackingReport<ItemMetadata>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "paginateQueryRows",
           "signature": "<T>(rows: readonly T[], options: { cursor?: string; fingerprint: string; limit: number; readId: (row: T) => string; snapshot?: string; }) => QueryCursorPage<T> | calls: <T>(rows: readonly T[], options: { cursor?: string; fingerprint: string; limit: number; readId: (row: T) => string; snapshot?: string; }) => QueryCursorPage<T>"
         },
@@ -6432,6 +6600,24 @@
           "kind": "function",
           "name": "parseBootstrapTypeValue",
           "signature": "(argv: string[]) => string | undefined | calls: (argv: string[]) => string | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseContextDepth",
+          "signature": "(raw: string | undefined, settings: ContextSettings) => ContextDepth | calls: (raw: string | undefined, settings: ContextSettings) => ContextDepth"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseContextFocusFields",
+          "signature": "(raw: string | undefined) => string[] | undefined | calls: (raw: string | undefined) => string[] | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseContextSections",
+          "signature": "(raw: string[] | undefined, depth: ContextDepth, settings: ContextSettings) => ContextSectionName[] | calls: (raw: string[] | undefined, depth: ContextDepth, settings: ContextSettings) => ContextSectionName[]"
         },
         {
           "classification": "supported",
@@ -6626,6 +6812,12 @@
           "signature": "(raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => ItemType | undefined | calls: (raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => ItemType | undefined"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "partitionDecisionEntries",
+          "signature": "(ready: ActionableEntry[], includeDecisions: boolean) => { agent: ActionableEntry[]; decisions: ActionableEntry[]; } | calls: (ready: ActionableEntry[], includeDecisions: boolean) => { agent: ActionableEntry[]; decisions: ActionableEntry[]; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "patchPathToChangedField",
@@ -6726,6 +6918,12 @@
           "kind": "interface",
           "name": "PlanDispatchInput",
           "signature": "export interface PlanDispatchInput { subcommand: PlanSubcommand; id?: string; stepRef?: string; reorderTo?: number; options: PlanCommandOptions; global: GlobalOptions; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "PlanOperationOptions",
+          "signature": "export type PlanOperationOptions = PlanCommandOptions;"
         },
         {
           "classification": "supported",
@@ -7628,7 +7826,7 @@
           "signature": "export interface ProfileWorkflowPlan { changes: ProfileWorkflowChange[]; result: TypeWorkflowDefinition[]; changed: boolean; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ProgressEntry",
           "signature": "export interface ProgressEntry { id: string; title: string; type: string; total: number; closed: number; open: number; in_progress: number; blocked: number; completion_pct: number; }"
@@ -7638,6 +7836,12 @@
           "kind": "function",
           "name": "projectAfterCommandItemSnapshot",
           "signature": "(metadata: ItemMetadata, changedFields: readonly string[]) => Partial<ItemMetadata> | calls: (metadata: ItemMetadata, changedFields: readonly string[]) => Partial<ItemMetadata>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "projectContextFocusRows",
+          "signature": "<T extends ContextFocusItem>(rows: T[], fields: string[]) => ContextFocusItem[] | calls: <T extends ContextFocusItem>(rows: T[], fields: string[]) => ContextFocusItem[]"
         },
         {
           "classification": "supported",
@@ -7796,7 +8000,7 @@
           "signature": "(options: Record<string, unknown>, contract: CommanderOptionAliasContract) => unknown | calls: (options: Record<string, unknown>, contract: CommanderOptionAliasContract) => unknown"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "readHistoryEntries",
           "signature": "(historyPath: string, itemId: string) => Promise<HistoryEntry[]> | calls: (historyPath: string, itemId: string) => Promise<HistoryEntry[]>"
@@ -7886,7 +8090,7 @@
           "signature": "(items: readonly ItemMetadata[], options: { pmRoot: string; statusRegistry: RuntimeStatusRegistry; now: string; minimumItems?: number; sourceCursor?: string; }) => Promise<WorkspaceMemoryReadResult> | calls: (items: readonly ItemMetadata[], options: { pmRoot: string; statusRegistry: RuntimeStatusRegistry; now: string; minimumItems?: number; sourceCursor?: string; }) => Promise<WorkspaceMemoryReadResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "RecentContextItem",
           "signature": "export interface RecentContextItem extends ContextFocusItem { created_at?: string; }"
@@ -8150,13 +8354,13 @@
           "signature": "\"reindex\""
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ReindexOptions",
           "signature": "export interface ReindexOptions { mode?: string; progress?: boolean; full?: boolean; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ReindexResult",
           "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
@@ -8702,16 +8906,22 @@
           "signature": "<Result extends LinkedArtifactResult, const Key extends \"docs\" | \"files\">(result: Result, key: Key) => RenamedLinkedArtifactResult<Result, Key> | calls: <Result extends LinkedArtifactResult, const Key extends \"files\" | \"docs\">(result: Result, key: Key) => RenamedLinkedArtifactResult<Result, Key>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "renderCalendarMarkdown",
           "signature": "(result: CalendarResult) => string | calls: (result: CalendarResult) => string"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "renderCalendarToon",
           "signature": "(result: CalendarResult) => string | calls: (result: CalendarResult) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "renderContextMarkdown",
+          "signature": "(result: ContextResult) => string | calls: (result: ContextResult) => string"
         },
         {
           "classification": "supported",
@@ -8742,6 +8952,12 @@
           "kind": "function",
           "name": "renderGuideMarkdown",
           "signature": "(result: GuideResult) => string | calls: (result: GuideResult) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "renderNextMarkdown",
+          "signature": "(result: NextResult) => string | calls: (result: NextResult) => string"
         },
         {
           "classification": "advanced_export",
@@ -8846,7 +9062,7 @@
           "signature": "(name: string) => Readonly<CorpusShape> | calls: (name: string) => Readonly<CorpusShape>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "resolveCalendarOutputFormat",
           "signature": "(options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat | calls: (options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat"
@@ -8892,6 +9108,18 @@
           "kind": "function",
           "name": "resolveContextIntentContract",
           "signature": "(command: string, intent: string, contracts?: readonly PmContextIntentContract[]) => PmContextIntentContract | undefined | calls: (command: string, intent: string, contracts?: readonly PmContextIntentContract[]) => PmContextIntentContract | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveContextOutputFormat",
+          "signature": "(options: ContextOptions, global: GlobalOptions) => ContextOutputFormat | calls: (options: ContextOptions, global: GlobalOptions) => ContextOutputFormat"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveContextTokenBudget",
+          "signature": "(raw: string | number | undefined, fallback: number) => number | calls: (raw: string | number | undefined, fallback: number) => number"
         },
         {
           "classification": "supported",
@@ -9006,6 +9234,12 @@
           "kind": "function",
           "name": "resolveModePairedOutputOmissionReceipt",
           "signature": "(command: string, mode: string) => OutputOmissionReceipt | calls: (command: string, mode: string) => OutputOmissionReceipt"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveNextOutputFormat",
+          "signature": "(options: NextOptions, global: GlobalOptions) => NextOutputFormat | calls: (options: NextOptions, global: GlobalOptions) => NextOutputFormat"
         },
         {
           "classification": "advanced_export",
@@ -9314,13 +9548,19 @@
           "signature": "(service: ExtensionServiceName, payload: unknown) => Promise<ServiceOverrideResult> | calls: (service: ExtensionServiceName, payload: unknown) => Promise<ServiceOverrideResult>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runActivity",
+          "signature": "(options: ActivityCommandOptions, global: GlobalOptions) => Promise<ActivityResult> | calls: (options: ActivityCommandOptions, global: GlobalOptions) => Promise<ActivityResult>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "runAfterCommandHooks",
           "signature": "(hooks: ExtensionHookRegistry, context: AfterCommandHookContext) => Promise<string[]> | calls: (hooks: ExtensionHookRegistry, context: AfterCommandHookContext) => Promise<string[]>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runAggregate",
           "signature": "(options: AggregateOptions, global: GlobalOptions) => Promise<AggregateResult> | calls: (options: AggregateOptions, global: GlobalOptions) => Promise<AggregateResult>"
@@ -9334,11 +9574,17 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "runAppend",
+          "signature": "(id: string, options: AppendCommandOptions, global: GlobalOptions) => Promise<AppendResult> | calls: (id: string, options: AppendCommandOptions, global: GlobalOptions) => Promise<AppendResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "runBeforeCommandHooks",
           "signature": "(hooks: ExtensionHookRegistry, context: BeforeCommandHookContext) => Promise<string[]> | calls: (hooks: ExtensionHookRegistry, context: BeforeCommandHookContext) => Promise<string[]>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runCalendar",
           "signature": "(options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult> | calls: (options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult>"
@@ -9346,8 +9592,32 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "runClaim",
+          "signature": "(id: string, force: boolean, global: GlobalOptions, options?: ClaimMutationOptions) => Promise<ClaimResult> | calls: (id: string, force: boolean, global: GlobalOptions, options?: ClaimMutationOptions) => Promise<ClaimResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runClaimNext",
+          "signature": "(force: boolean, global: GlobalOptions, options?: ClaimMutationOptions, nextOptions?: NextOptions) => Promise<ClaimNextResult> | calls: (force: boolean, global: GlobalOptions, options?: ClaimMutationOptions, nextOptions?: NextOptions) => Promise<ClaimNextResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "runClose",
           "signature": "(id: string, closeReasonText: string | undefined, options: CloseCommandOptions, global: GlobalOptions) => Promise<CloseResult> | calls: (id: string, closeReasonText: string | undefined, options: CloseCommandOptions, global: GlobalOptions) => Promise<CloseResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runCloseMany",
+          "signature": "(options: CloseManyCommandOptions, global: GlobalOptions) => Promise<CloseManyResult> | calls: (options: CloseManyCommandOptions, global: GlobalOptions) => Promise<CloseManyResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runComments",
+          "signature": "(id: string, options: CommentsCommandOptions, global: GlobalOptions) => Promise<CommentsResult> | calls: (id: string, options: CommentsCommandOptions, global: GlobalOptions) => Promise<CommentsResult>"
         },
         {
           "classification": "advanced_export",
@@ -9362,7 +9632,7 @@
           "signature": "(scopeValue: string, actionValue: string, keyValue: string | undefined, options: ConfigCommandOptions, global: GlobalOptions, valueValue?: string) => Promise<ConfigResult> | calls: (scopeValue: string, actionValue: string, keyValue: string | undefined, options: ConfigCommandOptions, global: GlobalOptions, valueValue?: string) => Promise<ConfigResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runContext",
           "signature": "(options: ContextOptions, global: GlobalOptions) => Promise<ContextResult> | calls: (options: ContextOptions, global: GlobalOptions) => Promise<ContextResult>"
@@ -9384,6 +9654,12 @@
           "kind": "function",
           "name": "runCopy",
           "signature": "(sourceId: string, options: CopyOptions, global: GlobalOptions) => Promise<CopyResult> | calls: (sourceId: string, options: CopyOptions, global: GlobalOptions) => Promise<CopyResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runCreate",
+          "signature": "(options: CreateCommandOptions, global: GlobalOptions) => Promise<CreateResult> | calls: (options: CreateCommandOptions, global: GlobalOptions) => Promise<CreateResult>"
         },
         {
           "classification": "advanced_export",
@@ -9446,7 +9722,7 @@
           "signature": "(global: GlobalOptions, options?: GcCommandOptions) => Promise<GcResult> | calls: (global: GlobalOptions, options?: GcCommandOptions) => Promise<GcResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runGet",
           "signature": "(id: string, global: GlobalOptions, options?: GetOptions) => Promise<GetResult> | calls: (id: string, global: GlobalOptions, options?: GetOptions) => Promise<GetResult>"
@@ -9474,6 +9750,12 @@
           "kind": "interface",
           "name": "RunHealthOptions",
           "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runHistory",
+          "signature": "(id: string, options: HistoryCommandOptions, global: GlobalOptions) => Promise<HistoryResult> | calls: (id: string, options: HistoryCommandOptions, global: GlobalOptions) => Promise<HistoryResult>"
         },
         {
           "classification": "advanced_export",
@@ -9532,6 +9814,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "runLearnings",
+          "signature": "(id: string, options: LearningsCommandOptions, global: GlobalOptions) => Promise<LearningsResult> | calls: (id: string, options: LearningsCommandOptions, global: GlobalOptions) => Promise<LearningsResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "runLinkedArtifacts",
           "signature": "(id: string, options: LinkedArtifactCommandOptions, global: GlobalOptions, config: LinkedArtifactKindConfig) => Promise<LinkedArtifactResult> | calls: (id: string, options: LinkedArtifactCommandOptions, global: GlobalOptions, config: LinkedArtifactKindConfig) => Promise<LinkedArtifactResult>"
         },
@@ -9572,10 +9860,22 @@
           "signature": "(options: MergeReconcileOptions, global: GlobalOptions) => Promise<MergeReconcileResult> | calls: (options: MergeReconcileOptions, global: GlobalOptions) => Promise<MergeReconcileResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runNext",
           "signature": "(options: NextOptions, global: GlobalOptions) => Promise<NextResult> | calls: (options: NextOptions, global: GlobalOptions) => Promise<NextResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runNotes",
+          "signature": "(id: string, options: NotesCommandOptions, global: GlobalOptions) => Promise<NotesResult> | calls: (id: string, options: NotesCommandOptions, global: GlobalOptions) => Promise<NotesResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runPlan",
+          "signature": "(input: PlanDispatchInput) => Promise<PlanCommandResult> | calls: (input: PlanDispatchInput) => Promise<PlanCommandResult>"
         },
         {
           "classification": "advanced_export",
@@ -9716,10 +10016,16 @@
           "signature": "export type RunRegisteredVectorStoreAdapterForTestOptions = { [Operation in keyof VectorStoreAdapterOperationContexts]: { adapter: string; operation: Operation; context: VectorStoreAdapterOperationContexts[Operation]; }; }[keyof VectorStoreAdapterOperationContexts];"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runReindex",
           "signature": "(options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult> | calls: (options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runRelease",
+          "signature": "(id: string, force: boolean, global: GlobalOptions, options?: ReleaseMutationOptions) => Promise<ReleaseResult> | calls: (id: string, force: boolean, global: GlobalOptions, options?: ReleaseMutationOptions) => Promise<ReleaseResult>"
         },
         {
           "classification": "advanced_export",
@@ -9858,6 +10164,18 @@
           "kind": "function",
           "name": "runUpdate",
           "signature": "(id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "runUpdateMany",
+          "signature": "(options: UpdateManyCommandOptions, global: GlobalOptions) => Promise<UpdateManyResult> | calls: (options: UpdateManyCommandOptions, global: GlobalOptions) => Promise<UpdateManyResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runUpgrade",
+          "signature": "(target: string | undefined, options: UpgradeCommandOptions, global: GlobalOptions) => Promise<UpgradeResult> | calls: (target: string | undefined, options: UpgradeCommandOptions, global: GlobalOptions) => Promise<UpgradeResult>"
         },
         {
           "classification": "supported",
@@ -10748,7 +11066,7 @@
           "signature": "(left: unknown, right: unknown) => boolean | calls: (left: unknown, right: unknown) => boolean"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "StaleEntry",
           "signature": "export interface StaleEntry { id: string; title: string; status: ItemStatus; updated_at: string; stale_days: number; }"
@@ -11090,7 +11408,7 @@
           "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "TestHealthSummary",
           "signature": "export interface TestHealthSummary { items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
@@ -11142,6 +11460,24 @@
           "kind": "function",
           "name": "toCompletionFlagString",
           "signature": "(flagContracts: CliFlagContract[], includeGlobal?: boolean) => string | calls: (flagContracts: CliFlagContract[], includeGlobal?: boolean) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toContextFocusItem",
+          "signature": "(item: ItemMetadata, statusRegistry?: RuntimeStatusRegistry, childrenByParent?: Map<string, ItemMetadata[]>) => ContextFocusItem | calls: (item: ItemMetadata, statusRegistry?: RuntimeStatusRegistry, childrenByParent?: Map<string, ItemMetadata[]>) => ContextFocusItem"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toContextPackingSummary",
+          "signature": "(report: ContextPackingReport<ItemMetadata>) => ContextPackingSummary | calls: (report: ContextPackingReport<ItemMetadata>) => ContextPackingSummary"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toContextRankingSummary",
+          "signature": "<TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult) => ContextRankingSummary | calls: <TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult) => ContextRankingSummary"
         },
         {
           "classification": "advanced_export",
@@ -11474,6 +11810,18 @@
           "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; status?: string; closeReason?: string; completedAt?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; allowMissingParent?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "UpdateManyOperationOptions",
+          "signature": "export type UpdateManyOperationOptions = UpdateManyCommandOptions;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "UpdateOperationOptions",
+          "signature": "export type UpdateOperationOptions = UpdateCommandOptions;"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "UpdateResult",
@@ -11492,13 +11840,37 @@
           "signature": "CliFlagContract[]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpgradeCliResult",
+          "signature": "export interface UpgradeCliResult { requested: boolean; status: \"planned\" | \"updated\" | \"failed\" | \"skipped\"; package: string; target: string; command: string[]; before_version?: string; after_version?: string; repair: boolean; reason?: string; error?: string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCommandOptions",
           "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
+          "kind": "type",
+          "name": "UpgradeCommandRunner",
+          "signature": "export type UpgradeCommandRunner = (command: string, args: string[], options?: { cwd?: string; }) => Promise<UpgradeCommandRunnerResult>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpgradeCommandRunnerResult",
+          "signature": "export interface UpgradeCommandRunnerResult { stdout: string; stderr: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpgradePackageResult",
+          "signature": "export interface UpgradePackageResult { name: string; directory: string; scope: ExtensionScope; source: ManagedExtensionSource; status: \"planned\" | \"updated\" | \"failed\" | \"skipped\"; command: string[]; previous_version: string; installed_version?: string; reason?: string; error?: string; }"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "UpgradeResult",
           "signature": "export interface UpgradeResult { ok: boolean; action: \"upgrade\"; dry_run: boolean; scope: ExtensionScope; target?: string; cli: UpgradeCliResult; packages: UpgradePackageResult[]; summary: { requested_cli: boolean; requested_packages: boolean; planned: number; updated: number; skipped: number; failed: number; }; }"
@@ -11648,7 +12020,7 @@
           "signature": "export interface VectorStoreUpsertPoint { id: string; vector: number[]; payload?: Record<string, unknown>; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "verifyHistoryChain",
           "signature": "(entries: HistoryEntry[]) => { ok: boolean; errors: string[]; } | calls: (entries: HistoryEntry[]) => { ok: boolean; errors: string[]; }"
@@ -11666,7 +12038,7 @@
           "signature": "(flagContracts: CliFlagContract[]) => CliFlagContract[] | calls: (flagContracts: CliFlagContract[]) => CliFlagContract[]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "WorkloadEntry",
           "signature": "export interface WorkloadEntry { assignee: string | null; active: number; in_progress: number; items: string[]; }"
@@ -13455,6 +13827,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "function",
+          "name": "contextIntentRowId",
+          "signature": "(row: unknown) => string | undefined | calls: (row: unknown) => string | undefined"
+        },
+        {
+          "classification": "contract_data",
           "kind": "value",
           "name": "CONTRACTS_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
@@ -13488,6 +13866,12 @@
           "kind": "value",
           "name": "CREATE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "decodeContextIntentCursor",
+          "signature": "(cursor: string) => ContextIntentCursorEnvelope | undefined | calls: (cursor: string) => ContextIntentCursorEnvelope | undefined"
         },
         {
           "classification": "contract_data",
@@ -15520,6 +15904,18 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ReindexOptions",
+          "signature": "export interface ReindexOptions { mode?: string; progress?: boolean; full?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReindexResult",
+          "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ResurrectedItemRow",
           "signature": "export interface ResurrectedItemRow { id: string; deleted_at: string; deleted_by: string; }"
         },
@@ -15540,6 +15936,18 @@
           "kind": "interface",
           "name": "RunHealthOptions",
           "signature": "export interface RunHealthOptions { strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runReindex",
+          "signature": "(options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult> | calls: (options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runUpgrade",
+          "signature": "(target: string | undefined, options: UpgradeCommandOptions, global: GlobalOptions) => Promise<UpgradeResult> | calls: (target: string | undefined, options: UpgradeCommandOptions, global: GlobalOptions) => Promise<UpgradeResult>"
         },
         {
           "classification": "supported",
@@ -15672,6 +16080,42 @@
           "kind": "interface",
           "name": "UnreadableItemFileRow",
           "signature": "export interface UnreadableItemFileRow { path: string; id: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpgradeCliResult",
+          "signature": "export interface UpgradeCliResult { requested: boolean; status: \"planned\" | \"updated\" | \"failed\" | \"skipped\"; package: string; target: string; command: string[]; before_version?: string; after_version?: string; repair: boolean; reason?: string; error?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpgradeCommandOptions",
+          "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "UpgradeCommandRunner",
+          "signature": "export type UpgradeCommandRunner = (command: string, args: string[], options?: { cwd?: string; }) => Promise<UpgradeCommandRunnerResult>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpgradeCommandRunnerResult",
+          "signature": "export interface UpgradeCommandRunnerResult { stdout: string; stderr: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpgradePackageResult",
+          "signature": "export interface UpgradePackageResult { name: string; directory: string; scope: ExtensionScope; source: ManagedExtensionSource; status: \"planned\" | \"updated\" | \"failed\" | \"skipped\"; command: string[]; previous_version: string; installed_version?: string; reason?: string; error?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpgradeResult",
+          "signature": "export interface UpgradeResult { ok: boolean; action: \"upgrade\"; dry_run: boolean; scope: ExtensionScope; target?: string; cli: UpgradeCliResult; packages: UpgradePackageResult[]; summary: { requested_cli: boolean; requested_packages: boolean; planned: number; updated: number; skipped: number; failed: number; }; }"
         },
         {
           "classification": "supported",
@@ -17218,6 +17662,24 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "_testOnlyAggregateCommand",
+          "signature": "{ buildGroupKey: typeof buildGroupKey; compareAggregateRows: typeof compareAggregateRows; compareNullableGroupValue: typeof compareNullableGroupValue; completionPct: typeof completionPct; normalizeTagGroupValue: typeof normalizeTagGroupValue; parseGroupBy: typeof parseGroupBy; parseNumericAggregation: typeof parseNumericAggregation; parseStatus: typeof parseStatus; readNumericAggregateValue: typeof readNumericAggregateValue; resolveGroupValue: typeof resolveGroupValue; updateCompletionCounts: typeof updateCompletionCounts; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "_testOnlyGetCommand",
+          "signature": "{ shouldAutoIncludeGetChildren: typeof shouldAutoIncludeGetChildren; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "_testOnlyNextCommand",
+          "signature": "{ partitionCallerOwnedReady: typeof partitionCallerOwnedReady; resolveNextCallerAuthor: (options: NextOptions, settingsAuthor: string) => string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "_testOnlySearchCommand",
           "signature": "{ applyFilters: typeof applyFilters; applyExactQueryFilters: typeof applyExactQueryFilters; applyInlineQueryFilters: typeof applyInlineQueryFilters; buildHitHighlights: typeof buildHitHighlights; buildVerboseSearchFilters: typeof buildVerboseSearchFilters; buildExplicitSemanticFallbackWarning: typeof buildExplicitSemanticFallbackWarning; buildCompactSearchFilterSummary: typeof buildCompactSearchFilterSummary; buildHybridLexicalScore: typeof buildHybridLexicalScore; buildRerankCorpus: typeof buildRerankCorpus; buildSemanticHits: typeof buildSemanticHits; classifyImplicitSemanticFallbackReason: typeof classifyImplicitSemanticFallbackReason; collectErrorCauseCodes: typeof collectErrorCauseCodes; collectExactPhraseFields: typeof collectExactPhraseFields; collectLinkedPaths: typeof collectLinkedPaths; combineHybridHits: typeof combineHybridHits; computeBuiltInBm25Hits: typeof computeBuiltInBm25Hits; computeSemanticOrHybridHits: typeof computeSemanticOrHybridHits; resolveBuiltInBm25Mode: typeof resolveBuiltInBm25Mode; countOccurrences: typeof countOccurrences; dependencyEntries: typeof dependencyEntries; documentContainsExactPhrase: typeof documentContainsExactPhrase; emptySearchResult: typeof emptySearchResult; highlightFieldSnippet: typeof highlightFieldSnippet; loadDocuments: typeof loadDocuments; markTokenRuns: typeof markTokenRuns; parseInlineQueryFilters: typeof parseInlineQueryFilters; maybeEmitVectorIndexStaleWarning: typeof maybeEmitVectorIndexStaleWarning; loadLinkedCorpus: typeof loadLinkedCorpus; mergeVectorHitsById: typeof mergeVectorHitsById; normalizeExtensionProviderHits: typeof normalizeExtensionProviderHits; normalizeScoreMap: typeof normalizeScoreMap; parseProjectionConfig: typeof parseSearchProjection; parseTimestampWindow: typeof parseTimestampWindow; parseTokens: typeof parseSearchTokens; projectSearchHits: typeof projectSearchHits; readSearchFieldValue: typeof readSearchFieldValue; requireSemanticDependencies: typeof requireSemanticDependencies; resolveExtensionSearchProvider: typeof resolveExtensionSearchProvider; resolveExtensionSearchProviderByName: typeof resolveExtensionSearchProviderByName; resolveExtensionVectorAdapter: typeof resolveExtensionVectorAdapter; resolveLinkedCorpusRoots: typeof resolveLinkedCorpusRoots; scoreDocument: typeof scoreDocument; sortHits: typeof sortHits; stringArray: typeof stringArray; textEntries: typeof textEntries; validateSearchProjectionFields: typeof validateSearchProjectionFields; }"
         },
@@ -17235,15 +17697,69 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "ActivityCommandOptions",
+          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; compact?: boolean; unbounded?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ActivityEntry",
+          "signature": "export interface ActivityEntry extends HistoryEntry { id: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ActivityResult",
+          "signature": "export interface ActivityResult { activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; compact: boolean; projection: { mode: \"compact\" | \"full\"; row_key: \"compact_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AggregateOptions",
+          "signature": "export interface AggregateOptions { groupBy?: string; count?: boolean; completion?: boolean; sum?: string; avg?: string; includeUnparented?: boolean; status?: string; type?: string; tag?: string; priority?: string; deadlineBefore?: string; deadlineAfter?: string; assignee?: string; assigneeFilter?: string; parent?: string; sprint?: string; release?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AggregateResult",
+          "signature": "export interface AggregateResult { groups: AggregateRow[]; count: number; totals: { items_considered: number; items_grouped: number; items_skipped_unparented: number; }; filters: { group_by: AggregateGroupField[]; count: boolean; completion: boolean; sum?: string | null; avg?: string | null; numeric_field?: string | null; include_unparented: boolean; status: ItemStatus | null; type: string | null; tag: string | null; priority: string | null; deadline_before: string | null; deadline_after: string | null; assignee: string | null; assignee_filter: string | null; parent: string | null; sprint: string | null; release: string | null; }; now: string; warnings?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AggregateRow",
+          "signature": "export interface AggregateRow { group: AggregateGroupRecord; group_label: string; count: number; open?: number; in_progress?: number; closed?: number; other?: number; completion_pct?: number; null_count?: number; sum?: number | null; avg?: number | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "applyContextTagProjection",
+          "signature": "(result: ContextResult, noTags: boolean) => void | calls: (result: ContextResult, noTags: boolean) => void"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "applyFilterValueEcho",
           "signature": "(filters: Record<string, unknown>, options: Record<string, unknown>, entries: ReadonlyArray<FilterValueEchoEntry>) => void | calls: (filters: Record<string, unknown>, options: Record<string, unknown>, entries: ReadonlyArray<FilterValueEchoEntry>) => void"
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "BlockerEntry",
+          "signature": "export interface BlockerEntry { id: string; title: string; blocked_by: string | null; blocked_by_title: string | null; blocked_by_status: ItemStatus | null; blocked_reason: string | null; unblock_note: string | null; }"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "BRIEF_LIST_FIELDS",
           "signature": "readonly [\"id\", \"status\", \"type\", \"title\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildChildrenByParent",
+          "signature": "(allItems: ItemMetadata[]) => Map<string, ItemMetadata[]> | calls: (allItems: ItemMetadata[]) => Map<string, ItemMetadata[]>"
         },
         {
           "classification": "supported",
@@ -17308,6 +17824,42 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "CalendarDayBucket",
+          "signature": "export interface CalendarDayBucket { date: string; count: number; events: CalendarRow[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CalendarOptions",
+          "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "CalendarOutputFormat",
+          "signature": "export type CalendarOutputFormat = (typeof CALENDAR_OUTPUT_VALUES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CalendarResult",
+          "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CalendarRow",
+          "signature": "export interface CalendarRow { at: string; date: string; kind: \"deadline\" | \"reminder\" | \"event\"; reminder_text: string | null; event_title: string | null; event_end: string | null; event_location: string | null; event_all_day: boolean | null; event_timezone: string | null; event_recurring: boolean | null; event_recurrence_rule: string | null; item_id: string; item_title: string; item_type: ItemType; item_status: ItemStatus; item_priority: number; item_assignee: string | null; item_deadline: string | null; item_tags: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "CalendarView",
+          "signature": "export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ChildRollupContext",
           "signature": "export interface ChildRollupContext { count: number; active: number; by_status: Record<string, number>; sample: ChildRollupSample[]; sample_limit: number; truncated: boolean; next_offset: number | null; continuation: string | null; scanned: number; }"
         },
@@ -17331,9 +17883,33 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "collectSubtreeIds",
+          "signature": "(corpus: ItemMetadata[], parentId: string) => { ids: Set<string>; found: boolean; } | calls: (corpus: ItemMetadata[], parentId: string) => { ids: Set<string>; found: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "CompactActivityEntry",
+          "signature": "export interface CompactActivityEntry { id: string; op: string; ts: string; author: string; msg?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "compareCriticalItems",
+          "signature": "(left: ItemMetadata, right: ItemMetadata, statusRegistry: RuntimeStatusRegistry) => number | calls: (left: ItemMetadata, right: ItemMetadata, statusRegistry: RuntimeStatusRegistry) => number"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_EVALUATION_METRIC_NAMES",
           "signature": "readonly [\"ndcg\", \"reciprocal_rank\", \"required_recall\", \"continuity_coverage\", \"token_budget_adherence\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "CONTEXT_OUTPUT_VALUES",
+          "signature": "readonly [\"markdown\", \"toon\", \"json\", \"ndjson\"]"
         },
         {
           "classification": "supported",
@@ -17364,6 +17940,12 @@
           "kind": "value",
           "name": "CONTEXT_SIGNAL_STORE_FORMAT_VERSION",
           "signature": "1"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ContextAgendaEvent",
+          "signature": "export type ContextAgendaEvent = CalendarRow | (Pick<CalendarRow, \"at\" | \"date\" | \"kind\" | \"item_id\"> & { reference_only: true; reminder_text?: string | null; event_title?: string | null; event_recurring?: boolean | null; });"
         },
         {
           "classification": "supported",
@@ -17434,6 +18016,24 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ContextFocusItem",
+          "signature": "export interface ContextFocusItem { id: string; title: string; type: string; status: ItemStatus; priority: number; order: number | null; deadline: string | null; assignee: string | null; tags?: string[]; tags_inherited?: string; updated_at: string; parent: string | null; children_total?: number; children_closed?: number; completion_pct?: number; blocked?: true; blocker_ids?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextOptions",
+          "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; [key: string]: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ContextOutputFormat",
+          "signature": "export type ContextOutputFormat = (typeof CONTEXT_OUTPUT_VALUES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ContextPackingCandidate",
           "signature": "export interface ContextPackingCandidate<TItem> { id: string; item: TItem; rank: number; score: number; token_costs: ContextProjectionCosts; cluster?: string; required?: boolean; uncertainty?: number; lineage?: string; }"
         },
@@ -17448,6 +18048,12 @@
           "kind": "interface",
           "name": "ContextPackingReport",
           "signature": "export interface ContextPackingReport<TItem> { included: PackedContextCandidate<TItem>[]; omitted_ids: string[]; token_budget: number; used_tokens: number; remaining_tokens: number; complete: boolean; selection_complete: boolean; termination_reason: \"exhausted\" | \"latency_budget\"; evaluated_candidates: number; latency_budget_ms: number | null; profile: ContextPackingProfile; degradation_ladder: ContextProjectionLevel[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ContextPackingSummary",
+          "signature": "export type ContextPackingSummary = Omit<ContextPackingReport<unknown>, \"included\"> & { included: Array<{ id: string; projection: string; tokens: number; }>; };"
         },
         {
           "classification": "supported",
@@ -17472,6 +18078,12 @@
           "kind": "interface",
           "name": "ContextRankingEvaluationInput",
           "signature": "export interface ContextRankingEvaluationInput { ranked_ids: string[]; judgments: Record<string, number>; required_ids?: string[]; continuity_ids?: string[]; actual_tokens: number; token_budget: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextRankingSummary",
+          "signature": "export interface ContextRankingSummary { model: string; available_signals: ContextRelevanceSignalName[]; items: Array<{ id: string; rank: number; baseline_rank: number; score: number; contributions: ContextRelevanceContributions; }>; feature_store?: { source: \"derived_index\" | \"scan_fallback\"; cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; generated_at: string; }; }"
         },
         {
           "classification": "supported",
@@ -17526,6 +18138,12 @@
           "kind": "type",
           "name": "ContextRelevanceSurface",
           "signature": "export type ContextRelevanceSurface = \"context\" | \"next\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ContextResult",
+          "signature": "export interface ContextResult { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "supported",
@@ -17670,6 +18288,54 @@
           "kind": "function",
           "name": "evaluateContextRanking",
           "signature": "(input: ContextRankingEvaluationInput) => ContextRankingEvaluation | calls: (input: ContextRankingEvaluationInput) => ContextRankingEvaluation"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "GetOptions",
+          "signature": "export interface GetOptions { depth?: string; fields?: string; full?: boolean; tree?: boolean; treeDepth?: string; at?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "GetResult",
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyChild",
+          "signature": "export interface HierarchyChild { id: string; title: string; type: string; status: ItemStatus; children_total: number; children_closed: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HierarchyNode",
+          "signature": "export interface HierarchyNode { id: string; title: string; type: string; status: ItemStatus; children_total: number; children_closed: number; children_open: number; children_in_progress: number; children_blocked: number; children: HierarchyChild[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HistoryCommandOptions",
+          "signature": "export interface HistoryCommandOptions { limit?: string; diff?: boolean; field?: string; verify?: boolean; compact?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HistoryDiffEntry",
+          "signature": "export interface HistoryDiffEntry { index: number; ts: string; op: string; author: string; patch_ops: number; changed_fields: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HistoryResult",
+          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; compact: boolean; projection: { mode: \"compact\" | \"full\"; row_key: \"compact_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "HotFile",
+          "signature": "export interface HotFile { path: string; references: number; items: string[]; }"
         },
         {
           "classification": "supported",
@@ -17830,6 +18496,54 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "mergeSortedWarnings",
+          "signature": "(...warningGroups: Array<string[] | undefined>) => string[] | calls: (...warningGroups: Array<string[] | undefined>) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "NEXT_OUTPUT_VALUES",
+          "signature": "readonly [\"markdown\", \"toon\", \"json\"]"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "NextActionableItem",
+          "signature": "export interface NextActionableItem extends ContextFocusItem { rank: number; open_blocker_count: number; blockers: NextBlockerRef[]; unblocks: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "NextBlockerRef",
+          "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "NextOptions",
+          "signature": "export interface NextOptions { type?: string; tag?: string; priority?: string | number; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; parent?: string; limit?: string; blockedLimit?: string; readyOnly?: boolean; format?: string; explainRanking?: boolean; tokenBudget?: string | number; includeDecisions?: boolean; callerAuthor?: string; [key: string]: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "NextOutputFormat",
+          "signature": "export type NextOutputFormat = (typeof NEXT_OUTPUT_VALUES)[number];"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "NextRecommendation",
+          "signature": "export interface NextRecommendation extends NextActionableItem { reasons: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "NextResult",
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { decision_needed_total?: number; held_by_others_total?: number; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "packContextCandidates",
           "signature": "<TItem>(candidates: readonly ContextPackingCandidate<TItem>[], options: PackContextCandidatesOptions) => ContextPackingReport<TItem> | calls: <TItem>(candidates: readonly ContextPackingCandidate<TItem>[], options: PackContextCandidatesOptions) => ContextPackingReport<TItem>"
         },
@@ -17848,8 +18562,32 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "packRankedContextItems",
+          "signature": "(report: ContextRelevanceReport<ItemMetadata>, tokenBudget: number, requiredIds?: ReadonlySet<string>, profile?: \"context\" | \"next\") => ContextPackingReport<ItemMetadata> | calls: (report: ContextRelevanceReport<ItemMetadata>, tokenBudget: number, requiredIds?: ReadonlySet<string>, profile?: \"context\" | \"next\") => ContextPackingReport<ItemMetadata>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "paginateQueryRows",
           "signature": "<T>(rows: readonly T[], options: { cursor?: string; fingerprint: string; limit: number; readId: (row: T) => string; snapshot?: string; }) => QueryCursorPage<T> | calls: <T>(rows: readonly T[], options: { cursor?: string; fingerprint: string; limit: number; readId: (row: T) => string; snapshot?: string; }) => QueryCursorPage<T>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseContextDepth",
+          "signature": "(raw: string | undefined, settings: ContextSettings) => ContextDepth | calls: (raw: string | undefined, settings: ContextSettings) => ContextDepth"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseContextFocusFields",
+          "signature": "(raw: string | undefined) => string[] | undefined | calls: (raw: string | undefined) => string[] | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "parseContextSections",
+          "signature": "(raw: string[] | undefined, depth: ContextDepth, settings: ContextSettings) => ContextSectionName[] | calls: (raw: string[] | undefined, depth: ContextDepth, settings: ContextSettings) => ContextSectionName[]"
         },
         {
           "classification": "supported",
@@ -17880,6 +18618,24 @@
           "kind": "function",
           "name": "parseType",
           "signature": "(raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => ItemType | undefined | calls: (raw: string | undefined, typeRegistry: ItemTypeRegistry, label?: string) => ItemType | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "partitionDecisionEntries",
+          "signature": "(ready: ActionableEntry[], includeDecisions: boolean) => { agent: ActionableEntry[]; decisions: ActionableEntry[]; } | calls: (ready: ActionableEntry[], includeDecisions: boolean) => { agent: ActionableEntry[]; decisions: ActionableEntry[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ProgressEntry",
+          "signature": "export interface ProgressEntry { id: string; title: string; type: string; total: number; closed: number; open: number; in_progress: number; blocked: number; completion_pct: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "projectContextFocusRows",
+          "signature": "<T extends ContextFocusItem>(rows: T[], fields: string[]) => ContextFocusItem[] | calls: <T extends ContextFocusItem>(rows: T[], fields: string[]) => ContextFocusItem[]"
         },
         {
           "classification": "supported",
@@ -17926,6 +18682,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "readHistoryEntries",
+          "signature": "(historyPath: string, itemId: string) => Promise<HistoryEntry[]> | calls: (historyPath: string, itemId: string) => Promise<HistoryEntry[]>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "readItemMetadataDerivedIndexState",
           "signature": "(pmRoot: string, folders?: readonly string[]) => Promise<ItemMetadataDerivedIndexState | null> | calls: (pmRoot: string, folders?: readonly string[]) => Promise<ItemMetadataDerivedIndexState | null>"
         },
@@ -17946,6 +18708,12 @@
           "kind": "function",
           "name": "readWorkspaceMemory",
           "signature": "(items: readonly ItemMetadata[], options: { pmRoot: string; statusRegistry: RuntimeStatusRegistry; now: string; minimumItems?: number; sourceCursor?: string; }) => Promise<WorkspaceMemoryReadResult> | calls: (items: readonly ItemMetadata[], options: { pmRoot: string; statusRegistry: RuntimeStatusRegistry; now: string; minimumItems?: number; sourceCursor?: string; }) => Promise<WorkspaceMemoryReadResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RecentContextItem",
+          "signature": "export interface RecentContextItem extends ContextFocusItem { created_at?: string; }"
         },
         {
           "classification": "supported",
@@ -17973,9 +18741,51 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "renderCalendarMarkdown",
+          "signature": "(result: CalendarResult) => string | calls: (result: CalendarResult) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "renderCalendarToon",
+          "signature": "(result: CalendarResult) => string | calls: (result: CalendarResult) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "renderContextMarkdown",
+          "signature": "(result: ContextResult) => string | calls: (result: ContextResult) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "renderNextMarkdown",
+          "signature": "(result: NextResult) => string | calls: (result: NextResult) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveCalendarOutputFormat",
+          "signature": "(options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat | calls: (options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "resolveContentFieldFilters",
           "signature": "(options: Record<string, unknown>) => ContentFieldFilters | calls: (options: Record<string, unknown>) => ContentFieldFilters"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveContextOutputFormat",
+          "signature": "(options: ContextOptions, global: GlobalOptions) => ContextOutputFormat | calls: (options: ContextOptions, global: GlobalOptions) => ContextOutputFormat"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveContextTokenBudget",
+          "signature": "(raw: string | number | undefined, fallback: number) => number | calls: (raw: string | number | undefined, fallback: number) => number"
         },
         {
           "classification": "supported",
@@ -17988,6 +18798,12 @@
           "kind": "value",
           "name": "resolveMissingMetadataFilters",
           "signature": "(options: { filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; filterReviewerMissing?: boolean; filterRiskMissing?: boolean; filterConfidenceMissing?: boolean; filterSprintMissing?: boolean; filterReleaseMissing?: boolean; }) => MissingMetadataFilters | calls: (options: { filterAcMissing?: boolean; filterEstimatesMissing?: boolean; filterResolutionMissing?: boolean; filterMetadataMissing?: boolean; filterReviewerMissing?: boolean; filterRiskMissing?: boolean; filterConfidenceMissing?: boolean; filterSprintMissing?: boolean; filterReleaseMissing?: boolean; }) => MissingMetadataFilters"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveNextOutputFormat",
+          "signature": "(options: NextOptions, global: GlobalOptions) => NextOutputFormat | calls: (options: NextOptions, global: GlobalOptions) => NextOutputFormat"
         },
         {
           "classification": "supported",
@@ -18022,6 +18838,30 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "runActivity",
+          "signature": "(options: ActivityCommandOptions, global: GlobalOptions) => Promise<ActivityResult> | calls: (options: ActivityCommandOptions, global: GlobalOptions) => Promise<ActivityResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runAggregate",
+          "signature": "(options: AggregateOptions, global: GlobalOptions) => Promise<AggregateResult> | calls: (options: AggregateOptions, global: GlobalOptions) => Promise<AggregateResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runCalendar",
+          "signature": "(options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult> | calls: (options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runContext",
+          "signature": "(options: ContextOptions, global: GlobalOptions) => Promise<ContextResult> | calls: (options: ContextOptions, global: GlobalOptions) => Promise<ContextResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "runContextEvaluationCorpus",
           "signature": "(scenarios: readonly ContextEvaluationScenario[], reader: ContextEvaluationReader, thresholds: ContextEvaluationThresholds) => Promise<ContextEvaluationCorpusReport> | calls: (scenarios: readonly ContextEvaluationScenario[], reader: ContextEvaluationReader, thresholds: ContextEvaluationThresholds) => Promise<ContextEvaluationCorpusReport>"
         },
@@ -18040,8 +18880,26 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "runGet",
+          "signature": "(id: string, global: GlobalOptions, options?: GetOptions) => Promise<GetResult> | calls: (id: string, global: GlobalOptions, options?: GetOptions) => Promise<GetResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runHistory",
+          "signature": "(id: string, options: HistoryCommandOptions, global: GlobalOptions) => Promise<HistoryResult> | calls: (id: string, options: HistoryCommandOptions, global: GlobalOptions) => Promise<HistoryResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "runList",
           "signature": "{ (status: ItemStatus | undefined, options: ListOptions & { full: true; }, global: GlobalOptions): Promise<ListFullResult>; (status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions): Promise<ListResult>; } | calls: (status: ItemStatus | undefined, options: ListOptions & { full: true; }, global: GlobalOptions) => Promise<ListFullResult> ; (status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions) => Promise<ListResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runNext",
+          "signature": "(options: NextOptions, global: GlobalOptions) => Promise<NextResult> | calls: (options: NextOptions, global: GlobalOptions) => Promise<NextResult>"
         },
         {
           "classification": "supported",
@@ -18189,9 +19047,51 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "StaleEntry",
+          "signature": "export interface StaleEntry { id: string; title: string; status: ItemStatus; updated_at: string; stale_days: number; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "summarizeContextEvaluationReports",
           "signature": "(reports: readonly ContextEvaluationScenarioReport[], thresholds: ContextEvaluationThresholds) => ContextEvaluationCorpusReport | calls: (reports: readonly ContextEvaluationScenarioReport[], thresholds: ContextEvaluationThresholds) => ContextEvaluationCorpusReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "TestHealthSummary",
+          "signature": "export interface TestHealthSummary { items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toContextFocusItem",
+          "signature": "(item: ItemMetadata, statusRegistry?: RuntimeStatusRegistry, childrenByParent?: Map<string, ItemMetadata[]>) => ContextFocusItem | calls: (item: ItemMetadata, statusRegistry?: RuntimeStatusRegistry, childrenByParent?: Map<string, ItemMetadata[]>) => ContextFocusItem"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toContextPackingSummary",
+          "signature": "(report: ContextPackingReport<ItemMetadata>) => ContextPackingSummary | calls: (report: ContextPackingReport<ItemMetadata>) => ContextPackingSummary"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toContextRankingSummary",
+          "signature": "<TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult) => ContextRankingSummary | calls: <TItem>(report: ContextRelevanceReport<TItem>, featureStore?: ContextSignalStoreReadResult) => ContextRankingSummary"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "verifyHistoryChain",
+          "signature": "(entries: HistoryEntry[]) => { ok: boolean; errors: string[]; } | calls: (entries: HistoryEntry[]) => { ok: boolean; errors: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WorkloadEntry",
+          "signature": "export interface WorkloadEntry { assignee: string | null; active: number; in_progress: number; items: string[]; }"
         },
         {
           "classification": "supported",
@@ -18314,7 +19214,7 @@
           "signature": "1"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "BlockerEntry",
           "signature": "export interface BlockerEntry { id: string; title: string; blocked_by: string | null; blocked_by_title: string | null; blocked_by_status: ItemStatus | null; blocked_reason: string | null; unblock_note: string | null; }"
@@ -18326,13 +19226,13 @@
           "signature": "readonly [\"Epic\", \"Feature\", \"Task\", \"Chore\", \"Issue\", \"Decision\", \"Event\", \"Reminder\", \"Milestone\", \"Meeting\", \"Plan\"]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "CalendarOptions",
           "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "CalendarResult",
           "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
@@ -18506,13 +19406,13 @@
           "signature": "(options?: ContextOptions, clientOptions?: PmClientOptions) => Promise<ContextResult> | calls: (options?: ContextOptions, clientOptions?: PmClientOptions) => Promise<ContextResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "value",
           "name": "CONTEXT_OUTPUT_VALUES",
           "signature": "readonly [\"markdown\", \"toon\", \"json\", \"ndjson\"]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ContextFocusItem",
           "signature": "export interface ContextFocusItem { id: string; title: string; type: string; status: ItemStatus; priority: number; order: number | null; deadline: string | null; assignee: string | null; tags?: string[]; tags_inherited?: string; updated_at: string; parent: string | null; children_total?: number; children_closed?: number; completion_pct?: number; blocked?: true; blocker_ids?: string[]; }"
@@ -18524,7 +19424,7 @@
           "signature": "export interface ContextOptions { date?: string; from?: string; to?: string; past?: boolean; type?: string; tag?: string; priority?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; limit?: string; maxItems?: string; after?: string; format?: string; depth?: string; fields?: string; section?: string[]; activityLimit?: string; staleThreshold?: string; parent?: string; explainRanking?: boolean; tokenBudget?: string | number; noTags?: boolean; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "ContextOutputFormat",
           "signature": "export type ContextOutputFormat = (typeof CONTEXT_OUTPUT_VALUES)[number];"
@@ -18968,13 +19868,13 @@
           "signature": "export interface HealthResult { ok: boolean; checks: HealthCheck[]; warning_count?: number; warnings: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "HierarchyChild",
           "signature": "export interface HierarchyChild { id: string; title: string; type: string; status: ItemStatus; children_total: number; children_closed: number; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "HierarchyNode",
           "signature": "export interface HierarchyNode { id: string; title: string; type: string; status: ItemStatus; children_total: number; children_closed: number; children_open: number; children_in_progress: number; children_blocked: number; children: HierarchyChild[]; }"
@@ -19010,7 +19910,7 @@
           "signature": "(options?: HistoryRepairCommandOptions, clientOptions?: PmClientOptions) => Promise<HistoryRepairAllResult> | calls: (options?: HistoryRepairCommandOptions, clientOptions?: PmClientOptions) => Promise<HistoryRepairAllResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "HotFile",
           "signature": "export interface HotFile { path: string; references: number; items: string[]; }"
@@ -19280,19 +20180,19 @@
           "signature": "(options?: NextOptions, clientOptions?: PmClientOptions) => Promise<NextResult> | calls: (options?: NextOptions, clientOptions?: PmClientOptions) => Promise<NextResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "value",
           "name": "NEXT_OUTPUT_VALUES",
           "signature": "readonly [\"markdown\", \"toon\", \"json\"]"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "NextActionableItem",
           "signature": "export interface NextActionableItem extends ContextFocusItem { rank: number; open_blocker_count: number; blockers: NextBlockerRef[]; unblocks: string[]; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "NextBlockerRef",
           "signature": "export interface NextBlockerRef { id: string; title: string | null; status: ItemStatus | null; }"
@@ -19304,13 +20204,13 @@
           "signature": "export interface NextOptions { type?: string; tag?: string; priority?: string | number; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; parent?: string; limit?: string; blockedLimit?: string; readyOnly?: boolean; format?: string; explainRanking?: boolean; tokenBudget?: string | number; includeDecisions?: boolean; callerAuthor?: string; [key: string]: unknown; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "type",
           "name": "NextOutputFormat",
           "signature": "export type NextOutputFormat = (typeof NEXT_OUTPUT_VALUES)[number];"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "NextRecommendation",
           "signature": "export interface NextRecommendation extends NextActionableItem { reasons: string[]; }"
@@ -19646,7 +20546,7 @@
           "signature": "export type ProfileSubcommand = (typeof PROFILE_SUBCOMMANDS)[number];"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ProgressEntry",
           "signature": "export interface ProgressEntry { id: string; title: string; type: string; total: number; closed: number; open: number; in_progress: number; blocked: number; completion_pct: number; }"
@@ -19694,19 +20594,19 @@
           "signature": "(options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined | calls: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "RecentContextItem",
           "signature": "export interface RecentContextItem extends ContextFocusItem { created_at?: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ReindexOptions",
           "signature": "export interface ReindexOptions { mode?: string; progress?: boolean; full?: boolean; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "ReindexResult",
           "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
@@ -19730,13 +20630,13 @@
           "signature": "(targetPath: string) => Promise<void> | calls: (targetPath: string) => Promise<void>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "renderCalendarMarkdown",
           "signature": "(result: CalendarResult) => string | calls: (result: CalendarResult) => string"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "renderCalendarToon",
           "signature": "(result: CalendarResult) => string | calls: (result: CalendarResult) => string"
@@ -19754,7 +20654,7 @@
           "signature": "(input: TerminalReasonInput, required: boolean) => TerminalReasonResolution | calls: (input: TerminalReasonInput, required: boolean) => TerminalReasonResolution"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "resolveCalendarOutputFormat",
           "signature": "(options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat | calls: (options: CalendarOptions, global: GlobalOptions) => CalendarOutputFormat"
@@ -19844,13 +20744,13 @@
           "signature": "(context: OnWriteHookContext) => Promise<string[]> | calls: (context: OnWriteHookContext) => Promise<string[]>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runAggregate",
           "signature": "(options: AggregateOptions, global: GlobalOptions) => Promise<AggregateResult> | calls: (options: AggregateOptions, global: GlobalOptions) => Promise<AggregateResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runCalendar",
           "signature": "(options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult> | calls: (options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult>"
@@ -19868,7 +20768,7 @@
           "signature": "(shell: string, itemTypes?: string[], tags?: string[], eagerTagExpansion?: boolean, runtime?: CompletionRuntimeConfig) => CompletionResult | calls: (shell: string, itemTypes?: string[], tags?: string[], eagerTagExpansion?: boolean, runtime?: CompletionRuntimeConfig) => CompletionResult"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runContext",
           "signature": "(options: ContextOptions, global: GlobalOptions) => Promise<ContextResult> | calls: (options: ContextOptions, global: GlobalOptions) => Promise<ContextResult>"
@@ -19898,7 +20798,7 @@
           "signature": "(id: string | undefined, options: FocusOptions, global: GlobalOptions) => Promise<FocusResult> | calls: (id: string | undefined, options: FocusOptions, global: GlobalOptions) => Promise<FocusResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runGet",
           "signature": "(id: string, global: GlobalOptions, options?: GetOptions) => Promise<GetResult> | calls: (id: string, global: GlobalOptions, options?: GetOptions) => Promise<GetResult>"
@@ -19922,13 +20822,13 @@
           "signature": "{ (status: ItemStatus | undefined, options: ListOptions & { full: true; }, global: GlobalOptions): Promise<ListFullResult>; (status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions): Promise<ListResult>; } | calls: (status: ItemStatus | undefined, options: ListOptions & { full: true; }, global: GlobalOptions) => Promise<ListFullResult> ; (status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions) => Promise<ListResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runNext",
           "signature": "(options: NextOptions, global: GlobalOptions) => Promise<NextResult> | calls: (options: NextOptions, global: GlobalOptions) => Promise<NextResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "function",
           "name": "runReindex",
           "signature": "(options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult> | calls: (options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult>"
@@ -20372,7 +21272,7 @@
           "signature": "(content: string) => { frontMatter: string; body: string; } | calls: (content: string) => { frontMatter: string; body: string; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "StaleEntry",
           "signature": "export interface StaleEntry { id: string; title: string; status: ItemStatus; updated_at: string; stale_days: number; }"
@@ -20462,7 +21362,7 @@
           "signature": "export interface TerminalTransitionPolicy { requireCloseReason: boolean; orderingEdges: \"preserve\" | \"remove\"; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "TestHealthSummary",
           "signature": "export interface TestHealthSummary { items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
@@ -20636,13 +21536,13 @@
           "signature": "(target?: string, options?: UpgradeCommandOptions, clientOptions?: PmClientOptions) => Promise<UpgradeResult> | calls: (target?: string, options?: UpgradeCommandOptions, clientOptions?: PmClientOptions) => Promise<UpgradeResult>"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "UpgradeCommandOptions",
           "signature": "export interface UpgradeCommandOptions { dryRun?: boolean; cliOnly?: boolean; packagesOnly?: boolean; project?: boolean; local?: boolean; global?: boolean; repair?: boolean; tag?: string; packageName?: string; commandRunner?: UpgradeCommandRunner; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "UpgradeResult",
           "signature": "export interface UpgradeResult { ok: boolean; action: \"upgrade\"; dry_run: boolean; scope: ExtensionScope; target?: string; cli: UpgradeCliResult; packages: UpgradePackageResult[]; summary: { requested_cli: boolean; requested_packages: boolean; planned: number; updated: number; skipped: number; failed: number; }; }"
@@ -20672,7 +21572,7 @@
           "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; projection: OutputProjectionDeclaration; }"
         },
         {
-          "classification": "advanced_export",
+          "classification": "supported",
           "kind": "interface",
           "name": "WorkloadEntry",
           "signature": "export interface WorkloadEntry { assignee: string | null; active: number; in_progress: number; items: string[]; }"

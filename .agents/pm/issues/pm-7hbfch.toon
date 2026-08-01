@@ -2,11 +2,13 @@ id: pm-7hbfch
 title: "Declared read-intent token budgets are written to a flag three of five intent commands do not accept, so the shipped intent layer overruns its own declaration by up to 43.8x"
 description: "Every built-in read intent shipped on 2026-07-30 declares a token_budget, and applyContextIntentProjection writes that budget into projected.tokenBudget at src/sdk/context-intent-contracts.ts line 323 for all five intent commands. Only next and context actually declare a --token-budget flag: list, get and search reject it as an unknown option, so the declared budget is written into a key those commands never read and is silently discarded. Measured on the live 2201-item tracker: list --for triage returns 315,037 bytes (about 78.8k tokens) against a declared 1,800 (43.8x); get --for inspect returns 252,575 bytes (about 63.1k tokens) against 3,200 (19.7x); search --for discover 17,662 bytes against 1,800 (2.45x); next --for execute 5,123 bytes against 1,200 (1.07x). The single conforming pair is the only one whose command accepts the flag, which is the natural control that proves the mechanism. The response envelope carries no budget, estimated_tokens or degradation field at all, so a consumer cannot detect the overrun from the payload. The list intent narrows fields correctly (projection.mode fields, 16 named fields) and applies no row bound, so all 306 open items are emitted with truncated false and has_more false."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts","area:sdk",conformance-gap,token-efficiency
 created_at: "2026-07-30T09:12:36.920Z"
-updated_at: "2026-08-01T00:37:54.818Z"
+updated_at: "2026-08-01T05:31:15.046Z"
+closed_at: "2026-08-01T05:27:52.210Z"
+completed_at: "2026-08-01T05:27:52.210Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "Every declared intent budget is enforced at one response egress point rather than by a per-command flag, so no intent can overrun its own declaration; list, get and search either declare --token-budget or the intent layer refuses to claim a budget it cannot apply, with no silent third option; the response envelope of every intent-projected read carries the resolved budget, the measured estimate and the degradation actually applied, so a consumer can detect an overrun without measuring bytes itself; a negative-control test asserts that an intent whose command lacks budget enforcement fails the build rather than shipping; the published evidence table records observed versus declared tokens per intent on a corpus of at least the current tracker size"
@@ -19,6 +21,9 @@ parent: pm-5t33or
 risk: high
 confidence: high
 severity: high
+resolution: Declared budgets are enforced after projection with truthful receipts and fail-closed cursor behavior
+expected_result: "Every context intent is measured after projection, stays within its declared token ceiling, and returns truthful omission and continuation metadata."
+actual_result: All five current-scale intent outputs remain within declared ceilings and the mandatory gate rejects removed enforcement
 affected_version: 2026.7.30
 component: sdk/context-intent-contracts
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
@@ -29,15 +34,20 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-sb0tns,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-07-30T09:28:37.564Z","harness:claude-code","cli:update:dep",detected
   pm-yekkvt,blocked_by,"2026-07-30T17:03:17.017Z","harness:claude-code","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-07-30T10:27:23.385Z","harness:codex","Implementation evidence: every built-in intent now emits resolved budget, measured tokens, within-budget verdict, and degradation; oversized context/next results compact deterministically and all six live tracker probes remained within ceiling."
   "2026-07-30T11:24:13.871Z","harness:codex","Delivery boundary: enforced intent receipts and deterministic degradation are implemented and exact 100% coverage plus token-budget gates pass. The canonical issue remains open until the current-tracker per-intent observed-versus-declared evidence table is published and its negative control is explicitly tied to the release gate."
   "2026-07-30T11:30:54.844Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
   "2026-07-30T11:54:22.385Z","harness:codex","Review correction: intent receipts now honor the effective explicit tokenBudget override, and over-budget row sets fall back to a receipt-only envelope instead of dropping rows while retaining stale counts or cursors."
   "2026-07-30T17:13:52.692Z","harness:claude-code","Conformance re-measure 2026-07-30 (evening), at HEAD after the context-budget bundle merged at 14:33Z. Enforcement shipped and works. The three intents this item measured as 43.8x, 19.7x and 2.45x over their declared budgets are now inside them: list triage 1,045 of 1,800 tokens in 6,250 bytes, get inspect 1,208 of 3,200 in 6,565 bytes, search discover 1,300 of 1,800 in 7,219 bytes. The receipt now carries the resolved budget, the measured estimate and the applied degradation, which closes the envelope half of the acceptance criteria.\n\nTwo of this item's own criteria are still open, and one of them is now falsified rather than merely unmet.\n\nThe criterion that list, get and search either declare the budget flag or the intent layer refuses to claim a budget it cannot apply, with no silent third option, is falsified. All three still exit 2 with unknown_option on --token-budget. All three nevertheless claim a budget in the receipt and enforce it at egress. That is precisely the silent third option the criterion forbids: the budget is claimed and applied on a command that offers no way to adjust it. It is reachable today, not latent. pm list --limit 200 --for triage returns budget_receipt_only with zero rows, and pm get <id> --depth deep --for inspect does the same, and neither has any override.\n\nThe criterion that a negative control asserts an intent whose command lacks budget enforcement fails the build is still unmet, and the day showed the control was pointed at the wrong invariant. Enforcement presence was never the fragile part. Reachability of the declared number is, and that is now tracked separately as a blocking dependency on this item, since enforcement cannot honestly be called complete while three of five declared ceilings cannot be met by the commands that declare them.\n\nMethod note for whoever picks this up: measure with the flag on the two commands that accept it. The floor is only visible by raising the ceiling until rows appear. next execute yields nothing at 1200, nothing at 2000, and 1,438 tokens of content at 4000. context orient yields nothing at 2400, nothing at 8000, and 8,417 tokens at 40000."
   "2026-08-01T00:37:51.706Z","harness:codex","Delivery evidence 2026-08-01: list/get/search now expose --token-budget across CLI, SDK tool options, cursor semantics, contracts, and tool schema 4.3.0. The release gate checks 28 surfaces plus a 256-token infeasible declaration control. Live current-tracker receipts are delivered and within ceiling: context orient 1725/2400 with 11 useful rows; list triage 1703/3200 with 20 rows and a cursor; search discover 1562/1800 with 16 rows; next execute 1109/1200 with 3 ready rows; get inspect 2009/3200. Remaining acceptance before closure: add a generated corpus at least as large as the current tracker to the mandatory gate and a structural negative control that removes enforcement from one declared command."
-files[12]{path,scope,note}:
+  "2026-08-01T05:27:12.706Z","harness:codex","Delivery evidence 2026-08-01: intent enforcement is now measured after projection/compaction, synthesizes resumable terminal continuations, and fails closed when a retained cursor row lacks stable identity. The mandatory quality pipeline executes structural receipt-removal and repeated-metadata negative controls. Current-scale measurements remain within all declared ceilings: context 1000/2400, get 415/3200, list 3181/3200, next 1171/1200, search 1763/1800 estimated tokens. Exact repo coverage is 100/100/100/100."
+files[16]{path,scope,note}:
+  package.json,project,quality static enforcement
   scripts/agent-token-surface-baseline.json,project,Regenerated package-owned token surface baseline after the list/get/search budget option and current command surface additions
+  scripts/release/context-intent-calibration-gate.mjs,project,mandatory executable intent calibration gate
+  scripts/release/context-intent-calibration.json,project,reproducible two-scale evidence
+  scripts/release/gate-registry.json,project,registered mandatory quality pipeline
   scripts/release/token-budget-gate.mjs,project,Intent reachability release gate
   scripts/release/token-budgets.json,project,Measured intent corpus baseline
   sdk/public-surface.json,project,Tool schema 4.3.0 public surface snapshot
@@ -49,13 +59,16 @@ files[12]{path,scope,note}:
   src/sdk/context-intent-contracts.ts,project,applyContextIntentProjection writes the declared token_budget into projected.tokenBudget at line 323 for all five intent commands
   tests/fixtures/contracts/full.json,project,Cross-surface token-budget flag and schema parity
   tests/unit/cli/context-intent-registration.spec.ts,project,Cross-surface token-budget flag and schema parity
-tests[4]{command,scope,timeout_seconds}:
+tests[6]{command,scope,timeout_seconds}:
   node scripts/release/token-budget-gate.mjs,project,300
+  node scripts/run-tests.mjs coverage,project,300
   node scripts/run-tests.mjs test -- tests/unit/cli/context-intent-registration.spec.ts tests/unit/sdk/context-packing-usage.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/cli/context-intent-registration.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts,project,300
   node scripts/run-tests.mjs test -- tests/unit/sdk/context-intent-contracts.spec.ts,project,240
+  "pnpm quality:static",project,300
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms9mewok-jsmdpi,test,passed,"2026-08-01T00:15:13.819Z","2026-08-01T00:15:58.196Z","2026-08-01T00:15:58.196Z",4,0,0
 docs[1]{path,scope,note}:
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Budget enforcement and degradation contract
+close_reason: Mandatory intent enforcement and structural negative controls pass at two-item and current-tracker scale
 body: ""

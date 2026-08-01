@@ -8,7 +8,7 @@ import {
   resolveGuideOutputFormat,
   runGuide,
   type GuideResult,
-} from "../../../src/cli/commands/guide.js";
+} from "../../../src/sdk/guide.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import type { GlobalOptions } from "../../../src/core/shared/command-types.js";

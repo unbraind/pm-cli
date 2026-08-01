@@ -15,13 +15,13 @@ import {
   parseTags,
   splitAcceptanceCriteria,
 } from "../../../../src/core/item/parse.js";
-import { resolveEventEndAt } from "../../../../src/cli/commands/event-validation-messages.js";
+import { resolveEventEndAt } from "../../../../src/sdk/lifecycle/event-validation-messages.js";
 import {
   parseIntegerLimit,
   parseLimit,
   parsePriority,
   parseType,
-} from "../../../../src/cli/shared-parsers.js";
+} from "../../../../src/sdk/query/parsers.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 
 afterEach(() => {

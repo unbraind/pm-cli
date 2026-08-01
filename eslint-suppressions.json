@@ -54,17 +54,17 @@
       "count": 1
     }
   },
-  "src/cli/commands/calendar.ts": {
+  "src/sdk/query/calendar.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "src/cli/commands/completion.ts": {
+  "src/sdk/completion.ts": {
     "complexity": {
       "count": 1
     }
   },
-  "src/cli/commands/contracts.ts": {
+  "src/sdk/cli-contracts/runtime-contracts.ts": {
     "complexity": {
       "count": 1
     },
@@ -72,7 +72,7 @@
       "count": 1
     }
   },
-  "src/cli/commands/create.ts": {
+  "src/sdk/lifecycle/create.ts": {
     "no-useless-assignment": {
       "count": 1
     },
@@ -80,7 +80,7 @@
       "count": 1
     }
   },
-  "src/cli/commands/guide.ts": {
+  "src/sdk/guide.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
@@ -88,7 +88,7 @@
       "count": 2
     }
   },
-  "src/cli/commands/reindex.ts": {
+  "src/sdk/governance/reindex.ts": {
     "no-useless-assignment": {
       "count": 1
     },
@@ -96,7 +96,7 @@
       "count": 2
     }
   },
-  "src/cli/commands/shared-unset-fields.ts": {
+  "src/sdk/lifecycle/shared-unset-fields.ts": {
     "complexity": {
       "count": 1
     },
@@ -117,7 +117,7 @@
       "count": 3
     }
   },
-  "src/cli/registration-helpers.ts": {
+  "src/sdk/cli-contracts/registration-helpers.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     }

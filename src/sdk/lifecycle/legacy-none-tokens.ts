@@ -1,12 +1,12 @@
 /**
- * @module cli/commands/legacy-none-tokens
+ * @module sdk/lifecycle/legacy-none-tokens
  *
  * Implements the pm legacy none tokens command surface and its agent-facing runtime behavior.
  */
 import {
   EXIT_CODE,
   PmCliError,
-} from "../../sdk/runtime-primitives.js";
+} from "../runtime-primitives.js";
 /**
  * Shared legacy "none"/"null" sentinel handling for the create and update
  * commands. These tokens used to mean "clear this field"; they are now

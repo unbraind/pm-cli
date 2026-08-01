@@ -5,8 +5,22 @@
  */
 export * from "./governance/gc.js";
 export * from "./governance/health.js";
+export {
+  runReindex,
+  type ReindexOptions,
+  type ReindexResult,
+} from "./governance/reindex.js";
 export * from "./governance/stale-work.js";
 export * from "./governance/storage-integrity.js";
+export {
+  runUpgrade,
+  type UpgradeCliResult,
+  type UpgradeCommandOptions,
+  type UpgradeCommandRunner,
+  type UpgradeCommandRunnerResult,
+  type UpgradePackageResult,
+  type UpgradeResult,
+} from "./governance/upgrade.js";
 export * from "./governance/validate.js";
 export * from "./author-attribution.js";
 export * from "./mutation-guard.js";

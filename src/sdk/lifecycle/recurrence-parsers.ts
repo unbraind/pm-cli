@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/recurrence-parsers
+ * @module sdk/lifecycle/recurrence-parsers
  *
  * Implements the pm recurrence parsers command surface and its agent-facing runtime behavior.
  */
@@ -8,7 +8,7 @@ import {
   EXIT_CODE,
   PmCliError,
   resolveIsoOrRelative,
-} from "../../sdk/runtime-primitives.js";
+} from "../runtime-primitives.js";
 import {
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,

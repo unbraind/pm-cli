@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "metric": "utf8_bytes",
+  "token_estimate": "ceil(bytes / 4)",
+  "structural_negative_control": "remove context_intent and repeat first-page metadata on a continuation",
+  "tiers": [
+    {
+      "item_count": 2,
+      "intents": {
+        "context": {
+          "delivered_bytes": 2828,
+          "delivered_rows": 1,
+          "declared_tokens": 2400,
+          "measured_tokens": 707,
+          "degradation": "bounded_sections"
+        },
+        "get": {
+          "delivered_bytes": 1602,
+          "delivered_rows": 0,
+          "declared_tokens": 3200,
+          "measured_tokens": 401,
+          "degradation": "standard_item"
+        },
+        "list": {
+          "delivered_bytes": 1572,
+          "delivered_rows": 2,
+          "declared_tokens": 3200,
+          "measured_tokens": 393,
+          "degradation": "bounded_fields_and_rows"
+        },
+        "next": {
+          "delivered_bytes": 1580,
+          "delivered_rows": 0,
+          "declared_tokens": 1200,
+          "measured_tokens": 395,
+          "degradation": "bounded_ranked_rows"
+        },
+        "search": {
+          "delivered_bytes": 1204,
+          "delivered_rows": 2,
+          "declared_tokens": 1800,
+          "measured_tokens": 301,
+          "degradation": "bounded_ranked_rows"
+        }
+      }
+    },
+    {
+      "item_count": 2243,
+      "intents": {
+        "context": {
+          "delivered_bytes": 3999,
+          "delivered_rows": 3,
+          "declared_tokens": 2400,
+          "measured_tokens": 1000,
+          "degradation": "bounded_sections"
+        },
+        "get": {
+          "delivered_bytes": 1657,
+          "delivered_rows": 0,
+          "declared_tokens": 3200,
+          "measured_tokens": 415,
+          "degradation": "standard_item"
+        },
+        "list": {
+          "delivered_bytes": 12721,
+          "delivered_rows": 70,
+          "declared_tokens": 3200,
+          "measured_tokens": 3181,
+          "degradation": "budget_row_compaction"
+        },
+        "next": {
+          "delivered_bytes": 4682,
+          "delivered_rows": 14,
+          "declared_tokens": 1200,
+          "measured_tokens": 1171,
+          "degradation": "budget_row_compaction"
+        },
+        "search": {
+          "delivered_bytes": 7050,
+          "delivered_rows": 28,
+          "declared_tokens": 1800,
+          "measured_tokens": 1763,
+          "degradation": "budget_row_compaction"
+        }
+      },
+      "cursor_walks": {
+        "list": {
+          "rows": 1998,
+          "pages": 30,
+          "bytes_per_row": 172.29,
+          "optimized_walk_bytes": 344234,
+          "repeated_metadata_control_bytes": 379875,
+          "unbounded_single_call_bytes": 1558741,
+          "optimized_to_unbounded_ratio": 0.2208
+        },
+        "search": {
+          "rows": 1998,
+          "pages": 64,
+          "bytes_per_row": 201.24,
+          "optimized_walk_bytes": 402075,
+          "repeated_metadata_control_bytes": 454869,
+          "unbounded_single_call_bytes": 1681847,
+          "optimized_to_unbounded_ratio": 0.2391
+        }
+      }
+    }
+  ]
+}

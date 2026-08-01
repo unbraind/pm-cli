@@ -73,6 +73,30 @@ Unknown provenance dimensions are preserved as data and do not change author
 resolution. Removing a dimension from a descriptor never rewrites existing
 history.
 
+## Historical disposition
+
+The repository snapshot measured at the start of the 2026-08-01 migration
+contains 42,679 immutable history entries. Privacy-safe aggregation by the
+presence and shape of `agent_provenance.effort` found 549 observed values, 166
+explicitly unavailable values, and 41,964 entries with no effort key. No raw
+provenance value, session identifier, or instance digest was exported during
+that measurement.
+
+The missing group is retained as `legacy_missing`; it is never backfilled from
+nearby mutations or inferred from another surface. The unavailable group
+means the dimension was declared at write time but could not be observed. The
+observed group remains the only group suitable for effort-based evaluation.
+Repository history does not persist the CLI-versus-MCP transport as an
+identity field, and the current snapshot contains no committed
+`agent_instance` group mixing an observed effort with a legacy-missing effort.
+Historical MCP records from the original isolated reproduction therefore keep
+the same immutable disposition: missing means unknown, not a change in effort.
+
+Consumers grouping one session must treat `legacy_missing`, explicit
+unavailability, and an observed value as three distinct states. Rewriting the
+hash chain would erase the evidence that motivated this amendment and could
+fabricate precision that was never captured.
+
 ## SDK and completeness contracts
 
 The aggregate and core SDK entrypoints export:

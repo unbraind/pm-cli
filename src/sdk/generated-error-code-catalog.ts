@@ -23,7 +23,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 4,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/claim.ts"],
+    sources: ["sdk/lifecycle/claim.ts"],
   },
   {
     code: "ambiguous_list_all",
@@ -41,7 +41,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/plan.ts"],
+    sources: ["sdk/lifecycle/plan.ts"],
   },
   {
     code: "annotation_flag_like_value",
@@ -68,7 +68,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/append.ts"],
+    sources: ["sdk/lifecycle/append.ts"],
   },
   {
     code: "body_file_conflicts_with_body",
@@ -140,7 +140,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/close-many.ts", "sdk/lifecycle-policy.ts"],
+    sources: ["sdk/lifecycle-policy.ts", "sdk/lifecycle/close-many.ts"],
   },
   {
     code: "close_through_update",
@@ -185,7 +185,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/contracts.ts"],
+    sources: ["sdk/cli-contracts/runtime-contracts.ts"],
   },
   {
     code: "command_override_conflict",
@@ -654,10 +654,10 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: [
-      "cli/commands/create.ts",
       "cli/error-guidance.ts",
       "core/telemetry/observability.ts",
       "sdk/context-intent-contracts.ts",
+      "sdk/lifecycle/create.ts",
     ],
   },
   {
@@ -824,7 +824,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/plan.ts"],
+    sources: ["sdk/lifecycle/plan.ts"],
   },
   {
     code: "manifest_capabilities_absent",
@@ -904,11 +904,11 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: [
-      "cli/commands/create.ts",
-      "cli/commands/plan.ts",
       "cli/error-guidance.ts",
       "core/telemetry/observability.ts",
       "sdk/context-intent-contracts.ts",
+      "sdk/lifecycle/create.ts",
+      "sdk/lifecycle/plan.ts",
     ],
   },
   {
@@ -1021,7 +1021,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 1,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/update.ts"],
+    sources: ["sdk/lifecycle/update.ts"],
   },
   {
     code: "ownership_metadata_bypass_restricted_options",
@@ -1030,7 +1030,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 1,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/update.ts"],
+    sources: ["sdk/lifecycle/update.ts"],
   },
   {
     code: "package_spec_empty",
@@ -1093,7 +1093,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 4,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/reindex.ts"],
+    sources: ["sdk/governance/reindex.ts"],
   },
   {
     code: "reserved_item_field",
@@ -1201,7 +1201,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/notes.ts"],
+    sources: ["sdk/notes.ts"],
   },
   {
     code: "structured_event_json_empty",
@@ -1210,7 +1210,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/notes.ts"],
+    sources: ["sdk/notes.ts"],
   },
   {
     code: "structured_event_json_invalid",
@@ -1219,7 +1219,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/notes.ts"],
+    sources: ["sdk/notes.ts"],
   },
   {
     code: "structured_event_since_invalid",
@@ -1228,7 +1228,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/notes.ts"],
+    sources: ["sdk/notes.ts"],
   },
   {
     code: "telemetry_endpoint_probe_failed",
@@ -1318,7 +1318,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 4,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/plan.ts"],
+    sources: ["sdk/lifecycle/plan.ts"],
   },
   {
     code: "terminal_state_conflict",
@@ -1391,9 +1391,9 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: [
-      "cli/commands/contracts.ts",
       "cli/error-guidance.ts",
       "core/telemetry/observability.ts",
+      "sdk/cli-contracts/runtime-contracts.ts",
     ],
   },
   {
@@ -1466,7 +1466,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/plan.ts"],
+    sources: ["sdk/lifecycle/plan.ts"],
   },
   {
     code: "unknown_status",
@@ -1921,6 +1921,6 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     exit_code: 2,
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["cli/commands/plan.ts"],
+    sources: ["sdk/lifecycle/plan.ts"],
   },
 ]);

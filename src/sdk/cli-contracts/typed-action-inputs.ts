@@ -12,8 +12,8 @@
  */
 import type { ToolOptionFlagContract } from "./flag-contracts.js";
 import type { CloseCommandOptions } from "../lifecycle/close.js";
-import type { CreateCommandOptions } from "../../cli/commands/create.js";
-import type { UpdateCommandOptions } from "../../cli/commands/update.js";
+import type { CreateCommandOptions } from "../lifecycle/create.js";
+import type { UpdateCommandOptions } from "../lifecycle/update.js";
 import type {
   TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE,
 } from "./tool-option-contracts.js";

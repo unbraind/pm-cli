@@ -7,7 +7,7 @@ import {
   resolveCalendarOutputFormat,
   runCalendar,
   type CalendarOptions,
-} from "../../../src/cli/commands/calendar.js";
+} from "../../../src/sdk/query/calendar.js";
 import { parseItemDocument, serializeItemDocument } from "../../../src/core/item/item-format.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -1776,7 +1776,7 @@ describe("calendar command module", () => {
       }));
 
       try {
-        const calendarModule = await import("../../../src/cli/commands/calendar.js");
+        const calendarModule = await import("../../../src/sdk/query/calendar.js");
         const mockedResult = await calendarModule.runCalendar(
           {
             view: "agenda",

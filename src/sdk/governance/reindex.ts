@@ -49,7 +49,7 @@ import {
   resolvePmRoot,
   readSettings,
   resolveAuthor,
-} from "../../sdk/runtime-primitives.js";
+} from "../runtime-primitives.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 const MANIFEST_PATH = "index/manifest.json";

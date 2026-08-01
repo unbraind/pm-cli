@@ -815,6 +815,54 @@ export function collectSdkBoundarySourceFiles(files) {
   );
 }
 
+function isSdkOwnershipSource(relativePath) {
+  return relativePath === "src/sdk.ts" || relativePath.startsWith("src/sdk/");
+}
+
+/** Find every forbidden dependency from the public SDK substrate into CLI presentation code. */
+export function collectSdkToCliImportEdges(files) {
+  const edges = [];
+  const seen = new Set();
+  for (const absolutePath of files) {
+    const relativeSource = relativeToRepo(absolutePath);
+    if (!isSdkOwnershipSource(relativeSource) || !existsSync(absolutePath)) {
+      continue;
+    }
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      loadText(absolutePath),
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const visit = (node) => {
+      const specifier = importModuleSpecifier(node);
+      const resolved =
+        specifier === null ? null : resolveRelativeImport(absolutePath, specifier);
+      if (resolved !== null) {
+        const relativeImport = relativeToRepo(resolved);
+        if (
+          relativeImport === "src/cli.ts" ||
+          relativeImport.startsWith("src/cli/")
+        ) {
+          const edge = { source: relativeSource, import_path: relativeImport };
+          const key = importEdgeKey(edge);
+          if (!seen.has(key)) {
+            seen.add(key);
+            edges.push(edge);
+          }
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return edges.sort(
+    (left, right) =>
+      left.source.localeCompare(right.source) ||
+      left.import_path.localeCompare(right.import_path),
+  );
+}
+
 function moduleSpecifierText(node) {
   return ts.isStringLiteralLike(node) ? node.text : null;
 }
@@ -988,14 +1036,19 @@ export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
     collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(
       boundarySourceFiles,
     );
+  const sdkToCliImports = collectSdkToCliImportEdges(files);
   return {
-    ok: actualEdges.length === 0 && unsupportedDynamicImports.length === 0,
+    ok:
+      actualEdges.length === 0 &&
+      unsupportedDynamicImports.length === 0 &&
+      sdkToCliImports.length === 0,
     scanned_file_count: boundarySourceFiles.length,
     actual_edge_count: actualEdges.length,
     baseline_edge_count: 0,
     new_private_core_imports: actualEdges,
     stale_baseline_imports: [],
     unsupported_dynamic_imports: unsupportedDynamicImports,
+    sdk_to_cli_imports: sdkToCliImports,
   };
 }
 
@@ -1467,7 +1520,8 @@ bulk-suppressions baseline budget, and hard budgets on inline gate-silencing pra
 (ESLint disable comments, coverage-ignore pragmas, jscpd ignores). Changed shipped/script files
 also get a CodeFactor-parity complexity check so branch-local issues fail before push. The
 SDK import boundary hard-denies every src/cli + src/mcp private src/core import,
-including type-only/re-export edges, and rejects computed dynamic imports.
+every src/sdk dependency on src/cli, including type-only/re-export edges, and
+rejects computed dynamic imports.
 `);
 }
 
@@ -1641,6 +1695,7 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       codefactor_complexity: codeFactorComplexity.violations,
       sdk_import_boundary: {
         new_private_core_imports: sdkImportBoundary.new_private_core_imports,
+        sdk_to_cli_imports: sdkImportBoundary.sdk_to_cli_imports,
         unsupported_dynamic_imports:
           sdkImportBoundary.unsupported_dynamic_imports,
       },
@@ -1751,6 +1806,10 @@ function printQualityFailureSummary(report) {
   printViolationCount(
     "sdk_import_boundary private_core_import",
     report.violations.sdk_import_boundary.new_private_core_imports.length,
+  );
+  printViolationCount(
+    "sdk_import_boundary sdk_to_cli_import",
+    report.violations.sdk_import_boundary.sdk_to_cli_imports.length,
   );
   printViolationCount(
     "sdk_import_boundary unsupported_dynamic_import",

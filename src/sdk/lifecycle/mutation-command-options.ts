@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/mutation-command-options
+ * @module sdk/lifecycle/mutation-command-options
  *
  * Defines shared create/update option fields used by mutation command surfaces.
  */

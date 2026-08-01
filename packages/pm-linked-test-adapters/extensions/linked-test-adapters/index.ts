@@ -171,6 +171,9 @@ function testRunsResumeCommand(): CommandDefinition {
     arguments: [
       { name: "runId", required: true, description: "Background run id." },
     ],
+    failure_hints: [
+      "Author identity is host-global. Put an intentional override before the command: pm --author <id> test-runs resume <runId>.",
+    ],
     run: async (context) =>
       runTestRunsResumePackage(
         assertSingleRunId(context.args, "test-runs resume"),

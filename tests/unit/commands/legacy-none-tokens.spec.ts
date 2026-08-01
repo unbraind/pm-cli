@@ -5,7 +5,7 @@ import {
   assertNoLegacyNoneToken,
   assertNoLegacyNoneTokens,
   isLegacyNoneToken,
-} from "../../../src/cli/commands/legacy-none-tokens.js";
+} from "../../../src/sdk/lifecycle/legacy-none-tokens.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 

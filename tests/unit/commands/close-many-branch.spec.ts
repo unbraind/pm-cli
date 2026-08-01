@@ -44,7 +44,7 @@ describe("close-many branch coverage", () => {
     vi.doMock("../../../src/core/item/status.js", () => ({
       isTerminalStatus: vi.fn((status: string, registry: { terminal_statuses: Set<string> }) => registry.terminal_statuses.has(status)),
     }));
-    vi.doMock("../../../src/cli/commands/list.js", () => ({
+    vi.doMock("../../../src/sdk/query/list.js", () => ({
       runList: vi.fn(async () => ({
         items: [{ id: "pm-1", title: 123, status: "open" }],
         filters: { ids: "pm-1" },
@@ -63,7 +63,7 @@ describe("close-many branch coverage", () => {
       runRestore: vi.fn(),
     }));
 
-    const { runCloseMany } = await import("../../../src/cli/commands/close-many.js");
+    const { runCloseMany } = await import("../../../src/sdk/lifecycle/close-many.js");
     const result = await runCloseMany(
       {
         list: { ids: "pm-1" },

@@ -5,6 +5,7 @@
  * workspace configuration, and packages.
  */
 import { attachOutputOmissionReceipt } from "./output-projection.js";
+import { encodeQueryCursor } from "./pagination.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
@@ -369,7 +370,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
         contract.token_budget,
       );
       projected.limit = String(
-        Math.max(2, Math.min(100, Math.floor((tokenBudget - 520) / 128))),
+        Math.max(2, Math.min(100, Math.floor((tokenBudget - 520) / 16))),
       );
     }
   },
@@ -390,7 +391,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
         contract.token_budget,
       );
       projected.limit = String(
-        Math.max(2, Math.min(100, Math.floor((tokenBudget - 480) / 80))),
+        Math.max(2, Math.min(100, Math.floor((tokenBudget - 480) / 16))),
       );
     }
   },
@@ -534,12 +535,133 @@ const CONTEXT_INTENT_ROW_KEYS: Readonly<
   search: ["items"],
 };
 
+interface ContextIntentCursorEnvelope {
+  fingerprint: string;
+  after_index: number;
+  snapshot?: string;
+}
+
+/** Decode the cursor fields required to preserve a row-compacted continuation. */
+export function decodeContextIntentCursor(
+  cursor: string,
+): ContextIntentCursorEnvelope | undefined {
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(cursor, "base64url").toString("utf8"),
+    ) as Record<string, unknown>;
+    if (
+      typeof parsed.fingerprint !== "string" ||
+      !Number.isSafeInteger(parsed.after_index)
+    ) {
+      return undefined;
+    }
+    return {
+      fingerprint: parsed.fingerprint,
+      after_index: parsed.after_index as number,
+      ...(typeof parsed.snapshot === "string"
+        ? { snapshot: parsed.snapshot }
+        : {}),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+/** Resolve the stable item id carried by list rows and nested search hits. */
+export function contextIntentRowId(row: unknown): string | undefined {
+  if (row === null || typeof row !== "object") return undefined;
+  if (typeof (row as Record<string, unknown>).id === "string") {
+    return (row as Record<string, unknown>).id as string;
+  }
+  const nestedId = (row as { item?: { id?: unknown } }).item?.id;
+  return typeof nestedId === "string" ? nestedId : undefined;
+}
+
+function shrinkContextIntentRowsToBudget(
+  projected: Record<string, unknown>,
+  receipt: PmContextIntentReceipt,
+  rows: unknown[],
+): boolean {
+  let compacted = false;
+  for (;;) {
+    updateContextIntentEstimate(projected, receipt);
+    if (receipt.estimated_tokens <= receipt.token_budget || rows.length <= 1) {
+      return compacted;
+    }
+    const rowBytes = Buffer.byteLength(JSON.stringify(rows), "utf8");
+    const excessBytes = (receipt.estimated_tokens - receipt.token_budget) * 4;
+    rows.splice(
+      -Math.min(
+        rows.length - 1,
+        Math.max(
+          1,
+          Math.ceil(
+            excessBytes / Math.max(1, Math.ceil(rowBytes / rows.length)),
+          ),
+        ),
+      ),
+    );
+    compacted = true;
+  }
+}
+
+function compactPaginatedContextIntentRows(
+  projected: Record<string, unknown>,
+  receipt: PmContextIntentReceipt,
+  options: Record<string, unknown>,
+): boolean {
+  const rows = projected.items;
+  const cursorContinuesExistingPage = typeof projected.next_cursor === "string";
+  const cursorSource = cursorContinuesExistingPage
+    ? projected.next_cursor
+    : options.after;
+  if (!Array.isArray(rows) || typeof cursorSource !== "string") return false;
+  const cursorEnvelope = decodeContextIntentCursor(cursorSource);
+  if (cursorEnvelope === undefined) return false;
+  const originalRowCount = rows.length;
+  const originalRows = [...rows];
+  let compacted = false;
+  for (;;) {
+    compacted =
+      shrinkContextIntentRowsToBudget(projected, receipt, rows) || compacted;
+    if (!compacted) return false;
+    const lastId = contextIntentRowId(rows.at(-1));
+    if (lastId === undefined) {
+      rows.splice(0, rows.length, ...originalRows);
+      updateContextIntentEstimate(projected, receipt);
+      return false;
+    }
+    projected.next_cursor = encodeQueryCursor(
+      cursorEnvelope.fingerprint,
+      lastId,
+      cursorContinuesExistingPage
+        ? cursorEnvelope.after_index - (originalRowCount - rows.length)
+        : cursorEnvelope.after_index + rows.length,
+      cursorEnvelope.snapshot,
+    );
+    updateContextIntentEstimate(projected, receipt);
+    if (receipt.estimated_tokens <= receipt.token_budget || rows.length <= 1) {
+      break;
+    }
+  }
+  if (typeof projected.count === "number") projected.count = rows.length;
+  if (typeof projected.applied_limit === "number") {
+    projected.applied_limit = rows.length;
+  }
+  if (options.limit === undefined) projected.budget_derived_limit = rows.length;
+  return true;
+}
+
 /** Reduce root row collections deterministically while retaining at least one useful row. */
 function compactContextIntentRows(
   command: BuiltInContextIntentCommand,
   projected: Record<string, unknown>,
   receipt: PmContextIntentReceipt,
+  options: Record<string, unknown>,
 ): boolean {
+  if (command === "list" || command === "search") {
+    return compactPaginatedContextIntentRows(projected, receipt, options);
+  }
   if (
     command !== "next" ||
     typeof projected.next_cursor === "string"
@@ -634,7 +756,7 @@ export function attachContextIntentReceipt<
   }
   if (
     receipt.estimated_tokens > receipt.token_budget &&
-    compactContextIntentRows(builtInCommand, projected, receipt)
+    compactContextIntentRows(builtInCommand, projected, receipt, options)
   ) {
     receipt.degradation = "budget_row_compaction";
     updateContextIntentEstimate(projected, receipt);
@@ -665,18 +787,8 @@ function collapseContinuationMetadata(
   if (typeof options.after !== "string" || options.after.length === 0) {
     return result;
   }
-  let fingerprint = "opaque_cursor";
-  try {
-    const decoded = JSON.parse(
-      Buffer.from(options.after, "base64url").toString("utf8"),
-    ) as { fingerprint?: unknown };
-    if (typeof decoded.fingerprint === "string") {
-      fingerprint = decoded.fingerprint;
-    }
-  } catch {
-    // Command-level cursor validation owns malformed cursors. The disclosure
-    // layer remains total for package-authored or opaque cursor formats.
-  }
+  const fingerprint =
+    decodeContextIntentCursor(options.after)?.fingerprint ?? "opaque_cursor";
   const projected = { ...result };
   for (const key of [
     "applied_limit",

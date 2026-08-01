@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { runExtension, writeManagedExtensionState } from "../../../src/cli/commands/extension.js";
-import { _testOnly as upgradeInternals, runUpgrade, type UpgradeCommandRunner } from "../../../src/cli/commands/upgrade.js";
+import { _testOnly as upgradeInternals, runUpgrade, type UpgradeCommandRunner } from "../../../src/sdk/governance/upgrade.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 async function createPackage(root: string, name: string, version = "1.0.0"): Promise<string> {
@@ -452,7 +452,7 @@ describe("upgrade command", () => {
     }));
 
     try {
-      const mockedUpgrade = await import("../../../src/cli/commands/upgrade.js");
+      const mockedUpgrade = await import("../../../src/sdk/governance/upgrade.js");
       await expect(mockedUpgrade._testOnly.defaultCommandRunner("mock-cmd", [])).rejects.toThrow("undefined-stderr");
       await expect(mockedUpgrade._testOnly.defaultCommandRunner("mock-cmd", [])).rejects.toThrow("Command failed: mock-cmd");
     } finally {
@@ -514,14 +514,14 @@ describe("upgrade command", () => {
       .mockResolvedValueOnce({})
       .mockRejectedValueOnce("string-package-failure")
       .mockRejectedValueOnce(new Error("error-package-failure"));
-    vi.doMock("../../../src/cli/commands/extension.js", () => ({
+    vi.doMock("../../../src/sdk/extension.js", () => ({
       readManagedExtensionState: readManagedStateMock,
       runExtension: runExtensionMock,
       writeManagedExtensionState: vi.fn(),
     }));
 
     try {
-      const mockedUpgrade = await import("../../../src/cli/commands/upgrade.js");
+      const mockedUpgrade = await import("../../../src/sdk/governance/upgrade.js");
       const upgraded = await mockedUpgrade.runUpgrade(
         "github-ext",
         {
@@ -567,7 +567,7 @@ describe("upgrade command", () => {
         error: "error-package-failure",
       });
     } finally {
-      vi.doUnmock("../../../src/cli/commands/extension.js");
+      vi.doUnmock("../../../src/sdk/extension.js");
       vi.resetModules();
     }
   });

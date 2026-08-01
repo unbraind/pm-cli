@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeStructuredLinkedTestEntry } from "../../../src/cli/commands/linked-test-entry.js";
+import { normalizeStructuredLinkedTestEntry } from "../../../src/sdk/test/entry.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 
 describe("linked-test-entry.normalizeStructuredLinkedTestEntry", () => {

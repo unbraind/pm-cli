@@ -6,7 +6,7 @@ import {
   resolveMissingMetadataFilters,
   type ListOptions,
 } from "../../../src/cli/commands/list.js";
-import { hasListFilters } from "../../../src/cli/commands/list-filter-shared.js";
+import { hasListFilters } from "../../../src/sdk/query/list-filter-shared.js";
 
 /**
  * Branch-level coverage for the GH-242 content-field and GH-236

@@ -907,12 +907,12 @@ describe("runAggregate", () => {
         ],
         warnings: ["aggregate:list-warning"],
       }));
-      vi.doMock("../../../src/cli/commands/list.js", () => ({
+      vi.doMock("../../../src/sdk/query/list.js", () => ({
         runList: runListMock,
       }));
 
       try {
-        const aggregateModule = await import("../../../src/cli/commands/aggregate.js");
+        const aggregateModule = await import("../../../src/sdk/query/aggregate.js");
         const result = await aggregateModule.runAggregate(
           {
             groupBy: "status",

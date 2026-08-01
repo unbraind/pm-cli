@@ -5,7 +5,7 @@ import {
   parseDelimitedList,
   parseEventBoolean,
   parseRecurrenceRule,
-} from "../../../src/cli/commands/recurrence-parsers.js";
+} from "../../../src/sdk/lifecycle/recurrence-parsers.js";
 
 const NOW = new Date("2026-05-24T00:00:00.000Z");
 const START = "2026-05-24T09:00:00.000Z";

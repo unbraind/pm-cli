@@ -10,13 +10,13 @@ import {
   EXIT_CODE,
   type GlobalOptions,
   PmCliError,
-} from "../../sdk/runtime-primitives.js";
+} from "./runtime-primitives.js";
 import {
   listGuideTopicIds,
   listGuideTopics,
   resolveGuideTopic,
   type GuideTopicDefinition,
-} from "../guide-topics.js";
+} from "./guide-topics.js";
 
 /** Supported values accepted by the guide output contract. */
 export const GUIDE_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;

@@ -6,7 +6,7 @@ import {
   runCompletion,
   type CompletionResult,
   type CompletionRuntimeConfig,
-} from "../../../src/cli/commands/completion.js";
+} from "../../../src/sdk/completion.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {

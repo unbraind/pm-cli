@@ -200,6 +200,33 @@ first page instead of being re-emitted. Calls
 without `--for` remain byte-compatible with the ordinary projection path apart
 from the universal row contract.
 
+The mandatory calibration gate generates both a two-item workspace and a
+2,243-item current-scale workspace. It validates all five intents, removes one
+receipt as an enforcement negative control, traverses every list and search
+cursor without duplicates or omissions, and reconstructs repeated first-page
+metadata as a continuation negative control. The checked-in report is
+[`scripts/release/context-intent-calibration.json`](../scripts/release/context-intent-calibration.json).
+
+| Intent | 2-item tokens / budget | 2,243-item tokens / budget | Current-scale rows | Degradation |
+| ------ | ---------------------- | -------------------------- | ------------------ | ----------- |
+| `context:orient` | 707 / 2,400 | 1,000 / 2,400 | 3 | bounded sections |
+| `get:inspect` | 401 / 3,200 | 415 / 3,200 | item envelope | standard item |
+| `list:triage` | 393 / 3,200 | 3,181 / 3,200 | 70 | budget-derived rows |
+| `next:execute` | 395 / 1,200 | 1,171 / 1,200 | 14 | budget-derived rows |
+| `search:discover` | 301 / 1,800 | 1,763 / 1,800 | 28 | budget-derived rows |
+
+Whole-answer cursor cost is measured against the unprojected single call for
+the identical ordered row set:
+
+| Family | Rows | Pages | Optimized bytes/row | Optimized walk | Repeated-metadata control | Unbounded call | Walk / unbounded |
+| ------ | ---- | ----- | ------------------- | -------------- | ------------------------- | -------------- | ---------------- |
+| `list:triage` | 1,998 | 30 | 172.29 | 344,234 B | 379,875 B | 1,558,741 B | 0.2208 |
+| `search:discover` | 1,998 | 64 | 201.24 | 402,075 B | 454,869 B | 1,681,847 B | 0.2391 |
+
+These are corpus-generated figures, not live tracker payloads. The generated
+corpus contains 2,243 items; the `status:all` query intentionally excludes 245
+canceled fixtures under the command's current status-selection contract.
+
 `health --check-only` defaults to a summary verdict: all checks still run, but
 passing check evidence bodies are empty. Use `health --check-only --full` when
 diagnostic evidence is required. Explicit `--brief` or `--summary` retains the

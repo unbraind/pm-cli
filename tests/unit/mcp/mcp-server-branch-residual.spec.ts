@@ -24,6 +24,18 @@ const LIFECYCLE_COPY_SDK_MODULE = "../../../src/sdk/lifecycle/copy.js";
 const LIFECYCLE_DELETE_SDK_MODULE = "../../../src/sdk/lifecycle/delete.js";
 const LIFECYCLE_FOCUS_SDK_MODULE = "../../../src/sdk/lifecycle/focus.js";
 const LIFECYCLE_CLOSE_SDK_MODULE = "../../../src/sdk/lifecycle/close.js";
+const LIFECYCLE_UPDATE_SDK_MODULE = "../../../src/sdk/lifecycle/update.js";
+const LIFECYCLE_CLAIM_SDK_MODULE = "../../../src/sdk/lifecycle/claim.js";
+const LIFECYCLE_APPEND_SDK_MODULE = "../../../src/sdk/lifecycle/append.js";
+const LIFECYCLE_PLAN_SDK_MODULE = "../../../src/sdk/lifecycle/plan.js";
+const LIFECYCLE_UPDATE_MANY_SDK_MODULE = "../../../src/sdk/lifecycle/update-many.js";
+const LIFECYCLE_CLOSE_MANY_SDK_MODULE = "../../../src/sdk/lifecycle/close-many.js";
+const QUERY_ACTIVITY_SDK_MODULE = "../../../src/sdk/query/activity.js";
+const QUERY_AGGREGATE_SDK_MODULE = "../../../src/sdk/query/aggregate.js";
+const QUERY_HISTORY_SDK_MODULE = "../../../src/sdk/query/history.js";
+const COMMENTS_SDK_MODULE = "../../../src/sdk/comments.js";
+const NOTES_SDK_MODULE = "../../../src/sdk/notes.js";
+const LEARNINGS_SDK_MODULE = "../../../src/sdk/learnings.js";
 const DOCS_SDK_MODULE = "../../../src/sdk/docs.js";
 const FILES_SDK_MODULE = "../../../src/sdk/files.js";
 const HISTORY_COMPACT_SDK_MODULE = "../../../src/sdk/history-compact.js";
@@ -86,6 +98,8 @@ function buildCommandMocks() {
     runFiles: vi.fn(async () => ({ action: "files" })),
     runFilesDiscover: vi.fn(async () => ({ action: "files-discover" })),
     runHistory: vi.fn(async () => ({ action: "history" })),
+    runActivity: vi.fn(async () => ({ action: "activity" })),
+    runAggregate: vi.fn(async () => ({ action: "aggregate" })),
     runHistoryRedact: vi.fn(async () => ({ action: "history-redact" })),
     runHistoryCompact: vi.fn(async () => ({ action: "history-compact" })),
     runHistoryCompactBulk: vi.fn(async () => ({
@@ -149,6 +163,39 @@ async function importServerWithCommandMocks(
     >(LIFECYCLE_CLOSE_SDK_MODULE);
     return { ...actual, runClose: commandMocks.runClose };
   });
+  vi.doMock(LIFECYCLE_UPDATE_SDK_MODULE, () => ({
+    runUpdate: commandMocks.runUpdate,
+  }));
+  vi.doMock(LIFECYCLE_CLAIM_SDK_MODULE, () => ({
+    runClaim: commandMocks.runClaim,
+    runRelease: commandMocks.runRelease,
+  }));
+  vi.doMock(LIFECYCLE_APPEND_SDK_MODULE, () => ({
+    runAppend: commandMocks.runAppend,
+  }));
+  vi.doMock(LIFECYCLE_PLAN_SDK_MODULE, () => ({
+    runPlan: commandMocks.runPlan,
+  }));
+  vi.doMock(LIFECYCLE_UPDATE_MANY_SDK_MODULE, () => ({
+    runUpdateMany: commandMocks.runUpdateMany,
+  }));
+  vi.doMock(LIFECYCLE_CLOSE_MANY_SDK_MODULE, () => ({
+    runCloseMany: commandMocks.runCloseMany,
+  }));
+  vi.doMock(QUERY_ACTIVITY_SDK_MODULE, () => ({
+    runActivity: commandMocks.runActivity,
+  }));
+  vi.doMock(QUERY_AGGREGATE_SDK_MODULE, () => ({
+    runAggregate: commandMocks.runAggregate,
+  }));
+  vi.doMock(QUERY_HISTORY_SDK_MODULE, () => ({
+    runHistory: commandMocks.runHistory,
+  }));
+  vi.doMock(COMMENTS_SDK_MODULE, () => ({ runComments: commandMocks.runComments }));
+  vi.doMock(NOTES_SDK_MODULE, () => ({ runNotes: commandMocks.runNotes }));
+  vi.doMock(LEARNINGS_SDK_MODULE, () => ({
+    runLearnings: commandMocks.runLearnings,
+  }));
   vi.doMock(CONFIG_SDK_MODULE, () => ({ runConfig: commandMocks.runConfig }));
   vi.doMock(DOCS_SDK_MODULE, () => ({ runDocs: commandMocks.runDocs }));
   vi.doMock(FILES_SDK_MODULE, () => ({
@@ -214,6 +261,19 @@ describe("mcp server branch residual coverage", () => {
     vi.doUnmock(LIFECYCLE_COPY_SDK_MODULE);
     vi.doUnmock(LIFECYCLE_DELETE_SDK_MODULE);
     vi.doUnmock(LIFECYCLE_FOCUS_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_CLOSE_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_UPDATE_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_CLAIM_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_APPEND_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_PLAN_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_UPDATE_MANY_SDK_MODULE);
+    vi.doUnmock(LIFECYCLE_CLOSE_MANY_SDK_MODULE);
+    vi.doUnmock(QUERY_ACTIVITY_SDK_MODULE);
+    vi.doUnmock(QUERY_AGGREGATE_SDK_MODULE);
+    vi.doUnmock(QUERY_HISTORY_SDK_MODULE);
+    vi.doUnmock(COMMENTS_SDK_MODULE);
+    vi.doUnmock(NOTES_SDK_MODULE);
+    vi.doUnmock(LEARNINGS_SDK_MODULE);
     vi.doUnmock(DOCS_SDK_MODULE);
     vi.doUnmock(FILES_SDK_MODULE);
     vi.doUnmock(HISTORY_COMPACT_SDK_MODULE);
