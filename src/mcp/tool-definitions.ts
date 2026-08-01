@@ -47,6 +47,11 @@ export const TOOL_SCHEMA_BASE = {
       description:
         "Optional mutation author override. Otherwise pm uses PM_AUTHOR, project settings, or detected harness identity.",
     },
+    tokenAccounting: {
+      type: "boolean",
+      description:
+        "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+    },
   },
   additionalProperties: true,
 } as const;

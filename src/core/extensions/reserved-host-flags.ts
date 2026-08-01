@@ -19,6 +19,7 @@ export const RESERVED_EXTENSION_HOST_FLAGS: readonly ReservedExtensionHostFlag[]
   Object.freeze([
     { flag: "--json" },
     { flag: "--lean" },
+    { flag: "--token-accounting" },
     { flag: "--quiet" },
     { flag: "--no-changed-fields" },
     { flag: "--full-changed-fields" },

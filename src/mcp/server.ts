@@ -45,6 +45,7 @@ import {
 } from "../sdk/agent-capability-contracts.js";
 import { commitItemMutations } from "../sdk/item-transaction.js";
 import { isRuntimeRecord } from "../sdk/runtime-input.js";
+import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
   parseAtomicMutationControls,
   validateItemMutationRows,
@@ -307,18 +308,22 @@ function detectUnexpectedOptionKeys(
 function resultContent(
   result: unknown,
   warnings?: string[],
+  tokenAccounting = false,
 ): Record<string, unknown> {
+  const effectiveResult = tokenAccounting
+    ? attachOutputTokenAccounting(result, (value) => JSON.stringify(value, null, 2))
+    : result;
   // pm-qxwu: warnings is additive — existing fields (content, structuredContent.result)
   // are never removed or renamed. The warnings array only appears when non-empty.
   const structuredContent: Record<string, unknown> =
     warnings !== undefined && warnings.length > 0
-      ? { result, warnings }
-      : { result };
+      ? { result: effectiveResult, warnings }
+      : { result: effectiveResult };
   return {
     content: [
       {
         type: "text",
-        text: JSON.stringify(result, null, 2),
+        text: JSON.stringify(effectiveResult, null, 2),
       },
     ],
     structuredContent,
@@ -453,7 +458,7 @@ async function handleToolCall(
           // cwd is applied inside the serialized activation cycle (see withActiveExtensions),
           // so the chdir/restore is exclusive per request and cannot race a concurrent caller.
           const result = await handler(args);
-          return resultContent(result, warnings);
+          return resultContent(result, warnings, args.tokenAccounting === true);
         },
       );
     },
@@ -754,6 +759,7 @@ export const _testOnly = {
     return readRuntimeTestHook("mutationListOptions");
   },
   nearestDeclaredKey,
+  resultContent,
   get normalizeActionName() {
     return readRuntimeTestHook("normalizeActionName");
   },

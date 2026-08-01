@@ -156,7 +156,11 @@
         "context_metric_regressed",
         "retrieval_metric_regressed",
         "corpus_contract_invalid",
-        "token_entitlement_regressed"
+        "token_entitlement_regressed",
+        "per_invocation_accounting_drift",
+        "task_token_regression",
+        "accounting_receipt_unbounded",
+        "consumed_field_omitted"
       ],
       "bypass": {
         "allowed": false,

@@ -44,6 +44,7 @@ pm guide release --json
 - [SDK Action and Boundary Conformance](SDK_ACTION_CONFORMANCE.md) - derived CLI/SDK/MCP action vocabulary, public-import ratchets, intent budget diagnostics, and package-runner proof.
 - [Context Relevance and Packing](CONTEXT_RELEVANCE.md) - shared CLI/SDK signals, derived-store provenance, ranking explanations, and token budgets.
 - [Output Projection and Omission Contracts](OUTPUT_PROJECTION_CONTRACTS.md) - explicit withheld-field receipts, mode-paired row keys, and completion resolver outcomes.
+- [Output Token Accounting](OUTPUT_TOKEN_ACCOUNTING.md) - opt-in CLI/MCP byte attribution, bounded receipt overhead, and release-level tokens-per-task baselines.
 - [SDK Context Truth Contracts](SDK_CONTEXT_TRUTH_CONTRACTS.md) - typed tracker-root diagnostics and explicit merge-driver enforcement policy.
 - [Self-Describing Context Contracts](SELF_DESCRIBING_CONTEXT_CONTRACTS.md) - intent-scoped reads, semantic flag invocation metadata, visibility parity, and generated error vocabulary.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.

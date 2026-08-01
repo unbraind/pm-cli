@@ -163,6 +163,7 @@ import {
 } from "./commander-usage.js";
 import { loadExtensionRecoveryFailures, loadUnknownCommandRecoveryFailures } from "./extension-recovery.js";
 import { maybeRenderBootstrapJsonHelp, attachCreateUpdatePolicyHelpText } from "./help-json-payload.js";
+import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
@@ -785,6 +786,7 @@ function extractCommandScopedOptions(
   delete scoped.fullChangedFields;
   delete scoped.idOnly;
   delete scoped.lean;
+  delete scoped.tokenAccounting;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
   for (const [key, value] of Object.entries(looseOptions)) {
@@ -2560,11 +2562,17 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   const rawContext = context.error instanceof PmCliError ? context.error.context : undefined;
   const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
   const classification = classifyPmCliError(errorMessage, enrichedContext);
+  const jsonErrorPayload = context.bootstrapGlobal.lean
+    ? projectLeanErrorEnvelope(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext))
+    : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext);
   const renderedError = context.jsonErrors
     ? JSON.stringify(
-        context.bootstrapGlobal.lean
-          ? projectLeanErrorEnvelope(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext))
-          : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext),
+        context.bootstrapGlobal.tokenAccounting
+          ? attachOutputTokenAccounting(
+              jsonErrorPayload,
+              (value) => `${JSON.stringify(value, null, 2)}\n`,
+            )
+          : jsonErrorPayload,
         null,
         2,
       )

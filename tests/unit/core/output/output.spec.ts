@@ -33,6 +33,19 @@ describe("core/output/output", () => {
     );
   });
 
+  it("keeps accounting opt-in and measures the exact unaccounted CLI bytes", () => {
+    const payload = { items: [{ id: "pm-one" }], warnings: ["notice"] };
+    const baseline = formatOutput(payload, { json: true });
+    expect(JSON.parse(baseline)).toEqual(payload);
+
+    const accounted = JSON.parse(
+      formatOutput(payload, { json: true, tokenAccounting: true }),
+    ) as Record<string, unknown>;
+    const receipt = accounted.token_accounting as Record<string, unknown>;
+    expect(receipt.total_bytes).toBe(Buffer.byteLength(baseline, "utf8"));
+    expect(receipt.measurement_scope).toBe("output_before_token_accounting");
+  });
+
   it("honors default output format and explicit json overrides", () => {
     const payload = { ok: true };
     const renderedFromDefault = formatOutput(payload, {

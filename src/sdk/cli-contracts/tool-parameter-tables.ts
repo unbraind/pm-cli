@@ -18,6 +18,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   profile: { type: "boolean" },
   noExtensions: { type: "boolean" },
   noPager: { type: "boolean" },
+  tokenAccounting: { type: "boolean" },
   path: { type: "string" },
   pmExecutable: { type: "string" },
   timeoutMs: { type: "number" },
@@ -833,6 +834,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   noPager: {
     description: "Disable pager integration for help and long output.",
+  },
+  tokenAccounting: {
+    description:
+      "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
   },
   profile: {
     description: "Emit deterministic timing diagnostics to stderr.",

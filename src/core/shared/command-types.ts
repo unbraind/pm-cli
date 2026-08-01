@@ -17,6 +17,8 @@ export interface GlobalOptions {
   idOnly?: boolean;
   /** Omit null and empty containers from JSON output. */
   lean?: boolean;
+  /** Attach a bounded receipt attributing the emitted output token cost. */
+  tokenAccounting?: boolean;
   /** Filesystem path used for path resolution. */
   path?: string;
   /** Value that configures or reports no extensions for this contract. */

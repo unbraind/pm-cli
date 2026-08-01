@@ -15,6 +15,11 @@ import {
 } from "../../../src/cli/bootstrap-args.js";
 
 describe("parseBootstrapGlobalOptions", () => {
+  it("recognizes opt-in token accounting before or after the command", () => {
+    expect(parseBootstrapGlobalOptions(["--token-accounting", "list"]).tokenAccounting).toBe(true);
+    expect(parseBootstrapGlobalOptions(["list", "--token-accounting"]).tokenAccounting).toBe(true);
+    expect(parseBootstrapGlobalOptions(["list"]).tokenAccounting).toBe(false);
+  });
   it("returns defaults for empty argv", () => {
     const result = parseBootstrapGlobalOptions([]);
     expect(result).toEqual({
@@ -24,6 +29,7 @@ describe("parseBootstrapGlobalOptions", () => {
       json: false,
       quiet: false,
       lean: false,
+      tokenAccounting: false,
     });
   });
 
@@ -131,6 +137,9 @@ describe("parseBootstrapGlobalOptions", () => {
 });
 
 describe("stripGlobalBootstrapTokens", () => {
+  it("strips token accounting without consuming the command", () => {
+    expect(stripGlobalBootstrapTokens(["--token-accounting", "list"])).toEqual(["list"]);
+  });
   it("strips all known global tokens", () => {
     const result = stripGlobalBootstrapTokens([
       "list",

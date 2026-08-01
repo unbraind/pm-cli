@@ -474,6 +474,7 @@ export * from "./workspace-memory.js";
 export * from "./lifecycle-completion.js";
 export * from "./lifecycle-policy.js";
 export * from "./output-projection.js";
+export * from "./output-token-accounting.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";
 export * from "./dependency-provenance.js";

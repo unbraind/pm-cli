@@ -7,6 +7,25 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
  * non-breaking warnings the pm-qxwu top-level detection produces.
  */
 describe("mcp nested option-key validation (pm-upi0)", () => {
+  it("uses the transport-neutral accounting receipt for MCP content", async () => {
+    const server = await import("../../../src/mcp/server.js");
+    const result = { items: [{ id: "pm-one" }], hints: ["continue"] };
+    const baseline = server._testOnly.resultContent(result);
+    const accounted = server._testOnly.resultContent(result, [], true) as {
+      content: Array<{ text: string }>;
+      structuredContent: {
+        result: { token_accounting: { total_bytes: number; accounting_receipt_bytes: number } };
+      };
+    };
+    const baselineText = (baseline.content as Array<{ text: string }>)[0].text;
+    const receipt = accounted.structuredContent.result.token_accounting;
+
+    expect(receipt.total_bytes).toBe(Buffer.byteLength(baselineText, "utf8"));
+    expect(receipt.accounting_receipt_bytes).toBe(
+      Buffer.byteLength(accounted.content[0].text, "utf8") - receipt.total_bytes,
+    );
+  });
+
   it("flags mutation-shaped options on read tools without rejecting the call", async () => {
     const server = await import("../../../src/mcp/server.js");
     await withTempPmPath(async (context) => {
@@ -29,6 +48,19 @@ describe("mcp nested option-key validation (pm-upi0)", () => {
       );
       expect(created.code).toBe(0);
       const id = (created.json as { item: { id: string } }).item.id;
+
+      const accountedRead = (await server.handleRequest({
+        jsonrpc: "2.0",
+        id: 0,
+        method: "tools/call",
+        params: {
+          name: "pm_get",
+          arguments: { id, path: context.pmPath, tokenAccounting: true },
+        },
+      })) as {
+        structuredContent: { result: { token_accounting: { total_bytes: number } } };
+      };
+      expect(accountedRead.structuredContent.result.token_accounting.total_bytes).toBeGreaterThan(0);
 
       const response = (await server.handleRequest({
         jsonrpc: "2.0",

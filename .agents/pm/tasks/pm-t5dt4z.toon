@@ -2,11 +2,13 @@ id: pm-t5dt4z
 title: "Self-reported token accounting: any command can report the token cost of its own output so budget spend is attributable at runtime and in CI"
 description: "Token cost is currently measured externally, in a CI corpus gate, against a fixed sample of commands. That answers whether a release regressed on the sampled corpus; it cannot answer where a specific agent's context budget actually went during a real session, which is the question that matters when an agent runs out of context mid-task. Add an opt-in accounting mode in which a command reports the token cost of the output it just produced, decomposed by section — result rows, envelope, diagnostics, hints — using the same tokenizer as the budget contract so the numbers are comparable to the declared ceilings. This makes budget spend attributable at the granularity of a single invocation and lets an agent adapt: if a read cost far more than expected, it can narrow the next one. It also gives the transcript-replay gate real per-command attribution instead of a session total, turning a regression signal into a diagnosis. Accounting must never itself be expensive or on by default: it is opt-in, adds no cost when off, and its own overhead is measured and asserted."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[6]: agent-ux,"area:cli","area:sdk",instrumentation,observability,token-efficiency
 created_at: "2026-07-25T12:28:07.388Z"
-updated_at: "2026-07-26T05:59:47.231Z"
+updated_at: "2026-08-01T23:05:51.110Z"
+closed_at: "2026-08-01T23:05:20.120Z"
+completed_at: "2026-08-01T23:05:20.120Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "An opt-in accounting mode reports output token cost decomposed by section, using the same tokenizer as the declared budget contract so the figures are directly comparable; Accounting is off by default and adds no measurable cost when off, asserted by a benchmark; The reported figure is asserted equal to an independent count of the emitted bytes, so the accounting cannot drift from reality; Accounting output is itself bounded and excluded from the accounted total, with the exclusion documented; The transcript-replay regression gate consumes per-command accounting so a session regression identifies the responsible commands; Accounting works identically for CLI and MCP transports, since MCP callers pay the same budget"
@@ -18,17 +20,53 @@ outcome: A context overrun becomes a diagnosable event with a named cause instea
 parent: pm-5oj5
 risk: low
 confidence: 70
-dependencies[12]{id,kind,created_at,author,source_kind}:
-  pm-5oj5,related,"2026-07-25T12:28:07.388Z",null,null
-  pm-5t33or,related,"2026-07-25T12:28:07.388Z",null,null
-  pm-8pnj,related,"2026-07-25T12:28:07.388Z",null,null
-  pm-kvxqp1,related,"2026-07-25T12:28:07.388Z",null,null
-  pm-atfm,related,"2026-07-25T12:35:10.300Z",null,null
-  pm-cxr0jb,related,"2026-07-25T12:35:10.300Z",null,null
-  pm-k6t4yb,related,"2026-07-25T12:35:10.300Z",null,null
-  pm-o87av6,related,"2026-07-25T12:35:10.300Z",null,null
-  pm-g3n00m,related,"2026-07-25T12:40:18.797Z",null,null
-  pm-g3n00m,implements,"2026-07-25T20:44:28.425Z",null,null
-  pm-5t33or,verifies,"2026-07-26T05:50:22.649Z",null,null
-  pm-ez1dfg,verifies,"2026-07-26T05:59:46.996Z",null,null
+resolution: completed
+expected_result: Every CLI and MCP invocation can opt into attributable section-level token accounting without paying output cost when disabled.
+actual_result: "CLI, MCP, structured errors, and SDK hosts share exact-byte accounting with bounded excluded receipt overhead; full coverage and isolated npm/Bun consumers passed."
+dependencies[12]{id,kind,created_at}:
+  pm-5oj5,related,"2026-07-25T12:28:07.388Z"
+  pm-5t33or,related,"2026-07-25T12:28:07.388Z"
+  pm-8pnj,related,"2026-07-25T12:28:07.388Z"
+  pm-kvxqp1,related,"2026-07-25T12:28:07.388Z"
+  pm-atfm,related,"2026-07-25T12:35:10.300Z"
+  pm-cxr0jb,related,"2026-07-25T12:35:10.300Z"
+  pm-k6t4yb,related,"2026-07-25T12:35:10.300Z"
+  pm-o87av6,related,"2026-07-25T12:35:10.300Z"
+  pm-g3n00m,related,"2026-07-25T12:40:18.797Z"
+  pm-g3n00m,implements,"2026-07-25T20:44:28.425Z"
+  pm-5t33or,verifies,"2026-07-26T05:50:22.649Z"
+  pm-ez1dfg,verifies,"2026-07-26T05:59:46.996Z"
+comments[1]{created_at,author,text}:
+  "2026-08-01T23:05:01.566Z","harness:codex","Delivery evidence: added the opt-in --token-accounting contract across CLI, structured errors, MCP tool calls, and public SDK exports. Receipts count exact UTF-8 bytes before the receipt, use ceil(bytes/4), attribute result_rows/envelope/diagnostics/hints exactly to the total, measure their own bounded overhead, and exclude only token_accounting. Disabled-path corpus assertions prove no receipt or output-byte cost when off; independent rerender assertions prove reported totals cannot drift. The final sandboxed suite passed 6,688 tests with 100% statements, branches, functions, and lines. Contract snapshots, typecheck, static quality, duplicate detection, secrets scan, docs links, and context-eval gates passed. Packed npm and Bun consumers resolved their executable inside unrelated install roots; success and not-found output both carried accounting, and direct @unbrained/pm-cli/sdk imports returned receipts."
+files[21]{path,scope,note}:
+  sdk/public-surface.json,project,Published SDK accounting surface
+  src/cli/main.ts,project,Structured failure accounting
+  src/core/extensions/reserved-host-flags.ts,project,Reserve host accounting flag from extensions
+  src/core/output/output.ts,project,Shared CLI output accounting attachment
+  src/core/shared/command-types.ts,project,Shared typed accounting option
+  src/mcp/server.ts,project,MCP accounting parity
+  src/mcp/tool-definitions.ts,project,MCP tokenAccounting transport option
+  src/sdk/cli-bootstrap.ts,project,Bootstrap accounting option parsing
+  src/sdk/cli-contracts/completeness.ts,project,Accounting transport completeness classification
+  src/sdk/cli-contracts/registration-helpers.ts,project,Commander global accounting resolution
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Strict action parameter parity
+  src/sdk/cli-contracts/tool-schema.ts,project,Global action schema accounting key
+  src/sdk/cli-program.ts,project,Global --token-accounting option
+  src/sdk/contracts.ts,project,Contracts subpath accounting export
+  src/sdk/index.ts,project,Public SDK accounting export
+  src/sdk/output-token-accounting.ts,project,Transport-neutral exact-byte accounting primitive
+  tests/fixtures/contracts/full.json,project,Generated command and action contract fixture
+  tests/unit/cli/cli-main-errors.spec.ts,project,Structured failure accounting coverage
+  tests/unit/cli/registration-helpers.spec.ts,project,Global option resolution coverage
+  tests/unit/mcp/mcp-server-nested-options.spec.ts,project,MCP request accounting coverage
+  tests/unit/sdk/output-token-accounting.spec.ts,project,Accounting unit and transport coverage
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage -- --testTimeout=120000,project,600
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output-token-accounting.spec.ts tests/unit/core/output/output.spec.ts tests/unit/cli/bootstrap-args.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts,project,300
+  pnpm typecheck,project,180
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msaz980g-17voza,test,passed,"2026-08-01T23:02:48.703Z","2026-08-01T23:03:14.128Z","2026-08-01T23:03:14.128Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/OUTPUT_TOKEN_ACCOUNTING.md,project,CLI SDK MCP accounting contract and exclusion semantics
+close_reason: "Delivered opt-in transport-neutral output token accounting with exact independent byte verification, bounded self-overhead, disabled-path zero output cost, CLI/MCP/SDK parity, packed consumer proof, and 100/100/100/100 coverage."
 body: ""

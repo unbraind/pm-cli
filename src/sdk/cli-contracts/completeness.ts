@@ -69,6 +69,7 @@ const CLI_TRANSPORT_FLAGS = new Set([
   "--follow",
   "--help",
   "--lean",
+  "--token-accounting",
   "--no-changed-fields",
   "--no-extensions",
   "--no-pager",
