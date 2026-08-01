@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-851: compare init discovery roots by filesystem identity ([pm-noq46i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-noq46i.toon))
 - GH-847: tighten managed built-in static SDK contracts and author guidance ([pm-ka6m65](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ka6m65.toon))
 - The MCP server never receives the harness provenance environment, so one agent session writes permanently divergent identity records depending on which surface it used ([pm-1zhfls](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1zhfls.toon))
 - The bounded read costs 13.8 times the unbounded read to deliver the same set, because eight metadata blocks are re-emitted per page and the page carries two rows ([pm-sf31yl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sf31yl.toon))

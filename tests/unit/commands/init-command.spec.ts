@@ -343,21 +343,33 @@ describe("runInit", () => {
       delete process.env.PM_PATH;
 
       process.chdir(workspaceRoot);
-      await expect(
-        runInit("pm", {}, { defaults: true, agentGuidance: "skip" }),
-      ).resolves.toMatchObject({
-        target: { discovery: "current", tracker_root: canonicalPmRoot },
+      const currentResult = await runInit(
+        "pm",
+        {},
+        { defaults: true, agentGuidance: "skip" },
+      );
+      expect(currentResult).toMatchObject({
+        target: { discovery: "current" },
       });
+      expect(await realpath(currentResult.target.tracker_root)).toBe(
+        canonicalPmRoot,
+      );
 
       process.chdir(nestedRoot);
-      await expect(
-        runInit("nested", {}, { defaults: true, agentGuidance: "skip" }),
-      ).rejects.toMatchObject<PmCliError>({
+      const ancestorFailure = await runInit(
+        "nested",
+        {},
+        { defaults: true, agentGuidance: "skip" },
+      ).then(
+        () => undefined,
+        (error: unknown) => error as PmCliError,
+      );
+      if (!(ancestorFailure instanceof PmCliError)) {
+        throw new Error("Expected ancestor tracker discovery to fail");
+      }
+      expect(ancestorFailure).toMatchObject<PmCliError>({
         context: expect.objectContaining({
           code: "init_existing_settings_requires_force",
-          requested_path: canonicalNestedRoot,
-          resolved_path: canonicalPmRoot,
-          suggested_path: path.join(canonicalNestedRoot, ".agents", "pm"),
           examples: expect.arrayContaining([
             'pm init <name> --yes --pm-path "$PWD/.agents/pm"',
           ]),
@@ -366,6 +378,19 @@ describe("runInit", () => {
           ]),
         }),
       });
+      expect(await realpath(String(ancestorFailure.context?.requested_path))).toBe(
+        canonicalNestedRoot,
+      );
+      expect(await realpath(String(ancestorFailure.context?.resolved_path))).toBe(
+        canonicalPmRoot,
+      );
+      expect(ancestorFailure.context?.suggested_path).toBe(
+        path.join(
+          String(ancestorFailure.context?.requested_path),
+          ".agents",
+          "pm",
+        ),
+      );
     } finally {
       process.chdir(originalCwd);
       if (originalPmPath === undefined) {
