@@ -338,13 +338,15 @@ describe("runInit", () => {
     try {
       await mkdir(nestedRoot, { recursive: true });
       await runInit("pm", { path: pmRoot }, { defaults: true });
+      const canonicalPmRoot = await realpath(pmRoot);
+      const canonicalNestedRoot = await realpath(nestedRoot);
       delete process.env.PM_PATH;
 
       process.chdir(workspaceRoot);
       await expect(
         runInit("pm", {}, { defaults: true, agentGuidance: "skip" }),
       ).resolves.toMatchObject({
-        target: { discovery: "current", tracker_root: pmRoot },
+        target: { discovery: "current", tracker_root: canonicalPmRoot },
       });
 
       process.chdir(nestedRoot);
@@ -353,9 +355,9 @@ describe("runInit", () => {
       ).rejects.toMatchObject<PmCliError>({
         context: expect.objectContaining({
           code: "init_existing_settings_requires_force",
-          requested_path: nestedRoot,
-          resolved_path: pmRoot,
-          suggested_path: path.join(nestedRoot, ".agents", "pm"),
+          requested_path: canonicalNestedRoot,
+          resolved_path: canonicalPmRoot,
+          suggested_path: path.join(canonicalNestedRoot, ".agents", "pm"),
           examples: expect.arrayContaining([
             'pm init <name> --yes --pm-path "$PWD/.agents/pm"',
           ]),
