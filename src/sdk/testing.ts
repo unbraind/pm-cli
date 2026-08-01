@@ -483,6 +483,17 @@ const HOOK_KIND_TO_REGISTRY_FIELD: Record<
   on_index: "onIndex",
 };
 
+const RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD = {
+  before_command: "beforeCommand",
+  after_command: "afterCommand",
+  on_read: "onRead",
+  on_write: "onWrite",
+  on_index: "onIndex",
+} as const satisfies Record<
+  RunRegisteredHookForTestOptions["kind"],
+  keyof ExtensionHookRegistry
+>;
+
 type RegisteredHookEntry<TKind extends RegisteredHookKind> = NonNullable<
   ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]]
 >[number];
@@ -1034,14 +1045,26 @@ export async function runRegisteredHookForTest(
   hooks: ExtensionHookRegistry,
   options: RunRegisteredHookForTestOptions,
 ): Promise<string[]> {
-  if ((hooks[HOOK_KIND_TO_REGISTRY_FIELD[options.kind]]?.length ?? 0) === 0) {
+  const kind = (options as { kind: RegisteredHookKind }).kind;
+  if (kind === "before_mutation") {
+    throw new Error(
+      "Invoke before_mutation hooks with runRegisteredMutationGuardForTest so denials and failures retain fail-closed semantics.",
+    );
+  }
+  if ((hooks[RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD[kind]]?.length ?? 0) === 0) {
     const populatedKinds = sortedUnique(
-      (Object.keys(HOOK_KIND_TO_REGISTRY_FIELD) as RegisteredHookKind[]).filter(
-        (kind) => (hooks[HOOK_KIND_TO_REGISTRY_FIELD[kind]]?.length ?? 0) > 0,
+      (
+        Object.keys(
+          RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD,
+        ) as RunRegisteredHookForTestOptions["kind"][]
+      ).filter(
+        (candidateKind) =>
+          (hooks[RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD[candidateKind]]
+            ?.length ?? 0) > 0,
       ),
     );
     throw new Error(
-      `Expected a registered "${options.kind}" hook to invoke. Hook kinds with registrations: ${formatAvailable(
+      `Expected a registered "${kind}" hook to invoke. Hook kinds with registrations: ${formatAvailable(
         populatedKinds,
       )}`,
     );

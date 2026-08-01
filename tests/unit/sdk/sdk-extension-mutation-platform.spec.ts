@@ -96,7 +96,13 @@ describe("extension mutation platform", () => {
         kind: "before_mutation",
         context,
       } as never),
-    ).rejects.toThrow(/registered "before_mutation" hook/);
+    ).rejects.toThrow(/runRegisteredMutationGuardForTest/);
+    await expect(
+      runRegisteredHookForTest({} as never, {
+        kind: "on_read",
+        context: { path: "/test/item.toon", scope: "project" },
+      }),
+    ).rejects.toThrow(/Hook kinds with registrations: \(none\)/);
     expect(() =>
       assertRegisteredHook(legacyHooks as never, { kind: "before_mutation" }),
     ).toThrow(/Available "before_mutation" hooks: \(none\)/);
@@ -111,6 +117,12 @@ describe("extension mutation platform", () => {
       { capabilities: ["hooks"] },
     );
     await expect(allowing.runMutationGuard({ context })).resolves.toBeUndefined();
+    await expect(
+      runRegisteredHookForTest(allowing.activation.hooks, {
+        kind: "before_mutation",
+        context,
+      } as never),
+    ).rejects.toThrow(/runRegisteredMutationGuardForTest/);
 
     const invalidDecision = await createExtensionTestHarness(
       {

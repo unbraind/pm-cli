@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:sdk","area:testing",authoring,extensions,gh-issue,host-parity
 created_at: "2026-08-01T13:27:06.241Z"
-updated_at: "2026-08-01T15:05:16.212Z"
+updated_at: "2026-08-01T15:18:29.285Z"
 closed_at: "2026-08-01T14:39:33.261Z"
 completed_at: "2026-08-01T14:39:33.261Z"
 author: "harness:codex"
@@ -22,10 +22,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-jcyn,discovered_from,"2026-08-01T13:27:06.241Z","harness:codex","cli:create:dep",detected
   pm-owm0,discovered_from,"2026-08-01T13:27:06.241Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-08-01T13:27:06.241Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-01T13:27:06.241Z","harness:codex","text=Duplicate check evidence: searched all statuses for GH-853, command harness, host-bound CommandHandlerContext SDK, runRegisteredCommandForTest, and createExtensionTestHarness. Closed pm-owm0 and pm-jcyn are foundations; neither injects the host SDK. Source: https://github.com/unbraind/pm-cli/issues/853"
   "2026-08-01T14:37:33.856Z","harness:codex","Evidence: runRegisteredCommandForTest and createExtensionTestHarness now inject the production ExtensionCommandSdk for non-empty pmRoot, with typed sdk/sdkFactory seams and mutual-exclusion validation. An isolated packed consumer created consumer-sdk-created through context.sdk.client and npx/bunx resolved the packed executable. The intentional sdk/testing cold-import cost of loading native PmClient services is captured in the regenerated performance budget/table; the gate passes against the reviewed measurement."
   "2026-08-01T15:05:16.212Z","harness:codex","Review evidence: clarified both context.pm_root and sdkFactory pmRoot as the tracker storage root (normally <workspace>/.agents/pm), not the workspace root; regenerated the public SDK surface and contracts and reran full 100/100/100/100 coverage."
+  "2026-08-01T15:18:29.285Z","harness:codex","Review evidence: the review-level outside-diff inventory exposed a silent-success path where runRegisteredHookForTest could receive before_mutation at runtime without dispatching it. The general lifecycle helper now rejects with dedicated-helper guidance, mutation invocation stays in runRegisteredMutationGuardForTest, legacy empty registries are covered, and the final full gate passes 6,666 tests at 100/100/100/100."
 learnings[1]{created_at,author,text}:
   "2026-08-01T14:37:34.559Z","harness:codex",Testing production-shaped extension command contexts requires loading the real native PmClient service graph; keep that cost isolated to the sdk/testing entrypoint and measure it explicitly rather than silently substituting a partial mock.
 files[4]{path,scope,note}:
