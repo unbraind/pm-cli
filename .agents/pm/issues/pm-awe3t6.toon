@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,closed-item-conformance,contracts,mcp,token-efficiency
 created_at: "2026-07-31T14:13:13.147Z"
-updated_at: "2026-08-01T00:38:51.296Z"
-closed_at: "2026-08-01T00:35:45.350Z"
-completed_at: "2026-08-01T00:35:45.350Z"
+updated_at: "2026-08-01T01:10:16.844Z"
+closed_at: "2026-08-01T01:10:16.041Z"
+completed_at: "2026-08-01T01:10:16.041Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The MCP default mutation echo matches the CLI default in both content and size, so neither surface requires a flag to obtain the lean form; The result wrapper divergence is resolved or documented as a protocol requirement with one accessor path stated for agents parsing both surfaces; A test asserts the byte-size relationship between the two surfaces for a representative mutation, so the ratio cannot silently invert again; The parity claim in the closed pm-nilh is corrected by a comment on that item pointing at this one, so the closed record does not continue to assert a parity that HEAD does not have; The measured CLI 72 bytes versus MCP 373 bytes baseline is recorded, and the post-fix numbers are reported against it"
@@ -27,21 +27,31 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-mpbb,related,"2026-07-31T14:20:57.070Z","harness:claude-code","cli:update:dep",detected
   pm-n7rr,related,"2026-07-31T14:20:57.070Z","harness:claude-code","cli:update:dep",detected
   pm-sb0tns,related,"2026-07-31T14:20:57.070Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-01T00:35:37.291Z","harness:codex","Implementation evidence 2026-08-01: raw SDK/MCP mutation actions create, copy, update, close, append, and restore now use the same lean id/status/changed_field_count default as the CLI, while typed PmClient convenience methods preserve full results through explicit fullChangedFields opt-in. Isolated identical creates measured 57 bytes on both CLI and MCP result versus the recorded 72/373-byte baseline. The MCP JSON-RPC structuredContent.result protocol wrapper remains documented, but both surfaces expose the same keys inside the result. Focused parity tests passed 22/22; the repo-wide suite passed 6631/6631 at 100/100/100/100 coverage."
-files[7]{path,scope,note}:
+  "2026-08-01T01:10:10.295Z","harness:codex","PR #849 exact-head CI correction: the Claude plugin smoke was the remaining consumer of the retired verbose raw pm_create result. It now requires the exact lean id/status/changed_field_count key set and a non-empty id; unit tests reject both verbose and malformed envelopes. Focused tests passed 19/19, the real MCP/plugin smoke passed all 31 tools and its full workflow, and ESLint passed."
+files[9]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated release entry
+  scripts/smoke-claude-plugin.mjs,project,Acceptance smoke enforces lean raw MCP create envelope
   src/mcp/server.ts,project,tool result envelope wraps in result and echoes the created item by default
   src/sdk/runtime.ts,project,CLI and MCP default mutation-envelope parity
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,Updated consumers for lean default and explicit full opt-in
   tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,Updated consumers for lean default and explicit full opt-in
   tests/unit/mcp/mutation-envelope-parity.spec.ts,project,CLI and MCP default mutation-envelope parity
+  tests/unit/scripts/smoke-claude-plugin.spec.ts,project,Regression coverage rejects verbose and malformed create envelopes
   tests/unit/sdk/sdk-index.spec.ts,project,Updated consumers for lean default and explicit full opt-in
-tests[1]{command,scope,timeout_seconds}:
-  node scripts/run-tests.mjs test -- tests/unit/mcp/mutation-envelope-parity.spec.ts tests/unit/core/output/mutation-projection.spec.ts,project,300
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/mcp/mutation-envelope-parity.spec.ts tests/unit/core/output/mutation-projection.spec.ts
+    scope: project
+    timeout_seconds: 300
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-claude-plugin.spec.ts tests/unit/mcp/mutation-envelope-parity.spec.ts
+    scope: project
+    timeout_seconds: 300
+    note: Lean mutation contract and Claude plugin smoke regression
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-ms9mg21p-sraa7s,test,passed,"2026-08-01T00:16:40.080Z","2026-08-01T00:16:51.805Z","2026-08-01T00:16:51.805Z",1,0,0
+  test-local-ms9ocl81-o0u486,test,passed,"2026-08-01T01:09:47.417Z","2026-08-01T01:10:09.265Z","2026-08-01T01:10:09.265Z",2,0,0
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Documented MCP protocol wrapper and lean result
-close_reason: "Implemented and verified CLI/MCP mutation-envelope parity: identical lean 57-byte create results, explicit full opt-in, protocol documentation, focused tests, and 100% repo coverage."
+close_reason: "Reclosed after exact-head CI compatibility correction: acceptance smoke now enforces the lean MCP create contract, focused regression tests and real 31-tool plugin workflow pass, and ESLint is clean."
 body: ""
