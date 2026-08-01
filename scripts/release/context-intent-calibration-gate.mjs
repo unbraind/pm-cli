@@ -349,10 +349,14 @@ function calibrationObjectKeys(value) {
 }
 
 function assertCalibrationTier(measuredTier, approvedTier) {
-  const approvedCommands = calibrationObjectKeys(approvedTier.intents);
-  const measuredCommands = calibrationObjectKeys(measuredTier?.intents);
   assertCalibrationCondition(
-    measuredTier?.item_count === approvedTier.item_count,
+    measuredTier !== null && typeof measuredTier === "object",
+    "calibration tier or intent shape changed",
+  );
+  const approvedCommands = calibrationObjectKeys(approvedTier.intents);
+  const measuredCommands = calibrationObjectKeys(measuredTier.intents);
+  assertCalibrationCondition(
+    measuredTier.item_count === approvedTier.item_count,
     "calibration tier or intent shape changed",
   );
   assertCalibrationCondition(
