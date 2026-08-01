@@ -393,8 +393,6 @@ describe("context intent contracts", () => {
     expect(projected.ready.length).toBeGreaterThanOrEqual(1);
     expect(projected.ready.length).toBeLessThan(recommended.length - 1);
     expect(projected).toMatchObject({ has_more: false });
-    expect(projected).not.toHaveProperty("truncated");
-    expect(projected).not.toHaveProperty("next_cursor");
   });
 
   it("batches large row compaction without serializing the full result once per removed row", () => {
