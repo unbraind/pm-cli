@@ -2974,7 +2974,11 @@ async function runMcpCreateAction(
   );
   return projectMutationResult(
     await runCreate(runnerOptions as never, ctx.global),
-    { changedFields, idOnly },
+    {
+      changedFields,
+      compactEnvelope: changedFields === "compact" && !idOnly,
+      idOnly,
+    },
   );
 }
 
@@ -3003,6 +3007,7 @@ async function runMcpCopyAction(
     ),
     {
       changedFields,
+      compactEnvelope: changedFields === "compact" && !idOnly,
       idOnly,
     },
   );
@@ -3023,6 +3028,7 @@ async function runMcpUpdateAction(
     ),
     {
       changedFields,
+      compactEnvelope: changedFields === "compact" && !idOnly,
       idOnly,
     },
   );
@@ -3047,7 +3053,11 @@ async function runMcpCloseAction(
       runnerOptions as never,
       ctx.global,
     ),
-    { changedFields, idOnly },
+    {
+      changedFields,
+      compactEnvelope: changedFields === "compact" && !idOnly,
+      idOnly,
+    },
   );
 }
 
@@ -3496,6 +3506,7 @@ async function runMcpAppendAction(
     ),
     {
       changedFields,
+      compactEnvelope: changedFields === "compact",
     },
   );
 }
@@ -3556,6 +3567,7 @@ async function runMcpRestoreAction(
     ),
     {
       changedFields,
+      compactEnvelope: changedFields === "compact" && !idOnly,
       idOnly,
     },
   );

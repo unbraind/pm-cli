@@ -528,6 +528,7 @@ describe("MCP dynamic package actions", () => {
             path: context.pmPath,
             id,
             author: "mcp-agent",
+            fullChangedFields: true,
             options: {
               comment: "scalar comment from MCP",
               note: "scalar note from MCP",
@@ -639,7 +640,7 @@ describe("MCP dynamic package actions", () => {
     });
   }, 60_000);
 
-  it("compacts mutation changed_fields by default and restores them with options.full", async () => {
+  it("compacts mutation envelopes by default and restores full changed fields explicitly", async () => {
     await withTempPmPath(async (context) => {
       const compactCreate = await handleRequest({
         jsonrpc: "2.0",
@@ -660,12 +661,13 @@ describe("MCP dynamic package actions", () => {
       });
       expect(compactCreate?.isError).not.toBe(true);
       const compactResult = (compactCreate?.structuredContent as {
-        result?: { item?: { id?: string }; changed_fields?: unknown; changed_field_count?: number };
+        result?: { id?: string; item?: unknown; changed_fields?: unknown; changed_field_count?: number };
       } | undefined)?.result;
+      expect(compactResult?.item).toBeUndefined();
       expect(compactResult?.changed_fields).toBeUndefined();
       expect(typeof compactResult?.changed_field_count).toBe("number");
       expect(compactResult?.changed_field_count ?? 0).toBeGreaterThan(0);
-      const id = compactResult?.item?.id as string;
+      const id = compactResult?.id as string;
       expect(id).toBeTruthy();
 
       const fullUpdate = await handleRequest({
@@ -725,6 +727,7 @@ describe("MCP dynamic package actions", () => {
           arguments: {
             path: context.pmPath,
             allowMissingParent: true,
+            fullChangedFields: true,
             options: {
               title: "MCP allow missing parent target",
               description: "MCP allow missing parent description",

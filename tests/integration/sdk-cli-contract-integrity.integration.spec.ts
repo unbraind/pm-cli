@@ -390,9 +390,10 @@ describe("SDK and CLI contract integrity", () => {
           priority: "2",
           message: "tool contract identity parity",
         },
-      })) as { item: { id: string } };
+      })) as { id: string; item?: unknown };
 
-      expect(created.item.id).toBe("pm-tool-explicit-id");
+      expect(created).toMatchObject({ id: "pm-tool-explicit-id" });
+      expect(created.item).toBeUndefined();
     });
   });
 
@@ -408,6 +409,7 @@ describe("SDK and CLI contract integrity", () => {
         author: "mcp-copy-author",
         message: "top-level copy message",
         path: context.pmPath,
+        fullChangedFields: true,
       })) as { item: { id: string; title: string } };
 
       expect(copied.item.title).toBe("Top-level copy title");
@@ -425,6 +427,7 @@ describe("SDK and CLI contract integrity", () => {
         author: "top-level-author",
         options: { author: "nested-option-author" },
         path: context.pmPath,
+        fullChangedFields: true,
       })) as { item: { id: string } };
       const optionAuthorHistory = context.runCli(
         ["history", optionAuthorCopy.item.id, "--full", "--json"],

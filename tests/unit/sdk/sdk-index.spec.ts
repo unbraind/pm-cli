@@ -1178,6 +1178,7 @@ console.log(JSON.stringify(payload));`,
         type: "Task",
         status: "open",
         createMode: "progressive",
+        fullChangedFields: true,
       })) as { item?: { id?: string; title?: string } };
       expect(runCreated.item?.id).toMatch(/^pm-/);
       expect(runCreated.item?.title).toBe("SDK structured run item");
@@ -1395,6 +1396,7 @@ console.log(JSON.stringify(payload));`,
         cwd: path.dirname(pmPath),
         noExtensions: true,
         author: "sdk-client-test",
+        fullChangedFields: true,
         target: "1",
         options: { message: "SDK restore to created version" },
       })) as { item?: { id?: string; status?: string }; restored_from?: { target?: string } };

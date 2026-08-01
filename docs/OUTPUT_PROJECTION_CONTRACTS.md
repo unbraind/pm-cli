@@ -6,7 +6,11 @@ Tracker references: [pm-p258tx](../.agents/pm/features/pm-p258tx.toon),
 intent-budget contracts are tracked by
 [pm-sb0tns](../.agents/pm/issues/pm-sb0tns.toon),
 [pm-cxr0jb](../.agents/pm/features/pm-cxr0jb.toon), and
-[pm-5t33or](../.agents/pm/features/pm-5t33or.toon). Trustworthy collection
+[pm-5t33or](../.agents/pm/features/pm-5t33or.toon). Reachable budgets and
+cursor-chain amortization are tracked by
+[pm-7hbfch](../.agents/pm/issues/pm-7hbfch.toon),
+[pm-yekkvt](../.agents/pm/issues/pm-yekkvt.toon), and
+[pm-sf31yl](../.agents/pm/issues/pm-sf31yl.toon). Trustworthy collection
 selectors are tracked by
 [pm-x710qm](../.agents/pm/issues/pm-x710qm.toon).
 
@@ -151,10 +155,12 @@ resolved contract in `context_intent`:
   "context_intent": {
     "command": "list",
     "intent": "triage",
-    "token_budget": 1800,
+    "token_budget": 3200,
     "estimated_tokens": 1416,
     "within_budget": true,
-    "degradation": "bounded_fields_and_rows"
+    "degradation": "bounded_fields_and_rows",
+    "declaration_feasible": true,
+    "result_omitted": false
   }
 }
 ```
@@ -164,21 +170,33 @@ Use `context --for orient|handoff`, `get --for inspect`,
 `search --for discover`. Explicit caller projection options win over intent
 defaults, while the intent ceiling still applies. Selecting an intent is an
 explicit request for its bounded shape: `get --for inspect` defaults to
-standard depth, `list --for triage` defaults to two compact rows, and
-`search --for discover` defaults to fifteen compact rows. Callers that need a
-different depth or page size can pass `--depth` or `--limit`; list and search
-retain their ordinary completeness and continuation metadata when bounded.
-If a selected result exceeds
-its budget, long explanatory strings are compacted deterministically without
-dropping rows. If the complete row set still cannot fit, the result is replaced
-by a `budget_receipt_only` envelope instead of retaining stale counts or
-pagination cursors. The receipt's `token_budget` is the effective ceiling after
-any explicit caller override. Explicit overrides below 256 tokens are rejected
-because the minimum machine-readable receipt cannot fit; malformed or absent
-overrides retain the declared intent budget. A receipt-only response directs
-callers to repeat their original invocation without `--for`, avoiding
-non-runnable recovery strings for positional commands such as `get` and
-`search`. Calls
+standard depth. List and search derive their default page size from the
+effective token ceiling and a conservative per-row cost, so raising
+`--token-budget` increases useful rows instead of paying the same fixed envelope
+cost for every page. Context applies the same principle to its focus and
+activity limits so the built-in orientation declaration remains feasible on a
+large tracker. All five intent commands accept the same
+`--token-budget` override. Explicit `--depth` and `--limit` controls still win.
+
+If a selected result exceeds its budget, long explanatory strings compact
+first, followed by deterministic root-row reduction that retains at least one
+useful row and reports `budget_row_compaction`. Only a result whose minimum
+useful projection cannot fit becomes `budget_receipt_only`. That receipt sets
+`declaration_feasible: false`, `result_omitted: true`, and
+`within_budget: false`; fitting the refusal envelope does not make the omitted
+result truthful. Recovery recommends increasing the ceiling or narrowing the
+request and never sends an agent to a potentially larger unprojected retry.
+Explicit overrides below 256 tokens are rejected because the minimum
+machine-readable receipt cannot fit; malformed or absent overrides retain the
+declared intent budget.
+
+The first cursor page carries the complete projection, filtering, sorting,
+completeness, row, and omission contracts. Continuation pages replace those
+chain-invariant blocks with `continuation_contract`, which carries the cursor's
+query fingerprint and a compact restore instruction. Continuations retain only
+the rows and next cursor needed to advance the chain; page counts, total,
+truncation, timestamps, and the full intent receipt are referenced from the
+first page instead of being re-emitted. Calls
 without `--for` remain byte-compatible with the ordinary projection path apart
 from the universal row contract.
 

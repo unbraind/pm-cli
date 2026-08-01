@@ -2593,6 +2593,12 @@
           "value_name": "intent"
         },
         {
+          "aliases": [
+            "--token_budget"
+          ],
+          "flag": "--token-budget"
+        },
+        {
           "flag": "--depth"
         },
         {
@@ -3014,6 +3020,13 @@
           "value_name": "intent"
         },
         {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
+        },
+        {
           "flag": "--status",
           "list": true
         },
@@ -3236,6 +3249,13 @@
         {
           "flag": "--for",
           "value_name": "intent"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
         },
         {
           "flag": "--status",
@@ -3462,6 +3482,13 @@
           "value_name": "intent"
         },
         {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
+        },
+        {
           "flag": "--status",
           "list": true
         },
@@ -3684,6 +3711,13 @@
         {
           "flag": "--for",
           "value_name": "intent"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
         },
         {
           "flag": "--status",
@@ -3910,6 +3944,13 @@
           "value_name": "intent"
         },
         {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
+        },
+        {
           "flag": "--status",
           "list": true
         },
@@ -4132,6 +4173,13 @@
         {
           "flag": "--for",
           "value_name": "intent"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
         },
         {
           "flag": "--status",
@@ -4358,6 +4406,13 @@
           "value_name": "intent"
         },
         {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
+        },
+        {
           "flag": "--status",
           "list": true
         },
@@ -4580,6 +4635,13 @@
         {
           "flag": "--for",
           "value_name": "intent"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
         },
         {
           "flag": "--status",
@@ -6235,6 +6297,13 @@
         {
           "flag": "--for",
           "value_name": "intent"
+        },
+        {
+          "aliases": [
+            "--token_budget"
+          ],
+          "cursor_semantics": "presentation",
+          "flag": "--token-budget"
         },
         {
           "flag": "--mode"
@@ -9116,7 +9185,7 @@
     },
     {
       "command": "list",
-      "description": "The first two compact governance, ownership, priority, and blocker rows for triage.",
+      "description": "A budget-derived page of compact governance, ownership, priority, and blocker rows for triage.",
       "included_field_groups": [
         "identity",
         "governance",
@@ -9125,7 +9194,7 @@
       ],
       "intent": "triage",
       "source": "core",
-      "token_budget": 1800
+      "token_budget": 3200
     },
     {
       "command": "next",
@@ -14185,6 +14254,22 @@
             ],
             "type": "number"
           },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -15156,6 +15241,22 @@
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
@@ -17549,6 +17650,22 @@
           "titleExact": {
             "description": "For search action, require exact normalized title match for the full query string.",
             "type": "boolean"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "type": {
             "description": "Alias for options.type.",
@@ -23593,6 +23710,22 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -24099,6 +24232,22 @@
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
@@ -24607,6 +24756,22 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -25113,6 +25278,22 @@
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
@@ -25621,6 +25802,22 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -26127,6 +26324,22 @@
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
@@ -26635,6 +26848,22 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -27141,6 +27370,22 @@
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
@@ -28029,6 +28274,22 @@
             ],
             "type": "number"
           },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
+          },
           "tree": {
             "description": "When true for list/get actions, render recursive parent/child tree ordering.",
             "type": "boolean"
@@ -28422,6 +28683,22 @@
           "titleExact": {
             "description": "For search action, require exact normalized title match for the full query string.",
             "type": "boolean"
+          },
+          "tokenBudget": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ],
+            "description": "Maximum estimated output tokens for deps --format context.",
+            "examples": [
+              600,
+              "1200"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -35961,10 +36238,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.2.0"
+    "x-schema-version": "4.3.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.2.0",
+  "schema_version": "4.3.0",
   "selected": {
     "action": null,
     "availability_only": false,

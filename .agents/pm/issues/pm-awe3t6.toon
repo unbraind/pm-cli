@@ -2,19 +2,22 @@ id: pm-awe3t6
 title: "Mutation echo parity reversed after pm-nilh closed: the MCP surface now returns 5.2x the CLI default for an identical create"
 description: "pm-nilh closed as 'GH-437: make lean mutation output the CLI default (parity with MCP compact envelope)'. The CLI side shipped and is now the lean surface. The MCP side did not follow, and the parity the closed item claims is inverted at HEAD.\n\nMeasured 2026-07-31 in one sandbox tracker, same item type, same fields, same second.\n\nCLI: pm create --title ... --type Task --status open --json returns {\"id\":\"...\",\"status\":\"open\",\"changed_field_count\":10} at 72 bytes.\n\nMCP: pm_create with the same arguments returns {\"result\":{\"item\":{ten fields},\"warnings\":[],\"next_transition\":{...},\"changed_field_count\":10}} at 373 bytes. That is 5.2x the CLI default, and it is the default: leanness on MCP requires passing idOnly:true, which drops it to 45 bytes, while the CLI needs no flag at all.\n\nTwo distinct problems sit inside that ratio. The MCP default echoes the full created item, which the caller already knows because it just supplied every field, and pm-nilh's whole argument was that this echo is redundant. And the MCP envelope wraps every response in a result key that the CLI does not emit, so an agent parsing both surfaces needs two accessor paths for the same data - the shape divergence that AGENTS.md's guidance about the CLI having no result wrapper exists to warn about.\n\nThe direction of the regression is what makes it worth a separate item rather than a comment on the closed one. MCP is the surface where tokens are most expensive, because every tool result enters the model's context whether the agent needed it or not, whereas a CLI caller can pipe through jq and discard. Optimizing the cheap surface to parity with the expensive one, and then leaving the expensive one unchanged, spends the effort on the wrong side of the ratio.\n\nThis also belongs to the growth pattern measured across the agent-facing surface this week: pm context --limit 10 is 9,218 bytes against a recorded 7.6 KB baseline on 2026-07-24, pm list-open --limit 20 is 4,734 bytes against 3.6 KB, and pm contracts --flags-only is 124,288 bytes against 117,070 on 2026-07-26. Payload size on the real corpus is trending up while the token-efficiency work is open."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,closed-item-conformance,contracts,mcp,token-efficiency
 created_at: "2026-07-31T14:13:13.147Z"
-updated_at: "2026-07-31T14:28:27.142Z"
+updated_at: "2026-08-01T00:38:51.296Z"
+closed_at: "2026-08-01T00:35:45.350Z"
+completed_at: "2026-08-01T00:35:45.350Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The MCP default mutation echo matches the CLI default in both content and size, so neither surface requires a flag to obtain the lean form; The result wrapper divergence is resolved or documented as a protocol requirement with one accessor path stated for agents parsing both surfaces; A test asserts the byte-size relationship between the two surfaces for a representative mutation, so the ratio cannot silently invert again; The parity claim in the closed pm-nilh is corrected by a comment on that item pointing at this one, so the closed record does not continue to assert a parity that HEAD does not have; The measured CLI 72 bytes versus MCP 373 bytes baseline is recorded, and the post-fix numbers are reported against it"
 parent: pm-5k4v
 risk: medium
 confidence: 96
+resolution: Aligned raw SDK and MCP mutation defaults with the CLI lean envelope while preserving explicit fullChangedFields output and documenting protocol framing.
 expected_result: An identical create returns the same lean envelope on both surfaces without a flag.
-actual_result: "CLI returns 72 bytes by default; MCP returns 373 bytes by default and requires idOnly:true to reach 45."
+actual_result: An isolated identical create returns id/status/changed_field_count at 57 bytes on both CLI and MCP result; fullChangedFields restores the full envelope.
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,related,"2026-07-31T14:16:09.459Z","harness:claude-code","cli:update:dep",detected
   pm-nilh,related,"2026-07-31T14:16:09.459Z","harness:claude-code","cli:update:dep",detected
@@ -24,6 +27,21 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-mpbb,related,"2026-07-31T14:20:57.070Z","harness:claude-code","cli:update:dep",detected
   pm-n7rr,related,"2026-07-31T14:20:57.070Z","harness:claude-code","cli:update:dep",detected
   pm-sb0tns,related,"2026-07-31T14:20:57.070Z","harness:claude-code","cli:update:dep",detected
-files[1]{path,scope,note}:
+comments[1]{created_at,author,text}:
+  "2026-08-01T00:35:37.291Z","harness:codex","Implementation evidence 2026-08-01: raw SDK/MCP mutation actions create, copy, update, close, append, and restore now use the same lean id/status/changed_field_count default as the CLI, while typed PmClient convenience methods preserve full results through explicit fullChangedFields opt-in. Isolated identical creates measured 57 bytes on both CLI and MCP result versus the recorded 72/373-byte baseline. The MCP JSON-RPC structuredContent.result protocol wrapper remains documented, but both surfaces expose the same keys inside the result. Focused parity tests passed 22/22; the repo-wide suite passed 6631/6631 at 100/100/100/100 coverage."
+files[7]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generated release entry
   src/mcp/server.ts,project,tool result envelope wraps in result and echoes the created item by default
+  src/sdk/runtime.ts,project,CLI and MCP default mutation-envelope parity
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,Updated consumers for lean default and explicit full opt-in
+  tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,Updated consumers for lean default and explicit full opt-in
+  tests/unit/mcp/mutation-envelope-parity.spec.ts,project,CLI and MCP default mutation-envelope parity
+  tests/unit/sdk/sdk-index.spec.ts,project,Updated consumers for lean default and explicit full opt-in
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/mcp/mutation-envelope-parity.spec.ts tests/unit/core/output/mutation-projection.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-ms9mg21p-sraa7s,test,passed,"2026-08-01T00:16:40.080Z","2026-08-01T00:16:51.805Z","2026-08-01T00:16:51.805Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Documented MCP protocol wrapper and lean result
+close_reason: "Implemented and verified CLI/MCP mutation-envelope parity: identical lean 57-byte create results, explicit full opt-in, protocol documentation, focused tests, and 100% repo coverage."
 body: ""
