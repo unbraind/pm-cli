@@ -30,6 +30,7 @@ const REPORT_PATH = path.join(
   "release",
   "context-intent-calibration.json",
 );
+const CALIBRATION_REGRESSION_MARGIN = 1.15;
 const INVARIANT_CONTINUATION_KEYS = Object.freeze([
   "applied_limit",
   "completeness",
@@ -339,6 +340,113 @@ export async function measureContextIntentCalibration(
   }
 }
 
+function assertCalibrationCondition(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+function calibrationObjectKeys(value) {
+  return value && typeof value === "object" ? Object.keys(value).sort() : [];
+}
+
+function assertCalibrationTier(measuredTier, approvedTier) {
+  const approvedCommands = calibrationObjectKeys(approvedTier.intents);
+  const measuredCommands = calibrationObjectKeys(measuredTier?.intents);
+  assertCalibrationCondition(
+    measuredTier?.item_count === approvedTier.item_count,
+    "calibration tier or intent shape changed",
+  );
+  assertCalibrationCondition(
+    JSON.stringify(measuredCommands) === JSON.stringify(approvedCommands),
+    "calibration tier or intent shape changed",
+  );
+  for (const command of approvedCommands) {
+    const approvedIntent = approvedTier.intents[command];
+    const measuredIntent = measuredTier.intents[command];
+    const message = `${command}: calibration intent ceiling regressed`;
+    assertCalibrationCondition(
+      measuredIntent.declared_tokens === approvedIntent.declared_tokens,
+      message,
+    );
+    assertCalibrationCondition(
+      measuredIntent.degradation === approvedIntent.degradation,
+      message,
+    );
+    assertCalibrationCondition(
+      measuredIntent.measured_tokens <= measuredIntent.declared_tokens,
+      message,
+    );
+    assertCalibrationCondition(
+      measuredIntent.delivered_bytes <= measuredIntent.declared_tokens * 4,
+      message,
+    );
+  }
+  const approvedWalkNames = calibrationObjectKeys(approvedTier.cursor_walks);
+  const measuredWalkNames = calibrationObjectKeys(measuredTier.cursor_walks);
+  assertCalibrationCondition(
+    JSON.stringify(measuredWalkNames) === JSON.stringify(approvedWalkNames),
+    "calibration cursor-walk shape changed",
+  );
+  for (const command of approvedWalkNames) {
+    const approvedWalk = approvedTier.cursor_walks[command];
+    const measuredWalk = measuredTier.cursor_walks[command];
+    const message = `${command}: calibration cursor efficiency regressed`;
+    assertCalibrationCondition(
+      measuredWalk.rows === approvedWalk.rows,
+      message,
+    );
+    assertCalibrationCondition(
+      measuredWalk.pages <=
+        Math.ceil(approvedWalk.pages * CALIBRATION_REGRESSION_MARGIN),
+      message,
+    );
+    assertCalibrationCondition(
+      measuredWalk.bytes_per_row <=
+        approvedWalk.bytes_per_row * CALIBRATION_REGRESSION_MARGIN,
+      message,
+    );
+    assertCalibrationCondition(
+      measuredWalk.optimized_to_unbounded_ratio <=
+        approvedWalk.optimized_to_unbounded_ratio *
+          CALIBRATION_REGRESSION_MARGIN,
+      message,
+    );
+  }
+}
+
+/** Fail when a measured report changes contract shape or exceeds an approved performance ceiling. */
+export function assertCalibrationWithinApprovedCeilings(
+  report,
+  approvedReport,
+) {
+  const reportHeader = {
+    version: report?.version,
+    metric: report?.metric,
+    token_estimate: report?.token_estimate,
+    structural_negative_control: report?.structural_negative_control,
+  };
+  const approvedHeader = {
+    version: approvedReport?.version,
+    metric: approvedReport?.metric,
+    token_estimate: approvedReport?.token_estimate,
+    structural_negative_control: approvedReport?.structural_negative_control,
+  };
+  const reportTiers = Array.isArray(report?.tiers) ? report.tiers : [];
+  const approvedTiers = Array.isArray(approvedReport?.tiers)
+    ? approvedReport.tiers
+    : [];
+  assertCalibrationCondition(
+    JSON.stringify(reportHeader) === JSON.stringify(approvedHeader),
+    "calibration contract shape changed",
+  );
+  assertCalibrationCondition(
+    reportTiers.length === approvedTiers.length,
+    "calibration contract shape changed",
+  );
+  for (const [index, approvedTier] of approvedTiers.entries()) {
+    assertCalibrationTier(reportTiers[index], approvedTier);
+  }
+}
+
 /** Exposes deterministic validation seams for exhaustive gate testing. */
 export const _testOnly = {
   assertCursorRowParity,
@@ -356,6 +464,7 @@ export async function main(
     reportPath = REPORT_PATH,
     readReport = readFile,
     writeReport = writeFile,
+    assertReport = assertCalibrationWithinApprovedCeilings,
     log = console.log,
   } = {},
 ) {
@@ -371,9 +480,12 @@ export async function main(
     return;
   }
   const approvedReport = JSON.parse(await readReport(reportPath, "utf8"));
-  if (JSON.stringify(approvedReport) !== JSON.stringify(report)) {
+  try {
+    assertReport(report, approvedReport);
+  } catch (error) {
     throw new Error(
-      `Context intent calibration drifted from ${path.relative(repoRoot, reportPath)}; run pnpm context:intent:calibrate --update and review the approved report`,
+      `Context intent calibration drifted from ${path.relative(repoRoot, reportPath)}: ${error instanceof Error ? error.message : String(error)}; run pnpm context:intent:calibrate --update and review the approved report`,
+      { cause: error },
     );
   }
   log(

@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import {
   _testOnly,
+  assertCalibrationWithinApprovedCeilings,
   main,
   measureContextIntentCalibration,
   repeatedContinuationMetadata,
@@ -80,6 +81,16 @@ describe("context intent calibration gate", () => {
         log,
       }),
     ).rejects.toThrow("calibration drifted");
+    await expect(
+      main([], {
+        measure: async () => report,
+        readReport: async () => JSON.stringify(report),
+        assertReport: () => {
+          throw "raw calibration drift";
+        },
+        log,
+      }),
+    ).rejects.toThrow("raw calibration drift");
     await main(["--update"], {
       measure: async () => report,
       reportPath: "/tmp/context-calibration.json",
@@ -92,6 +103,90 @@ describe("context intent calibration gate", () => {
       "utf8",
     );
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Updated"));
+  });
+
+  it("enforces portable calibration contract and performance ceilings", () => {
+    const approved = {
+      version: 1,
+      metric: "utf8_bytes",
+      token_estimate: "ceil(bytes / 4)",
+      structural_negative_control: "negative control",
+      tiers: [
+        {
+          item_count: 2_243,
+          intents: {
+            list: {
+              delivered_bytes: 8_000,
+              declared_tokens: 3_200,
+              measured_tokens: 2_000,
+              degradation: "budget_row_compaction",
+            },
+          },
+          cursor_walks: {
+            list: {
+              rows: 1_998,
+              pages: 30,
+              bytes_per_row: 172,
+              optimized_to_unbounded_ratio: 0.22,
+            },
+          },
+        },
+      ],
+    };
+    expect(() =>
+      assertCalibrationWithinApprovedCeilings(
+        structuredClone(approved),
+        approved,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertCalibrationWithinApprovedCeilings(null, null),
+    ).not.toThrow();
+    for (const measured of [
+      { ...structuredClone(approved), version: 2 },
+      { ...structuredClone(approved), tiers: [] },
+      {
+        ...structuredClone(approved),
+        tiers: [{ ...approved.tiers[0], item_count: 2 }],
+      },
+      {
+        ...structuredClone(approved),
+        tiers: [{ ...approved.tiers[0], intents: {} }],
+      },
+    ]) {
+      expect(() =>
+        assertCalibrationWithinApprovedCeilings(measured, approved),
+      ).toThrow("calibration");
+    }
+    for (const intent of [
+      { declared_tokens: 1_800 },
+      { degradation: "receipt_only" },
+      { measured_tokens: 3_201 },
+      { delivered_bytes: 12_801 },
+    ]) {
+      const measured = structuredClone(approved);
+      Object.assign(measured.tiers[0].intents.list, intent);
+      expect(() =>
+        assertCalibrationWithinApprovedCeilings(measured, approved),
+      ).toThrow("intent ceiling regressed");
+    }
+    const missingWalk = structuredClone(approved);
+    missingWalk.tiers[0].cursor_walks = {};
+    expect(() =>
+      assertCalibrationWithinApprovedCeilings(missingWalk, approved),
+    ).toThrow("cursor-walk shape changed");
+    for (const walk of [
+      { rows: 1_997 },
+      { pages: 36 },
+      { bytes_per_row: 198 },
+      { optimized_to_unbounded_ratio: 0.254 },
+    ]) {
+      const measured = structuredClone(approved);
+      Object.assign(measured.tiers[0].cursor_walks.list, walk);
+      expect(() =>
+        assertCalibrationWithinApprovedCeilings(measured, approved),
+      ).toThrow("cursor efficiency regressed");
+    }
   });
 
   it("rejects every malformed receipt condition while accepting a valid receipt", () => {
