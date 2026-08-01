@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts","area:sdk",conformance-gap,token-efficiency
 created_at: "2026-07-30T09:12:36.920Z"
-updated_at: "2026-08-01T06:16:05.961Z"
+updated_at: "2026-08-01T06:45:24.586Z"
 closed_at: "2026-08-01T05:27:52.210Z"
 completed_at: "2026-08-01T05:27:52.210Z"
 author: "harness:claude-code"
@@ -34,7 +34,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-sb0tns,related,"2026-07-30T09:13:11.911Z","harness:claude-code","cli:update:dep",detected
   pm-o87av6,implements,"2026-07-30T09:28:37.564Z","harness:claude-code","cli:update:dep",detected
   pm-yekkvt,blocked_by,"2026-07-30T17:03:17.017Z","harness:claude-code","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-30T10:27:23.385Z","harness:codex","Implementation evidence: every built-in intent now emits resolved budget, measured tokens, within-budget verdict, and degradation; oversized context/next results compact deterministically and all six live tracker probes remained within ceiling."
   "2026-07-30T11:24:13.871Z","harness:codex","Delivery boundary: enforced intent receipts and deterministic degradation are implemented and exact 100% coverage plus token-budget gates pass. The canonical issue remains open until the current-tracker per-intent observed-versus-declared evidence table is published and its negative control is explicitly tied to the release gate."
   "2026-07-30T11:30:54.844Z","harness:codex","PR evidence: https://github.com/unbraind/pm-cli/pull/829 reviews cohesive SDK context budgets, universal row contracts, bounded graph/health diagnostics, quality ratchets, and exact-head commit e53544cd1."
@@ -43,6 +43,7 @@ comments[8]{created_at,author,text}:
   "2026-08-01T00:37:51.706Z","harness:codex","Delivery evidence 2026-08-01: list/get/search now expose --token-budget across CLI, SDK tool options, cursor semantics, contracts, and tool schema 4.3.0. The release gate checks 28 surfaces plus a 256-token infeasible declaration control. Live current-tracker receipts are delivered and within ceiling: context orient 1725/2400 with 11 useful rows; list triage 1703/3200 with 20 rows and a cursor; search discover 1562/1800 with 16 rows; next execute 1109/1200 with 3 ready rows; get inspect 2009/3200. Remaining acceptance before closure: add a generated corpus at least as large as the current tracker to the mandatory gate and a structural negative control that removes enforcement from one declared command."
   "2026-08-01T05:27:12.706Z","harness:codex","Delivery evidence 2026-08-01: intent enforcement is now measured after projection/compaction, synthesizes resumable terminal continuations, and fails closed when a retained cursor row lacks stable identity. The mandatory quality pipeline executes structural receipt-removal and repeated-metadata negative controls. Current-scale measurements remain within all declared ceilings: context 1000/2400, get 415/3200, list 3181/3200, next 1171/1200, search 1763/1800 estimated tokens. Exact repo coverage is 100/100/100/100."
   "2026-08-01T06:16:05.960Z","harness:codex","CI follow-up evidence (PR #850): decoded coverage shard 2 and found the real entrypoint test used a developer-machine absolute path, so the executable guard never ran on GitHub Linux or Windows and the assertion waited until timeout. The test now derives the script path from import.meta.url, restoring cross-checkout and cross-platform execution; the ceiling returned from 300s to 120s. Focused validation passes 9/9 in 24.68s, including the real entrypoint in 10.49s; strict ESLint and the complete quality:static chain pass."
+  "2026-08-01T06:45:24.586Z","harness:codex","PR #850 review evidence: replaced the stale src/sdk/cli-contracts.ts note with the delivered cross-surface behavior. Numeric SDK tokenBudget and priority inputs now survive Commander normalization, with regression coverage."
 files[16]{path,scope,note}:
   package.json,project,quality static enforcement
   scripts/agent-token-surface-baseline.json,project,Regenerated package-owned token surface baseline after the list/get/search budget option and current command surface additions
@@ -53,13 +54,13 @@ files[16]{path,scope,note}:
   scripts/release/token-budgets.json,project,Measured intent corpus baseline
   sdk/public-surface.json,project,Tool schema 4.3.0 public surface snapshot
   src/cli/register-list-query.ts,project,Cross-surface token-budget flag and schema parity
-  src/sdk/cli-contracts.ts,project,"only next and context declare a --token-budget flag; list,get and search reject it as unknown"
   src/sdk/cli-contracts/flag-contracts.ts,project,Cross-surface token-budget flag and schema parity
   src/sdk/cli-contracts/tool-option-contracts.ts,project,Cross-surface token-budget flag and schema parity
   src/sdk/cli-contracts/tool-schema.ts,project,Cross-surface token-budget flag and schema parity
   src/sdk/context-intent-contracts.ts,project,applyContextIntentProjection writes the declared token_budget into projected.tokenBudget at line 323 for all five intent commands
   tests/fixtures/contracts/full.json,project,Cross-surface token-budget flag and schema parity
   tests/unit/cli/context-intent-registration.spec.ts,project,Cross-surface token-budget flag and schema parity
+  src/sdk/cli-contracts.ts,project,Cross-surface token-budget aliases and normalized SDK option contracts
 tests[6]{command,scope,timeout_seconds}:
   node scripts/release/token-budget-gate.mjs,project,300
   node scripts/run-tests.mjs coverage,project,300

@@ -36,13 +36,18 @@ describe("close-many branch coverage", () => {
       getActiveExtensionRegistrations: vi.fn(() => []),
     }));
     vi.doMock("../../../src/core/item/type-registry.js", () => ({
-      resolveItemTypeRegistry: vi.fn(() => ({ type_to_folder: new Map<string, string>() })),
+      resolveItemTypeRegistry: vi.fn(() => ({
+        type_to_folder: new Map<string, string>(),
+      })),
     }));
     vi.doMock("../../../src/core/store/item-store.js", () => ({
       listAllItemMetadataLight: vi.fn(async () => []),
     }));
     vi.doMock("../../../src/core/item/status.js", () => ({
-      isTerminalStatus: vi.fn((status: string, registry: { terminal_statuses: Set<string> }) => registry.terminal_statuses.has(status)),
+      isTerminalStatus: vi.fn(
+        (status: string, registry: { terminal_statuses: Set<string> }) =>
+          registry.terminal_statuses.has(status),
+      ),
     }));
     vi.doMock("../../../src/sdk/query/list.js", () => ({
       runList: vi.fn(async () => ({
@@ -56,14 +61,8 @@ describe("close-many branch coverage", () => {
       restoreCheckpointItems: vi.fn(),
       writeMutationCheckpoint: vi.fn(),
     }));
-    vi.doMock("../../../src/cli/commands/close.js", () => ({
-      runClose: vi.fn(),
-    }));
-    vi.doMock("../../../src/cli/commands/restore.js", () => ({
-      runRestore: vi.fn(),
-    }));
-
-    const { runCloseMany } = await import("../../../src/sdk/lifecycle/close-many.js");
+    const { runCloseMany } =
+      await import("../../../src/sdk/lifecycle/close-many.js");
     const result = await runCloseMany(
       {
         list: { ids: "pm-1" },

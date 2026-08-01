@@ -5,7 +5,7 @@
  *
  * Trackers: pm-7hbfch, pm-yekkvt, and pm-sf31yl.
  */
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -86,7 +86,11 @@ function withReadContracts(command, options, result) {
 async function runIntent(command, manifest, global) {
   if (command === "context") {
     const options = applyContextIntentProjection("context", { for: "orient" });
-    return withReadContracts(command, options, await runContext(options, global));
+    return withReadContracts(
+      command,
+      options,
+      await runContext(options, global),
+    );
   }
   if (command === "get") {
     const options = applyContextIntentProjection("get", { for: "inspect" });
@@ -155,7 +159,9 @@ function validateCursorPage(command, page, continuation) {
     throw new Error(`${command}: cursor page omitted its result collection`);
   }
   if (page.items.length === 0 && typeof page.next_cursor === "string") {
-    throw new Error(`${command}: resumable cursor page omitted every result row`);
+    throw new Error(
+      `${command}: resumable cursor page omitted every result row`,
+    );
   }
 }
 
@@ -165,7 +171,9 @@ function assertCursorRowParity(command, ids, baselineIds) {
     new Set(ids).size !== ids.length ||
     ids.some((id, index) => id !== baselineIds[index])
   ) {
-    throw new Error(`${command}: cursor walk duplicated, omitted, or reordered rows`);
+    throw new Error(
+      `${command}: cursor walk duplicated, omitted, or reordered rows`,
+    );
   }
 }
 
@@ -206,7 +214,8 @@ async function runCursorWalk(
   );
   const repeatedMetadataBytes = pages.reduce(
     (total, page, index) =>
-      total + serializedBytes(index === 0 ? page : { ...firstInvariant, ...page }),
+      total +
+      serializedBytes(index === 0 ? page : { ...firstInvariant, ...page }),
     0,
   );
   const unboundedBytes = serializedBytes(baseline);
@@ -216,7 +225,9 @@ async function runCursorWalk(
     );
   }
   if (pages.length > 1 && repeatedMetadataBytes <= optimizedBytes) {
-    throw new Error(`${command}: repeated-metadata negative control was not more expensive`);
+    throw new Error(
+      `${command}: repeated-metadata negative control was not more expensive`,
+    );
   }
   return {
     rows: ids.length,
@@ -266,18 +277,19 @@ async function measureTier(
       const violation = intentReceiptViolation(command, result);
       if (violation !== undefined) throw new Error(violation);
       if (!negativeControl(command, result)) {
-        throw new Error(`${command}: enforcement negative control escaped detection`);
+        throw new Error(
+          `${command}: enforcement negative control escaped detection`,
+        );
       }
       intents[command] = {
         delivered_bytes: serializedBytes(result),
         delivered_rows: Array.isArray(result.items)
           ? result.items.length
-          : result.row_contract?.row_keys?.reduce(
+          : (result.row_contract?.row_keys?.reduce(
               (count, key) =>
-                count +
-                (Array.isArray(result[key]) ? result[key].length : 0),
+                count + (Array.isArray(result[key]) ? result[key].length : 0),
               0,
-            ) ?? 0,
+            ) ?? 0),
         declared_tokens: result.context_intent.token_budget,
         measured_tokens: result.context_intent.estimated_tokens,
         degradation: result.context_intent.degradation,
@@ -311,7 +323,8 @@ export async function measureContextIntentCalibration(
       version: 1,
       metric: "utf8_bytes",
       token_estimate: "ceil(bytes / 4)",
-      structural_negative_control: "remove context_intent and repeat first-page metadata on a continuation",
+      structural_negative_control:
+        "remove context_intent and repeat first-page metadata on a continuation",
       tiers: [
         await measureTierFn(2),
         await measureTierFn(CURRENT_TRACKER_SCALE),
@@ -341,6 +354,7 @@ export async function main(
   {
     measure = measureContextIntentCalibration,
     reportPath = REPORT_PATH,
+    readReport = readFile,
     writeReport = writeFile,
     log = console.log,
   } = {},
@@ -348,9 +362,19 @@ export async function main(
   const { flags } = parseFlags(args);
   const report = await measure();
   if (flags.has("update")) {
-    await writeReport(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+    await writeReport(
+      reportPath,
+      `${JSON.stringify(report, null, 2)}\n`,
+      "utf8",
+    );
     log(`Updated ${path.relative(repoRoot, reportPath)}`);
     return;
+  }
+  const approvedReport = JSON.parse(await readReport(reportPath, "utf8"));
+  if (JSON.stringify(approvedReport) !== JSON.stringify(report)) {
+    throw new Error(
+      `Context intent calibration drifted from ${path.relative(repoRoot, reportPath)}; run pnpm context:intent:calibrate --update and review the approved report`,
+    );
   }
   log(
     `Context intent calibration passed (${report.tiers.map((tier) => tier.item_count).join(" and ")} items; five intents; list/search full cursor walks).`,
@@ -358,10 +382,7 @@ export async function main(
 }
 
 /** Route executable entrypoint failures through the shared release-gate failure contract. */
-export async function runMain(
-  run = main,
-  failWith = fail,
-) {
+export async function runMain(run = main, failWith = fail) {
   try {
     await run();
   } catch (error) {

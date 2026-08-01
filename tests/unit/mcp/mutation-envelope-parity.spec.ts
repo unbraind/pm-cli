@@ -198,18 +198,23 @@ describe("MCP mutation envelope parity", () => {
           getHistoryPath(context.pmPath, mcpId),
           mcpId,
         );
+        if (cliEntry === undefined || mcpEntry === undefined) {
+          throw new Error(
+            "Expected both CLI and MCP mutations to append history entries",
+          );
+        }
         expect({
-          author: mcpEntry?.author,
-          author_source: mcpEntry?.author_source,
-          agent_harness: mcpEntry?.agent_harness,
-          agent_instance: mcpEntry?.agent_instance,
-          agent_provenance: mcpEntry?.agent_provenance,
+          author: mcpEntry.author,
+          author_source: mcpEntry.author_source,
+          agent_harness: mcpEntry.agent_harness,
+          agent_instance: mcpEntry.agent_instance,
+          agent_provenance: mcpEntry.agent_provenance,
         }).toEqual({
-          author: cliEntry?.author,
-          author_source: cliEntry?.author_source,
-          agent_harness: cliEntry?.agent_harness,
-          agent_instance: cliEntry?.agent_instance,
-          agent_provenance: cliEntry?.agent_provenance,
+          author: cliEntry.author,
+          author_source: cliEntry.author_source,
+          agent_harness: cliEntry.agent_harness,
+          agent_instance: cliEntry.agent_instance,
+          agent_provenance: cliEntry.agent_provenance,
         });
 
         process.env.PM_AGENT_EFFORT = "xhigh";

@@ -50,35 +50,12 @@ describe("context intent calibration gate", () => {
     ).toEqual([]);
   });
 
-  it("measures both real calibration tiers and restores an absent usage setting", async () => {
-    const previous = process.env.PM_CONTEXT_USAGE_DISABLED;
-    delete process.env.PM_CONTEXT_USAGE_DISABLED;
-    try {
-      const report = await measureContextIntentCalibration();
-      expect(report).toMatchObject({
-        version: 1,
-        metric: "utf8_bytes",
-        tiers: [
-          { item_count: 2 },
-          {
-            item_count: 2_243,
-            cursor_walks: {
-              list: { rows: expect.any(Number), pages: expect.any(Number) },
-              search: { rows: expect.any(Number), pages: expect.any(Number) },
-            },
-          },
-        ],
-      });
-      expect(process.env.PM_CONTEXT_USAGE_DISABLED).toBeUndefined();
-    } finally {
-      if (previous === undefined) delete process.env.PM_CONTEXT_USAGE_DISABLED;
-      else process.env.PM_CONTEXT_USAGE_DISABLED = previous;
-    }
-  }, 120_000);
-
   it("restores an existing usage setting and exercises both main output modes", async () => {
     process.env.PM_CONTEXT_USAGE_DISABLED = "existing";
-    const tier = vi.fn(async (itemCount: number) => ({ item_count: itemCount, intents: {} }));
+    const tier = vi.fn(async (itemCount: number) => ({
+      item_count: itemCount,
+      intents: {},
+    }));
     await expect(measureContextIntentCalibration(tier)).resolves.toMatchObject({
       tiers: [{ item_count: 2 }, { item_count: 2_243 }],
     });
@@ -88,8 +65,21 @@ describe("context intent calibration gate", () => {
     const report = { tiers: [{ item_count: 2 }, { item_count: 2_243 }] };
     const log = vi.fn();
     const writeReport = vi.fn(async () => {});
-    await main([], { measure: async () => report, log });
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("2 and 2243 items"));
+    await main([], {
+      measure: async () => report,
+      readReport: async () => JSON.stringify(report),
+      log,
+    });
+    expect(log).toHaveBeenCalledWith(
+      expect.stringContaining("2 and 2243 items"),
+    );
+    await expect(
+      main([], {
+        measure: async () => report,
+        readReport: async () => JSON.stringify({ tiers: [] }),
+        log,
+      }),
+    ).rejects.toThrow("calibration drifted");
     await main(["--update"], {
       measure: async () => report,
       reportPath: "/tmp/context-calibration.json",
@@ -167,30 +157,45 @@ describe("context intent calibration gate", () => {
     ).not.toThrow();
 
     await expect(
-      _testOnly.runCursorWalk("list", {}, {
-        maxPages: 1,
-        runPage: async () => ({ items: [{ id: "a" }], next_cursor: "next" }),
-        runBaseline: async () => ({ items: [{ id: "a" }] }),
-      }),
+      _testOnly.runCursorWalk(
+        "list",
+        {},
+        {
+          maxPages: 1,
+          runPage: async () => ({ items: [{ id: "a" }], next_cursor: "next" }),
+          runBaseline: async () => ({ items: [{ id: "a" }] }),
+        },
+      ),
     ).rejects.toThrow("did not terminate");
     await expect(
-      _testOnly.runCursorWalk("list", {}, {
-        runPage: async () => ({ items: [{ id: "a" }], padding: "x".repeat(200) }),
-        runBaseline: async () => ({ items: [{ id: "a" }] }),
-      }),
+      _testOnly.runCursorWalk(
+        "list",
+        {},
+        {
+          runPage: async () => ({
+            items: [{ id: "a" }],
+            padding: "x".repeat(200),
+          }),
+          runBaseline: async () => ({ items: [{ id: "a" }] }),
+        },
+      ),
     ).rejects.toThrow("exceeds unbounded");
     let page = 0;
     await expect(
-      _testOnly.runCursorWalk("list", {}, {
-        runPage: async () =>
-          page++ === 0
-            ? { items: [{ id: "a" }], next_cursor: "next" }
-            : { items: [{ id: "b" }] },
-        runBaseline: async () => ({
-          items: [{ id: "a" }, { id: "b" }],
-          padding: "x".repeat(500),
-        }),
-      }),
+      _testOnly.runCursorWalk(
+        "list",
+        {},
+        {
+          runPage: async () =>
+            page++ === 0
+              ? { items: [{ id: "a" }], next_cursor: "next" }
+              : { items: [{ id: "b" }] },
+          runBaseline: async () => ({
+            items: [{ id: "a" }, { id: "b" }],
+            padding: "x".repeat(500),
+          }),
+        },
+      ),
     ).rejects.toThrow("negative control was not more expensive");
   });
 
@@ -250,10 +255,15 @@ describe("context intent calibration gate", () => {
     await runMain(async () => {
       throw "string failure";
     }, failWith);
-    expect(failWith.mock.calls).toEqual([["error failure"], ["string failure"]]);
+    expect(failWith.mock.calls).toEqual([
+      ["error failure"],
+      ["string failure"],
+    ]);
   });
 
   it("executes the real top-level entrypoint", async () => {
+    const previous = process.env.PM_CONTEXT_USAGE_DISABLED;
+    delete process.env.PM_CONTEXT_USAGE_DISABLED;
     process.argv = [
       process.execPath,
       fileURLToPath(
@@ -272,5 +282,8 @@ describe("context intent calibration gate", () => {
         ),
       120_000,
     );
+    expect(process.env.PM_CONTEXT_USAGE_DISABLED).toBeUndefined();
+    if (previous !== undefined)
+      process.env.PM_CONTEXT_USAGE_DISABLED = previous;
   }, 120_000);
 });

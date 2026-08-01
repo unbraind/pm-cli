@@ -819,6 +819,13 @@ function isSdkOwnershipSource(relativePath) {
   return relativePath === "src/sdk.ts" || relativePath.startsWith("src/sdk/");
 }
 
+function isCliPackageSelfReference(specifier) {
+  return (
+    specifier === "@unbrained/pm-cli/cli" ||
+    specifier.startsWith("@unbrained/pm-cli/cli/")
+  );
+}
+
 /** Find every forbidden dependency from the public SDK substrate into CLI presentation code. */
 export function collectSdkToCliImportEdges(files) {
   const edges = [];
@@ -836,8 +843,18 @@ export function collectSdkToCliImportEdges(files) {
     );
     const visit = (node) => {
       const specifier = importModuleSpecifier(node);
+      if (specifier !== null && isCliPackageSelfReference(specifier)) {
+        const edge = { source: relativeSource, import_path: specifier };
+        const key = importEdgeKey(edge);
+        if (!seen.has(key)) {
+          seen.add(key);
+          edges.push(edge);
+        }
+      }
       const resolved =
-        specifier === null ? null : resolveRelativeImport(absolutePath, specifier);
+        specifier === null
+          ? null
+          : resolveRelativeImport(absolutePath, specifier);
       if (resolved !== null) {
         const relativeImport = relativeToRepo(resolved);
         if (
@@ -876,6 +893,9 @@ function isRequireCallExpression(node) {
 }
 
 function importModuleSpecifier(node) {
+  if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
+    return moduleSpecifierText(node.argument.literal);
+  }
   if (
     (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
     node.moduleSpecifier
@@ -911,7 +931,12 @@ function isDynamicImportExpression(node) {
 
 export function collectUnsupportedDynamicImportExpressions(files) {
   return collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(
-    collectSdkBoundarySourceFiles(files),
+    files.filter((absolutePath) => {
+      const relativePath = relativeToRepo(absolutePath);
+      return (
+        isSdkBoundarySource(relativePath) || isSdkOwnershipSource(relativePath)
+      );
+    }),
   );
 }
 
@@ -1030,11 +1055,17 @@ function importEdgeKey(edge) {
 
 export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
   const boundarySourceFiles = collectSdkBoundarySourceFiles(files);
+  const boundaryAndSdkSourceFiles = files.filter((absolutePath) => {
+    const relativePath = relativeToRepo(absolutePath);
+    return (
+      isSdkBoundarySource(relativePath) || isSdkOwnershipSource(relativePath)
+    );
+  });
   const actualEdges =
     collectPrivateCoreImportEdgesFromBoundaryFiles(boundarySourceFiles);
   const unsupportedDynamicImports =
     collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(
-      boundarySourceFiles,
+      boundaryAndSdkSourceFiles,
     );
   const sdkToCliImports = collectSdkToCliImportEdges(files);
   return {

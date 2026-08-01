@@ -332,6 +332,17 @@ function anyOptionTrue(
   return keys.some((key) => options[key] === true) ? true : undefined;
 }
 
+function readStringOrFiniteNumberFromCommanderOptions(
+  options: Record<string, unknown>,
+  contract: CommanderOptionAliasContract,
+): string | number | undefined {
+  const value = readFirstValueFromCommanderOptions(options, contract);
+  return typeof value === "string" ||
+    (typeof value === "number" && Number.isFinite(value))
+    ? value
+    : undefined;
+}
+
 function copyUnknownOptions(
   target: Record<string, unknown>,
   source: Record<string, unknown>,
@@ -485,7 +496,10 @@ export function normalizeCreateOptions(
     assignee: readCreateString("assignee"),
     parent: readCreateString("parent"),
     allowMissingParent:
-      optionTrue(commandOptions, "allowMissingParent") === true,
+      anyOptionTrue(commandOptions, [
+        "allowMissingParent",
+        "allow_missing_parent",
+      ]) === true,
     allowDuplicate: optionTrue(commandOptions, "allowDuplicate") === true,
     reviewer: readCreateString("reviewer"),
     risk: readCreateString("risk"),
@@ -1127,6 +1141,16 @@ export function normalizeContextOptions(
         target,
       ),
     );
+  const readContextStringOrNumber = (
+    target: string,
+  ): string | number | undefined =>
+    readStringOrFiniteNumberFromCommanderOptions(
+      options,
+      resolveCommanderContract(
+        CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
+        target,
+      ),
+    );
   const sectionRaw = options.section;
   const section: string[] | undefined = Array.isArray(sectionRaw)
     ? (sectionRaw as string[]).filter(
@@ -1155,7 +1179,7 @@ export function normalizeContextOptions(
     section: section && section.length > 0 ? section : undefined,
     activityLimit: readContextString("activityLimit"),
     staleThreshold: readContextString("staleThreshold"),
-    tokenBudget: readContextString("tokenBudget"),
+    tokenBudget: readContextStringOrNumber("tokenBudget"),
     noTags: options.tags === false ? true : undefined,
   };
   for (const [key, value] of Object.entries(options)) {
@@ -1182,10 +1206,17 @@ export function normalizeNextOptions(
       options,
       resolveCommanderContract(NEXT_COMMANDER_STRING_OPTION_CONTRACTS, target),
     );
+  const readNextStringOrNumber = (
+    target: string,
+  ): string | number | undefined =>
+    readStringOrFiniteNumberFromCommanderOptions(
+      options,
+      resolveCommanderContract(NEXT_COMMANDER_STRING_OPTION_CONTRACTS, target),
+    );
   const normalized: Record<string, unknown> = {
     type: readNextString("type"),
     tag: readNextString("tag"),
-    priority: readNextString("priority"),
+    priority: readNextStringOrNumber("priority"),
     assignee: readNextString("assignee"),
     assigneeFilter: readNextString("assigneeFilter"),
     sprint: readNextString("sprint"),
@@ -1198,7 +1229,7 @@ export function normalizeNextOptions(
         ? true
         : undefined,
     format: readNextString("format"),
-    tokenBudget: readNextString("tokenBudget"),
+    tokenBudget: readNextStringOrNumber("tokenBudget"),
   };
   for (const [key, value] of Object.entries(options)) {
     if (Object.hasOwn(normalized, key)) {
