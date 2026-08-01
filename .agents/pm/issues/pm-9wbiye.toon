@@ -2,19 +2,22 @@ id: pm-9wbiye
 title: "Explicit-unavailable provenance is recorded for the model dimension only, so effort and role absence is permanently indistinguishable from a legacy entry"
 description: "AGENT_PROVENANCE_DIMENSIONS in src/core/shared/author.ts:21-25 declares three dimensions: model, effort, role. resolveAgentProvenance at lines 443-457 iterates all declared dimensions, and when a dimension yields no observation it writes an explicit null for exactly one of them: else if (dimension === \"model\" && descriptor) { observations.model = null }. For effort and role the key is simply omitted.\n\nThe SDK is built on the three-state distinction that this omission destroys. summarizeAgentModelProvenance in src/sdk/provenance.ts:73-117 buckets each entry as observed, unavailable (agent_provenance.model === null) or legacy_missing (no provenance at all), and derives coverage from observed / (observed + unavailable) precisely so that entries written before the feature existed do not depress the coverage of entries written after it. That computation is only possible for model. For effort and role there is no unavailable state, so a missing key conflates three genuinely different facts: the harness declared the dimension and exposed no value, the harness never declared the dimension, and the entry predates the dimension entirely.\n\nMeasured over all 44,408 history entries in this tracker on 2026-07-31: 2,814 entries carry a model key and every one of them is an explicit null; 471 entries carry an effort key and every one of them is an observation, with zero explicit nulls anywhere in the corpus; no entry in the corpus has ever carried a role key. So the asymmetry is not theoretical - the corpus contains explicit-unavailable records for one dimension and none for the other two, and the difference is a code branch rather than a property of the signals.\n\nThis is what makes the surface divergence in pm-1zhfls unrecoverable rather than merely visible. An MCP-written entry with no effort key is byte-identical in that respect to an entry written before effort support shipped on 2026-07-27, so no analysis can separate the two populations after the fact."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: contracts,history,identity,provenance
 created_at: "2026-07-31T14:11:09.450Z"
-updated_at: "2026-07-31T14:28:18.586Z"
+updated_at: "2026-08-01T11:59:16.107Z"
+closed_at: "2026-08-01T11:59:15.228Z"
+completed_at: "2026-08-01T11:59:15.228Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Every declared provenance dimension records an explicit unavailable marker when the selected harness declares it and no value is observed, so absence of a key means only that the dimension was never declared; summarizeAgentModelProvenance, or a generalization of it, computes observed/unavailable/legacy coverage for every declared dimension rather than for model alone; A test asserts the invariant generically over AGENT_PROVENANCE_DIMENSIONS so adding a fourth dimension cannot reintroduce a model-only branch; The existing corpus is given a stated disposition: the 471 effort-bearing entries and the entries with no effort key are documented as pre-fix populations, since history is append-only and cannot be back-filled"
 parent: pm-dj98
 risk: medium
 confidence: 98
-expected_result: "All three declared dimensions record explicit unavailability, so the SDK's observed/unavailable/legacy classification is computable for each of them."
-actual_result: "Only model does. The corpus holds 2,814 explicit model nulls, zero explicit effort nulls, and no role key has ever been written in 44,408 entries."
+resolution: "Persist and analyze observed, unavailable, and legacy provenance for every declared dimension."
+expected_result: Every declared provenance dimension has a recoverable three-state history contract.
+actual_result: "Model, effort, role, and topic now use one generic invariant; existing pre-fix streams remain identifiable as legacy."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-1wiugq,related,"2026-07-31T14:20:39.642Z","harness:claude-code","cli:update:dep",detected
   pm-dj98,implements,"2026-07-31T14:20:39.642Z","harness:claude-code","cli:update:dep",detected
@@ -22,9 +25,21 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-o2kc,related,"2026-07-31T14:20:39.642Z","harness:claude-code","cli:update:dep",detected
   pm-oskdmu,related,"2026-07-31T14:20:39.642Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,verifies,"2026-07-31T14:20:39.642Z","harness:claude-code","cli:update:dep",detected
-files[2]{path,scope,note}:
+comments[2]{created_at,author,text}:
+  "2026-08-01T10:24:08.339Z","harness:codex","Implementation start 2026-08-01: selected after all-status duplicate and dependency review. This item owns generic observed/unavailable/legacy semantics and is the prerequisite for the session-context item in the same cohesive SDK provenance tranche."
+  "2026-08-01T11:58:17.152Z","harness:codex","Evidence: generalized provenance classification now covers every declared dimension, and selected harnesses persist explicit unavailable markers for model, effort, role, and topic. Generic regression coverage prevents future dimension-specific branches. Linked acceptance tests passed 25 assertions; the full release suite passed 6,662 tests with exact 100 percent statements, branches, functions, and lines. Existing pre-fix history remains append-only and is documented as legacy population."
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,package-generated release record
   src/core/shared/author.ts,project,resolveAgentProvenance lines 443-457; the model-only explicit null is the else-if at 453-455
   src/sdk/provenance.ts,project,summarizeAgentModelProvenance depends on the three-state distinction that only model can satisfy
-tests[1]{command,scope,timeout_seconds}:
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project,history null availability regression coverage across built-in dimensions
+  tests/unit/sdk/provenance.spec.ts,project,dimension invariant and generic classification regression coverage
+tests[2]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- provenance,project,300
+  node scripts/run-tests.mjs test -- tests/unit/sdk/provenance.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msabe8ac-ceha0s,test,passed,"2026-08-01T11:54:56.883Z","2026-08-01T11:55:16.980Z","2026-08-01T11:55:16.980Z",2,0,0
+docs[1]{path,scope,note}:
+  docs/AGENT_RUNTIME_PRIMITIVES.md,project,availability semantics and compatibility contract
+close_reason: Generic explicit-unavailable provenance and dimension-independent SDK summaries implemented with append-only compatibility documented.
 body: ""

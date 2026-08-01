@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1348,
+    "covered_symbols": 1359,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1349
+    "required_symbols": 1360
   },
   "breaking_acknowledgements": [
     {
@@ -445,6 +445,35 @@
       ],
       "package_version": "2026.7.31",
       "reason": "Intent receipts now require truthful feasibility and omission state; tool schema 4.3.0 adds tokenBudget to list get and search"
+    },
+    {
+      "changes": [
+        "signature ./sdk:AGENT_PROVENANCE_DIMENSIONS",
+        "signature ./sdk:AgentClientInfo",
+        "signature ./sdk:AgentModelSource",
+        "signature ./sdk:DetectedAgentIdentity",
+        "signature ./sdk:HarnessDetectionSignals",
+        "signature ./sdk:HarnessSignalDescriptor",
+        "signature ./sdk:PmSettings",
+        "signature ./sdk/core:AGENT_PROVENANCE_DIMENSIONS",
+        "signature ./sdk/core:AgentClientInfo",
+        "signature ./sdk/core:AgentModelSource",
+        "signature ./sdk/core:DetectedAgentIdentity",
+        "signature ./sdk/core:HarnessDetectionSignals",
+        "signature ./sdk/core:HarnessSignalDescriptor",
+        "signature ./sdk/core:PmSettings",
+        "signature ./sdk/runtime:PmSettings"
+      ],
+      "package_version": "2026.8.1",
+      "reason": "Additive optional session provenance and episode fields broaden identity contracts without removing or requiring existing consumer fields."
+    },
+    {
+      "changes": [
+        "signature ./sdk:AgentEpisodeGroup",
+        "signature ./sdk/core:AgentEpisodeGroup"
+      ],
+      "package_version": "2026.8.1",
+      "reason": "Strengthen AgentEpisodeGroup.entries from a possibly empty array to a truthful non-empty tuple; every produced group already contains at least one immutable history event."
     }
   ],
   "entrypoints": {
@@ -671,13 +700,25 @@
           "classification": "supported",
           "kind": "value",
           "name": "AGENT_PROVENANCE_DIMENSIONS",
-          "signature": "readonly [\"model\", \"effort\", \"role\"]"
+          "signature": "readonly [\"model\", \"effort\", \"role\", \"topic\"]"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AgentClientInfo",
-          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; provenance?: Readonly<Record<string, string | undefined>>; }"
+          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; provenance?: Readonly<Record<string, string | undefined>>; episode?: AgentEpisodeIdentity; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentEpisodeGroup",
+          "signature": "export interface AgentEpisodeGroup { id: string; label?: string; parent_id?: string; source: \"declared\" | \"inferred\"; entries: [ HistoryEntry, ...HistoryEntry[] ]; children: AgentEpisodeGroup[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentEpisodeIdentity",
+          "signature": "export interface AgentEpisodeIdentity { id: string; label?: string; parent_id?: string; }"
         },
         {
           "classification": "supported",
@@ -689,7 +730,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AgentModelSource",
-          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\";"
+          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\";"
         },
         {
           "classification": "supported",
@@ -706,8 +747,26 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "AgentProvenanceDimensionCoverage",
+          "signature": "export interface AgentProvenanceDimensionCoverage extends AgentModelProvenanceCoverage { dimension: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "AgentProvenanceObservation",
           "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentSessionContext",
+          "signature": "export interface AgentSessionContext { provenance?: Readonly<Record<string, string | undefined>>; episode?: AgentEpisodeIdentity; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "agentSessionEnvironment",
+          "signature": "(context: AgentSessionContext) => Record<string, string> | calls: (context: AgentSessionContext) => Record<string, string>"
         },
         {
           "classification": "supported",
@@ -1260,6 +1319,12 @@
           "kind": "interface",
           "name": "BootstrapNormalizationEvent",
           "signature": "export interface BootstrapNormalizationEvent { from: string; to: string[]; reason: BootstrapNormalizationReason; confidence: BootstrapNormalizationConfidence; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "boundAgentEpisodeIdentity",
+          "signature": "(value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined | calls: (value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined"
         },
         {
           "classification": "supported",
@@ -3167,7 +3232,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DetectedAgentIdentity",
-          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; provenance?: AgentProvenance; }"
+          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; provenance?: AgentProvenance; episode?: AgentEpisodeIdentity; }"
         },
         {
           "classification": "supported",
@@ -4706,6 +4771,12 @@
           "signature": "export interface GraphTraversalResult { subcommand: \"ancestors\" | \"descendants\" | \"predecessors\" | \"successors\"; root: string; count: number; truncated: boolean; next_cursor?: string; cost: GraphQueryCost; ids?: string[]; cache?: GraphCacheMetadata; }"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "groupHistoryByEpisode",
+          "signature": "(entries: readonly HistoryEntry[]) => AgentEpisodeGroup[] | calls: (entries: readonly HistoryEntry[]) => AgentEpisodeGroup[]"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "GUIDE_FLAG_CONTRACTS",
@@ -4745,13 +4816,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessDetectionSignals",
-          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; descriptors?: readonly HarnessSignalDescriptor[]; }"
+          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; session_context?: AgentSessionContext; descriptors?: readonly HarnessSignalDescriptor[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessSignalDescriptor",
-          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; provenance_environment_keys?: Readonly<Record<string, readonly string[] | undefined>>; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
+          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; provenance_environment_keys?: Readonly<Record<string, readonly string[] | undefined>>; provenance_unavailable_dimensions?: readonly string[]; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -7505,7 +7576,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "contract_data",
@@ -9026,6 +9097,12 @@
           "signature": "() => void | calls: () => void"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveAgentSessionContextFromSignals",
+          "signature": "(signals: { session_context?: AgentSessionContext; client_info?: { episode?: AgentEpisodeIdentity; }; }, env: Readonly<Record<string, string | undefined>>) => AgentSessionContext | calls: (signals: { session_context?: AgentSessionContext; client_info?: { episode?: AgentEpisodeIdentity; }; }, env: Readonly<Record<string, string | undefined>>) => AgentSessionContext"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "resolveAnnotationIndex",
@@ -9168,6 +9245,12 @@
           "kind": "function",
           "name": "resolveGuideOutputFormat",
           "signature": "(options: GuideOptions, global: GlobalOptions) => GuideOutputFormat | calls: (options: GuideOptions, global: GlobalOptions) => GuideOutputFormat"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveHistoryEpisodeGroupIdentity",
+          "signature": "(entry: HistoryEntry) => Pick<AgentEpisodeGroup, \"id\" | \"source\"> | calls: (entry: HistoryEntry) => Pick<AgentEpisodeGroup, \"id\" | \"source\">"
         },
         {
           "classification": "advanced_export",
@@ -10192,6 +10275,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "runWithAgentSessionContext",
+          "signature": "<T>(context: AgentSessionContext, callback: () => T) => T | calls: <T>(context: AgentSessionContext, callback: () => T) => T"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "runWithHarnessDetectionSignals",
           "signature": "<T>(signals: HarnessDetectionSignals, callback: () => T) => T | calls: <T>(signals: HarnessDetectionSignals, callback: () => T) => T"
         },
@@ -11196,6 +11285,12 @@
           "kind": "function",
           "name": "summarizeAgentModelProvenance",
           "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], minimumExplicitSample?: number) => AgentModelProvenanceCoverage[] | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], minimumExplicitSample?: number) => AgentModelProvenanceCoverage[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "summarizeAgentProvenance",
+          "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], dimensions?: readonly string[], minimumExplicitSample?: number) => AgentProvenanceDimensionCoverage[] | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], dimensions?: readonly string[], minimumExplicitSample?: number) => AgentProvenanceDimensionCoverage[]"
         },
         {
           "classification": "supported",
@@ -14855,13 +14950,25 @@
           "classification": "supported",
           "kind": "value",
           "name": "AGENT_PROVENANCE_DIMENSIONS",
-          "signature": "readonly [\"model\", \"effort\", \"role\"]"
+          "signature": "readonly [\"model\", \"effort\", \"role\", \"topic\"]"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "AgentClientInfo",
-          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; provenance?: Readonly<Record<string, string | undefined>>; }"
+          "signature": "export interface AgentClientInfo { name: string; version?: string; model?: string; session?: string; provenance?: Readonly<Record<string, string | undefined>>; episode?: AgentEpisodeIdentity; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentEpisodeGroup",
+          "signature": "export interface AgentEpisodeGroup { id: string; label?: string; parent_id?: string; source: \"declared\" | \"inferred\"; entries: [ HistoryEntry, ...HistoryEntry[] ]; children: AgentEpisodeGroup[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentEpisodeIdentity",
+          "signature": "export interface AgentEpisodeIdentity { id: string; label?: string; parent_id?: string; }"
         },
         {
           "classification": "supported",
@@ -14873,7 +14980,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "AgentModelSource",
-          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\";"
+          "signature": "export type AgentModelSource = \"override\" | \"environment\" | \"mcp_client\" | \"argv\" | \"host\" | \"session\";"
         },
         {
           "classification": "supported",
@@ -14890,8 +14997,26 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "AgentProvenanceDimensionCoverage",
+          "signature": "export interface AgentProvenanceDimensionCoverage extends AgentModelProvenanceCoverage { dimension: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "AgentProvenanceObservation",
           "signature": "export interface AgentProvenanceObservation { value: string; source: AgentModelSource; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "AgentSessionContext",
+          "signature": "export interface AgentSessionContext { provenance?: Readonly<Record<string, string | undefined>>; episode?: AgentEpisodeIdentity; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "agentSessionEnvironment",
+          "signature": "(context: AgentSessionContext) => Record<string, string> | calls: (context: AgentSessionContext) => Record<string, string>"
         },
         {
           "classification": "supported",
@@ -14958,6 +15083,12 @@
           "kind": "value",
           "name": "BASELINE_ITEM_FORMAT_VERSION",
           "signature": "1"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "boundAgentEpisodeIdentity",
+          "signature": "(value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined | calls: (value: unknown, strict: boolean) => AgentEpisodeIdentity | undefined"
         },
         {
           "classification": "supported",
@@ -15149,7 +15280,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DetectedAgentIdentity",
-          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; provenance?: AgentProvenance; }"
+          "signature": "export interface DetectedAgentIdentity { harness?: string; model?: string; model_source?: AgentModelSource; session?: string; instance?: string; provenance?: AgentProvenance; episode?: AgentEpisodeIdentity; }"
         },
         {
           "classification": "supported",
@@ -15267,15 +15398,21 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "groupHistoryByEpisode",
+          "signature": "(entries: readonly HistoryEntry[]) => AgentEpisodeGroup[] | calls: (entries: readonly HistoryEntry[]) => AgentEpisodeGroup[]"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "HarnessDetectionSignals",
-          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; descriptors?: readonly HarnessSignalDescriptor[]; }"
+          "signature": "export interface HarnessDetectionSignals { env?: Readonly<Record<string, string | undefined>>; argv?: readonly string[]; process_labels?: readonly string[]; client_info?: AgentClientInfo; provenance?: Readonly<Record<string, string | undefined>>; session_context?: AgentSessionContext; descriptors?: readonly HarnessSignalDescriptor[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "HarnessSignalDescriptor",
-          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; provenance_environment_keys?: Readonly<Record<string, readonly string[] | undefined>>; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
+          "signature": "export interface HarnessSignalDescriptor { harness: string; environment_keys?: readonly string[]; model_environment_keys?: readonly string[]; session_environment_keys?: readonly string[]; provenance_environment_keys?: Readonly<Record<string, readonly string[] | undefined>>; provenance_unavailable_dimensions?: readonly string[]; argv_markers?: readonly string[]; client_names?: readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -15479,7 +15616,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "supported",
@@ -15508,6 +15645,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "resolveAgentSessionContextFromSignals",
+          "signature": "(signals: { session_context?: AgentSessionContext; client_info?: { episode?: AgentEpisodeIdentity; }; }, env: Readonly<Record<string, string | undefined>>) => AgentSessionContext | calls: (signals: { session_context?: AgentSessionContext; client_info?: { episode?: AgentEpisodeIdentity; }; }, env: Readonly<Record<string, string | undefined>>) => AgentSessionContext"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "resolveAuthorIdentity",
           "signature": "(candidate: string | undefined, fallback: string | undefined, signals?: HarnessDetectionSignals) => ResolvedAuthorIdentity | calls: (candidate: string | undefined, fallback: string | undefined, signals?: HarnessDetectionSignals) => ResolvedAuthorIdentity"
         },
@@ -15516,6 +15659,12 @@
           "kind": "interface",
           "name": "ResolvedAuthorIdentity",
           "signature": "export interface ResolvedAuthorIdentity extends DetectedAgentIdentity { author: string; source: AuthorSource; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveHistoryEpisodeGroupIdentity",
+          "signature": "(entry: HistoryEntry) => Pick<AgentEpisodeGroup, \"id\" | \"source\"> | calls: (entry: HistoryEntry) => Pick<AgentEpisodeGroup, \"id\" | \"source\">"
         },
         {
           "classification": "supported",
@@ -15540,6 +15689,12 @@
           "kind": "function",
           "name": "runAction",
           "signature": "(args: PmActionInput) => Promise<unknown> | calls: (args: PmActionInput) => Promise<unknown>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "runWithAgentSessionContext",
+          "signature": "<T>(context: AgentSessionContext, callback: () => T) => T | calls: <T>(context: AgentSessionContext, callback: () => T) => T"
         },
         {
           "classification": "supported",
@@ -15612,6 +15767,12 @@
           "kind": "function",
           "name": "summarizeAgentModelProvenance",
           "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], minimumExplicitSample?: number) => AgentModelProvenanceCoverage[] | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], minimumExplicitSample?: number) => AgentModelProvenanceCoverage[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "summarizeAgentProvenance",
+          "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], dimensions?: readonly string[], minimumExplicitSample?: number) => AgentProvenanceDimensionCoverage[] | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], dimensions?: readonly string[], minimumExplicitSample?: number) => AgentProvenanceDimensionCoverage[]"
         },
         {
           "classification": "supported",
@@ -20471,7 +20632,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmSettings",
-          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+          "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
         },
         {
           "classification": "advanced_export",

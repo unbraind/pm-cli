@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Episode identity: a stable, labelled, nestable episode key that survives process, surface and harness boundaries so trajectory grouping and fleet aggregation have a join key ([pm-oqo9l2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oqo9l2.toon))
+
 ### Fixed
 
+- Session-topic provenance has no descriptor keys on any harness, and effort/role are wired for only claude-code and codex, so most fleet history records harness and model but nothing about the work's shape ([pm-rbg1qo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rbg1qo.toon))
+- Explicit-unavailable provenance is recorded for the model dimension only, so effort and role absence is permanently indistinguishable from a legacy entry ([pm-9wbiye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9wbiye.toon))
 - GH-851: compare init discovery roots by filesystem identity ([pm-noq46i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-noq46i.toon))
 - GH-847: tighten managed built-in static SDK contracts and author guidance ([pm-ka6m65](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ka6m65.toon))
 - The MCP server never receives the harness provenance environment, so one agent session writes permanently divergent identity records depending on which surface it used ([pm-1zhfls](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1zhfls.toon))

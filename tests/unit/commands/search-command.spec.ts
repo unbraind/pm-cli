@@ -2247,7 +2247,7 @@ describe("runSearch", () => {
     readSettingsMock
       .mockResolvedValueOnce({
         search: {
-          score_threshold: 20,
+          score_threshold: 100,
         },
       } as unknown as { id_prefix: string })
       .mockResolvedValueOnce(semanticSettings)
@@ -2302,7 +2302,7 @@ describe("runSearch", () => {
       expect(keywordResult.items.map((entry) => entry.item.id)).toEqual([
         "pm-threshold-strong",
       ]);
-      expect(keywordResult.filters).toMatchObject({ score_threshold: 20 });
+      expect(keywordResult.filters).toMatchObject({ score_threshold: 100 });
 
       const semanticResult = await runSearch(
         "tok",
@@ -2927,11 +2927,43 @@ describe("runSearch", () => {
     expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
   });
 
+  it("keeps a title owner above an omnibus item with repeated annotation terms", async () => {
+    const owner = makeItemMetadata({
+      id: "pm-owner",
+      title: "alpha beta gamma",
+    });
+    const omnibus = makeItemMetadata({
+      id: "pm-omnibus",
+      title: "Programme rollup",
+      comments: [
+        {
+          author: "agent",
+          created_at: "2026-02-18T00:00:00.000Z",
+          text: Array.from({ length: 50 }, () => "alpha beta gamma").join(" "),
+        },
+      ],
+    });
+    listAllItemMetadataMock.mockResolvedValue([omnibus, owner]);
+    readFileMock.mockImplementation(async (targetPath) =>
+      serializeDocument(
+        targetPath.endsWith("pm-owner.md") ? owner : omnibus,
+        "unrelated body",
+      ),
+    );
+
+    const result = await runSearch(
+      "alpha beta gamma",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(result.items[0]?.item.id).toBe("pm-owner");
+  });
+
   it("resolves search tuning parameters from settings", async () => {
     const { resolveSearchTuning } =
       await import("../../../src/cli/commands/search.js");
     const defaultTuning = resolveSearchTuning({});
-    expect(defaultTuning.title_weight).toBe(8);
+    expect(defaultTuning.title_weight).toBe(48);
 
     const customTuning = resolveSearchTuning({
       search: {

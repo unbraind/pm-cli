@@ -47,6 +47,7 @@ pm guide release --json
 - [Self-Describing Context Contracts](SELF_DESCRIBING_CONTEXT_CONTRACTS.md) - intent-scoped reads, semantic flag invocation metadata, visibility parity, and generated error vocabulary.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.
 - [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.
+- [SDK Agent Session and Episode Context](SDK_AGENT_SESSION_CONTEXT.md) - inherited role/topic context, cross-process episode identity, and deterministic history grouping.
 - [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md) - durable mutation events, bounded duplicate governance, and scale-safe package primitives.
 - [SDK Context Integrity Primitives](SDK_CONTEXT_INTEGRITY_PRIMITIVES.md) - batch duplicate discovery, structured errors, Plan evidence/lifecycle, sparse settings, tombstones, linked-test output, relocation diagnostics, and scoped output services.
 - [Reproducible Workspaces and Snapshots](REPRODUCIBLE_WORKSPACES.md) - deterministic SDK recipes and content-addressed authoritative tracker restore points.

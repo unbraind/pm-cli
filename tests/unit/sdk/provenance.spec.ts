@@ -1,10 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
+  AGENT_PROVENANCE_DIMENSIONS,
+  BUILTIN_HARNESS_SIGNAL_DESCRIPTORS,
+} from "../../../src/core/shared/author.js";
+import {
   analyzeAgentProvenanceDescriptorCoverage,
   summarizeAgentModelProvenance,
 } from "../../../src/sdk/provenance.js";
 
 describe("agent provenance SDK analysis", () => {
+  it("declares a signal or an explicit no-signal disposition for every built-in dimension", () => {
+    for (const descriptor of BUILTIN_HARNESS_SIGNAL_DESCRIPTORS) {
+      for (const dimension of AGENT_PROVENANCE_DIMENSIONS) {
+        const keys =
+          dimension === "model"
+            ? descriptor.model_environment_keys
+            : descriptor.provenance_environment_keys?.[dimension];
+        expect(
+          (keys?.length ?? 0) > 0 ||
+            descriptor.provenance_unavailable_dimensions?.includes(dimension),
+          `${descriptor.harness}:${dimension}`,
+        ).toBe(true);
+      }
+    }
+  });
+
   it("derives built-in dimension conformance and supports a negative control", () => {
     expect(analyzeAgentProvenanceDescriptorCoverage()).toEqual([
       {
@@ -29,6 +49,11 @@ describe("agent provenance SDK analysis", () => {
         dimension: "role",
         harnesses: ["codex"],
         covered: true,
+      },
+      {
+        dimension: "topic",
+        harnesses: [],
+        covered: false,
       },
     ]);
     expect(

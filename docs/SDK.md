@@ -1347,6 +1347,11 @@ mode, tracker root, optional workspace root, discovery provenance, invocation di
 `next_steps` command carries `--pm-path` so embedded tools can display runnable
 recovery without depending on the caller's current directory.
 
+Use [SDK Agent Session and Episode Context](SDK_AGENT_SESSION_CONTEXT.md) to
+declare role/topic provenance once, propagate it across SDK, CLI-child, and MCP
+boundaries, and reconstruct deterministic nested work episodes from immutable
+history.
+
 Package install results include `details.verification`, a light doctor-equivalent
 projection of activation, registered commands/actions/item types, target tracker
 root, and health verdict. Treat `ok: false` or `verification.status: "degraded"`

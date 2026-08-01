@@ -13,6 +13,7 @@ export {
   renderPmCommandVisibilityMarkdown,
   resolvePmCommandVisibilityTier,
 } from "./agent-capability-contracts.js";
+export * from "./agent-session-context.js";
 export type {
   PmCommandVisibilityContract,
   PmCommandVisibilityTier,

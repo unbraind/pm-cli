@@ -283,10 +283,17 @@ pm search "release docs" --mode keyword --limit 10
 `search.tuning` controls deterministic lexical weighting in keyword mode and the lexical component of hybrid mode. Default runtime weights:
 
 - `title_exact_bonus=10`
-- `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`
+- `title_weight=48`, `description_weight=5`, `tags_weight=6`, `status_weight=2`
 - `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`
 - `reminders_weight=2`, `events_weight=2`
 - `dependencies_weight=3`, `linked_content_weight=1`
+
+The title is the identity-bearing summary and therefore carries substantially
+more weight than append-only annotations. This prevents a long-lived roadmap or
+rollup item from outranking the item that owns the queried concept merely
+because the rollup repeats the same terms across many comments. The default is
+measured by the real-corpus `pm eval` gate; projects can still override every
+weight through `search.tuning`.
 
 Semantic and hybrid search can use built-in OpenAI-compatible or Ollama providers plus vector stores such as Qdrant or LanceDB. If local Ollama is available and semantic settings are unset, `pm` can resolve local defaults automatically.
 
