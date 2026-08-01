@@ -15,6 +15,7 @@ function normalizeMockPath(value: unknown): string {
 }
 
 type SqModule = {
+  PRIVATE_SDK_IMPORT_ALLOWLIST: ReadonlySet<string>;
   walkFiles: (
     dir: string,
     matcher: (p: string) => boolean,
@@ -1389,22 +1390,20 @@ describe("static-quality-gate", () => {
         },
       ]);
 
-      const allowlistedPrivatePaths = [
-        "src/sdk/cli-contracts/registration-helpers.ts",
-        "src/sdk/cli-contracts/runtime-contracts.ts",
-        "src/sdk/extension/describe.ts",
-        "src/sdk/extension/scaffold.ts",
-        "src/sdk/extension/shared.ts",
-        "src/sdk/lifecycle/lifecycle-transitions.ts",
-        "src/sdk/schema.ts",
-      ];
-      expect(
-        mod.checkSdkImportBoundary([
-          ...files,
-          ...allowlistedPrivatePaths.map((entry) => `${root}/${entry}`),
-        ]),
-      ).toMatchObject({
+      const allowlistedPrivatePaths = [...mod.PRIVATE_SDK_IMPORT_ALLOWLIST];
+      const fullRepositoryReport = mod.checkSdkImportBoundary();
+      expect(fullRepositoryReport.stale_private_sdk_allowlist).toEqual(
+        [...allowlistedPrivatePaths].sort((left, right) =>
+          left.localeCompare(right),
+        ),
+      );
+      const boundaryReport = mod.checkSdkImportBoundary([
+        ...files,
+        ...allowlistedPrivatePaths.map((entry) => `${root}/${entry}`),
+      ]);
+      expect(boundaryReport).toMatchObject({
         ok: false,
+        private_sdk_allowlist_count: allowlistedPrivatePaths.length,
         new_private_sdk_imports: [
           {
             source: "src/cli/main.ts",
@@ -1419,6 +1418,9 @@ describe("static-quality-gate", () => {
           (left, right) => left.localeCompare(right),
         ),
       });
+      expect(boundaryReport.stale_private_sdk_allowlist).toHaveLength(
+        boundaryReport.private_sdk_allowlist_count,
+      );
     });
 
     it("checkSdkImportBoundary fails closed on computed dynamic imports and require calls", async () => {

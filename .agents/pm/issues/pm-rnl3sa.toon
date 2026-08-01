@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[3]: agent-ergonomics,dispatch,release
 created_at: "2026-08-01T13:02:41.297Z"
-updated_at: "2026-08-01T18:57:04.350Z"
-closed_at: "2026-08-01T18:57:03.536Z"
-completed_at: "2026-08-01T18:57:03.536Z"
+updated_at: "2026-08-01T19:38:14.927Z"
+closed_at: "2026-08-01T19:38:13.631Z"
+completed_at: "2026-08-01T19:38:13.631Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "npx --yes @unbrained/pm-cli@<version> pm init succeeds in a clean workspace and so does the bunx equivalent; A leading positional equal to any declared bin name of this package is absorbed before subcommand resolution, so pm pm init behaves as pm init; The pm pseudo-command no longer appears in rendered root help, and no help surface invites a form the dispatcher refuses; verify-published-release.mjs gains required npx and bunx legs using the two-token short form, and a negative control proves the leg fails when dispatch is broken; No leg of the published-artifact verification asserts only on a flag that short-circuits before dispatch"
@@ -25,10 +25,12 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-u9d0,implements,"2026-08-01T13:02:41.297Z","harness:claude-code","cli:create:dep",detected
   pm-ygli86,related,"2026-08-01T13:02:41.297Z","harness:claude-code","cli:create:dep",detected
   pm-pbyu,related,"2026-08-01T13:10:36.161Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-08-01T18:08:09.834Z","harness:codex","Implementation evidence: bootstrap normalization absorbs only leading pm or pm-cli executable tokens; published verification now exercises disambiguated and package-default npx/bunx commands plus missing-command controls. Focused bootstrap and verifier tests passed."
   "2026-08-01T18:19:24.077Z","harness:codex","Manual packed-consumer evidence: independent npm and Bun install roots each resolved node_modules/@unbrained/pm-cli/dist/cli.js, executed the compiled shim with leading pm and pm-cli tokens, returned contracts summary, and rejected pm-definitely-missing with exit 2. Registry package-default npx/bunx legs remain release-time checks because local tarball package-default syntax is not supported by those executors."
   "2026-08-01T18:54:34.753Z","harness:codex","Verification evidence: bootstrap/verifier regressions, the full 6,673-test suite, exact 100/100/100/100 coverage, lint/static gates, type checks, docs/skills, secret scan, and pnpm audit all passed. Root help contains no pm pseudo-command entry; pm appears only as the root name and valid example."
+  "2026-08-01T19:12:14.862Z","harness:codex","Review finding accepted: add alias-before-legacy and repeated-alias ordering controls to pin single-token normalization semantics."
+  "2026-08-01T19:38:05.961Z","harness:codex","Review-resolution evidence: ordering tests now prove a self-bin alias is absorbed before legacy extension normalization and repeated aliases consume only one executable token. Bootstrap regressions and the complete 6,674-test suite pass."
 files[4]{path,scope,note}:
   scripts/release/verify-published-release.mjs,project,npx and bunx package-default consumer proof
   src/sdk/cli-bootstrap.ts,project,package-runner executable token normalization
@@ -40,5 +42,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msaqeq5c-jvb3jg,test,passed,"2026-08-01T18:55:27.299Z","2026-08-01T18:55:34.368Z","2026-08-01T18:55:34.368Z",1,0,0
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,explicit and package-default release verification
-close_reason: Implemented self-bin normalization and package-default release-verifier legs; independent npm/Bun packed consumers and all gates pass.
+close_reason: "Implemented and verified package-runner self-bin normalization, consumer checks, and ordering regressions."
 body: ""

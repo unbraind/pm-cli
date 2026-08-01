@@ -545,6 +545,28 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   policy: { type: "string" },
 };
 
+/** Per-action property overrides for parameters whose transport shape differs from their shared default. */
+export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
+  Record<PmToolAction, Record<string, unknown>>
+> = {
+  events: {
+    since: { type: "string", minLength: 1 },
+    type: {
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+    },
+    author: {
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+    },
+    item: {
+      anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+    },
+    limit: { type: "integer", minimum: 0, maximum: 1000 },
+  },
+  remind: {
+    at: { type: "string", minLength: 1 },
+  },
+};
+
 /** Supported values accepted by the plan subcommand contract. */
 export const PLAN_SUBCOMMAND_VALUES = [
   "create",
@@ -1759,6 +1781,36 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     Record<string, { description: string; examples?: unknown[] }>
   >
 > = {
+  events: {
+    since: {
+      description:
+        "Durable event cursor returned as next_cursor, or an inclusive event timestamp.",
+      examples: ["eyJmaW5nZXJwcmludCI6Ii4uLiJ9", "2026-08-01T00:00:00.000Z"],
+    },
+    type: {
+      description: "Mutation event type filter, supplied once or as a list.",
+      examples: ["create", ["create", "update"]],
+    },
+    author: {
+      description: "Mutation author filter, supplied once or as a list.",
+      examples: ["agent-a", ["agent-a", "agent-b"]],
+    },
+    item: {
+      description: "Tracked item id filter, supplied once or as a list.",
+      examples: ["pm-a1b2", ["pm-a1b2", "pm-c3d4"]],
+    },
+    limit: {
+      description: "Maximum mutation events returned, from 0 through 1000.",
+      examples: [0, 100],
+    },
+  },
+  remind: {
+    at: {
+      description:
+        "Reminder time as an ISO 8601 timestamp or supported relative expression.",
+      examples: ["2026-08-02T09:00:00+02:00", "tomorrow 09:00"],
+    },
+  },
   deps: {
     tokenBudget: {
       description: "Maximum estimated output tokens for deps --format context.",

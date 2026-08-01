@@ -23,6 +23,7 @@ import {
 import {
   PM_TOOL_PARAMETER_PROPERTIES,
   PM_TOOL_PARAMETER_METADATA,
+  PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES,
   PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA,
   PLAN_ACTION_PARAMETER_PROPERTIES,
   PLAN_ACTION_PARAMETER_METADATA,
@@ -413,6 +414,26 @@ function managedLifecycleSchemaContracts(
   };
 }
 
+const SCHEDULING_ACTION_SCHEMA_CONTRACT: PmActionSchemaContract = {
+  required: ["title"],
+  optional: [
+    "start",
+    "duration",
+    "end",
+    "location",
+    "timezone",
+    "allDay",
+    "parent",
+    "allowMissingParent",
+    "tags",
+    "priority",
+    "body",
+    "description",
+    "author",
+    "message",
+  ],
+};
+
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
   {
     init: {
@@ -565,44 +586,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "lockWaitMs",
       ],
     },
-    meet: {
-      required: ["title"],
-      optional: [
-        "start",
-        "duration",
-        "end",
-        "location",
-        "timezone",
-        "allDay",
-        "parent",
-        "allowMissingParent",
-        "tags",
-        "priority",
-        "body",
-        "description",
-        "author",
-        "message",
-      ],
-    },
-    event: {
-      required: ["title"],
-      optional: [
-        "start",
-        "duration",
-        "end",
-        "location",
-        "timezone",
-        "allDay",
-        "parent",
-        "allowMissingParent",
-        "tags",
-        "priority",
-        "body",
-        "description",
-        "author",
-        "message",
-      ],
-    },
+    meet: SCHEDULING_ACTION_SCHEMA_CONTRACT,
+    event: SCHEDULING_ACTION_SCHEMA_CONTRACT,
     remind: {
       required: ["title"],
       optional: [
@@ -1216,6 +1201,13 @@ function actionScopedToolParameterDefinition(
   action: PmToolAction,
   key: string,
 ): unknown {
+  const actionProperties = PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES[action];
+  if (
+    actionProperties &&
+    Object.prototype.hasOwnProperty.call(actionProperties, key)
+  ) {
+    return actionProperties[key];
+  }
   if (
     action === "plan" &&
     Object.prototype.hasOwnProperty.call(PLAN_ACTION_PARAMETER_PROPERTIES, key)

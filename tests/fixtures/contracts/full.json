@@ -16429,8 +16429,19 @@
             "type": "array"
           },
           "reorderTo": {
-            "description": "New order for reorder-step.",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "New integer order for reorder-step.",
+            "examples": [
+              1,
+              "2"
+            ]
           },
           "reporter": {
             "description": "Reporter.",
@@ -29652,8 +29663,25 @@
             "description": "Tool action to execute."
           },
           "author": {
-            "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Mutation author filter, supplied once or as a list.",
+            "examples": [
+              "agent-a",
+              [
+                "agent-a",
+                "agent-b"
+              ]
+            ]
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -29671,7 +29699,14 @@
                 "type": "array"
               }
             ],
-            "description": "Item."
+            "description": "Tracked item id filter, supplied once or as a list.",
+            "examples": [
+              "pm-a1b2",
+              [
+                "pm-a1b2",
+                "pm-c3d4"
+              ]
+            ]
           },
           "json": {
             "default": true,
@@ -29679,19 +29714,14 @@
             "type": "boolean"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "number"
-              }
-            ],
-            "description": "Maximum number of rows returned by the selected action.",
+            "description": "Maximum mutation events returned, from 0 through 1000.",
             "examples": [
-              10,
-              "25"
-            ]
+              0,
+              100
+            ],
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "integer"
           },
           "noExtensions": {
             "description": "Disable extension loading for this invocation.",
@@ -29725,11 +29755,12 @@
             "type": "boolean"
           },
           "since": {
-            "description": "Inclusive ISO 8601 creation timestamp lower bound for duplicate discovery.",
+            "description": "Durable event cursor returned as next_cursor, or an inclusive event timestamp.",
             "examples": [
-              "2026-01-01T00:00:00.000Z"
+              "eyJmaW5nZXJwcmludCI6Ii4uLiJ9",
+              "2026-08-01T00:00:00.000Z"
             ],
-            "format": "date-time",
+            "minLength": 1,
             "type": "string"
           },
           "timeoutMs": {
@@ -29740,12 +29771,25 @@
             "type": "number"
           },
           "type": {
-            "description": "Item type name from the active runtime type registry.",
-            "examples": [
-              "Task",
-              "Feature"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
             ],
-            "type": "string"
+            "description": "Mutation event type filter, supplied once or as a list.",
+            "examples": [
+              "create",
+              [
+                "create",
+                "update"
+              ]
+            ]
           }
         },
         "required": [
@@ -37141,11 +37185,12 @@
             "type": "boolean"
           },
           "at": {
-            "description": "Read-only historical projection boundary as an item version or ISO timestamp.",
+            "description": "Reminder time as an ISO 8601 timestamp or supported relative expression.",
             "examples": [
-              "3",
-              "2026-07-01T12:00:00.000Z"
+              "2026-08-02T09:00:00+02:00",
+              "tomorrow 09:00"
             ],
+            "minLength": 1,
             "type": "string"
           },
           "author": {

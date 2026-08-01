@@ -767,7 +767,6 @@ const RAW_TOOLS: ToolDefinition[] = [
         type: "string",
         description: "Step id or order for step lifecycle subcommands.",
       },
-      reorderTo: { type: "number", description: "New order for reorder-step." },
       options: {
         type: "object",
         description:

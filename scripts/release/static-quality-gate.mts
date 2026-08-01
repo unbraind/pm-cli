@@ -1056,7 +1056,8 @@ function importEdgeKey(edge) {
 // Ratchet for presentation-layer imports that are not yet reachable through a
 // published SDK export declaration. Entries must only be removed as modules
 // join the public SDK surface; stale entries fail the gate.
-const PRIVATE_SDK_IMPORT_ALLOWLIST = new Set([
+/** Temporary private SDK modules still imported by presentation layers. */
+export const PRIVATE_SDK_IMPORT_ALLOWLIST = new Set([
   "src/sdk/cli-contracts/registration-helpers.ts",
   "src/sdk/cli-contracts/runtime-contracts.ts",
   "src/sdk/extension/describe.ts",
@@ -1071,7 +1072,9 @@ export function collectPublicSdkExportClosure(
   files,
   entryPaths = ["src/sdk/index.ts", ...collectPackageExportSourceEntries()],
 ) {
-  const sourceFiles = new Set(files.filter((file) => existsSync(file)));
+  const sourceFiles = new Set(
+    files.filter((file) => existsSync(file)).map((file) => path.resolve(file)),
+  );
   const pending = entryPaths
     .map((entry) => path.resolve(repoRoot, entry))
     .filter((entry) => sourceFiles.has(entry));
@@ -1159,9 +1162,11 @@ export function collectPrivateSdkImportEdges(
   );
 }
 
-export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
-  const boundarySourceFiles = collectSdkBoundarySourceFiles(files);
-  const boundaryAndSdkSourceFiles = files.filter((absolutePath) => {
+export function checkSdkImportBoundary(files) {
+  const scanningEntireRepository = files === undefined;
+  const selectedFiles = files ?? collectTypeScriptFiles();
+  const boundarySourceFiles = collectSdkBoundarySourceFiles(selectedFiles);
+  const boundaryAndSdkSourceFiles = selectedFiles.filter((absolutePath) => {
     const relativePath = relativeToRepo(absolutePath);
     return (
       isSdkBoundarySource(relativePath) || isSdkOwnershipSource(relativePath)
@@ -1173,23 +1178,22 @@ export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
     collectUnsupportedDynamicImportExpressionsFromBoundaryFiles(
       boundaryAndSdkSourceFiles,
     );
-  const sdkToCliImports = collectSdkToCliImportEdges(files);
-  const privateSdkImports = collectPrivateSdkImportEdges(files);
+  const sdkToCliImports = collectSdkToCliImportEdges(selectedFiles);
+  const privateSdkImports = collectPrivateSdkImportEdges(selectedFiles);
   const privateSdkTargets = new Set(
     privateSdkImports.map(({ import_path }) => import_path),
   );
   const newPrivateSdkImports = privateSdkImports.filter(
     ({ import_path }) => !PRIVATE_SDK_IMPORT_ALLOWLIST.has(import_path),
   );
-  const scannedPaths = new Set(files.map(relativeToRepo));
-  const scansCompleteAllowlist = [...PRIVATE_SDK_IMPORT_ALLOWLIST].every(
-    (entry) => scannedPaths.has(entry),
-  );
-  const stalePrivateSdkAllowlist = scansCompleteAllowlist
-    ? [...PRIVATE_SDK_IMPORT_ALLOWLIST]
-        .filter((entry) => !privateSdkTargets.has(entry))
-        .sort((left, right) => left.localeCompare(right))
-    : [];
+  const scannedPaths = new Set(selectedFiles.map(relativeToRepo));
+  const stalePrivateSdkAllowlist = [...PRIVATE_SDK_IMPORT_ALLOWLIST]
+    .filter(
+      (entry) =>
+        !privateSdkTargets.has(entry) &&
+        (scanningEntireRepository || scannedPaths.has(entry)),
+    )
+    .sort((left, right) => left.localeCompare(right));
   return {
     ok:
       actualEdges.length === 0 &&

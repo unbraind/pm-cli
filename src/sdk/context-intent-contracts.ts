@@ -413,7 +413,6 @@ export function applyContextIntentProjection(
   options: Record<string, unknown>,
 ): Record<string, unknown> {
   const tokenBudget = options.tokenBudget ?? options.token_budget;
-  const explicitTokenBudget = tokenBudget !== undefined;
   if (typeof options.for !== "string") {
     if (
       tokenBudget !== undefined &&
@@ -445,6 +444,8 @@ export function applyContextIntentProjection(
     return projected;
   }
   const contract = resolveContextIntentContract(command, options.for)!;
+  const explicitTokenBudget =
+    parsePositiveIntentTokenBudget(tokenBudget) !== undefined;
   const projected = { ...options };
   if (projected.tokenBudget === undefined && tokenBudget !== undefined) {
     projected.tokenBudget = tokenBudget;
@@ -491,17 +492,22 @@ function compactContextIntentValue(value: unknown): unknown {
     : value;
 }
 
-function resolveIntentTokenBudget(
-  value: unknown,
-  declaredBudget: number,
-): number {
+function parsePositiveIntentTokenBudget(value: unknown): number | undefined {
   const parsed =
     typeof value === "number"
       ? value
       : typeof value === "string" && /^\d+$/u.test(value.trim())
         ? Number(value)
         : Number.NaN;
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) return declaredBudget;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function resolveIntentTokenBudget(
+  value: unknown,
+  declaredBudget: number,
+): number {
+  const parsed = parsePositiveIntentTokenBudget(value);
+  if (parsed === undefined) return declaredBudget;
   if (parsed < MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET) {
     throw new PmCliError(
       `Context intent token budget must be at least ${MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET}`,
@@ -762,7 +768,9 @@ export function attachContextIntentReceipt<
       Math.floor((receipt.token_budget - overhead) / 16),
     );
     const explicitTokenBudget =
-      options.tokenBudget !== undefined || options.token_budget !== undefined;
+      parsePositiveIntentTokenBudget(
+        options.tokenBudget ?? options.token_budget,
+      ) !== undefined;
     const budgetDerivedLimit = explicitTokenBudget
       ? calculatedLimit
       : Math.min(100, calculatedLimit);

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[2]: agent-ergonomics,token-efficiency
 created_at: "2026-08-01T13:12:40.881Z"
-updated_at: "2026-08-01T18:57:02.649Z"
-closed_at: "2026-08-01T18:57:01.747Z"
-completed_at: "2026-08-01T18:57:01.747Z"
+updated_at: "2026-08-01T19:38:12.340Z"
+closed_at: "2026-08-01T19:38:11.033Z"
+completed_at: "2026-08-01T19:38:11.033Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "An explicitly supplied token budget raises the derived row limit above the default page cap, because the explicit budget is the more specific instruction; budget_derived_limit is emitted on every budgeted response, never omitted, and carries the reason it took its value including clamped-by-page-cap; When the budget is not the binding constraint the envelope names the constraint that is; A regression test asserts that raising the budget across the page-cap boundary changes the row count, with a negative control at a budget below the floor"
@@ -26,9 +26,11 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-sf31yl,related,"2026-08-01T13:12:40.881Z","harness:claude-code","cli:create:dep",detected
   pm-t2t709,related,"2026-08-01T13:12:40.881Z","harness:claude-code","cli:create:dep",detected
   pm-yekkvt,related,"2026-08-01T13:12:40.881Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-01T18:08:09.124Z","harness:codex","Implementation evidence: explicit token budgets now bypass default list/search/context page caps, emit budget_derived_limit plus binding_constraint and limit_reason, and retain cursor-safe compaction. High-budget and explicit-limit regression tests passed."
   "2026-08-01T18:54:33.991Z","harness:codex","Verification evidence: token-budget and context-intent calibration gates passed across 28 surfaces and five intents, including full cursor walks; full suite passed 6,673 tests and exact 100/100/100/100 coverage."
+  "2026-08-01T19:12:12.505Z","harness:codex","Review finding accepted: option presence currently marks invalid budget overrides explicit. Reopened to derive explicitness from the validated positive-integer override and add negative controls."
+  "2026-08-01T19:38:05.038Z","harness:codex","Review-resolution evidence: an explicit intent budget is now recognized only from a syntactically valid positive integer; malformed camelCase and snake_case overrides fall back to the declared budget and default cap, while valid low legacy next/context budgets retain their existing projection behavior. Focused intent tests and the complete suite pass."
 files[3]{path,scope,note}:
   sdk/public-surface.json,project,optional intent receipt diagnostics compatibility snapshot
   src/sdk/context-intent-contracts.ts,project,explicit budget-derived limits and binding diagnostics
@@ -39,5 +41,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msaqek7j-ywnqow,test,passed,"2026-08-01T18:55:20.048Z","2026-08-01T18:55:26.671Z","2026-08-01T18:55:26.671Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK_ACTION_CONFORMANCE.md,project,intent budget diagnostics contract
-close_reason: "Implemented explicit-budget upward scaling and binding diagnostics; calibration, linked, full-suite, and exact coverage gates pass."
+close_reason: "Implemented and verified explicit context-budget scaling, diagnostics, and malformed-override fallback semantics."
 body: ""

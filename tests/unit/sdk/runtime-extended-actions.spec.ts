@@ -96,7 +96,7 @@ describe("runtime extended action adapters", () => {
           type: ["create", "update"],
           author: "agent",
           item: ["pm-a"],
-          limit: 12,
+          limit: "12",
           full: true,
         },
       ),

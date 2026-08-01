@@ -82,9 +82,9 @@ export function runRuntimeEventsAction(
     author: stringList(input.author),
     item: stringList(input.item),
     limit:
-      typeof input.limit === "number"
-        ? parseRuntimeInteger(input.limit, "limit")
-        : undefined,
+      input.limit === undefined
+        ? undefined
+        : parseRuntimeInteger(input.limit, "limit"),
     full: input.full === true,
   });
 }

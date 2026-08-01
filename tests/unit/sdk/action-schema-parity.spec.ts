@@ -36,7 +36,21 @@ describe("action-scoped MCP schema parity", () => {
         ["create"],
         {},
       ),
-    ).toMatchObject({ missing_cli_actions: ["synthetic-command"] });
+    ).toEqual({
+      missing_cli_actions: ["synthetic-command"],
+      waived_cli_actions: [],
+      stale_waivers: [],
+    });
+    expect(
+      analyzePmToolActionParity(["create", "waived-command"], ["create"], {
+        "waived-command": "transport-only namespace",
+        stale: "removed",
+      }),
+    ).toEqual({
+      missing_cli_actions: [],
+      waived_cli_actions: ["waived-command"],
+      stale_waivers: ["stale"],
+    });
   });
 
   it("derives complete SDK dispatch and parameter coverage for every public action", () => {

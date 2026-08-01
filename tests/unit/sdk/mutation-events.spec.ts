@@ -172,7 +172,7 @@ describe("SDK mutation event stream", () => {
         }),
       ).resolves.toMatchObject({
         structuredContent: {
-          result: { count: 3 },
+          result: { count: 1 },
         },
       });
       await expect(

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:contracts","area:mcp",conformance-gap,multi-agent
 created_at: "2026-07-30T09:14:08.293Z"
-updated_at: "2026-08-01T18:58:28.617Z"
-closed_at: "2026-08-01T18:57:00.070Z"
-completed_at: "2026-08-01T18:57:00.070Z"
+updated_at: "2026-08-01T19:38:09.945Z"
+closed_at: "2026-08-01T19:38:08.943Z"
+completed_at: "2026-08-01T19:38:08.943Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "One contract table is the single source for the CLI command set, the MCP narrow-tool map and the pm_run action enum, so no surface can declare a spelling the others do not know; a parity gate enumerates all three and fails the build on any difference in either direction, with an explicit declared-waiver list for anything intentionally CLI-only; merge, workspace snapshot and eval are reachable from MCP so an MCP-only agent can install the merge driver, reconcile after a merge, snapshot and restore the workspace and run the retrieval eval; the Meeting, Event and Reminder creation paths are reachable from MCP or the calendar sugar is declared as CLI-only in the waiver list with the reason recorded; the flattened extension and package action spellings are either contracted CLI names or generated from the nested contract rather than hand-listed in the MCP enum"
@@ -34,11 +34,13 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-lwmstb,related,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
   pm-pww8ax,related,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
   pm-xwah,discovered_from,"2026-07-30T09:14:29.371Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-01T18:08:07.738Z","harness:codex","Implementation evidence: PM_TOOL_ACTIONS now derives from the CLI vocabulary plus three reasoned presentation waivers; extension/package aliases share one generated verb table; MCP narrow tools use the schema-owned map; eval, events, merge, workspace, meet, event, and remind have native SDK handlers. Focused parity/runtime tests passed."
   "2026-08-01T18:19:16.624Z","harness:codex","Manual compiled-SDK acceptance in an isolated git workspace passed: init, meet, remind, mutation events, named workspace snapshot/list, and merge-install dry-run. Packed consumers installed independently with npm and Bun resolved their own dist/cli.js, accepted leading pm/pm-cli tokens, and rejected an unknown leading token with exit 2."
   "2026-08-01T18:54:33.298Z","harness:codex","Verification evidence: full action bundle passed lint/static gates, type checks, docs/skills, secret scan, pnpm audit (no known vulnerabilities), 414 test files/6,673 tests, and exact 100/100/100/100 coverage. GitHub open-issue inventory found every issue already has a pm-item link comment."
   "2026-08-01T18:58:28.617Z","harness:codex","Changelog evidence: pm-changelog 2026.8.1 generated CHANGELOG.md from the closed tracker state and changelog:pm:check reported unchanged."
+  "2026-08-01T19:12:10.131Z","harness:codex","Review findings accepted for scheduling schema deduplication, event descriptor parity, plan reorder input parity, reminder-time documentation, numeric event limits, and complete parity disposition tests."
+  "2026-08-01T19:38:04.171Z","harness:codex","Review-resolution evidence: deduplicated scheduling schemas, aligned event cursor/filter/limit descriptors, restored canonical plan reorder typing, added reminder-specific time metadata, accepted numeric-string event limits, and strengthened complete missing/waived/stale parity controls. Generated contracts are current; full coverage is exact 100/100/100/100."
 files[19]{path,scope,note}:
   sdk/public-surface.json,project,reviewed additive action and SDK export surface
   src/cli/commands/scheduling-shortcuts.ts,project,CLI compatibility re-export for SDK-owned scheduling
@@ -69,5 +71,5 @@ docs[3]{path,scope,note}:
   CHANGELOG.md,project,package-owned generated release history for the closed conformance bundle
   docs/README.md,project,SDK conformance documentation index
   docs/SDK_ACTION_CONFORMANCE.md,project,CLI SDK MCP conformance model
-close_reason: "Implemented the derived action vocabulary and native SDK/MCP adapters; focused, manual, full-suite, static, security, and coverage gates pass."
+close_reason: "Implemented and verified unified CLI/SDK/MCP actions, native extended runtime adapters, and strict action-specific schemas."
 body: ""

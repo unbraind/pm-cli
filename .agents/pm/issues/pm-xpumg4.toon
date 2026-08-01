@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[3]: architecture,ci-gates,sdk-first
 created_at: "2026-08-01T13:05:16.303Z"
-updated_at: "2026-08-01T18:56:59.182Z"
-closed_at: "2026-08-01T18:56:58.422Z"
-completed_at: "2026-08-01T18:56:58.422Z"
+updated_at: "2026-08-01T19:38:07.849Z"
+closed_at: "2026-08-01T19:38:06.947Z"
+completed_at: "2026-08-01T19:38:06.947Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "The static quality gate denies any src/cli or src/mcp import of an SDK module outside the transitive public export closure, seeded with a shrinking allowlist of the current ten; A negative control proves the new rule fails when a private SDK import is introduced; createExtensionCommandSdk, isRuntimeRecord and resolveStartTaskInProgressStatus are reachable from a public entry point or their consumers are relocated; The public surface snapshot and the consumer scan are joined by one check so the published surface and the consumed surface are compared rather than measured separately; The allowlist count is reported in the gate output so the ratchet direction is observable release over release"
@@ -26,9 +26,11 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-rtn5h6,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-usfg,implements,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
   pm-w89s,related,"2026-08-01T13:05:16.303Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-01T18:08:08.421Z","harness:codex","Implementation evidence: static quality now computes the published SDK export-declaration closure, rejects new CLI/MCP imports outside it, reports a seven-module shrinking allowlist, and fails stale entries. createExtensionCommandSdk, isRuntimeRecord, and resolveStartTaskInProgressStatus are public SDK exports. Negative-control tests passed."
   "2026-08-01T18:54:32.598Z","harness:codex","Verification evidence: repo-wide lint and static quality passed with zero duplicate chunks, 100% source/export/member docstrings, no new or stale private-SDK boundary entries, and exact 100/100/100/100 coverage. Full suite: 414 files, 6,673 tests."
+  "2026-08-01T19:12:07.534Z","harness:codex","Review finding: Windows path identity breaks the export-closure fixture, and the global stale-allowlist completeness switch can suppress all stale entries. Reopened for cross-platform canonicalization and per-entry full/partial scan semantics."
+  "2026-08-01T19:38:03.228Z","harness:codex","Review-resolution evidence: canonicalized export-closure paths for Windows and replaced the global stale-allowlist switch with per-entry full/partial scan semantics. The exact CI shard now passes; repository-wide lint/static gates and 6,674 tests pass at exact 100/100/100/100 coverage."
 files[4]{path,scope,note}:
   scripts/release/static-quality-gate.mts,project,public SDK export-closure boundary ratchet
   sdk/public-surface.json,project,public export closure consumer surface proof
@@ -40,5 +42,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msaqdtpk-unb9l4,test,passed,"2026-08-01T18:54:44.651Z","2026-08-01T18:54:52.328Z","2026-08-01T18:54:52.328Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK_ACTION_CONFORMANCE.md,project,public boundary conformance contract
-close_reason: "Implemented and verified the public SDK closure ratchet, promoted required exports, passed linked tests and exact repo-wide coverage."
+close_reason: "Implemented and verified the public SDK boundary ratchet, including Windows-safe closure resolution and fail-closed allowlist semantics."
 body: ""

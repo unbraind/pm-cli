@@ -333,6 +333,25 @@ describe("normalizeBootstrapInvocation", () => {
       commandName: "pm-mcp",
       trace: [],
     });
+    expect(normalizeBootstrapInvocation(["pm", "pm", "init"])).toMatchObject({
+      argv: ["pm", "init"],
+      commandName: "pm",
+      trace: [expect.objectContaining({ reason: "executable_alias" })],
+    });
+  });
+
+  it("absorbs an executable alias before normalizing legacy extension syntax", () => {
+    const normalized = normalizeBootstrapInvocation([
+      "pm",
+      "extension",
+      "install",
+      "my-ext",
+    ]);
+    expect(normalized.argv).toEqual(["extension", "--install", "my-ext"]);
+    expect(normalized.trace.map(({ reason }) => reason)).toEqual([
+      "executable_alias",
+      "legacy_extension_action",
+    ]);
   });
 
   it("normalizes legacy extension action syntax before parse", () => {

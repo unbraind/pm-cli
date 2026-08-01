@@ -259,6 +259,25 @@ describe("context intent contracts", () => {
         tokenBudget: "8000",
       }),
     ).toMatchObject({ limit: "470" });
+    for (const invalidBudget of [
+      { tokenBudget: "invalid" },
+      { token_budget: "invalid" },
+    ]) {
+      const projected = applyContextIntentProjection("list", {
+        for: "triage",
+        ...invalidBudget,
+      });
+      expect(projected).toMatchObject({ limit: "100" });
+      expect(
+        attachContextIntentReceipt("list", projected, { items: [] }),
+      ).toMatchObject({
+        budget_derived_limit: 100,
+        context_intent: {
+          token_budget: 3200,
+          budget_derived_limit: 100,
+        },
+      });
+    }
     expect(
       attachContextIntentReceipt("list-open", { for: "triage" }, { items: [] }),
     ).toMatchObject({
