@@ -89,7 +89,7 @@ export async function runAppend(
     force: options.force,
     mutate(document) {
       const spacer = document.body.trim().length > 0 ? "\n\n" : "";
-      document.body = `${document.body.replace(/\s+$/, "")}${spacer}${appended}\n`;
+      document.body = `${document.body.trimEnd()}${spacer}${appended}\n`;
       return { changedFields: ["body"] };
     },
   });

@@ -1231,7 +1231,7 @@ describe("runGet and runAppend", () => {
 
       const spacedBodyId = createTask(context, {
         title: "append-existing-body",
-        body: "existing body   \n",
+        body: `existing body${" ".repeat(100_000)}\n`,
       });
       const settingsAuthorId = createTask(context, {
         title: "append-settings-author",

@@ -12,6 +12,10 @@
 - Declared read-intent token budgets are written to a flag three of five intent commands do not accept, so the shipped intent layer overruns its own declaration by up to 43.8x ([pm-7hbfch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7hbfch.toon))
 - The public SDK's item-lifecycle surface re-exports CLI command modules, so lifecycle policy cannot be expressed, inspected, or overridden through the SDK ([pm-z5pmf8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z5pmf8.toon))
 
+### Security
+
+- CodeQL alert 33: eliminate polynomial trailing-whitespace matching in SDK append ([pm-8wskoj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8wskoj.toon))
+
 ## 2026.8.1 - 2026-08-01
 
 ### Fixed

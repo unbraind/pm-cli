@@ -1,0 +1,34 @@
+id: pm-8wskoj
+title: "CodeQL alert 33: eliminate polynomial trailing-whitespace matching in SDK append"
+description: "Merged-head CodeQL reports high-severity js/polynomial-redos at src/sdk/lifecycle/append.ts:92 because the append primitive applies a repetition-sensitive trailing-whitespace regular expression to item body input. Replace it with a linear built-in operation and add an adversarial regression that preserves append spacing semantics."
+type: Issue
+status: closed
+priority: 0
+tags[5]: append,"area:sdk",codeql,redos,security
+created_at: "2026-08-01T08:25:57.892Z"
+updated_at: "2026-08-01T08:33:15.913Z"
+closed_at: "2026-08-01T08:33:15.203Z"
+completed_at: "2026-08-01T08:33:15.203Z"
+author: "harness:codex"
+parent: pm-usfg
+resolution: fixed
+expected_result: "SDK append removes arbitrary trailing whitespace in linear time while preserving blank-body, spacer, mutation, and provenance semantics."
+actual_result: "The repetition-sensitive /\\s+$/ expression operated on unbounded stored item bodies and CodeQL classified the merged-head path as high-severity polynomial ReDoS."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rtn5h6,verifies,"2026-08-01T08:25:57.892Z","harness:codex","cli:create:dep",detected
+  pm-v3zd3o,related_to,"2026-08-01T08:25:57.892Z","harness:codex","cli:create:dep",detected
+  pm-z5pmf8,discovered_from,"2026-08-01T08:25:57.892Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-08-01T08:25:57.892Z","harness:codex","Duplicate check: all-status searches for the exact CodeQL rule, append path, and polynomial ReDoS found closed alerts pm-v3zd3o and pm-8og4 in distinct path/link parsers, but no item for alert 33 or SDK append trailing whitespace. GitHub source: https://github.com/unbraind/pm-cli/security/code-scanning/33"
+  "2026-08-01T08:33:09.621Z","harness:codex","Evidence: replaced the unbounded trailing-whitespace regex with String.prototype.trimEnd(), preserving the exact append body result. The existing spacer/provenance test now feeds 100,000 repeated spaces as a defect-reproducing negative control. Linked suite passed 20/20; repository coverage passed 411 files and 6,653 tests at exact 100% statements (46,874/46,874), branches (33,722/33,722), functions (9,544/9,544), and lines (45,505/45,505). ESLint, zero-clone, 100% docstring/static quality, SDK boundary/parity/token/calibration/surface/import-cost/transport gates, and secret scan pass. Hosted CodeQL on the PR is the required alert-closure gate."
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/append.ts,project,Replace repetition-sensitive trailing whitespace matcher
+  tests/unit/commands/get-append-command.spec.ts,project,Adversarial repeated-whitespace regression
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/get-append-command.spec.ts,project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msa3yq9u-jxylkf,test,passed,"2026-08-01T08:27:04.969Z","2026-08-01T08:27:16.482Z","2026-08-01T08:27:16.482Z",1,0,0
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned security fix release note
+close_reason: "Eliminated CodeQL alert 33's polynomial trailing-whitespace regex with linear trimEnd semantics and a 100,000-character adversarial regression; full exact coverage and strict local gates pass, with hosted CodeQL required on the PR."
+body: ""
