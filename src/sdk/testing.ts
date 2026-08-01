@@ -203,12 +203,13 @@ export interface RunRegisteredCommandForTestOptions {
   options?: Record<string, unknown>;
   /** Global option overrides merged onto the agent-safe test defaults (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`. */
   global?: Partial<GlobalOptions>;
-  /** Resolved pm workspace root forwarded as `context.pm_root` (default: `""`). Most pure handlers ignore it; set it when the handler reads workspace files. */
+  /** Resolved tracker storage root forwarded as `context.pm_root` (default: `""`), normally `<workspace>/.agents/pm`; this is not the workspace root. */
   pmRoot?: string;
   /** Explicit host SDK override for specialized tests. Mutually exclusive with sdkFactory. */
   sdk?: ExtensionCommandSdk;
-  /** Lazily build a typed host SDK override from the resolved test context. */
+  /** Lazily build a typed host SDK override from the resolved test context. `pmRoot` is the tracker storage root (normally `<workspace>/.agents/pm`), not the workspace root. */
   sdkFactory?: (context: {
+    /** Tracker storage root for tracker data under `.agents/pm`, not the workspace root. */
     pmRoot: string;
     global: GlobalOptions;
   }) => ExtensionCommandSdk;

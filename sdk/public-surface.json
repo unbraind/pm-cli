@@ -22531,6 +22531,7 @@
     "extension_mutation_guard_failed",
     "extension_mutation_guard_invalid_decision",
     "extension_mutation_guard_invalid_denial",
+    "extension_mutation_guard_timed_out",
     "extension_update_health_partial_coverage",
     "field_duplicate",
     "field_invalid",

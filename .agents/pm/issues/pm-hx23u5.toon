@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions","area:sdk",gh-issue,invariants,mutation,security,transactions
 created_at: "2026-08-01T13:27:20.518Z"
-updated_at: "2026-08-01T14:39:32.375Z"
+updated_at: "2026-08-01T15:05:15.482Z"
 closed_at: "2026-08-01T14:39:31.642Z"
 completed_at: "2026-08-01T14:39:31.642Z"
 author: "harness:codex"
@@ -22,9 +22,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-usfg,implements,"2026-08-01T13:27:20.518Z","harness:codex","cli:create:dep",detected
   pm-wwooxx,related,"2026-08-01T13:27:20.518Z","harness:codex","cli:create:dep",detected
   pm-xm7c,discovered_from,"2026-08-01T13:27:20.518Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-01T13:27:20.518Z","harness:codex","text=Duplicate check evidence: searched all statuses for GH-854, pre-commit mutation guard, invariant veto, transaction hooks, and extension enforcement. Closed pm-xm7c supplies atomic mutation foundations; open pm-wwooxx governs secret-rule consistency, not package-defined domain invariants. Source: https://github.com/unbraind/pm-cli/issues/854"
   "2026-08-01T14:37:32.431Z","harness:codex","Evidence: added capability/policy-gated api.hooks.beforeMutation with canonical before/after snapshots, changed fields, host-bound read-only get/list SDK, stable allow/deny diagnostics, fail-closed malformed/throw handling, activation/compose/testing/public contracts, and pre-persistence integration across create, mutate/annotations/close, delete, restore, and structured transactions. Full all-source coverage passed 6666 tests at 100/100/100/100; linked suite passed 195 tests; contracts and SDK surface snapshots are current."
+  "2026-08-01T15:05:15.482Z","harness:codex","Review evidence: exact-head bot review identified and we implemented a bounded 5-second mutation-guard timeout with stable extension_mutation_guard_timed_out guidance, plus active extension-field preservation in delete guard snapshots. Focused regression coverage and the complete 6,666-test all-source gate pass at 100/100/100/100."
 learnings[1]{created_at,author,text}:
   "2026-08-01T14:37:33.116Z","harness:codex","A precommit invariant hook must run before missing-history auto-creation and before service overrides, not merely before the final item write; otherwise a denied mutation can still leave persistence or external side effects."
 files[23]{path,scope,note}:

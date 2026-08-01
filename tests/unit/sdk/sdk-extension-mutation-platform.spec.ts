@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   assertRegisteredHook,
@@ -180,6 +180,28 @@ describe("extension mutation platform", () => {
       { capabilities: ["hooks"] },
     );
     await expect(propagating.runMutationGuard({ context })).rejects.toBe(ownedError);
+
+    const stalled = await createExtensionTestHarness(
+      {
+        activate(api) {
+          api.hooks.beforeMutation(() => new Promise(() => {}));
+        },
+      },
+      { capabilities: ["hooks"] },
+    );
+    vi.useFakeTimers();
+    try {
+      const pending = expect(
+        stalled.runMutationGuard({ context }),
+      ).rejects.toMatchObject({
+        code: "extension_mutation_guard_timed_out",
+        exitCode: 4,
+      });
+      await vi.advanceTimersByTimeAsync(5_000);
+      await pending;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("locates extension-registered custom types through atomic, annotation, and lifecycle mutations", async () => {
@@ -230,9 +252,10 @@ describe("extension mutation platform", () => {
       await writeTestExtension({
         root: path.join(pmPath, "extensions", "immutable-runs"),
         name: "immutable-runs",
-        manifestOverrides: { capabilities: ["hooks"] },
+        manifestOverrides: { capabilities: ["hooks", "schema"] },
         entrySource: `export default {
   activate(api) {
+    api.registerItemFields([{ name: "guard_marker", type: "string" }]);
     api.hooks.beforeMutation(async (context) => {
       if (context.operation === "create" && context.after?.metadata.title === "Forbidden create") {
         if (await context.sdk.get("pm-never-created") !== null) throw new Error("guard get SDK invented an item");
@@ -242,6 +265,7 @@ describe("extension mutation platform", () => {
         return { allow: false, code: "forbidden_restore", remediation: "Keep this item deleted." };
       }
       if (context.operation === "delete" && context.before?.metadata.id.endsWith("immutable-run")) {
+        if (context.before.metadata.guard_marker !== "preserved") throw new Error("delete guard lost its extension field");
         const visible = await context.sdk.list();
         if (!visible.some((item) => item.id === context.before.metadata.id)) throw new Error("guard list SDK lost its host binding");
         return { allow: false, code: "forbidden_delete", remediation: "Retain the immutable item." };
@@ -265,6 +289,7 @@ describe("extension mutation platform", () => {
         type: "Task",
         status: "open",
         body: "version one",
+        field: ["guard_marker=preserved"],
       });
       const id = created.item.id;
       const historyPath = path.join(pmPath, "history", `${id}.jsonl`);

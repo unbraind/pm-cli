@@ -871,8 +871,10 @@ export async function deleteItem(params: {
   } = prepared;
 
   try {
+    const extensionFieldNames = resolveActiveExtensionFieldNames(undefined);
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,
+      extensionFieldNames,
     });
     await runActiveBeforeMutationHooks({
       pm_root: params.pmRoot,

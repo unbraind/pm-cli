@@ -44,6 +44,7 @@ import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 
 type HookName = keyof ExtensionHookRegistry;
+const DEFAULT_MUTATION_GUARD_TIMEOUT_MS = 5_000;
 
 async function executeRegisteredHooks<TContext>(
   entries: Array<
@@ -136,15 +137,46 @@ export async function runBeforeMutationHooks(
 ): Promise<void> {
   for (const entry of hooks.beforeMutation ?? []) {
     let decision;
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
     try {
-      decision = await entry.run({
-        pm_root: context.pm_root,
-        operation: context.operation,
-        before: context.before === null ? null : cloneContextSnapshot(context.before),
-        after: context.after === null ? null : cloneContextSnapshot(context.after),
-        changed_fields: [...context.changed_fields],
-        sdk: context.sdk,
-      });
+      const guardPromise = Promise.resolve().then(() =>
+        entry.run({
+          pm_root: context.pm_root,
+          operation: context.operation,
+          before:
+            context.before === null
+              ? null
+              : cloneContextSnapshot(context.before),
+          after:
+            context.after === null
+              ? null
+              : cloneContextSnapshot(context.after),
+          changed_fields: [...context.changed_fields],
+          sdk: context.sdk,
+        }),
+      );
+      guardPromise.catch(() => {});
+      decision = await Promise.race([
+        guardPromise,
+        new Promise<never>((_, reject) => {
+          timeoutHandle = setTimeout(() => {
+            reject(
+              new PmCliError(
+                `Extension mutation guard ${entry.name} timed out before ${context.operation}.`,
+                EXIT_CODE.CONFLICT,
+                {
+                  code: "extension_mutation_guard_timed_out",
+                  reason: `${entry.layer}:${entry.name}`,
+                  nextSteps: [
+                    "Fix or disable the stalled extension guard, then retry the mutation.",
+                  ],
+                },
+              ),
+            );
+          }, DEFAULT_MUTATION_GUARD_TIMEOUT_MS);
+          timeoutHandle.unref?.();
+        }),
+      ]);
     } catch (error: unknown) {
       if (error instanceof PmCliError) throw error;
       throw new PmCliError(
@@ -156,6 +188,8 @@ export async function runBeforeMutationHooks(
           nextSteps: ["Fix or disable the failing extension guard, then retry the mutation."],
         },
       );
+    } finally {
+      clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
     }
     enforceMutationGuardDecision(decision, entry, context.operation);
   }

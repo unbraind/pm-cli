@@ -458,6 +458,15 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: ["core/extensions/extension-hook-runtime.ts"],
   },
   {
+    code: "extension_mutation_guard_timed_out",
+    meaning: "Extension mutation guard timed out condition.",
+    stability: "stable",
+    exit_code: 4,
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/extensions/extension-hook-runtime.ts"],
+  },
+  {
     code: "extension_update_health_partial_coverage",
     meaning: "Extension update health partial coverage condition.",
     stability: "stable",
