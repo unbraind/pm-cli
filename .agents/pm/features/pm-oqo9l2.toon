@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-environment,"area:sdk",provenance,rl
 created_at: "2026-08-01T09:47:25.348Z"
-updated_at: "2026-08-01T11:59:26.306Z"
+updated_at: "2026-08-01T12:17:58.280Z"
 closed_at: "2026-08-01T11:59:25.284Z"
 completed_at: "2026-08-01T11:59:25.284Z"
 author: "harness:claude-code"
@@ -40,9 +40,10 @@ dependencies[17]{id,kind,created_at,author,source_kind,author_source}:
   pm-03pq3o,related,"2026-08-01T09:56:38.350Z","harness:claude-code","cli:update:dep",detected
   pm-0zcwz6,related,"2026-08-01T09:56:38.350Z","harness:claude-code","cli:update:dep",detected
   pm-itsjf0,related,"2026-08-01T09:56:38.350Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-01T10:24:14.702Z","harness:codex","Implementation start 2026-08-01: active as the consumer-facing join-key layer over the generic provenance and session-context primitives. Scope includes SDK, CLI inherited environment, MCP client metadata, immutable history, declared grouping, nested children, and inferred legacy fallback."
   "2026-08-01T11:58:19.017Z","harness:codex","Evidence: optional episode identity now persists immutably across SDK, CLI environment propagation, and MCP client context; nested calls acquire an automatic parent. Deterministic grouping produces declared or inferred roots, preserves nested children, handles cycles and collisions, and falls back for legacy history. Linked acceptance passed 40 assertions. Installed-consumer proof produced exactly three boundary-crossing history events under root installed-parent and child installed-child."
+  "2026-08-01T12:17:58.280Z","harness:codex","PR evidence: SDK provenance and episode context bundle opened as PR #856 at implementation head e80a7e35e; exact-head hosted checks and AI review loop are pending."
 files[7]{path,scope,note}:
   CHANGELOG.md,project,package-generated release record
   src/core/history/history.ts,project,immutable episode identity persistence

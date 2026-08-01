@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: contracts,history,identity,provenance
 created_at: "2026-07-31T14:11:09.450Z"
-updated_at: "2026-08-01T11:59:16.107Z"
+updated_at: "2026-08-01T12:17:56.096Z"
 closed_at: "2026-08-01T11:59:15.228Z"
 completed_at: "2026-08-01T11:59:15.228Z"
 author: "harness:claude-code"
@@ -25,9 +25,10 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-o2kc,related,"2026-07-31T14:20:39.642Z","harness:claude-code","cli:update:dep",detected
   pm-oskdmu,related,"2026-07-31T14:20:39.642Z","harness:claude-code","cli:update:dep",detected
   pm-w7ccmv,verifies,"2026-07-31T14:20:39.642Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-08-01T10:24:08.339Z","harness:codex","Implementation start 2026-08-01: selected after all-status duplicate and dependency review. This item owns generic observed/unavailable/legacy semantics and is the prerequisite for the session-context item in the same cohesive SDK provenance tranche."
   "2026-08-01T11:58:17.152Z","harness:codex","Evidence: generalized provenance classification now covers every declared dimension, and selected harnesses persist explicit unavailable markers for model, effort, role, and topic. Generic regression coverage prevents future dimension-specific branches. Linked acceptance tests passed 25 assertions; the full release suite passed 6,662 tests with exact 100 percent statements, branches, functions, and lines. Existing pre-fix history remains append-only and is documented as legacy population."
+  "2026-08-01T12:17:56.095Z","harness:codex","PR evidence: SDK provenance and episode context bundle opened as PR #856 at implementation head e80a7e35e; exact-head hosted checks and AI review loop are pending."
 files[5]{path,scope,note}:
   CHANGELOG.md,project,package-generated release record
   src/core/shared/author.ts,project,resolveAgentProvenance lines 443-457; the model-only explicit null is the else-if at 453-455
