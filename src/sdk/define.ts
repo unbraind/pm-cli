@@ -35,6 +35,7 @@
 import type {
   AfterCommandHook,
   BeforeCommandHook,
+  BeforeMutationHook,
   CommandDefinition,
   CommandOverride,
   Exporter,
@@ -357,6 +358,13 @@ export function defineExporter(exporter: Exporter): Exporter {
 export function defineBeforeCommandHook(
   hook: BeforeCommandHook,
 ): BeforeCommandHook {
+  return hook;
+}
+
+/** Type a fail-closed `before_mutation` guard for `api.hooks.beforeMutation(hook)`. */
+export function defineBeforeMutationHook(
+  hook: BeforeMutationHook,
+): BeforeMutationHook {
   return hook;
 }
 

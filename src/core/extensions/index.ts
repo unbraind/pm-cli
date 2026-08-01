@@ -8,6 +8,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import {
   runCommandHandler,
+  runBeforeMutationHooks,
   runCommandOverride,
   runOnIndexHooks,
   runParserOverride,
@@ -33,6 +34,7 @@ import {
   type OnIndexHookContext,
   type OnReadHookContext,
   type OnWriteHookContext,
+  type BeforeMutationHookContext,
   type OutputRendererFormat,
   type ParserOverrideContext,
   type ParserOverrideResult,
@@ -446,6 +448,16 @@ export async function runActiveOnWriteHooks(
     return [];
   }
   return runOnWriteHooks(hooks, context);
+}
+
+/** Run active transactional mutation guards before any item or history write. */
+export async function runActiveBeforeMutationHooks(
+  context: BeforeMutationHookContext,
+): Promise<void> {
+  const state = runtimeState();
+  const hooks = state ? state.hooks : activeExtensionHooks;
+  if (!hooks) return;
+  await runBeforeMutationHooks(hooks, context);
 }
 
 /** Implements run active on read hooks for the public runtime surface of this module. */

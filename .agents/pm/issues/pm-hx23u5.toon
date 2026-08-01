@@ -1,0 +1,62 @@
+id: pm-hx23u5
+title: "GH-854: transactional extension mutation guards for enforceable domain invariants"
+description: "Extensions can observe committed writes but cannot veto invalid core mutations. Add a public capability-gated pre-commit mutation guard receiving before, proposed after, changed fields, operation, and a host-bound read-only SDK; stable allow or deny errors must run inside the same item/history transaction across CLI, PmClient, workspace transactions, restore/delete, and bulk paths."
+type: Issue
+status: closed
+priority: 1
+tags[7]: "area:extensions","area:sdk",gh-issue,invariants,mutation,security,transactions
+created_at: "2026-08-01T13:27:20.518Z"
+updated_at: "2026-08-01T15:05:15.482Z"
+closed_at: "2026-08-01T14:39:31.642Z"
+completed_at: "2026-08-01T14:39:31.642Z"
+author: "harness:codex"
+acceptance_criteria: "Public guard contracts expose before, proposed after, changed fields, operation, and host-bound read-only SDK context; Deny results and expected public errors abort item and history persistence atomically with stable codes and remediation; CLI, embedded client, workspace transaction, restore, delete, and bulk mutation routes share the guard; Capability contracts, testing helpers, docs, and isolated extension acceptance prove enforcement"
+parent: pm-usfg
+severity: high
+repro_steps: "Register an immutable content-addressed custom type, reference one item, then mutate it through pm update; the extension can only detect the invalid write afterward"
+expected_result: A capability-gated public guard can atomically allow or deny every core item mutation with stable remediation
+actual_result: Available hooks are post-commit or warning-only and cannot enforce invariants
+affected_version: 2026.8.1
+component: sdk/extensions/mutations
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-usfg,implements,"2026-08-01T13:27:20.518Z","harness:codex","cli:create:dep",detected
+  pm-wwooxx,related,"2026-08-01T13:27:20.518Z","harness:codex","cli:create:dep",detected
+  pm-xm7c,discovered_from,"2026-08-01T13:27:20.518Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-01T13:27:20.518Z","harness:codex","text=Duplicate check evidence: searched all statuses for GH-854, pre-commit mutation guard, invariant veto, transaction hooks, and extension enforcement. Closed pm-xm7c supplies atomic mutation foundations; open pm-wwooxx governs secret-rule consistency, not package-defined domain invariants. Source: https://github.com/unbraind/pm-cli/issues/854"
+  "2026-08-01T14:37:32.431Z","harness:codex","Evidence: added capability/policy-gated api.hooks.beforeMutation with canonical before/after snapshots, changed fields, host-bound read-only get/list SDK, stable allow/deny diagnostics, fail-closed malformed/throw handling, activation/compose/testing/public contracts, and pre-persistence integration across create, mutate/annotations/close, delete, restore, and structured transactions. Full all-source coverage passed 6666 tests at 100/100/100/100; linked suite passed 195 tests; contracts and SDK surface snapshots are current."
+  "2026-08-01T15:05:15.482Z","harness:codex","Review evidence: exact-head bot review identified and we implemented a bounded 5-second mutation-guard timeout with stable extension_mutation_guard_timed_out guidance, plus active extension-field preservation in delete guard snapshots. Focused regression coverage and the complete 6,666-test all-source gate pass at 100/100/100/100."
+learnings[1]{created_at,author,text}:
+  "2026-08-01T14:37:33.116Z","harness:codex","A precommit invariant hook must run before missing-history auto-creation and before service overrides, not merely before the final item write; otherwise a denied mutation can still leave persistence or external side effects."
+files[23]{path,scope,note}:
+  sdk/public-surface.json,project,Transactional extension mutation guard implementation or verification
+  src/core/extensions/activation-summary.ts,project,Transactional extension mutation guard implementation or verification
+  src/core/extensions/activation-transaction.ts,project,Transactional extension mutation guard implementation or verification
+  src/core/extensions/capability-usage.ts,project,Transactional extension mutation guard implementation or verification
+  src/core/extensions/extension-hook-runtime.ts,project,Transactional extension mutation guard implementation or verification
+  src/core/extensions/extension-registries.ts,project,Transactional extension mutation guard implementation or verification
+  src/core/extensions/extension-types.ts,project,Transactional extension mutation guard implementation or verification
+  src/core/extensions/index.ts,project,Transactional extension mutation guard implementation or verification
+  src/core/extensions/loader.ts,project,Transactional extension mutation guard implementation or verification
+  src/core/store/item-store.ts,project,Transactional extension mutation guard implementation or verification
+  src/sdk/authoring.ts,project,Transactional extension mutation guard implementation or verification
+  src/sdk/compose.ts,project,Transactional extension mutation guard implementation or verification
+  src/sdk/define.ts,project,Transactional extension mutation guard implementation or verification
+  src/sdk/generated-error-code-catalog.ts,project,Transactional extension mutation guard implementation or verification
+  src/sdk/lifecycle/create.ts,project,Transactional extension mutation guard implementation or verification
+  src/sdk/lifecycle/restore.ts,project,Transactional extension mutation guard implementation or verification
+  src/sdk/runtime-primitives.ts,project,Transactional extension mutation guard implementation or verification
+  src/sdk/testing.ts,project,Transactional extension mutation guard implementation or verification
+  tests/fixtures/contracts/full.json,project,Transactional extension mutation guard implementation or verification
+  tests/unit/extensions/extension-loader.spec.ts,project,Transactional extension mutation guard implementation or verification
+  tests/unit/sdk/sdk-compose.spec.ts,project,Transactional extension mutation guard implementation or verification
+  tests/unit/sdk/sdk-define.spec.ts,project,Transactional extension mutation guard implementation or verification
+  tests/unit/sdk/sdk-extension-mutation-platform.spec.ts,project,Transactional extension mutation guard implementation or verification
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-extension-mutation-platform.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/sdk/sdk-compose.spec.ts tests/unit/sdk/sdk-define.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped,items,linked_tests}:
+  test-all-local-msah1yx5-wxg83g,test-all,passed,"2026-08-01T14:33:42.646Z","2026-08-01T14:33:53.354Z","2026-08-01T14:33:53.355Z",1,0,0,1,1
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Fail-closed mutation guard authoring and testing contract
+close_reason: "Delivered fail-closed transactional extension mutation guards across SDK authoring, lifecycle persistence, testing, contracts, docs, and 100% coverage."
+body: ""

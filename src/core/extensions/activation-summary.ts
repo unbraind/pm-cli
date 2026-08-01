@@ -43,6 +43,7 @@ import {
  */
 const HOOK_REGISTRY_FIELD_TO_KIND = [
   ["beforeCommand", "before_command"],
+  ["beforeMutation", "before_mutation"],
   ["afterCommand", "after_command"],
   ["onWrite", "on_write"],
   ["onRead", "on_read"],

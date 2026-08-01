@@ -28,6 +28,7 @@
 import type {
   AfterCommandHook,
   BeforeCommandHook,
+  BeforeMutationHook,
   CommandDefinition,
   CommandOverride,
   ExtensionApi,
@@ -148,6 +149,8 @@ export interface ExtensionBlueprintExporter {
 export interface ExtensionBlueprintHooks {
   /** Hooks fired before a command runs (`api.hooks.beforeCommand`). */
   beforeCommand?: BeforeCommandHook[];
+  /** Transactional guards fired before item and history persistence (`api.hooks.beforeMutation`). */
+  beforeMutation?: BeforeMutationHook[];
   /** Hooks fired after a command runs (`api.hooks.afterCommand`). */
   afterCommand?: AfterCommandHook[];
   /** Hooks fired when an item is persisted (`api.hooks.onWrite`). */
@@ -334,13 +337,16 @@ function registerBlueprintRetrievalSurfaces(
   }
 }
 
-/** Register a blueprint's lifecycle hooks in canonical order (beforeCommand → afterCommand → onWrite → onRead → onIndex). */
+/** Register a blueprint's lifecycle hooks in canonical order. */
 function registerBlueprintHooks(
   api: ExtensionApi,
   hooks: ExtensionBlueprintHooks,
 ): void {
   for (const hook of hooks.beforeCommand ?? []) {
     api.hooks.beforeCommand(hook);
+  }
+  for (const hook of hooks.beforeMutation ?? []) {
+    api.hooks.beforeMutation(hook);
   }
   for (const hook of hooks.afterCommand ?? []) {
     api.hooks.afterCommand(hook);
@@ -441,6 +447,7 @@ function mergeFlagRecord(
 
 const EXTENSION_BLUEPRINT_HOOK_KEYS = [
   "beforeCommand",
+  "beforeMutation",
   "afterCommand",
   "onWrite",
   "onRead",
@@ -805,6 +812,7 @@ export function deriveExtensionCapabilities(
   if (
     [
       hooks.beforeCommand,
+      hooks.beforeMutation,
       hooks.afterCommand,
       hooks.onWrite,
       hooks.onRead,
@@ -825,6 +833,7 @@ export function deriveExtensionCapabilities(
  */
 const BLUEPRINT_HOOK_FIELD_TO_KIND = [
   ["beforeCommand", "before_command"],
+  ["beforeMutation", "before_mutation"],
   ["afterCommand", "after_command"],
   ["onWrite", "on_write"],
   ["onRead", "on_read"],
@@ -1352,6 +1361,7 @@ function collectBlueprintEmptySurfaceFindings(
     const hooks: ExtensionBlueprintHooks = blueprint.hooks ?? {};
     const registersHook = [
       hooks.beforeCommand,
+      hooks.beforeMutation,
       hooks.afterCommand,
       hooks.onWrite,
       hooks.onRead,

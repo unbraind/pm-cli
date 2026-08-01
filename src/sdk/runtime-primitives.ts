@@ -45,6 +45,7 @@ export {
   recordAfterCommandAffectedItem,
   resetActiveExtensionRuntimeState,
   runActiveCommandHandler,
+  runActiveBeforeMutationHooks,
   runActiveOnIndexHooks,
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
@@ -330,6 +331,7 @@ export {
 } from "../core/store/item-metadata-cache.js";
 export {
   buildItemNotFoundError,
+  createMutationGuardSdk,
   deleteItem,
   listAllItemMetadataLight,
   locateItem,

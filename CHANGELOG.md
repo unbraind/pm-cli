@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- GH-855: core mutation locators must honor extension-registered item types ([pm-scga6k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-scga6k.toon))
+- GH-853: extension command test harness must inject the real host-bound SDK ([pm-wx2lr5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wx2lr5.toon))
 - Session-topic provenance has no descriptor keys on any harness, and effort/role are wired for only claude-code and codex, so most fleet history records harness and model but nothing about the work's shape ([pm-rbg1qo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rbg1qo.toon))
 - Explicit-unavailable provenance is recorded for the model dimension only, so effort and role absence is permanently indistinguishable from a legacy entry ([pm-9wbiye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9wbiye.toon))
 - GH-851: compare init discovery roots by filesystem identity ([pm-noq46i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-noq46i.toon))
@@ -20,6 +22,7 @@
 
 ### Security
 
+- GH-854: transactional extension mutation guards for enforceable domain invariants ([pm-hx23u5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hx23u5.toon))
 - CodeQL alert 33: eliminate polynomial trailing-whitespace matching in SDK append ([pm-8wskoj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8wskoj.toon))
 
 ## 2026.8.1 - 2026-08-01

@@ -1963,6 +1963,7 @@ describe("extension loader", () => {
       expect(activation.warnings).toEqual([]);
       expect(activation.hook_counts).toEqual({
         before_command: 2,
+        before_mutation: 0,
         after_command: 2,
         on_write: 1,
         on_read: 1,
@@ -2391,6 +2392,7 @@ describe("extension loader", () => {
     expect(activation.warnings).toEqual([]);
     expect(activation.hook_counts).toEqual({
       before_command: 0,
+      before_mutation: 0,
       after_command: 0,
       on_write: 1,
       on_read: 1,
@@ -5378,6 +5380,7 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
       {
         activate(api: ExtensionApi) {
           api.hooks.beforeCommand(() => undefined);
+          api.hooks.beforeMutation(() => ({ allow: true }));
           api.hooks.afterCommand(() => undefined);
           api.hooks.onWrite(() => undefined);
           api.hooks.onRead(() => undefined);
@@ -5388,18 +5391,20 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     );
     loadResult.policy = createTestExtensionPolicy({
       mode: "enforce",
-      blocked_surfaces: ["hooks.beforecommand", "hooks.aftercommand", "hooks.onwrite", "hooks.onread", "hooks.onindex"],
+      blocked_surfaces: ["hooks.beforecommand", "hooks.beforemutation", "hooks.aftercommand", "hooks.onwrite", "hooks.onread", "hooks.onindex"],
     });
 
     const result = await activateExtensions(loadResult);
     expect(result.failed).toHaveLength(0);
     expect(result.hook_counts.before_command).toBe(0);
+    expect(result.hook_counts.before_mutation).toBe(0);
     expect(result.hook_counts.after_command).toBe(0);
     expect(result.hook_counts.on_write).toBe(0);
     expect(result.hook_counts.on_read).toBe(0);
     expect(result.hook_counts.on_index).toBe(0);
     expect(result.warnings).toEqual([
       "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.beforecommand:surface=hooks.beforecommand",
+      "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.beforemutation:surface=hooks.beforemutation",
       "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.aftercommand:surface=hooks.aftercommand",
       "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.onwrite:surface=hooks.onwrite",
       "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.onread:surface=hooks.onread",

@@ -24,6 +24,7 @@ import {
   resolveAuthor,
   resolveIsoOrRelative,
   shouldCompletePlanOnClose,
+  getActiveExtensionRegistrations,
 } from "../runtime-primitives.js";
 import { collectBlockedByIds } from "../actionability.js";
 import {
@@ -190,7 +191,10 @@ async function assertDuplicateTargetExists(
       },
     );
   }
-  const typeRegistry = resolveItemTypeRegistry(settings);
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const itemCache = new Map<string, ItemMetadata | null>();
   const loadItemById = async (id: string): Promise<ItemMetadata | null> => {
     if (itemCache.has(id)) {
@@ -609,7 +613,10 @@ export async function closeItem(
   // "Close reason text is required" and hides the real cause (bad id) until a
   // reason is supplied. Existence is the more fundamental precondition, so it
   // is validated first regardless of whether a reason was provided.
-  const typeToFolder = resolveItemTypeRegistry(settings).type_to_folder;
+  const typeToFolder = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  ).type_to_folder;
   const located = await locateItem(
     pmRoot,
     id,

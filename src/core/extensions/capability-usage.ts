@@ -33,6 +33,7 @@ export const EXTENSION_CAPABILITY_REGISTRATION_SURFACES = {
   renderers: ["registerRenderer"],
   hooks: [
     "hooks.beforeCommand",
+    "hooks.beforeMutation",
     "hooks.afterCommand",
     "hooks.onWrite",
     "hooks.onRead",
@@ -165,6 +166,7 @@ function attributeCapabilityUsage(
   record(services.overrides, "services");
   record(renderers.overrides, "renderers");
   record(hooks.beforeCommand, "hooks");
+  record(hooks.beforeMutation, "hooks");
   record(hooks.afterCommand, "hooks");
   record(hooks.onWrite, "hooks");
   record(hooks.onRead, "hooks");

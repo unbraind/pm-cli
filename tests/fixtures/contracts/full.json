@@ -9693,6 +9693,46 @@
       "stability": "stable"
     },
     {
+      "code": "extension_mutation_guard_failed",
+      "exit_code": 4,
+      "meaning": "Extension mutation guard failed condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/extension-hook-runtime.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_mutation_guard_invalid_decision",
+      "exit_code": 4,
+      "meaning": "Extension mutation guard invalid decision condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/extension-hook-runtime.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_mutation_guard_invalid_denial",
+      "exit_code": 4,
+      "meaning": "Extension mutation guard invalid denial condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/extension-hook-runtime.ts"
+      ],
+      "stability": "stable"
+    },
+    {
+      "code": "extension_mutation_guard_timed_out",
+      "exit_code": 4,
+      "meaning": "Extension mutation guard timed out condition.",
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/extension-hook-runtime.ts"
+      ],
+      "stability": "stable"
+    },
+    {
       "code": "extension_update_health_partial_coverage",
       "exit_code": 1,
       "meaning": "Extension update health partial coverage condition.",
@@ -11373,6 +11413,7 @@
       "commands.override",
       "commands.handler",
       "hooks.beforecommand",
+      "hooks.beforemutation",
       "hooks.aftercommand",
       "hooks.onwrite",
       "hooks.onread",

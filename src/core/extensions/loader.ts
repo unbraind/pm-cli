@@ -105,6 +105,7 @@ export {
 } from "./extension-registries.js";
 export {
   runBeforeCommandHooks,
+  runBeforeMutationHooks,
   runAfterCommandHooks,
   runOnWriteHooks,
   runOnReadHooks,
@@ -140,6 +141,7 @@ import {
   type FailedExtensionLoad,
   type ExtensionLoadResult,
   type BeforeCommandHook,
+  type BeforeMutationHook,
   type AfterCommandHook,
   type OnWriteHook,
   type OnReadHook,
@@ -2262,6 +2264,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
       this.registerVectorStoreAdapter.bind(this);
     this.hooks = {
       beforeCommand: (hook) => this.registerBeforeCommand(hook),
+      beforeMutation: (hook) => this.registerBeforeMutation(hook),
       afterCommand: (hook) => this.registerAfterCommand(hook),
       onWrite: (hook) => this.registerOnWrite(hook),
       onRead: (hook) => this.registerOnRead(hook),
@@ -3170,20 +3173,8 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerBeforeCommand(hook: BeforeCommandHook): void {
-    assertExtensionCapability(
-      this.#loadedExtension,
-      "hooks",
-      "api.hooks.beforeCommand",
-    );
-    if (
-      !this.allowRegistration(
-        "hooks.beforecommand",
-        "api.hooks.beforeCommand",
-        "hooks",
-      )
-    ) {
-      return;
-    }
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.beforeCommand");
+    if (!this.allowRegistration("hooks.beforecommand", "api.hooks.beforeCommand", "hooks")) return;
     assertHookHandler("beforeCommand", hook);
     this.#hookRegistry.beforeCommand.push({
       layer: this.#loadedExtension.layer,
@@ -3192,21 +3183,20 @@ class ExtensionApiRegistrar implements ExtensionApi {
     });
   }
 
+  private registerBeforeMutation(hook: BeforeMutationHook): void {
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.beforeMutation");
+    if (!this.allowRegistration("hooks.beforemutation", "api.hooks.beforeMutation", "hooks")) return;
+    assertHookHandler("beforeMutation", hook);
+    this.#hookRegistry.beforeMutation.push({
+      layer: this.#loadedExtension.layer,
+      name: this.#loadedExtension.name,
+      run: hook,
+    });
+  }
+
   private registerAfterCommand(hook: AfterCommandHook): void {
-    assertExtensionCapability(
-      this.#loadedExtension,
-      "hooks",
-      "api.hooks.afterCommand",
-    );
-    if (
-      !this.allowRegistration(
-        "hooks.aftercommand",
-        "api.hooks.afterCommand",
-        "hooks",
-      )
-    ) {
-      return;
-    }
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.afterCommand");
+    if (!this.allowRegistration("hooks.aftercommand", "api.hooks.afterCommand", "hooks")) return;
     assertHookHandler("afterCommand", hook);
     this.#hookRegistry.afterCommand.push({
       layer: this.#loadedExtension.layer,
@@ -3216,16 +3206,8 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnWrite(hook: OnWriteHook): void {
-    assertExtensionCapability(
-      this.#loadedExtension,
-      "hooks",
-      "api.hooks.onWrite",
-    );
-    if (
-      !this.allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks")
-    ) {
-      return;
-    }
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onWrite");
+    if (!this.allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks")) return;
     assertHookHandler("onWrite", hook);
     this.#hookRegistry.onWrite.push({
       layer: this.#loadedExtension.layer,
@@ -3235,14 +3217,8 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnRead(hook: OnReadHook): void {
-    assertExtensionCapability(
-      this.#loadedExtension,
-      "hooks",
-      "api.hooks.onRead",
-    );
-    if (!this.allowRegistration("hooks.onread", "api.hooks.onRead", "hooks")) {
-      return;
-    }
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onRead");
+    if (!this.allowRegistration("hooks.onread", "api.hooks.onRead", "hooks")) return;
     assertHookHandler("onRead", hook);
     this.#hookRegistry.onRead.push({
       layer: this.#loadedExtension.layer,
@@ -3252,16 +3228,8 @@ class ExtensionApiRegistrar implements ExtensionApi {
   }
 
   private registerOnIndex(hook: OnIndexHook): void {
-    assertExtensionCapability(
-      this.#loadedExtension,
-      "hooks",
-      "api.hooks.onIndex",
-    );
-    if (
-      !this.allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks")
-    ) {
-      return;
-    }
+    assertExtensionCapability(this.#loadedExtension, "hooks", "api.hooks.onIndex");
+    if (!this.allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks")) return;
     assertHookHandler("onIndex", hook);
     this.#hookRegistry.onIndex.push({
       layer: this.#loadedExtension.layer,
@@ -3595,6 +3563,7 @@ export async function activateExtensions(
     warnings: mergedWarnings,
     hook_counts: {
       before_command: hooks.beforeCommand.length,
+      before_mutation: hooks.beforeMutation.length,
       after_command: hooks.afterCommand.length,
       on_write: hooks.onWrite.length,
       on_read: hooks.onRead.length,

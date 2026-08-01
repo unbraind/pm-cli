@@ -6,6 +6,7 @@
 import type {
   AfterCommandHookContext,
   BeforeCommandHookContext,
+  BeforeMutationHookContext,
   CommandHandlerResult,
   CommandOverrideContext,
   CommandOverrideResult,
@@ -15,6 +16,7 @@ import type {
   ExtensionDeactivationResult,
   ExtensionGovernancePolicy,
   ExtensionHookRegistry,
+  ExtensionCommandSdk,
   ExtensionLayer,
   ExtensionLoadResult,
   ExtensionManifest,
@@ -74,6 +76,7 @@ import {
   deactivateExtensions,
   runAfterCommandHooks,
   runBeforeCommandHooks,
+  runBeforeMutationHooks,
   runCommandHandler,
   runCommandOverride,
   runOnIndexHooks,
@@ -132,6 +135,8 @@ import {
   asPropertyRecord,
   resolveActivatablePropertyRecord,
 } from "../core/shared/primitives.js";
+import { createExtensionCommandSdk } from "./extension-command-context.js";
+import { PmClient } from "./runtime.js";
 
 // `describeExtensionActivation` is the `describe` (enumerate-all) verb that
 // pairs with the `assert*` (verify-one) and `run*` (invoke-one) helpers below.
@@ -198,8 +203,22 @@ export interface RunRegisteredCommandForTestOptions {
   options?: Record<string, unknown>;
   /** Global option overrides merged onto the agent-safe test defaults (`{ json: true, quiet: true, noPager: true }`), forwarded as `context.global`. */
   global?: Partial<GlobalOptions>;
-  /** Resolved pm workspace root forwarded as `context.pm_root` (default: `""`). Most pure handlers ignore it; set it when the handler reads workspace files. */
+  /** Resolved tracker storage root forwarded as `context.pm_root` (default: `""`), normally `<workspace>/.agents/pm`; this is not the workspace root. */
   pmRoot?: string;
+  /** Explicit host SDK override for specialized tests. Mutually exclusive with sdkFactory. */
+  sdk?: ExtensionCommandSdk;
+  /** Lazily build a typed host SDK override from the resolved test context. `pmRoot` is the tracker storage root (normally `<workspace>/.agents/pm`), not the workspace root. */
+  sdkFactory?: (context: {
+    /** Tracker storage root for tracker data under `.agents/pm`, not the workspace root. */
+    pmRoot: string;
+    global: GlobalOptions;
+  }) => ExtensionCommandSdk;
+}
+
+/** Options for invoking a registered transactional mutation guard in package tests. */
+export interface RunRegisteredMutationGuardForTestOptions {
+  /** Synthetic proposed mutation context, including a host-bound read-only SDK. */
+  context: BeforeMutationHookContext;
 }
 
 /**
@@ -446,6 +465,7 @@ export type RegisteredFlagsExpectation = NamedRegistrationExpectation<
 /** Public hook lifecycle kinds an extension can register through `api.hooks.*`. */
 export type RegisteredHookKind =
   | "before_command"
+  | "before_mutation"
   | "after_command"
   | "on_read"
   | "on_write"
@@ -456,11 +476,27 @@ const HOOK_KIND_TO_REGISTRY_FIELD: Record<
   keyof ExtensionHookRegistry
 > = {
   before_command: "beforeCommand",
+  before_mutation: "beforeMutation",
   after_command: "afterCommand",
   on_read: "onRead",
   on_write: "onWrite",
   on_index: "onIndex",
 };
+
+const RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD = {
+  before_command: "beforeCommand",
+  after_command: "afterCommand",
+  on_read: "onRead",
+  on_write: "onWrite",
+  on_index: "onIndex",
+} as const satisfies Record<
+  RunRegisteredHookForTestOptions["kind"],
+  keyof ExtensionHookRegistry
+>;
+
+type RegisteredHookEntry<TKind extends RegisteredHookKind> = NonNullable<
+  ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]]
+>[number];
 
 /** Documents the registered hook expectation payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredHookExpectation {
@@ -954,13 +990,36 @@ export async function runRegisteredCommandForTest(
       )}`,
     );
   }
+  if (options.sdk !== undefined && options.sdkFactory !== undefined) {
+    throw new TypeError("runRegisteredCommandForTest accepts sdk or sdkFactory, not both");
+  }
+  const pmRoot = options.pmRoot ?? "";
+  const global = { json: true, quiet: true, noPager: true, ...options.global };
+  const sdk =
+    options.sdk ??
+    options.sdkFactory?.({ pmRoot, global }) ??
+    (pmRoot.length > 0
+      ? createExtensionCommandSdk(pmRoot, new PmClient({ pmRoot }))
+      : undefined);
   return runCommandHandler(commands, {
     command,
     args: options.args ? [...options.args] : [],
     options: options.options ? { ...options.options } : {},
-    global: { json: true, quiet: true, noPager: true, ...options.global },
-    pm_root: options.pmRoot ?? "",
+    global,
+    pm_root: pmRoot,
+    ...(sdk === undefined ? {} : { sdk }),
   });
+}
+
+/** Invoke registered transactional mutation guards through the same fail-closed runtime used by real writes. */
+export async function runRegisteredMutationGuardForTest(
+  hooks: ExtensionHookRegistry,
+  options: RunRegisteredMutationGuardForTestOptions,
+): Promise<void> {
+  if ((hooks.beforeMutation?.length ?? 0) === 0) {
+    throw new Error("Expected a registered before_mutation hook to invoke");
+  }
+  await runBeforeMutationHooks(hooks, options.context);
 }
 
 /**
@@ -986,14 +1045,26 @@ export async function runRegisteredHookForTest(
   hooks: ExtensionHookRegistry,
   options: RunRegisteredHookForTestOptions,
 ): Promise<string[]> {
-  if (hooks[HOOK_KIND_TO_REGISTRY_FIELD[options.kind]].length === 0) {
+  const kind = (options as { kind: RegisteredHookKind }).kind;
+  if (kind === "before_mutation") {
+    throw new Error(
+      "Invoke before_mutation hooks with runRegisteredMutationGuardForTest so denials and failures retain fail-closed semantics.",
+    );
+  }
+  if ((hooks[RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD[kind]]?.length ?? 0) === 0) {
     const populatedKinds = sortedUnique(
-      (Object.keys(HOOK_KIND_TO_REGISTRY_FIELD) as RegisteredHookKind[]).filter(
-        (kind) => hooks[HOOK_KIND_TO_REGISTRY_FIELD[kind]].length > 0,
+      (
+        Object.keys(
+          RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD,
+        ) as RunRegisteredHookForTestOptions["kind"][]
+      ).filter(
+        (candidateKind) =>
+          (hooks[RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD[candidateKind]]
+            ?.length ?? 0) > 0,
       ),
     );
     throw new Error(
-      `Expected a registered "${options.kind}" hook to invoke. Hook kinds with registrations: ${formatAvailable(
+      `Expected a registered "${kind}" hook to invoke. Hook kinds with registrations: ${formatAvailable(
         populatedKinds,
       )}`,
     );
@@ -1629,9 +1700,9 @@ export function assertRegisteredFlags(
 export function assertRegisteredHook<TKind extends RegisteredHookKind>(
   hooks: ExtensionHookRegistry,
   expectation: RegisteredHookExpectation & { kind: TKind },
-): ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]][number] {
+): RegisteredHookEntry<TKind> {
   const field = HOOK_KIND_TO_REGISTRY_FIELD[expectation.kind];
-  const candidates = hooks[field] as ReadonlyArray<
+  const candidates = (hooks[field] ?? []) as ReadonlyArray<
     RegisteredExtensionHook<unknown>
   >;
   const hook = expectation.extensionName
@@ -1646,7 +1717,7 @@ export function assertRegisteredHook<TKind extends RegisteredHookKind>(
     );
   }
 
-  return hook as ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]][number];
+  return hook as RegisteredHookEntry<TKind>;
 }
 
 /** Assert that an activated extension registration registry contains a search provider with the expected name (optionally scoped to a specific extension). */
@@ -2532,7 +2603,7 @@ export interface ExtensionTestHarness {
   /** Bound {@link assertRegisteredHook} over `activation.hooks`. */
   assertHook<TKind extends RegisteredHookKind>(
     expectation: RegisteredHookExpectation & { kind: TKind },
-  ): ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]][number];
+  ): RegisteredHookEntry<TKind>;
   /** Bound {@link assertRegisteredCommandOverride} over `activation.commands`. */
   assertCommandOverride(
     expectation: RegisteredCommandOverrideExpectation,
@@ -2584,6 +2655,8 @@ export interface ExtensionTestHarness {
   ): Promise<CommandHandlerResult>;
   /** Bound {@link runRegisteredHookForTest} over `activation.hooks`. */
   runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>;
+  /** Bound transactional mutation-guard runner over `activation.hooks`. */
+  runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<void>;
   /** Bound {@link runRegisteredCommandOverrideForTest} over `activation.commands`. */
   runCommandOverride(
     context: CommandOverrideContext,
@@ -2788,6 +2861,9 @@ export async function createExtensionTestHarness(
     },
     runHook(runOptions) {
       return runRegisteredHookForTest(activation.hooks, runOptions);
+    },
+    runMutationGuard(runOptions) {
+      return runRegisteredMutationGuardForTest(activation.hooks, runOptions);
     },
     runCommandOverride(context) {
       return runRegisteredCommandOverrideForTest(activation.commands, context);
