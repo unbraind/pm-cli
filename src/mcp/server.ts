@@ -33,7 +33,7 @@ import {
   runWithActiveExtensions,
   type PmActionInput,
 } from "../sdk/runtime.js";
-import { TOOLS } from "./tool-definitions.js";
+import { NARROW_TOOL_ACTIONS, TOOLS } from "./tool-definitions.js";
 import {
   normalizeWorkspaceToolArguments,
   resolveMcpToolAccess,
@@ -45,7 +45,6 @@ import {
 } from "../sdk/agent-capability-contracts.js";
 import { commitItemMutations } from "../sdk/item-transaction.js";
 import { isRuntimeRecord } from "../sdk/runtime-input.js";
-import { listMutationEvents } from "../sdk/mutation-events.js";
 import {
   parseAtomicMutationControls,
   validateItemMutationRows,
@@ -163,61 +162,8 @@ function detectUnexpectedTopLevelKeys(
   return warnings;
 }
 
-// Fixed pm action behind each narrow tool. Also consulted by nested-option
-// validation (pm-upi0) to resolve the invoked action's contract keys.
-const NARROW_TOOL_ACTIONS: Record<string, string> = {
-  pm_context: "context",
-  pm_next: "next",
-  pm_search: "search",
-  pm_list: "list",
-  pm_get: "get",
-  pm_create: "create",
-  pm_copy: "copy",
-  pm_focus: "focus",
-  pm_update: "update",
-  pm_append: "append",
-  pm_claim: "claim",
-  pm_release: "release",
-  pm_close: "close",
-  pm_comments: "comments",
-  pm_files: "files",
-  pm_docs: "docs",
-  pm_notes: "notes",
-  pm_learnings: "learnings",
-  pm_deps: "deps",
-  pm_graph: "graph",
-  pm_test: "test",
-  pm_validate: "validate",
-  pm_health: "health",
-  pm_contracts: "contracts",
-  pm_schema: "schema",
-  pm_profile: "profile",
-  pm_config: "config",
-  pm_plan: "plan",
-};
-
 const HANDLERS: Record<string, ToolHandler> = {
   pm_run: (args) => runAction(args as PmActionInput),
-  pm_events: (args) =>
-    listMutationEvents({
-      cwd: typeof args.cwd === "string" ? args.cwd : undefined,
-      pmRoot: typeof args.path === "string" ? args.path : undefined,
-      since: typeof args.since === "string" ? args.since : undefined,
-      type:
-        typeof args.type === "string" || Array.isArray(args.type)
-          ? (args.type as string | string[])
-          : undefined,
-      author:
-        typeof args.author === "string" || Array.isArray(args.author)
-          ? (args.author as string | string[])
-          : undefined,
-      item:
-        typeof args.item === "string" || Array.isArray(args.item)
-          ? (args.item as string | string[])
-          : undefined,
-      limit: typeof args.limit === "number" ? args.limit : undefined,
-      full: args.full === true,
-    }),
   pm_mutate: async (args) => {
     const transactionId = readRequiredString(args, "transactionId");
     const mutations = validateItemMutationRows(args.mutations);

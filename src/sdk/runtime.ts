@@ -107,24 +107,18 @@ import {
   type PlanCommandResult,
   type PlanSubcommand,
 } from "./lifecycle/plan.js";
-import { runContext, type ContextOptions, type ContextResult } from "./query/context.js";
+import {
+  runContext,
+  type ContextOptions,
+  type ContextResult,
+} from "./query/context.js";
 import { runNext, type NextOptions, type NextResult } from "./query/next.js";
 import { runClose } from "./lifecycle/close.js";
 import { runCopy, type CopyResult } from "./lifecycle/copy.js";
-import {
-  runDelete,
-  type DeleteResult,
-} from "./lifecycle/delete.js";
-import {
-  runRestore,
-  type RestoreResult,
-} from "./lifecycle/restore.js";
+import { runDelete, type DeleteResult } from "./lifecycle/delete.js";
+import { runRestore, type RestoreResult } from "./lifecycle/restore.js";
 import { runFocus, type FocusResult } from "./lifecycle/focus.js";
-import {
-  runGet,
-  type GetOptions,
-  type GetResult,
-} from "./query/get.js";
+import { runGet, type GetOptions, type GetResult } from "./query/get.js";
 import {
   runGc,
   type GcCommandOptions,
@@ -148,6 +142,13 @@ import {
 } from "./extension.js";
 import { runConfig } from "./config.js";
 import { runInit } from "./init.js";
+import {
+  runRuntimeEvalAction,
+  runRuntimeEventsAction,
+  runRuntimeMergeAction,
+  runRuntimeSchedulingAction,
+  runRuntimeWorkspaceAction,
+} from "./runtime-extended-actions.js";
 import {
   acknowledgeUnknownAuthorHistoryEvents,
   type AcknowledgeUnknownAuthorEventsOptions,
@@ -213,10 +214,7 @@ import {
   type GraphSubcommand,
 } from "./graph/run.js";
 import { runFiles, runFilesDiscover } from "./files.js";
-import type {
-  AppendCommandOptions,
-  AppendResult,
-} from "./lifecycle/append.js";
+import type { AppendCommandOptions, AppendResult } from "./lifecycle/append.js";
 import type {
   ClaimNextResult,
   ClaimResult,
@@ -248,14 +246,8 @@ import { runTelemetry } from "./telemetry.js";
 import { runTest } from "./test/execution.js";
 import { runTestAll } from "./test/batch.js";
 import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
-import type {
-  CommentsCommandOptions,
-  CommentsResult,
-} from "./comments.js";
-import type {
-  ConfigCommandOptions,
-  ConfigResult,
-} from "./config.js";
+import type { CommentsCommandOptions, CommentsResult } from "./comments.js";
+import type { ConfigCommandOptions, ConfigResult } from "./config.js";
 import type { DepsCommandOptions, DepsResult } from "./dependencies.js";
 import type { DocsCommandOptions, DocsResult } from "./docs.js";
 import type {
@@ -265,14 +257,8 @@ import type {
   FilesResult,
 } from "./files.js";
 import type { InitCommandOptions, InitResult } from "./init.js";
-import type {
-  LearningsCommandOptions,
-  LearningsResult,
-} from "./learnings.js";
-import type {
-  NotesCommandOptions,
-  NotesResult,
-} from "./notes.js";
+import type { LearningsCommandOptions, LearningsResult } from "./learnings.js";
+import type { NotesCommandOptions, NotesResult } from "./notes.js";
 import type {
   ProfileApplyCommandOptions,
   ProfileApplyResult,
@@ -465,11 +451,7 @@ export {
   type TestHealthSummary,
   type WorkloadEntry,
 } from "./query/context.js";
-export {
-  runGet,
-  type GetOptions,
-  type GetResult,
-} from "./query/get.js";
+export { runGet, type GetOptions, type GetResult } from "./query/get.js";
 export {
   runList,
   type ListFullResult,
@@ -524,10 +506,7 @@ export {
   type TerminalReasonSource,
   type TerminalTransitionPolicy,
 } from "./lifecycle-policy.js";
-export {
-  runUpdate,
-  type UpdateCommandOptions,
-} from "./lifecycle/update.js";
+export { runUpdate, type UpdateCommandOptions } from "./lifecycle/update.js";
 export {
   NEXT_OUTPUT_VALUES,
   runNext,
@@ -3708,6 +3687,13 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     ),
   next: (ctx) =>
     runNext(applyContextIntentProjection("next", ctx.options), ctx.global),
+  eval: runRuntimeEvalAction,
+  events: runRuntimeEventsAction,
+  merge: runRuntimeMergeAction,
+  workspace: runRuntimeWorkspaceAction,
+  meet: runRuntimeSchedulingAction,
+  event: runRuntimeSchedulingAction,
+  remind: runRuntimeSchedulingAction,
   list: runMcpListAction,
   get: (ctx) =>
     runGet(

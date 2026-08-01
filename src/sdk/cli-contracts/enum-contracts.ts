@@ -157,98 +157,85 @@ export const GRAPH_SUBCOMMAND_VALUES = [
 /** Restricts graph subcommand values accepted by command, SDK, and MCP contracts. */
 export type GraphSubcommand = (typeof GRAPH_SUBCOMMAND_VALUES)[number];
 
-/** Public contract for pm tool actions, shared by SDK and presentation-layer consumers. */
-export const PM_TOOL_ACTIONS = [
+/** Nested lifecycle verbs flattened by SDK and MCP package actions. */
+export const PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS = [
   "init",
-  "config",
-  "extension-init",
-  "extension-install",
-  "extension-uninstall",
-  "extension-explore",
-  "extension-manage",
-  "extension-describe",
-  "extension-reload",
-  "extension-doctor",
-  "extension-catalog",
-  "extension-adopt",
-  "extension-adopt-all",
-  "extension-activate",
-  "extension-deactivate",
-  "extension",
-  "package-init",
-  "package-install",
-  "package-uninstall",
-  "package-explore",
-  "package-manage",
-  "package-describe",
-  "package-reload",
-  "package-doctor",
-  "package-catalog",
-  "package-adopt",
-  "package-adopt-all",
-  "package-activate",
-  "package-deactivate",
-  "package",
   "install",
-  "upgrade",
-  "create",
-  "copy",
-  "focus",
-  "list",
-  "list-all",
-  "list-draft",
-  "list-open",
-  "list-in-progress",
-  "list-blocked",
-  "list-closed",
-  "list-canceled",
-  "aggregate",
-  "context",
-  "ctx",
-  "get",
-  "search",
-  "duplicates",
-  "next",
-  "history",
-  "history-redact",
-  "history-repair",
-  "history-compact",
-  "history-author-acknowledge",
-  "schema",
-  "profile",
-  "activity",
-  "restore",
-  "update",
-  "update-many",
-  "close",
-  "close-many",
-  "delete",
-  "append",
-  "comments",
-  "plan",
-  "notes",
-  "learnings",
-  "files",
-  "docs",
-  "deps",
-  "graph",
-  "test",
-  "test-all",
-  "telemetry",
-  "stats",
-  "health",
-  "validate",
-  "gc",
-  "contracts",
-  "claim",
-  "release",
-  "start-task",
-  "pause-task",
-  "close-task",
+  "uninstall",
+  "explore",
+  "manage",
+  "describe",
+  "reload",
+  "doctor",
+  "catalog",
+  "adopt",
+  "adopt-all",
+  "activate",
+  "deactivate",
 ] as const;
 
+/** CLI-only presentation commands intentionally omitted from programmatic actions. */
+export const PM_CLI_ONLY_TOOL_ACTION_WAIVERS = {
+  help: "Commander help rendering has no SDK operation result.",
+  item: "The item namespace only groups lifecycle subcommands already exposed as actions.",
+  packages: "The plural package alias only renders package-oriented help.",
+} as const;
+
+type PmCoreCommandName = (typeof PM_CORE_COMMAND_NAMES)[number];
+type PmCliOnlyToolAction = keyof typeof PM_CLI_ONLY_TOOL_ACTION_WAIVERS;
+type PmExtensionPackageAction =
+  `${"extension" | "package"}-${(typeof PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS)[number]}`;
+
 /** Restricts pm tool action values accepted by command, SDK, and storage contracts. */
-export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
+export type PmToolAction =
+  | Exclude<PmCoreCommandName, PmCliOnlyToolAction>
+  | PmExtensionPackageAction;
+
+/**
+ * Public pm tool actions derived from the CLI vocabulary. Nested extension and
+ * package verbs are flattened for transports that expose one action string.
+ */
+export const PM_TOOL_ACTIONS: readonly PmToolAction[] = Object.freeze(
+  PM_CORE_COMMAND_NAMES.flatMap((command): PmToolAction[] => {
+    if (command in PM_CLI_ONLY_TOOL_ACTION_WAIVERS) return [];
+    if (command === "extension" || command === "package") {
+      return [
+        ...PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS.map(
+          (subcommand): PmExtensionPackageAction => `${command}-${subcommand}`,
+        ),
+        command,
+      ];
+    }
+    return [command as PmToolAction];
+  }),
+);
+
+/** Static CLI-to-tool action parity evidence used by quality gates and tests. */
+export function analyzePmToolActionParity(
+  cliCommands: readonly string[] = PM_CORE_COMMAND_NAMES,
+  toolActions: readonly string[] = PM_TOOL_ACTIONS,
+  waivers: Readonly<Record<string, string>> = PM_CLI_ONLY_TOOL_ACTION_WAIVERS,
+): {
+  missing_cli_actions: string[];
+  waived_cli_actions: string[];
+  stale_waivers: string[];
+} {
+  const toolActionSet = new Set(toolActions);
+  const cliCommandSet = new Set(cliCommands);
+  return {
+    missing_cli_actions: cliCommands.filter(
+      (command) =>
+        !toolActionSet.has(command) && waivers[command] === undefined,
+    ),
+    waived_cli_actions: cliCommands.filter(
+      (command) =>
+        !toolActionSet.has(command) && waivers[command] !== undefined,
+    ),
+    stale_waivers: Object.keys(waivers).filter(
+      (command) => !cliCommandSet.has(command) || toolActionSet.has(command),
+    ),
+  };
+}
 
 /** Implements check whether pm tool action for the public runtime surface of this module. */
 export function isPmToolAction(value: string): value is PmToolAction {

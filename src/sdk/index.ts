@@ -138,6 +138,17 @@ export {
 } from "./governance/validate.js";
 export { runExtension } from "./extension.js";
 export {
+  runEvent,
+  runMeet,
+  runRemind,
+  type MeetingEventShortcutOptions,
+  type ReminderShortcutOptions,
+  type SchedulingShortcutCommonOptions,
+} from "./scheduling-shortcuts.js";
+export { createExtensionCommandSdk } from "./extension-command-context.js";
+export { isRuntimeRecord } from "./runtime-input.js";
+export { resolveStartTaskInProgressStatus } from "./start-task-status.js";
+export {
   auditMergeAttributeFence,
   buildMergeAttributePatterns,
   findGitWorkspaceRoot,
@@ -346,7 +357,9 @@ export {
   PLAN_CREATE_METADATA_PARAMETER_KEYS,
   PLAN_FLAG_CONTRACTS,
   PM_COMMAND_OUTPUT_BUDGET_CONTRACTS,
+  PM_CLI_ONLY_TOOL_ACTION_WAIVERS,
   PM_CORE_COMMAND_NAMES,
+  PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS,
   PM_EXTENSION_CAPABILITY_CONTRACTS,
   PM_EXTENSION_POLICY_MODE_CONTRACTS,
   PM_EXTENSION_POLICY_SURFACE_CONTRACTS,
@@ -356,6 +369,7 @@ export {
   PM_PROVIDER_TOOL_PARAMETERS_SCHEMA,
   PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION,
   PM_TOOL_ACTIONS,
+  analyzePmToolActionParity,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   PM_TOOL_PARAMETERS_SCHEMA,
   PM_TOOL_PARAMETERS_SCHEMA_MAJOR,

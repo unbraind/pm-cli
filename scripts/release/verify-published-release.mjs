@@ -3,7 +3,14 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
+import {
+  commandFor,
+  fail,
+  flagBool,
+  flagString,
+  parseFlags,
+  runCommand,
+} from "./utils.mjs";
 
 const NPM_PACKAGE =
   process.env.NPM_PACKAGE?.trim() ||
@@ -48,7 +55,8 @@ function sleep(milliseconds) {
   // the worker thread for the production 10–15s propagation delays.
   const override = Number(process.env.PM_VERIFY_SLEEP_MS);
   /* c8 ignore next -- the fallback uses the real 10-15s production backoff; the unit suite always sets PM_VERIFY_SLEEP_MS so exercising it would block the worker thread */
-  const effective = Number.isFinite(override) && override >= 0 ? override : milliseconds;
+  const effective =
+    Number.isFinite(override) && override >= 0 ? override : milliseconds;
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, effective);
 }
 
@@ -84,7 +92,9 @@ function runWithRetries(label, attempts, delayMs, action) {
     /* c8 ignore next -- every action returns an explicit reason on failure; the "unknown_failure" fallback is defensive */
     failures.push(result.reason ?? "unknown_failure");
     if (attempt < attempts) {
-      console.error(`Waiting for ${label} propagation (attempt ${attempt}/${attempts})...`);
+      console.error(
+        `Waiting for ${label} propagation (attempt ${attempt}/${attempts})...`,
+      );
       sleep(delayMs);
     }
   }
@@ -101,7 +111,14 @@ function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   return runWithRetries("npm metadata", attempts, 15000, () => {
     const result = runCommand(
       npm,
-      ["view", `${NPM_PACKAGE}@${version}`, "version", "dist.integrity", "dist.unpackedSize", "--json"],
+      [
+        "view",
+        `${NPM_PACKAGE}@${version}`,
+        "version",
+        "dist.integrity",
+        "dist.unpackedSize",
+        "--json",
+      ],
       { capture: true, allowFailure: true, env: publicRegistryEnv },
     );
     if (result.status !== 0) {
@@ -110,7 +127,10 @@ function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
     try {
       const metadata = JSON.parse(result.stdout);
       if (metadata.version !== version) {
-        return { ok: false, reason: `npm_version_mismatch:${metadata.version ?? "missing"}` };
+        return {
+          ok: false,
+          reason: `npm_version_mismatch:${metadata.version ?? "missing"}`,
+        };
       }
       return { ok: true, metadata };
     } catch (error) {
@@ -121,7 +141,16 @@ function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   });
 }
 
-function verifyExecutor(name, args, attempts, tempRoot, publicRegistryEnv, assertion, input, timeout) {
+function verifyExecutor(
+  name,
+  args,
+  attempts,
+  tempRoot,
+  publicRegistryEnv,
+  assertion,
+  input,
+  timeout,
+) {
   return runWithRetries(name, attempts, 10000, () => {
     const result = runCommand(args[0], args.slice(1), {
       cwd: tempRoot,
@@ -147,7 +176,16 @@ function verifyExecutor(name, args, attempts, tempRoot, publicRegistryEnv, asser
   });
 }
 
-function verifyRequiredExecutor(label, args, attempts, tempRoot, publicRegistryEnv, assertion, input, timeout) {
+function verifyRequiredExecutor(
+  label,
+  args,
+  attempts,
+  tempRoot,
+  publicRegistryEnv,
+  assertion,
+  input,
+  timeout,
+) {
   const result = verifyExecutor(
     label,
     args,
@@ -228,16 +266,49 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
 
     const packageSpec = `${NPM_PACKAGE}@${version}`;
     const binEntries = Object.entries(PACKAGE_BINS);
-    const coveredEntrypoints = new Set([PACKAGE_BINS.pm, PACKAGE_BINS["pm-mcp"]]);
+    const coveredEntrypoints = new Set([
+      PACKAGE_BINS.pm,
+      PACKAGE_BINS["pm-mcp"],
+    ]);
     const uncoveredBins = binEntries
       .filter(([, entrypoint]) => !coveredEntrypoints.has(entrypoint))
       .map(([bin]) => bin);
     if (uncoveredBins.length > 0) {
-      fail(`Published package bins lack executable coverage: ${uncoveredBins.join(", ")}`);
+      fail(
+        `Published package bins lack executable coverage: ${uncoveredBins.join(", ")}`,
+      );
     }
     const npxPm = verifyRequiredExecutor(
       "npx-pm",
-      [commandFor("npx"), "--yes", "--package", packageSpec, "--", "pm", "--json", "--no-extensions", "contracts", "--summary"],
+      [
+        commandFor("npx"),
+        "--yes",
+        "--package",
+        packageSpec,
+        "--",
+        "pm",
+        "--json",
+        "--no-extensions",
+        "contracts",
+        "--summary",
+      ],
+      executorAttempts,
+      tempRoot,
+      publicRegistryEnv,
+      assertCliDispatch,
+    );
+    const npxPackageDefaultPm = verifyRequiredExecutor(
+      "npx-package-default-pm",
+      [
+        commandFor("npx"),
+        "--yes",
+        packageSpec,
+        "pm",
+        "--json",
+        "--no-extensions",
+        "contracts",
+        "--summary",
+      ],
       executorAttempts,
       tempRoot,
       publicRegistryEnv,
@@ -255,7 +326,36 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
     );
     const bunxPm = verifyRequiredExecutor(
       "bunx-pm",
-      [commandFor("bunx"), "--silent", "--bun", "--package", packageSpec, "pm", "--json", "--no-extensions", "contracts", "--summary"],
+      [
+        commandFor("bunx"),
+        "--silent",
+        "--bun",
+        "--package",
+        packageSpec,
+        "pm",
+        "--json",
+        "--no-extensions",
+        "contracts",
+        "--summary",
+      ],
+      executorAttempts,
+      tempRoot,
+      publicRegistryEnv,
+      assertCliDispatch,
+    );
+    const bunxPackageDefaultPm = verifyRequiredExecutor(
+      "bunx-package-default-pm",
+      [
+        commandFor("bunx"),
+        "--silent",
+        "--bun",
+        packageSpec,
+        "pm",
+        "--json",
+        "--no-extensions",
+        "contracts",
+        "--summary",
+      ],
       executorAttempts,
       tempRoot,
       publicRegistryEnv,
@@ -263,7 +363,14 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
     );
     const bunxMcp = verifyRequiredExecutor(
       "bunx-pm-mcp",
-      [commandFor("bunx"), "--silent", "--bun", "--package", packageSpec, "pm-mcp"],
+      [
+        commandFor("bunx"),
+        "--silent",
+        "--bun",
+        "--package",
+        packageSpec,
+        "pm-mcp",
+      ],
       executorAttempts,
       tempRoot,
       publicRegistryEnv,
@@ -274,13 +381,45 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
     const negativeControls = {
       npx: verifyMissingBinControl(
         "npx-missing-bin",
-        [commandFor("npx"), "--yes", "--package", packageSpec, "--", "pm-definitely-missing"],
+        [
+          commandFor("npx"),
+          "--yes",
+          "--package",
+          packageSpec,
+          "--",
+          "pm-definitely-missing",
+        ],
+        tempRoot,
+        publicRegistryEnv,
+      ),
+      npx_package_default: verifyMissingBinControl(
+        "npx-package-default-missing-command",
+        [commandFor("npx"), "--yes", packageSpec, "pm-definitely-missing"],
         tempRoot,
         publicRegistryEnv,
       ),
       bunx: verifyMissingBinControl(
         "bunx-missing-bin",
-        [commandFor("bunx"), "--silent", "--bun", "--package", packageSpec, "pm-definitely-missing"],
+        [
+          commandFor("bunx"),
+          "--silent",
+          "--bun",
+          "--package",
+          packageSpec,
+          "pm-definitely-missing",
+        ],
+        tempRoot,
+        publicRegistryEnv,
+      ),
+      bunx_package_default: verifyMissingBinControl(
+        "bunx-package-default-missing-command",
+        [
+          commandFor("bunx"),
+          "--silent",
+          "--bun",
+          packageSpec,
+          "pm-definitely-missing",
+        ],
         tempRoot,
         publicRegistryEnv,
       ),
@@ -288,13 +427,23 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
     return {
       npm: npmMetadata,
       executors: {
-        npx: { pm: npxPm, "pm-mcp": npxMcp },
-        bunx: { pm: bunxPm, "pm-mcp": bunxMcp },
+        npx: {
+          pm: npxPm,
+          "package-default-pm": npxPackageDefaultPm,
+          "pm-mcp": npxMcp,
+        },
+        bunx: {
+          pm: bunxPm,
+          "package-default-pm": bunxPackageDefaultPm,
+          "pm-mcp": bunxMcp,
+        },
       },
       negative_controls: negativeControls,
       bin_coverage: {
         covered_bins: binEntries.map(([bin]) => bin).sort(),
-        distinct_entrypoints: [...new Set(binEntries.map(([, entrypoint]) => entrypoint))].sort(),
+        distinct_entrypoints: [
+          ...new Set(binEntries.map(([, entrypoint]) => entrypoint)),
+        ].sort(),
         uncovered_bins: uncoveredBins,
       },
     };
@@ -307,16 +456,26 @@ function verifyGitHubRelease(version) {
   const tagName = `v${version}`;
   const result = runCommand(
     commandFor("gh"),
-    ["release", "view", tagName, "--json", "tagName,name,isDraft,isPrerelease,url"],
+    [
+      "release",
+      "view",
+      tagName,
+      "--json",
+      "tagName,name,isDraft,isPrerelease,url",
+    ],
     { capture: true, allowFailure: true },
   );
   if (result.status !== 0) {
-    fail(`GitHub release verification failed: ${result.stderr.trim() || "gh_release_view_failed"}`);
+    fail(
+      `GitHub release verification failed: ${result.stderr.trim() || "gh_release_view_failed"}`,
+    );
   }
   try {
     const metadata = JSON.parse(result.stdout);
     if (metadata.tagName !== tagName) {
-      fail(`GitHub release tag mismatch: expected ${tagName}, received ${metadata.tagName ?? "missing"}.`);
+      fail(
+        `GitHub release tag mismatch: expected ${tagName}, received ${metadata.tagName ?? "missing"}.`,
+      );
     }
     if (metadata.isDraft === true || metadata.isPrerelease === true) {
       fail(`GitHub release ${tagName} must not be draft/prerelease.`);
@@ -346,8 +505,12 @@ function main() {
   const result = {
     ok: true,
     version,
-    package: skipPackage ? { skipped: true } : verifyPackageSurfaces(version, npmAttempts, executorAttempts),
-    github_release: skipGithubRelease ? { skipped: true } : verifyGitHubRelease(version),
+    package: skipPackage
+      ? { skipped: true }
+      : verifyPackageSurfaces(version, npmAttempts, executorAttempts),
+    github_release: skipGithubRelease
+      ? { skipped: true }
+      : verifyGitHubRelease(version),
   };
 
   if (outputJson) {

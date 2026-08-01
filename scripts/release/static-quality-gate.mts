@@ -1053,6 +1053,112 @@ function importEdgeKey(edge) {
   return `${edge.source}\u0000${edge.import_path}`;
 }
 
+// Ratchet for presentation-layer imports that are not yet reachable through a
+// published SDK export declaration. Entries must only be removed as modules
+// join the public SDK surface; stale entries fail the gate.
+const PRIVATE_SDK_IMPORT_ALLOWLIST = new Set([
+  "src/sdk/cli-contracts/registration-helpers.ts",
+  "src/sdk/cli-contracts/runtime-contracts.ts",
+  "src/sdk/extension/describe.ts",
+  "src/sdk/extension/scaffold.ts",
+  "src/sdk/extension/shared.ts",
+  "src/sdk/lifecycle/lifecycle-transitions.ts",
+  "src/sdk/schema.ts",
+]);
+
+/** Resolve SDK modules reachable through published export declarations. */
+export function collectPublicSdkExportClosure(
+  files,
+  entryPaths = ["src/sdk/index.ts", ...collectPackageExportSourceEntries()],
+) {
+  const sourceFiles = new Set(files.filter((file) => existsSync(file)));
+  const pending = entryPaths
+    .map((entry) => path.resolve(repoRoot, entry))
+    .filter((entry) => sourceFiles.has(entry));
+  const closure = new Set();
+  while (pending.length > 0) {
+    const absolutePath = pending.pop();
+    if (closure.has(absolutePath)) continue;
+    closure.add(absolutePath);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      loadText(absolutePath),
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    for (const statement of sourceFile.statements) {
+      if (
+        !ts.isExportDeclaration(statement) ||
+        !statement.moduleSpecifier ||
+        !ts.isStringLiteralLike(statement.moduleSpecifier)
+      ) {
+        continue;
+      }
+      const resolved = resolveRelativeImport(
+        absolutePath,
+        statement.moduleSpecifier.text,
+      );
+      if (
+        resolved !== null &&
+        sourceFiles.has(resolved) &&
+        isSdkOwnershipSource(relativeToRepo(resolved)) &&
+        !closure.has(resolved)
+      ) {
+        pending.push(resolved);
+      }
+    }
+  }
+  return new Set([...closure].map(relativeToRepo));
+}
+
+/** Find CLI/MCP imports of SDK modules absent from the published export closure. */
+export function collectPrivateSdkImportEdges(
+  files,
+  entryPaths = ["src/sdk/index.ts", ...collectPackageExportSourceEntries()],
+) {
+  const publicSdkModules = collectPublicSdkExportClosure(files, entryPaths);
+  const edges = [];
+  const seen = new Set();
+  for (const absolutePath of collectSdkBoundarySourceFiles(files)) {
+    if (!existsSync(absolutePath)) continue;
+    const relativeSource = relativeToRepo(absolutePath);
+    const sourceFile = ts.createSourceFile(
+      absolutePath,
+      loadText(absolutePath),
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const visit = (node) => {
+      const specifier = importModuleSpecifier(node);
+      const resolved =
+        specifier === null
+          ? null
+          : resolveRelativeImport(absolutePath, specifier);
+      if (resolved !== null) {
+        const relativeImport = relativeToRepo(resolved);
+        if (
+          isSdkOwnershipSource(relativeImport) &&
+          !publicSdkModules.has(relativeImport)
+        ) {
+          const edge = { source: relativeSource, import_path: relativeImport };
+          const key = importEdgeKey(edge);
+          if (!seen.has(key)) {
+            seen.add(key);
+            edges.push(edge);
+          }
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+  }
+  return edges.sort(
+    (left, right) =>
+      left.source.localeCompare(right.source) ||
+      left.import_path.localeCompare(right.import_path),
+  );
+}
+
 export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
   const boundarySourceFiles = collectSdkBoundarySourceFiles(files);
   const boundaryAndSdkSourceFiles = files.filter((absolutePath) => {
@@ -1068,11 +1174,29 @@ export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
       boundaryAndSdkSourceFiles,
     );
   const sdkToCliImports = collectSdkToCliImportEdges(files);
+  const privateSdkImports = collectPrivateSdkImportEdges(files);
+  const privateSdkTargets = new Set(
+    privateSdkImports.map(({ import_path }) => import_path),
+  );
+  const newPrivateSdkImports = privateSdkImports.filter(
+    ({ import_path }) => !PRIVATE_SDK_IMPORT_ALLOWLIST.has(import_path),
+  );
+  const scannedPaths = new Set(files.map(relativeToRepo));
+  const scansCompleteAllowlist = [...PRIVATE_SDK_IMPORT_ALLOWLIST].every(
+    (entry) => scannedPaths.has(entry),
+  );
+  const stalePrivateSdkAllowlist = scansCompleteAllowlist
+    ? [...PRIVATE_SDK_IMPORT_ALLOWLIST]
+        .filter((entry) => !privateSdkTargets.has(entry))
+        .sort((left, right) => left.localeCompare(right))
+    : [];
   return {
     ok:
       actualEdges.length === 0 &&
       unsupportedDynamicImports.length === 0 &&
-      sdkToCliImports.length === 0,
+      sdkToCliImports.length === 0 &&
+      newPrivateSdkImports.length === 0 &&
+      stalePrivateSdkAllowlist.length === 0,
     scanned_file_count: boundarySourceFiles.length,
     actual_edge_count: actualEdges.length,
     baseline_edge_count: 0,
@@ -1080,6 +1204,9 @@ export function checkSdkImportBoundary(files = collectTypeScriptFiles()) {
     stale_baseline_imports: [],
     unsupported_dynamic_imports: unsupportedDynamicImports,
     sdk_to_cli_imports: sdkToCliImports,
+    private_sdk_allowlist_count: PRIVATE_SDK_IMPORT_ALLOWLIST.size,
+    new_private_sdk_imports: newPrivateSdkImports,
+    stale_private_sdk_allowlist: stalePrivateSdkAllowlist,
   };
 }
 
@@ -1726,6 +1853,9 @@ function buildQualityReport(files, duplicateScopeFiles, thresholds) {
       codefactor_complexity: codeFactorComplexity.violations,
       sdk_import_boundary: {
         new_private_core_imports: sdkImportBoundary.new_private_core_imports,
+        new_private_sdk_imports: sdkImportBoundary.new_private_sdk_imports,
+        stale_private_sdk_allowlist:
+          sdkImportBoundary.stale_private_sdk_allowlist,
         sdk_to_cli_imports: sdkImportBoundary.sdk_to_cli_imports,
         unsupported_dynamic_imports:
           sdkImportBoundary.unsupported_dynamic_imports,
@@ -1837,6 +1967,14 @@ function printQualityFailureSummary(report) {
   printViolationCount(
     "sdk_import_boundary private_core_import",
     report.violations.sdk_import_boundary.new_private_core_imports.length,
+  );
+  printViolationCount(
+    "sdk_import_boundary private_sdk_import",
+    report.violations.sdk_import_boundary.new_private_sdk_imports.length,
+  );
+  printViolationCount(
+    "sdk_import_boundary stale_private_sdk_allowlist",
+    report.violations.sdk_import_boundary.stale_private_sdk_allowlist.length,
   );
   printViolationCount(
     "sdk_import_boundary sdk_to_cli_import",

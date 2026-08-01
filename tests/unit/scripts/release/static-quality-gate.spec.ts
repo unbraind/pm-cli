@@ -23,10 +23,18 @@ type SqModule = {
   ) => string[];
   relativeToRepo: (abs: string) => string;
   collectTypeScriptFiles: () => string[];
-  checkFileLength: (files: string[], maxSrc: number, maxTest: number) => unknown[];
+  checkFileLength: (
+    files: string[],
+    maxSrc: number,
+    maxTest: number,
+  ) => unknown[];
   checkDirectoryLoad: (files: string[], maxPerDir: number) => unknown[];
   normalizeLine: (line: string) => string;
-  checkDuplicateChunks: (files: string[], window: number, maxChunks: number) => unknown[];
+  checkDuplicateChunks: (
+    files: string[],
+    window: number,
+    maxChunks: number,
+  ) => unknown[];
   resolveRelativeImport: (fromAbs: string, spec: string) => string | null;
   sourceFilesOnly: (files: string[]) => string[];
   hasModuleDocstring: (sourceText: string) => boolean;
@@ -48,11 +56,18 @@ type SqModule = {
     ok: boolean;
     total: number;
     documented: number;
-    missing: Array<{ path: string; line: number; name: string; reason: string }>;
+    missing: Array<{
+      path: string;
+      line: number;
+      name: string;
+      reason: string;
+    }>;
     coverage_percent: number;
     min_coverage_percent: number;
   };
-  checkDocstringBoilerplate: (files: string[]) => Array<{ path: string; line: number; reason: string }>;
+  checkDocstringBoilerplate: (
+    files: string[],
+  ) => Array<{ path: string; line: number; reason: string }>;
   documentedSourceFiles: (files: string[]) => string[];
   checkExportedMemberDocstringCoverage: (
     files: string[],
@@ -61,51 +76,98 @@ type SqModule = {
     ok: boolean;
     total: number;
     documented: number;
-    missing: Array<{ path: string; line: number; name: string; reason: string }>;
+    missing: Array<{
+      path: string;
+      line: number;
+      name: string;
+      reason: string;
+    }>;
     coverage_percent: number;
     min_coverage_percent: number;
   };
   extractDocstringProse: (comment: string) => string;
   identifierWords: (name: string) => string[];
   isTrivialDocstring: (comment: string, symbolName: string) => boolean;
-  checkTrivialDocstrings: (files: string[]) => Array<{ path: string; line: number; name: string; reason: string }>;
+  checkTrivialDocstrings: (
+    files: string[],
+  ) => Array<{ path: string; line: number; name: string; reason: string }>;
   checkOrphanSourceModules: (files: string[]) => Array<{ path: string }>;
   collectSdkBoundarySourceFiles: (files: string[]) => string[];
-  collectPrivateCoreImportEdges: (files: string[]) => Array<{ source: string; import_path: string }>;
-  collectSdkToCliImportEdges: (files: string[]) => Array<{ source: string; import_path: string }>;
+  collectPrivateCoreImportEdges: (
+    files: string[],
+  ) => Array<{ source: string; import_path: string }>;
+  collectSdkToCliImportEdges: (
+    files: string[],
+  ) => Array<{ source: string; import_path: string }>;
+  collectPublicSdkExportClosure: (
+    files: string[],
+    entryPaths?: string[],
+  ) => Set<string>;
+  collectPrivateSdkImportEdges: (
+    files: string[],
+    entryPaths?: string[],
+  ) => Array<{ source: string; import_path: string }>;
   collectUnsupportedDynamicImportExpressions: (files: string[]) => Array<{
     source: string;
     line: number;
     reason: string;
   }>;
-  checkSdkImportBoundary: (files?: string[], ignoredLegacyBaselinePath?: string) => {
+  checkSdkImportBoundary: (
+    files?: string[],
+    ignoredLegacyBaselinePath?: string,
+  ) => {
     ok: boolean;
     scanned_file_count: number;
     actual_edge_count: number;
     baseline_edge_count: 0;
     new_private_core_imports: Array<{ source: string; import_path: string }>;
     stale_baseline_imports: Array<{ source: string; import_path: string }>;
-    unsupported_dynamic_imports: Array<{ source: string; line: number; reason: string }>;
+    unsupported_dynamic_imports: Array<{
+      source: string;
+      line: number;
+      reason: string;
+    }>;
     sdk_to_cli_imports: Array<{ source: string; import_path: string }>;
+    private_sdk_allowlist_count: number;
+    new_private_sdk_imports: Array<{ source: string; import_path: string }>;
+    stale_private_sdk_allowlist: string[];
   };
   complexityContribution: (node: unknown) => number;
   functionLikeName: (node: unknown, sf: unknown) => string;
-  checkFunctionComplexity: (files: string[], max: number) => Array<{ function_name: string; complexity: number }>;
+  checkFunctionComplexity: (
+    files: string[],
+    max: number,
+  ) => Array<{ function_name: string; complexity: number }>;
   collectCodeFactorParityFiles: (
-    changedPaths?: { ok: true; files: string[] } | { ok: false; files: string[]; error: string },
-  ) => { ok: true; files: string[] } | { ok: false; files: string[]; error: string };
+    changedPaths?:
+      | { ok: true; files: string[] }
+      | { ok: false; files: string[]; error: string },
+  ) =>
+    | { ok: true; files: string[] }
+    | { ok: false; files: string[]; error: string };
   checkCodeFactorComplexity: (
     max: number,
-    changedPaths?: { ok: true; files: string[] } | { ok: false; files: string[]; error: string },
+    changedPaths?:
+      | { ok: true; files: string[] }
+      | { ok: false; files: string[]; error: string },
   ) => {
     ok: boolean;
     scanned_file_count: number;
     max_complexity: number;
-    violations: Array<{ path: string; function_name: string; complexity: number; max_complexity: number }>;
+    violations: Array<{
+      path: string;
+      function_name: string;
+      complexity: number;
+      max_complexity: number;
+    }>;
     error?: string;
   };
   usage: () => void;
-  parseNumberFlag: (flags: Map<string, unknown>, key: string, fallback: number) => number;
+  parseNumberFlag: (
+    flags: Map<string, unknown>,
+    key: string,
+    fallback: number,
+  ) => number;
   countEslintSuppressions: (suppressionsPath: string) => number;
   checkEslintSuppressionsBudget: (maxSuppressions: number) => {
     ok: boolean;
@@ -115,8 +177,13 @@ type SqModule = {
   };
   MAX_ESLINT_SUPPRESSIONS: number;
   collectPragmaScanFiles: () => string[];
-  readPragmaScanTexts: (files: string[]) => Array<{ path: string; text: string }>;
-  countPragmaMatchesInTexts: (scanTexts: Array<{ path: string; text: string }>, pattern: RegExp) => number;
+  readPragmaScanTexts: (
+    files: string[],
+  ) => Array<{ path: string; text: string }>;
+  countPragmaMatchesInTexts: (
+    scanTexts: Array<{ path: string; text: string }>,
+    pattern: RegExp,
+  ) => number;
   checkInlinePragmaBudgets: (
     budgets?: {
       maxInlineEslintDisables?: number;
@@ -129,7 +196,10 @@ type SqModule = {
     ok: boolean;
     scanned_file_count: number;
     error?: string;
-    budgets: Record<string, { ok: boolean; total: number | null; max: number; error?: string }>;
+    budgets: Record<
+      string,
+      { ok: boolean; total: number | null; max: number; error?: string }
+    >;
   };
   MAX_INLINE_ESLINT_DISABLES: number;
   MAX_BROAD_ESLINT_DISABLES: number;
@@ -148,7 +218,9 @@ const JSCPD_IGNORE_END_PRAGMA = "// jscpd:" + "ignore-end";
 
 function mockUtils(repoRoot: string): void {
   vi.doMock("../../../../scripts/release/utils.mjs", async () => {
-    const actual = await vi.importActual<Record<string, unknown>>("../../../../scripts/release/utils.mjs");
+    const actual = await vi.importActual<Record<string, unknown>>(
+      "../../../../scripts/release/utils.mjs",
+    );
     return {
       ...actual,
       repoRoot,
@@ -168,8 +240,34 @@ function mockFs(impl: Partial<typeof fs>): void {
 
 function mockChildProcess(impl: Partial<typeof childProcess>): void {
   vi.doMock("node:child_process", async () => {
-    const actual = await vi.importActual<typeof childProcess>("node:child_process");
+    const actual =
+      await vi.importActual<typeof childProcess>("node:child_process");
     return { ...actual, ...impl };
+  });
+}
+
+function mockCodeFactorSource(filePath: string): void {
+  mockFs({
+    existsSync: vi.fn(
+      (path: string) =>
+        normalizeMockPath(path) === "/repo/.git" ||
+        normalizeMockPath(path) === filePath,
+    ) as never,
+    statSync: vi.fn((path: string) => {
+      if (normalizeMockPath(path) === filePath) {
+        return {
+          isFile: () => true,
+          isDirectory: () => false,
+        } as unknown as Stats;
+      }
+      return {
+        isFile: () => false,
+        isDirectory: () => true,
+      } as unknown as Stats;
+    }) as never,
+    readFileSync: vi.fn(
+      () => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n",
+    ) as never,
   });
 }
 
@@ -184,7 +282,9 @@ describe("static-quality-gate", () => {
       const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       mod.usage();
-      expect(logSpy.mock.calls.some((c) => String(c[0]).includes("Usage:"))).toBe(true);
+      expect(
+        logSpy.mock.calls.some((c) => String(c[0]).includes("Usage:")),
+      ).toBe(true);
 
       expect(mod.normalizeLine("   ")).toBe("");
       expect(mod.normalizeLine("// comment")).toBe("");
@@ -199,8 +299,12 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       expect(mod.parseNumberFlag(new Map(), "x", 7)).toBe(7);
       expect(mod.parseNumberFlag(new Map([["x", "12"]]), "x", 7)).toBe(12);
-      expect(() => mod.parseNumberFlag(new Map([["x", "-1"]]), "x", 7)).toThrow(/Invalid --x/);
-      expect(() => mod.parseNumberFlag(new Map([["x", "nan"]]), "x", 7)).toThrow(/Invalid --x/);
+      expect(() => mod.parseNumberFlag(new Map([["x", "-1"]]), "x", 7)).toThrow(
+        /Invalid --x/,
+      );
+      expect(() =>
+        mod.parseNumberFlag(new Map([["x", "nan"]]), "x", 7),
+      ).toThrow(/Invalid --x/);
     });
 
     it("checkFileLength + checkDirectoryLoad flag oversize files and dense dirs", async () => {
@@ -224,29 +328,51 @@ describe("static-quality-gate", () => {
 
       // Two over-budget directories so the sort comparator (line 74) runs.
       const dirViol = mod.checkDirectoryLoad(
-        ["/repo/src/a.ts", "/repo/src/b.ts", "/repo/src/c.ts", "/repo/lib/d.ts", "/repo/lib/e.ts", "/repo/x/f.ts"],
+        [
+          "/repo/src/a.ts",
+          "/repo/src/b.ts",
+          "/repo/src/c.ts",
+          "/repo/lib/d.ts",
+          "/repo/lib/e.ts",
+          "/repo/x/f.ts",
+        ],
         1,
       ) as Array<{ directory: string; file_count: number }>;
-      expect(dirViol.some((v) => v.directory === "src" && v.file_count === 3)).toBe(true);
-      expect(dirViol.some((v) => v.directory === "lib" && v.file_count === 2)).toBe(true);
+      expect(
+        dirViol.some((v) => v.directory === "src" && v.file_count === 3),
+      ).toBe(true);
+      expect(
+        dirViol.some((v) => v.directory === "lib" && v.file_count === 2),
+      ).toBe(true);
       // Sorted descending by file_count.
-      expect(dirViol[0].file_count).toBeGreaterThanOrEqual(dirViol[1].file_count);
+      expect(dirViol[0].file_count).toBeGreaterThanOrEqual(
+        dirViol[1].file_count,
+      );
     });
 
     it("checkFileLength excludes documentation-only and blank lines from the implementation budget", async () => {
       mockUtils("/repo");
       mockFs({
-        readFileSync: vi.fn(() => "/**\n * Public contract documentation.\n */\n\nexport const value = 1;\n") as never,
+        readFileSync: vi.fn(
+          () =>
+            "/**\n * Public contract documentation.\n */\n\nexport const value = 1;\n",
+        ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      expect(mod.checkFileLength(["/repo/src/documented.ts"], 1, 1)).toEqual([]);
+      expect(mod.checkFileLength(["/repo/src/documented.ts"], 1, 1)).toEqual(
+        [],
+      );
     });
 
     it("checkDuplicateChunks: dup, skip-blank, same-file, cap, and overlapping-duplicate guard", async () => {
       mockUtils("/repo");
-      const dupBlock = ["line one here", "line two here", "line three here", "line four here", "line five here"].join(
-        "\n",
-      );
+      const dupBlock = [
+        "line one here",
+        "line two here",
+        "line three here",
+        "line four here",
+        "line five here",
+      ].join("\n");
       // A file that repeats two distinct 5-line blocks so b.ts matches a.ts at two
       // non-overlapping offsets — the second match for the same path pair is far
       // enough away that the overlap guard is false (pushes a second duplicate),
@@ -282,14 +408,24 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       // a.ts has one 5-line window; b.ts repeats it twice. The first b.ts match
       // records a duplicate; the second match is non-overlapping → second duplicate.
-      const dups = mod.checkDuplicateChunks(["/repo/src/core/a.ts", "/repo/src/core/b.ts"], 5, 10) as Array<unknown>;
+      const dups = mod.checkDuplicateChunks(
+        ["/repo/src/core/a.ts", "/repo/src/core/b.ts"],
+        5,
+        10,
+      ) as Array<unknown>;
       expect(dups.length).toBeGreaterThanOrEqual(1);
 
       // window with blank lines is skipped → no dup
-      expect(mod.checkDuplicateChunks(["/repo/src/core/blank.ts"], 5, 4)).toEqual([]);
+      expect(
+        mod.checkDuplicateChunks(["/repo/src/core/blank.ts"], 5, 4),
+      ).toEqual([]);
 
       // cap: maxDuplicateChunks=0 → returns early after first dup pushed
-      const capped = mod.checkDuplicateChunks(["/repo/src/core/a.ts", "/repo/src/core/b.ts"], 5, 0) as Array<unknown>;
+      const capped = mod.checkDuplicateChunks(
+        ["/repo/src/core/a.ts", "/repo/src/core/b.ts"],
+        5,
+        0,
+      ) as Array<unknown>;
       expect(capped.length).toBe(1);
     });
 
@@ -312,7 +448,9 @@ describe("static-quality-gate", () => {
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       // Single file repeating a window — the same-file branch (line 115/116) continues.
-      expect(mod.checkDuplicateChunks(["/repo/src/core/dup.ts"], 5, 4)).toEqual([]);
+      expect(mod.checkDuplicateChunks(["/repo/src/core/dup.ts"], 5, 4)).toEqual(
+        [],
+      );
     });
 
     it("checkDuplicateChunks: overlapping-duplicate guard skips near-adjacent re-match", async () => {
@@ -340,7 +478,11 @@ describe("static-quality-gate", () => {
       // window=5 over a 6-line block yields windows at offsets 0 and 1. The offset-1
       // window of b.ts matches a.ts's offset-1 window adjacent to the offset-0 pair
       // → overlap guard returns true and continues, leaving a single duplicate.
-      const dups = mod.checkDuplicateChunks(["/repo/src/core/a.ts", "/repo/src/core/b.ts"], 5, 10) as Array<unknown>;
+      const dups = mod.checkDuplicateChunks(
+        ["/repo/src/core/a.ts", "/repo/src/core/b.ts"],
+        5,
+        10,
+      ) as Array<unknown>;
       expect(dups.length).toBe(1);
     });
 
@@ -349,36 +491,60 @@ describe("static-quality-gate", () => {
       harness.mockPosixPath();
       mockFs({
         statSync: vi.fn((p: string) => {
-          if (String(p) === "/repo/src/dep.ts") return { isFile: () => true } as unknown as Stats;
-          if (String(p) === "/repo/src/core/rooted.ts") return { isFile: () => true } as unknown as Stats;
+          if (String(p) === "/repo/src/dep.ts")
+            return { isFile: () => true } as unknown as Stats;
+          if (String(p) === "/repo/src/core/rooted.ts")
+            return { isFile: () => true } as unknown as Stats;
           throw Object.assign(new Error("nope"), { code: "ENOENT" });
         }) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      expect(mod.resolveRelativeImport("/repo/src/main.ts", "node:path")).toBeNull();
-      expect(mod.resolveRelativeImport("/repo/src/main.ts", "./dep")).toBe("/repo/src/dep.ts");
-      expect(mod.resolveRelativeImport("/repo/src/main.ts", "src/core/rooted")).toBe("/repo/src/core/rooted.ts");
-      expect(mod.resolveRelativeImport("/repo/src/main.ts", "./gone")).toBeNull();
+      expect(
+        mod.resolveRelativeImport("/repo/src/main.ts", "node:path"),
+      ).toBeNull();
+      expect(mod.resolveRelativeImport("/repo/src/main.ts", "./dep")).toBe(
+        "/repo/src/dep.ts",
+      );
+      expect(
+        mod.resolveRelativeImport("/repo/src/main.ts", "src/core/rooted"),
+      ).toBe("/repo/src/core/rooted.ts");
+      expect(
+        mod.resolveRelativeImport("/repo/src/main.ts", "./gone"),
+      ).toBeNull();
     });
 
     it("checkSourceDocstringCoverage requires module TSDoc after optional shebang", async () => {
       mockUtils("/repo");
       const fileBodies: Record<string, string> = {
-        "/repo/src/cli.ts": "#!/usr/bin/env node\n/** CLI entrypoint. */\nexport {};",
+        "/repo/src/cli.ts":
+          "#!/usr/bin/env node\n/** CLI entrypoint. */\nexport {};",
         "/repo/src/missing.ts": "export const missing = true;",
         "/repo/src/also-missing.ts": "export const alsoMissing = true;",
         "/repo/tests/sample.ts": "export const testOnly = true;",
       };
       mockFs({
-        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+        readFileSync: vi.fn(
+          (p: string) => fileBodies[String(p)] ?? "",
+        ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      expect(mod.hasModuleDocstring("/** documented */\nexport {};")).toBe(true);
-      expect(mod.hasModuleDocstring("#!/usr/bin/env node\n/** documented */\nexport {};")).toBe(true);
+      expect(mod.hasModuleDocstring("/** documented */\nexport {};")).toBe(
+        true,
+      );
+      expect(
+        mod.hasModuleDocstring(
+          "#!/usr/bin/env node\n/** documented */\nexport {};",
+        ),
+      ).toBe(true);
       expect(mod.hasModuleDocstring("#!/usr/bin/env node")).toBe(false);
-      expect(mod.hasModuleDocstring("// not a docstring\nexport {};")).toBe(false);
+      expect(mod.hasModuleDocstring("// not a docstring\nexport {};")).toBe(
+        false,
+      );
 
-      const report = mod.checkSourceDocstringCoverage(Object.keys(fileBodies), 100);
+      const report = mod.checkSourceDocstringCoverage(
+        Object.keys(fileBodies),
+        100,
+      );
       expect(report.ok).toBe(false);
       expect(report.total).toBe(3);
       expect(report.documented).toBe(1);
@@ -387,9 +553,14 @@ describe("static-quality-gate", () => {
         { path: "src/also-missing.ts", reason: "missing_module_docstring" },
         { path: "src/missing.ts", reason: "missing_module_docstring" },
       ]);
-      expect(mod.checkSourceDocstringCoverage(Object.keys(fileBodies), 33.333).coverage_percent).toBe(33.3333);
+      expect(
+        mod.checkSourceDocstringCoverage(Object.keys(fileBodies), 33.333)
+          .coverage_percent,
+      ).toBe(33.3333);
 
-      expect(mod.checkSourceDocstringCoverage(["/repo/tests/sample.ts"], 100)).toMatchObject({
+      expect(
+        mod.checkSourceDocstringCoverage(["/repo/tests/sample.ts"], 100),
+      ).toMatchObject({
         ok: true,
         total: 0,
         coverage_percent: 100,
@@ -418,20 +589,50 @@ describe("static-quality-gate", () => {
         ].join("\n"),
       };
       mockFs({
-        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+        readFileSync: vi.fn(
+          (p: string) => fileBodies[String(p)] ?? "",
+        ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const report = mod.checkExportedDocstringCoverage(Object.keys(fileBodies), 100);
+      const report = mod.checkExportedDocstringCoverage(
+        Object.keys(fileBodies),
+        100,
+      );
       expect(report.ok).toBe(false);
       expect(report.total).toBe(7);
       expect(report.documented).toBe(2);
       expect(report.coverage_percent).toBe(28.57);
       expect(report.missing).toEqual([
-        { path: "src/a.ts", line: 8, name: "missing", reason: "missing_exported_docstring" },
-        { path: "src/a.ts", line: 9, name: "alsoMissing", reason: "missing_exported_docstring" },
-        { path: "src/a.ts", line: 10, name: "exported_declaration", reason: "missing_exported_docstring" },
-        { path: "src/a.ts", line: 11, name: "missingArrow", reason: "missing_exported_docstring" },
-        { path: "src/a.ts", line: 12, name: "exported_value", reason: "missing_exported_docstring" },
+        {
+          path: "src/a.ts",
+          line: 8,
+          name: "missing",
+          reason: "missing_exported_docstring",
+        },
+        {
+          path: "src/a.ts",
+          line: 9,
+          name: "alsoMissing",
+          reason: "missing_exported_docstring",
+        },
+        {
+          path: "src/a.ts",
+          line: 10,
+          name: "exported_declaration",
+          reason: "missing_exported_docstring",
+        },
+        {
+          path: "src/a.ts",
+          line: 11,
+          name: "missingArrow",
+          reason: "missing_exported_docstring",
+        },
+        {
+          path: "src/a.ts",
+          line: 12,
+          name: "exported_value",
+          reason: "missing_exported_docstring",
+        },
       ]);
       // No exported declarations in scope → 100% by definition.
       expect(mod.checkExportedDocstringCoverage([], 100)).toMatchObject({
@@ -461,16 +662,31 @@ describe("static-quality-gate", () => {
         ].join("\n"),
       };
       mockFs({
-        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+        readFileSync: vi.fn(
+          (p: string) => fileBodies[String(p)] ?? "",
+        ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const report = mod.checkExportedDocstringCoverage(Object.keys(fileBodies), 100);
+      const report = mod.checkExportedDocstringCoverage(
+        Object.keys(fileBodies),
+        100,
+      );
       expect(report.ok).toBe(false);
       expect(report.total).toBe(4);
       expect(report.documented).toBe(2);
       expect(report.missing).toEqual([
-        { path: "src/a.ts", line: 2, name: "missingOwnDocstring", reason: "missing_exported_docstring" },
-        { path: "src/c.ts", line: 2, name: "missingAfterPlainModuleBanner", reason: "missing_exported_docstring" },
+        {
+          path: "src/a.ts",
+          line: 2,
+          name: "missingOwnDocstring",
+          reason: "missing_exported_docstring",
+        },
+        {
+          path: "src/c.ts",
+          line: 2,
+          name: "missingAfterPlainModuleBanner",
+          reason: "missing_exported_docstring",
+        },
       ]);
     });
 
@@ -497,7 +713,9 @@ describe("static-quality-gate", () => {
         ].join("\n"),
       };
       mockFs({
-        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+        readFileSync: vi.fn(
+          (p: string) => fileBodies[String(p)] ?? "",
+        ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       expect(mod.checkDocstringBoilerplate(Object.keys(fileBodies))).toEqual([
@@ -523,19 +741,33 @@ describe("static-quality-gate", () => {
           "/repo/scripts/e.ts",
         ])
         .map((p) => mod.relativeToRepo(p).replace(/\\/g, "/"));
-      expect(kept).toEqual(["src/a.ts", "packages/pkg/index.ts", "src/windows.tsx"]);
+      expect(kept).toEqual([
+        "src/a.ts",
+        "packages/pkg/index.ts",
+        "src/windows.tsx",
+      ]);
     });
 
     it("extractDocstringProse + identifierWords normalize comments and identifiers", async () => {
       mockUtils("/repo");
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      expect(mod.extractDocstringProse("/** Single line. */")).toBe("Single line.");
-      expect(mod.extractDocstringProse(["/**", " * Multi line", " * @remarks detail here", " */"].join("\n"))).toBe(
-        "Multi line detail here",
+      expect(mod.extractDocstringProse("/** Single line. */")).toBe(
+        "Single line.",
       );
-      expect(mod.extractDocstringProse("/** See {@link Foo} now. */")).toBe("See Foo now.");
+      expect(
+        mod.extractDocstringProse(
+          ["/**", " * Multi line", " * @remarks detail here", " */"].join("\n"),
+        ),
+      ).toBe("Multi line detail here");
+      expect(mod.extractDocstringProse("/** See {@link Foo} now. */")).toBe(
+        "See Foo now.",
+      );
       expect(mod.identifierWords("itemMetadata")).toEqual(["item", "metadata"]);
-      expect(mod.identifierWords("Owner.snake_case")).toEqual(["owner", "snake", "case"]);
+      expect(mod.identifierWords("Owner.snake_case")).toEqual([
+        "owner",
+        "snake",
+        "case",
+      ]);
       expect(mod.identifierWords("")).toEqual([]);
       expect(mod.identifierWords(undefined as unknown as string)).toEqual([]);
     });
@@ -544,8 +776,12 @@ describe("static-quality-gate", () => {
       mockUtils("/repo");
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       expect(mod.isTrivialDocstring("/** */", "foo")).toBe(true);
-      expect(mod.isTrivialDocstring("/** The item id. */", "itemId")).toBe(true);
-      expect(mod.isTrivialDocstring("/** Unique primary key. */", "id")).toBe(false);
+      expect(mod.isTrivialDocstring("/** The item id. */", "itemId")).toBe(
+        true,
+      );
+      expect(mod.isTrivialDocstring("/** Unique primary key. */", "id")).toBe(
+        false,
+      );
     });
 
     it("checkExportedMemberDocstringCoverage: interface + type-literal members, skips index sigs and non-owners", async () => {
@@ -575,18 +811,32 @@ describe("static-quality-gate", () => {
         "export function make() { return 0; }",
       ].join("\n");
       mockFs({
-        readFileSync: vi.fn((p: string) => (String(p).endsWith("members.ts") ? membersFixture : "")) as never,
+        readFileSync: vi.fn((p: string) =>
+          String(p).endsWith("members.ts") ? membersFixture : "",
+        ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const report = mod.checkExportedMemberDocstringCoverage(["/repo/src/members.ts"], 100);
+      const report = mod.checkExportedMemberDocstringCoverage(
+        ["/repo/src/members.ts"],
+        100,
+      );
       expect(report.total).toBe(5);
       expect(report.documented).toBe(2);
       expect(report.ok).toBe(false);
-      expect(report.missing.map((m) => m.line).sort((a, b) => a - b)).toEqual([6, 7, 17]);
-      expect(report.missing.every((m) => m.reason === "missing_member_docstring")).toBe(true);
-      expect(report.missing.some((m) => m.name.includes("weird-key"))).toBe(true);
+      expect(report.missing.map((m) => m.line).sort((a, b) => a - b)).toEqual([
+        6, 7, 17,
+      ]);
+      expect(
+        report.missing.every((m) => m.reason === "missing_member_docstring"),
+      ).toBe(true);
+      expect(report.missing.some((m) => m.name.includes("weird-key"))).toBe(
+        true,
+      );
       // Same fixture passes when the minimum is relaxed to 0.
-      expect(mod.checkExportedMemberDocstringCoverage(["/repo/src/members.ts"], 0).ok).toBe(true);
+      expect(
+        mod.checkExportedMemberDocstringCoverage(["/repo/src/members.ts"], 0)
+          .ok,
+      ).toBe(true);
       // No documentable owners → 100% by definition.
       expect(mod.checkExportedMemberDocstringCoverage([], 100)).toMatchObject({
         total: 0,
@@ -636,11 +886,18 @@ describe("static-quality-gate", () => {
       ].join("\n");
       mockFs({
         readFileSync: vi.fn((p: string) =>
-          String(p).endsWith("klass.ts") ? klassFixture : String(p).endsWith("anon.ts") ? anonFixture : "",
+          String(p).endsWith("klass.ts")
+            ? klassFixture
+            : String(p).endsWith("anon.ts")
+              ? anonFixture
+              : "",
         ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const report = mod.checkExportedMemberDocstringCoverage(["/repo/src/klass.ts", "/repo/src/anon.ts"], 100);
+      const report = mod.checkExportedMemberDocstringCoverage(
+        ["/repo/src/klass.ts", "/repo/src/anon.ts"],
+        100,
+      );
       expect(report.total).toBe(11);
       expect(report.documented).toBe(6);
       const klassMissing = report.missing
@@ -678,14 +935,18 @@ describe("static-quality-gate", () => {
         "}",
       ].join("\n");
       mockFs({
-        readFileSync: vi.fn((p: string) => (String(p).endsWith("trivia.ts") ? triviaFixture : "")) as never,
+        readFileSync: vi.fn((p: string) =>
+          String(p).endsWith("trivia.ts") ? triviaFixture : "",
+        ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const violations = mod.checkTrivialDocstrings(["/repo/src/trivia.ts"]);
       expect(violations.map((v) => v.line)).toEqual([3, 9]);
       expect(violations.find((v) => v.line === 3)?.name).toBe("id");
       expect(violations.find((v) => v.line === 9)?.name).toBe("Widget.name");
-      expect(violations.every((v) => v.reason === "trivial_docstring")).toBe(true);
+      expect(violations.every((v) => v.reason === "trivial_docstring")).toBe(
+        true,
+      );
     });
 
     it("checkOrphanSourceModules: flags multiple orphans (sort), honors allowlist + skip + out-of-set import", async () => {
@@ -694,7 +955,8 @@ describe("static-quality-gate", () => {
       const fileBodies: Record<string, string> = {
         // imports a path that resolves OUTSIDE the incoming map → exercises the
         // `incoming.has(resolved)` false branch (line 188) without crediting it.
-        "/repo/src/cli/main.ts": 'import "../used.ts";\nexport * from "../barrel/index.ts";\nimport "../../external/out.ts";',
+        "/repo/src/cli/main.ts":
+          'import "../used.ts";\nexport * from "../barrel/index.ts";\nimport "../../external/out.ts";',
         "/repo/src/used.ts": "export const used = 1;",
         // Two orphans so the final sort comparator (line 227) is exercised.
         "/repo/src/zeta-orphan.ts": "export const z = 1;",
@@ -704,7 +966,9 @@ describe("static-quality-gate", () => {
         "/repo/src/thing.spec.ts": "export const t = 1;",
       };
       mockFs({
-        readFileSync: vi.fn((p: string) => fileBodies[String(p)] ?? "") as never,
+        readFileSync: vi.fn(
+          (p: string) => fileBodies[String(p)] ?? "",
+        ) as never,
         statSync: vi.fn((p: string) => {
           if (Object.prototype.hasOwnProperty.call(fileBodies, String(p))) {
             return { isFile: () => true } as unknown as Stats;
@@ -722,7 +986,9 @@ describe("static-quality-gate", () => {
       expect(paths).toContain("src/zeta-orphan.ts");
       expect(paths).toContain("src/alpha-orphan.ts");
       // Sorted ascending by path.
-      expect(paths.indexOf("src/alpha-orphan.ts")).toBeLessThan(paths.indexOf("src/zeta-orphan.ts"));
+      expect(paths.indexOf("src/alpha-orphan.ts")).toBeLessThan(
+        paths.indexOf("src/zeta-orphan.ts"),
+      );
       expect(paths).not.toContain("src/cli/main.ts");
       expect(paths).not.toContain("src/types/x.ts");
       expect(paths).not.toContain("src/barrel/index.ts");
@@ -731,7 +997,9 @@ describe("static-quality-gate", () => {
     });
 
     it("checkSdkImportBoundary hard-denies CLI/MCP private core imports regardless of legacy baselines", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-sdk-boundary-",
+      );
       await mkdir(`${root}/src/cli`, { recursive: true });
       await mkdir(`${root}/src/mcp`, { recursive: true });
       await mkdir(`${root}/src/core`, { recursive: true });
@@ -754,18 +1022,66 @@ describe("static-quality-gate", () => {
         ].join("\n"),
         "utf8",
       );
-      await writeFile(`${root}/src/mcp/server.ts`, 'export { b } from "../core/b";\n', "utf8");
-      await writeFile(`${root}/src/mcp.ts`, 'import "./core/root-mcp";\nexport const mcpRoot = true;\n', "utf8");
-      await writeFile(`${root}/src/core/a.ts`, "export const a = true;\n", "utf8");
-      await writeFile(`${root}/src/core/aliased.ts`, "export const aliased = true;\n", "utf8");
-      await writeFile(`${root}/src/core/b.ts`, "export const b = true;\n", "utf8");
-      await writeFile(`${root}/src/core/import-equals.ts`, "export const importEquals = true;\n", "utf8");
-      await writeFile(`${root}/src/core/require-edge.ts`, "export const requireEdge = true;\n", "utf8");
-      await writeFile(`${root}/src/core/root-mcp.ts`, "export const rootMcp = true;\n", "utf8");
-      await writeFile(`${root}/src/core/dynamic.ts`, "export const dynamic = true;\n", "utf8");
-      await writeFile(`${root}/src/core/new.ts`, "export const next = true;\n", "utf8");
-      await writeFile(`${root}/src/core/template.ts`, "export const template = true;\n", "utf8");
-      await writeFile(`${root}/src/core/attributes.ts`, "export const attributes = true;\n", "utf8");
+      await writeFile(
+        `${root}/src/mcp/server.ts`,
+        'export { b } from "../core/b";\n',
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/mcp.ts`,
+        'import "./core/root-mcp";\nexport const mcpRoot = true;\n',
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/a.ts`,
+        "export const a = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/aliased.ts`,
+        "export const aliased = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/b.ts`,
+        "export const b = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/import-equals.ts`,
+        "export const importEquals = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/require-edge.ts`,
+        "export const requireEdge = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/root-mcp.ts`,
+        "export const rootMcp = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/dynamic.ts`,
+        "export const dynamic = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/new.ts`,
+        "export const next = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/template.ts`,
+        "export const template = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/attributes.ts`,
+        "export const attributes = true;\n",
+        "utf8",
+      );
       await writeFile(
         `${root}/src/sdk/index.ts`,
         [
@@ -784,8 +1100,16 @@ describe("static-quality-gate", () => {
         "export const anotherSdkCliLeak = true;\n",
         "utf8",
       );
-      await writeFile(`${root}/src/cli/sdk-leak.ts`, "export const sdkCliLeak = true;\n", "utf8");
-      await writeFile(`${root}/src/mcp/z-stale.ts`, "export const stale = true;\n", "utf8");
+      await writeFile(
+        `${root}/src/cli/sdk-leak.ts`,
+        "export const sdkCliLeak = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/mcp/z-stale.ts`,
+        "export const stale = true;\n",
+        "utf8",
+      );
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const baselinePath = `${root}/legacy-baseline.json`;
@@ -816,7 +1140,10 @@ describe("static-quality-gate", () => {
               },
               { source: "src/mcp.ts", imports: ["src/core/root-mcp.ts"] },
               { source: "src/mcp/server.ts", imports: ["src/core/b.ts"] },
-              { source: "src/mcp/z-stale.ts", imports: ["src/core/z.ts", "src/core/y.ts"] },
+              {
+                source: "src/mcp/z-stale.ts",
+                imports: ["src/core/z.ts", "src/core/y.ts"],
+              },
             ],
           },
           null,
@@ -825,7 +1152,11 @@ describe("static-quality-gate", () => {
         "utf8",
       );
 
-      expect(mod.collectSdkBoundarySourceFiles(files).map((file) => file.replace(`${root}/`, ""))).toEqual([
+      expect(
+        mod
+          .collectSdkBoundarySourceFiles(files)
+          .map((file) => file.replace(`${root}/`, "")),
+      ).toEqual([
         "src/cli/main.ts",
         "src/mcp.ts",
         "src/mcp/server.ts",
@@ -853,7 +1184,9 @@ describe("static-quality-gate", () => {
         },
         { source: "src/sdk/index.ts", import_path: "src/cli/sdk-leak.ts" },
       ]);
-      expect(mod.checkSdkImportBoundary(subsetFiles, baselinePath)).toMatchObject({
+      expect(
+        mod.checkSdkImportBoundary(subsetFiles, baselinePath),
+      ).toMatchObject({
         ok: false,
         scanned_file_count: 3,
         actual_edge_count: 9,
@@ -883,8 +1216,16 @@ describe("static-quality-gate", () => {
         stale_baseline_imports: [],
       });
 
-      await writeFile(`${root}/src/cli/main.ts`, 'import "node:path";\nimport "../core/a";\nimport "../core/new";\n', "utf8");
-      await writeFile(`${root}/src/mcp/server.ts`, "export const mcp = true;\n", "utf8");
+      await writeFile(
+        `${root}/src/cli/main.ts`,
+        'import "node:path";\nimport "../core/a";\nimport "../core/new";\n',
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/mcp/server.ts`,
+        "export const mcp = true;\n",
+        "utf8",
+      );
       expect(mod.checkSdkImportBoundary(files, baselinePath)).toMatchObject({
         ok: false,
         new_private_core_imports: [
@@ -897,10 +1238,16 @@ describe("static-quality-gate", () => {
     });
 
     it("ignores deleted legacy baseline entries because no allowance file is consulted", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-deleted-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-sdk-boundary-deleted-",
+      );
       await mkdir(`${root}/src/cli`, { recursive: true });
       await mkdir(`${root}/scripts/release`, { recursive: true });
-      await writeFile(`${root}/src/cli/main.ts`, "export const main = true;\n", "utf8");
+      await writeFile(
+        `${root}/src/cli/main.ts`,
+        "export const main = true;\n",
+        "utf8",
+      );
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const baselinePath = `${root}/legacy-baseline.json`;
@@ -909,7 +1256,12 @@ describe("static-quality-gate", () => {
         JSON.stringify(
           {
             version: 1,
-            allowed_private_core_imports: [{ source: "src/cli/deleted.ts", imports: ["src/core/deleted.ts"] }],
+            allowed_private_core_imports: [
+              {
+                source: "src/cli/deleted.ts",
+                imports: ["src/core/deleted.ts"],
+              },
+            ],
           },
           null,
           2,
@@ -917,25 +1269,162 @@ describe("static-quality-gate", () => {
         "utf8",
       );
 
-      expect(mod.checkSdkImportBoundary([`${root}/src/cli/main.ts`], baselinePath)).toMatchObject({
+      expect(
+        mod.checkSdkImportBoundary([`${root}/src/cli/main.ts`], baselinePath),
+      ).toMatchObject({
         ok: true,
         scanned_file_count: 1,
         actual_edge_count: 0,
         baseline_edge_count: 0,
         stale_baseline_imports: [],
       });
-      expect(mod.checkSdkImportBoundary([`${root}/src/cli/main.ts`, `${root}/src/cli/deleted.ts`], baselinePath))
-        .toMatchObject({
-          ok: true,
-          scanned_file_count: 2,
-          actual_edge_count: 0,
-          baseline_edge_count: 0,
-          stale_baseline_imports: [],
-        });
+      expect(
+        mod.checkSdkImportBoundary(
+          [`${root}/src/cli/main.ts`, `${root}/src/cli/deleted.ts`],
+          baselinePath,
+        ),
+      ).toMatchObject({
+        ok: true,
+        scanned_file_count: 2,
+        actual_edge_count: 0,
+        baseline_edge_count: 0,
+        stale_baseline_imports: [],
+      });
+    });
+
+    it("rejects SDK module imports outside the published export closure", async () => {
+      const root = await harness.createTempRoot(
+        "pm-static-quality-private-sdk-boundary-",
+      );
+      await mkdir(`${root}/src/cli`, { recursive: true });
+      await mkdir(`${root}/src/sdk`, { recursive: true });
+      await mkdir(`${root}/scripts/release`, { recursive: true });
+      await writeFile(
+        `${root}/src/sdk/index.ts`,
+        [
+          'export { publicValue } from "./public";',
+          'export * from "./public";',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/sdk/public.ts`,
+        'export { nestedValue } from "./nested";\nexport const publicValue = true;\n',
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/sdk/nested.ts`,
+        "export const nestedValue = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/sdk/private.ts`,
+        "export const privateValue = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/sdk/private-secondary.ts`,
+        "export const secondaryPrivateValue = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/cli/main.ts`,
+        [
+          'import { publicValue } from "../sdk/public";',
+          'import { nestedValue } from "../sdk/nested";',
+          'import { privateValue } from "../sdk/private";',
+          'import "../sdk/private";',
+          'import { secondaryPrivateValue } from "../sdk/private-secondary";',
+          "export { publicValue, nestedValue, privateValue, secondaryPrivateValue };",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      mockUtils(root);
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const files = [
+        `${root}/src/cli/main.ts`,
+        `${root}/src/sdk/index.ts`,
+        `${root}/src/sdk/public.ts`,
+        `${root}/src/sdk/nested.ts`,
+        `${root}/src/sdk/private.ts`,
+        `${root}/src/sdk/private-secondary.ts`,
+      ];
+
+      expect([
+        ...mod.collectPublicSdkExportClosure(files, ["src/sdk/index.ts"]),
+      ]).toEqual([
+        "src/sdk/index.ts",
+        "src/sdk/public.ts",
+        "src/sdk/nested.ts",
+      ]);
+      expect(
+        mod.collectPrivateSdkImportEdges(files, ["src/sdk/index.ts"]),
+      ).toEqual([
+        {
+          source: "src/cli/main.ts",
+          import_path: "src/sdk/private-secondary.ts",
+        },
+        {
+          source: "src/cli/main.ts",
+          import_path: "src/sdk/private.ts",
+        },
+      ]);
+
+      const missingCliPath = `${root}/src/cli/missing.ts`;
+      expect(
+        mod.collectPrivateSdkImportEdges(
+          [...files, missingCliPath],
+          ["src/sdk/index.ts"],
+        ),
+      ).toEqual([
+        {
+          source: "src/cli/main.ts",
+          import_path: "src/sdk/private-secondary.ts",
+        },
+        {
+          source: "src/cli/main.ts",
+          import_path: "src/sdk/private.ts",
+        },
+      ]);
+
+      const allowlistedPrivatePaths = [
+        "src/sdk/cli-contracts/registration-helpers.ts",
+        "src/sdk/cli-contracts/runtime-contracts.ts",
+        "src/sdk/extension/describe.ts",
+        "src/sdk/extension/scaffold.ts",
+        "src/sdk/extension/shared.ts",
+        "src/sdk/lifecycle/lifecycle-transitions.ts",
+        "src/sdk/schema.ts",
+      ];
+      expect(
+        mod.checkSdkImportBoundary([
+          ...files,
+          ...allowlistedPrivatePaths.map((entry) => `${root}/${entry}`),
+        ]),
+      ).toMatchObject({
+        ok: false,
+        new_private_sdk_imports: [
+          {
+            source: "src/cli/main.ts",
+            import_path: "src/sdk/private-secondary.ts",
+          },
+          {
+            source: "src/cli/main.ts",
+            import_path: "src/sdk/private.ts",
+          },
+        ],
+        stale_private_sdk_allowlist: [...allowlistedPrivatePaths].sort(
+          (left, right) => left.localeCompare(right),
+        ),
+      });
     });
 
     it("checkSdkImportBoundary fails closed on computed dynamic imports and require calls", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-computed-import-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-sdk-boundary-computed-import-",
+      );
       await mkdir(`${root}/src/cli`, { recursive: true });
       await mkdir(`${root}/src/sdk`, { recursive: true });
       await mkdir(`${root}/scripts/release`, { recursive: true });
@@ -978,7 +1467,11 @@ describe("static-quality-gate", () => {
       );
       await writeFile(
         `${root}/scripts/release/sdk-import-boundary-baseline.json`,
-        JSON.stringify({ version: 1, allowed_private_core_imports: [] }, null, 2),
+        JSON.stringify(
+          { version: 1, allowed_private_core_imports: [] },
+          null,
+          2,
+        ),
         "utf8",
       );
       mockUtils(root);
@@ -986,33 +1479,54 @@ describe("static-quality-gate", () => {
       const files = [`${root}/src/cli/main.ts`, `${root}/src/sdk/index.ts`];
 
       expect(mod.collectPrivateCoreImportEdges(files)).toEqual([]);
-      expect(mod.collectUnsupportedDynamicImportExpressions(files)).toEqual([
-        { source: "src/cli/main.ts", line: 3, reason: "computed_dynamic_import" },
-        { source: "src/cli/main.ts", line: 6, reason: "computed_dynamic_import" },
-        { source: "src/cli/main.ts", line: 9, reason: "computed_dynamic_import" },
-        { source: "src/cli/main.ts", line: 12, reason: "computed_dynamic_import" },
+      const unsupportedDynamicImports = [
+        {
+          source: "src/cli/main.ts",
+          line: 3,
+          reason: "computed_dynamic_import",
+        },
+        {
+          source: "src/cli/main.ts",
+          line: 6,
+          reason: "computed_dynamic_import",
+        },
+        {
+          source: "src/cli/main.ts",
+          line: 9,
+          reason: "computed_dynamic_import",
+        },
+        {
+          source: "src/cli/main.ts",
+          line: 12,
+          reason: "computed_dynamic_import",
+        },
         { source: "src/cli/main.ts", line: 15, reason: "computed_require" },
         { source: "src/cli/main.ts", line: 19, reason: "computed_require" },
-        { source: "src/sdk/index.ts", line: 2, reason: "computed_dynamic_import" },
+        {
+          source: "src/sdk/index.ts",
+          line: 2,
+          reason: "computed_dynamic_import",
+        },
         { source: "src/sdk/index.ts", line: 3, reason: "computed_require" },
-      ]);
-      expect(mod.checkSdkImportBoundary(files, `${root}/scripts/release/sdk-import-boundary-baseline.json`)).toMatchObject({
+      ];
+      expect(mod.collectUnsupportedDynamicImportExpressions(files)).toEqual(
+        unsupportedDynamicImports,
+      );
+      expect(
+        mod.checkSdkImportBoundary(
+          files,
+          `${root}/scripts/release/sdk-import-boundary-baseline.json`,
+        ),
+      ).toMatchObject({
         ok: false,
-        unsupported_dynamic_imports: [
-          { source: "src/cli/main.ts", line: 3, reason: "computed_dynamic_import" },
-          { source: "src/cli/main.ts", line: 6, reason: "computed_dynamic_import" },
-          { source: "src/cli/main.ts", line: 9, reason: "computed_dynamic_import" },
-          { source: "src/cli/main.ts", line: 12, reason: "computed_dynamic_import" },
-          { source: "src/cli/main.ts", line: 15, reason: "computed_require" },
-          { source: "src/cli/main.ts", line: 19, reason: "computed_require" },
-          { source: "src/sdk/index.ts", line: 2, reason: "computed_dynamic_import" },
-          { source: "src/sdk/index.ts", line: 3, reason: "computed_require" },
-        ],
+        unsupported_dynamic_imports: unsupportedDynamicImports,
       });
     });
 
     it("checkSdkImportBoundary never reads a supplied legacy allowance path", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-string-error-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-sdk-boundary-string-error-",
+      );
       mockUtils(root);
       mockFs({
         readFileSync: vi.fn(() => {
@@ -1021,7 +1535,9 @@ describe("static-quality-gate", () => {
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
 
-      expect(mod.checkSdkImportBoundary([], `${root}/baseline.json`)).toMatchObject({
+      expect(
+        mod.checkSdkImportBoundary([], `${root}/baseline.json`),
+      ).toMatchObject({
         ok: true,
         scanned_file_count: 0,
         actual_edge_count: 0,
@@ -1033,28 +1549,46 @@ describe("static-quality-gate", () => {
     });
 
     it("checkSdkImportBoundary cannot be bypassed by missing or malformed legacy allowance files on native paths", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-invalid-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-sdk-boundary-invalid-",
+      );
       await mkdir(`${root}/src/cli`, { recursive: true });
       await mkdir(`${root}/src/core`, { recursive: true });
-      await writeFile(`${root}/src/cli/main.ts`, 'import "../core/a";\n', "utf8");
-      await writeFile(`${root}/src/core/a.ts`, "export const a = true;\n", "utf8");
+      await writeFile(
+        `${root}/src/cli/main.ts`,
+        'import "../core/a";\n',
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/core/a.ts`,
+        "export const a = true;\n",
+        "utf8",
+      );
       mockUtils(root);
       // This fixture walks real temporary files, so retain the host-native path
       // implementation to exercise Windows drive-letter paths as well as POSIX paths.
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const files = [`${root}/src/cli/main.ts`];
-      expect(mod.checkSdkImportBoundary(files, `${root}/missing.json`)).toMatchObject({
+      expect(
+        mod.checkSdkImportBoundary(files, `${root}/missing.json`),
+      ).toMatchObject({
         ok: false,
         baseline_edge_count: 0,
-        new_private_core_imports: [{ source: "src/cli/main.ts", import_path: "src/core/a.ts" }],
+        new_private_core_imports: [
+          { source: "src/cli/main.ts", import_path: "src/core/a.ts" },
+        ],
         stale_baseline_imports: [],
         unsupported_dynamic_imports: [],
       });
       await writeFile(`${root}/baseline.json`, "[]", "utf8");
-      expect(mod.checkSdkImportBoundary(files, `${root}/baseline.json`)).toMatchObject({
+      expect(
+        mod.checkSdkImportBoundary(files, `${root}/baseline.json`),
+      ).toMatchObject({
         ok: false,
         baseline_edge_count: 0,
-        new_private_core_imports: [{ source: "src/cli/main.ts", import_path: "src/core/a.ts" }],
+        new_private_core_imports: [
+          { source: "src/cli/main.ts", import_path: "src/core/a.ts" },
+        ],
       });
     });
 
@@ -1085,7 +1619,9 @@ describe("static-quality-gate", () => {
       const viol = mod.checkFunctionComplexity(["/repo/src/x.ts"], 3);
       expect(viol.some((v) => v.function_name === "busy")).toBe(true);
       const all = mod.checkFunctionComplexity(["/repo/src/x.ts"], 1);
-      expect(all.some((v) => v.function_name.startsWith("<anonymous@"))).toBe(true);
+      expect(all.some((v) => v.function_name.startsWith("<anonymous@"))).toBe(
+        true,
+      );
     });
 
     it("checkCodeFactorComplexity enforces changed shipped/script files only", async () => {
@@ -1098,9 +1634,22 @@ describe("static-quality-gate", () => {
         "}",
       ].join("\n");
       mockFs({
-        existsSync: vi.fn((p: string) => String(p).endsWith("changed.ts") || String(p).endsWith("tool.mjs")) as never,
-        statSync: vi.fn(() => ({ isFile: () => true, isDirectory: () => false }) as unknown as Stats) as never,
-        readFileSync: vi.fn((p: string) => (String(p).endsWith("changed.ts") ? complexSource : "export const ok = true;\n")) as never,
+        existsSync: vi.fn(
+          (p: string) =>
+            String(p).endsWith("changed.ts") || String(p).endsWith("tool.mjs"),
+        ) as never,
+        statSync: vi.fn(
+          () =>
+            ({
+              isFile: () => true,
+              isDirectory: () => false,
+            }) as unknown as Stats,
+        ) as never,
+        readFileSync: vi.fn((p: string) =>
+          String(p).endsWith("changed.ts")
+            ? complexSource
+            : "export const ok = true;\n",
+        ) as never,
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const changedPaths = {
@@ -1117,10 +1666,13 @@ describe("static-quality-gate", () => {
       const parityFiles = mod.collectCodeFactorParityFiles(changedPaths);
       expect(parityFiles.ok).toBe(true);
       if (parityFiles.ok) {
-        expect(parityFiles.files.map((filePath) => normalizeMockPath(filePath).replace("/repo/", "")).sort()).toEqual([
-          "scripts/tool.mjs",
-          "src/changed.ts",
-        ]);
+        expect(
+          parityFiles.files
+            .map((filePath) =>
+              normalizeMockPath(filePath).replace("/repo/", ""),
+            )
+            .sort(),
+        ).toEqual(["scripts/tool.mjs", "src/changed.ts"]);
       }
 
       const report = mod.checkCodeFactorComplexity(2, changedPaths);
@@ -1155,7 +1707,9 @@ describe("static-quality-gate", () => {
     it("checkCodeFactorComplexity reports default git scan failures after missing base refs", async () => {
       mockUtils("/repo");
       mockFs({
-        existsSync: vi.fn((p: string) => normalizeMockPath(p) === "/repo/.git") as never,
+        existsSync: vi.fn(
+          (p: string) => normalizeMockPath(p) === "/repo/.git",
+        ) as never,
       });
       mockChildProcess({
         execFileSync: vi.fn((cmd: string, args: string[]) => {
@@ -1177,18 +1731,7 @@ describe("static-quality-gate", () => {
 
     it("checkCodeFactorComplexity falls back to worktree diffs when base refs are empty", async () => {
       mockUtils("/repo");
-      mockFs({
-        existsSync: vi.fn(
-          (p: string) => normalizeMockPath(p) === "/repo/.git" || normalizeMockPath(p) === "/repo/src/changed.ts",
-        ) as never,
-        statSync: vi.fn((p: string) => {
-          if (normalizeMockPath(p) === "/repo/src/changed.ts") {
-            return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
-          }
-          return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
-        }) as never,
-        readFileSync: vi.fn(() => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n}\n") as never,
-      });
+      mockCodeFactorSource("/repo/src/changed.ts");
       mockChildProcess({
         execFileSync: vi.fn((cmd: string, args: string[]) => {
           expect(cmd).toBe("git");
@@ -1204,25 +1747,35 @@ describe("static-quality-gate", () => {
       });
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const report = mod.checkCodeFactorComplexity(1);
-      expect(report.violations[0]).toMatchObject({ path: "src/changed.ts", complexity: 2 });
+      expect(report.violations[0]).toMatchObject({
+        path: "src/changed.ts",
+        complexity: 2,
+      });
     });
 
     it("checkCodeFactorComplexity fails closed when a clean checkout has no base refs", async () => {
       mockUtils("/repo");
       mockFs({
-        existsSync: vi.fn((p: string) => normalizeMockPath(p) === "/repo/.git") as never,
+        existsSync: vi.fn(
+          (p: string) => normalizeMockPath(p) === "/repo/.git",
+        ) as never,
       });
       mockChildProcess({
         execFileSync: vi.fn((cmd: string, args: string[]) => {
           expect(cmd).toBe("git");
           const joined = args.join(" ");
-          if (joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD") {
+          if (
+            joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD"
+          ) {
             return "\n";
           }
           if (args[0] === "merge-base") {
             return "\n";
           }
-          if (joined === "diff --name-only --diff-filter=ACMR" || joined === "diff --cached --name-only --diff-filter=ACMR") {
+          if (
+            joined === "diff --name-only --diff-filter=ACMR" ||
+            joined === "diff --cached --name-only --diff-filter=ACMR"
+          ) {
             return "\n";
           }
           throw new Error(`unexpected git args: ${joined}`);
@@ -1233,41 +1786,43 @@ describe("static-quality-gate", () => {
       expect(report).toMatchObject({
         ok: false,
         scanned_file_count: 0,
-        error: "Unable to determine committed changed files for CodeFactor parity without origin default branch, origin/main, main, origin/master, master, origin/develop, develop, or worktree diffs.",
+        error:
+          "Unable to determine committed changed files for CodeFactor parity without origin default branch, origin/main, main, origin/master, master, origin/develop, develop, or worktree diffs.",
       });
     });
 
     it("checkCodeFactorComplexity uses the origin default branch before main fallbacks", async () => {
       mockUtils("/repo");
-      mockFs({
-        existsSync: vi.fn(
-          (p: string) => normalizeMockPath(p) === "/repo/.git" || normalizeMockPath(p) === "/repo/src/default-branch.ts",
-        ) as never,
-        statSync: vi.fn((p: string) => {
-          if (normalizeMockPath(p) === "/repo/src/default-branch.ts") {
-            return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
-          }
-          return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
-        }) as never,
-        readFileSync: vi.fn(() => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n}\n") as never,
-      });
+      mockCodeFactorSource("/repo/src/default-branch.ts");
       mockChildProcess({
         execFileSync: vi.fn((cmd: string, args: string[]) => {
           expect(cmd).toBe("git");
           const joined = args.join(" ");
-          if (joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD") {
+          if (
+            joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD"
+          ) {
             return "origin/master\n";
           }
           if (joined === "merge-base HEAD origin/master") {
             return "master-base\n";
           }
-          if (joined === "merge-base HEAD origin/main" || joined === "merge-base HEAD main") {
-            throw new Error(`unexpected fallback after default branch: ${joined}`);
+          if (
+            joined === "merge-base HEAD origin/main" ||
+            joined === "merge-base HEAD main"
+          ) {
+            throw new Error(
+              `unexpected fallback after default branch: ${joined}`,
+            );
           }
-          if (joined === "diff --name-only --diff-filter=ACMR master-base...HEAD") {
+          if (
+            joined === "diff --name-only --diff-filter=ACMR master-base...HEAD"
+          ) {
             return "src/default-branch.ts\n";
           }
-          if (joined === "diff --name-only --diff-filter=ACMR" || joined === "diff --cached --name-only --diff-filter=ACMR") {
+          if (
+            joined === "diff --name-only --diff-filter=ACMR" ||
+            joined === "diff --cached --name-only --diff-filter=ACMR"
+          ) {
             return "\n";
           }
           throw new Error(`unexpected git args: ${joined}`);
@@ -1276,40 +1831,42 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const report = mod.checkCodeFactorComplexity(1);
       expect(report.scanned_file_count).toBe(1);
-      expect(report.violations[0]).toMatchObject({ path: "src/default-branch.ts", complexity: 2 });
+      expect(report.violations[0]).toMatchObject({
+        path: "src/default-branch.ts",
+        complexity: 2,
+      });
     });
 
     it("checkCodeFactorComplexity falls back to origin/master when origin HEAD is unavailable", async () => {
       mockUtils("/repo");
-      mockFs({
-        existsSync: vi.fn(
-          (p: string) => normalizeMockPath(p) === "/repo/.git" || normalizeMockPath(p) === "/repo/src/master-branch.ts",
-        ) as never,
-        statSync: vi.fn((p: string) => {
-          if (normalizeMockPath(p) === "/repo/src/master-branch.ts") {
-            return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
-          }
-          return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
-        }) as never,
-        readFileSync: vi.fn(() => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n}\n") as never,
-      });
+      mockCodeFactorSource("/repo/src/master-branch.ts");
       mockChildProcess({
         execFileSync: vi.fn((cmd: string, args: string[]) => {
           expect(cmd).toBe("git");
           const joined = args.join(" ");
-          if (joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD") {
+          if (
+            joined === "symbolic-ref --quiet --short refs/remotes/origin/HEAD"
+          ) {
             return "\n";
           }
-          if (joined === "merge-base HEAD origin/main" || joined === "merge-base HEAD main") {
+          if (
+            joined === "merge-base HEAD origin/main" ||
+            joined === "merge-base HEAD main"
+          ) {
             return "\n";
           }
           if (joined === "merge-base HEAD origin/master") {
             return "master-base\n";
           }
-          if (joined === "diff --name-only --diff-filter=ACMR master-base...HEAD") {
+          if (
+            joined === "diff --name-only --diff-filter=ACMR master-base...HEAD"
+          ) {
             return "src/master-branch.ts\n";
           }
-          if (joined === "diff --name-only --diff-filter=ACMR" || joined === "diff --cached --name-only --diff-filter=ACMR") {
+          if (
+            joined === "diff --name-only --diff-filter=ACMR" ||
+            joined === "diff --cached --name-only --diff-filter=ACMR"
+          ) {
             return "\n";
           }
           throw new Error(`unexpected git args: ${joined}`);
@@ -1318,23 +1875,15 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const report = mod.checkCodeFactorComplexity(1);
       expect(report.scanned_file_count).toBe(1);
-      expect(report.violations[0]).toMatchObject({ path: "src/master-branch.ts", complexity: 2 });
+      expect(report.violations[0]).toMatchObject({
+        path: "src/master-branch.ts",
+        complexity: 2,
+      });
     });
 
     it("checkCodeFactorComplexity inspects git diff, staged, and unstaged paths in a checkout", async () => {
       mockUtils("/repo");
-      mockFs({
-        existsSync: vi.fn(
-          (p: string) => normalizeMockPath(p) === "/repo/.git" || normalizeMockPath(p) === "/repo/src/changed.ts",
-        ) as never,
-        statSync: vi.fn((p: string) => {
-          if (normalizeMockPath(p) === "/repo/src/changed.ts") {
-            return { isFile: () => true, isDirectory: () => false } as unknown as Stats;
-          }
-          return { isFile: () => false, isDirectory: () => true } as unknown as Stats;
-        }) as never,
-        readFileSync: vi.fn(() => "export function changed(a) {\n  if (a) return 1;\n  return 0;\n}\n") as never,
-      });
+      mockCodeFactorSource("/repo/src/changed.ts");
       mockChildProcess({
         execFileSync: vi.fn((cmd: string, args: string[]) => {
           expect(cmd).toBe("git");
@@ -1345,7 +1894,9 @@ describe("static-quality-gate", () => {
           if (joined === "merge-base HEAD main") {
             return "base-sha\n";
           }
-          if (joined === "diff --name-only --diff-filter=ACMR base-sha...HEAD") {
+          if (
+            joined === "diff --name-only --diff-filter=ACMR base-sha...HEAD"
+          ) {
             return "src/changed.ts\n";
           }
           if (joined === "diff --name-only --diff-filter=ACMR") {
@@ -1360,43 +1911,67 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const report = mod.checkCodeFactorComplexity(1);
       expect(report.scanned_file_count).toBe(1);
-      expect(report.violations[0]).toMatchObject({ path: "src/changed.ts", complexity: 2 });
+      expect(report.violations[0]).toMatchObject({
+        path: "src/changed.ts",
+        complexity: 2,
+      });
     });
 
     it("countEslintSuppressions: rejects unreadable or malformed files and sums valid counts", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-suppressions-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-suppressions-",
+      );
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(
-        /Unable to read ESLint suppressions budget file/,
-      );
+      expect(() =>
+        mod.countEslintSuppressions(`${root}/eslint-suppressions.json`),
+      ).toThrow(/Unable to read ESLint suppressions budget file/);
       await writeFile(`${root}/eslint-suppressions.json`, "{", "utf8");
-      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(
-        /Invalid ESLint suppressions budget file/,
-      );
+      expect(() =>
+        mod.countEslintSuppressions(`${root}/eslint-suppressions.json`),
+      ).toThrow(/Invalid ESLint suppressions budget file/);
       await writeFile(`${root}/eslint-suppressions.json`, "[]", "utf8");
-      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected an object/);
-      await writeFile(`${root}/eslint-suppressions.json`, JSON.stringify({ "src/a.ts": null }), "utf8");
-      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected rule objects/);
-      await writeFile(`${root}/eslint-suppressions.json`, JSON.stringify({ "src/a.ts": { complexity: {} } }), "utf8");
-      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(
-        /expected non-negative integer counts/,
+      expect(() =>
+        mod.countEslintSuppressions(`${root}/eslint-suppressions.json`),
+      ).toThrow(/expected an object/);
+      await writeFile(
+        `${root}/eslint-suppressions.json`,
+        JSON.stringify({ "src/a.ts": null }),
+        "utf8",
       );
+      expect(() =>
+        mod.countEslintSuppressions(`${root}/eslint-suppressions.json`),
+      ).toThrow(/expected rule objects/);
+      await writeFile(
+        `${root}/eslint-suppressions.json`,
+        JSON.stringify({ "src/a.ts": { complexity: {} } }),
+        "utf8",
+      );
+      expect(() =>
+        mod.countEslintSuppressions(`${root}/eslint-suppressions.json`),
+      ).toThrow(/expected non-negative integer counts/);
       await writeFile(
         `${root}/eslint-suppressions.json`,
         JSON.stringify({ "src/a.ts": { complexity: { count: 1.5 } } }),
         "utf8",
       );
-      expect(() => mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/expected non-negative integer counts/);
+      expect(() =>
+        mod.countEslintSuppressions(`${root}/eslint-suppressions.json`),
+      ).toThrow(/expected non-negative integer counts/);
       await writeFile(
         `${root}/eslint-suppressions.json`,
         JSON.stringify({
-          "src/a.ts": { complexity: { count: 2 }, "no-useless-assignment": { count: 1 } },
+          "src/a.ts": {
+            complexity: { count: 2 },
+            "no-useless-assignment": { count: 1 },
+          },
           "src/b.ts": { complexity: { count: 3 } },
         }),
         "utf8",
       );
-      expect(mod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toBe(6);
+      expect(
+        mod.countEslintSuppressions(`${root}/eslint-suppressions.json`),
+      ).toBe(6);
     });
 
     it("countEslintSuppressions: normalizes non-Error read failures", async () => {
@@ -1407,28 +1982,45 @@ describe("static-quality-gate", () => {
         }) as never,
       });
       const readFailureMod = await harness.importModuleStable<SqModule>(SCRIPT);
-      expect(() => readFailureMod.countEslintSuppressions("/repo/eslint-suppressions.json")).toThrow(/read-failed/);
+      expect(() =>
+        readFailureMod.countEslintSuppressions(
+          "/repo/eslint-suppressions.json",
+        ),
+      ).toThrow(/read-failed/);
     });
 
     it("countEslintSuppressions: normalizes non-Error parse failures", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-non-error-parse-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-non-error-parse-",
+      );
       await writeFile(`${root}/eslint-suppressions.json`, "{}", "utf8");
       mockUtils(root);
-      const parseFailureMod = await harness.importModuleStable<SqModule>(SCRIPT);
+      const parseFailureMod =
+        await harness.importModuleStable<SqModule>(SCRIPT);
       vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
         throw "parse-failed";
       });
-      expect(() => parseFailureMod.countEslintSuppressions(`${root}/eslint-suppressions.json`)).toThrow(/parse-failed/);
+      expect(() =>
+        parseFailureMod.countEslintSuppressions(
+          `${root}/eslint-suppressions.json`,
+        ),
+      ).toThrow(/parse-failed/);
     });
 
     it("checkEslintSuppressionsBudget: within and over budget", async () => {
       const root = await harness.createTempRoot("pm-static-quality-budget-");
       mockUtils(root);
-      expect((await harness.importModuleStable<SqModule>(SCRIPT)).checkEslintSuppressionsBudget(1)).toMatchObject({
+      expect(
+        (
+          await harness.importModuleStable<SqModule>(SCRIPT)
+        ).checkEslintSuppressionsBudget(1),
+      ).toMatchObject({
         ok: false,
         total: null,
         max_suppressions: 1,
-        error: expect.stringContaining("Unable to read ESLint suppressions budget file"),
+        error: expect.stringContaining(
+          "Unable to read ESLint suppressions budget file",
+        ),
       });
       await writeFile(
         `${root}/eslint-suppressions.json`,
@@ -1436,10 +2028,22 @@ describe("static-quality-gate", () => {
         "utf8",
       );
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const actualSuppressionCount = mod.countEslintSuppressions(`${root}/eslint-suppressions.json`);
-      expect(mod.MAX_ESLINT_SUPPRESSIONS).toBeGreaterThanOrEqual(actualSuppressionCount);
-      expect(mod.checkEslintSuppressionsBudget(2)).toEqual({ ok: true, total: 2, max_suppressions: 2 });
-      expect(mod.checkEslintSuppressionsBudget(1)).toEqual({ ok: false, total: 2, max_suppressions: 1 });
+      const actualSuppressionCount = mod.countEslintSuppressions(
+        `${root}/eslint-suppressions.json`,
+      );
+      expect(mod.MAX_ESLINT_SUPPRESSIONS).toBeGreaterThanOrEqual(
+        actualSuppressionCount,
+      );
+      expect(mod.checkEslintSuppressionsBudget(2)).toEqual({
+        ok: true,
+        total: 2,
+        max_suppressions: 2,
+      });
+      expect(mod.checkEslintSuppressionsBudget(1)).toEqual({
+        ok: false,
+        total: 2,
+        max_suppressions: 1,
+      });
     });
 
     it("checkEslintSuppressionsBudget: reports non-Error infrastructure failures", async () => {
@@ -1467,21 +2071,37 @@ describe("static-quality-gate", () => {
     });
 
     it("collectPragmaScanFiles: scans lintable files, skips d.ts/node_modules/missing roots", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-pragma-scan-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-pragma-scan-",
+      );
       await mkdir(`${root}/src`, { recursive: true });
       await mkdir(`${root}/scripts`, { recursive: true });
       await mkdir(`${root}/plugins/node_modules`, { recursive: true });
       await writeFile(`${root}/src/a.ts`, "export const a = 1;\n", "utf8");
-      await writeFile(`${root}/src/a.d.ts`, "export declare const a: number;\n", "utf8");
+      await writeFile(
+        `${root}/src/a.d.ts`,
+        "export declare const a: number;\n",
+        "utf8",
+      );
       await writeFile(`${root}/src/readme.md`, "not code\n", "utf8");
       await writeFile(`${root}/scripts/b.mjs`, "export const b = 2;\n", "utf8");
-      await writeFile(`${root}/scripts/b.mts`, "export const typed = 2;\n", "utf8");
+      await writeFile(
+        `${root}/scripts/b.mts`,
+        "export const typed = 2;\n",
+        "utf8",
+      );
       await writeFile(`${root}/scripts/c.cjs`, "module.exports = 3;\n", "utf8");
       await writeFile(`${root}/plugins/c.js`, "module.exports = 3;\n", "utf8");
-      await writeFile(`${root}/plugins/node_modules/dep.js`, "module.exports = 4;\n", "utf8");
+      await writeFile(
+        `${root}/plugins/node_modules/dep.js`,
+        "module.exports = 4;\n",
+        "utf8",
+      );
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const relative = mod.collectPragmaScanFiles().map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
+      const relative = mod
+        .collectPragmaScanFiles()
+        .map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
       expect(relative).toEqual([
         "plugins/c.js",
         "scripts/b.mjs",
@@ -1498,28 +2118,56 @@ describe("static-quality-gate", () => {
       await mkdir(`${root}/packages/pkg/src`, { recursive: true });
       await mkdir(`${root}/packages/pkg/node_modules/dep`, { recursive: true });
       await writeFile(`${root}/src/a.ts`, "export const a = 1;\n", "utf8");
-      await writeFile(`${root}/src/a.d.ts`, "export declare const a: number;\n", "utf8");
-      await writeFile(`${root}/tests/sample.ts`, "export const sample = true;\n", "utf8");
-      await writeFile(`${root}/packages/pkg/src/index.ts`, "export const pkg = true;\n", "utf8");
-      await writeFile(`${root}/packages/pkg/node_modules/dep/index.ts`, "export const dep = true;\n", "utf8");
+      await writeFile(
+        `${root}/src/a.d.ts`,
+        "export declare const a: number;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/tests/sample.ts`,
+        "export const sample = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/packages/pkg/src/index.ts`,
+        "export const pkg = true;\n",
+        "utf8",
+      );
+      await writeFile(
+        `${root}/packages/pkg/node_modules/dep/index.ts`,
+        "export const dep = true;\n",
+        "utf8",
+      );
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const relative = mod.collectTypeScriptFiles().map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
-      expect(relative).toEqual(["packages/pkg/src/index.ts", "src/a.ts", "tests/sample.ts"]);
+      const relative = mod
+        .collectTypeScriptFiles()
+        .map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
+      expect(relative).toEqual([
+        "packages/pkg/src/index.ts",
+        "src/a.ts",
+        "tests/sample.ts",
+      ]);
     });
 
     it("collectTypeScriptFiles: skips missing scan roots", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-ts-missing-roots-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-ts-missing-roots-",
+      );
       await mkdir(`${root}/src`, { recursive: true });
       await writeFile(`${root}/src/a.ts`, "export const a = 1;\n", "utf8");
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const relative = mod.collectTypeScriptFiles().map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
+      const relative = mod
+        .collectTypeScriptFiles()
+        .map((p) => p.slice(root.length + 1).replaceAll("\\", "/"));
       expect(relative).toEqual(["src/a.ts"]);
     });
 
     it("readPragmaScanTexts + checkInlinePragmaBudgets: totals, budgets, and defaults", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-pragma-budget-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-pragma-budget-",
+      );
       await mkdir(`${root}/src`, { recursive: true });
       await writeFile(
         `${root}/src/pragmas.ts`,
@@ -1537,25 +2185,45 @@ describe("static-quality-gate", () => {
         ].join("\n"),
         "utf8",
       );
-      await writeFile(`${root}/src/clean.ts`, "export const clean = true;\n", "utf8");
+      await writeFile(
+        `${root}/src/clean.ts`,
+        "export const clean = true;\n",
+        "utf8",
+      );
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
 
       const files = [`${root}/src/pragmas.ts`, `${root}/src/clean.ts`];
       const scanTexts = mod.readPragmaScanTexts(files);
       expect(
-        mod.countPragmaMatchesInTexts(scanTexts, new RegExp("eslint-" + "disable-(?:next-line|line)\\b", "g")),
+        mod.countPragmaMatchesInTexts(
+          scanTexts,
+          new RegExp("eslint-" + "disable-(?:next-line|line)\\b", "g"),
+        ),
       ).toBe(1);
       expect(
         mod.countPragmaMatchesInTexts(
-          [{ path: `${root}/src/repeated.ts`, text: [ESLINT_DISABLE_PRAGMA, ESLINT_DISABLE_PRAGMA].join("\n") }],
+          [
+            {
+              path: `${root}/src/repeated.ts`,
+              text: [ESLINT_DISABLE_PRAGMA, ESLINT_DISABLE_PRAGMA].join("\n"),
+            },
+          ],
           new RegExp("eslint-" + "disable-(?:next-line|line)\\b"),
         ),
       ).toBe(2);
       expect(
-        mod.countPragmaMatchesInTexts(scanTexts, new RegExp("eslint-" + "disable\\b(?!-(?:next-line|line)\\b)", "g")),
+        mod.countPragmaMatchesInTexts(
+          scanTexts,
+          new RegExp("eslint-" + "disable\\b(?!-(?:next-line|line)\\b)", "g"),
+        ),
       ).toBe(1);
-      expect(mod.countPragmaMatchesInTexts(scanTexts, new RegExp("never-matches-anything", "g"))).toBe(0);
+      expect(
+        mod.countPragmaMatchesInTexts(
+          scanTexts,
+          new RegExp("never-matches-anything", "g"),
+        ),
+      ).toBe(0);
 
       const withinBudget = mod.checkInlinePragmaBudgets(
         {
@@ -1568,10 +2236,26 @@ describe("static-quality-gate", () => {
       );
       expect(withinBudget.ok).toBe(true);
       expect(withinBudget.scanned_file_count).toBe(2);
-      expect(withinBudget.budgets.inline_eslint_disables).toEqual({ ok: true, total: 1, max: 1 });
-      expect(withinBudget.budgets.broad_eslint_disables).toEqual({ ok: true, total: 1, max: 1 });
-      expect(withinBudget.budgets.coverage_ignore_pragmas).toEqual({ ok: true, total: 1, max: 1 });
-      expect(withinBudget.budgets.jscpd_ignore_pragmas).toEqual({ ok: true, total: 1, max: 1 });
+      expect(withinBudget.budgets.inline_eslint_disables).toEqual({
+        ok: true,
+        total: 1,
+        max: 1,
+      });
+      expect(withinBudget.budgets.broad_eslint_disables).toEqual({
+        ok: true,
+        total: 1,
+        max: 1,
+      });
+      expect(withinBudget.budgets.coverage_ignore_pragmas).toEqual({
+        ok: true,
+        total: 1,
+        max: 1,
+      });
+      expect(withinBudget.budgets.jscpd_ignore_pragmas).toEqual({
+        ok: true,
+        total: 1,
+        max: 1,
+      });
 
       // Default files argument scans the (mocked) repo root itself.
       const overBudget = mod.checkInlinePragmaBudgets({
@@ -1581,29 +2265,61 @@ describe("static-quality-gate", () => {
         maxJscpdIgnorePragmas: 0,
       });
       expect(overBudget.ok).toBe(false);
-      expect(overBudget.budgets.inline_eslint_disables).toEqual({ ok: false, total: 1, max: 0 });
-      expect(overBudget.budgets.broad_eslint_disables).toEqual({ ok: false, total: 1, max: 0 });
+      expect(overBudget.budgets.inline_eslint_disables).toEqual({
+        ok: false,
+        total: 1,
+        max: 0,
+      });
+      expect(overBudget.budgets.broad_eslint_disables).toEqual({
+        ok: false,
+        total: 1,
+        max: 0,
+      });
 
       const defaultBroadBudget = mod.checkInlinePragmaBudgets(
-        { maxInlineEslintDisables: 1, maxCoverageIgnorePragmas: 1, maxJscpdIgnorePragmas: 1 },
+        {
+          maxInlineEslintDisables: 1,
+          maxCoverageIgnorePragmas: 1,
+          maxJscpdIgnorePragmas: 1,
+        },
         files,
       );
-      expect(defaultBroadBudget.budgets.broad_eslint_disables).toEqual({ ok: false, total: 1, max: 0 });
+      expect(defaultBroadBudget.budgets.broad_eslint_disables).toEqual({
+        ok: false,
+        total: 1,
+        max: 0,
+      });
 
       const allDefaultBudgets = mod.checkInlinePragmaBudgets({}, files);
-      expect(allDefaultBudgets.budgets.inline_eslint_disables.max).toBe(mod.MAX_INLINE_ESLINT_DISABLES);
-      expect(allDefaultBudgets.budgets.broad_eslint_disables.max).toBe(mod.MAX_BROAD_ESLINT_DISABLES);
-      expect(allDefaultBudgets.budgets.coverage_ignore_pragmas.max).toBe(mod.MAX_COVERAGE_IGNORE_PRAGMAS);
-      expect(allDefaultBudgets.budgets.jscpd_ignore_pragmas.max).toBe(mod.MAX_JSCPD_IGNORE_PRAGMAS);
+      expect(allDefaultBudgets.budgets.inline_eslint_disables.max).toBe(
+        mod.MAX_INLINE_ESLINT_DISABLES,
+      );
+      expect(allDefaultBudgets.budgets.broad_eslint_disables.max).toBe(
+        mod.MAX_BROAD_ESLINT_DISABLES,
+      );
+      expect(allDefaultBudgets.budgets.coverage_ignore_pragmas.max).toBe(
+        mod.MAX_COVERAGE_IGNORE_PRAGMAS,
+      );
+      expect(allDefaultBudgets.budgets.jscpd_ignore_pragmas.max).toBe(
+        mod.MAX_JSCPD_IGNORE_PRAGMAS,
+      );
 
       const omittedBudgets = mod.checkInlinePragmaBudgets();
       expect(omittedBudgets.scanned_file_count).toBe(2);
-      expect(omittedBudgets.budgets.inline_eslint_disables.max).toBe(mod.MAX_INLINE_ESLINT_DISABLES);
-      expect(omittedBudgets.budgets.broad_eslint_disables.max).toBe(mod.MAX_BROAD_ESLINT_DISABLES);
+      expect(omittedBudgets.budgets.inline_eslint_disables.max).toBe(
+        mod.MAX_INLINE_ESLINT_DISABLES,
+      );
+      expect(omittedBudgets.budgets.broad_eslint_disables.max).toBe(
+        mod.MAX_BROAD_ESLINT_DISABLES,
+      );
 
       const nullBudgets = mod.checkInlinePragmaBudgets(null, files);
-      expect(nullBudgets.budgets.inline_eslint_disables.max).toBe(mod.MAX_INLINE_ESLINT_DISABLES);
-      expect(nullBudgets.budgets.broad_eslint_disables.max).toBe(mod.MAX_BROAD_ESLINT_DISABLES);
+      expect(nullBudgets.budgets.inline_eslint_disables.max).toBe(
+        mod.MAX_INLINE_ESLINT_DISABLES,
+      );
+      expect(nullBudgets.budgets.broad_eslint_disables.max).toBe(
+        mod.MAX_BROAD_ESLINT_DISABLES,
+      );
 
       expect(mod.MAX_INLINE_ESLINT_DISABLES).toBeGreaterThanOrEqual(0);
       expect(mod.MAX_BROAD_ESLINT_DISABLES).toBe(0);
@@ -1615,10 +2331,18 @@ describe("static-quality-gate", () => {
       mockUtils("/repo");
       const readFileSync = vi.fn((p: string) => {
         if (String(p).endsWith("a.ts")) {
-          return [ESLINT_DISABLE_PRAGMA, COVERAGE_IGNORE_PRAGMA, "export const a = 1;"].join("\n");
+          return [
+            ESLINT_DISABLE_PRAGMA,
+            COVERAGE_IGNORE_PRAGMA,
+            "export const a = 1;",
+          ].join("\n");
         }
         if (String(p).endsWith("b.ts")) {
-          return [ESLINT_BROAD_DISABLE_PRAGMA, JSCPD_IGNORE_PRAGMA, "export const b = 1;"].join("\n");
+          return [
+            ESLINT_BROAD_DISABLE_PRAGMA,
+            JSCPD_IGNORE_PRAGMA,
+            "export const b = 1;",
+          ].join("\n");
         }
         return "";
       });
@@ -1626,9 +2350,12 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       const files = ["/repo/src/a.ts", "/repo/src/b.ts"];
       const scanTexts = mod.readPragmaScanTexts(files);
-      expect(mod.countPragmaMatchesInTexts(scanTexts, new RegExp("eslint-" + "disable-(?:next-line|line)\\b", "g"))).toBe(
-        1,
-      );
+      expect(
+        mod.countPragmaMatchesInTexts(
+          scanTexts,
+          new RegExp("eslint-" + "disable-(?:next-line|line)\\b", "g"),
+        ),
+      ).toBe(1);
 
       const report = mod.checkInlinePragmaBudgets(
         {
@@ -1640,14 +2367,33 @@ describe("static-quality-gate", () => {
         files,
       );
       expect(report.ok).toBe(true);
-      expect(report.budgets.inline_eslint_disables).toEqual({ ok: true, total: 1, max: 1 });
-      expect(report.budgets.broad_eslint_disables).toEqual({ ok: true, total: 1, max: 1 });
-      expect(report.budgets.coverage_ignore_pragmas).toEqual({ ok: true, total: 1, max: 1 });
-      expect(report.budgets.jscpd_ignore_pragmas).toEqual({ ok: true, total: 1, max: 1 });
+      expect(report.budgets.inline_eslint_disables).toEqual({
+        ok: true,
+        total: 1,
+        max: 1,
+      });
+      expect(report.budgets.broad_eslint_disables).toEqual({
+        ok: true,
+        total: 1,
+        max: 1,
+      });
+      expect(report.budgets.coverage_ignore_pragmas).toEqual({
+        ok: true,
+        total: 1,
+        max: 1,
+      });
+      expect(report.budgets.jscpd_ignore_pragmas).toEqual({
+        ok: true,
+        total: 1,
+        max: 1,
+      });
       // 2 explicit readPragmaScanTexts calls above plus 2 internal reads from
       // checkInlinePragmaBudgets; the budget check itself reuses cached text.
       expect(readFileSync).toHaveBeenCalledTimes(4);
-      expect(readFileSync.mock.calls.map((call) => String(call[0]))).toEqual([...files, ...files]);
+      expect(readFileSync.mock.calls.map((call) => String(call[0]))).toEqual([
+        ...files,
+        ...files,
+      ]);
     });
 
     it("checkInlinePragmaBudgets: reports unreadable scan files as structured failures", async () => {
@@ -1677,9 +2423,21 @@ describe("static-quality-gate", () => {
         total: null,
         max: 0,
       });
-      expect(report.budgets.broad_eslint_disables).toEqual({ ok: false, total: null, max: 0 });
-      expect(report.budgets.coverage_ignore_pragmas).toEqual({ ok: false, total: null, max: 0 });
-      expect(report.budgets.jscpd_ignore_pragmas).toEqual({ ok: false, total: null, max: 0 });
+      expect(report.budgets.broad_eslint_disables).toEqual({
+        ok: false,
+        total: null,
+        max: 0,
+      });
+      expect(report.budgets.coverage_ignore_pragmas).toEqual({
+        ok: false,
+        total: null,
+        max: 0,
+      });
+      expect(report.budgets.jscpd_ignore_pragmas).toEqual({
+        ok: false,
+        total: null,
+        max: 0,
+      });
     });
 
     it("checkInlinePragmaBudgets: stringifies non-Error scan failures", async () => {
@@ -1723,7 +2481,9 @@ describe("static-quality-gate", () => {
             ];
           }
           if (String(p) === "/root/sub") {
-            return [{ name: "b.ts", isDirectory: () => false, isFile: () => true }];
+            return [
+              { name: "b.ts", isDirectory: () => false, isFile: () => true },
+            ];
           }
           return [];
         }) as never,
@@ -1734,7 +2494,10 @@ describe("static-quality-gate", () => {
       expect(collected).toContain("/root/a.ts");
       expect(collected).toContain("/root/sub/b.ts");
       expect(collected).not.toContain("/root/skip.md");
-      expect(mod.walkFiles("/root", matcher, [], null)).toEqual(["/root/sub/b.ts", "/root/a.ts"]);
+      expect(mod.walkFiles("/root", matcher, [], null)).toEqual([
+        "/root/sub/b.ts",
+        "/root/a.ts",
+      ]);
       expect(mod.walkFiles("/notdir", matcher)).toEqual([]);
     });
 
@@ -1744,19 +2507,27 @@ describe("static-quality-gate", () => {
       const readdirSync = vi.fn((p: string) => {
         if (String(p) === "/root") {
           return [
-            { name: "node_modules", isDirectory: () => true, isFile: () => false },
+            {
+              name: "node_modules",
+              isDirectory: () => true,
+              isFile: () => false,
+            },
             { name: "src", isDirectory: () => true, isFile: () => false },
           ];
         }
         if (String(p) === "/root/src") {
-          return [{ name: "a.ts", isDirectory: () => false, isFile: () => true }];
+          return [
+            { name: "a.ts", isDirectory: () => false, isFile: () => true },
+          ];
         }
         throw new Error(`Unexpected directory read: ${p}`);
       });
       mockFs({
         statSync: vi.fn((p: string) => ({
           isDirectory: () =>
-            String(p) === "/root" || String(p) === "/root/src" || String(p) === "/root/node_modules",
+            String(p) === "/root" ||
+            String(p) === "/root/src" ||
+            String(p) === "/root/node_modules",
         })) as never,
         readdirSync: readdirSync as never,
       });
@@ -1765,7 +2536,10 @@ describe("static-quality-gate", () => {
         shouldSkipDirectory: (p) => p.endsWith("/node_modules"),
       });
       expect(collected).toEqual(["/root/src/a.ts"]);
-      expect(readdirSync).not.toHaveBeenCalledWith("/root/node_modules", expect.anything());
+      expect(readdirSync).not.toHaveBeenCalledWith(
+        "/root/node_modules",
+        expect.anything(),
+      );
     });
   });
 
@@ -1808,6 +2582,11 @@ describe("static-quality-gate", () => {
           'export { run } from "../core/a";',
           "",
         ].join("\n"),
+        "src/sdk/index.ts": [
+          "/** Published SDK fixture. */",
+          'export { run } from "./a";',
+          "",
+        ].join("\n"),
         "tests/unit/sample.ts": "export const sample = true;\n",
         // Packages are held to the same documentation bar as src/, so the fixture
         // package needs both a module header and a per-export docstring to be clean.
@@ -1819,7 +2598,10 @@ describe("static-quality-gate", () => {
         ].join("\n"),
       } as const;
       for (const [relativePath, content] of Object.entries(files)) {
-        await mkdir(`${root}/${relativePath.split("/").slice(0, -1).join("/")}`, { recursive: true });
+        await mkdir(
+          `${root}/${relativePath.split("/").slice(0, -1).join("/")}`,
+          { recursive: true },
+        );
         await writeFile(`${root}/${relativePath}`, content, "utf8");
       }
     }
@@ -1830,14 +2612,18 @@ describe("static-quality-gate", () => {
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       process.argv = ["node", "x", "--help"];
       mod.main();
-      expect(logSpy.mock.calls.some((c) => String(c[0]).includes("Usage:"))).toBe(true);
+      expect(
+        logSpy.mock.calls.some((c) => String(c[0]).includes("Usage:")),
+      ).toBe(true);
     });
 
     it("full JSON scan passes for a clean fixture", async () => {
       const root = await harness.createTempRoot("pm-static-quality-pass-");
       await seedFixture(root);
       mockUtils(root);
-      const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+      const stdoutSpy = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
       process.argv = [
         "node",
@@ -1857,7 +2643,9 @@ describe("static-quality-gate", () => {
         "1",
       ];
       mod.main();
-      const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}")) as {
+      const payload = JSON.parse(
+        String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}"),
+      ) as {
         ok: boolean;
         scanned: {
           file_count: number;
@@ -1868,7 +2656,11 @@ describe("static-quality-gate", () => {
         source_docstrings: { coverage_percent: number };
         exported_docstrings: { coverage_percent: number };
         member_docstrings: { coverage_percent: number };
-        sdk_import_boundary: { ok: boolean; actual_edge_count: number; baseline_edge_count: number };
+        sdk_import_boundary: {
+          ok: boolean;
+          actual_edge_count: number;
+          baseline_edge_count: number;
+        };
       };
       expect(payload.ok).toBe(true);
       expect(payload.scanned.file_count).toBeGreaterThan(0);
@@ -1878,7 +2670,11 @@ describe("static-quality-gate", () => {
       expect(payload.source_docstrings.coverage_percent).toBe(100);
       expect(payload.exported_docstrings.coverage_percent).toBe(100);
       expect(payload.member_docstrings.coverage_percent).toBe(100);
-      expect(payload.sdk_import_boundary).toMatchObject({ ok: true, actual_edge_count: 0, baseline_edge_count: 0 });
+      expect(payload.sdk_import_boundary).toMatchObject({
+        ok: true,
+        actual_edge_count: 0,
+        baseline_edge_count: 0,
+      });
     });
 
     it("reports member_docstring and trivial_docstring violations in text mode", async () => {
@@ -1915,12 +2711,23 @@ describe("static-quality-gate", () => {
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
-      expect(emitted.some((line) => line.includes("member_docstring coverage"))).toBe(true);
-      expect(emitted.some((line) => line.includes("trivial_docstring violations"))).toBe(true);
+      expect(
+        emitted.some((line) => line.includes("member_docstring coverage")),
+      ).toBe(true);
+      expect(
+        emitted.some((line) => line.includes("trivial_docstring violations")),
+      ).toBe(true);
     });
 
     it("full text scan prints success message when clean", async () => {
@@ -1929,16 +2736,31 @@ describe("static-quality-gate", () => {
       mockUtils(root);
       const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
-      expect(logSpy.mock.calls.some((c) => String(c[0]).includes("Static quality gate passed."))).toBe(true);
+      expect(
+        logSpy.mock.calls.some((c) =>
+          String(c[0]).includes("Static quality gate passed."),
+        ),
+      ).toBe(true);
     });
 
     it("full text scan reports every violation category and sets exit code", async () => {
       const root = await harness.createTempRoot("pm-static-quality-fail-");
       await seedFixture(root);
       // A function with a branch so complexity (2) exceeds --max-complexity 1.
-      await writeFile(`${root}/src/core/b.ts`, "export function pick(a) {\n  if (a) { return 1; }\n  return 0;\n}\n", "utf8");
+      await writeFile(
+        `${root}/src/core/b.ts`,
+        "export function pick(a) {\n  if (a) { return 1; }\n  return 0;\n}\n",
+        "utf8",
+      );
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
@@ -1963,29 +2785,40 @@ describe("static-quality-gate", () => {
       mod.main();
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
-      expect(emitted.some((line) => line.includes("Static quality gate failed."))).toBe(true);
-      expect(emitted.some((line) => line.includes("file_length violations"))).toBe(true);
-      expect(emitted.some((line) => line.includes("directory_load violations"))).toBe(true);
-      expect(emitted.some((line) => line.includes("complexity violations"))).toBe(true);
+      expect(
+        emitted.some((line) => line.includes("Static quality gate failed.")),
+      ).toBe(true);
+      expect(
+        emitted.some((line) => line.includes("file_length violations")),
+      ).toBe(true);
+      expect(
+        emitted.some((line) => line.includes("directory_load violations")),
+      ).toBe(true);
+      expect(
+        emitted.some((line) => line.includes("complexity violations")),
+      ).toBe(true);
     });
 
-    it("reports duplicate_chunks violations in text mode", async () => {
+    it.each([
+      ["reports duplicate_chunks violations in text mode", "src/core"],
+      ["includes src/cli files in duplicate scope", "src/cli"],
+    ])("%s", async (_title, scope) => {
       const root = await harness.createTempRoot("pm-static-quality-dup-");
       await seedRoots(root);
-      await mkdir(`${root}/src/core`, { recursive: true });
+      await mkdir(`${root}/${scope}`, { recursive: true });
       const block = [
-        "/** Duplicate fixture one. */",
-        "export const sharedConstantOne = 1;",
-        "export const sharedConstantTwo = 2;",
-        "export const sharedConstantThree = 3;",
-        "export const sharedConstantFour = 4;",
-        "export const sharedConstantFive = 5;",
-        "export const sharedConstantSix = 6;",
+        "/** Duplicate fixture. */",
+        "export const sharedOne = 1;",
+        "export const sharedTwo = 2;",
+        "export const sharedThree = 3;",
+        "export const sharedFour = 4;",
+        "export const sharedFive = 5;",
+        "export const sharedSix = 6;",
       ].join("\n");
-      // Two files in src/core (the duplicate scope) sharing a >=5-line window so a
-      // cross-file duplicate is recorded; max-duplicate-chunks 0 makes it a violation.
-      await writeFile(`${root}/src/core/one.ts`, `${block}\n`, "utf8");
-      await writeFile(`${root}/src/core/two.ts`, `${block}\n`, "utf8");
+      // Two files in each production scope share a >=5-line window, so the
+      // zero-tolerance duplicate budget must reject both core and CLI copies.
+      await writeFile(`${root}/${scope}/one.ts`, `${block}\n`, "utf8");
+      await writeFile(`${root}/${scope}/two.ts`, `${block}\n`, "utf8");
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
@@ -2003,42 +2836,11 @@ describe("static-quality-gate", () => {
       ];
       mod.main();
       expect(process.exitCode).toBe(1);
-      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("duplicate_chunks violations"))).toBe(true);
-    });
-
-    it("includes src/cli files in duplicate scope", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-dup-cli-");
-      await seedRoots(root);
-      await mkdir(`${root}/src/cli`, { recursive: true });
-      const block = [
-        "/** Duplicate fixture one. */",
-        "export const sharedCliOne = 1;",
-        "export const sharedCliTwo = 2;",
-        "export const sharedCliThree = 3;",
-        "export const sharedCliFour = 4;",
-        "export const sharedCliFive = 5;",
-        "export const sharedCliSix = 6;",
-      ].join("\n");
-      await writeFile(`${root}/src/cli/one.ts`, `${block}\n`, "utf8");
-      await writeFile(`${root}/src/cli/two.ts`, `${block}\n`, "utf8");
-      mockUtils(root);
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = [
-        "node",
-        "x",
-        "--max-lines",
-        "500",
-        "--max-lines-tests",
-        "500",
-        "--duplicate-window",
-        "5",
-        "--max-duplicate-chunks",
-        "0",
-      ];
-      mod.main();
-      expect(process.exitCode).toBe(1);
-      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("duplicate_chunks violations"))).toBe(true);
+      expect(
+        errorSpy.mock.calls.some((call) =>
+          String(call[0]).includes("duplicate_chunks violations"),
+        ),
+      ).toBe(true);
     });
 
     it("reports orphan_modules violations in text mode", async () => {
@@ -2046,50 +2848,105 @@ describe("static-quality-gate", () => {
       await seedRoots(root);
       await mkdir(`${root}/src`, { recursive: true });
       // A lone unreferenced src module → orphan_modules violation (line 401-402).
-      await writeFile(`${root}/src/lonely.ts`, "/** Lonely fixture. */\nexport const lonely = 1;\n", "utf8");
-      mockUtils(root);
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
-      mod.main();
-      expect(process.exitCode).toBe(1);
-      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("orphan_modules violations"))).toBe(true);
-    });
-
-    it("reports source_docstring coverage violations in text mode", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-docstrings-");
-      await seedRoots(root);
-      await mkdir(`${root}/src`, { recursive: true });
-      await writeFile(`${root}/src/cli.ts`, "export const cli = true;\n", "utf8");
-      mockUtils(root);
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
-      mod.main();
-      expect(process.exitCode).toBe(1);
-      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("source_docstring coverage"))).toBe(true);
-    });
-
-    it("reports exported_docstring coverage violations in text mode", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-exported-docstrings-");
-      await seedRoots(root);
-      await mkdir(`${root}/src`, { recursive: true });
       await writeFile(
-        `${root}/src/cli.ts`,
-        ["/**", " * @module cli", " *", " * Module docs.", " */", "export function missing() { return true; }", ""].join("\n"),
+        `${root}/src/lonely.ts`,
+        "/** Lonely fixture. */\nexport const lonely = 1;\n",
         "utf8",
       );
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
-      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("exported_docstring coverage"))).toBe(true);
+      expect(
+        errorSpy.mock.calls.some((c) =>
+          String(c[0]).includes("orphan_modules violations"),
+        ),
+      ).toBe(true);
+    });
+
+    it("reports source_docstring coverage violations in text mode", async () => {
+      const root = await harness.createTempRoot(
+        "pm-static-quality-docstrings-",
+      );
+      await seedRoots(root);
+      await mkdir(`${root}/src`, { recursive: true });
+      await writeFile(
+        `${root}/src/cli.ts`,
+        "export const cli = true;\n",
+        "utf8",
+      );
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      expect(
+        errorSpy.mock.calls.some((c) =>
+          String(c[0]).includes("source_docstring coverage"),
+        ),
+      ).toBe(true);
+    });
+
+    it("reports exported_docstring coverage violations in text mode", async () => {
+      const root = await harness.createTempRoot(
+        "pm-static-quality-exported-docstrings-",
+      );
+      await seedRoots(root);
+      await mkdir(`${root}/src`, { recursive: true });
+      await writeFile(
+        `${root}/src/cli.ts`,
+        [
+          "/**",
+          " * @module cli",
+          " *",
+          " * Module docs.",
+          " */",
+          "export function missing() { return true; }",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      mockUtils(root);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<SqModule>(SCRIPT);
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
+      mod.main();
+      expect(process.exitCode).toBe(1);
+      expect(
+        errorSpy.mock.calls.some((c) =>
+          String(c[0]).includes("exported_docstring coverage"),
+        ),
+      ).toBe(true);
     });
 
     it("reports boilerplate_docstring violations in text mode", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-boilerplate-docstrings-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-boilerplate-docstrings-",
+      );
       await seedRoots(root);
       await mkdir(`${root}/src`, { recursive: true });
       await writeFile(
@@ -2111,14 +2968,27 @@ describe("static-quality-gate", () => {
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
-      expect(errorSpy.mock.calls.some((c) => String(c[0]).includes("boilerplate_docstring violations"))).toBe(true);
+      expect(
+        errorSpy.mock.calls.some((c) =>
+          String(c[0]).includes("boilerplate_docstring violations"),
+        ),
+      ).toBe(true);
     });
 
     it("reports eslint_suppressions budget violations in text mode", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-suppbudget-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-suppbudget-",
+      );
       await seedFixture(root);
       await writeFile(
         `${root}/eslint-suppressions.json`,
@@ -2128,11 +2998,24 @@ describe("static-quality-gate", () => {
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500", "--max-eslint-suppressions", "1"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+        "--max-eslint-suppressions",
+        "1",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
-      expect(emitted.some((line) => line.includes("eslint_suppressions budget exceeded: 2 > 1"))).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("eslint_suppressions budget exceeded: 2 > 1"),
+        ),
+      ).toBe(true);
     });
 
     it("reports eslint_suppressions file failures in text mode", async () => {
@@ -2142,15 +3025,28 @@ describe("static-quality-gate", () => {
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
-      expect(emitted.some((line) => line.includes("eslint_suppressions budget failed"))).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("eslint_suppressions budget failed"),
+        ),
+      ).toBe(true);
     });
 
     it("reports inline pragma budget violations in text mode", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-pragmabudget-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-pragmabudget-",
+      );
       await seedFixture(root);
       await writeFile(
         `${root}/src/core/pragma-user.ts`,
@@ -2192,22 +3088,46 @@ describe("static-quality-gate", () => {
       mod.main();
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
-      expect(emitted.some((line) => line.includes("inline_eslint_disables budget exceeded: 1 > 0"))).toBe(true);
-      expect(emitted.some((line) => line.includes("broad_eslint_disables budget exceeded: 1 > 0"))).toBe(true);
-      expect(emitted.some((line) => line.includes("coverage_ignore_pragmas budget exceeded: 1 > 0"))).toBe(true);
-      expect(emitted.some((line) => line.includes("jscpd_ignore_pragmas budget exceeded: 1 > 0"))).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("inline_eslint_disables budget exceeded: 1 > 0"),
+        ),
+      ).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("broad_eslint_disables budget exceeded: 1 > 0"),
+        ),
+      ).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("coverage_ignore_pragmas budget exceeded: 1 > 0"),
+        ),
+      ).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("jscpd_ignore_pragmas budget exceeded: 1 > 0"),
+        ),
+      ).toBe(true);
     });
 
     it("reports inline pragma scan failures in text mode", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-pragma-read-fail-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-pragma-read-fail-",
+      );
       await seedFixture(root);
       await mkdir(`${root}/scripts`, { recursive: true });
-      await writeFile(`${root}/scripts/unreadable.mjs`, "export const unreadable = true;\n", "utf8");
+      await writeFile(
+        `${root}/scripts/unreadable.mjs`,
+        "export const unreadable = true;\n",
+        "utf8",
+      );
       const realReadFileSync = fs.readFileSync;
       mockUtils(root);
       mockFs({
         readFileSync: vi.fn((p: string, options?: BufferEncoding) => {
-          if (String(p).replaceAll("\\", "/").endsWith("scripts/unreadable.mjs")) {
+          if (
+            String(p).replaceAll("\\", "/").endsWith("scripts/unreadable.mjs")
+          ) {
             throw new Error("unreadable pragma file");
           }
           return realReadFileSync(p, options);
@@ -2215,16 +3135,29 @@ describe("static-quality-gate", () => {
       });
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
-      expect(emitted.some((line) => line.includes("inline_pragmas scan failed"))).toBe(true);
-      expect(emitted.some((line) => line.includes("unreadable pragma file"))).toBe(true);
+      expect(
+        emitted.some((line) => line.includes("inline_pragmas scan failed")),
+      ).toBe(true);
+      expect(
+        emitted.some((line) => line.includes("unreadable pragma file")),
+      ).toBe(true);
     });
 
     it("reports CodeFactor parity scan failures in text mode", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-codefactor-fail-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-codefactor-fail-",
+      );
       await seedFixture(root);
       await mkdir(`${root}/.git`, { recursive: true });
       mockUtils(root);
@@ -2239,15 +3172,28 @@ describe("static-quality-gate", () => {
       });
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
       const emitted = errorSpy.mock.calls.map((c) => String(c[0]));
-      expect(emitted.some((line) => line.includes("codefactor_complexity scan failed"))).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("codefactor_complexity scan failed"),
+        ),
+      ).toBe(true);
     });
 
     it("reports SDK import-boundary violations in text mode", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-text-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-sdk-boundary-text-",
+      );
       await seedFixture(root);
       await writeFile(
         `${root}/src/cli.ts`,
@@ -2265,20 +3211,35 @@ describe("static-quality-gate", () => {
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
       process.exitCode = undefined;
       expect(
-        errorSpy.mock.calls.some((call) => String(call[0]).includes("sdk_import_boundary private_core_import")),
+        errorSpy.mock.calls.some((call) =>
+          String(call[0]).includes("sdk_import_boundary private_core_import"),
+        ),
       ).toBe(true);
       expect(
-        errorSpy.mock.calls.some((call) => String(call[0]).includes("sdk_import_boundary unsupported_dynamic_import")),
+        errorSpy.mock.calls.some((call) =>
+          String(call[0]).includes(
+            "sdk_import_boundary unsupported_dynamic_import",
+          ),
+        ),
       ).toBe(true);
     });
 
     it("reports SDK unsupported dynamic imports without consulting an allowance baseline", async () => {
-      const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-error-text-");
+      const root = await harness.createTempRoot(
+        "pm-static-quality-sdk-boundary-error-text-",
+      );
       await seedFixture(root);
       await writeFile(
         `${root}/src/cli.ts`,
@@ -2295,14 +3256,33 @@ describe("static-quality-gate", () => {
       mockUtils(root);
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      process.argv = ["node", "x", "--max-lines", "500", "--max-lines-tests", "500"];
+      process.argv = [
+        "node",
+        "x",
+        "--max-lines",
+        "500",
+        "--max-lines-tests",
+        "500",
+      ];
       mod.main();
       expect(process.exitCode).toBe(1);
       process.exitCode = undefined;
       const emitted = errorSpy.mock.calls.map((call) => String(call[0]));
-      expect(emitted.some((line) => line.includes("sdk_import_boundary scan failed"))).toBe(false);
-      expect(emitted.some((line) => line.includes("sdk_import_boundary private_core_import"))).toBe(true);
-      expect(emitted.some((line) => line.includes("sdk_import_boundary unsupported_dynamic_import"))).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("sdk_import_boundary scan failed"),
+        ),
+      ).toBe(false);
+      expect(
+        emitted.some((line) =>
+          line.includes("sdk_import_boundary private_core_import"),
+        ),
+      ).toBe(true);
+      expect(
+        emitted.some((line) =>
+          line.includes("sdk_import_boundary unsupported_dynamic_import"),
+        ),
+      ).toBe(true);
     });
 
     it("rejects a duplicate-window below the minimum", async () => {

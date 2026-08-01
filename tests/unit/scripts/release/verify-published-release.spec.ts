@@ -14,7 +14,11 @@ interface ScenarioOptions {
   argv: string[];
   npmPackage?: string;
   packageManifest?: Record<string, unknown>;
-  runCommand?: (command: string, args: string[], call: number) => RunCommandResult;
+  runCommand?: (
+    command: string,
+    args: string[],
+    call: number,
+  ) => RunCommandResult;
   sleepMs?: string;
 }
 
@@ -32,14 +36,16 @@ async function runVerify(options: ScenarioOptions) {
 
   const mkdtempSync = vi.fn(() => "/tmp/pm-cli-published-verify-test");
   const readFileSync = vi.fn(() =>
-    JSON.stringify(options.packageManifest ?? {
-      name: "@unbrained/pm-cli",
-      bin: {
-        pm: "dist/cli.js",
-        "pm-cli": "dist/cli.js",
-        "pm-mcp": "dist/mcp/server.js",
+    JSON.stringify(
+      options.packageManifest ?? {
+        name: "@unbrained/pm-cli",
+        bin: {
+          pm: "dist/cli.js",
+          "pm-cli": "dist/cli.js",
+          "pm-mcp": "dist/mcp/server.js",
+        },
       },
-    }),
+    ),
   );
   const rmSync = vi.fn();
   const writeFileSync = vi.fn();
@@ -52,12 +58,17 @@ async function runVerify(options: ScenarioOptions) {
 
   let callIndex = 0;
   const runCommand = vi.fn((command: string, args: string[]) => {
-    const result = (options.runCommand ?? (() => ({ status: 0, stdout: "", stderr: "" })))(command, args, callIndex);
+    const result = (
+      options.runCommand ?? (() => ({ status: 0, stdout: "", stderr: "" }))
+    )(command, args, callIndex);
     callIndex += 1;
     return result;
   });
   vi.doMock(UTILS_SPECIFIER, async () => {
-    const actual = await vi.importActual<typeof import("../../../../scripts/release/utils.mjs")>(UTILS_SPECIFIER);
+    const actual =
+      await vi.importActual<
+        typeof import("../../../../scripts/release/utils.mjs")
+      >(UTILS_SPECIFIER);
     return {
       ...actual,
       runCommand,
@@ -70,8 +81,14 @@ async function runVerify(options: ScenarioOptions) {
     };
   });
 
-  process.argv = ["node", "scripts/release/verify-published-release.mjs", ...options.argv];
-  const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+  process.argv = [
+    "node",
+    "scripts/release/verify-published-release.mjs",
+    ...options.argv,
+  ];
+  const stdoutSpy = vi
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
   const logs: string[] = [];
   const errors: string[] = [];
   vi.spyOn(console, "log").mockImplementation((value?: unknown) => {
@@ -83,7 +100,9 @@ async function runVerify(options: ScenarioOptions) {
 
   let failure: unknown = null;
   try {
-    await harness.importModuleStable("scripts/release/verify-published-release.mjs");
+    await harness.importModuleStable(
+      "scripts/release/verify-published-release.mjs",
+    );
   } catch (error) {
     failure = error;
   }
@@ -109,7 +128,10 @@ async function runVerify(options: ScenarioOptions) {
 function npmViewResult(version: string): RunCommandResult {
   return {
     status: 0,
-    stdout: JSON.stringify({ version, dist: { integrity: "sha512-test", unpackedSize: 12345 } }),
+    stdout: JSON.stringify({
+      version,
+      dist: { integrity: "sha512-test", unpackedSize: 12345 },
+    }),
     stderr: "",
   };
 }
@@ -142,7 +164,9 @@ function successfulExecutorResult(args: string[]): RunCommandResult {
 describe("scripts/release/verify-published-release: usage and validation", () => {
   it("prints usage for --help and runs nothing", async () => {
     const { logs, runCommand } = await runVerify({ argv: ["--help"] });
-    expect(logs.join("\n")).toContain("scripts/release/verify-published-release.mjs");
+    expect(logs.join("\n")).toContain(
+      "scripts/release/verify-published-release.mjs",
+    );
     expect(runCommand).not.toHaveBeenCalled();
   });
 
@@ -153,7 +177,13 @@ describe("scripts/release/verify-published-release: usage and validation", () =>
 
   it("derives the version from --tag by stripping the leading v", async () => {
     const { json } = await runVerify({
-      argv: ["--tag", "v2026.6.14", "--json", "--skip-package", "--skip-github-release"],
+      argv: [
+        "--tag",
+        "v2026.6.14",
+        "--json",
+        "--skip-package",
+        "--skip-github-release",
+      ],
     });
     expect(json.version).toBe("2026.6.14");
     expect(json.package).toEqual({ skipped: true });
@@ -161,25 +191,43 @@ describe("scripts/release/verify-published-release: usage and validation", () =>
   });
 
   it("fails on an invalid version format", async () => {
-    const { failure } = await runVerify({ argv: ["--version", "not-a-version"] });
-    expect(String(failure ?? "")).toContain('Invalid release version "not-a-version"');
+    const { failure } = await runVerify({
+      argv: ["--version", "not-a-version"],
+    });
+    expect(String(failure ?? "")).toContain(
+      'Invalid release version "not-a-version"',
+    );
   });
 
   it("fails on a non-positive --npm-attempts value", async () => {
-    const { failure } = await runVerify({ argv: ["--version", "2026.6.14", "--npm-attempts", "0"] });
+    const { failure } = await runVerify({
+      argv: ["--version", "2026.6.14", "--npm-attempts", "0"],
+    });
     expect(String(failure ?? "")).toContain('Invalid --npm-attempts value "0"');
   });
 
   it("fails on a non-integer --executor-attempts value", async () => {
-    const { failure } = await runVerify({ argv: ["--version", "2026.6.14", "--executor-attempts", "1.5"] });
-    expect(String(failure ?? "")).toContain('Invalid --executor-attempts value "1.5"');
+    const { failure } = await runVerify({
+      argv: ["--version", "2026.6.14", "--executor-attempts", "1.5"],
+    });
+    expect(String(failure ?? "")).toContain(
+      'Invalid --executor-attempts value "1.5"',
+    );
   });
 });
 
 describe("scripts/release/verify-published-release: success path", () => {
   it("verifies npm, npx, bunx, and the GitHub release and prints JSON", async () => {
     const { json, rmSync, runCommand, writeFileSync } = await runVerify({
-      argv: ["--version", "2026.6.14", "--json", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--json",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
           return npmViewResult("2026.6.14");
@@ -206,9 +254,17 @@ describe("scripts/release/verify-published-release: success path", () => {
     expect(json.ok).toBe(true);
     expect(json.package.npm.ok).toBe(true);
     expect(json.package.executors.npx.pm.ok).toBe(true);
+    expect(json.package.executors.npx["package-default-pm"].ok).toBe(true);
     expect(json.package.executors.npx["pm-mcp"].ok).toBe(true);
     expect(json.package.executors.bunx.pm.ok).toBe(true);
+    expect(json.package.executors.bunx["package-default-pm"].ok).toBe(true);
     expect(json.package.executors.bunx["pm-mcp"].ok).toBe(true);
+    expect(json.package.negative_controls).toMatchObject({
+      npx: { ok: true },
+      npx_package_default: { ok: true },
+      bunx: { ok: true },
+      bunx_package_default: { ok: true },
+    });
     for (const call of runCommand.mock.calls.filter((entry) =>
       entry[1].includes("pm-mcp"),
     )) {
@@ -228,7 +284,7 @@ describe("scripts/release/verify-published-release: success path", () => {
       "",
       "utf8",
     );
-    for (const call of runCommand.mock.calls.slice(0, 5)) {
+    for (const call of runCommand.mock.calls.slice(0, 7)) {
       expect(call[2]).toMatchObject({
         env: {
           NODE_AUTH_TOKEN: "",
@@ -253,14 +309,27 @@ describe("scripts/release/verify-published-release: success path", () => {
 
   it("prints a text success line when --json is omitted", async () => {
     const { logs } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-package", "--skip-github-release"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-package",
+        "--skip-github-release",
+      ],
     });
     expect(logs.join("\n")).toContain("Published release 2026.6.14 verified.");
   });
 
   it("uses the workflow package identity for every public package surface", async () => {
     const { runCommand } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       npmPackage: "@example/pm-cli",
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
@@ -269,11 +338,57 @@ describe("scripts/release/verify-published-release: success path", () => {
         return successfulExecutorResult(args);
       },
     });
-    expect(runCommand.mock.calls.slice(0, 5).map((call) => call[1])).toEqual([
-      ["view", "@example/pm-cli@2026.6.14", "version", "dist.integrity", "dist.unpackedSize", "--json"],
-      ["--yes", "--package", "@example/pm-cli@2026.6.14", "--", "pm", "--json", "--no-extensions", "contracts", "--summary"],
+    expect(runCommand.mock.calls.slice(0, 7).map((call) => call[1])).toEqual([
+      [
+        "view",
+        "@example/pm-cli@2026.6.14",
+        "version",
+        "dist.integrity",
+        "dist.unpackedSize",
+        "--json",
+      ],
+      [
+        "--yes",
+        "--package",
+        "@example/pm-cli@2026.6.14",
+        "--",
+        "pm",
+        "--json",
+        "--no-extensions",
+        "contracts",
+        "--summary",
+      ],
+      [
+        "--yes",
+        "@example/pm-cli@2026.6.14",
+        "pm",
+        "--json",
+        "--no-extensions",
+        "contracts",
+        "--summary",
+      ],
       ["--yes", "--package", "@example/pm-cli@2026.6.14", "--", "pm-mcp"],
-      ["--silent", "--bun", "--package", "@example/pm-cli@2026.6.14", "pm", "--json", "--no-extensions", "contracts", "--summary"],
+      [
+        "--silent",
+        "--bun",
+        "--package",
+        "@example/pm-cli@2026.6.14",
+        "pm",
+        "--json",
+        "--no-extensions",
+        "contracts",
+        "--summary",
+      ],
+      [
+        "--silent",
+        "--bun",
+        "@example/pm-cli@2026.6.14",
+        "pm",
+        "--json",
+        "--no-extensions",
+        "contracts",
+        "--summary",
+      ],
       ["--silent", "--bun", "--package", "@example/pm-cli@2026.6.14", "pm-mcp"],
     ]);
   });
@@ -282,12 +397,23 @@ describe("scripts/release/verify-published-release: success path", () => {
 describe("scripts/release/verify-published-release: npm metadata retries", () => {
   it("retries npm metadata and succeeds on a later attempt (exercises sleep + waiting log)", async () => {
     const { json, errors } = await runVerify({
-      argv: ["--version", "2026.6.14", "--json", "--skip-github-release", "--npm-attempts", "2", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--json",
+        "--skip-github-release",
+        "--npm-attempts",
+        "2",
+        "--executor-attempts",
+        "1",
+      ],
       sleepMs: "0",
       runCommand: (command, args, call) => {
         if (command === "npm" && args[0] === "view") {
           // First attempt fails, second succeeds.
-          return call === 0 ? { status: 1, stdout: "", stderr: "registry timeout" } : npmViewResult("2026.6.14");
+          return call === 0
+            ? { status: 1, stdout: "", stderr: "registry timeout" }
+            : npmViewResult("2026.6.14");
         }
         if (command === "npx" || command === "bunx") {
           return successfulExecutorResult(args);
@@ -297,32 +423,62 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
     });
     expect(json.ok).toBe(true);
     expect(json.package.npm.attempts).toBe(2);
-    expect(errors.join("\n")).toContain("Waiting for npm metadata propagation (attempt 1/2)");
+    expect(errors.join("\n")).toContain(
+      "Waiting for npm metadata propagation (attempt 1/2)",
+    );
   });
 
   it("fails npm metadata after exhausting attempts", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) =>
         command === "npm" && args[0] === "view"
           ? { status: 1, stdout: "", stderr: "npm down" }
           : { status: 0, stdout: "", stderr: "" },
     });
-    expect(String(failure ?? "")).toContain("npm metadata verification failed: npm down");
+    expect(String(failure ?? "")).toContain(
+      "npm metadata verification failed: npm down",
+    );
   });
 
   it("fails npm metadata on a version mismatch", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) =>
-        command === "npm" && args[0] === "view" ? npmViewResult("2026.6.13") : { status: 0, stdout: "", stderr: "" },
+        command === "npm" && args[0] === "view"
+          ? npmViewResult("2026.6.13")
+          : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("npm_version_mismatch:2026.6.13");
   });
 
   it("fails npm metadata on malformed JSON", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) =>
         command === "npm" && args[0] === "view"
           ? { status: 0, stdout: "not-json", stderr: "" }
@@ -333,7 +489,15 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
 
   it("falls back to npm_view_failed when npm exits non-zero with empty stderr", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) =>
         command === "npm" && args[0] === "view"
           ? { status: 1, stdout: "", stderr: "" }
@@ -344,10 +508,22 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
 
   it("reports a missing version when npm metadata omits the version field", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) =>
         command === "npm" && args[0] === "view"
-          ? { status: 0, stdout: JSON.stringify({ dist: { integrity: "sha512-x" } }), stderr: "" }
+          ? {
+              status: 0,
+              stdout: JSON.stringify({ dist: { integrity: "sha512-x" } }),
+              stderr: "",
+            }
           : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("npm_version_mismatch:missing");
@@ -357,7 +533,15 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
 describe("scripts/release/verify-published-release: executor failures", () => {
   it("fails when an executor reports a mismatched version (no_output branch)", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
           return npmViewResult("2026.6.14");
@@ -374,7 +558,15 @@ describe("scripts/release/verify-published-release: executor failures", () => {
 
   it("reports the stderr/no_output fallback when an executor exits non-zero with empty stdout", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
           return npmViewResult("2026.6.14");
@@ -385,12 +577,22 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         return { status: 0, stdout: "", stderr: "" };
       },
     });
-    expect(String(failure ?? "")).toContain("npx-pm_execution_failed:executor crashed");
+    expect(String(failure ?? "")).toContain(
+      "npx-pm_execution_failed:executor crashed",
+    );
   });
 
   it("reports no_output when an executor exits non-zero with empty stdout and stderr", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
           return npmViewResult("2026.6.14");
@@ -401,14 +603,25 @@ describe("scripts/release/verify-published-release: executor failures", () => {
         return { status: 0, stdout: "", stderr: "" };
       },
     });
-    expect(String(failure ?? "")).toContain("npx-pm_execution_failed:no_output");
+    expect(String(failure ?? "")).toContain(
+      "npx-pm_execution_failed:no_output",
+    );
   });
 
   it("rejects non-object CLI output and an invalid MCP initialize response", async () => {
     const cli = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) => {
-        if (command === "npm" && args[0] === "view") return npmViewResult("2026.6.14");
+        if (command === "npm" && args[0] === "view")
+          return npmViewResult("2026.6.14");
         if (command === "npx") return { status: 0, stdout: "null", stderr: "" };
         return successfulExecutorResult(args);
       },
@@ -416,11 +629,24 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     expect(String(cli.failure)).toContain("cli_dispatch_not_an_object");
 
     const mcp = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) => {
-        if (command === "npm" && args[0] === "view") return npmViewResult("2026.6.14");
+        if (command === "npm" && args[0] === "view")
+          return npmViewResult("2026.6.14");
         if (command === "npx" && args.includes("pm-mcp")) {
-          return { status: 0, stdout: JSON.stringify({ id: 1, result: {} }), stderr: "" };
+          return {
+            status: 0,
+            stdout: JSON.stringify({ id: 1, result: {} }),
+            stderr: "",
+          };
         }
         return successfulExecutorResult(args);
       },
@@ -430,10 +656,21 @@ describe("scripts/release/verify-published-release: executor failures", () => {
 
   it("fails closed when missing-bin controls pass or a manifest bin is uncovered", async () => {
     const negativeControl = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command, args) => {
-        if (command === "npm" && args[0] === "view") return npmViewResult("2026.6.14");
-        return successfulExecutorResult(args.includes("pm-definitely-missing") ? [] : args);
+        if (command === "npm" && args[0] === "view")
+          return npmViewResult("2026.6.14");
+        return successfulExecutorResult(
+          args.includes("pm-definitely-missing") ? [] : args,
+        );
       },
     });
     expect(String(negativeControl.failure)).toContain(
@@ -441,7 +678,15 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     );
 
     const uncovered = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-github-release",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       packageManifest: {
         name: "@unbrained/pm-cli",
         bin: {
@@ -468,28 +713,62 @@ describe("scripts/release/verify-published-release: executor failures", () => {
 describe("scripts/release/verify-published-release: github release", () => {
   it("fails when gh release view exits non-zero", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-package", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-package",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command) =>
-        command === "gh" ? { status: 1, stdout: "", stderr: "no release" } : { status: 0, stdout: "", stderr: "" },
+        command === "gh"
+          ? { status: 1, stdout: "", stderr: "no release" }
+          : { status: 0, stdout: "", stderr: "" },
     });
-    expect(String(failure ?? "")).toContain("GitHub release verification failed: no release");
+    expect(String(failure ?? "")).toContain(
+      "GitHub release verification failed: no release",
+    );
   });
 
   it("falls back to gh_release_view_failed when gh stderr is empty", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-package", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-package",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command) =>
-        command === "gh" ? { status: 1, stdout: "", stderr: "" } : { status: 0, stdout: "", stderr: "" },
+        command === "gh"
+          ? { status: 1, stdout: "", stderr: "" }
+          : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("gh_release_view_failed");
   });
 
   it("fails on a github release tag mismatch", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-package", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-package",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command) =>
         command === "gh"
-          ? { status: 0, stdout: JSON.stringify({ tagName: "v2026.6.13" }), stderr: "" }
+          ? {
+              status: 0,
+              stdout: JSON.stringify({ tagName: "v2026.6.13" }),
+              stderr: "",
+            }
           : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("GitHub release tag mismatch");
@@ -497,10 +776,22 @@ describe("scripts/release/verify-published-release: github release", () => {
 
   it("reports a missing received tag when gh metadata omits tagName", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-package", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-package",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command) =>
         command === "gh"
-          ? { status: 0, stdout: JSON.stringify({ name: "v2026.6.14" }), stderr: "" }
+          ? {
+              status: 0,
+              stdout: JSON.stringify({ name: "v2026.6.14" }),
+              stderr: "",
+            }
           : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("received missing");
@@ -508,10 +799,22 @@ describe("scripts/release/verify-published-release: github release", () => {
 
   it("fails when the github release is a draft or prerelease", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-package", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-package",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command) =>
         command === "gh"
-          ? { status: 0, stdout: JSON.stringify({ tagName: "v2026.6.14", isDraft: true }), stderr: "" }
+          ? {
+              status: 0,
+              stdout: JSON.stringify({ tagName: "v2026.6.14", isDraft: true }),
+              stderr: "",
+            }
           : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("must not be draft/prerelease");
@@ -519,9 +822,19 @@ describe("scripts/release/verify-published-release: github release", () => {
 
   it("fails when gh release JSON cannot be parsed", async () => {
     const { failure } = await runVerify({
-      argv: ["--version", "2026.6.14", "--skip-package", "--npm-attempts", "1", "--executor-attempts", "1"],
+      argv: [
+        "--version",
+        "2026.6.14",
+        "--skip-package",
+        "--npm-attempts",
+        "1",
+        "--executor-attempts",
+        "1",
+      ],
       runCommand: (command) =>
-        command === "gh" ? { status: 0, stdout: "not-json{", stderr: "" } : { status: 0, stdout: "", stderr: "" },
+        command === "gh"
+          ? { status: 0, stdout: "not-json{", stderr: "" }
+          : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("GitHub release JSON parse failed");
   });

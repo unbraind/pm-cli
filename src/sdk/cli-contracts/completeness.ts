@@ -6,10 +6,7 @@
  * a bounded, machine-readable disposition so compatibility gaps cannot hide in
  * a hand-picked test list.
  */
-import {
-  PM_TOOL_ACTIONS,
-  type PmToolAction,
-} from "./enum-contracts.js";
+import { PM_TOOL_ACTIONS, type PmToolAction } from "./enum-contracts.js";
 import {
   resolveSubcommandFlagContractsForCommand,
   type CliFlagContract,
@@ -69,6 +66,7 @@ export interface SdkCliCompletenessContractSource {
 
 const CLI_TRANSPORT_FLAGS = new Set([
   "--author",
+  "--follow",
   "--help",
   "--lean",
   "--no-changed-fields",
@@ -77,6 +75,7 @@ const CLI_TRANSPORT_FLAGS = new Set([
   "--pm-path",
   "--profile",
   "--quiet",
+  "--interval-ms",
 ]);
 
 const CLI_PRESENTATION_FLAGS = new Set([
@@ -89,17 +88,9 @@ const CLI_PRESENTATION_FLAGS = new Set([
   "--stream",
 ]);
 
-const CLI_ADAPTER_FLAGS = new Set([
-  "--body-file",
-  "--file",
-  "--stdin-json",
-]);
+const CLI_ADAPTER_FLAGS = new Set(["--body-file", "--file", "--stdin-json"]);
 
-const CLI_SCOPE_SELECTOR_FLAGS = new Set([
-  "--global",
-  "--local",
-  "--project",
-]);
+const CLI_SCOPE_SELECTOR_FLAGS = new Set(["--global", "--local", "--project"]);
 
 const CLI_CONFIG_SHORTHAND_FLAGS = new Set([
   "--activity-limit",
@@ -132,6 +123,21 @@ const CLI_POSITIONAL_PARAMETERS = new Set([
   "target",
   "text",
 ]);
+
+const ACTION_POSITIONAL_PARAMETERS: Readonly<
+  Partial<Record<PmToolAction, Readonly<Record<string, string>>>>
+> = {
+  event: { title: "<title>" },
+  meet: { title: "<title>" },
+  merge: { subcommand: "<subcommand>" },
+  remind: { title: "<title>" },
+  workspace: {
+    name: "<name>",
+    subcommand: "snapshot",
+    snapshotAction: "<snapshot-action>",
+    target: "<target>",
+  },
+};
 
 const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
   Partial<Record<PmToolAction, Readonly<Record<string, string>>>>
@@ -266,7 +272,8 @@ function classifyCliInput(
       surface: "cli",
       input: contract.flag,
       disposition: "cli_presentation",
-      reason: "CLI rendering or mutation projection does not alter the SDK result envelope.",
+      reason:
+        "CLI rendering or mutation projection does not alter the SDK result envelope.",
     };
   }
   if (CLI_ADAPTER_FLAGS.has(contract.flag)) {
@@ -293,7 +300,8 @@ function classifyCliInput(
       input: contract.flag,
       counterpart: "scope",
       disposition: "cli_scope_selector",
-      reason: "Mutually exclusive CLI scope switches normalize to the SDK scope parameter.",
+      reason:
+        "Mutually exclusive CLI scope switches normalize to the SDK scope parameter.",
     };
   }
   return {
@@ -301,11 +309,13 @@ function classifyCliInput(
     input: contract.flag,
     counterpart: parameter,
     disposition: "unclassified",
-    reason: "The CLI flag has no strict SDK parameter or approved boundary classification.",
+    reason:
+      "The CLI flag has no strict SDK parameter or approved boundary classification.",
   };
 }
 
 function classifySdkInput(
+  action: PmToolAction,
   parameter: string,
   cliEntries: SdkCliParameterCoverageEntry[],
 ): SdkCliParameterCoverageEntry {
@@ -325,12 +335,25 @@ function classifySdkInput(
       reason: "The strict SDK parameter is reachable from the CLI contract.",
     };
   }
+  const positionalCounterpart =
+    ACTION_POSITIONAL_PARAMETERS[action]?.[parameter];
+  if (positionalCounterpart !== undefined) {
+    return {
+      surface: "sdk",
+      input: parameter,
+      counterpart: positionalCounterpart,
+      disposition: "shared",
+      reason:
+        "The strict SDK parameter maps to a canonical CLI positional argument.",
+    };
+  }
   if (SDK_TRANSPORT_PARAMETERS.has(parameter)) {
     return {
       surface: "sdk",
       input: parameter,
       disposition: "sdk_transport",
-      reason: "The SDK host supplies in-process transport and workspace selection.",
+      reason:
+        "The SDK host supplies in-process transport and workspace selection.",
     };
   }
   if (CLI_POSITIONAL_PARAMETERS.has(parameter)) {
@@ -338,14 +361,16 @@ function classifySdkInput(
       surface: "sdk",
       input: parameter,
       disposition: "cli_positional",
-      reason: "The CLI accepts this SDK parameter as a positional command argument.",
+      reason:
+        "The CLI accepts this SDK parameter as a positional command argument.",
     };
   }
   return {
     surface: "sdk",
     input: parameter,
     disposition: "sdk_native",
-    reason: "The typed SDK exposes this structured input without a canonical CLI long flag.",
+    reason:
+      "The typed SDK exposes this structured input without a canonical CLI long flag.",
   };
 }
 
@@ -373,7 +398,7 @@ export function analyzeSdkCliParameterCompleteness(
     );
     const sdk = [...sdkParameters]
       .sort((left, right) => left.localeCompare(right))
-      .map((parameter) => classifySdkInput(parameter, cli));
+      .map((parameter) => classifySdkInput(action, parameter, cli));
     return {
       action,
       command,

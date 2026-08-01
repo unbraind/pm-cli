@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   PM_TOOL_ACTIONS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
+  analyzePmToolActionParity,
   analyzeSdkCliParameterCompleteness,
 } from "../../../src/sdk/cli-contracts.js";
 import {
@@ -23,6 +24,21 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("derives CLI action reachability with explicit, shrinking waivers", () => {
+    expect(analyzePmToolActionParity()).toEqual({
+      missing_cli_actions: [],
+      waived_cli_actions: ["packages", "item", "help"],
+      stale_waivers: [],
+    });
+    expect(
+      analyzePmToolActionParity(
+        ["create", "synthetic-command"],
+        ["create"],
+        {},
+      ),
+    ).toMatchObject({ missing_cli_actions: ["synthetic-command"] });
+  });
+
   it("derives complete SDK dispatch and parameter coverage for every public action", () => {
     const coverage = analyzeSdkActionCoverage();
     expect(coverage).toHaveLength(PM_TOOL_ACTIONS.length);
@@ -75,9 +91,7 @@ describe("action-scoped MCP schema parity", () => {
   it("derives bidirectional CLI/SDK reachability with a shrinking-only waiver ratchet", async () => {
     const baseline = JSON.parse(
       await readFile(
-        path.resolve(
-          "tests/fixtures/sdk/sdk-cli-parameter-completeness.json",
-        ),
+        path.resolve("tests/fixtures/sdk/sdk-cli-parameter-completeness.json"),
         "utf8",
       ),
     ) as CompletenessBaseline;
@@ -86,10 +100,7 @@ describe("action-scoped MCP schema parity", () => {
     const waiverCounts = new Map<string, number>();
     for (const { disposition } of entries) {
       if (disposition === "shared" || disposition === "unclassified") continue;
-      waiverCounts.set(
-        disposition,
-        (waiverCounts.get(disposition) ?? 0) + 1,
-      );
+      waiverCounts.set(disposition, (waiverCounts.get(disposition) ?? 0) + 1);
     }
 
     expect(coverage).toHaveLength(PM_TOOL_ACTIONS.length);

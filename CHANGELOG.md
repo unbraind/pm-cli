@@ -8,6 +8,10 @@
 
 ### Fixed
 
+- Both published bin names are refused as subcommands, so npx PKG pm init and bunx PKG pm init fail while the version probe that guards them passes ([pm-rnl3sa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rnl3sa.toon))
+- The intent budget binds downward and is inert upward: a sevenfold budget increase buys zero rows and the field that would reveal the clamp is omitted exactly when it applies ([pm-prsvjh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-prsvjh.toon))
+- The MCP action vocabulary is not derived from the CLI contract table: 26 MCP-only spellings, and seven contracted capability families including merge, workspace snapshot and eval have no MCP route at all ([pm-0834kq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0834kq.toon))
+- The SDK boundary gate proves the CLI stopped importing private core and never proves the CLI only imports the published SDK, so ten private SDK modules carry our own commands ([pm-xpumg4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xpumg4.toon))
 - GH-855: core mutation locators must honor extension-registered item types ([pm-scga6k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-scga6k.toon))
 - GH-853: extension command test harness must inject the real host-bound SDK ([pm-wx2lr5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wx2lr5.toon))
 - Session-topic provenance has no descriptor keys on any harness, and effort/role are wired for only claude-code and codex, so most fleet history records harness and model but nothing about the work's shape ([pm-rbg1qo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rbg1qo.toon))

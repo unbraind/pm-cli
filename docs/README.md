@@ -41,6 +41,7 @@ pm guide release --json
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
 - [SDK Primitive Inventory](SDK_PRIMITIVE_INVENTORY.md) - SDK-first migration map and private-import ratchet for CLI/MCP layering.
 - [Package SDK Contract Conformance](PACKAGE_SDK_CONTRACT_CONFORMANCE.md) - authoritative public types, `typeof` module derivation, and the first-party parity gate.
+- [SDK Action and Boundary Conformance](SDK_ACTION_CONFORMANCE.md) - derived CLI/SDK/MCP action vocabulary, public-import ratchets, intent budget diagnostics, and package-runner proof.
 - [Context Relevance and Packing](CONTEXT_RELEVANCE.md) - shared CLI/SDK signals, derived-store provenance, ranking explanations, and token budgets.
 - [Output Projection and Omission Contracts](OUTPUT_PROJECTION_CONTRACTS.md) - explicit withheld-field receipts, mode-paired row keys, and completion resolver outcomes.
 - [SDK Context Truth Contracts](SDK_CONTEXT_TRUTH_CONTRACTS.md) - typed tracker-root diagnostics and explicit merge-driver enforcement policy.

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1364,
+    "covered_symbols": 1367,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1365
+    "required_symbols": 1368
   },
   "breaking_acknowledgements": [
     {
@@ -510,6 +510,27 @@
       ],
       "package_version": "2026.8.1",
       "reason": "Transactional beforeMutation is a required host registry member; package call sites remain source-compatible and receive the field from pm."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_ACTION_PARAMETER_CONTRACTS",
+        "signature ./sdk:PM_TOOL_ACTIONS",
+        "signature ./sdk:PmContextIntentReceipt",
+        "signature ./sdk:PmToolAction",
+        "signature ./sdk/contracts:PM_TOOL_ACTION_PARAMETER_CONTRACTS",
+        "signature ./sdk/contracts:PM_TOOL_ACTIONS",
+        "signature ./sdk/contracts:PmContextIntentReceipt",
+        "signature ./sdk/contracts:PmToolAction"
+      ],
+      "package_version": "2026.8.1",
+      "reason": "Unify CLI SDK MCP action contracts, add optional budget diagnostics, and expose newly reachable native actions; existing action names and receipt fields remain compatible."
+    },
+    {
+      "changes": [
+        "error code missing_required_parameter removed"
+      ],
+      "package_version": "2026.8.1",
+      "reason": "Remove an unshipped generated error-code entry before review; runtime behavior continues to use the established usage-error envelope."
     }
   ],
   "entrypoints": {
@@ -851,6 +872,12 @@
           "kind": "function",
           "name": "analyzeKnowledgeGraph",
           "signature": "(graph: RelationshipGraph) => RelationshipKnowledgeAnalysis | calls: (graph: RelationshipGraph) => RelationshipKnowledgeAnalysis"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "analyzePmToolActionParity",
+          "signature": "(cliCommands?: readonly string[], toolActions?: readonly string[], waivers?: Readonly<Record<string, string>>) => { missing_cli_actions: string[]; waived_cli_actions: string[]; stale_waivers: string[]; } | calls: (cliCommands?: readonly string[], toolActions?: readonly string[], waivers?: Readonly<Record<string, string>>) => { missing_cli_actions: string[]; waived_cli_actions: string[]; stale_waivers: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -2705,6 +2732,12 @@
           "kind": "function",
           "name": "createEmptyExtensionRegistrationRegistry",
           "signature": "() => ExtensionRegistrationRegistry | calls: () => ExtensionRegistrationRegistry"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "createExtensionCommandSdk",
+          "signature": "(pmRoot: string, client: PmClient) => ExtensionCommandSdk | calls: (pmRoot: string, client: PmClient) => ExtensionCommandSdk"
         },
         {
           "classification": "supported",
@@ -5425,6 +5458,12 @@
           "signature": "(value: unknown) => value is ReadRowContract | calls: (value: unknown) => value is ReadRowContract"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isRuntimeRecord",
+          "signature": "(value: unknown) => value is Record<string, unknown> | calls: (value: unknown) => value is Record<string, unknown>"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "ISSUE_SEVERITY_VALUES",
@@ -6053,6 +6092,12 @@
           "kind": "value",
           "name": "MEET_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "MeetingEventShortcutOptions",
+          "signature": "export interface MeetingEventShortcutOptions extends SchedulingShortcutCommonOptions { start?: string; duration?: string; end?: string; location?: string; timezone?: string; allDay?: boolean; }"
         },
         {
           "classification": "supported",
@@ -7143,6 +7188,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_CLI_ONLY_TOOL_ACTION_WAIVERS",
+          "signature": "{ readonly help: \"Commander help rendering has no SDK operation result.\"; readonly item: \"The item namespace only groups lifecycle subcommands already exposed as actions.\"; readonly packages: \"The plural package alias only renders package-oriented help.\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
           "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\" | \"workspace\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
         },
@@ -7181,6 +7232,12 @@
           "kind": "value",
           "name": "PM_EXTENSION_CAPABILITY_CONTRACTS",
           "signature": "readonly [\"commands\", \"renderers\", \"hooks\", \"schema\", \"importers\", \"search\", \"parser\", \"preflight\", \"services\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS",
+          "signature": "readonly [\"init\", \"install\", \"uninstall\", \"explore\", \"manage\", \"describe\", \"reload\", \"doctor\", \"catalog\", \"adopt\", \"adopt-all\", \"activate\", \"deactivate\"]"
         },
         {
           "classification": "contract_data",
@@ -7318,13 +7375,13 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_ACTION_PARAMETER_CONTRACTS",
-          "signature": "Readonly<Record<\"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"extension-activate\" | \"extension-adopt-all\" | \"extension-adopt\" | \"extension-catalog\" | \"extension-deactivate\" | \"extension-describe\" | \"extension-doctor\" | \"extension-explore\" | \"extension-init\" | \"extension-install\" | \"extension-manage\" | \"extension-reload\" | \"extension-uninstall\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"next\" | \"notes\" | \"package-activate\" | \"package-adopt-all\" | \"package-adopt\" | \"package-catalog\" | \"package-deactivate\" | \"package-describe\" | \"package-doctor\" | \"package-explore\" | \"package-init\" | \"package-install\" | \"package-manage\" | \"package-reload\" | \"package-uninstall\" | \"package\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\", PmActionSchemaContract>>"
+          "signature": "Readonly<Record<PmToolAction, PmActionSchemaContract>>"
         },
         {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_ACTIONS",
-          "signature": "readonly [\"init\", \"config\", \"extension-init\", \"extension-install\", \"extension-uninstall\", \"extension-explore\", \"extension-manage\", \"extension-describe\", \"extension-reload\", \"extension-doctor\", \"extension-catalog\", \"extension-adopt\", \"extension-adopt-all\", \"extension-activate\", \"extension-deactivate\", \"extension\", \"package-init\", \"package-install\", \"package-uninstall\", \"package-explore\", \"package-manage\", \"package-describe\", \"package-reload\", \"package-doctor\", \"package-catalog\", \"package-adopt\", \"package-adopt-all\", \"package-activate\", \"package-deactivate\", \"package\", \"install\", \"upgrade\", \"create\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"search\", \"duplicates\", \"next\", \"history\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"plan\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"graph\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\"]"
+          "signature": "readonly PmToolAction[]"
         },
         {
           "classification": "contract_data",
@@ -7498,7 +7555,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmContextIntentReceipt",
-          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; }"
         },
         {
           "classification": "contract_data",
@@ -7654,7 +7711,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmToolAction",
-          "signature": "export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];"
+          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction> | PmExtensionPackageAction;"
         },
         {
           "classification": "contract_data",
@@ -9038,6 +9095,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ReminderShortcutOptions",
+          "signature": "export interface ReminderShortcutOptions extends SchedulingShortcutCommonOptions { at?: string; text?: string; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "function",
           "name": "removeFileIfExists",
           "signature": "(targetPath: string) => Promise<void> | calls: (targetPath: string) => Promise<void>"
@@ -9535,6 +9598,12 @@
           "signature": "(settings: PmSettings) => SemanticRuntimeDefaultsResolution | calls: (settings: PmSettings) => SemanticRuntimeDefaultsResolution"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveStartTaskInProgressStatus",
+          "signature": "(statusRegistry: RuntimeStatusRegistry) => string | calls: (statusRegistry: RuntimeStatusRegistry) => string"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "resolveSubcommandFlagContractsForCommand",
@@ -9854,6 +9923,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "function",
+          "name": "runEvent",
+          "signature": "(title: string, options: MeetingEventShortcutOptions, global: GlobalOptions) => Promise<CreateResult> | calls: (title: string, options: MeetingEventShortcutOptions, global: GlobalOptions) => Promise<CreateResult>"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "value",
           "name": "runExtension",
           "signature": "(target: string | undefined, options: ExtensionCommandOptions, global: GlobalOptions) => Promise<ExtensionCommandResult> | calls: (target: string | undefined, options: ExtensionCommandOptions, global: GlobalOptions) => Promise<ExtensionCommandResult>"
@@ -9995,6 +10070,12 @@
           "kind": "function",
           "name": "runList",
           "signature": "{ (status: ItemStatus | undefined, options: ListOptions & { full: true; }, global: GlobalOptions): Promise<ListFullResult>; (status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions): Promise<ListResult>; } | calls: (status: ItemStatus | undefined, options: ListOptions & { full: true; }, global: GlobalOptions) => Promise<ListFullResult> ; (status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions) => Promise<ListResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runMeet",
+          "signature": "(title: string, options: MeetingEventShortcutOptions, global: GlobalOptions) => Promise<CreateResult> | calls: (title: string, options: MeetingEventShortcutOptions, global: GlobalOptions) => Promise<CreateResult>"
         },
         {
           "classification": "supported",
@@ -10199,6 +10280,12 @@
           "kind": "function",
           "name": "runRelease",
           "signature": "(id: string, force: boolean, global: GlobalOptions, options?: ReleaseMutationOptions) => Promise<ReleaseResult> | calls: (id: string, force: boolean, global: GlobalOptions, options?: ReleaseMutationOptions) => Promise<ReleaseResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runRemind",
+          "signature": "(title: string, options: ReminderShortcutOptions, global: GlobalOptions) => Promise<CreateResult> | calls: (title: string, options: ReminderShortcutOptions, global: GlobalOptions) => Promise<CreateResult>"
         },
         {
           "classification": "advanced_export",
@@ -10427,6 +10514,12 @@
           "kind": "function",
           "name": "scanStorageIntegrity",
           "signature": "(pmRoot: string, parsedItemIds: ReadonlySet<string>, typeToFolder: Record<string, string>, itemParseOptions?: StorageIntegrityItemParseOptions) => Promise<StorageIntegrityScanResult> | calls: (pmRoot: string, parsedItemIds: ReadonlySet<string>, typeToFolder: Record<string, string>, itemParseOptions?: StorageIntegrityItemParseOptions) => Promise<StorageIntegrityScanResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "SchedulingShortcutCommonOptions",
+          "signature": "export interface SchedulingShortcutCommonOptions { parent?: string; allowMissingParent?: boolean; tags?: string; priority?: string; body?: string; description?: string; author?: string; message?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -13893,6 +13986,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "analyzePmToolActionParity",
+          "signature": "(cliCommands?: readonly string[], toolActions?: readonly string[], waivers?: Readonly<Record<string, string>>) => { missing_cli_actions: string[]; waived_cli_actions: string[]; stale_waivers: string[]; } | calls: (cliCommands?: readonly string[], toolActions?: readonly string[], waivers?: Readonly<Record<string, string>>) => { missing_cli_actions: string[]; waived_cli_actions: string[]; stale_waivers: string[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "analyzeSdkCliParameterCompleteness",
           "signature": "(source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[] | calls: (source?: SdkCliCompletenessContractSource) => SdkCliActionParameterCoverage[]"
         },
@@ -14463,6 +14562,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_CLI_ONLY_TOOL_ACTION_WAIVERS",
+          "signature": "{ readonly help: \"Commander help rendering has no SDK operation result.\"; readonly item: \"The item namespace only groups lifecycle subcommands already exposed as actions.\"; readonly packages: \"The plural package alias only renders package-oriented help.\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_COMMAND_OUTPUT_BUDGET_CONTRACTS",
           "signature": "{ command: \"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"eval\" | \"event\" | \"events\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"help\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"item\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"meet\" | \"merge\" | \"next\" | \"notes\" | \"package\" | \"packages\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"remind\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\" | \"workspace\"; budget_class: \"discovery\" | \"governance\" | \"mutation\" | \"read\"; default_max_estimated_tokens: number; degradation_ladder: readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]; allows_unbounded_opt_out: true; token_estimate: \"ceil(utf8_bytes / 4)\"; }[]"
         },
@@ -14489,6 +14594,12 @@
           "kind": "value",
           "name": "PM_EXTENSION_CAPABILITY_CONTRACTS",
           "signature": "readonly [\"commands\", \"renderers\", \"hooks\", \"schema\", \"importers\", \"search\", \"parser\", \"preflight\", \"services\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS",
+          "signature": "readonly [\"init\", \"install\", \"uninstall\", \"explore\", \"manage\", \"describe\", \"reload\", \"doctor\", \"catalog\", \"adopt\", \"adopt-all\", \"activate\", \"deactivate\"]"
         },
         {
           "classification": "contract_data",
@@ -14548,13 +14659,13 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_ACTION_PARAMETER_CONTRACTS",
-          "signature": "Readonly<Record<\"activity\" | \"aggregate\" | \"append\" | \"claim\" | \"close-many\" | \"close-task\" | \"close\" | \"comments\" | \"config\" | \"context\" | \"contracts\" | \"copy\" | \"create\" | \"ctx\" | \"delete\" | \"deps\" | \"docs\" | \"duplicates\" | \"extension-activate\" | \"extension-adopt-all\" | \"extension-adopt\" | \"extension-catalog\" | \"extension-deactivate\" | \"extension-describe\" | \"extension-doctor\" | \"extension-explore\" | \"extension-init\" | \"extension-install\" | \"extension-manage\" | \"extension-reload\" | \"extension-uninstall\" | \"extension\" | \"files\" | \"focus\" | \"gc\" | \"get\" | \"graph\" | \"health\" | \"history-author-acknowledge\" | \"history-compact\" | \"history-redact\" | \"history-repair\" | \"history\" | \"init\" | \"install\" | \"learnings\" | \"list-all\" | \"list-blocked\" | \"list-canceled\" | \"list-closed\" | \"list-draft\" | \"list-in-progress\" | \"list-open\" | \"list\" | \"next\" | \"notes\" | \"package-activate\" | \"package-adopt-all\" | \"package-adopt\" | \"package-catalog\" | \"package-deactivate\" | \"package-describe\" | \"package-doctor\" | \"package-explore\" | \"package-init\" | \"package-install\" | \"package-manage\" | \"package-reload\" | \"package-uninstall\" | \"package\" | \"pause-task\" | \"plan\" | \"profile\" | \"release\" | \"restore\" | \"schema\" | \"search\" | \"start-task\" | \"stats\" | \"telemetry\" | \"test-all\" | \"test\" | \"update-many\" | \"update\" | \"upgrade\" | \"validate\", PmActionSchemaContract>>"
+          "signature": "Readonly<Record<PmToolAction, PmActionSchemaContract>>"
         },
         {
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_ACTIONS",
-          "signature": "readonly [\"init\", \"config\", \"extension-init\", \"extension-install\", \"extension-uninstall\", \"extension-explore\", \"extension-manage\", \"extension-describe\", \"extension-reload\", \"extension-doctor\", \"extension-catalog\", \"extension-adopt\", \"extension-adopt-all\", \"extension-activate\", \"extension-deactivate\", \"extension\", \"package-init\", \"package-install\", \"package-uninstall\", \"package-explore\", \"package-manage\", \"package-describe\", \"package-reload\", \"package-doctor\", \"package-catalog\", \"package-adopt\", \"package-adopt-all\", \"package-activate\", \"package-deactivate\", \"package\", \"install\", \"upgrade\", \"create\", \"copy\", \"focus\", \"list\", \"list-all\", \"list-draft\", \"list-open\", \"list-in-progress\", \"list-blocked\", \"list-closed\", \"list-canceled\", \"aggregate\", \"context\", \"ctx\", \"get\", \"search\", \"duplicates\", \"next\", \"history\", \"history-redact\", \"history-repair\", \"history-compact\", \"history-author-acknowledge\", \"schema\", \"profile\", \"activity\", \"restore\", \"update\", \"update-many\", \"close\", \"close-many\", \"delete\", \"append\", \"comments\", \"plan\", \"notes\", \"learnings\", \"files\", \"docs\", \"deps\", \"graph\", \"test\", \"test-all\", \"telemetry\", \"stats\", \"health\", \"validate\", \"gc\", \"contracts\", \"claim\", \"release\", \"start-task\", \"pause-task\", \"close-task\"]"
+          "signature": "readonly PmToolAction[]"
         },
         {
           "classification": "contract_data",
@@ -14632,7 +14743,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmContextIntentReceipt",
-          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; }"
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; }"
         },
         {
           "classification": "contract_data",
@@ -14722,7 +14833,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmToolAction",
-          "signature": "export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];"
+          "signature": "export type PmToolAction = Exclude<PmCoreCommandName, PmCliOnlyToolAction> | PmExtensionPackageAction;"
         },
         {
           "classification": "contract_data",

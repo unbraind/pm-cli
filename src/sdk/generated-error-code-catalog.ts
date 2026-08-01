@@ -1523,6 +1523,7 @@ export const PM_ERROR_CODE_CATALOG = definePmErrorCodeCatalog([
     sources: [
       "cli/register-mutation.ts",
       "cli/register-operations.ts",
+      "sdk/runtime-extended-actions.ts",
       "sdk/telemetry.ts",
     ],
   },

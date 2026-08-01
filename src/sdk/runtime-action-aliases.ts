@@ -3,6 +3,7 @@
  *
  * Declares canonical native-action routes for public SDK aliases.
  */
+import { PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS } from "./cli-contracts/enum-contracts.js";
 
 interface SdkActionAlias {
   action: string;
@@ -37,84 +38,27 @@ const LIST_ACTION_ALIASES: Record<string, SdkActionAlias> = {
   },
 };
 
-const EXTENSION_ACTION_ALIASES: Record<string, SdkActionAlias> = {
-  "extension-init": { action: "extension", options: { init: true } },
-  "extension-install": { action: "extension", options: { install: true } },
-  "extension-uninstall": { action: "extension", options: { uninstall: true } },
-  "extension-explore": { action: "extension", options: { explore: true } },
-  "extension-manage": { action: "extension", options: { manage: true } },
-  "extension-describe": { action: "extension", options: { describe: true } },
-  "extension-reload": { action: "extension", options: { reload: true } },
-  "extension-doctor": { action: "extension", options: { doctor: true } },
-  "extension-catalog": { action: "extension", options: { catalog: true } },
-  "extension-adopt": { action: "extension", options: { adopt: true } },
-  "extension-adopt-all": { action: "extension", options: { adoptAll: true } },
-  "extension-activate": { action: "extension", options: { activate: true } },
-  "extension-deactivate": {
-    action: "extension",
-    options: { deactivate: true },
-  },
-};
-
-const PACKAGE_ACTION_ALIASES: Record<string, SdkActionAlias> = {
-  "package-init": {
-    action: "package",
-    options: { init: true, vocabulary: "package" },
-  },
-  "package-install": {
-    action: "package",
-    options: { install: true, vocabulary: "package" },
-  },
-  "package-uninstall": {
-    action: "package",
-    options: { uninstall: true, vocabulary: "package" },
-  },
-  "package-explore": {
-    action: "package",
-    options: { explore: true, vocabulary: "package" },
-  },
-  "package-manage": {
-    action: "package",
-    options: { manage: true, vocabulary: "package" },
-  },
-  "package-describe": {
-    action: "package",
-    options: { describe: true, vocabulary: "package" },
-  },
-  "package-reload": {
-    action: "package",
-    options: { reload: true, vocabulary: "package" },
-  },
-  "package-doctor": {
-    action: "package",
-    options: { doctor: true, vocabulary: "package" },
-  },
-  "package-catalog": {
-    action: "package",
-    options: { catalog: true, vocabulary: "package" },
-  },
-  "package-adopt": {
-    action: "package",
-    options: { adopt: true, vocabulary: "package" },
-  },
-  "package-adopt-all": {
-    action: "package",
-    options: { adoptAll: true, vocabulary: "package" },
-  },
-  "package-activate": {
-    action: "package",
-    options: { activate: true, vocabulary: "package" },
-  },
-  "package-deactivate": {
-    action: "package",
-    options: { deactivate: true, vocabulary: "package" },
-  },
-};
+function buildExtensionPackageActionAliases(
+  action: "extension" | "package",
+): Record<string, SdkActionAlias> {
+  return Object.fromEntries(
+    PM_EXTENSION_PACKAGE_ACTION_SUBCOMMANDS.map((subcommand) => [
+      `${action}-${subcommand}`,
+      {
+        action,
+        options: {
+          [subcommand === "adopt-all" ? "adoptAll" : subcommand]: true,
+          ...(action === "package" ? { vocabulary: "package" } : {}),
+        },
+      },
+    ]),
+  );
+}
 
 /** Canonical action and default-option routing for every SDK alias. */
 export const SDK_ACTION_ALIASES: Readonly<Record<string, SdkActionAlias>> = {
   ctx: { action: "context" },
   ...LIST_ACTION_ALIASES,
-  ...EXTENSION_ACTION_ALIASES,
-  ...PACKAGE_ACTION_ALIASES,
+  ...buildExtensionPackageActionAliases("extension"),
+  ...buildExtensionPackageActionAliases("package"),
 };
