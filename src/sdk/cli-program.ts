@@ -25,6 +25,10 @@ export function createPmCliProgram(version: string): Command {
     })
     .option("--json", "Output JSON instead of TOON")
     .option("--lean", "Omit null and empty containers from JSON output")
+    .option(
+      "--token-accounting",
+      "Attach a bounded per-section token-cost receipt to command output",
+    )
     .option("--quiet", "Suppress stdout output")
     .option(
       "--no-changed-fields",

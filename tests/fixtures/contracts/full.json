@@ -11787,6 +11787,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -12023,6 +12027,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -12163,6 +12171,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "validateClose": {
             "description": "Close-time metadata validation mode (\"off\", \"warn\", or \"strict\").",
             "enum": [
@@ -12295,6 +12307,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -12404,6 +12420,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           },
           "value": {
             "description": "New value for configAction=set.",
@@ -12671,6 +12691,10 @@
           "to": {
             "description": "To.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           },
           "tokenBudget": {
             "anyOf": [
@@ -12961,6 +12985,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [],
@@ -13049,6 +13077,10 @@
           "title": {
             "description": "Item title text.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -13537,6 +13569,10 @@
             "description": "Item title text.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "type": {
             "description": "Item type name from the active runtime type registry.",
             "examples": [
@@ -13761,6 +13797,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -13921,6 +13961,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "validatePaths": {
             "description": "Validate Paths.",
             "type": "boolean"
@@ -14027,6 +14071,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           },
           "type": {
             "anyOf": [
@@ -14200,6 +14248,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "validatePaths": {
             "description": "Validate Paths.",
             "type": "boolean"
@@ -14289,6 +14341,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [],
@@ -14414,6 +14470,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           },
           "tokenBudget": {
             "anyOf": [
@@ -14710,6 +14770,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -14837,6 +14901,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "verboseAuthorEvents": {
             "description": "For health action, include every actionable unknown-author event coordinate.",
             "type": "boolean"
@@ -14959,6 +15027,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -15403,6 +15475,10 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -15525,6 +15601,10 @@
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           },
           "transactionId": {
             "description": "Stable idempotency key for this atomic mutation batch.",
@@ -15710,6 +15790,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           },
           "tokenBudget": {
             "anyOf": [
@@ -15926,6 +16010,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -16626,6 +16714,10 @@
             "description": "Item title text.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "typeOption": {
             "description": "Type Option.",
             "items": {
@@ -16799,6 +16891,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -16881,6 +16977,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -17040,6 +17140,10 @@
           "subcommand": {
             "description": "Subcommand selector for actions that take one (for example telemetry, or schema — prefer the dedicated pm_schema tool for schema operations).",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -17477,6 +17581,10 @@
             "description": "To.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "typePreset": {
             "description": "Domain type preset to adopt (apply-preset).",
             "enum": [
@@ -17830,6 +17938,10 @@
             "description": "For search action, require exact normalized title match for the full query string.",
             "type": "boolean"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -18112,6 +18224,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -18634,6 +18750,10 @@
             "description": "Item title text.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "type": {
             "description": "Item type name from the active runtime type registry.",
             "examples": [
@@ -18899,6 +19019,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
+            "type": "boolean"
+          },
           "verboseDiagnostics": {
             "description": "For validate action, include full diagnostic ID lists instead of compact summaries.",
             "type": "boolean"
@@ -19060,6 +19184,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "typePreset": {
             "description": "Domain item-type preset registered during initialization.",
             "enum": [
@@ -19192,6 +19320,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "value": {
             "description": "Value.",
             "type": "string"
@@ -19286,6 +19418,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -19392,6 +19528,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -19470,6 +19610,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -19540,6 +19684,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -19617,6 +19765,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -19710,6 +19862,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -19779,6 +19935,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "watch": {
             "description": "When true for extension-reload/extension action payloads, enable watch mode semantics.",
@@ -19885,6 +20045,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "trace": {
             "description": "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
             "type": "boolean"
@@ -19966,6 +20130,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20059,6 +20227,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20129,6 +20301,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20207,6 +20383,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20286,6 +20466,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20502,6 +20686,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "trace": {
             "description": "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
             "type": "boolean"
@@ -20606,6 +20794,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20712,6 +20904,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20790,6 +20986,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20860,6 +21060,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -20937,6 +21141,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -21030,6 +21238,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -21099,6 +21311,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "watch": {
             "description": "When true for extension-reload/extension action payloads, enable watch mode semantics.",
@@ -21205,6 +21421,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "trace": {
             "description": "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
             "type": "boolean"
@@ -21286,6 +21506,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -21379,6 +21603,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -21449,6 +21677,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -21527,6 +21759,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -21606,6 +21842,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -21822,6 +22062,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "trace": {
             "description": "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
             "type": "boolean"
@@ -21938,6 +22182,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -22048,6 +22296,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -22528,6 +22780,10 @@
           "title": {
             "description": "Item title text.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -23338,6 +23594,10 @@
           "title": {
             "description": "Item title text.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -23417,6 +23677,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -23887,6 +24151,10 @@
           },
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
             "type": "boolean"
           },
           "tokenBudget": {
@@ -24412,6 +24680,10 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -24933,6 +25205,10 @@
           },
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
             "type": "boolean"
           },
           "tokenBudget": {
@@ -25458,6 +25734,10 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -25979,6 +26259,10 @@
           },
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
             "type": "boolean"
           },
           "tokenBudget": {
@@ -26504,6 +26788,10 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -27025,6 +27313,10 @@
           },
           "today": {
             "description": "When true for list actions, include only items updated since local midnight today.",
+            "type": "boolean"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
             "type": "boolean"
           },
           "tokenBudget": {
@@ -27550,6 +27842,10 @@
             "description": "When true for list actions, include only items updated since local midnight today.",
             "type": "boolean"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -27769,6 +28065,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -28030,6 +28330,10 @@
           "to": {
             "description": "To.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "tokenBudget": {
             "anyOf": [
@@ -28308,6 +28612,10 @@
             "description": "To.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -28452,6 +28760,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "tokenBudget": {
             "anyOf": [
@@ -28732,6 +29044,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -29107,6 +29423,10 @@
             "description": "For search action, require exact normalized title match for the full query string.",
             "type": "boolean"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -29235,6 +29555,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -29335,6 +29659,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -29505,6 +29833,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -29643,6 +29975,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "verify": {
             "description": "Verify.",
             "type": "boolean"
@@ -29769,6 +30105,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "type": {
             "anyOf": [
@@ -29910,6 +30250,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -30030,6 +30374,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -30146,6 +30494,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -30265,6 +30617,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -30395,6 +30751,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -30870,6 +31230,10 @@
             "description": "To.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "typePreset": {
             "description": "Domain item-type preset registered during initialization.",
             "enum": [
@@ -31019,6 +31383,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -31158,6 +31526,10 @@
             "description": "To.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "unbounded": {
             "description": "Unbounded.",
             "type": "boolean"
@@ -31254,6 +31626,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -31774,6 +32150,10 @@
           "title": {
             "description": "Item title text.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -32543,6 +32923,10 @@
             "description": "Item title text.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "type": {
             "description": "Item type name from the active runtime type registry.",
             "examples": [
@@ -32702,6 +33086,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "validateClose": {
             "description": "Close-time metadata validation mode (\"off\", \"warn\", or \"strict\").",
@@ -33038,6 +33426,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "validateClose": {
             "description": "Close-time metadata validation mode (\"off\", \"warn\", or \"strict\").",
             "enum": [
@@ -33131,6 +33523,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -33216,6 +33612,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -33334,6 +33734,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -33528,6 +33932,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -33645,6 +34053,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -33807,6 +34219,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "validatePaths": {
             "description": "Validate Paths.",
             "type": "boolean"
@@ -33952,6 +34368,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "validatePaths": {
             "description": "Validate Paths.",
@@ -34131,6 +34551,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "tokenBudget": {
             "anyOf": [
@@ -34848,6 +35272,10 @@
             "description": "Item title text.",
             "type": "string"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "typeOption": {
             "description": "Type Option.",
             "items": {
@@ -35139,6 +35567,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -35326,6 +35758,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -35402,6 +35838,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -35487,6 +35927,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -35603,6 +36047,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "verboseAuthorEvents": {
             "description": "For health action, include every actionable unknown-author event coordinate.",
@@ -35822,6 +36270,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "verboseDiagnostics": {
             "description": "For validate action, include full diagnostic ID lists instead of compact summaries.",
             "type": "boolean"
@@ -35918,6 +36370,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -36032,6 +36488,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -36294,6 +36754,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -36528,6 +36992,10 @@
             ],
             "type": "number"
           },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
+          },
           "tokenBudget": {
             "anyOf": [
               {
@@ -36631,6 +37099,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -36712,6 +37184,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -36793,6 +37269,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -36878,6 +37358,10 @@
               120000
             ],
             "type": "number"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           },
           "validateClose": {
             "description": "Close-time metadata validation mode (\"off\", \"warn\", or \"strict\").",
@@ -37028,6 +37512,10 @@
           "title": {
             "description": "Item title text.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -37164,6 +37652,10 @@
           "title": {
             "description": "Item title text.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [
@@ -37289,6 +37781,10 @@
           "title": {
             "description": "Item title text.",
             "type": "string"
+          },
+          "tokenAccounting": {
+            "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
+            "type": "boolean"
           }
         },
         "required": [

@@ -39,6 +39,7 @@ const PM_TOOL_GLOBAL_PARAMETER_KEYS = [
   "profile",
   "noExtensions",
   "noPager",
+  "tokenAccounting",
   "path",
   "pmExecutable",
   "timeoutMs",

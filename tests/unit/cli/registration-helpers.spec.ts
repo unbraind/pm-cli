@@ -99,6 +99,7 @@ describe("registration helpers", () => {
         noPager: true,
         profile: true,
         fullChangedFields: true,
+        tokenAccounting: true,
       }),
     } as unknown as Command;
     expect(getGlobalOptions(command)).toEqual({
@@ -111,6 +112,7 @@ describe("registration helpers", () => {
       noPager: true,
       profile: true,
       fullChangedFields: true,
+      tokenAccounting: true,
     });
 
     // A primitive (non-object) command yields an empty options reader so every option resolves to its default.

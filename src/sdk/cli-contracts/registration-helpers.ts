@@ -179,6 +179,7 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     ...(opts.fullChangedFields === true ? { fullChangedFields: true } : {}),
     idOnly: opts.idOnly === true,
     ...(opts.lean === true ? { lean: true } : {}),
+    ...(opts.tokenAccounting === true ? { tokenAccounting: true } : {}),
     path:
       typeof opts.pmPath === "string"
         ? opts.pmPath

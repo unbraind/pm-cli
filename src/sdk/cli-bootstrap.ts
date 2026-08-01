@@ -86,6 +86,8 @@ export interface BootstrapGlobalOptions {
   quiet: boolean;
   /** Whether compact JSON projection is requested. */
   lean: boolean;
+  /** Whether output token accounting is requested. */
+  tokenAccounting: boolean;
   /** Invocation-wide mutation author override. */
   author?: string;
   /** Whether `--author` was present without its required value. */
@@ -98,6 +100,7 @@ const BOOTSTRAP_BOOLEAN_FLAGS = new Set([
   "--json",
   "--quiet",
   "--lean",
+  "--token-accounting",
 ]);
 
 interface BootstrapGlobalParseState {
@@ -158,6 +161,7 @@ export function parseBootstrapGlobalOptions(
     json: state.booleanFlags.has("--json"),
     quiet: state.booleanFlags.has("--quiet"),
     lean: state.booleanFlags.has("--lean"),
+    tokenAccounting: state.booleanFlags.has("--token-accounting"),
     ...(state.author === ""
       ? { authorMissingValue: true }
       : state.author !== undefined
@@ -176,11 +180,7 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
       break;
     }
     if (
-      token === "--json" ||
-      token === "--quiet" ||
-      token === "--lean" ||
-      token === "--no-extensions" ||
-      token === "--no-pager" ||
+      BOOTSTRAP_BOOLEAN_FLAGS.has(token) ||
       token === "--profile" ||
       token === "--id-only" ||
       token === "--full-changed-fields" ||
@@ -282,11 +282,7 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
     }
     if (
       isInlineGlobalValueToken(token) ||
-      token === "--json" ||
-      token === "--quiet" ||
-      token === "--lean" ||
-      token === "--no-extensions" ||
-      token === "--no-pager" ||
+      BOOTSTRAP_BOOLEAN_FLAGS.has(token) ||
       token === "--profile" ||
       token === "--id-only" ||
       token === "--explain"

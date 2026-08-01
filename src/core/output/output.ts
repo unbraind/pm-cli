@@ -14,6 +14,7 @@ import { EXIT_CODE } from "../shared/constants.js";
 import { isHostOutputSuppressed } from "./output-control.js";
 import { projectMutationResult } from "./mutation-projection.js";
 import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js";
+import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
 
 /** Documents the output options payload exchanged by command, SDK, and package integrations. */
 export interface OutputOptions {
@@ -29,6 +30,8 @@ export interface OutputOptions {
   idOnly?: boolean;
   /** When true, JSON output omits null, undefined, and empty containers recursively. */
   lean?: boolean;
+  /** Attach a bounded receipt for the emitted output before the receipt itself. */
+  tokenAccounting?: boolean;
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
   /** Value that configures or reports command for this contract. */
@@ -444,28 +447,31 @@ function formatEffectiveOutput(
     options.commandOptions ?? activeCommandContext?.options ?? {},
     projectedOutputResult,
   );
-  if (format === "toon") {
-    const markdownDefault = renderDefaultMarkdownResult(intentOutputResult);
-    if (markdownDefault !== null) {
-      return markdownDefault;
+  const renderResolvedOutput = (value: unknown): string => {
+    if (format === "toon") {
+      const markdownDefault = renderDefaultMarkdownResult(value);
+      if (markdownDefault !== null) return markdownDefault;
     }
-  }
-  const rendererOverride = nativeOutput
-    ? { rendered: null }
-    : runActiveRendererOverride(format, intentOutputResult);
-  if (rendererOverride.rendered !== null) {
-    return rendererOverride.rendered.endsWith("\n")
-      ? rendererOverride.rendered
-      : `${rendererOverride.rendered}\n`;
-  }
-  if (format === "json") {
-    const jsonResult =
-      options.lean === true
-        ? projectLeanJsonValue(intentOutputResult)
-        : intentOutputResult;
-    return formatBuiltInOutput(jsonResult, "json");
-  }
-  return formatBuiltInOutput(intentOutputResult, "toon");
+    const rendererOverride = nativeOutput
+      ? { rendered: null }
+      : runActiveRendererOverride(format, value);
+    if (rendererOverride.rendered !== null) {
+      return rendererOverride.rendered.endsWith("\n")
+        ? rendererOverride.rendered
+        : `${rendererOverride.rendered}\n`;
+    }
+    if (format === "json") {
+      return formatBuiltInOutput(
+        options.lean === true ? projectLeanJsonValue(value) : value,
+        "json",
+      );
+    }
+    return formatBuiltInOutput(value, "toon");
+  };
+  const accountedOutputResult = options.tokenAccounting === true
+    ? attachOutputTokenAccounting(intentOutputResult, renderResolvedOutput)
+    : intentOutputResult;
+  return renderResolvedOutput(accountedOutputResult);
 }
 
 /** Implements format output for the public runtime surface of this module. */

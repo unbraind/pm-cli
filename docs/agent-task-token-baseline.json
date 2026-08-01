@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "estimator": "ceil(utf8_bytes / 4)",
+  "measurement_scope": "output_before_token_accounting",
+  "published_with_release": true,
+  "scenarios": [
+    {
+      "id": "small-workspace",
+      "max_estimated_tokens": 621
+    },
+    {
+      "id": "large-workspace",
+      "max_estimated_tokens": 1231
+    },
+    {
+      "id": "returning-agent",
+      "max_estimated_tokens": 336
+    },
+    {
+      "id": "failing-command",
+      "max_estimated_tokens": 197
+    }
+  ],
+  "composite_max_estimated_tokens": 2385
+}

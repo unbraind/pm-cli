@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1367,
+    "covered_symbols": 1372,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1368
+    "required_symbols": 1373
   },
   "breaking_acknowledgements": [
     {
@@ -531,6 +531,15 @@
       ],
       "package_version": "2026.8.1",
       "reason": "Remove an unshipped generated error-code entry before review; runtime behavior continues to use the established usage-error envelope."
+    },
+    {
+      "changes": [
+        "signature ./sdk:BootstrapGlobalOptions",
+        "signature ./sdk:GlobalOptions",
+        "signature ./sdk/runtime:GlobalOptions"
+      ],
+      "package_version": "2026.8.1",
+      "reason": "Additive optional tokenAccounting output instrumentation flag shared by CLI SDK and MCP"
     }
   ],
   "entrypoints": {
@@ -1308,6 +1317,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "attachOutputTokenAccounting",
+          "signature": "<Result>(result: Result, render: (value: unknown) => string) => PmTokenAccountedResult<Result> | calls: <Result>(result: Result, render: (value: unknown) => string) => PmTokenAccountedResult<Result>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "attachReadOutputContracts",
           "signature": "(command: string | undefined, options: Record<string, unknown>, result: unknown) => unknown | calls: (command: string | undefined, options: Record<string, unknown>, result: unknown) => unknown"
         },
@@ -1381,7 +1396,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "BootstrapGlobalOptions",
-          "signature": "export interface BootstrapGlobalOptions { path?: string; noExtensions: boolean; noPager: boolean; json: boolean; quiet: boolean; lean: boolean; author?: string; authorMissingValue?: true; }"
+          "signature": "export interface BootstrapGlobalOptions { path?: string; noExtensions: boolean; noPager: boolean; json: boolean; quiet: boolean; lean: boolean; tokenAccounting: boolean; author?: string; authorMissingValue?: true; }"
         },
         {
           "classification": "advanced_export",
@@ -4621,7 +4636,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GlobalOptions",
-          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
+          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
         },
         {
           "classification": "supported",
@@ -7666,6 +7681,24 @@
           "signature": "export type PmOutputDegradationStep = (typeof PM_OUTPUT_DEGRADATION_STEPS)[number];"
         },
         {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmOutputTokenAccounting",
+          "signature": "export interface PmOutputTokenAccounting { version: 1; measurement_scope: \"output_before_token_accounting\"; estimator: \"ceil(utf8_bytes / 4)\"; total_bytes: number; total_estimated_tokens: number; sections: Record<PmOutputTokenSection, PmOutputTokenSectionAccounting>; accounting_receipt_bytes: number; accounting_receipt_estimated_tokens: number; excluded_fields: readonly [ \"token_accounting\" ]; section_allocation: \"proportional_canonical_json\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmOutputTokenSection",
+          "signature": "export type PmOutputTokenSection = \"result_rows\" | \"envelope\" | \"diagnostics\" | \"hints\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmOutputTokenSectionAccounting",
+          "signature": "export interface PmOutputTokenSectionAccounting { bytes: number; estimated_tokens: number; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "PmPackageCatalogLinkMap",
@@ -7706,6 +7739,12 @@
           "kind": "interface",
           "name": "PmSettings",
           "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmTokenAccountedResult",
+          "signature": "export type PmTokenAccountedResult<Result> = Result extends Record<string, unknown> ? Result & { token_accounting: PmOutputTokenAccounting; } : { result: Result; token_accounting: PmOutputTokenAccounting; };"
         },
         {
           "classification": "contract_data",
@@ -14016,6 +14055,12 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "attachOutputTokenAccounting",
+          "signature": "<Result>(result: Result, render: (value: unknown) => string) => PmTokenAccountedResult<Result> | calls: <Result>(result: Result, render: (value: unknown) => string) => PmTokenAccountedResult<Result>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "attachReadOutputContracts",
           "signature": "(command: string | undefined, options: Record<string, unknown>, result: unknown) => unknown | calls: (command: string | undefined, options: Record<string, unknown>, result: unknown) => unknown"
         },
@@ -14828,6 +14873,30 @@
           "kind": "type",
           "name": "PmOutputDegradationStep",
           "signature": "export type PmOutputDegradationStep = (typeof PM_OUTPUT_DEGRADATION_STEPS)[number];"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmOutputTokenAccounting",
+          "signature": "export interface PmOutputTokenAccounting { version: 1; measurement_scope: \"output_before_token_accounting\"; estimator: \"ceil(utf8_bytes / 4)\"; total_bytes: number; total_estimated_tokens: number; sections: Record<PmOutputTokenSection, PmOutputTokenSectionAccounting>; accounting_receipt_bytes: number; accounting_receipt_estimated_tokens: number; excluded_fields: readonly [ \"token_accounting\" ]; section_allocation: \"proportional_canonical_json\"; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmOutputTokenSection",
+          "signature": "export type PmOutputTokenSection = \"result_rows\" | \"envelope\" | \"diagnostics\" | \"hints\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmOutputTokenSectionAccounting",
+          "signature": "export interface PmOutputTokenSectionAccounting { bytes: number; estimated_tokens: number; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmTokenAccountedResult",
+          "signature": "export type PmTokenAccountedResult<Result> = Result extends Record<string, unknown> ? Result & { token_accounting: PmOutputTokenAccounting; } : { result: Result; token_accounting: PmOutputTokenAccounting; };"
         },
         {
           "classification": "contract_data",
@@ -20215,7 +20284,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "GlobalOptions",
-          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
+          "signature": "export interface GlobalOptions { json?: boolean; quiet?: boolean; noChangedFields?: boolean; fullChangedFields?: boolean; idOnly?: boolean; lean?: boolean; tokenAccounting?: boolean; path?: string; noExtensions?: boolean; noPager?: boolean; profile?: boolean; author?: string; defaultOutputFormat?: \"toon\" | \"json\"; }"
         },
         {
           "classification": "supported",

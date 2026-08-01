@@ -1100,6 +1100,17 @@ describe("CLI bootstrap entrypoints", () => {
         }),
       });
 
+      const accountedMissingItem = await runSourceCli(
+        ["--no-extensions", "--json", "--lean", "get", "--token-accounting", "pm-does-not-exist"],
+        context.env,
+      );
+      expect(accountedMissingItem.code).toBe(EXIT_CODE.NOT_FOUND);
+      expect(JSON.parse(accountedMissingItem.stderr)).toMatchObject({
+        token_accounting: {
+          measurement_scope: "output_before_token_accounting",
+        },
+      });
+
       const nonJsonCommander = await runSourceCli(["--no-extensions", "list", "--definitely-not-real"], {
         ...context.env,
         PM_SENTRY_CAPTURE_EXPECTED_ERRORS: "true",
@@ -3712,6 +3723,7 @@ describe("CLI bootstrap argument helpers", () => {
       json: true,
       quiet: true,
       lean: false,
+      tokenAccounting: false,
     });
 
     expect(parseBootstrapHelpRequest(["--json", "help", "extension", "doctor", "--explain"])).toEqual({
@@ -3737,6 +3749,7 @@ describe("CLI bootstrap argument helpers", () => {
       json: false,
       quiet: false,
       lean: false,
+      tokenAccounting: false,
     });
     expect(stripGlobalBootstrapTokens(["--json", "--pm-path", "tracker", "--profile", "list", "--", "--quiet"])).toEqual([
       "list",

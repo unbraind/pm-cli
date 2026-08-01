@@ -29,6 +29,10 @@
 - GH-854: transactional extension mutation guards for enforceable domain invariants ([pm-hx23u5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hx23u5.toon))
 - CodeQL alert 33: eliminate polynomial trailing-whitespace matching in SDK append ([pm-8wskoj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8wskoj.toon))
 
+### Other
+
+- Self-reported token accounting: any command can report the token cost of its own output so budget spend is attributable at runtime and in CI ([pm-t5dt4z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-t5dt4z.toon))
+
 ## 2026.8.1 - 2026-08-01
 
 ### Fixed
