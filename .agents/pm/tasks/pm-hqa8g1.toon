@@ -6,17 +6,18 @@ status: open
 priority: 1
 tags[3]: ci-gates,composability,governance
 created_at: "2026-08-01T13:09:48.878Z"
-updated_at: "2026-08-01T13:09:48.878Z"
+updated_at: "2026-08-01T20:25:36.879Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every command declares its exit-code set in the same contract tables that already carry its flags and error codes, and the set is rendered by the contracts output; The vocabulary distinguishes succeeded with effect, succeeded with no effect, refused for input, refused for tracker state, and internal failure; A conformance check asserts no command returns an undeclared code and every declared code is reachable from the replay corpus, with a negative control; The scripting contract documents the exit-code semantics once, and no command describes its own numeric convention separately"
 parent: pm-33cw
 risk: medium
 confidence: 82
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-33cw,implements,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-f05lsg,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-psy1,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-srns,related,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
   pm-x4nn3z,blocked_by,"2026-08-01T13:09:48.878Z","harness:claude-code","cli:create:dep",detected
+  pm-xp1xsw,verifies,"2026-08-01T20:22:18.095Z","harness:codex","cli:update:dep",detected
 body: ""

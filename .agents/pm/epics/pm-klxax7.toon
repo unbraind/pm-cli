@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: benchmark,evaluation,programme,rl,sdk,simulation
 created_at: "2026-07-31T14:25:58.150Z"
-updated_at: "2026-08-01T09:56:22.867Z"
+updated_at: "2026-08-01T20:25:31.279Z"
 author: "harness:claude-code"
 estimated_minutes: 2400
 acceptance_criteria: "An environment author can run a complete episode - reset, step, observe, score - through public SDK primitives alone, with no import from src/cli and no shelling out, demonstrated by a worked example under docs/examples; A stable episode identity spans every surface and process an episode touches, is recorded in the immutable stream, and groups a trajectory correctly when a session mixes CLI and MCP calls; The boundary between a pm-computed verdict and an author-computed reward is stated as a contract, with pm's side reproducible from recorded state and independently checkable; Observation cost is declared before the call and honoured, so a training loop can budget tokens per step without measuring empirically; The programme's own scale claim is proved on a generated corpus at the 100k and 1M points using the existing harness, reporting per-step latency and observation size rather than only assembly latency; Reproducibility is proved end to end: the same episode specification and seed produce byte-identical workspace state and an identical verdict across runs and across platforms; Every constituent item retains its capability parent and carries a typed edge to this epic, so the programme is traversable without moving ownership"
@@ -29,4 +29,6 @@ dependencies[15]{id,kind,created_at,author,source_kind,author_source}:
   pm-vv2lti,related,"2026-07-31T14:26:15.891Z","harness:claude-code","cli:update:dep",detected
   pm-z5pmf8,blocked_by,"2026-07-31T14:26:15.891Z","harness:claude-code","cli:update:dep",detected
   pm-oqo9l2,blocked_by,"2026-08-01T09:56:22.566Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-01T20:21:51.948Z","harness:codex","Long-horizon agent-environment plan 2026-08-01: pm supplies a framework-neutral substrate, not a training framework. Phase A stabilizes episode identity, deterministic reset, action and observation schemas, verdict predicates, trajectory projection, and point-in-time replay. Phase B adds bounded observation costs, attestation, dataset export, seeded fault and concurrency simulation, and reproducibility across OS and process boundaries. Phase C scales episodes across 100k and 1M-item corpora and thousand-agent fleets with resumable streams, content-addressed shared observations, privacy-safe provenance, and contamination controls. Phase D publishes environment and benchmark authoring kits, offline evaluation adapters, sim-to-real validation hooks, and domain packs. Every phase stays SDK-only, versioned, replayable, and auditable; reward shaping, model policy, and framework-specific orchestration remain external."
 body: ""

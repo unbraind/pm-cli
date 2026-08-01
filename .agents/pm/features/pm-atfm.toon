@@ -6,20 +6,36 @@ status: open
 priority: 1
 tags[4]: context,quality-gate,relevance,scale
 created_at: "2026-07-06T23:25:57.317Z"
-updated_at: "2026-07-26T05:54:42.986Z"
+updated_at: "2026-08-01T20:25:34.303Z"
 author: maintainer-agent
 estimated_minutes: 480
 acceptance_criteria: Golden corpus (one real-shaped and one synthetic pm-mi2x workspace) with graded judgments versioned in-repo; offline runner scores pm context and pm next with rank-aware quality metrics; baseline of the current structural assembler recorded before pm-4k6b lands; CI gate fails on quality regression beyond a documented threshold; harness consumes only public SDK read primitives; documented workflow for adding new judgment cases
 parent: pm-9rxu
 risk: medium
 confidence: medium
-dependencies[5]{id,kind,created_at,author,source_kind}:
-  pm-4k6b,related,"2026-07-10T21:38:37.208Z",null,null
-  pm-mi2x,related,"2026-07-10T21:38:37.208Z",null,null
-  pm-lixy,related,"2026-07-11T02:59:42.959Z",null,null
-  pm-4k6b,verifies,"2026-07-25T06:27:53.163Z",null,null
-  pm-9rxu,implements,"2026-07-26T05:54:42.632Z",null,null
-comments[8]{created_at,author,text}:
+dependencies[6]:
+  - id: pm-4k6b
+    kind: related
+    created_at: "2026-07-10T21:38:37.208Z"
+  - id: pm-mi2x
+    kind: related
+    created_at: "2026-07-10T21:38:37.208Z"
+  - id: pm-lixy
+    kind: related
+    created_at: "2026-07-11T02:59:42.959Z"
+  - id: pm-4k6b
+    kind: verifies
+    created_at: "2026-07-25T06:27:53.163Z"
+  - id: pm-9rxu
+    kind: implements
+    created_at: "2026-07-26T05:54:42.632Z"
+  - id: pm-lixy
+    kind: blocked_by
+    created_at: "2026-08-01T20:22:14.678Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[9]{created_at,author,text}:
   "2026-07-06T23:51:08.193Z",codex-agent,"Planning evidence 2026-07-07: pm-atfm remains the canonical quality harness for context/next relevance. Added non-duplicate child slices pm-lixy (graded scenario corpus across scratch, real-shaped, scale, and returning-agent continuity cases) and pm-xmp5 (offline runner + CI gate). Done definition should mirror search-eval rigor but score context assembly: rank-aware quality, required-item recall, continuity-delta coverage, and token-budget adherence. This keeps pm-4k6b weight tuning evidence-driven instead of aesthetic.\n"
   "2026-07-09T19:10:26.051Z",codex-root-20260709,"Progress evidence: context/next evaluation harness now has public SDK runner contracts, reviewable golden workspaces, committed baseline, required CI gate, and documented intentional-update workflow."
   "2026-07-09T19:50:43.336Z",codex-root-20260709,"Verification: public SDK evaluation scenario/corpus APIs execute context and next through real PmClient readers with attribution and threshold/baseline regression reporting. Four committed scenarios and installed-package consumer pass; thresholds remain explicit and token budgets measured from compact payloads."
@@ -28,6 +44,7 @@ comments[8]{created_at,author,text}:
   "2026-07-10T00:16:51.550Z",codex-root-20260709,"Review-fix evidence: the external corpus reader now rejects missing, null, NaN/non-finite required thresholds with metric-specific errors before workspace setup. Focused gate tests and the real committed corpus pass; full suite remains exact 100% coverage."
   "2026-07-10T05:53:29.680Z",codex-root-20260709,"Verification evidence 2026-07-10: full sandbox suite passed 270 files / 5,505 tests with exact 100% statements, branches, functions, and lines. pm test-all over the seven active items passed 8 linked commands with 0 failures and 1 duplicate-safe skip. pnpm typecheck, contracts:check, lint (ESLint + 0 jscpd clones + static quality/token budget), docs-skills, context-eval, security scan, and audit all passed. Live CodeFactor reports A+ and 0 issues. Fresh packed npm install at /tmp/pm-cli-sdk-path-proof-XIsSsh activated 11 bundled packages in a path-target tracker, left caller extension files at zero, and passed CLI/SDK context plus isolated doctor with zero blocking failures. pm health is clean and history drift is zero."
   "2026-07-25T12:33:44.265Z","harness:claude-code","Registry input 2026-07-25 (directed maintainer pass): pm-4k6b note (22) proposes counterfactual replay evaluation under this harness — replaying a candidate scorer against recorded request points from real sessions and comparing on whether subsequently touched items were served, at what rank, and at what token cost. It is off-policy evaluation and must be documented with its honest limit: it cannot observe what an agent would have done with items it never saw, so it bounds improvement rather than proving it, and a replay win still requires a live comparison before a default changes. Its value is filtering — rejecting most scoring proposals on recorded data rather than shipping them. Recorded here so the harness scope covers counterfactual comparison and not only graded judgments; see pm-g8t7b9 for the full ownership disposition."
+  "2026-08-01T20:21:52.786Z","harness:codex","Evaluation design 2026-08-01: the context harness should stratify three-item scratch, real-shaped team, returning-agent, high-contention fleet, deep-history, adversarial metadata, and million-item synthetic scenarios. Judgments distinguish required, useful, redundant, misleading, and unsafe context. Gates report recall at budget, NDCG, first-relevant rank, continuity delta coverage, blocker and decision coverage, duplication, tokens per useful fact, latency, memory, and ranking stability. Counterfactual and ablation runs isolate each signal; frozen seeds and snapshot fingerprints make regressions reproducible. Quality thresholds are profile-specific so optimizing the million-item case cannot degrade the seconds-old scratch project."
 learnings[1]{created_at,author,text}:
   "2026-07-25T12:41:54.275Z","harness:claude-code","An evaluation mechanism must never be owned by the item whose work it evaluates. When a scoring item owns its own harness, the harness's acceptance criteria are written to be satisfiable by that scorer, and a genuinely falsifying result becomes a scope negotiation rather than a finding. Keeping the judgment corpus, the replay harness, and the counterfactual evaluator under an evaluation-owned item — with scoring items depending on them rather than containing them — is what preserves the ability to reject a scoring idea on evidence."
 files[4]{path,scope,note}:

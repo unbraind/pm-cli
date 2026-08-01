@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: ci,developer-experience,gates,governance,quality,verification
 created_at: "2026-07-26T10:47:54.428Z"
-updated_at: "2026-07-31T06:27:57.152Z"
+updated_at: "2026-08-01T20:25:37.776Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One declared registry lists every enforced gate with where it runs — local, pull request, nightly, release — and that registry is the source both sides read rather than two hand-maintained lists; A check fails when a gate exists on one side and is neither present nor explicitly waived on the other, so divergence is a build failure rather than a discovery; A single documented command gives a contributor or agent the strongest verification available locally, and its relationship to the hosted set is stated precisely rather than implied; Gates that legitimately cannot run locally — hosted analysis, matrix platforms, published-artifact checks — are recorded as such with the reason, not omitted; The agent-facing guidance names the preflight command, so the local loop is discoverable without reading workflow files"
@@ -19,16 +19,40 @@ why_now: "The gate registry work is about to define per-gate ownership, and defi
 parent: pm-u9d0
 risk: medium
 confidence: 80
-dependencies[9]{id,kind,created_at}:
-  pm-k6t4yb,blocked_by,"2026-07-26T10:47:54.428Z"
-  pm-ka6d,related,"2026-07-26T10:47:54.428Z"
-  pm-kpftft,related,"2026-07-26T10:47:54.428Z"
-  pm-lpqln4,related,"2026-07-26T10:47:54.428Z"
-  pm-rtn5h6,related,"2026-07-26T10:47:54.428Z"
-  pm-u9d0,implements,"2026-07-26T10:47:54.428Z"
-  pm-xgcp18,related,"2026-07-26T10:47:54.428Z"
-  pm-xp1xsw,verifies,"2026-07-26T10:47:54.428Z"
-  pm-k6t4yb,discovered_from,"2026-07-26T10:52:02.040Z"
+dependencies[10]:
+  - id: pm-k6t4yb
+    kind: blocked_by
+    created_at: "2026-07-26T10:47:54.428Z"
+  - id: pm-ka6d
+    kind: related
+    created_at: "2026-07-26T10:47:54.428Z"
+  - id: pm-kpftft
+    kind: related
+    created_at: "2026-07-26T10:47:54.428Z"
+  - id: pm-lpqln4
+    kind: related
+    created_at: "2026-07-26T10:47:54.428Z"
+  - id: pm-rtn5h6
+    kind: related
+    created_at: "2026-07-26T10:47:54.428Z"
+  - id: pm-u9d0
+    kind: implements
+    created_at: "2026-07-26T10:47:54.428Z"
+  - id: pm-xgcp18
+    kind: related
+    created_at: "2026-07-26T10:47:54.428Z"
+  - id: pm-xp1xsw
+    kind: verifies
+    created_at: "2026-07-26T10:47:54.428Z"
+  - id: pm-k6t4yb
+    kind: discovered_from
+    created_at: "2026-07-26T10:52:02.040Z"
+  - id: pm-u9d0
+    kind: verifies
+    created_at: "2026-08-01T20:22:19.251Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
 comments[1]{created_at,author,text}:
   "2026-07-31T06:27:57.149Z","harness:claude-code","Concrete instance measured 2026-07-31, filed as pm-631t9p. The parity gap here runs in the direction the item does not yet name: four harness-detection specs fail locally under Claude Code and pass on GitHub Actions, on the same commit, because runners carry no harness environment variables and the local machine does. So the hosted gate is not merely a different rule set — for this class it is a strictly weaker environment, and the green signal it publishes is produced by conditions no contributor works under. Any parity contract this item defines should include the environment the gates run in, not only the set of checks they run."
 notes[2]{created_at,author,text}:

@@ -1,0 +1,41 @@
+id: pm-4flipp
+title: "Regression: governance dedupe audit again rejects the explicit all-lifecycle status sentinel"
+description: "In the current 2026.8.1 checkout, pm dedupe-audit --mode title_exact --status all --limit 10000 --json exits invalid_argument_value even though closed canonical issue pm-mp49 records explicit --status all support as implemented and verified. Omitting --status considers all 2,263 items, so behavior, documentation, recovery guidance, and the closed contract have drifted apart. This is a recurrence linked to pm-mp49, not a duplicate of its historical delivery."
+type: Issue
+status: canceled
+priority: 1
+tags[6]: agent-ux,"area:contracts","area:extensions",dedupe,governance-audit,regression
+created_at: "2026-08-01T20:19:42.243Z"
+updated_at: "2026-08-01T20:27:41.355Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Explicit --status all succeeds and considers the same all-lifecycle candidate set as an omitted status filter; result metadata truthfully records the explicit all sentinel; help, action contracts, docs, completion metadata, SDK/package handler, focused tests, and packed installed-consumer behavior agree; configured custom statuses remain accepted and invalid statuses still fail with the declared domain; a regression gate prevents the package-owned parser from drifting from the shared lifecycle-filter contract"
+goal: project management = context management
+objective: "Restore one explicit, contract-backed all-lifecycle duplicate-scan grammar across core and package-owned surfaces"
+value: Agents can follow the repository-required duplicate-prevention workflow without memorizing an undocumented omission workaround
+impact: "Removes a live contradiction between the CLI, docs, recovery text, and immutable completion evidence"
+outcome: "All-status duplicate sweeps are explicit, portable, tested, and stable"
+why_now: The mandated all-status inventory reproduced the regression before any new tracker item was created
+parent: pm-ugqx
+risk: low
+confidence: high
+severity: medium
+environment: pm 2026.8.1 built from current main with active pm-governance-audit package
+repro_steps: Run pm dedupe-audit --mode title_exact --status all --limit 10000 --json; compare with the same command omitting --status.
+resolution: Duplicate of pm-449do9
+expected_result: Both invocations consider all lifecycle states; the explicit invocation reports filters.status=all.
+actual_result: "The explicit invocation exits code 2 because all is rejected; omission succeeds across 2,263 items."
+affected_version: 2026.8.1
+component: pm-governance-audit/dedupe-audit lifecycle filter contract
+regression: true
+customer_impact: Agents following AGENTS.md and docs cannot express the required all-status duplicate scan explicitly and receive contradictory recovery guidance.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-i02t,related,"2026-08-01T20:19:42.243Z","harness:codex","cli:create:dep",detected
+  pm-mp49,discovered_from,"2026-08-01T20:19:42.243Z","harness:codex","cli:create:dep",detected
+  pm-n7rr,implements,"2026-08-01T20:19:42.243Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-08-01T20:19:42.243Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-01T20:19:42.243Z","harness:codex","Duplicate-check evidence: two all-status searches for dedupe-audit/status-all found closed pm-mp49 as the exact historical owner plus closed core sentinel work pm-i02t; no active recurrence item exists. Live reproduction on 2026-08-01: explicit --status all fails, omission considers all 2,263 items. This item preserves the prior completion record and tracks the new regression separately."
+close_reason: Duplicate of pm-449do9
+duplicate_of: pm-449do9
+body: ""

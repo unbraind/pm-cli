@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:search",ci,context,quality,relevance,scale
 created_at: "2026-07-25T06:19:47.451Z"
-updated_at: "2026-08-01T12:17:59.368Z"
+updated_at: "2026-08-01T20:25:35.207Z"
 author: unknown
 estimated_minutes: 720
 acceptance_criteria: "A labelled query and relevance-judgment set exists over the real corpus and over generated corpora at multiple scales, reusing the context harness scenario shapes rather than defining a parallel methodology; Recall and precision targets are declared per corpus scale and per query class (identifier, exact phrase, conceptual, cross-lingual-free), and are measured by a repeatable command; CI fails when measured quality regresses below the declared targets, in the same way the latency gate fails on regression; The hybrid weighting is tuned against the judgment set and the chosen value is recorded with its measurement, superseding the constant chosen by decision alone; Results are published in a form the public benchmark can consume, so external claims and internal gates share one number"
@@ -19,7 +19,7 @@ why_now: "The search capability epic has no other open work, the scale corpus ge
 parent: pm-ydp6
 risk: medium
 confidence: medium
-dependencies[9]:
+dependencies[10]:
   - id: pm-4k6b
     kind: related
     created_at: "2026-07-25T06:19:47.451Z"
@@ -48,6 +48,12 @@ dependencies[9]:
     kind: blocked_by
     created_at: "2026-07-29T16:55:18.207Z"
     author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-4k6b
+    kind: verifies
+    created_at: "2026-08-01T20:22:15.704Z"
+    author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[5]{created_at,author,text}:

@@ -1,0 +1,40 @@
+id: pm-449do9
+title: "2026.8.1 regression: governance dedupe audit rejects the restored all-lifecycle status sentinel"
+description: "Current main at pm 2026.8.1 again rejects pm dedupe-audit --status all, although closed pm-mp49 records that exact package-owned contract as implemented and verified. Omitting --status considers all 2,263 items. This recurrence preserves the completed historical record and owns only the new drift across behavior, docs, contracts, recovery guidance, and tests."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,"area:contracts","area:extensions",dedupe,governance-audit,regression
+created_at: "2026-08-01T20:20:19.401Z"
+updated_at: "2026-08-01T20:25:39.376Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Explicit --status all succeeds and considers the same all-lifecycle candidate set as an omitted status filter; Result metadata truthfully records the explicit all sentinel; Help, action contracts, docs, completions, SDK/package handler, focused tests, and packed installed-consumer behavior agree; Configured custom statuses remain accepted and invalid statuses still fail with the declared domain; A regression gate prevents the package-owned parser from drifting from the shared lifecycle-filter contract"
+goal: project management = context management
+objective: Restore one explicit all-lifecycle duplicate-scan grammar across core and package-owned surfaces
+value: Agents can follow duplicate-prevention guidance without an undocumented omission workaround
+impact: "Removes a live contradiction between CLI behavior, documentation, recovery text, and immutable completion evidence"
+outcome: "All-status duplicate sweeps are explicit, portable, tested, and stable"
+why_now: The mandatory all-status inventory reproduced the regression before new tracker work was added
+parent: pm-ugqx
+risk: low
+confidence: high
+severity: medium
+environment: pm 2026.8.1 built from current main with pm-governance-audit active
+repro_steps: Run pm dedupe-audit --mode title_exact --status all --limit 10000 --json; compare with the same command omitting --status.
+expected_result: Both invocations consider all lifecycle states and the explicit invocation reports filters.status=all.
+actual_result: "Explicit invocation exits code 2 because all is rejected; omission succeeds across 2,263 items."
+affected_version: 2026.8.1
+component: pm-governance-audit/dedupe-audit lifecycle filter contract
+regression: true
+customer_impact: Agents following repository guidance cannot express the required all-status duplicate scan explicitly and receive contradictory recovery guidance.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-i02t,related,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
+  pm-mp49,discovered_from,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
+  pm-n7rr,implements,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-08-01T20:20:19.401Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-01T20:20:19.401Z","harness:codex","Duplicate-check evidence: all-status searches found closed pm-mp49 as the exact historical owner plus closed core sentinel work pm-i02t; no active recurrence exists. Live 2026-08-01 reproduction: explicit --status all fails while omission considers all 2,263 items. --allow-duplicate is used only to represent this versioned regression without rewriting or reopening the immutable completion record."
+  "2026-08-01T20:21:53.634Z","harness:codex","Planning note: fix ownership belongs in the shared lifecycle-filter parser and package action contract, not as another local special case. Verification must include source tests plus a freshly packed installed package because the historical item passed at that boundary and current source behavior regressed. The regression should also reply to the misleading recovery path by making allowed values include the all sentinel when the command supports it."
+  "2026-08-01T20:25:23.985Z","harness:codex","Organization evidence: this is the only active owner of the 2026.8.1 recurrence. Exact-title dedupe remains unchanged from the historical canceled probe cluster and parent-scope dedupe has zero clusters. pm-4flipp was consolidated into this item through pm dedupe-merge with duplicate_of metadata after delayed command output revealed the first create had succeeded."
+body: ""
