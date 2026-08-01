@@ -102,7 +102,7 @@ import {
   listGuideTopicIds,
   listGuideTopics,
   resolveGuideTopic,
-} from "../../../src/cli/guide-topics.js";
+} from "../../../src/sdk/guide-topics.js";
 import {
   collectMandatoryMigrationBlockers,
   decideWriteGate,

@@ -7,9 +7,11 @@ Tracked by [pm-z5pmf8](../.agents/pm/issues/pm-z5pmf8.toon),
 The public SDK owns lifecycle transactions and policy. CLI and MCP operations
 delegate to SDK modules, so an item does not gain different storage,
 governance, history, or graph semantics depending on the presentation surface
-that invoked it. SDK-owned operations currently include close, copy, delete,
-restore, focus, and get; their historical `src/cli/commands/*` modules are
-compatibility exports only.
+that invoked it. SDK-owned operations include create, append, update, bulk
+update, claim/release, close, bulk close, copy, delete, restore, focus, get,
+context, next, activity, calendar, aggregate, history, planning, annotations,
+runtime contracts, guide/completion, reindex, and upgrade. Their historical
+`src/cli/commands/*` modules are compatibility exports only.
 
 The ownership boundary is architectural, not cosmetic:
 
@@ -19,7 +21,19 @@ The ownership boundary is architectural, not cosmetic:
 - `sdk/lifecycle/copy` owns similarity governance and atomic item/history
   construction.
 - `sdk/lifecycle/focus` owns durable focus state.
+- `sdk/lifecycle/create`, `update`, and `plan` own item construction,
+  mutation, transition validation, planning transactions, and their shared
+  parsers.
+- `sdk/lifecycle/append`, `claim`, `close-many`, and `update-many` own the
+  remaining single- and bulk-item mutation transactions.
 - `sdk/query/get` owns bounded current and point-in-time item reads.
+- `sdk/query/context`, `next`, `list`, `search`, `aggregate`, `activity`,
+  `calendar`, and `history` own every built-in read primitive.
+
+The mandatory static boundary walks TypeScript imports and re-exports. Any
+module below `src/sdk` that reaches into `src/cli` fails `quality:static`,
+including type-only edges. The SDK is therefore the substrate rather than a
+facade over command implementations.
 
 Package authors can import these operations from `@unbrained/pm-cli/sdk`
 without importing CLI modules or spawning the executable. Existing CLI import
@@ -86,6 +100,10 @@ The compilable example lives at
 `runClose`, `CloseCommandOptions`, and `CloseResult` remain supported aliases.
 New integrations should prefer `closeItem`, `CloseOperationOptions`, and
 `CloseOperationResult`; the operation vocabulary remains meaningful outside a
-command-line host. `runCopy`, `runDelete`, `runRestore`, `runFocus`, and
-`runGet` retain their established result contracts while their implementation
-ownership moves under the SDK.
+command-line host. The additive `CreateOperationOptions`,
+`UpdateOperationOptions`, `PlanOperationOptions`, `AppendOperationOptions`,
+`CloseManyOperationOptions`, and `UpdateManyOperationOptions` names provide the
+same presentation-neutral vocabulary without breaking integrations that still
+refer to the historical `*CommandOptions` aliases. `runCopy`, `runDelete`,
+`runRestore`, `runFocus`, and `runGet` retain their established result
+contracts while their implementation ownership moves under the SDK.

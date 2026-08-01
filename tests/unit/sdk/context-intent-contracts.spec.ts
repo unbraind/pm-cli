@@ -7,10 +7,37 @@ import {
   attachContextIntentReceipt,
   attachReadOutputContracts,
   composeContextIntentContracts,
+  contextIntentRowId,
+  decodeContextIntentCursor,
   resolveContextIntentContract,
 } from "../../../src/sdk/context-intent-contracts.js";
 
 describe("context intent contracts", () => {
+  it("decodes resumable cursor fields and both supported row shapes", () => {
+    const cursor = Buffer.from(
+      JSON.stringify({ fingerprint: "fp", after_index: 4, snapshot: "snap" }),
+    ).toString("base64url");
+    expect(decodeContextIntentCursor(cursor)).toEqual({
+      fingerprint: "fp",
+      after_index: 4,
+      snapshot: "snap",
+    });
+    expect(decodeContextIntentCursor("not-json")).toBeUndefined();
+    expect(
+      decodeContextIntentCursor(
+        Buffer.from(JSON.stringify({ fingerprint: "fp" })).toString(
+          "base64url",
+        ),
+      ),
+    ).toBeUndefined();
+    expect(contextIntentRowId({ id: "pm-flat" })).toBe("pm-flat");
+    expect(contextIntentRowId({ item: { id: "pm-nested" } })).toBe(
+      "pm-nested",
+    );
+    expect(contextIntentRowId(null)).toBeUndefined();
+    expect(contextIntentRowId({ item: { id: 42 } })).toBeUndefined();
+  });
+
   it("publishes bounded built-in projections for every read primitive", () => {
     expect(
       PM_CONTEXT_INTENT_CONTRACTS.map(
@@ -212,13 +239,13 @@ describe("context intent contracts", () => {
         for: "triage",
         tokenBudget: "1800",
       }),
-    ).toMatchObject({ limit: "10" });
+    ).toMatchObject({ limit: "80" });
     expect(
       applyContextIntentProjection("list", {
         for: "triage",
         token_budget: "1800",
       }),
-    ).toMatchObject({ limit: "10", tokenBudget: "1800" });
+    ).toMatchObject({ limit: "80", tokenBudget: "1800" });
     expect(
       applyContextIntentProjection("context", { token_budget: "900" }),
     ).toEqual({ tokenBudget: "900" });
@@ -227,7 +254,7 @@ describe("context intent contracts", () => {
         for: "triage",
         tokenBudget: "3000",
       }),
-    ).toMatchObject({ limit: "19" });
+    ).toMatchObject({ limit: "100" });
     expect(
       attachContextIntentReceipt("list-open", { for: "triage" }, { items: [] }),
     ).toMatchObject({
@@ -478,6 +505,124 @@ describe("context intent contracts", () => {
     });
     expect(projected).not.toHaveProperty("items");
     expect(projected).not.toHaveProperty("next_cursor");
+  });
+
+  it("turns an oversized terminal continuation into another resumable page", () => {
+    const after = Buffer.from(
+      JSON.stringify({
+        fingerprint: "chain-fingerprint",
+        after_index: 10,
+        snapshot: "snapshot-token",
+      }),
+    ).toString("base64url");
+    const projected = attachContextIntentReceipt(
+      "search",
+      { for: "discover", after },
+      {
+        items: Array.from({ length: 100 }, (_, index) => ({
+          id: `pm-${index}`,
+          title: "x".repeat(180),
+          status: "open",
+        })),
+      },
+    );
+    expect(projected.context_intent).toMatchObject({
+      degradation: "budget_row_compaction",
+      result_omitted: false,
+      within_budget: true,
+    });
+    expect(projected.items.length).toBeGreaterThan(0);
+    expect(projected.items.length).toBeLessThan(100);
+    const next = JSON.parse(
+      Buffer.from(projected.next_cursor!, "base64url").toString("utf8"),
+    );
+    expect(next).toMatchObject({
+      fingerprint: "chain-fingerprint",
+      after_index: 10 + projected.items.length,
+      snapshot: "snapshot-token",
+    });
+    expect(next.after_id).toBe(projected.items.at(-1)?.id);
+  });
+
+  it("recalculates an existing outgoing cursor and pagination counters after compaction", () => {
+    const outgoingCursor = Buffer.from(
+      JSON.stringify({
+        fingerprint: "existing-page",
+        after_index: 100,
+        snapshot: "snapshot-token",
+      }),
+    ).toString("base64url");
+    const projected = attachContextIntentReceipt(
+      "list",
+      { for: "triage", limit: "100" },
+      {
+        items: Array.from({ length: 100 }, (_, index) => ({
+          id: `pm-${index}`,
+          title: "x".repeat(220),
+          status: "open",
+        })),
+        next_cursor: outgoingCursor,
+        count: 100,
+        applied_limit: 100,
+      },
+    );
+    expect(projected.items.length).toBeLessThan(100);
+    expect(projected.count).toBe(projected.items.length);
+    expect(projected.applied_limit).toBe(projected.items.length);
+    expect(projected).not.toHaveProperty("budget_derived_limit");
+    const next = JSON.parse(
+      Buffer.from(projected.next_cursor!, "base64url").toString("utf8"),
+    );
+    expect(next.after_index).toBe(projected.items.length);
+  });
+
+  it("fails closed when a compacted cursor row has no stable identity", () => {
+    const outgoingCursor = Buffer.from(
+      JSON.stringify({ fingerprint: "missing-identity", after_index: 2 }),
+    ).toString("base64url");
+    const projected = attachContextIntentReceipt(
+      "search",
+      { for: "discover" },
+      {
+        items: Array.from({ length: 20 }, (_, row) =>
+          Object.fromEntries(
+            Array.from({ length: 100 }, (_, field) => [
+              `field_${row}_${field}`,
+              field,
+            ]),
+          ),
+        ),
+        next_cursor: outgoingCursor,
+      },
+    );
+    expect(projected).toMatchObject({
+      budget_exceeded: { omitted_result: true },
+      context_intent: { result_omitted: true, within_budget: false },
+    });
+  });
+
+  it("fails closed when one cursor row cannot make an oversized payload feasible", () => {
+    const outgoingCursor = Buffer.from(
+      JSON.stringify({ fingerprint: "single-row", after_index: 1 }),
+    ).toString("base64url");
+    const projected = attachContextIntentReceipt(
+      "list",
+      { for: "triage" },
+      {
+        items: [{ id: "pm-anchor" }],
+        next_cursor: outgoingCursor,
+        ...Object.fromEntries(
+          Array.from({ length: 2_500 }, (_, index) => [
+            `field_${index}`,
+            index,
+          ]),
+        ),
+      },
+    );
+    expect(projected).toMatchObject({
+      budget_exceeded: { omitted_result: true },
+      context_intent: { result_omitted: true, within_budget: false },
+    });
   });
 
   it("retains the final useful row when unrelated payload fields exceed the budget", () => {

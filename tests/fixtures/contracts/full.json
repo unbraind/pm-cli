@@ -9237,7 +9237,7 @@
       "meaning": "Already claimed by condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/claim.ts"
+        "sdk/lifecycle/claim.ts"
       ],
       "stability": "stable"
     },
@@ -9257,7 +9257,7 @@
       "meaning": "Ambiguous option combination condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/plan.ts"
+        "sdk/lifecycle/plan.ts"
       ],
       "stability": "stable"
     },
@@ -9287,7 +9287,7 @@
       "meaning": "Append empty body condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/append.ts"
+        "sdk/lifecycle/append.ts"
       ],
       "stability": "stable"
     },
@@ -9367,8 +9367,8 @@
       "meaning": "Close reason required condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/close-many.ts",
-        "sdk/lifecycle-policy.ts"
+        "sdk/lifecycle-policy.ts",
+        "sdk/lifecycle/close-many.ts"
       ],
       "stability": "stable"
     },
@@ -9418,7 +9418,7 @@
       "meaning": "Command namespace condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/contracts.ts"
+        "sdk/cli-contracts/runtime-contracts.ts"
       ],
       "stability": "stable"
     },
@@ -9938,10 +9938,10 @@
       "meaning": "Invalid argument value condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/create.ts",
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts",
-        "sdk/context-intent-contracts.ts"
+        "sdk/context-intent-contracts.ts",
+        "sdk/lifecycle/create.ts"
       ],
       "stability": "stable"
     },
@@ -10125,7 +10125,7 @@
       "meaning": "Malformed plan step evidence condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/plan.ts"
+        "sdk/lifecycle/plan.ts"
       ],
       "stability": "stable"
     },
@@ -10210,11 +10210,11 @@
       "meaning": "Missing required option condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/create.ts",
-        "cli/commands/plan.ts",
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts",
-        "sdk/context-intent-contracts.ts"
+        "sdk/context-intent-contracts.ts",
+        "sdk/lifecycle/create.ts",
+        "sdk/lifecycle/plan.ts"
       ],
       "stability": "stable"
     },
@@ -10337,7 +10337,7 @@
       "meaning": "Ownership dependency bypass restricted options condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/update.ts"
+        "sdk/lifecycle/update.ts"
       ],
       "stability": "stable"
     },
@@ -10347,7 +10347,7 @@
       "meaning": "Ownership metadata bypass restricted options condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/update.ts"
+        "sdk/lifecycle/update.ts"
       ],
       "stability": "stable"
     },
@@ -10417,7 +10417,7 @@
       "meaning": "Reindex already running condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/reindex.ts"
+        "sdk/governance/reindex.ts"
       ],
       "stability": "stable"
     },
@@ -10537,7 +10537,7 @@
       "meaning": "Structured event input conflict condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/notes.ts"
+        "sdk/notes.ts"
       ],
       "stability": "stable"
     },
@@ -10547,7 +10547,7 @@
       "meaning": "Structured event json empty condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/notes.ts"
+        "sdk/notes.ts"
       ],
       "stability": "stable"
     },
@@ -10557,7 +10557,7 @@
       "meaning": "Structured event json invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/notes.ts"
+        "sdk/notes.ts"
       ],
       "stability": "stable"
     },
@@ -10567,7 +10567,7 @@
       "meaning": "Structured event since invalid condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/notes.ts"
+        "sdk/notes.ts"
       ],
       "stability": "stable"
     },
@@ -10667,7 +10667,7 @@
       "meaning": "Terminal plan mutation condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/plan.ts"
+        "sdk/lifecycle/plan.ts"
       ],
       "stability": "stable"
     },
@@ -10748,9 +10748,9 @@
       "meaning": "Unknown command condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/contracts.ts",
         "cli/error-guidance.ts",
-        "core/telemetry/observability.ts"
+        "core/telemetry/observability.ts",
+        "sdk/cli-contracts/runtime-contracts.ts"
       ],
       "stability": "stable"
     },
@@ -10832,7 +10832,7 @@
       "meaning": "Unknown plan template condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/plan.ts"
+        "sdk/lifecycle/plan.ts"
       ],
       "stability": "stable"
     },
@@ -11334,7 +11334,7 @@
       "meaning": "Wrong item type condition.",
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/commands/plan.ts"
+        "sdk/lifecycle/plan.ts"
       ],
       "stability": "stable"
     }

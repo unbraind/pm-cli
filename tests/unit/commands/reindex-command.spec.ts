@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { _testOnly as reindexInternals, runReindex } from "../../../src/cli/commands/reindex.js";
+import { _testOnly as reindexInternals, runReindex } from "../../../src/sdk/governance/reindex.js";
 import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from "../../../src/core/search/cache.js";
 import { SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING } from "../../../src/core/search/corpus.js";
 import { executeVectorUpsert } from "../../../src/core/search/vector-stores.js";

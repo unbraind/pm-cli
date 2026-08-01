@@ -72,6 +72,7 @@ type SqModule = {
   checkOrphanSourceModules: (files: string[]) => Array<{ path: string }>;
   collectSdkBoundarySourceFiles: (files: string[]) => string[];
   collectPrivateCoreImportEdges: (files: string[]) => Array<{ source: string; import_path: string }>;
+  collectSdkToCliImportEdges: (files: string[]) => Array<{ source: string; import_path: string }>;
   collectUnsupportedDynamicImportExpressions: (files: string[]) => Array<{
     source: string;
     line: number;
@@ -85,6 +86,7 @@ type SqModule = {
     new_private_core_imports: Array<{ source: string; import_path: string }>;
     stale_baseline_imports: Array<{ source: string; import_path: string }>;
     unsupported_dynamic_imports: Array<{ source: string; line: number; reason: string }>;
+    sdk_to_cli_imports: Array<{ source: string; import_path: string }>;
   };
   complexityContribution: (node: unknown) => number;
   functionLikeName: (node: unknown, sf: unknown) => string;
@@ -764,7 +766,25 @@ describe("static-quality-gate", () => {
       await writeFile(`${root}/src/core/new.ts`, "export const next = true;\n", "utf8");
       await writeFile(`${root}/src/core/template.ts`, "export const template = true;\n", "utf8");
       await writeFile(`${root}/src/core/attributes.ts`, "export const attributes = true;\n", "utf8");
-      await writeFile(`${root}/src/sdk/index.ts`, "export const sdk = true;\n", "utf8");
+      await writeFile(
+        `${root}/src/sdk/index.ts`,
+        [
+          'export { anotherSdkCliLeak } from "../cli/another-sdk-leak";',
+          'export { anotherSdkCliLeak as duplicateLeak } from "../cli/another-sdk-leak";',
+          'export { sdkCliLeak } from "../cli/sdk-leak";',
+          'export type LeakedCliType = import("../cli/sdk-leak").LeakedCliType;',
+          'export { selfReferencedCli } from "@unbrained/pm-cli/cli";',
+          'export { selfReferencedCli as duplicateSelfReference } from "@unbrained/pm-cli/cli";',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
+        `${root}/src/cli/another-sdk-leak.ts`,
+        "export const anotherSdkCliLeak = true;\n",
+        "utf8",
+      );
+      await writeFile(`${root}/src/cli/sdk-leak.ts`, "export const sdkCliLeak = true;\n", "utf8");
       await writeFile(`${root}/src/mcp/z-stale.ts`, "export const stale = true;\n", "utf8");
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
@@ -822,6 +842,17 @@ describe("static-quality-gate", () => {
         { source: "src/mcp.ts", import_path: "src/core/root-mcp.ts" },
         { source: "src/mcp/server.ts", import_path: "src/core/b.ts" },
       ]);
+      expect(mod.collectSdkToCliImportEdges(files)).toEqual([
+        {
+          source: "src/sdk/index.ts",
+          import_path: "@unbrained/pm-cli/cli",
+        },
+        {
+          source: "src/sdk/index.ts",
+          import_path: "src/cli/another-sdk-leak.ts",
+        },
+        { source: "src/sdk/index.ts", import_path: "src/cli/sdk-leak.ts" },
+      ]);
       expect(mod.checkSdkImportBoundary(subsetFiles, baselinePath)).toMatchObject({
         ok: false,
         scanned_file_count: 3,
@@ -832,6 +863,17 @@ describe("static-quality-gate", () => {
           { source: "src/mcp/server.ts", import_path: "src/core/b.ts" },
         ]),
         stale_baseline_imports: [],
+        sdk_to_cli_imports: [
+          {
+            source: "src/sdk/index.ts",
+            import_path: "@unbrained/pm-cli/cli",
+          },
+          {
+            source: "src/sdk/index.ts",
+            import_path: "src/cli/another-sdk-leak.ts",
+          },
+          { source: "src/sdk/index.ts", import_path: "src/cli/sdk-leak.ts" },
+        ],
       });
       expect(mod.checkSdkImportBoundary(files, baselinePath)).toMatchObject({
         ok: false,
@@ -895,6 +937,7 @@ describe("static-quality-gate", () => {
     it("checkSdkImportBoundary fails closed on computed dynamic imports and require calls", async () => {
       const root = await harness.createTempRoot("pm-static-quality-sdk-boundary-computed-import-");
       await mkdir(`${root}/src/cli`, { recursive: true });
+      await mkdir(`${root}/src/sdk`, { recursive: true });
       await mkdir(`${root}/scripts/release`, { recursive: true });
       await writeFile(
         `${root}/src/cli/main.ts`,
@@ -924,13 +967,23 @@ describe("static-quality-gate", () => {
         "utf8",
       );
       await writeFile(
+        `${root}/src/sdk/index.ts`,
+        [
+          "const target = '../cli/private';",
+          "export async function loadComputedCli() { return import(target); }",
+          "export function requireComputedCli() { return require(target); }",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(
         `${root}/scripts/release/sdk-import-boundary-baseline.json`,
         JSON.stringify({ version: 1, allowed_private_core_imports: [] }, null, 2),
         "utf8",
       );
       mockUtils(root);
       const mod = await harness.importModuleStable<SqModule>(SCRIPT);
-      const files = [`${root}/src/cli/main.ts`];
+      const files = [`${root}/src/cli/main.ts`, `${root}/src/sdk/index.ts`];
 
       expect(mod.collectPrivateCoreImportEdges(files)).toEqual([]);
       expect(mod.collectUnsupportedDynamicImportExpressions(files)).toEqual([
@@ -940,6 +993,8 @@ describe("static-quality-gate", () => {
         { source: "src/cli/main.ts", line: 12, reason: "computed_dynamic_import" },
         { source: "src/cli/main.ts", line: 15, reason: "computed_require" },
         { source: "src/cli/main.ts", line: 19, reason: "computed_require" },
+        { source: "src/sdk/index.ts", line: 2, reason: "computed_dynamic_import" },
+        { source: "src/sdk/index.ts", line: 3, reason: "computed_require" },
       ]);
       expect(mod.checkSdkImportBoundary(files, `${root}/scripts/release/sdk-import-boundary-baseline.json`)).toMatchObject({
         ok: false,
@@ -950,6 +1005,8 @@ describe("static-quality-gate", () => {
           { source: "src/cli/main.ts", line: 12, reason: "computed_dynamic_import" },
           { source: "src/cli/main.ts", line: 15, reason: "computed_require" },
           { source: "src/cli/main.ts", line: 19, reason: "computed_require" },
+          { source: "src/sdk/index.ts", line: 2, reason: "computed_dynamic_import" },
+          { source: "src/sdk/index.ts", line: 3, reason: "computed_require" },
         ],
       });
     });

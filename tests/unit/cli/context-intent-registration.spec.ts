@@ -30,7 +30,7 @@ describe("read command context intent registration", () => {
     ).toMatchObject({
       fields:
         "id,title,status,type,priority,parent,assignee,risk,blocked_by",
-      limit: "20",
+      limit: "100",
       tokenBudget: "3200",
     });
     expect(
@@ -42,7 +42,7 @@ describe("read command context intent registration", () => {
       applyContextIntentProjection("search", {
         for: "discover",
       }),
-    ).toMatchObject({ compact: true, limit: "16", tokenBudget: "1800" });
+    ).toMatchObject({ compact: true, limit: "82", tokenBudget: "1800" });
   });
 
   it("preserves explicit projection and token options", () => {

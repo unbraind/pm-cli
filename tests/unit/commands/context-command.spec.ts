@@ -625,7 +625,7 @@ describe("context command module", () => {
     } as never);
     expect(omittedBlockersMarkdown).not.toContain("- sections:");
 
-    const activityModule = await import("../../../src/cli/commands/activity.js");
+    const activityModule = await import("../../../src/sdk/query/activity.js");
     const runActivitySpy = vi.spyOn(activityModule, "runActivity").mockResolvedValue({ compact_activity: undefined } as never);
     try {
       await expect(contextInternals.buildActivity(3, { path: "/tmp" } as never)).resolves.toEqual([]);

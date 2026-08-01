@@ -27,6 +27,7 @@ import {
   normalizeContextOptions,
   normalizeCreateOptions,
   normalizeListOptions,
+  normalizeNextOptions,
   normalizeSearchOptions,
   normalizeSearchKeywordsInput,
   normalizeUpdateOptions,
@@ -330,6 +331,12 @@ describe("registration helpers", () => {
       clearDocs: true,
       customRuntimeField: "kept",
     });
+    expect(
+      normalizeCreateOptions(
+        { type: "Task", allow_missing_parent: true },
+        { requireType: false },
+      ).allowMissingParent,
+    ).toBe(true);
 
     const update = normalizeUpdateOptions({
       acceptanceCriteria: ["first"],
@@ -835,6 +842,65 @@ describe("registration helpers", () => {
     });
   });
 
+  it("removes every update-many selector and execution control from mutation input", () => {
+    const controlOptions = {
+      filterStatus: "open",
+      filterType: "Task",
+      filterTag: "sdk",
+      filterPriority: "1",
+      filterDeadlineBefore: "2026-09-01",
+      filterDeadlineAfter: "2026-08-01",
+      filterUpdatedAfter: "2026-08-01",
+      filterUpdatedBefore: "2026-09-01",
+      filterCreatedAfter: "2026-08-01",
+      filterCreatedBefore: "2026-09-01",
+      filterAssignee: "agent",
+      filterAssigneeFilter: "agent",
+      filterAssignee_filter: "agent",
+      filterParent: "pm-parent",
+      filterSprint: "sprint",
+      filterRelease: "release",
+      filterAcMissing: true,
+      filterEstimatesMissing: true,
+      filterEstimateMissing: true,
+      filterResolutionMissing: true,
+      filterMetadataMissing: true,
+      filterReviewerMissing: true,
+      filterRiskMissing: true,
+      filterConfidenceMissing: true,
+      filterSprintMissing: true,
+      filterReleaseMissing: true,
+      filterHasNotes: true,
+      filterNoNotes: true,
+      filterHasLearnings: true,
+      filterNoLearnings: true,
+      filterHasFiles: true,
+      filterNoFiles: true,
+      filterHasDocs: true,
+      filterNoDocs: true,
+      filterHasTests: true,
+      filterNoTests: true,
+      filterHasComments: true,
+      filterNoComments: true,
+      filterHasDeps: true,
+      filterNoDeps: true,
+      filterHasBody: true,
+      filterEmptyBody: true,
+      filterHasLinkedCommand: true,
+      filterNoLinkedCommand: true,
+      ids: "pm-1",
+      limit: "2",
+      offset: "1",
+      dryRun: true,
+      rollback: true,
+      checkpoint: "checkpoint.json",
+      status: "closed",
+    };
+    expect(extractUpdateManyMutationOptionSource(controlOptions)).toEqual({
+      status: "closed",
+    });
+  });
+
   it("normalizes list and aggregate filters with numeric list fallbacks", () => {
     expect(
       normalizeListOptions({
@@ -1239,6 +1305,13 @@ describe("registration helpers", () => {
       parent: "pm-epic",
     });
     expect(normalizeContextOptions({}).parent).toBeUndefined();
+    expect(normalizeContextOptions({ tokenBudget: 800 }).tokenBudget).toBe(800);
+    expect(
+      normalizeContextOptions({ tokenBudget: Number.NaN }).tokenBudget,
+    ).toBeUndefined();
+    expect(
+      normalizeNextOptions({ priority: 2, tokenBudget: 900 }),
+    ).toMatchObject({ priority: 2, tokenBudget: 900 });
   });
 
   it("applies default output format only when settings are available and JSON was not requested", async () => {

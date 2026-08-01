@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/calendar
+ * @module sdk/query/calendar
  *
  * Implements the pm calendar command surface and its agent-facing runtime behavior.
  */
@@ -26,12 +26,12 @@ import {
   getSettingsPath,
   resolvePmRoot,
   readSettings,
-} from "../../sdk/runtime-primitives.js";
+} from "../runtime-primitives.js";
 import {
   parseIntegerLimit,
   parsePriority,
   parseType,
-} from "../shared-parsers.js";
+} from "./parsers.js";
 import type {
   ItemMetadata,
   ItemStatus,

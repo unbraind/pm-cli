@@ -2,18 +2,36 @@ id: pm-ka6m65
 title: "GH-847: tighten managed built-in static SDK contracts and author guidance"
 description: "Track package-owned cleanup for managed built-in extension static SDK contracts: host-global author recovery guidance, a narrow Beads runtime SDK interface, and named Todos SDK imports. The generated managed artifacts must be updated through the pm-cli package workflow rather than downstream edits."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: "area:packages","area:sdk","source:github"
 created_at: "2026-07-31T21:29:44.851Z"
-updated_at: "2026-07-31T21:29:44.851Z"
+updated_at: "2026-08-01T05:40:28.126Z"
+closed_at: "2026-08-01T05:28:08.746Z"
+completed_at: "2026-08-01T05:28:08.746Z"
 author: "harness:codex"
 acceptance_criteria: "test-runs resume explains host-global --author placement in failure hints; Beads import runtime depends on a narrow structural SDK contract without a redundant namespace alias; Todos import/export runtime uses named SDK imports without module namespace aliasing; Managed artifacts, focused tests, package parity, and generated output are verified"
 parent: pm-usfg
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Narrowed Beads contracts, named Todos imports, and resume-only linked-test author hints"
+expected_result: First-party packages consume narrow named public SDK contracts and emit correct host-global author guidance
+actual_result: "Focused package tests, package parity, exact full coverage, and packed npm/Bun consumers pass"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-vnk7ob,related_to,"2026-07-31T21:29:44.851Z","harness:codex",github,detected
   pm-w7mqzt,related_to,"2026-07-31T21:29:44.851Z","harness:codex",github,detected
   pm-z5pmf8,related_to,"2026-07-31T21:29:44.851Z","harness:codex",github,detected
-comments[1]{created_at,author,text}:
+  pm-z5pmf8,verifies,"2026-08-01T05:26:35.736Z","harness:codex",package_sdk_conformance,detected
+comments[3]{created_at,author,text}:
   "2026-07-31T21:29:44.851Z","harness:codex","Duplicate check: searched every status for GH-847 and the full issue title plus Beads/Todos/test-runs SDK contract terms; no canonical item existed. GitHub source: https://github.com/unbraind/pm-cli/issues/847. Related edges continue pm-z5pmf8 and the completed pm-vnk7ob/pm-w7mqzt package-contract lineage."
+  "2026-08-01T05:27:15.710Z","harness:codex","GH847 delivery evidence 2026-08-01: Beads uses a narrow Pick-based SDK metadata contract without a redundant alias; Todos uses named SDK imports; linked-test adapters apply the author hint to resume only and keep status read-only. Package contract parity, focused package suites, 6,652-test exact full coverage, and isolated packed npm/Bun consumers all pass."
+  "2026-08-01T05:40:28.126Z","harness:codex","GitHub delivery evidence: GH-847 is implemented by PR #850 https://github.com/unbraind/pm-cli/pull/850 with the canonical PM link in the PR body; exact-head checks and reviews are pending."
+files[5]{path,scope,note}:
+  packages/pm-beads/extensions/beads/runtime.ts,project,narrow SDK metadata contract and removal of redundant alias
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts,project,resume-only author propagation
+  packages/pm-todos/extensions/todos/runtime.ts,project,named SDK imports replace namespace coupling
+  tests/unit/extensions/builtin-extension-entrypoints.spec.ts,project,status and resume author-hint contract regression
+  tests/unit/scripts/release/package-sdk-contract-parity.spec.ts,project,package SDK contract gate
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/release/package-sdk-contract-parity.mjs,project,300
+  node scripts/run-tests.mjs test -- tests/unit/extensions/builtin-extension-entrypoints.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/packages/todos-extension.spec.ts tests/unit/commands/test-runs-command.spec.ts,project,300
+close_reason: GH847 first-party package SDK contract findings are implemented and verified
 body: ""

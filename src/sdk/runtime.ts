@@ -80,30 +80,35 @@ import {
   attachReadOutputContracts,
 } from "./context-intent-contracts.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
+import { runActivity } from "./query/activity.js";
 import {
+  runAggregate,
   type AggregateOptions,
   type AggregateResult,
-  runActivity,
-  runAggregate,
-  runAppend,
-  runClaim,
-  runClaimNext,
-  runCloseMany,
-  runComments,
-  runContext,
-  runCreate,
-  runHistory,
-  runLearnings,
-  runNext,
-  runNotes,
-  runPlan,
-  runRelease,
-  runUpdate,
-  runUpdateMany,
+} from "./query/aggregate.js";
+import { runAppend } from "./lifecycle/append.js";
+import { runClaim, runClaimNext, runRelease } from "./lifecycle/claim.js";
+import { runCloseMany } from "./lifecycle/close-many.js";
+import { runComments } from "./comments.js";
+import { runHistory } from "./query/history.js";
+import { runLearnings } from "./learnings.js";
+import { runNotes } from "./notes.js";
+import { runUpdateMany } from "./lifecycle/update-many.js";
+import {
   runUpgrade,
   type UpgradeCommandOptions,
   type UpgradeResult,
-} from "../cli/commands/index.js";
+} from "./governance/upgrade.js";
+import { runCreate, type CreateResult } from "./lifecycle/create.js";
+import { runUpdate, type UpdateResult } from "./lifecycle/update.js";
+import {
+  runPlan,
+  type PlanCommandOptions,
+  type PlanCommandResult,
+  type PlanSubcommand,
+} from "./lifecycle/plan.js";
+import { runContext, type ContextOptions, type ContextResult } from "./query/context.js";
+import { runNext, type NextOptions, type NextResult } from "./query/next.js";
 import { runClose } from "./lifecycle/close.js";
 import { runCopy, type CopyResult } from "./lifecycle/copy.js";
 import {
@@ -208,30 +213,22 @@ import {
   type GraphSubcommand,
 } from "./graph/run.js";
 import { runFiles, runFilesDiscover } from "./files.js";
-import type { ContextOptions, ContextResult } from "../cli/commands/context.js";
 import type {
   AppendCommandOptions,
   AppendResult,
-} from "../cli/commands/append.js";
+} from "./lifecycle/append.js";
 import type {
   ClaimNextResult,
   ClaimResult,
   ReleaseResult,
-} from "../cli/commands/claim.js";
+} from "./lifecycle/claim.js";
 import type { CloseResult } from "./lifecycle/close.js";
 import {
   runContracts,
   type ContractsCommandOptions,
   type ContractsResult,
-} from "../cli/commands/contracts.js";
-import type { CreateResult } from "../cli/commands/create.js";
+} from "./cli-contracts/runtime-contracts.js";
 import { runList, type ListOptions, type ListResult } from "./query/list.js";
-import type { NextOptions, NextResult } from "../cli/commands/next.js";
-import type {
-  PlanCommandOptions,
-  PlanCommandResult,
-  PlanSubcommand,
-} from "../cli/commands/plan.js";
 import {
   runSearch,
   type SearchOptions,
@@ -251,15 +248,14 @@ import { runTelemetry } from "./telemetry.js";
 import { runTest } from "./test/execution.js";
 import { runTestAll } from "./test/batch.js";
 import { resolveStartTaskInProgressStatus } from "./start-task-status.js";
-import type { UpdateResult } from "../cli/commands/update.js";
 import type {
   CommentsCommandOptions,
   CommentsResult,
-} from "../cli/commands/comments.js";
+} from "./comments.js";
 import type {
   ConfigCommandOptions,
   ConfigResult,
-} from "../cli/commands/config.js";
+} from "./config.js";
 import type { DepsCommandOptions, DepsResult } from "./dependencies.js";
 import type { DocsCommandOptions, DocsResult } from "./docs.js";
 import type {
@@ -268,15 +264,15 @@ import type {
   FilesDiscoverResult,
   FilesResult,
 } from "./files.js";
-import type { InitCommandOptions, InitResult } from "../cli/commands/init.js";
+import type { InitCommandOptions, InitResult } from "./init.js";
 import type {
   LearningsCommandOptions,
   LearningsResult,
-} from "../cli/commands/learnings.js";
+} from "./learnings.js";
 import type {
   NotesCommandOptions,
   NotesResult,
-} from "../cli/commands/notes.js";
+} from "./notes.js";
 import type {
   ProfileApplyCommandOptions,
   ProfileApplyResult,
@@ -285,7 +281,7 @@ import type {
   ProfileResult,
   ProfileShowResult,
   ProfileSubcommand,
-} from "../cli/commands/profile.js";
+} from "./profile.js";
 import {
   runSchemaAddField,
   runSchemaAddStatus,
@@ -451,7 +447,7 @@ export {
   type AggregateOptions,
   type AggregateResult,
   type AggregateRow,
-} from "../cli/commands/aggregate.js";
+} from "./query/aggregate.js";
 export {
   CONTEXT_OUTPUT_VALUES,
   runContext,
@@ -468,7 +464,7 @@ export {
   type StaleEntry,
   type TestHealthSummary,
   type WorkloadEntry,
-} from "../cli/commands/context.js";
+} from "./query/context.js";
 export {
   runGet,
   type GetOptions,
@@ -531,7 +527,7 @@ export {
 export {
   runUpdate,
   type UpdateCommandOptions,
-} from "../cli/commands/update.js";
+} from "./lifecycle/update.js";
 export {
   NEXT_OUTPUT_VALUES,
   runNext,
@@ -541,7 +537,7 @@ export {
   type NextOutputFormat,
   type NextRecommendation,
   type NextResult,
-} from "../cli/commands/next.js";
+} from "./query/next.js";
 export {
   runSearch,
   type SearchCompactResult,
@@ -570,7 +566,7 @@ export {
   runCalendar,
   type CalendarOptions,
   type CalendarResult,
-} from "../cli/commands/calendar.js";
+} from "./query/calendar.js";
 export {
   renderGuideMarkdown,
   resolveGuideOutputFormat,
@@ -579,17 +575,17 @@ export {
   type GuideOptions,
   type GuideOutputFormat,
   type GuideResult,
-} from "../cli/commands/guide.js";
+} from "./guide.js";
 export {
   runCompletion,
   type CompletionResult,
   type CompletionShell,
-} from "../cli/commands/completion.js";
+} from "./completion.js";
 export {
   runReindex,
   type ReindexOptions,
   type ReindexResult,
-} from "../cli/commands/reindex.js";
+} from "./governance/reindex.js";
 export {
   loadCreateTemplateOptions,
   runTemplatesList,

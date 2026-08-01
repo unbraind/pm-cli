@@ -1544,6 +1544,10 @@ describe("built-in extension entrypoints", () => {
           "test-runs stop",
           "test-runs resume",
         ]);
+        expect(commands[2]!.failure_hints).toBeUndefined();
+        expect(commands[5]!.failure_hints).toEqual([
+          "Author identity is host-global. Put an intentional override before the command: pm --author <id> test-runs resume <runId>.",
+        ]);
 
         const runtimeGlobal = { ...globalFlags, path: context.pmPath };
         const listed = await commands[0]!.run({

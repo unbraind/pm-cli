@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/repeatable-metadata-parsers
+ * @module sdk/lifecycle/repeatable-metadata-parsers
  *
  * Implements the pm repeatable metadata parsers command surface and its agent-facing runtime behavior.
  */
@@ -9,7 +9,7 @@ import {
   EXIT_CODE,
   PmCliError,
   resolveIsoOrRelative,
-} from "../../sdk/runtime-primitives.js";
+} from "../runtime-primitives.js";
 import type { CalendarEvent, Reminder } from "../../types/index.js";
 import { resolveEventEndAt } from "./event-validation-messages.js";
 import {

@@ -250,11 +250,11 @@ describe("runDedupeMerge", () => {
       });
       vi.resetModules();
       vi.doMock(
-        "../../../src/cli/commands/update.js",
+        "../../../src/sdk/lifecycle/update.js",
         async (importOriginal) => {
           const actual =
             await importOriginal<
-              typeof import("../../../src/cli/commands/update.js")
+              typeof import("../../../src/sdk/lifecycle/update.js")
             >();
           let updateCalls = 0;
           return {

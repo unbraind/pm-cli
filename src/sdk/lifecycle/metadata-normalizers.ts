@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/metadata-normalizers
+ * @module sdk/lifecycle/metadata-normalizers
  *
  * Implements the pm metadata normalizers command surface and its agent-facing runtime behavior.
  */
@@ -7,7 +7,7 @@ import {
   EXIT_CODE,
   PmCliError,
   parseOptionalNumber,
-} from "../../sdk/runtime-primitives.js";
+} from "../runtime-primitives.js";
 import { CONFIDENCE_TEXT_VALUES } from "../../types/index.js";
 
 /** Implements normalize risk input for the public runtime surface of this module. */

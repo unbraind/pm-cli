@@ -89,6 +89,9 @@
         "duplication_failed",
         "docstring_coverage_failed",
         "agent_token_budget_failed",
+        "intent_budget_unreachable",
+        "cursor_chain_token_regression",
+        "continuation_metadata_regression",
         "sdk_contract_drift"
       ],
       "bypass": {

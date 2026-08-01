@@ -6,8 +6,8 @@
 import {
   EXIT_CODE,
   PmCliError,
-} from "../../sdk/runtime-primitives.js";
-import { listPmCommandsForTier } from "../../sdk/agent-capability-contracts.js";
+} from "./runtime-primitives.js";
+import { listPmCommandsForTier } from "./agent-capability-contracts.js";
 import { SCAFFOLD_CAPABILITIES } from "./extension/scaffold.js";
 import {
   AGGREGATE_FLAG_CONTRACTS,
@@ -40,9 +40,9 @@ import {
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
   toCompletionFlagString,
-} from "../../sdk/cli-contracts.js";
-import { BUILTIN_ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
-import { listGuideTopicIds } from "../guide-topics.js";
+} from "./cli-contracts.js";
+import { BUILTIN_ITEM_TYPE_VALUES, STATUS_VALUES } from "../types/index.js";
+import { listGuideTopicIds } from "./guide-topics.js";
 
 /** Restricts completion shell values accepted by command, SDK, and storage contracts. */
 export type CompletionShell = "bash" | "zsh" | "fish";

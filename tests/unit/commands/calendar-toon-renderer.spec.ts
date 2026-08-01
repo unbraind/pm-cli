@@ -5,7 +5,7 @@ import {
   renderCalendarToon,
   runCalendar,
   type CalendarResult,
-} from "../../../src/cli/commands/calendar.js";
+} from "../../../src/sdk/query/calendar.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 function createCalendarSeed(context: Parameters<Parameters<typeof withTempPmPath>[0]>[0]): void {

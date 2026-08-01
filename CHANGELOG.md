@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-851: compare init discovery roots by filesystem identity ([pm-noq46i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-noq46i.toon))
+- GH-847: tighten managed built-in static SDK contracts and author guidance ([pm-ka6m65](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ka6m65.toon))
+- The MCP server never receives the harness provenance environment, so one agent session writes permanently divergent identity records depending on which surface it used ([pm-1zhfls](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1zhfls.toon))
+- The bounded read costs 13.8 times the unbounded read to deliver the same set, because eight metadata blocks are re-emitted per page and the page carries two rows ([pm-sf31yl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sf31yl.toon))
+- Declared intent token budgets are smaller than the smallest projection their own command can emit, so three of five intents return no result at all on this tracker ([pm-yekkvt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yekkvt.toon))
+- Declared read-intent token budgets are written to a flag three of five intent commands do not accept, so the shipped intent layer overruns its own declaration by up to 43.8x ([pm-7hbfch](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7hbfch.toon))
+- The public SDK's item-lifecycle surface re-exports CLI command modules, so lifecycle policy cannot be expressed, inspected, or overridden through the SDK ([pm-z5pmf8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-z5pmf8.toon))
+
 ## 2026.8.1 - 2026-08-01
 
 ### Fixed

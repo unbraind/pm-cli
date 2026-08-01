@@ -15,7 +15,7 @@ import {
   parseLinkedTestMinLines,
   parseLinkedTestRegexList,
   parseLinkedTestStringList,
-} from "../../../src/cli/commands/linked-test-parsers.js";
+} from "../../../src/sdk/test/parsers.js";
 
 describe("linked-test constants", () => {
   it("exposes the protected keys, name pattern, and context modes", () => {

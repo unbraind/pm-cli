@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/shared-unset-fields
+ * @module sdk/lifecycle/shared-unset-fields
  *
  * Single-sources unset-field metadata shared by create and update command handlers.
  */
@@ -8,7 +8,7 @@ import {
   type RuntimeFieldRegistry,
   EXIT_CODE,
   PmCliError,
-} from "../../sdk/runtime-primitives.js";
+} from "../runtime-primitives.js";
 import { isLegacyNoneToken } from "./legacy-none-tokens.js";
 
 /** Describes one command option that can be removed from item metadata through `--unset`. */

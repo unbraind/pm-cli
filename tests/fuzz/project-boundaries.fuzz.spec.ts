@@ -133,7 +133,7 @@ describe("project boundary property fuzzing", () => {
         ),
         (cursor) => {
           expect(() => decodeQueryCursorState(cursor, "fingerprint")).toThrow(
-            "Query cursor is malformed.",
+            /Query cursor (?:is malformed|version or payload is unsupported)\./u,
           );
         },
       ),

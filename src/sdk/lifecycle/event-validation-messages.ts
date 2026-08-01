@@ -1,5 +1,5 @@
 /**
- * @module cli/commands/event-validation-messages
+ * @module sdk/lifecycle/event-validation-messages
  *
  * Implements the pm event validation messages command surface and its agent-facing runtime behavior.
  */

@@ -544,6 +544,7 @@ export * from "./relationships.js";
 export * from "./actionability.js";
 export type {
   PlanCommandOptions,
+  PlanOperationOptions,
   PlanCommandResult,
   PlanDispatchInput,
   PlanResultPlan,
@@ -551,12 +552,27 @@ export type {
   PlanStepSummary,
   PlanSubcommand,
   PlanTemplateName,
-} from "../cli/commands/plan.js";
+} from "./lifecycle/plan.js";
+export type { CreateOperationOptions } from "./lifecycle/create.js";
+export type { UpdateOperationOptions } from "./lifecycle/update.js";
+export type { AppendOperationOptions } from "./lifecycle/append.js";
+export type { CloseManyOperationOptions } from "./lifecycle/close-many.js";
+export type { UpdateManyOperationOptions } from "./lifecycle/update-many.js";
+export { runCreate } from "./lifecycle/create.js";
+export { runPlan } from "./lifecycle/plan.js";
+export { runAppend } from "./lifecycle/append.js";
+export { runClaim, runClaimNext, runRelease } from "./lifecycle/claim.js";
+export { runCloseMany } from "./lifecycle/close-many.js";
+export { runUpdateMany } from "./lifecycle/update-many.js";
+export { runComments } from "./comments.js";
+export { runNotes } from "./notes.js";
+export { runLearnings } from "./learnings.js";
+export { runUpgrade } from "./governance/upgrade.js";
 export {
   PLAN_SHOW_DEPTH_VALUES,
   PLAN_SUBCOMMANDS,
   PLAN_TEMPLATE_NAMES,
-} from "../cli/commands/plan.js";
+} from "./lifecycle/plan.js";
 export * from "./define.js";
 export {
   BASELINE_ITEM_FORMAT_VERSION,

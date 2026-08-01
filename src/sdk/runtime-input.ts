@@ -11,9 +11,9 @@ import { asRecordClone } from "../core/shared/primitives.js";
 import {
   normalizeListOptions,
   normalizeUpdateOptions,
-} from "../cli/registration-helpers.js";
-import type { CloseManyCommandOptions } from "../cli/commands/close-many.js";
-import type { UpdateManyCommandOptions } from "../cli/commands/update-many.js";
+} from "./cli-contracts/registration-helpers.js";
+import type { CloseManyCommandOptions } from "./lifecycle/close-many.js";
+import type { UpdateManyCommandOptions } from "./lifecycle/update-many.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import type { GraphCommandOptions } from "./graph/run.js";
 import type { ListOptions } from "./query/list.js";

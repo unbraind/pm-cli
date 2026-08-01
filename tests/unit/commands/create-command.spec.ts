@@ -4,7 +4,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlyCreateCommand, runCreate, type CreateCommandOptions } from "../../../src/cli/commands/create.js";
-import { parseTypeOptionEntries } from "../../../src/cli/commands/repeatable-metadata-parsers.js";
+import { parseTypeOptionEntries } from "../../../src/sdk/lifecycle/repeatable-metadata-parsers.js";
 import {
   clearActiveExtensionHooks,
   setActiveExtensionCommands,

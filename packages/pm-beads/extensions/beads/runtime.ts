@@ -90,7 +90,15 @@ interface BeadsRecord extends Record<string, unknown> {
 }
 
 interface BeadsImportRuntime {
-  sdk: typeof pmSdk;
+  sdk: Pick<
+    typeof pmSdk,
+    | "canonicalDocument"
+    | "commitImportedItem"
+    | "generateItemId"
+    | "getItemPath"
+    | "locateItem"
+    | "normalizeItemMetadata"
+  >;
   pmRoot: string;
   settings: PmSettings;
   typeRegistry: ReturnType<typeof pmSdk.resolveItemTypeRegistry>;
@@ -103,8 +111,6 @@ type BeadsImportLineResult =
   | { id: string; writeWarnings: string[] }
   | { warning: string };
 type ParsedBeadsLine = { record: BeadsRecord } | { warning: string } | null;
-
-const beadsSdk = pmSdk;
 
 const {
   DEPENDENCY_KIND_VALUES,
@@ -131,7 +137,7 @@ const {
   toImportStatus,
   toImportTags,
   toNonEmptyImportString,
-} = beadsSdk;
+} = pmSdk;
 
 // Shared, behavior-identical value coercers are sourced from the SDK adapter
 // surface; package-specific mappings (timestamps, item types, dependencies,
@@ -613,7 +619,7 @@ export async function runBeadsImport(
   let imported = 0;
   let skipped = 0;
   const runtime: BeadsImportRuntime = {
-    sdk: beadsSdk,
+    sdk: pmSdk,
     pmRoot,
     settings,
     typeRegistry,
