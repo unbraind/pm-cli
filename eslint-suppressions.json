@@ -54,56 +54,6 @@
       "count": 1
     }
   },
-  "src/sdk/query/calendar.ts": {
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "src/sdk/completion.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "src/sdk/cli-contracts/runtime-contracts.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "src/sdk/lifecycle/create.ts": {
-    "no-useless-assignment": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "src/sdk/guide.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    }
-  },
-  "src/sdk/governance/reindex.ts": {
-    "no-useless-assignment": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    }
-  },
-  "src/sdk/lifecycle/shared-unset-fields.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "src/cli/error-guidance.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
@@ -115,11 +65,6 @@
     },
     "sonarjs/cognitive-complexity": {
       "count": 3
-    }
-  },
-  "src/sdk/cli-contracts/registration-helpers.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
     }
   },
   "src/core/checkpoint/checkpoint-gc.ts": {
@@ -257,6 +202,19 @@
       "count": 1
     }
   },
+  "src/sdk/cli-contracts/runtime-contracts.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/sdk/completion.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
   "src/sdk/config.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
@@ -267,8 +225,40 @@
       "count": 1
     }
   },
+  "src/sdk/governance/reindex.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
   "src/sdk/governance/validate.ts": {
     "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/sdk/guide.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 2
+    }
+  },
+  "src/sdk/lifecycle/create.ts": {
+    "no-useless-assignment": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/sdk/lifecycle/shared-unset-fields.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
@@ -278,6 +268,11 @@
     }
   },
   "src/sdk/profile.ts": {
+    "sonarjs/cognitive-complexity": {
+      "count": 1
+    }
+  },
+  "src/sdk/query/calendar.ts": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }

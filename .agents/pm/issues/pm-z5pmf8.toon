@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: architecture,contracts,lifecycle,sdk
 created_at: "2026-07-31T14:12:15.320Z"
-updated_at: "2026-08-01T05:56:35.838Z"
+updated_at: "2026-08-01T06:03:23.714Z"
 closed_at: "2026-08-01T05:27:48.040Z"
 completed_at: "2026-08-01T05:27:48.040Z"
 author: "harness:claude-code"
@@ -27,7 +27,7 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-t4d7nz,verifies,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
   pm-usfg,implements,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
   pm-xm0id4,related,"2026-07-31T14:20:55.220Z","harness:claude-code","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-07-31T14:40:25.095Z","harness:codex","Scope selected after all-status and GitHub intake: co-deliver pm-xm0id4 and pm-2ew0w3 because both expose CLI-private lifecycle policy that must become SDK-owned. No other item is in progress."
   "2026-07-31T15:21:34.990Z","harness:codex","Delivery evidence: close transaction ownership moved under src/sdk/lifecycle; lifecycle policy is public, individually testable, selectable by SDK consumers, and shared by CLI/MCP. The CLI close module is now a compatibility shim; public surface snapshot records 24 classified additive exports. Fresh npm and Bun consumers installed the packed 2026.7.31 tarball, imported closeItem and policy primitives from @unbrained/pm-cli/sdk, and ran contained npx/bunx binaries. Full coverage passed 6,610 tests at 100/100/100/100. Remaining create/update/delete/restore/context SDK-to-CLI inversions mean the broad item is intentionally not complete in this PR."
   "2026-07-31T15:49:45.896Z","harness:codex",The generated error-code catalog was refreshed after moving close implementation ownership; close-family error source provenance now names sdk/lifecycle/close.ts rather than the CLI shim.
@@ -39,6 +39,7 @@ comments[11]{created_at,author,text}:
   "2026-08-01T05:29:04.464Z","harness:codex","Changelog evidence: npm registry latest pm-changelog is 2026.7.29-1; the project installed that exact version, regenerated CHANGELOG.md from closed PM items, and changelog:pm:check returned unchanged for 1,872 items."
   "2026-08-01T05:40:27.418Z","harness:codex","PR evidence 2026-08-01: broad SDK substrate, context calibration, provenance parity, and package conformance delivery published as GitHub PR #850 https://github.com/unbraind/pm-cli/pull/850 at implementation commit a5be2cda39c1072906265bb6120325600cc38523. Exact-head release gates and AI review loop are pending."
   "2026-08-01T05:56:35.837Z","harness:codex","Exact-head CI feedback 2026-08-01: PR #850 exposed a cross-platform acceptance timeout and four DeepScan relocation findings. The real calibration entrypoint exceeded its 120-second test ceiling on Windows, so the test now allows 300 seconds; two unused imports and two unused local parameters were removed from SDK-owned modules. Focused 118 tests, quality:static, context calibration, contracts, SDK surface/import-cost, package parity, and transport gates pass."
+  "2026-08-01T06:03:23.713Z","harness:codex","CI lint follow-up 2026-08-01: after accepting DeepScan's dead-code findings, strict ESLint correctly rejected stale suppression entries. Pruned the obsolete registration-helper suppressions and normalized the suppression manifest. Full pnpm lint now passes ESLint, zero jscpd clones, static quality, 100% docstrings, SDK/package boundaries, intent calibration, gate registry, SDK surface/import costs, and transport floors."
 learnings[2]{created_at,author,text}:
   "2026-07-31T14:28:52.007Z","harness:claude-code","Counting import directions between two layers gives a precise answer to an architectural question that usually gets a qualitative one. Here 86 CLI-to-SDK imports against 36 SDK-to-CLI imports across 3 files reads as nearly-done until the 36 are enumerated and turn out to be the entire item lifecycle - so the useful metric is which capabilities flow the wrong way, not how many files do."
   "2026-08-01T05:27:11.941Z","harness:codex","Architecture boundary lesson: moving files is insufficient if logical SDK subpath barrels do not export the newly owned operations. Packed consumer assertions caught the gap; aggregate, query, and governance entrypoints must be validated independently from source imports and the root SDK barrel."
