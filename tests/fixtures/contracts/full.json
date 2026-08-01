@@ -10213,7 +10213,8 @@
         "cli/commands/create.ts",
         "cli/commands/plan.ts",
         "cli/error-guidance.ts",
-        "core/telemetry/observability.ts"
+        "core/telemetry/observability.ts",
+        "sdk/context-intent-contracts.ts"
       ],
       "stability": "stable"
     },
