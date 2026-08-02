@@ -1,0 +1,63 @@
+id: pm-y3w0ld
+title: "GH-864: history-redact output must never echo literal secrets"
+description: "GitHub issue #864 demonstrates that the audited redaction mutation rewrites history safely but returns the original literal matcher under patterns.literals, copying the value into terminal logs, CI output, agent transcripts, and SDK/MCP responses. Make the result contract disclosure-safe across applied, dry-run, no-op, and failure paths while preserving deterministic matcher counts and auditability."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:sdk","area:security",history,privacy,redaction
+created_at: "2026-08-02T00:40:15.547Z"
+updated_at: "2026-08-02T01:28:11.945Z"
+closed_at: "2026-08-02T01:25:47.246Z"
+completed_at: "2026-08-02T01:25:47.246Z"
+author: "harness:codex"
+acceptance_criteria: "Raw literal matcher values are absent from TOON, JSON, SDK, MCP, dry-run, no-op, error, telemetry, and profile outputs; regex matcher source receives equally safe treatment because pattern text may itself be sensitive; results retain deterministic matcher-kind counts and replacement/change counts without reversible matcher material; regression tests use canary matchers and assert absence from serialized success, dry-run, no-op, and failure surfaces; public SDK types and operator documentation define the disclosure-safe result contract; full 100/100/100/100 coverage, security scan, contract gates, and isolated temporary-directory acceptance pass"
+goal: project management = context management
+objective: A secret supplied for audited removal is never repeated by the command that removes it
+value: "History redaction must reduce disclosure, never multiply it into output and observability surfaces"
+impact: "Changes the public HistoryRedactResult pattern summary to non-reversible metadata and hardens CLI, SDK, MCP, telemetry, and tests against canary disclosure"
+outcome: "Applied, preview, no-op, and rejected redaction invocations expose useful counts without returning matcher content"
+parent: pm-4a7m
+risk: high
+confidence: high
+resolution: "Disclosure-safe history-redact output across CLI, SDK, MCP, recovery, telemetry, and profiling"
+expected_result: "No supplied literal, regex source, or replacement is reflected by any success or failure surface; useful non-reversible counts remain"
+actual_result: Canary acceptance and 63 focused tests prove non-disclosure; 6691 tests and exact 100/100/100/100 coverage plus strict gates pass
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4a7m,verifies,"2026-08-02T00:41:03.670Z","harness:codex","cli:update:dep",detected
+  pm-qwoy,implements,"2026-08-02T00:41:03.670Z","harness:codex","cli:update:dep",detected
+  pm-wwooxx,related_to,"2026-08-02T00:41:03.670Z","harness:codex","cli:update:dep",detected
+  pm-xk39,discovered_from,"2026-08-02T00:41:03.670Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-08-02T01:25:27.533Z","harness:codex","Implementation evidence: public HistoryRedactResult now exposes matcher-kind counts and replacement_is_default only; CLI recovery and typo guidance sanitize history-redact argv; telemetry redacts literal/regex/replacement inputs while retaining safe count fields; CLI, SDK, MCP, telemetry, dry-run, no-op, applied, and rejected paths have canary non-disclosure coverage. The public SDK surface records the acknowledged GH-864 security contract change."
+  "2026-08-02T01:25:33.533Z","harness:codex","Verification evidence: final source head passes 417/417 test files and 6691/6691 tests with exact 100% statements (47379/47379), branches (34105/34105), functions (9641/9641), and lines (45975/45975). pnpm lint passed with zero ESLint warnings and zero duplication clones; static quality passed 100% docstring/export/member coverage and SDK/package/token/context gates; contracts, secrets, docs links, context/retrieval/agent-task token evaluations, SDK surface, typecheck, and focused 63-test matrix passed."
+  "2026-08-02T01:28:11.945Z","harness:codex","Changelog evidence: npm registry latest pm-changelog is 2026.8.1; package-owned generation added the Unreleased security entry and changelog:pm:check reproduced it byte-for-byte."
+notes[1]{created_at,author,text}:
+  "2026-08-02T01:25:29.335Z","harness:codex","Manual acceptance used an unrelated temporary tracker and exercised dry-run, applied, no-op, and invalid-regex paths. All matcher and replacement canaries were absent from captured stdout/stderr; applied history verified successfully and added the audit marker only when a rewrite occurred."
+learnings[1]{created_at,author,text}:
+  "2026-08-02T01:25:31.961Z","harness:codex","Inputs supplied to a redaction primitive are sensitive by purpose, even when they do not resemble credentials. Disclosure safety must cover success results, failures, recovery bundles, telemetry, profiling, and transport adapters; counts are the useful non-reversible substitute."
+files[13]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog 2026.8.1 install receipt
+  CHANGELOG.md,project,Package-owned unreleased security changelog entry
+  sdk/public-surface.json,project,Acknowledged security-hardening SDK contract change
+  src/cli/argv-utils.ts,project,CLI export for recovery sanitization
+  src/cli/main.ts,project,Sanitized recovery and typo diagnostics
+  src/core/telemetry/runtime.ts,project,Sensitive redaction-option telemetry filtering
+  src/sdk/command-line.ts,project,Disclosure-safe recovery argv primitive
+  src/sdk/history-redact.ts,project,Disclosure-safe public result contract and serialization
+  tests/unit/cli/argv-utils.spec.ts,project,Recovery argv canary coverage
+  tests/unit/commands/history-activity-command.spec.ts,project,CLI success dry-run no-op and error disclosure coverage
+  tests/unit/core/telemetry/history-redact-sensitive-options.spec.ts,project,Telemetry sensitive-input regression coverage
+  tests/unit/mcp/mcp-server-nested-options.spec.ts,project,MCP disclosure-safe integration coverage
+  tests/unit/sdk/history-read-primitives.spec.ts,project,Public SDK result contract coverage
+tests[7]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs coverage -- --testTimeout=120000,project,900
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history-read-primitives.spec.ts tests/unit/commands/history-activity-command.spec.ts,project,300
+  "pnpm contracts:check",project,300
+  pnpm lint,project,300
+  "pnpm quality:context-eval",project,300
+  "pnpm quality:docs-links",project,120
+  "pnpm security:scan",project,120
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Safe redaction output semantics
+close_reason: "Resolved GH-864 by replacing secret-bearing history-redact result fields with non-reversible counts, sanitizing recovery and telemetry surfaces, documenting the contract, and proving CLI/SDK/MCP/manual behavior with exact 100% coverage and all strict gates."
+body: ""

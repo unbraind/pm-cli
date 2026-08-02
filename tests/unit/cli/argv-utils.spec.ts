@@ -5,6 +5,7 @@ import {
   normalizeLongFlag,
   normalizeLongOptionFlag,
   quoteCommandArg,
+  redactSensitiveCommandArgs,
   renderPmCommand,
 } from "../../../src/cli/argv-utils.js";
 
@@ -17,6 +18,39 @@ describe("argv-utils.normalizeLongOptionFlag", () => {
   it("returns undefined for tokens that are not long flags", () => {
     expect(normalizeLongOptionFlag("-x")).toBeUndefined();
     expect(normalizeLongOptionFlag("positional")).toBeUndefined();
+  });
+});
+
+describe("argv-utils.redactSensitiveCommandArgs", () => {
+  it("preserves ordinary commands and redacts every history-redact input form", () => {
+    expect(redactSensitiveCommandArgs(["get", "pm-example"])).toEqual([
+      "get",
+      "pm-example",
+    ]);
+    expect(
+      redactSensitiveCommandArgs([
+        "history-redact",
+        "pm-example",
+        "--literal",
+        "literal-canary",
+        "--regex=regex-canary",
+        "--replacement",
+        "replacement-canary",
+        "--dry-run",
+      ]),
+    ).toEqual([
+      "history-redact",
+      "pm-example",
+      "--literal",
+      "[redacted]",
+      "--regex=[redacted]",
+      "--replacement",
+      "[redacted]",
+      "--dry-run",
+    ]);
+    expect(redactSensitiveCommandArgs(["history-redact", "--literal"])).toEqual(
+      ["history-redact", "--literal"],
+    );
   });
 });
 

@@ -540,6 +540,13 @@
       ],
       "package_version": "2026.8.1",
       "reason": "Additive optional tokenAccounting output instrumentation flag shared by CLI SDK and MCP"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryRedactResult"
+      ],
+      "package_version": "2026.8.2",
+      "reason": "Remove secret-bearing matcher and replacement fields from history-redact results (GH-864)"
     }
   ],
   "entrypoints": {
@@ -5152,7 +5159,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRedactResult",
-          "signature": "export interface HistoryRedactResult { id: string; dry_run: boolean; changed: boolean; patterns: { literals: string[]; regex: string[]; replacement: string; }; history: { path: string; entries_scanned: number; entries_changed: number; replacements: number; hash_mismatches_before: number; hash_mismatches_after: number; preexisting_hash_mismatches: number; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; }; item: { existed_before: boolean; exists_after: boolean; path_before: string | null; path_after: string | null; changed: boolean; }; warnings: string[]; generated_at: string; }"
+          "signature": "export interface HistoryRedactResult { id: string; dry_run: boolean; changed: boolean; patterns: { literal_count: number; regex_count: number; total_count: number; replacement_is_default: boolean; }; history: { path: string; entries_scanned: number; entries_changed: number; replacements: number; hash_mismatches_before: number; hash_mismatches_after: number; preexisting_hash_mismatches: number; audit_entry_added: boolean; verify_ok: boolean; verify_errors: string[]; }; item: { existed_before: boolean; exists_after: boolean; path_before: string | null; path_after: string | null; changed: boolean; }; warnings: string[]; generated_at: string; }"
         },
         {
           "classification": "advanced_export",

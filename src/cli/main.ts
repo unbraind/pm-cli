@@ -92,7 +92,12 @@ import {
 } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
 import { finishActiveTelemetryCommand, recordAfterCommandContextUsage } from "./after-command-context-usage.js";
-import { extractProvidedOptionFlags, normalizeLongOptionFlag, renderPmCommand } from "./argv-utils.js";
+import {
+  extractProvidedOptionFlags,
+  normalizeLongOptionFlag,
+  redactSensitiveCommandArgs,
+  renderPmCommand,
+} from "./argv-utils.js";
 import {
   classifyCommanderError,
   classifyPmCliError,
@@ -404,7 +409,8 @@ function buildRecoveryPayload(params: {
 }
 
 function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invocationArgv: string[], rawMessage: string): PmCliErrorContext {
-  const explainRequested = invocationArgv.includes("--explain");
+  const safeInvocationArgv = redactSensitiveCommandArgs(invocationArgv);
+  const explainRequested = safeInvocationArgv.includes("--explain");
   const existingRecovery = context?.recovery;
   if (existingRecovery?.recovery_mode === "compact" && !explainRequested) {
     return {
@@ -413,12 +419,12 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
       recovery: existingRecovery,
     };
   }
-  const attemptedCommand = renderAttemptedCommand(invocationArgv);
-  const providedFields = extractProvidedOptionFlags(invocationArgv);
-  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, invocationArgv, existingRecovery);
-  const suggestedRetry = resolveRecoverySuggestedRetry(invocationArgv, attemptedCommand, inferredMissing, existingRecovery);
+  const attemptedCommand = renderAttemptedCommand(safeInvocationArgv);
+  const providedFields = extractProvidedOptionFlags(safeInvocationArgv);
+  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, safeInvocationArgv, existingRecovery);
+  const suggestedRetry = resolveRecoverySuggestedRetry(safeInvocationArgv, attemptedCommand, inferredMissing, existingRecovery);
   const recovery = buildRecoveryPayload({
-    invocationArgv,
+    invocationArgv: safeInvocationArgv,
     attemptedCommand,
     providedFields,
     inferredMissing,
@@ -2412,16 +2418,17 @@ function enforceExplicitRetryForFlagTypos(bootstrapInvocation: ReturnType<typeof
   const mutatingCommand = MUTATION_COMMAND_NAMES.has(commandName) || MUTATING_OPERATION_COMMAND_NAMES.has(commandName);
   const code = mutatingCommand ? "mutating_flag_typo_requires_retry" : "flag_typo_requires_retry";
   const commandScope = mutatingCommand ? "mutating option" : "option";
+  const safeArgv = redactSensitiveCommandArgs(bootstrapInvocation.argv);
   throw new PmCliError(
     `Refusing to auto-correct ${commandScope} ${typoEvent.from} to ${normalizedDisplay}. Retry with the canonical flag so the command is explicit.`,
     EXIT_CODE.USAGE,
     {
       code,
-      examples: [renderPmCommand(bootstrapInvocation.argv)],
+      examples: [renderPmCommand(safeArgv)],
       nextSteps: ["Retry the command with the canonical flag shown in examples."],
       recovery: {
-        normalized_args: [...bootstrapInvocation.argv],
-        suggested_retry: renderPmCommand(bootstrapInvocation.argv),
+        normalized_args: safeArgv,
+        suggested_retry: renderPmCommand(safeArgv),
       },
     },
   );

@@ -141,7 +141,16 @@ describe("public SDK history and rich-read primitives", () => {
 
       expect(
         await redactHistory(id, { literal: ["secret"], dryRun: true }),
-      ).toMatchObject({ id, dry_run: true });
+      ).toMatchObject({
+        id,
+        dry_run: true,
+        patterns: {
+          literal_count: 1,
+          regex_count: 0,
+          total_count: 1,
+          replacement_is_default: true,
+        },
+      });
       expect(await repairHistory(id)).toMatchObject({ id });
       expect(await repairAllHistory()).toMatchObject({ all: true });
       expect(await compactHistory(id)).toMatchObject({ id });
