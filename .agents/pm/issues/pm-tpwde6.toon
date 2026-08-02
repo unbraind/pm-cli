@@ -1,0 +1,26 @@
+id: pm-tpwde6
+title: "GH-859: pm-beads source export can omit Beads comment bodies and events"
+description: "The current Beads export consumed by pm-beads may omit comment bodies and event history, so migration can appear successful while losing context. The importer must either consume a lossless source or emit a fail-closed completeness receipt before writing PM records."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-08-02T14:10:55.004Z"
+updated_at: "2026-08-02T14:10:55.004Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: A source fixture with comments and events imports every body and event with record/content parity; incomplete export formats fail closed with actionable guidance; immutable backup and source/target parity gates are documented and tested; package and installed-consumer acceptance pass
+goal: project management = context management
+objective: Guarantee lossless Beads-to-pm context migration
+value: Prevents silent loss of discussion and history during importer adoption
+why_now: GitHub issue #859 reports a live migration data-loss boundary
+parent: pm-ugqx
+risk: high
+confidence: 95
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-13bn,discovered_from,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
+  pm-axl0,supersedes,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-08-02T14:10:55.004Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-02T14:10:55.004Z","harness:codex","Duplicate-check evidence: all-status searches for GH-859, pm-beads comment loss, Beads export lossiness, and prior importer parity found no active owner. Closed pm-axl0 covered earlier importer lossiness but not current comment/event source completeness; this item preserves that lineage rather than reopening shipped scope."
+body: ""
