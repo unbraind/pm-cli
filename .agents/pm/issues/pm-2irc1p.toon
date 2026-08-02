@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:sdk","area:testing",classification,github-report,linked-tests,reliability
 created_at: "2026-08-02T06:47:21.892Z"
-updated_at: "2026-08-02T12:22:04.689Z"
-closed_at: "2026-08-02T12:22:03.905Z"
-completed_at: "2026-08-02T12:22:03.905Z"
+updated_at: "2026-08-02T13:08:14.893Z"
+closed_at: "2026-08-02T13:08:14.159Z"
+completed_at: "2026-08-02T13:08:14.159Z"
 author: "harness:codex"
 acceptance_criteria: Narrow lock-contention stderr is classified as infra_collision through SDK and CLI paths; Unrelated lock words and genuine assertion failures remain assertion_failure; The GitHub report is linked to this canonical PM item
 goal: project management = context management
@@ -24,7 +24,7 @@ reporter: GitHub #865
 severity: medium
 resolution: fixed
 expected_result: Lock acquisition contention is infra_collision
-actual_result: "Implemented, regression-covered, manually package-tested, and verified on exact-head cross-platform nightly run 30747290823"
+actual_result: "Implemented, review-corrected, and verified by 6,704 tests at exact 100/100/100/100 coverage"
 affected_version: 2026.8.2
 fixed_version: next-auto-release
 component: linked-test SDK/CLI classification
@@ -33,12 +33,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-a8lnoh,related,"2026-08-02T06:47:21.892Z","harness:codex","cli:create:dep",detected
   pm-rtn5h6,related,"2026-08-02T06:47:21.892Z","harness:codex","cli:create:dep",detected
   pm-92if,implements,"2026-08-02T07:13:21.024Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-08-02T06:47:21.892Z","harness:codex","Duplicate check evidence: searched all open, closed, and canceled PM items for failure_category, infra_collision, assertion_failure, linked test lock, lock acquisition timeout, and already running; adjacent lock and test items do not own failure classification. Source: https://github.com/unbraind/pm-cli/issues/865."
   "2026-08-02T07:13:26.958Z","harness:codex","Implementation evidence: linked-test failure classification now recognizes compound acquisition+contention lock failures while retaining generic lock/timeout assertion text as assertion_failure."
   "2026-08-02T11:28:20.952Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
   "2026-08-02T11:35:47.576Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
   "2026-08-02T12:21:49.572Z","harness:codex","Hosted acceptance: exact head fd69b84335ead8ef1022b606a470166e78c9f188 passed nightly run 30747290823 on Windows Node 24, macOS Node 24, and Ubuntu Node 22/24/25. Ubuntu Node 24 also passed secret scan, exact 100% coverage, static quality, and compatibility migration gates."
+  "2026-08-02T12:58:07.725Z","harness:codex","PR #872 review correction: compound lock acquisition and contention evidence must occur on the same output line; multiline false-positive regression added. CodeRabbit comment 3699054655 was verified as valid."
+  "2026-08-02T13:08:08.325Z","harness:codex","Exact-head review-correction verification: 418 test files and 6,704 tests passed with exact 100% statements (47,540/47,540), branches (34,248/34,248), functions (9,675/9,675), and lines (46,130/46,130). The first run's 99.99% branch result exposed and removed an impossible join fallback rather than weakening the gate."
 files[2]{path,scope,note}:
   src/sdk/test/execution.ts,project,compound lock acquisition classification
   tests/unit/sdk/context-management-primitives.spec.ts,project,positive and negative classification coverage
@@ -48,5 +50,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed
   test-local-msbpxj2n-smzebz,test,passed,"2026-08-02T11:29:43.170Z","2026-08-02T11:29:58.223Z","2026-08-02T11:29:58.223Z",1,0,0
 docs[1]{path,scope,note}:
   docs/SDK_EVIDENCE_TRACEABILITY.md,project,linked-test classification contract
-close_reason: "Delivered narrow linked-test lock contention classification as infra_collision without weakening assertion failures, with regression coverage and green hosted matrix."
+close_reason: PR #872 review corrections implemented with focused regressions and exact 100% repository coverage.
 body: ""

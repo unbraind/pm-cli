@@ -28,13 +28,20 @@ async function runFilesLookupAction(
   command: Command,
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
+  if (
+    options.scope !== undefined &&
+    options.scope !== "project" &&
+    options.scope !== "global"
+  ) {
+    throw new PmCliError(
+      "--scope must be either project or global.",
+      EXIT_CODE.USAGE,
+    );
+  }
   const result = await runFilesLookup(
     {
       paths,
-      scope:
-        options.scope === "project" || options.scope === "global"
-          ? options.scope
-          : undefined,
+      scope: options.scope,
       limit: typeof options.limit === "number" ? options.limit : undefined,
       offset: typeof options.offset === "number" ? options.offset : undefined,
       noTruncate: options.noTruncate === true,

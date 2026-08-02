@@ -3,16 +3,16 @@
   "metric": "utf8_bytes",
   "headroom": 1.1,
   "surfaces": {
-    "root_help": 15041,
-    "per_command_total": 225719,
-    "full_help_surface": 240760,
+    "root_help": 15186,
+    "per_command_total": 226500,
+    "full_help_surface": 241686,
     "contracts": {
-      "summary_toon": 10672,
-      "summary_json": 14744,
-      "json": 14744,
-      "full": 1027133
+      "summary_toon": 10724,
+      "summary_json": 14814,
+      "json": 14814,
+      "full": 1081751
     },
-    "mcp_tools_list": 40002,
+    "mcp_tools_list": 40659,
     "required_commands": [
       "activity",
       "aggregate",
@@ -83,9 +83,9 @@
       "workspace"
     ],
     "commands": {
-      "update-many": 12675,
+      "update-many": 12899,
       "plan": 10003,
-      "update": 9335,
+      "update": 9584,
       "create": 8601,
       "close-many": 7875,
       "list": 7473,
@@ -107,9 +107,9 @@
       "context": 2805,
       "graph": 2670,
       "test-all": 2633,
+      "files": 2512,
       "health": 2304,
       "init": 2204,
-      "files": 2204,
       "close": 2077,
       "calendar": 2011,
       "cal": 2006,

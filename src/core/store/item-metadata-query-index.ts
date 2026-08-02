@@ -582,10 +582,12 @@ export async function queryLinkedFileMetadataIndex(options: {
            ORDER BY path ASC, scope ASC`,
         )
         .all(...itemIds, ...matchParameters);
-      const filesByItem = new Map<string, LinkedFile[]>();
+      const filesByItem = new Map<string, LinkedFile[]>(
+        itemIds.map((itemId) => [itemId, []]),
+      );
       for (const row of linkedRows) {
         const itemId = String(row.item_id);
-        const files = filesByItem.get(itemId) ?? [];
+        const files = filesByItem.get(itemId)!;
         files.push({
           path: String(row.path),
           scope: String(row.scope) as LinkScope,
@@ -595,7 +597,7 @@ export async function queryLinkedFileMetadataIndex(options: {
       }
       for (const row of itemRows) {
         const item = JSON.parse(String(row.metadata_json)) as ItemMetadata;
-        matches.push({ item, files: filesByItem.get(item.id) ?? [] });
+        matches.push({ item, files: filesByItem.get(String(row.id))! });
       }
     }
     database.close();

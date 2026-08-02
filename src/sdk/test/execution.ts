@@ -1388,8 +1388,13 @@ function hasInfraCollisionSignal(
     LINKED_TEST_INFRA_COLLISION_PATTERNS.some((pattern) =>
       pattern.test(combined),
     ) ||
-    (LINKED_TEST_LOCK_ACQUISITION_PATTERN.test(combined) &&
-      LINKED_TEST_LOCK_CONTENTION_CONTEXT_PATTERN.test(combined))
+    combined
+      .split(/\r?\n/u)
+      .some(
+        (line) =>
+          LINKED_TEST_LOCK_ACQUISITION_PATTERN.test(line) &&
+          LINKED_TEST_LOCK_CONTENTION_CONTEXT_PATTERN.test(line),
+      )
   );
 }
 

@@ -1570,21 +1570,14 @@ function validateReplaceOptions(options: UpdateCommandOptions): void {
       EXIT_CODE.USAGE,
     );
   }
-  if (
-    options.replaceTests === true &&
-    (options.test === undefined || options.test.length === 0)
-  ) {
-    throw new PmCliError(
-      "--replace-tests requires at least one --test entry",
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (options.replaceTests === true && options.clearTests === true) {
-    throw new PmCliError(
-      "--replace-tests cannot be combined with --clear-tests",
-      EXIT_CODE.USAGE,
-    );
-  }
+  validateLinkedArtifactReplacement({
+    enabled: options.replaceTests === true,
+    values: options.test,
+    replaceFlag: "--replace-tests",
+    clearEnabled: options.clearTests === true,
+    clearFlag: "--clear-tests",
+    valueFlag: "--test",
+  });
   validateLinkedArtifactReplacement({
     enabled: options.replaceFiles === true,
     values: options.file,

@@ -31,6 +31,8 @@ import {
 import { listAllItemMetadata } from "../../../src/core/store/item-store.js";
 import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
 import { getActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
+import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   readSettings,
   writeSettings,
@@ -269,7 +271,7 @@ describe("context-management SDK primitives", () => {
         "--scope",
         "global",
       ]);
-      await createFilesLookupCli(context.pmPath).parseAsync([
+      await expect(createFilesLookupCli(context.pmPath).parseAsync([
         "node",
         "pm",
         "files",
@@ -277,7 +279,7 @@ describe("context-management SDK primitives", () => {
         "src/sdk/files.ts",
         "--scope",
         "unsupported",
-      ]);
+      ])).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
       await expect(
         createFilesLookupCli(context.pmPath).parseAsync([
           "node",
@@ -327,7 +329,7 @@ describe("context-management SDK primitives", () => {
           "--no-truncate",
           "--json",
         ]),
-      ).toMatchObject({ code: 0 });
+      ).toMatchObject({ code: 2 });
       expect(
         await context.runCliInProcess([
           "files",
@@ -642,7 +644,16 @@ describe("context-management SDK primitives", () => {
           expectedSourceCursor: "test-cursor",
           paths: ["src/sdk/files.ts"],
         }),
-      ).resolves.toMatchObject({ matches: [{ files: [] }] });
+      ).resolves.toMatchObject({
+        matches: [{
+          item: { id: "pm-projection-mismatch" },
+          files: [{
+            path: "src/sdk/files.ts",
+            scope: "project",
+            note: "indexed",
+          }],
+        }],
+      });
       await fs.writeFile(queryIndexPath, "invalid sqlite", "utf8");
       await expect(
         queryLinkedFileMetadataIndex({
@@ -674,6 +685,12 @@ describe("context-management SDK primitives", () => {
         ...base,
         stderr:
           "Assertion failed: lock metadata should be retained after timeout",
+      }),
+    ).toBe("assertion_failure");
+    expect(
+      classifyLinkedTestFailure({
+        ...base,
+        stderr: "Could not acquire workspace lock\nAssertion failed after timeout",
       }),
     ).toBe("assertion_failure");
   });

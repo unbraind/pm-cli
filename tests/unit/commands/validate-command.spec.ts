@@ -18,6 +18,7 @@ import {
 } from "../../../src/cli/commands/validate.js";
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
+import { getActiveExtensionRegistrations } from "../../../src/core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
 import { listAllDocumentCandidatesCached } from "../../../src/core/store/item-metadata-cache.js";
 import { readSettings } from "../../../src/core/store/settings.js";
@@ -2434,7 +2435,7 @@ describe("runValidate", () => {
         { expectJson: true },
       );
       const settings = await readSettings(context.pmPath);
-      const typeRegistry = resolveItemTypeRegistry(settings);
+      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
       await listAllDocumentCandidatesCached(
         context.pmPath,
         settings.item_format,
@@ -2451,6 +2452,9 @@ describe("runValidate", () => {
       await expect(
         runValidate({ checkHistoryDrift: true }, { path: context.pmPath }),
       ).resolves.toMatchObject({ warnings: [] });
+      await expect(
+        readFile(path.join(context.pmPath, "runtime", "history-drift-cache.json"), "utf8"),
+      ).resolves.toContain(`"${id}"`);
 
       const redaction = await runHistoryRedact(
         id,

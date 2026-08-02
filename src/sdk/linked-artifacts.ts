@@ -705,12 +705,11 @@ export async function runLinkedArtifacts(
       } else {
         delete metadata[metadataKey];
       }
+      const changed = !stableValueEquals(current, normalized);
       return {
-        changedFields: stableValueEquals(current, normalized)
-          ? []
-          : [metadataKey],
+        changedFields: changed ? [metadataKey] : [],
         warnings:
-          migrated.count > 0
+          changed && migrated.count > 0
             ? [`path_migrations_applied:${migrated.count}`]
             : [],
       };

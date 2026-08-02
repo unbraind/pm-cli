@@ -638,6 +638,7 @@ async function applyHistoryRedactRewrite(params: {
       if (params.currentItem.path && params.currentItem.raw !== null) {
         itemSnapshots.set(params.currentItem.path, params.currentItem.raw);
       }
+      let rethrowReleaseFailure = (): void => {};
       try {
         try {
           /* c8 ignore next -- item-write diff branch requires path and content divergence under lock races. */
@@ -690,8 +691,13 @@ async function applyHistoryRedactRewrite(params: {
           });
         }
       } finally {
-        await releaseDerivedIndexLock();
+        await releaseDerivedIndexLock().catch((error: unknown) => {
+          rethrowReleaseFailure = () => {
+            throw error;
+          };
+        });
       }
+      rethrowReleaseFailure();
     },
     applyPostRewrite: async () => [
       ...derivedIndexWarnings,
