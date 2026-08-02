@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[6]: "area:sdk",context,evidence,governance,graph,traceability
 created_at: "2026-07-25T06:19:09.470Z"
-updated_at: "2026-08-02T11:40:56.060Z"
+updated_at: "2026-08-02T12:00:17.899Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#b54ea3df17a9d4f6f64078c0"
 author: unknown
@@ -55,7 +55,7 @@ dependencies[9]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-07-29T16:56:44.090Z","harness:claude-code","Traceability coverage measured at build 2026.7.29, and it is complete.\n\nEvery source, test and documentation file in the repository is referenced by at least one tracker item: 400 of 400 src TypeScript files, 390 of 390 test spec files, 42 of 42 docs markdown files. Zero unreferenced files in any of the three sets. 1,137 distinct repository paths appear across item files.\n\nMethod and its honest limit. The census matches any occurrence of a repository path inside an item's stored document, which includes formal linked-file and linked-doc entries as well as paths named in descriptions, comments and notes. It therefore proves reachability - for any file, some item explains why it exists - but not that every file carries a structured link on the item that owns it. The forward direction this item inverts is the stronger claim; this measurement bounds the reverse direction at 100 percent and tells the eventual gate what its baseline is.\n\nCompanion number for the linked-path health check: validate reports 179 missing linked paths against this same corpus, all of which are moved or deleted historical paths on terminal holders, partitioned under pm-zw9188.\n"
   "2026-08-02T06:50:32.361Z","harness:codex","GitHub intake: #861 requests the typed indexed linked-file reverse lookup that forms the first complete delivery surface of this canonical traceability feature: https://github.com/unbraind/pm-cli/issues/861. The broader acceptance remains path/line attribution, rationale, decision path, bounded incremental indexing, CLI/SDK/MCP parity, and no fabricated relationships."
   "2026-08-02T07:13:24.050Z","harness:codex","Implementation evidence: added a cursor-bound reverse linked-file SQLite projection with rebuild and incremental mutation updates; public CLI, PmClient, one-shot SDK, and MCP lookup surfaces; bounded pagination and explicit index/source-scan completeness receipts; generated contracts; focused documentation and regression coverage."
@@ -65,6 +65,8 @@ comments[9]{created_at,author,text}:
   "2026-08-02T11:28:18.148Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
   "2026-08-02T11:35:44.609Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
   "2026-08-02T11:40:56.060Z","harness:codex","Release-tooling evidence: installed the latest npm pm-changelog package (2026.8.2) through pm's managed extension lifecycle and verified changelog generation in check mode. The committed managed-extension provenance moved from 2026.8.1 to 2026.8.2; CHANGELOG.md remains unchanged until this tranche's items close."
+  "2026-08-02T11:54:02.499Z","harness:codex","Hosted matrix evidence: run 30746262926 passed Ubuntu Node 22/24/25 and macOS Node 24, but exposed a new absolute-path normalization failure in context-management-primitives on Windows Node 24 (expected lookup total=1, received 0). Root cause scope is the reverse lookup introduced by this item; correcting via canonical workspace/target paths before relative projection, then rerunning focused, full coverage, and all hosted legs."
+  "2026-08-02T12:00:17.899Z","harness:codex","Correction verification: canonical workspace and requested absolute paths are now resolved through filesystem identity before relative projection. Focused context-management and runtime Windows suites passed 14/14; typecheck, lint, zero-clone duplication, static/docstring/package/SDK/token/context gates passed; full coverage passed 418 files and 6,703 tests at exact 100/100/100/100 (47,530 statements, 34,246 branches, 9,673 functions, 46,120 lines)."
 files[18]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Pinned latest pm-changelog 2026.8.2 for package-owned release notes
   sdk/public-surface.json,project,Reviewed public SDK surface for reverse lookup contracts

@@ -489,11 +489,12 @@ export async function runFiles(
   return renameArtifactsResultKey(result, "files");
 }
 
-function normalizeFilesLookupPaths(
+async function normalizeFilesLookupPaths(
   values: readonly string[],
   workspaceRoot: string,
-): string[] {
-  const paths = values.map((value) => {
+): Promise<string[]> {
+  const canonicalWorkspaceRoot = await realpathForContainment(workspaceRoot);
+  const paths = await Promise.all(values.map(async (value) => {
     const trimmed = value.trim();
     if (!trimmed) {
       throw new PmCliError(
@@ -502,11 +503,13 @@ function normalizeFilesLookupPaths(
       );
     }
     if (!path.isAbsolute(trimmed)) return normalizeLinkedPath(trimmed);
-    const absolutePath = path.resolve(trimmed);
-    return isPathWithinDirectory(workspaceRoot, absolutePath)
-      ? normalizeLinkedPath(path.relative(workspaceRoot, absolutePath))
-      : normalizeLinkedPath(absolutePath);
-  });
+    const canonicalAbsolutePath = await realpathForContainment(trimmed);
+    return isPathWithinDirectory(canonicalWorkspaceRoot, canonicalAbsolutePath)
+      ? normalizeLinkedPath(
+          path.relative(canonicalWorkspaceRoot, canonicalAbsolutePath),
+        )
+      : normalizeLinkedPath(canonicalAbsolutePath);
+  }));
   const uniquePaths = [...new Set(paths)].sort((left, right) =>
     left.localeCompare(right),
   );
@@ -670,7 +673,7 @@ export async function runFilesLookup(
       EXIT_CODE.NOT_FOUND,
     );
   }
-  const paths = normalizeFilesLookupPaths(options.paths, workspaceRoot);
+  const paths = await normalizeFilesLookupPaths(options.paths, workspaceRoot);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(
     settings,

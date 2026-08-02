@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: "area:testing",ci,github-report,portability,windows
 created_at: "2026-08-02T10:36:31.773Z"
-updated_at: "2026-08-02T11:35:49.110Z"
+updated_at: "2026-08-02T12:00:18.591Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#2200ff97f3054162c3afa1bb"
 author: "harness:codex"
@@ -15,14 +15,19 @@ parent: pm-j668gl
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-e70zh5,related,"2026-08-02T10:36:31.773Z","harness:codex","cli:create:dep",detected
   pm-tq5t,discovered_from,"2026-08-02T10:36:31.773Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-08-02T10:36:31.773Z","harness:codex","created_at=now,text=Duplicate check evidence: searched every status for Windows nightly, runtime extended actions, workspace snapshot paths, and separator assertions. pm-j668gl is the broad portability parent and historical items cover different failures; no existing item owns GitHub #870. Source: https://github.com/unbraind/pm-cli/issues/870."
   "2026-08-02T10:38:31.655Z","harness:codex","Implementation evidence: workspace snapshot adapter assertion now uses path.join, preserving the same semantic suffix on POSIX and Windows. Focused runtime adapter suite passes; hosted Windows proof remains a PR gate."
   "2026-08-02T11:28:22.485Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
   "2026-08-02T11:35:49.109Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
-files[1]{path,scope,note}:
+  "2026-08-02T11:54:03.187Z","harness:codex","Hosted matrix evidence: run 30746262926 passed Ubuntu Node 22/24/25 and macOS Node 24. Windows Node 24 passed build/typecheck and 6,697 tests but failed the new SDK absolute-path reverse-lookup case (total 0 vs 1). The original GH-870 separator assertion passed; this additional Windows-only canonicalization defect is now part of the active portability correction before completion."
+  "2026-08-02T12:00:18.591Z","harness:codex","Correction verification: canonical workspace and requested absolute paths are now resolved through filesystem identity before relative projection. Focused context-management and runtime Windows suites passed 14/14; typecheck, lint, zero-clone duplication, static/docstring/package/SDK/token/context gates passed; full coverage passed 418 files and 6,703 tests at exact 100/100/100/100. Hosted rerun remains the acceptance gate."
+files[3]{path,scope,note}:
+  src/sdk/files.ts,project,Windows-stable absolute lookup canonicalization
+  tests/unit/sdk/context-management-primitives.spec.ts,project,hosted Windows regression coverage
   tests/unit/sdk/runtime-extended-actions.spec.ts,project,platform-native tracker path assertion
-tests[1]{command,scope,timeout_seconds}:
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-management-primitives.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts,project,240
   node scripts/run-tests.mjs test -- tests/unit/sdk/runtime-extended-actions.spec.ts,project,240
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
   test-local-msbpxz9n-t893br,test,passed,"2026-08-02T11:30:11.319Z","2026-08-02T11:30:19.211Z","2026-08-02T11:30:19.211Z",1,0,0
