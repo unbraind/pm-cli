@@ -19,6 +19,14 @@ export interface GlobalOptions {
   lean?: boolean;
   /** Attach a bounded receipt attributing the emitted output token cost. */
   tokenAccounting?: boolean;
+  /** Canonical comma-separated fields or sections retained in read output. */
+  outputInclude?: string;
+  /** Canonical maximum row count retained in read output. */
+  outputLimit?: string;
+  /** Canonical estimated-token ceiling for read output. */
+  outputBudget?: string;
+  /** Canonical renderer encoding for read output. */
+  outputFormat?: "toon" | "json";
   /** Filesystem path used for path resolution. */
   path?: string;
   /** Value that configures or reports no extensions for this contract. */

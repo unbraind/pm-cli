@@ -15,6 +15,17 @@ const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
   "--pm-path",
   "--path",
   "--author",
+  "--output-include",
+  "--output-limit",
+  "--output-budget",
+  "--output-format",
+]);
+
+const OUTPUT_VALUE_FLAGS = new Set<string>([
+  "--output-include",
+  "--output-limit",
+  "--output-budget",
+  "--output-format",
 ]);
 
 /** Whether a global value-consuming flag uses its inline `--flag=value` form. */
@@ -30,47 +41,6 @@ const isInlineGlobalValueToken = (token: string): boolean => {
 const consumesBootstrapAuthorValue = (next: string | undefined): boolean => {
   return typeof next === "string" && !next.startsWith("-");
 };
-
-function parseBootstrapPathToken(
-  token: string,
-  next: string | undefined,
-): { consumed: number; pathValue?: string; preferred: boolean } | null {
-  if (token === "--path" || token === "--pm-path") {
-    if (typeof next === "string" && next.length > 0) {
-      return {
-        consumed: 2,
-        pathValue: next,
-        preferred: token === "--pm-path",
-      };
-    }
-    return {
-      consumed: 1,
-      preferred: token === "--pm-path",
-    };
-  }
-
-  const inlinePrefix = token.startsWith("--path=")
-    ? "--path="
-    : token.startsWith("--pm-path=")
-      ? "--pm-path="
-      : undefined;
-  if (!inlinePrefix) {
-    return null;
-  }
-
-  const value = token.slice(inlinePrefix.length);
-  if (value.length > 0) {
-    return {
-      consumed: 1,
-      pathValue: value,
-      preferred: inlinePrefix === "--pm-path=",
-    };
-  }
-  return {
-    consumed: 1,
-    preferred: inlinePrefix === "--pm-path=",
-  };
-}
 
 /** Documents the bootstrap global options payload exchanged by command, SDK, and package integrations. */
 export interface BootstrapGlobalOptions {
@@ -88,6 +58,14 @@ export interface BootstrapGlobalOptions {
   lean: boolean;
   /** Whether output token accounting is requested. */
   tokenAccounting: boolean;
+  /** Canonical comma-separated fields or sections retained in read output. */
+  outputInclude?: string;
+  /** Canonical maximum row count retained in read output. */
+  outputLimit?: string;
+  /** Canonical estimated-token ceiling for read output. */
+  outputBudget?: string;
+  /** Canonical renderer encoding for read output. */
+  outputFormat?: "toon" | "json";
   /** Invocation-wide mutation author override. */
   author?: string;
   /** Whether `--author` was present without its required value. */
@@ -104,14 +82,14 @@ const BOOTSTRAP_BOOLEAN_FLAGS = new Set([
 ]);
 
 interface BootstrapGlobalParseState {
-  /** Last legacy `--path` value. */
-  legacyPathValue?: string;
-  /** Last preferred `--pm-path` value. */
-  pmPathValue?: string;
+  /** Non-empty tracker-root values keyed by their preferred or legacy flag. */
+  pathValues: Map<string, string>;
   /** Boolean global flags observed before the command terminator. */
   booleanFlags: Set<string>;
   /** Author value, with an empty string marking a missing value. */
   author?: string;
+  /** Canonical output-dimension values observed before the command terminator. */
+  outputValues: Map<string, string>;
 }
 
 /** Consume one bootstrap-global token and update the accumulated parse state. */
@@ -125,43 +103,67 @@ function consumeBootstrapGlobalToken(
     state.booleanFlags.add(token);
     return 1;
   }
-  const parsedPath = parseBootstrapPathToken(token, argv[index + 1]);
-  if (parsedPath) {
-    if (parsedPath.pathValue !== undefined) {
-      if (parsedPath.preferred) state.pmPathValue = parsedPath.pathValue;
-      else state.legacyPathValue = parsedPath.pathValue;
-    }
-    return parsedPath.consumed;
+  const equalsIndex = token.indexOf("=");
+  const canonicalFlag = equalsIndex > 0 ? token.slice(0, equalsIndex) : token;
+  if (!GLOBAL_VALUE_CONSUMING_FLAGS.has(canonicalFlag)) return 1;
+
+  const inlineValue =
+    equalsIndex > 0 ? token.slice(equalsIndex + 1) : undefined;
+  const consumesValue =
+    inlineValue === undefined &&
+    (canonicalFlag !== "--author" ||
+      consumesBootstrapAuthorValue(argv[index + 1]));
+  const value = inlineValue ?? (consumesValue ? argv[index + 1] : undefined);
+  if (canonicalFlag === "--author") {
+    state.author = value ?? "";
+  } else if (typeof value === "string" && value.length > 0) {
+    const target = OUTPUT_VALUE_FLAGS.has(canonicalFlag)
+      ? state.outputValues
+      : state.pathValues;
+    target.set(canonicalFlag, value);
   }
-  if (token === "--author") {
-    const consumesValue = consumesBootstrapAuthorValue(argv[index + 1]);
-    state.author = consumesValue ? argv[index + 1] : "";
-    return consumesValue ? 2 : 1;
-  }
-  if (token.startsWith("--author=")) {
-    state.author = token.slice("--author=".length);
-  }
-  return 1;
+  return consumesValue ? 2 : 1;
 }
 
 /** Implements parse bootstrap global options for the public runtime surface of this module. */
 export function parseBootstrapGlobalOptions(
   argv: string[],
 ): BootstrapGlobalOptions {
-  const state: BootstrapGlobalParseState = { booleanFlags: new Set() };
+  const state: BootstrapGlobalParseState = {
+    booleanFlags: new Set(),
+    outputValues: new Map(),
+    pathValues: new Map(),
+  };
   let index = 0;
   while (index < argv.length) {
     if (argv[index] === "--") break;
     index += consumeBootstrapGlobalToken(argv, index, state);
   }
   return {
-    path: state.pmPathValue ?? state.legacyPathValue,
+    path: state.pathValues.get("--pm-path") ?? state.pathValues.get("--path"),
     noExtensions: state.booleanFlags.has("--no-extensions"),
     noPager: state.booleanFlags.has("--no-pager"),
     json: state.booleanFlags.has("--json"),
     quiet: state.booleanFlags.has("--quiet"),
     lean: state.booleanFlags.has("--lean"),
     tokenAccounting: state.booleanFlags.has("--token-accounting"),
+    ...(state.outputValues.get("--output-include") === undefined
+      ? {}
+      : { outputInclude: state.outputValues.get("--output-include") }),
+    ...(state.outputValues.get("--output-limit") === undefined
+      ? {}
+      : { outputLimit: state.outputValues.get("--output-limit") }),
+    ...(state.outputValues.get("--output-budget") === undefined
+      ? {}
+      : { outputBudget: state.outputValues.get("--output-budget") }),
+    ...(state.outputValues.get("--output-format") === "toon" ||
+    state.outputValues.get("--output-format") === "json"
+      ? {
+          outputFormat: state.outputValues.get("--output-format") as
+            | "toon"
+            | "json",
+        }
+      : {}),
     ...(state.author === ""
       ? { authorMissingValue: true }
       : state.author !== undefined

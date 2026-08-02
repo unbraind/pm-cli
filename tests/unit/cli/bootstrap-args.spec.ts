@@ -16,8 +16,14 @@ import {
 
 describe("parseBootstrapGlobalOptions", () => {
   it("recognizes opt-in token accounting before or after the command", () => {
-    expect(parseBootstrapGlobalOptions(["--token-accounting", "list"]).tokenAccounting).toBe(true);
-    expect(parseBootstrapGlobalOptions(["list", "--token-accounting"]).tokenAccounting).toBe(true);
+    expect(
+      parseBootstrapGlobalOptions(["--token-accounting", "list"])
+        .tokenAccounting,
+    ).toBe(true);
+    expect(
+      parseBootstrapGlobalOptions(["list", "--token-accounting"])
+        .tokenAccounting,
+    ).toBe(true);
     expect(parseBootstrapGlobalOptions(["list"]).tokenAccounting).toBe(false);
   });
   it("returns defaults for empty argv", () => {
@@ -71,6 +77,41 @@ describe("parseBootstrapGlobalOptions", () => {
     expect(result.json).toBe(true);
     expect(result.quiet).toBe(true);
     expect(result.lean).toBe(true);
+  });
+
+  it("parses every canonical read-output value in separated and inline forms", () => {
+    expect(
+      parseBootstrapGlobalOptions([
+        "list",
+        "--output-include",
+        "id,title",
+        "--output-limit=5",
+        "--output-budget",
+        "800",
+        "--output-format=json",
+      ]),
+    ).toMatchObject({
+      outputInclude: "id,title",
+      outputLimit: "5",
+      outputBudget: "800",
+      outputFormat: "json",
+    });
+    expect(
+      parseBootstrapGlobalOptions([
+        "--output-include=",
+        "--output-limit=",
+        "--output-budget=",
+        "--output-format=yaml",
+      ]),
+    ).toEqual({
+      path: undefined,
+      noExtensions: false,
+      noPager: false,
+      json: false,
+      quiet: false,
+      lean: false,
+      tokenAccounting: false,
+    });
   });
 
   it("stops parsing at -- sentinel", () => {
@@ -138,7 +179,9 @@ describe("parseBootstrapGlobalOptions", () => {
 
 describe("stripGlobalBootstrapTokens", () => {
   it("strips token accounting without consuming the command", () => {
-    expect(stripGlobalBootstrapTokens(["--token-accounting", "list"])).toEqual(["list"]);
+    expect(stripGlobalBootstrapTokens(["--token-accounting", "list"])).toEqual([
+      "list",
+    ]);
   });
   it("strips all known global tokens", () => {
     const result = stripGlobalBootstrapTokens([

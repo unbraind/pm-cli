@@ -61,6 +61,32 @@ describe("core/output/output", () => {
     expect(renderedFromExplicitToon).toContain("ok: true");
   });
 
+  it("forwards every canonical read-output control through shared rendering", () => {
+    const rendered = formatOutput(
+      {
+        items: [
+          { id: "pm-1", title: "One", body: "drop" },
+          { id: "pm-2", title: "Two", body: "drop" },
+        ],
+        row_contract: { command: "list", row_keys: ["items"] },
+      },
+      {
+        command: "list",
+        outputInclude: "id,title",
+        outputLimit: "1",
+        outputBudget: "800",
+        outputFormat: "json",
+      },
+    );
+    expect(JSON.parse(rendered)).toMatchObject({
+      items: [{ id: "pm-1", title: "One" }],
+      read_output: {
+        command: "list",
+        requested_dimensions: ["include", "amount", "cost", "encoding"],
+      },
+    });
+  });
+
   it("renders deterministic TOON output for nested values", () => {
     const rendered = formatOutput(
       {

@@ -79,6 +79,14 @@ import {
   applyContextIntentProjection,
   attachReadOutputContracts,
 } from "./context-intent-contracts.js";
+import {
+  runWithDiscoveredContextIntentContracts,
+  type PmContextIntentPackageModule,
+} from "./context-intent-runtime.js";
+import {
+  validateReadOutputOptions,
+  type PmReadOutputOptions,
+} from "./read-output-contracts.js";
 export { clearWorkspaceContractsCache } from "./workspace-contracts-cache.js";
 import { runActivity } from "./query/activity.js";
 import {
@@ -846,37 +854,37 @@ export class PmClient {
   }
 
   /** Return the same context snapshot produced by `pm context`. */
-  context(options: ContextOptions = {}): Promise<ContextResult> {
+  context(options: ContextOptions & PmReadOutputOptions = {}): Promise<ContextResult> {
     return this.runTyped("context", { options });
   }
 
   /** List items with the MCP/agent compact defaults. */
-  list(options: ListOptions = {}): Promise<ListResult> {
+  list(options: ListOptions & PmReadOutputOptions = {}): Promise<ListResult> {
     return this.runTyped("list", { options });
   }
 
   /** Search items with the MCP/agent compact defaults. */
-  search(query: string, options: SearchOptions = {}): Promise<SearchResult> {
+  search(query: string, options: SearchOptions & PmReadOutputOptions = {}): Promise<SearchResult> {
     return this.runTyped("search", { query, options });
   }
 
   /** Read one item by id. */
-  get(id: string, options: GetOptions = {}): Promise<GetResult> {
+  get(id: string, options: GetOptions & PmReadOutputOptions = {}): Promise<GetResult> {
     return this.runTyped("get", { id, options });
   }
 
   /** Return the ranked next-work recommendation produced by `pm next`. */
-  next(options: NextOptions = {}): Promise<NextResult> {
+  next(options: NextOptions & PmReadOutputOptions = {}): Promise<NextResult> {
     return this.runTyped("next", { options });
   }
 
   /** Group matching items with the same semantics as `pm aggregate`. */
-  aggregate(options: AggregateOptions = {}): Promise<AggregateResult> {
+  aggregate(options: AggregateOptions & PmReadOutputOptions = {}): Promise<AggregateResult> {
     return this.runTyped("aggregate", { options });
   }
 
   /** Return project tracker statistics with the same sections as `pm stats`. */
-  stats(options: StatsCommandOptions = {}): Promise<StatsResult> {
+  stats(options: StatsCommandOptions & PmReadOutputOptions = {}): Promise<StatsResult> {
     return this.runTyped("stats", { options });
   }
 
@@ -890,13 +898,13 @@ export class PmClient {
   /** List, add, edit, or delete item comments. */
   comments(
     id: string,
-    options: CommentsCommandOptions = {},
+    options: CommentsCommandOptions & PmReadOutputOptions = {},
   ): Promise<CommentsResult> {
     return this.runTyped("comments", { id, options });
   }
 
   /** List or append private item notes. */
-  notes(id: string, options: NotesCommandOptions = {}): Promise<NotesResult> {
+  notes(id: string, options: NotesCommandOptions & PmReadOutputOptions = {}): Promise<NotesResult> {
     return this.runTyped("notes", { id, options });
   }
 
@@ -909,7 +917,7 @@ export class PmClient {
   }
 
   /** Add, remove, clear, or list linked project files for an item. */
-  files(id: string, options: FilesCommandOptions = {}): Promise<FilesResult> {
+  files(id: string, options: FilesCommandOptions & PmReadOutputOptions = {}): Promise<FilesResult> {
     return this.runTyped("files", { id, options });
   }
 
@@ -927,12 +935,12 @@ export class PmClient {
   }
 
   /** Add, remove, clear, or list linked documentation for an item. */
-  docs(id: string, options: DocsCommandOptions = {}): Promise<DocsResult> {
+  docs(id: string, options: DocsCommandOptions & PmReadOutputOptions = {}): Promise<DocsResult> {
     return this.runTyped("docs", { id, options });
   }
 
   /** Inspect item dependency relationships. */
-  deps(id: string, options: DepsCommandOptions = {}): Promise<DepsResult> {
+  deps(id: string, options: DepsCommandOptions & PmReadOutputOptions = {}): Promise<DepsResult> {
     return this.runTyped("deps", { id, options });
   }
 
@@ -940,7 +948,7 @@ export class PmClient {
   graph(
     subcommand: GraphSubcommand,
     ids: { id?: string; target?: string } = {},
-    options: GraphCommandOptions = {},
+    options: GraphCommandOptions & PmReadOutputOptions = {},
   ): Promise<GraphResult> {
     return this.runTyped("graph", { subcommand, ...ids, options });
   }
@@ -1185,25 +1193,25 @@ export class PmClient {
 
   /** Run project validation checks with counts-only diagnostics. */
   validate(
-    options: ValidateCommandOptions & { counts: true },
+    options: ValidateCommandOptions & PmReadOutputOptions & { counts: true },
   ): Promise<ValidateCountsResult>;
   /** Run project validation checks with complete diagnostic arrays. */
   validate(
-    options?: ValidateCommandOptions & { counts?: false },
+    options?: ValidateCommandOptions & PmReadOutputOptions & { counts?: false },
   ): Promise<ValidateResult>;
   /** Run project validation checks with a dynamically selected projection. */
   validate(
-    options: ValidateCommandOptions,
+    options: ValidateCommandOptions & PmReadOutputOptions,
   ): Promise<ValidateResult | ValidateCountsResult>;
   /** Run project validation checks. */
   validate(
-    options: ValidateCommandOptions = {},
+    options: ValidateCommandOptions & PmReadOutputOptions = {},
   ): Promise<ValidateResult | ValidateCountsResult> {
     return this.runTyped("validate", { options });
   }
 
   /** Run project health checks. */
-  health(options: RunHealthOptions = {}): Promise<HealthResult> {
+  health(options: RunHealthOptions & PmReadOutputOptions = {}): Promise<HealthResult> {
     return this.runTyped("health", { options });
   }
 
@@ -2538,6 +2546,7 @@ type ActiveExtensionRuntime = {
   registrations: ExtensionActivationResult["registrations"];
   commands: ExtensionActivationResult["commands"];
   pmRoot: string;
+  packages: readonly PmContextIntentPackageModule[];
 };
 
 /** Publishes empty active extension registries so built-in fallback actions cannot observe stale or partially published extension state from a failed activation cycle. */
@@ -2631,11 +2640,11 @@ async function withActiveExtensionsExclusively<T>(
   cwd: string,
   run: (active: ActiveExtensionRuntime | null) => Promise<T>,
 ): Promise<T> {
+  const pmRoot = resolvePmRoot(cwd, global.path);
   if (global.noExtensions) {
     resetActiveExtensionRegistries();
-    return run(null);
+    return runWithDiscoveredContextIntentContracts({ pmRoot }, () => run(null));
   }
-  const pmRoot = resolvePmRoot(cwd, global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     resetActiveExtensionRegistries();
     return run(null);
@@ -2674,6 +2683,7 @@ async function withActiveExtensionsExclusively<T>(
       registrations: activationResult.registrations,
       commands: activationResult.commands,
       pmRoot,
+      packages: loadResult.loaded,
     };
   } catch (error) {
     resetActiveExtensionRegistries();
@@ -2687,7 +2697,10 @@ async function withActiveExtensionsExclusively<T>(
     );
   }
   try {
-    return await run(active);
+    return await runWithDiscoveredContextIntentContracts(
+      { pmRoot, packages: active?.packages },
+      () => run(active),
+    );
   } finally {
     // Reset the process-global active registries FIRST so a torn-down extension's
     // overrides/hooks cannot leak into a later request in this long-running server
@@ -3882,6 +3895,7 @@ async function dispatchAction(
   activeExtensions: ActiveExtensionRuntime | null,
 ): Promise<unknown> {
   const options = optionsWithAuthor(args, action);
+  validateReadOutputOptions(action, options);
   const ctx: McpActionDispatchContext = {
     action,
     args,

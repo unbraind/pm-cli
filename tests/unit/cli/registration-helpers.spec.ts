@@ -100,6 +100,10 @@ describe("registration helpers", () => {
         profile: true,
         fullChangedFields: true,
         tokenAccounting: true,
+        outputInclude: "id,title",
+        outputLimit: "5",
+        outputBudget: "800",
+        outputFormat: "toon",
       }),
     } as unknown as Command;
     expect(getGlobalOptions(command)).toEqual({
@@ -113,6 +117,10 @@ describe("registration helpers", () => {
       profile: true,
       fullChangedFields: true,
       tokenAccounting: true,
+      outputInclude: "id,title",
+      outputLimit: "5",
+      outputBudget: "800",
+      outputFormat: "toon",
     });
 
     // A primitive (non-object) command yields an empty options reader so every option resolves to its default.

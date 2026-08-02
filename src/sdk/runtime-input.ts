@@ -95,6 +95,7 @@ export function parseRuntimeInteger(
 export function actionGlobalOptions(
   args: Record<string, unknown>,
 ): GlobalOptions {
+  const outputFormat = readRuntimeString(args, "outputFormat");
   return {
     json: true,
     quiet: true,
@@ -102,6 +103,13 @@ export function actionGlobalOptions(
     path: readRuntimeString(args, "path"),
     noExtensions: args.noExtensions === true || args.no_extensions === true,
     noPager: true,
+    outputInclude: readRuntimeString(args, "outputInclude"),
+    outputLimit: readRuntimeScalarString(args, "outputLimit"),
+    outputBudget: readRuntimeScalarString(args, "outputBudget"),
+    outputFormat:
+      outputFormat === "json" || outputFormat === "toon"
+        ? outputFormat
+        : undefined,
   };
 }
 
@@ -185,6 +193,13 @@ const HOISTED_ACTION_OPTION_KEYS: Readonly<
   append: ["body"],
 };
 
+const UNIVERSAL_READ_OUTPUT_OPTION_KEYS = [
+  "outputInclude",
+  "outputLimit",
+  "outputBudget",
+  "outputFormat",
+] as const;
+
 /** Reconcile MCP array/scalar option spellings with CLI flag expectations. */
 export function normalizeMcpOptionsArrays(
   options: Record<string, unknown>,
@@ -235,6 +250,9 @@ export function optionsWithAuthor(
     hoistedTopLevel[key] = args[key];
   };
   for (const key of HOISTED_ACTION_OPTION_KEYS[action ?? ""] ?? []) {
+    hoistKey(key);
+  }
+  for (const key of UNIVERSAL_READ_OUTPUT_OPTION_KEYS) {
     hoistKey(key);
   }
   const options = normalizeMcpOptionsArrays(

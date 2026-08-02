@@ -33,7 +33,21 @@ pm next --for execute --ready-only --json
 pm search "output projection" --for discover --json
 ```
 
-Package authors compose declarations with `composeContextIntentContracts`. Package declarations add commands and intents; workspace declarations can intentionally override a matching command/intent pair. Invalid or duplicate declarations fail closed. Unknown CLI intent names return nearest-name guidance.
+Package authors compose declarations with `composeContextIntentContracts`. Active package modules may export `contextIntents` (or `context_intents`) as an array of contracts. Workspaces may declare an array, or `{ "intents": [...] }`, in `.agents/pm/context-intents.json`. Package declarations extend the built-ins; workspace declarations have final precedence and can intentionally override a matching command/intent pair. Invalid or duplicate declarations fail closed. Unknown CLI intent names return nearest-name guidance.
+
+```ts
+export const contextIntents = [
+  {
+    command: "search",
+    intent: "security-triage",
+    description: "Find likely security lineage with a bounded evidence set.",
+    included_field_groups: ["identity", "status", "relevance", "evidence"],
+    token_budget: 900,
+  },
+];
+```
+
+Discovery is request-scoped for concurrent SDK clients: built-ins, active packages, and the selected workspace cannot leak declarations into another request. See [Universal Read Output Contracts](READ_OUTPUT_CONTRACTS.md) for the four output dimensions shared by every read surface.
 
 ## Flag Invocation Metadata
 

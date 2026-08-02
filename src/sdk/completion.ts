@@ -987,6 +987,10 @@ _pm() {
   _arguments -C \\
     '--json[Output JSON instead of TOON]' \\
     '--quiet[Suppress stdout output]' \\
+    '--output-include[Retain comma-separated read fields or sections]:selectors' \\
+    '--output-limit[Set the universal read row ceiling]:limit' \\
+    '--output-budget[Set the universal estimated-token ceiling]:tokens' \\
+    '--output-format[Select the universal read encoding]:(toon json)' \\
     '--no-changed-fields[Omit changed_fields array from mutation output]' \\
     '--pm-path[Explicit tracker storage path for this command]:path:_files -/' \\
     '--path[Compatibility alias for --pm-path]:path:_files -/' \\
@@ -2008,6 +2012,10 @@ complete -c pm -f
 # Global flags (available for all subcommands)
 complete -c pm -l json -d 'Output JSON instead of TOON'
 complete -c pm -l quiet -d 'Suppress stdout output'
+complete -c pm -l output-include -d 'Retain comma-separated read fields or sections' -r
+complete -c pm -l output-limit -d 'Set the universal read row ceiling' -r
+complete -c pm -l output-budget -d 'Set the universal estimated-token ceiling' -r
+complete -c pm -l output-format -d 'Select the universal read encoding' -r -a 'toon json'
 complete -c pm -l no-changed-fields -d 'Omit changed_fields array from mutation output'
 complete -c pm -l id-only -d 'Print only id and status for single-item mutation output'
 complete -c pm -l pm-path -d 'Explicit tracker storage path for this command' -r

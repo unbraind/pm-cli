@@ -2,11 +2,13 @@ id: pm-hb7ug8
 title: "One declared output-bounding dimension set on every read surface: 18 flag spellings across 19 commands collapse to include / how-much / cost / encoding, with a precedence algebra and permanent aliases"
 description: "Consolidate every way to ask a pm read for less output into one dimension set available identically on all read surfaces, with declared composition precedence and zero removed spellings."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ergonomics,cli-grammar,contracts,pm-cli,simplification,token-efficiency
 created_at: "2026-07-31T06:07:31.733Z"
-updated_at: "2026-08-01T21:15:48.038Z"
+updated_at: "2026-08-02T18:17:42.490Z"
+closed_at: "2026-08-02T18:17:23.994Z"
+completed_at: "2026-08-02T18:17:23.994Z"
 author: "harness:claude-code"
 estimated_minutes: 960
 acceptance_criteria: "One declared bounding dimension set (include, how much, cost, encoding) is available identically on every read surface, or the contract states per surface why a dimension is inapplicable; Pairwise availability disagreement between any two read surfaces over the dimension set is zero, asserted by a contract test rather than reviewed; No read surface supports zero bounding dimensions; files, docs, stats and aggregate gain the set; A declared precedence algebra states which dimension wins when two are supplied, and get --depth deep --for inspect has a contract-defined result; Every one of the 18 current spellings continues to work as a hidden alias with a one-line migration hint; no invocation in any recorded transcript breaks; A gate fails when a new read command or a new bounding flag is added outside the declared set, so the growth trend stops rather than being periodically re-measured"
@@ -18,6 +20,9 @@ why_now: Two recorded simplification axes independently conclude that noun conso
 parent: pm-n7rr
 risk: medium
 confidence: high
+resolution: Implemented and verified one SDK-owned include amount cost encoding contract across all canonical read surfaces.
+expected_result: All 19 reads expose the four dimensions with declared precedence and permanent legacy aliases while mutation schemas reject them.
+actual_result: Zero availability disagreement and zero unbounded surfaces are contract-tested; CLI SDK MCP completions public schema exact coverage and isolated consumers all pass.
 dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-1kxs,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
   pm-5t33or,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
@@ -33,14 +38,51 @@ dependencies[14]{id,kind,created_at,author,source_kind,author_source}:
   pm-srns,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
   pm-x710qm,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
   pm-yekkvt,related,"2026-07-31T06:09:19.788Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-07-31T07:02:30.950Z","harness:codex","Scope decision: this PR delivers four independently complete SDK/CLI context-integrity contracts. The universal four-dimension runtime flag algebra requires command-wide registration and execution changes beyond a truthful additive contract table, so it remains canonical follow-up work rather than being falsely closed by metadata-only implementation."
   "2026-08-01T21:15:45.750Z","harness:codex","Tranche boundary 2026-08-01: the accounting receipt establishes the cost dimension at shared egress, but this branch does not collapse all 18 legacy bounding spellings across 19 read commands. Releasing the claim and returning the item to open so only actively edited work remains in progress."
-files[2]{path,scope,note}:
+  "2026-08-02T17:24:14.187Z","harness:codex","Evidence 2026-08-02: one SDK-owned four-dimension contract now covers include, amount, cost, and encoding across 19 canonical read surfaces; aliases normalize list-* and ctx, explicit controls reject mutation and hybrid-mutation combinations, legacy-only calls remain byte-stable, and action-scoped SDK/MCP schemas omit the controls from mutations. Focused parser, transport, contract, completion, and SDK/CLI integration verification passed 249 tests; the schema-parity waiver ratchet remains at its prior ceiling rather than being relaxed. Public SDK and generated CLI/MCP contract snapshots are current."
+  "2026-08-02T18:17:10.078Z","harness:codex","Completion evidence 2026-08-02: one SDK-owned include/amount/cost/encoding algebra covers all 19 canonical reads with zero availability disagreement and zero unbounded surfaces. Canonical flags are globally discoverable in CLI and Bash/Zsh/Fish completion, typed on PmClient reads, transported by MCP, present only on read action schemas, and rejected before mutations. Linked suites passed 124 focused tests plus contracts snapshot validation. Full repository coverage passed 421 files / 6,730 tests at exact 100/100/100/100; lint, docstrings, duplication, SDK surface, context evaluation, fuzz, security scan, pnpm audit, changelog check, and contract gates all passed. The public versioned schema now serves byte-identical 4.4.0 at https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json with 133 strict action branches and outputInclude/outputLimit/outputBudget/outputFormat; the prior schema and exact stale GET/HEAD cache entries have recoverable timestamped backups. GitHub has zero open PRs and zero open Dependabot, code-scanning, or secret-scanning alerts; all 24 open issues contain a valid canonical PM-item Markdown link. The sole scheduled auto-release run after the manual v2026.8.2 release returned release_already_cut_today and created no second tag; npm latest is 2026.8.2, and isolated npx/bunx execution passed."
+learnings[1]{created_at,author,text}:
+  "2026-08-02T18:17:10.670Z","harness:codex","Universal read controls belong in one SDK contract and shared egress. Canonical controls may shape output, but merely retaining a legacy alias must not change bytes. Action-scoped schemas must omit read-only controls from every mutation branch rather than relaxing parity waivers."
+files[27]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed universal read-output SDK compatibility snapshot
   src/cli/commands/contracts.ts,project,surface that must render the declared dimension set and its inapplicability reasons
+  src/cli/context-intent-invocation.ts,project,read invocation contract discovery boundary
+  src/cli/main.ts,project,pre-execution read mutation boundary validation
+  src/core/extensions/reserved-host-flags.ts,project,extension collision protection
+  src/core/output/output.ts,project,shared egress projection and encoding
+  src/core/shared/command-types.ts,project,global option types
+  src/mcp/tool-definitions.ts,project,narrow and universal MCP tools
+  src/sdk/cli-bootstrap.ts,project,bootstrap normalization
   src/sdk/cli-contracts.ts,project,contract table is where the four bounding dimensions and their per-command applicability must be declared once
-tests[1]{command,scope,timeout_seconds}:
+  src/sdk/cli-contracts/completeness.ts,project,CLI SDK coverage classification
+  src/sdk/cli-contracts/registration-helpers.ts,project,Commander global option extraction
+  src/sdk/cli-contracts/runtime-contracts.ts,project,19-surface runtime matrix
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,SDK MCP parameter definitions
+  src/sdk/cli-contracts/tool-schema.ts,project,read-only action-scoped schemas
+  src/sdk/cli-program.ts,project,canonical CLI flag registration
+  src/sdk/completion.ts,project,Bash Zsh Fish discoverability
+  src/sdk/read-output-contracts.ts,project,canonical four-dimension contract and projector
+  src/sdk/runtime-input.ts,project,MCP top-level option normalization
+  src/sdk/runtime.ts,project,typed PmClient read methods and validation
+  tests/fixtures/contracts/full.json,project,generated drift fixture
+  tests/unit/cli/bootstrap-args.spec.ts,project,canonical global output option parsing and empty path regression coverage
+  tests/unit/cli/registration-helpers.spec.ts,project,Commander extraction and mutation boundary coverage
+  tests/unit/commands/completion-command.spec.ts,project,three-shell completion parity
+  tests/unit/core/output/output.spec.ts,project,shared egress projection encoding and budget coverage
+  tests/unit/sdk/read-output-contracts.spec.ts,project,precedence projection budget and composition tests
+  tests/unit/sdk/read-output-transport.spec.ts,project,SDK MCP transport schema tests
+tests[3]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts tests/unit/commands/completion-command.spec.ts tests/integration/sdk-cli-contract-integrity.integration.spec.ts,project,300
   pm contracts --summary --json,project,240
-docs[1]{path,scope,note}:
+  "pnpm contracts:check",project,300
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msc3wofg-le40gz,test,passed,"2026-08-02T18:00:55.274Z","2026-08-02T18:01:13.132Z","2026-08-02T18:01:13.132Z",3,0,0
+docs[4]{path,scope,note}:
   docs/COMMANDS.md,project,command reference must present one bounding vocabulary rather than a per-command flag list
+  docs/READ_OUTPUT_CONTRACTS.md,project,canonical operator SDK and package contract
+  docs/README.md,project,progressive disclosure index
+  docs/SELF_DESCRIBING_CONTEXT_CONTRACTS.md,project,intent and output composition route
+close_reason: "Completed the universal read-output contract across all 19 canonical reads: include/amount/cost/encoding controls, permanent alias migration, declared precedence, SDK/CLI/MCP/completion parity, mutation rejection, versioned public schema 4.4.0, exact 100% coverage, strict gates, and isolated npm/Bun acceptance."
 body: "## The operation this is about\n\nAsking for less output is the single most frequent thing an agent does with `pm`, and it is the operation with the least consistent surface in the product.\n\n## Measured 2026-07-31 at HEAD, nineteen read commands\n\nEighteen distinct output-bounding flag spellings exist: `--after`, `--blocked-limit`, `--brief`, `--check-only`, `--compact`, `--counts`, `--depth`, `--fields`, `--for`, `--format`, `--full`, `--limit`, `--no-truncate`, `--section`, `--stream`, `--summary`, `--token-budget`, `--verbose`. No two commands expose the same set.\n\n| command | bounding flags | spellings |\n|---|---|---|\n| list | 10 | after brief compact fields for format full limit no-truncate stream |\n| context | 8 | after depth fields for format limit section token-budget |\n| search | 7 | after compact fields for format full limit |\n| get | 5 | depth fields for format full |\n| next | 5 | blocked-limit for format limit token-budget |\n| health | 5 | brief check-only full summary verbose |\n| deps | 4 | format full summary token-budget |\n| graph | 4 | after full limit summary |\n| history | 4 | compact format full limit |\n| activity | 4 | compact full limit stream |\n| validate | 3 | counts full verbose |\n| events | 2 | full limit |\n| contracts | 2 | full summary |\n| comments | 1 | limit |\n| notes | 1 | limit |\n| files, docs, stats, aggregate | 0 | — |\n\n## Five asymmetries that matter more than the total\n\n**Four read surfaces cannot be bounded at all.** `files`, `docs`, `stats` and `aggregate` expose zero bounding flags. Their output is whatever the workspace happens to be.\n\n**`--limit` reaches 10 of 19.** The most basic bound in the product is absent from `get`, `deps`, `contracts`, `health`, `validate`, `files`, `docs`, `stats` and `aggregate`.\n\n**`--fields` reaches 4 of 19** (list, get, search, context). Projection — the cheapest possible bound, because it costs the producer nothing — is unavailable on three quarters of read surfaces.\n\n**`--token-budget` is on the wrong three.** It exists on `next`, `context` and `deps`. It does not exist on `list`, `get` or `search` — the three surfaces that declare and enforce per-intent token ceilings. So the one flag that could raise a ceiling is absent from exactly the surfaces whose ceilings have been measured as infeasible.\n\n**`--summary` is on four and missing from the four that need it.** Present on `deps`, `graph`, `health`, `contracts`; absent from `list`, `get`, `next`, `context`. On `health`, four near-synonyms coexist — `--brief`, `--check-only`, `--summary`, `--full` — and an agent cannot infer from the names which produces the least output.\n\nWidest pairwise disagreement: 10 flags (list) against 0 (files, docs, stats, aggregate).\n\n## Composition has no declared algebra\n\n`context` accepts five bounding dimensions simultaneously. `get --depth deep --for inspect` omits its result while either flag alone returns content. Nothing states which dimension wins when two disagree, so composition is discovered by experiment rather than read from a contract.\n\n## The trend, which is the real argument\n\nEvery context capability shipped in the last month added a bounding flag and removed none. `--for` and `--token-budget` and `--section` are all recent. A consolidation programme that does not stop that trend has not simplified the surface, it has renamed it.\n\n## The target\n\nReduce output bounding to **one declared dimension set, available identically on every read surface**:\n\n1. **What to include** — field/section selection (`--fields`, subsuming `--brief`, `--full`, `--section`, `--compact`, `--counts`, `--check-only`, `--verbose`, `--summary`).\n2. **How much of it** — row and traversal bounds (`--limit`, `--after`, `--depth`, subsuming `--blocked-limit`, `--sample-limit`, `--max-items`, `--no-truncate`).\n3. **What it may cost** — `--token-budget`, with `--for` selecting a named preset over the other two.\n4. **How it is encoded** — `--format`, with `--stream` as an encoding choice rather than a separate dimension.\n\nEvery existing spelling is retained permanently as a hidden alias onto that set — nothing is removed and no invocation breaks. Where a surface genuinely cannot support a dimension, the contract declares why, and the flag is accepted and reported as inapplicable rather than rejected as unknown.\n\nA declared **precedence algebra** states which dimension wins when two disagree, so `--depth deep --for inspect` has a contract-defined result instead of an experimental one.\n\n## Why this is the first tranche, before any noun is moved\n\nTwo independently recorded simplification axes on the parent epic reach the same conclusion from different directions: folding `list-*` into `list --status` is a null move while the flag lexicon is inconsistent, and folding nouns is a null move for an agent that must still learn a per-command availability matrix to ask for less output. This is the smallest self-contained tranche in the whole programme, it is the one an agent pays for on every single call, and unlike a noun count its metric cannot be improved by hiding spellings behind aliases.\n\n## Metric\n\nNot the total flag count. The **pairwise availability disagreement** between any two read surfaces over the declared dimension set — 10 today at its widest — and the count of read surfaces that support zero dimensions — 4 today. Target: 0 and 0. Both are computable from the contract table, so the gate is a contract test rather than a review.\n\n## Relationship to adjacent owners\n\nThis is not the flag lexicon conformance item, which forbids two spellings for one concept anywhere in the CLI; this decides which bounding dimensions exist and requires them everywhere on reads. It is not the intent-scoped projection feature, which supplies `--for` presets over this set. It is not the output token budget contract, which declares the ceilings this set exposes. It is not the uniform output contract, which owns envelope shape and format grammar. All four consume or feed this set; none of them declares it."

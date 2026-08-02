@@ -15,6 +15,7 @@ import { isHostOutputSuppressed } from "./output-control.js";
 import { projectMutationResult } from "./mutation-projection.js";
 import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js";
 import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
+import { resolveReadOutputEncoding } from "../../sdk/read-output-contracts.js";
 
 /** Documents the output options payload exchanged by command, SDK, and package integrations. */
 export interface OutputOptions {
@@ -32,6 +33,14 @@ export interface OutputOptions {
   lean?: boolean;
   /** Attach a bounded receipt for the emitted output before the receipt itself. */
   tokenAccounting?: boolean;
+  /** Canonical comma-separated fields or sections retained in read output. */
+  outputInclude?: string;
+  /** Canonical maximum row count retained in read output. */
+  outputLimit?: string;
+  /** Canonical estimated-token ceiling for read output. */
+  outputBudget?: string;
+  /** Canonical renderer encoding for read output. */
+  outputFormat?: "toon" | "json";
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
   /** Value that configures or reports command for this contract. */
@@ -428,7 +437,23 @@ function formatEffectiveOutput(
   nativeOutput: boolean,
   options: OutputOptions,
 ): string {
-  const format = resolveOutputFormat(options);
+  const activeCommandContext = getActiveCommandContext();
+  const command = options.command ?? activeCommandContext?.command;
+  const commandOptions = {
+    ...activeCommandContext?.options,
+    ...options.commandOptions,
+    ...Object.fromEntries(
+      [
+        ["outputInclude", options.outputInclude],
+        ["outputLimit", options.outputLimit],
+        ["outputBudget", options.outputBudget],
+        ["outputFormat", options.outputFormat],
+      ].filter((entry): entry is [string, string] => entry[1] !== undefined),
+    ),
+  };
+  const format =
+    resolveReadOutputEncoding(command ?? "", commandOptions) ??
+    resolveOutputFormat(options);
   const service = resolveOutputService(
     effectiveResult,
     nativeOutput,
@@ -441,10 +466,9 @@ function formatEffectiveOutput(
     options.command === "test"
       ? projectLinkedTestEvidence(outputResult, options.lean === true)
       : outputResult;
-  const activeCommandContext = getActiveCommandContext();
   const intentOutputResult = attachReadOutputContracts(
-    options.command ?? activeCommandContext?.command,
-    options.commandOptions ?? activeCommandContext?.options ?? {},
+    command,
+    commandOptions,
     projectedOutputResult,
   );
   const renderResolvedOutput = (value: unknown): string => {
@@ -468,9 +492,10 @@ function formatEffectiveOutput(
     }
     return formatBuiltInOutput(value, "toon");
   };
-  const accountedOutputResult = options.tokenAccounting === true
-    ? attachOutputTokenAccounting(intentOutputResult, renderResolvedOutput)
-    : intentOutputResult;
+  const accountedOutputResult =
+    options.tokenAccounting === true
+      ? attachOutputTokenAccounting(intentOutputResult, renderResolvedOutput)
+      : intentOutputResult;
   return renderResolvedOutput(accountedOutputResult);
 }
 
