@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { Command } from "commander";
@@ -400,6 +401,10 @@ describe("context-management SDK primitives", () => {
     await withTempPmPath(async (context) => {
       const workspaceRoot = path.dirname(path.dirname(context.pmPath));
       const sourcePath = path.join(workspaceRoot, "src", "absolute.ts");
+      const globalEvidencePath = path.join(
+        os.tmpdir(),
+        "pm-cli-global-evidence.ts",
+      );
       await fs.mkdir(path.dirname(sourcePath), { recursive: true });
       await fs.writeFile(sourcePath, "export {};\n", "utf8");
       const id = createTask(context, "Lookup validation");
@@ -413,7 +418,7 @@ describe("context-management SDK primitives", () => {
             "path=src/absolute.ts,scope=project",
             "path=src/absolute.ts,scope=global",
             "path=src/other.ts,scope=project",
-            "path=/tmp/pm-cli-global-evidence.ts,scope=global",
+            `path=${globalEvidencePath},scope=global`,
           ],
         },
         { path: context.pmPath },
@@ -475,7 +480,7 @@ describe("context-management SDK primitives", () => {
       await expect(
         runFilesLookup(
           {
-            paths: ["/tmp/pm-cli-global-evidence.ts"],
+            paths: [globalEvidencePath],
             scope: "global",
           },
           { path: context.pmPath },
