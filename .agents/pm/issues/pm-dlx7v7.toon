@@ -1,0 +1,33 @@
+id: pm-dlx7v7
+title: "Merge direction decides which agent's value survives: the same two branches converge to different item state depending on which side merges, and nothing reports the divergence"
+description: "The field-aware item merge resolves every scalar conflict toward the preferred side, and the preferred side is always the branch performing the merge (preferred: \"ours\"). Union collections (ITEM_UNION_COLLECTION_FIELDS: tags, dependencies, comments, notes, learnings, files, tests, test_runs, docs, reminders, events) merge commutatively, so the fields an agent annotates converge. Every scalar field does not. Two clones of the same two branches therefore hold different project state forever, both are internally consistent, both validate clean, and neither can discover that the other exists. This is not a race: it is deterministic per direction, and the two directions are exactly the two that occur in a fleet — an agent merges main into its branch while the integrator merges the branch into main."
+type: Issue
+status: open
+priority: 1
+tags[4]: concurrency,convergence,merge,multi-agent
+created_at: "2026-08-02T21:03:14.740Z"
+updated_at: "2026-08-02T21:10:19.288Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "Resolving the same scalar conflict from either direction yields the same retained value, or the retained value is chosen by a declared deterministic tie-break that both directions compute identically and that the contracts surface names; A workspace can determine from recorded data alone that a merge discarded a value, which field it was, and what the discarded value was, without consulting the transient driver stdout; pm validate reports an unreconciled discarded merge value as a warning until it is explicitly accepted or re-applied; The merge conformance property covers the scalar field class in both directions, and a regression that makes a scalar field direction-dependent fails it"
+value: Convergence is the property the whole multi-agent story rests on; without it two integrators produce two projects.
+impact: "At thousands of agents every scalar edit is a coin flip decided by who merges, and no recorded signal distinguishes a converged workspace from a diverged one."
+outcome: "Scalar conflict resolution is direction-independent, or direction-dependence is contractual, detectable from recorded data, and reported until reconciled."
+why_now: pm-2sbj8p must choose the convergence model and names the merge conformance suite as its evidence source; that suite does not cover this class.
+parent: pm-dj98
+risk: high
+confidence: high
+severity: high
+environment: git merge via installed pm merge drivers; pm 2026.8.2; sandbox tracker
+repro_steps: "1) pm init sandbox, pm merge install, create item, commit. 2) branch A and B; on each run pm update <id> --description desc-<br> --priority <n> --estimate <n> --assignee agent-<br>, plus pm comments and pm notes; commit both. 3) clone twice; in clone1 checkout A and merge origin/B; in clone2 checkout B and merge origin/A. 4) diff the two merged item documents."
+expected_result: "Both clones hold the same item state, or the direction-dependence is a declared contract with a tie-break both directions compute identically."
+actual_result: "A<-B keeps desc-A, priority 1, estimate 100, assignee agent-A. B<-A keeps desc-B, priority 2, estimate 200, assignee agent-B. tags/comments/notes are identical in both. Both merges report ok:false, conflicts:[description], preferred:ours and exit git-conflict; after git add and pm history-repair both workspaces report validate ok:true. Application order is not the problem: A<-B<-C and A<-C<-B both keep desc-A, so the merge is associative and non-commutative."
+component: sdk/merge
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1tns7o,related,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
+  pm-76dnfg,discovered_from,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
+  pm-inn5y5,related,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
+  pm-lwmstb,related,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
+  pm-o87av6,implements,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
+  pm-qx95lz,related,"2026-08-02T21:10:19.121Z","harness:claude-code","cli:update:dep",detected
+body: ""

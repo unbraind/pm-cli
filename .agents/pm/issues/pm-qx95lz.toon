@@ -1,0 +1,31 @@
+id: pm-qx95lz
+title: "Two items created independently on two branches with the same id merge into one document carrying two create entries, and storage integrity only notices when the types differ"
+description: "Id minting probes only the local working tree (src/core/item/id.ts:50 idExists), which the docstring states plainly: concurrent branches can still mint the same id independently. What happens when they do is not defined. If both branches minted the same id for the same item type, the two documents occupy one path and the item merge driver treats them as an ordinary field conflict: title, description and created_at resolve toward the preferred side and the second item is annihilated, leaving only discarded_hash values in a receipt. The merged history stream then holds two create entries — a lifecycle no single item can have — and pm validate --check-storage-integrity reports parsed_items with no duplicate finding, because on disk there is exactly one file. Only the cross-type case is caught, because two type folders leave two files with one id. The escalation heuristic cannot help: token length grows only after 32 consecutive local probe collisions, so it is driven by local density while the failure it must prevent is cross-branch, and the two have opposite sensitivity to workspace size. At the default 4-character base36 token the space is 1,679,616; at a million items the local probe still succeeds essentially always while the unprotected cross-branch collision rate rises with occupancy."
+type: Issue
+status: open
+priority: 1
+tags[4]: concurrency,identity,merge,storage-integrity
+created_at: "2026-08-02T21:07:10.619Z"
+updated_at: "2026-08-02T21:10:21.882Z"
+author: "harness:claude-code"
+estimated_minutes: 420
+acceptance_criteria: "An item merge in which the base side is absent and both sides carry their own create entry is reported as a duplicate-identity conflict distinct from a field conflict, and is not silently resolved toward the preferred side; pm validate --check-storage-integrity reports a history stream containing more than one create entry as an error in the same-type case, not only the cross-type multi-file case; pm get on an id that resolves to more than one document refuses or reports the ambiguity instead of silently returning one; The default ids.token_length and the escalation rule are derived from a stated concurrency and corpus-size regime, and the guidance names the width required for a workspace of a given size and agent count"
+value: "Item id is the primary key every read, edge, history stream and evidence link is addressed by; two items sharing one is the failure that cannot be repaired after the fact."
+impact: "In a fleet minting concurrently against a fixed-width id space, the same-type fusion destroys one item with no finding, and the surviving history is internally inconsistent."
+outcome: "An add/add item merge whose two sides have no common create entry is refused or flagged as duplicate identity, a stream with two create entries is a hard integrity error, and the id width is chosen from the concurrency regime rather than from local probe pressure."
+why_now: "The duplicate-identity path is reachable today through the supported pm create --id surface, and the ADR on the convergence model needs the identity regime stated alongside the merge regime."
+parent: pm-o2kc
+risk: high
+confidence: high
+severity: high
+environment: git merge via pm merge drivers; pm 2026.8.2; ids.token_length default 4
+repro_steps: "pm init sandbox; commit; branch A and B; on A run pm create --id dupe --title 'Alpha work' --type Task and pm create --id dupex --title 'Alpha' --type Task; on B run pm create --id dupe --title 'Beta work' --type Task and pm create --id dupex --title 'Beta' --type Issue; commit both; clone, checkout A, merge origin/B; inspect the documents, the history stream, and pm validate --check-storage-integrity."
+expected_result: "A merge that would fuse two independently created items is refused, or reported as a distinct duplicate-identity finding, in both the same-type and cross-type cases."
+actual_result: "Same type: one document survives (title 'Alpha work by agent A'), the history stream holds two create entries, storage integrity reports item_files_on_disk 4 / item_ids_on_disk 3 / parsed_items 3 with duplicate_item_ids listing only the cross-type id, and the only signal for the fused item is pending_merge_decision_count 1 — indistinguishable from an ordinary field conflict. Cross type: duplicate_item_ids correctly lists issues/mp-dupex.toon and tasks/mp-dupex.toon, and pm get mp-dupex silently returns one of the two."
+component: "core/item/id, sdk/merge"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-10l1vm,related,"2026-08-02T21:10:21.705Z","harness:claude-code","cli:update:dep",detected
+  pm-dlx7v7,discovered_from,"2026-08-02T21:10:21.705Z","harness:claude-code","cli:update:dep",detected
+  pm-e3gn0z,related,"2026-08-02T21:10:21.705Z","harness:claude-code","cli:update:dep",detected
+  pm-o87av6,implements,"2026-08-02T21:10:21.705Z","harness:claude-code","cli:update:dep",detected
+body: ""

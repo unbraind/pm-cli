@@ -1,0 +1,32 @@
+id: pm-inn5y5
+title: "Acceptance criteria are documented as merging like tags but are stored as one delimiter-joined scalar, so concurrent criteria additions from different branches are silently discarded"
+description: "src/core/item/parse.ts:92 documents applyAcceptanceCriteriaMutations as giving --add-ac/--remove-ac 'tag-API parity' with the explicit promise that 'disjoint additions merge cleanly across branches'. Tags have that property because 'tags' is in ITEM_UNION_COLLECTION_FIELDS and merges by element identity. acceptance_criteria is not in that list: it is stored as a single string joined with '; ', so it takes the scalar three-way path and resolves toward the preferred side like any other scalar. The documented guarantee is therefore false for the one field whose CLI grammar is explicitly list-shaped. Criteria are the field close-validation reads, so the loss is silent in exactly the workflow that is supposed to be enforced."
+type: Issue
+status: open
+priority: 1
+tags[4]: acceptance-criteria,concurrency,data-loss,merge
+created_at: "2026-08-02T21:05:22.040Z"
+updated_at: "2026-08-02T21:10:20.937Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Concurrent disjoint --add-ac additions on separate branches all survive a merge, or the delimiter-joined scalar semantics are documented at src/core/item/parse.ts, in pm update --help, and in the merge guidance; Every field whose CLI grammar exposes additive and subtractive mutation is either a union collection or is listed as a known-lossy scalar in one enumerable place the merge driver and the docs both read; A merge that discards acceptance criteria names acceptance_criteria and the number of discarded criteria in the receipt guidance rather than reporting a generic scalar conflict"
+value: Acceptance criteria are the machine-readable definition of done; losing them on merge silently weakens every close-time check built on them.
+impact: "Any two agents that add criteria to the same item on different branches lose all but one contribution, and the close validation that reads criteria cannot tell."
+outcome: "Either acceptance criteria merge by element identity like every other list-shaped field, or the docstring and the CLI help state the scalar semantics and pm warns when a merge discards criteria."
+why_now: The same probe that falsified merge-direction independence falsified this documented guarantee; the fix is small and the loss is unrecoverable.
+parent: pm-33cw
+risk: high
+confidence: high
+severity: high
+environment: git merge via pm merge drivers; pm 2026.8.2
+repro_steps: "Create an item on a base commit, branch three ways, run pm update <id> --add-ac 'criterion from A|B|C' on each branch, commit, then merge all three branches into one clone."
+expected_result: "All three disjoint criteria survive, matching the tag-API parity documented at src/core/item/parse.ts:92."
+actual_result: "Exactly one criterion survives: acceptance_criteria = 'criterion from A'. The other two appear only as discarded_hash values in the merge receipt. No warning names acceptance_criteria as a lossy field."
+component: core/item/parse
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dlx7v7,discovered_from,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
+  pm-e96opw,related,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
+  pm-htbetn,related,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
+  pm-wenq,related,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
+  pm-xp1xsw,implements,"2026-08-02T21:10:20.753Z","harness:claude-code","cli:update:dep",detected
+body: ""

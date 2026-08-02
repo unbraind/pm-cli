@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:merge",diagnostics,multi-agent,remediation
 created_at: "2026-07-28T10:29:04.048Z"
-updated_at: "2026-07-28T10:34:43.097Z"
+updated_at: "2026-08-02T21:11:34.671Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: Following the remediation text the merge driver and pm health emit returns the workspace to zero warnings; no path clears history drift while leaving a receipt pending
@@ -18,6 +18,8 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-ei6x66,related,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
   pm-g5sx,related,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
   pm-ysqb6n,discovered_from,"2026-07-28T10:31:19.920Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-08-02T21:11:34.671Z","harness:claude-code","Receipt scope evidence (2026-08-02). The merge receipt is not only unsettled, it is the sole record of what a merge destroyed: for a scalar conflict it carries retained_hash and discarded_hash and no values, so once the driver stdout is gone there is no way to recover or even read the losing value. Two clones merging the same branch pair in opposite directions produce opposite receipts, both validate clean afterwards, and nothing joins the two. See pm-dlx7v7."
 learnings[1]{created_at,author,text}:
   "2026-07-28T10:34:43.096Z","harness:claude-code","Remediation text is part of the product's contract with agents, and it can be wrong in a way tests never catch: every assertion here passes, because each individual command does what its own tests say. The defect only exists in the composition — follow the printed guidance to the letter, then check whether the system reports itself clean. It did not.\n\nWorth generalizing into a habit: after any operation that prints \"run X next\", run X and then re-run the full diagnostic. The gap between \"the remediation succeeded\" and \"the workspace is clean\" is where this class lives, and drift-clean-but-receipt-pending is invisible unless both are checked."
 body: ""

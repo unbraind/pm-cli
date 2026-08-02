@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: concurrency,identity,merge,multi-agent,story
 created_at: "2026-07-25T12:32:19.634Z"
-updated_at: "2026-07-26T05:49:14.918Z"
+updated_at: "2026-08-02T21:10:23.531Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "An end-to-end scenario runs multiple agents on divergent branches performing claim, work, evidence, and close, then merges in several orders and asserts the same final state; Every agent's history entries are present after merge with their own author, harness, and model provenance intact and no cross-author loss; Claims are respected while held and correctly released or reported as stale after merge, with no item left claimed by nobody yet unreleasable; Evidence links — files, docs, tests, comments, notes — survive merge with no silent drops, asserted by count and content; Concurrent non-contradictory work from different agents is all present after merge, and contradictory work resolves deterministically with the resolution recorded; The scenario runs at a fleet size large enough to exercise contention rather than as a two-agent illustration"
@@ -18,19 +18,53 @@ outcome: The multi-agent guarantees have one composite acceptance surface instea
 parent: pm-dj98
 risk: medium
 confidence: 70
-dependencies[14]{id,kind,created_at,author,source_kind}:
-  pm-03pq3o,related,"2026-07-25T12:32:19.634Z",null,null
-  pm-2sbj8p,related,"2026-07-25T12:32:19.634Z",null,null
-  pm-3oqjnc,related,"2026-07-25T12:32:19.634Z",null,null
-  pm-76dnfg,verifies,"2026-07-25T12:32:19.634Z",null,null
-  pm-dj98,related,"2026-07-25T12:32:19.634Z",null,null
-  pm-g5sx,related,"2026-07-25T12:32:19.634Z",null,null
-  pm-lvyd,related,"2026-07-25T12:32:19.634Z",null,null
-  pm-bzmeaa,related,"2026-07-25T12:35:46.011Z",null,null
-  pm-gw6uyq,related,"2026-07-25T12:35:46.011Z",null,null
-  pm-o87av6,related,"2026-07-25T12:35:46.011Z",null,null
-  pm-odohgb,related,"2026-07-25T12:35:46.011Z",null,null
-  pm-qwuber,related,"2026-07-25T12:35:46.011Z",null,null
-  pm-ugld,related,"2026-07-25T12:35:46.011Z",null,null
-  pm-w7ccmv,implements,"2026-07-26T05:49:14.693Z",null,null
+dependencies[15]:
+  - id: pm-03pq3o
+    kind: related
+    created_at: "2026-07-25T12:32:19.634Z"
+  - id: pm-2sbj8p
+    kind: related
+    created_at: "2026-07-25T12:32:19.634Z"
+  - id: pm-3oqjnc
+    kind: related
+    created_at: "2026-07-25T12:32:19.634Z"
+  - id: pm-76dnfg
+    kind: verifies
+    created_at: "2026-07-25T12:32:19.634Z"
+  - id: pm-dj98
+    kind: related
+    created_at: "2026-07-25T12:32:19.634Z"
+  - id: pm-g5sx
+    kind: related
+    created_at: "2026-07-25T12:32:19.634Z"
+  - id: pm-lvyd
+    kind: related
+    created_at: "2026-07-25T12:32:19.634Z"
+  - id: pm-bzmeaa
+    kind: related
+    created_at: "2026-07-25T12:35:46.011Z"
+  - id: pm-gw6uyq
+    kind: related
+    created_at: "2026-07-25T12:35:46.011Z"
+  - id: pm-o87av6
+    kind: related
+    created_at: "2026-07-25T12:35:46.011Z"
+  - id: pm-odohgb
+    kind: related
+    created_at: "2026-07-25T12:35:46.011Z"
+  - id: pm-qwuber
+    kind: related
+    created_at: "2026-07-25T12:35:46.011Z"
+  - id: pm-ugld
+    kind: related
+    created_at: "2026-07-25T12:35:46.011Z"
+  - id: pm-w7ccmv
+    kind: implements
+    created_at: "2026-07-26T05:49:14.693Z"
+  - id: pm-dlx7v7
+    kind: blocked_by
+    created_at: "2026-08-02T21:10:23.359Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
 body: ""

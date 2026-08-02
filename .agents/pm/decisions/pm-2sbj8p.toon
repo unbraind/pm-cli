@@ -6,10 +6,10 @@ status: open
 priority: 2
 tags[8]: adr,concurrency,decision,federation,long-term,merge,multi-agent,storage
 created_at: "2026-07-24T23:48:31.411Z"
-updated_at: "2026-07-29T21:22:29.859Z"
+updated_at: "2026-08-02T21:11:32.080Z"
 author: maintainer-agent
 estimated_minutes: 900
-acceptance_criteria: "The decision states the concurrency and divergence regime under which field-aware three-way merge is proven sufficient, with measured evidence; Rejected alternatives are recorded with their reasons, including full conflict-free replicated data types and operation-log-only storage; Any adopted change states its format_version and migration implications and its effect on the plain-text, git-diffable storage property; The decision names the acceptance evidence source — the merge conformance suite and the simulation harness — rather than asserting a position"
+acceptance_criteria: "The decision states the concurrency and divergence regime under which field-aware three-way merge is proven sufficient, with measured evidence; Rejected alternatives are recorded with their reasons, including full conflict-free replicated data types and operation-log-only storage; Any adopted change states its format_version and migration implications and its effect on the plain-text, git-diffable storage property; The decision names the acceptance evidence source — the merge conformance suite and the simulation harness — rather than asserting a position; The decision states the merge-direction regime explicitly: whether scalar conflict resolution must be direction-independent, and if it may not be, which recorded artifact makes a discarded value recoverable and which surface reports an unreconciled divergence; The decision states the identity regime alongside the merge regime: the id width required for a stated corpus size and concurrent-agent count, and what a merge does when two independently created items share one id"
 goal: provable-history
 objective: "Decide, with evidence, whether field-aware three-way merge is sufficient at the stated concurrency target or whether convergent replicated state is required"
 value: The shipped merge drivers resolve conflicts correctly for the concurrency levels observed so far. Whether they still do at thousands of simultaneous agents across many branches is an open question that silently constrains the federation and scale milestones.
@@ -19,16 +19,58 @@ why_now: The merge-safety program has closed and federation is on the roadmap. T
 parent: pm-m2u1
 risk: high
 confidence: low
-dependencies[11]{id,kind,created_at}:
-  pm-76dnfg,blocked_by,"2026-07-24T23:48:31.411Z"
-  pm-a8lnoh,blocked_by,"2026-07-24T23:48:31.411Z"
-  pm-agou,related,"2026-07-24T23:48:31.411Z"
-  pm-dj98,related,"2026-07-24T23:48:31.411Z"
-  pm-is1a,related,"2026-07-24T23:48:31.411Z"
-  pm-o2kc,related,"2026-07-24T23:48:31.411Z"
-  pm-o87av6,related,"2026-07-24T23:48:31.411Z"
-  pm-pae3wo,related,"2026-07-24T23:48:31.411Z"
-  pm-t4d7nz,related,"2026-07-24T23:48:31.411Z"
-  pm-o87av6,implements,"2026-07-26T05:49:23.121Z"
-  pm-10l1vm,blocked_by,"2026-07-26T10:52:04.768Z"
+dependencies[14]:
+  - id: pm-76dnfg
+    kind: blocked_by
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-a8lnoh
+    kind: blocked_by
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-agou
+    kind: related
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-dj98
+    kind: related
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-is1a
+    kind: related
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-o2kc
+    kind: related
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-o87av6
+    kind: related
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-pae3wo
+    kind: related
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-t4d7nz
+    kind: related
+    created_at: "2026-07-24T23:48:31.411Z"
+  - id: pm-o87av6
+    kind: implements
+    created_at: "2026-07-26T05:49:23.121Z"
+  - id: pm-10l1vm
+    kind: blocked_by
+    created_at: "2026-07-26T10:52:04.768Z"
+  - id: pm-1tns7o
+    kind: blocked_by
+    created_at: "2026-08-02T21:10:22.530Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-dlx7v7
+    kind: blocked_by
+    created_at: "2026-08-02T21:10:22.530Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-qx95lz
+    kind: blocked_by
+    created_at: "2026-08-02T21:10:22.530Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-08-02T21:11:31.406Z","harness:claude-code","Measured convergence regime (2026-08-02, pm 2026.8.2, sandbox tracker, installed merge drivers). Union collections converge: the eleven ITEM_UNION_COLLECTION_FIELDS merge by element identity and are byte-identical in every direction and application order tested. Scalars do not: with branches A and B each rewriting description, priority, estimated_minutes and assignee, A<-B retains all four of A's values and B<-A retains all four of B's, because scalar three-way always resolves toward the merging side (preferred: ours). The merge is associative — A<-B<-C and A<-C<-B agree — so the failure is commutativity alone, and the two non-commuting directions are exactly the fleet's two: agent merges main into branch, integrator merges branch into main. Both merged workspaces report validate ok:true after git add and history-repair, and neither carries any recorded signal that the other exists. Identity has the same shape: two branches that mint one id produce one fused document with two create entries, and storage integrity only reports it when the two items had different types. Filed as pm-dlx7v7 (product), pm-1tns7o (the property suite that misses the class), pm-qx95lz (identity fusion); this decision is now blocked_by all three so the model is chosen against measurement rather than assertion."
 body: "## Question\nThe product target is thousands of agents working the same workspace across many branches, merging without conflict or loss. Today that is delivered by field-aware three-way merge drivers plus history union and reanchoring. Those are correct for the divergence patterns tested. The open question is whether they remain correct — and remain conflict-free rather than merely correct — as branch count and divergence depth grow.\n\n## Tension\nConvergent replicated state buys order-independent merge by construction, which is exactly the property the merge conformance suite is being built to assert. It costs metadata weight in every record and it works against the plain-text, human-readable, git-diffable storage property that is a deliberate product commitment.\n\n## Constraint that must be respected\nStorage stays human-readable and git-native. Any convergence mechanism that turns items into opaque blobs is rejected on that ground alone, regardless of its theoretical merits.\n\n## Evidence this decision waits on\nMeasured conflict rates from the merge conformance property suite at increasing branch counts, and invariant violations found by the deterministic simulation harness. Deciding before that evidence exists would be a preference, not a decision."

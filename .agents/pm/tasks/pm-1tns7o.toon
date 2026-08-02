@@ -1,0 +1,26 @@
+id: pm-1tns7o
+title: "The N-branch convergence property is proven only over the field class that cannot diverge: the randomized suite varies one union collection and compares it sorted"
+description: "tests/fuzz/project-boundaries.fuzz.spec.ts:219 is the property that carries the convergence claim: 'converges randomized N-branch item appends independent of merge order'. It builds each branch by setting metadata.tags to a single generated tag, folds the branches with mergeItemDocuments in original and reversed order, and asserts converge(tags).sort() equals converge(reverse(tags)).sort(). Every element of that construction lands inside ITEM_UNION_COLLECTION_FIELDS, the eleven collections that merge by element identity and therefore cannot conflict; the assertion then sorts away even the ordering. No scalar field is varied, ours and theirs are never swapped, and the merged document is never compared as a whole. The conflict policy the merge actually implements — scalar three-way resolved toward the preferred side — has no convergence property at all. This is a gate-scope defect and is filed separately from the product behaviour it fails to cover, following the pm-wlqxg3/pm-m0yjtg precedent."
+type: Task
+status: open
+priority: 1
+tags[4]: convergence,gate,merge,property-testing
+created_at: "2026-08-02T21:05:06.550Z"
+updated_at: "2026-08-02T21:10:20.069Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "The convergence property varies at least one scalar metadata field and the body in addition to union collections, and compares the whole merged document rather than a single field; The property asserts both application-order independence and merge-direction independence, exercising each branch pair as ours and as theirs; A deliberate regression that makes any union field direction-dependent, and a deliberate regression in the scalar path, each fail the suite; Every field class the merge distinguishes — union collection, latest-timestamp, scalar three-way — is named in the property and covered by at least one generated case, and adding a new field class without extending the property fails a conformance check"
+value: A property suite that can only pass is not evidence; pm-2sbj8p names this suite as the acceptance evidence for the convergence model.
+outcome: "The convergence property covers every field class the merge policy distinguishes, and a direction-dependent scalar fails it."
+why_now: The ADR that must choose the convergence model is blocked on evidence this suite is supposed to supply.
+parent: pm-33cw
+risk: high
+confidence: high
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-76dnfg,discovered_from,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
+  pm-9c7h9x,related,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
+  pm-a8lnoh,related,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
+  pm-dlx7v7,verifies,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
+  pm-ei6x66,related,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
+  pm-o87av6,implements,"2026-08-02T21:10:19.903Z","harness:claude-code","cli:update:dep",detected
+body: ""
