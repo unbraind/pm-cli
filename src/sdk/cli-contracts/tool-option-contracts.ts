@@ -276,6 +276,8 @@ export const TOOL_UPDATE_OPTION_CONTRACT_SOURCE = [
   { param: "depRemove", flag: "--dep-remove", repeatable: true },
   { param: "replaceDeps", flag: "--replace-deps" },
   { param: "replaceTests", flag: "--replace-tests" },
+  { param: "replaceFiles", flag: "--replace-files" },
+  { param: "replaceDocs", flag: "--replace-docs" },
   { param: "comment", flag: "--comment", repeatable: true },
   { param: "note", flag: "--note", repeatable: true },
   { param: "learning", flag: "--learning", repeatable: true },

@@ -1017,6 +1017,7 @@ async function persistMetadataCacheIfNeeded(params: {
       ({ candidate }) => ({
         relativePath: path.relative(params.pmRoot, candidate.item_path),
         metadata: splitHeavyMetadata(candidate.metadata).light,
+        linkedFiles: candidate.metadata.files ?? [],
       }),
     );
     if (rows.length >= params.minimumIndexedItems) {
@@ -1098,8 +1099,7 @@ export async function acquireItemMetadataDerivedIndexLock(
   const cache = await loadDerivedIndexManifest(pmRoot);
   if (
     options.required !== true &&
-    (cache === null ||
-      cache.entry_count < DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS)
+    (cache === null || cache.entry_count < DEFAULT_DERIVED_INDEX_MINIMUM_ITEMS)
   ) {
     return async () => {};
   }
@@ -1318,6 +1318,7 @@ export async function refreshItemMetadataDerivedIndex(
           : {
               relativePath,
               metadata: splitHeavyMetadata(mutation.document.metadata).light,
+              linkedFiles: mutation.document.metadata.files,
             },
       deletedRelativePaths: [
         ...(previousRelativePath === undefined ? [] : [previousRelativePath]),

@@ -4,7 +4,7 @@
  * Dependency-light deterministic scoring shared by core governance and
  * extension packages without loading tracker query infrastructure.
  */
-const ISSUE_CODE_PATTERN = /\b[a-z][a-z0-9]*-\d+\b/giu;
+const ISSUE_CODE_PATTERN = /\b[a-z][a-z0-9]*-\d+(?:-[a-z0-9]+)*\b/giu;
 
 /** Precomputed title signals reused by bounded batch similarity operations. */
 export interface PreparedSimilarityText {

@@ -51,6 +51,7 @@ pm guide release --json
 - [Agent Provenance ADR Amendment](AGENT_PROVENANCE_ADR.md) - extensible model, effort, role, and host provenance with privacy and compatibility boundaries.
 - [SDK Agent Session and Episode Context](SDK_AGENT_SESSION_CONTEXT.md) - inherited role/topic context, cross-process episode identity, and deterministic history grouping.
 - [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md) - durable mutation events, bounded duplicate governance, and scale-safe package primitives.
+- [SDK Evidence Traceability and Integrity](SDK_EVIDENCE_TRACEABILITY.md) - reverse source-to-item lookup, atomic evidence replacement, no-op history, linked-test collision classification, and telemetry drain receipts.
 - [SDK Context Integrity Primitives](SDK_CONTEXT_INTEGRITY_PRIMITIVES.md) - batch duplicate discovery, structured errors, Plan evidence/lifecycle, sparse settings, tombstones, linked-test output, relocation diagnostics, and scoped output services.
 - [Reproducible Workspaces and Snapshots](REPRODUCIBLE_WORKSPACES.md) - deterministic SDK recipes and content-addressed authoritative tracker restore points.
 - [Portable Corpus Shapes](CORPUS_SHAPES.md) - versioned SDK populations for realistic benchmarks, evaluations, and package tests.

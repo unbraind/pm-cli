@@ -2,11 +2,13 @@ id: pm-f86lth
 title: "Source-to-item traceability: derive which tracked work produced any given file or line, so an agent can ask why this code exists and get an evidence-backed answer"
 description: "Items link forward to the files they touched, but the reverse question - which item, decision, and rationale produced this line - has no answer inside pm. An agent reading unfamiliar code must guess from commit messages, and the decision that justified the code is usually two links away in an ADR that the code does not reference. This feature derives the reverse index from evidence that already exists: linked file paths on items, commit-to-item association, and line attribution from the version control host. Given a path and optional line range it returns the items that touched it, ranked by contribution and recency, each carrying its rationale fields and its path to the governing decision. Derivation is evidence-only: where attribution is ambiguous the answer says so rather than guessing, and nothing is written back onto items as fabricated links."
 type: Feature
-status: open
+status: in_progress
 priority: 2
 tags[6]: "area:sdk",context,evidence,governance,graph,traceability
 created_at: "2026-07-25T06:19:09.470Z"
-updated_at: "2026-07-29T16:56:44.091Z"
+updated_at: "2026-08-02T11:40:56.060Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#b54ea3df17a9d4f6f64078c0"
 author: unknown
 estimated_minutes: 900
 acceptance_criteria: "Given a file path and optional line range, the SDK returns the tracked items associated with it, ranked by contribution and recency, with the evidence that produced each association; Each returned item carries its rationale (value, why-now, outcome) and the shortest typed path to the decision that governs it, so the answer is a why and not just a what; Attribution is derived from existing evidence - linked paths, commit association, and line attribution - and ambiguity is reported explicitly rather than resolved by guessing; The reverse index is bounded and incremental at repository scale, and never blocks a command on a full history scan; The derivation writes no fabricated relationships onto items; any edge it proposes is surfaced as a reviewable suggestion; A CLI surface exposes the query in the target noun grammar, and the answer fits an explicit token budget"
@@ -19,14 +21,76 @@ why_now: "Linked-file ownership, evidence-edge reconstruction, and graph path qu
 parent: pm-33cw
 risk: medium
 confidence: medium
-dependencies[7]{id,kind,created_at}:
-  pm-4k6b,related,"2026-07-25T06:19:09.470Z"
-  pm-bzmeaa,related,"2026-07-25T06:19:09.470Z"
-  pm-j8z6,related,"2026-07-25T06:19:09.470Z"
-  pm-rml5,related,"2026-07-25T06:19:09.470Z"
-  pm-s5e04g,related,"2026-07-25T06:19:09.470Z"
-  pm-t4d7nz,related,"2026-07-25T06:19:09.470Z"
-  pm-bwyw,implements,"2026-07-26T05:49:46.805Z"
-comments[1]{created_at,author,text}:
+dependencies[9]:
+  - id: pm-4k6b
+    kind: related
+    created_at: "2026-07-25T06:19:09.470Z"
+  - id: pm-bzmeaa
+    kind: related
+    created_at: "2026-07-25T06:19:09.470Z"
+  - id: pm-j8z6
+    kind: related
+    created_at: "2026-07-25T06:19:09.470Z"
+  - id: pm-rml5
+    kind: related
+    created_at: "2026-07-25T06:19:09.470Z"
+  - id: pm-s5e04g
+    kind: related
+    created_at: "2026-07-25T06:19:09.470Z"
+  - id: pm-t4d7nz
+    kind: related
+    created_at: "2026-07-25T06:19:09.470Z"
+  - id: pm-bwyw
+    kind: implements
+    created_at: "2026-07-26T05:49:46.805Z"
+  - id: pm-cstuys
+    kind: related
+    created_at: "2026-08-02T06:50:12.384Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-jb1ron
+    kind: related
+    created_at: "2026-08-02T06:50:12.384Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[9]{created_at,author,text}:
   "2026-07-29T16:56:44.090Z","harness:claude-code","Traceability coverage measured at build 2026.7.29, and it is complete.\n\nEvery source, test and documentation file in the repository is referenced by at least one tracker item: 400 of 400 src TypeScript files, 390 of 390 test spec files, 42 of 42 docs markdown files. Zero unreferenced files in any of the three sets. 1,137 distinct repository paths appear across item files.\n\nMethod and its honest limit. The census matches any occurrence of a repository path inside an item's stored document, which includes formal linked-file and linked-doc entries as well as paths named in descriptions, comments and notes. It therefore proves reachability - for any file, some item explains why it exists - but not that every file carries a structured link on the item that owns it. The forward direction this item inverts is the stronger claim; this measurement bounds the reverse direction at 100 percent and tells the eventual gate what its baseline is.\n\nCompanion number for the linked-path health check: validate reports 179 missing linked paths against this same corpus, all of which are moved or deleted historical paths on terminal holders, partitioned under pm-zw9188.\n"
+  "2026-08-02T06:50:32.361Z","harness:codex","GitHub intake: #861 requests the typed indexed linked-file reverse lookup that forms the first complete delivery surface of this canonical traceability feature: https://github.com/unbraind/pm-cli/issues/861. The broader acceptance remains path/line attribution, rationale, decision path, bounded incremental indexing, CLI/SDK/MCP parity, and no fabricated relationships."
+  "2026-08-02T07:13:24.050Z","harness:codex","Implementation evidence: added a cursor-bound reverse linked-file SQLite projection with rebuild and incremental mutation updates; public CLI, PmClient, one-shot SDK, and MCP lookup surfaces; bounded pagination and explicit index/source-scan completeness receipts; generated contracts; focused documentation and regression coverage."
+  "2026-08-02T07:23:00.734Z","harness:codex","Manual isolated acceptance: built dist CLI in unrelated temporary root /tmp/tmp.M0KDXDPIeX with isolated PM_PATH and PM_GLOBAL_PATH; created pm-d2xt; files lookup returned total=1 with complete source_scan receipt; exact repeated add returned changed=false; no repository tracker data was used."
+  "2026-08-02T10:57:49.101Z","harness:codex","Implementation evidence: extracted files lookup registration into a dedicated documented CLI module to satisfy strict file-length and complexity limits without weakening the contract; the SDK public-surface snapshot explicitly acknowledges the additive evidence lookup, replacement, and telemetry receipt APIs. Strict static analysis now reports zero complexity, file-length, SDK-boundary, duplication, orphan, or docstring violations."
+  "2026-08-02T11:06:11.065Z","harness:codex","Coverage-gate diagnosis: the new lookupPath SDK parameter was initially counted as SDK-native because files lookup accepts its paths positionally. Classified the real 'lookup <path...>' CLI counterpart and added an explicit parity assertion; the shrinking-only waiver ceiling remains unchanged and the focused 13-test gate passes."
+  "2026-08-02T11:28:18.148Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
+  "2026-08-02T11:35:44.609Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
+  "2026-08-02T11:40:56.060Z","harness:codex","Release-tooling evidence: installed the latest npm pm-changelog package (2026.8.2) through pm's managed extension lifecycle and verified changelog generation in check mode. The committed managed-extension provenance moved from 2026.8.1 to 2026.8.2; CHANGELOG.md remains unchanged until this tranche's items close."
+files[18]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Pinned latest pm-changelog 2026.8.2 for package-owned release notes
+  sdk/public-surface.json,project,Reviewed public SDK surface for reverse lookup contracts
+  src/cli/register-files-lookup.ts,project,Dedicated CLI registration for indexed reverse evidence lookup
+  src/cli/register-mutation.ts,project,files lookup CLI
+  src/core/store/item-metadata-cache.ts,project,rebuild and incremental index projection
+  src/core/store/item-metadata-query-index.ts,project,bounded reverse linked-file index
+  src/sdk/cli-contracts/completeness.ts,project,Bidirectional CLI and SDK lookup positional reachability
+  src/sdk/cli-contracts/flag-contracts.ts,project,files lookup argv flag vocabulary
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,lookup parameter schema
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP files lookup contract
+  src/sdk/files.ts,project,public reverse source lookup
+  src/sdk/index.ts,project,supported public SDK export
+  src/sdk/item-metadata-index.ts,project,public index export
+  src/sdk/runtime.ts,project,PmClient and MCP parity
+  tests/fixtures/contracts/full.json,project,generated contract snapshot
+  tests/types/sdk-evidence-traceability.test-d.ts,project,public lookup compile-time contract
+  tests/unit/sdk/action-schema-parity.spec.ts,project,Shrinking-only CLI and SDK parity ratchet coverage
+  tests/unit/sdk/context-management-primitives.spec.ts,project,reverse lookup and index regression coverage
+tests[2]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts,project,240
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-management-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msbpw6qk-nq6ijx,test,passed,"2026-08-02T11:28:31.659Z","2026-08-02T11:28:55.579Z","2026-08-02T11:28:55.579Z",2,0,0
+docs[3]{path,scope,note}:
+  docs/README.md,project,documentation map
+  docs/SDK_EVIDENCE_TRACEABILITY.md,project,reverse traceability and integrity contract
+  README.md,project,public documentation route
 body: ""

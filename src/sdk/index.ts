@@ -512,7 +512,10 @@ export { runDocs } from "./docs.js";
 export {
   runFiles,
   runFilesDiscover,
+  runFilesLookup,
   type FilesDiscoveryCandidate,
+  type FilesLookupItem,
+  type FilesLookupMatch,
 } from "./files.js";
 export {
   applyPathMigrations,
@@ -712,6 +715,7 @@ export {
   extensionList,
   files,
   filesDiscover,
+  filesLookup,
   focus,
   gc,
   get,
@@ -809,6 +813,8 @@ export {
   type FilesCommandOptions,
   type FilesDiscoverOptions,
   type FilesDiscoverResult,
+  type FilesLookupOptions,
+  type FilesLookupResult,
   type FilesResult,
   type FocusResult,
   type GcCommandOptions,
@@ -990,6 +996,8 @@ export {
   runTelemetry,
   TELEMETRY_SUBCOMMANDS,
   type TelemetryCommandOptions,
+  type TelemetryFlushResult,
+  type TelemetryStatusSummary,
   type TelemetrySubcommand,
 } from "./telemetry.js";
 export {

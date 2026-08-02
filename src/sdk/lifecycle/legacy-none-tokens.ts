@@ -3,10 +3,7 @@
  *
  * Implements the pm legacy none tokens command surface and its agent-facing runtime behavior.
  */
-import {
-  EXIT_CODE,
-  PmCliError,
-} from "../runtime-primitives.js";
+import { EXIT_CODE, PmCliError } from "../runtime-primitives.js";
 /**
  * Shared legacy "none"/"null" sentinel handling for the create and update
  * commands. These tokens used to mean "clear this field"; they are now
@@ -18,9 +15,7 @@ import {
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
 
 /** Describes a repeatable option whose legacy none/null token maps to a clear flag. */
-export interface LegacyNoneCollectionNormalizer<
-  TOptions extends object,
-> {
+export interface LegacyNoneCollectionNormalizer<TOptions extends object> {
   /** Value that configures or reports option key for this contract. */
   optionKey: keyof TOptions;
   /** Value that configures or reports clear flag key for this contract. */
@@ -83,7 +78,9 @@ export function createLegacyNoneCollectionNormalizers<
 >(
   options: {
     depDisableFlagKey?: keyof TOptions;
+    fileDisableFlagKey?: keyof TOptions;
     testDisableFlagKey?: keyof TOptions;
+    docDisableFlagKey?: keyof TOptions;
   } = {},
 ): ReadonlyArray<LegacyNoneCollectionNormalizer<TOptions>> {
   return [
@@ -119,6 +116,9 @@ export function createLegacyNoneCollectionNormalizers<
       clearFlagKey: "clearFiles",
       valueFlag: "--file",
       clearFlag: "--clear-files",
+      ...(options.fileDisableFlagKey === undefined
+        ? {}
+        : { disableFlagKey: options.fileDisableFlagKey }),
     },
     {
       optionKey: "test",
@@ -134,6 +134,9 @@ export function createLegacyNoneCollectionNormalizers<
       clearFlagKey: "clearDocs",
       valueFlag: "--doc",
       clearFlag: "--clear-docs",
+      ...(options.docDisableFlagKey === undefined
+        ? {}
+        : { disableFlagKey: options.docDisableFlagKey }),
     },
     {
       optionKey: "reminder",

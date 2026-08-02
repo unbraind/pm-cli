@@ -2634,6 +2634,21 @@
           "flag": "--validate-paths"
         },
         {
+          "flag": "--scope"
+        },
+        {
+          "flag": "--limit"
+        },
+        {
+          "flag": "--offset"
+        },
+        {
+          "flag": "--no-truncate"
+        },
+        {
+          "flag": "--strict-read"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -7014,6 +7029,12 @@
           "flag": "--replace-tests"
         },
         {
+          "flag": "--replace-files"
+        },
+        {
+          "flag": "--replace-docs"
+        },
+        {
           "flag": "--comment"
         },
         {
@@ -7432,6 +7453,12 @@
         },
         {
           "flag": "--replace-tests"
+        },
+        {
+          "flag": "--replace-files"
+        },
+        {
+          "flag": "--replace-docs"
         },
         {
           "flag": "--comment"
@@ -14123,6 +14150,18 @@
             }
           }
         ],
+        "anyOf": [
+          {
+            "required": [
+              "id"
+            ]
+          },
+          {
+            "required": [
+              "lookupPath"
+            ]
+          }
+        ],
         "properties": {
           "add": {
             "description": "Add.",
@@ -14185,12 +14224,43 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
+          },
           "list": {
             "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
             "examples": [
               true
             ],
             "type": "boolean"
+          },
+          "lookupPath": {
+            "description": "One or more source paths whose referencing pm items should be returned by files lookup.",
+            "examples": [
+              [
+                "src/sdk/files.ts"
+              ],
+              [
+                "README.md",
+                "docs/SDK.md"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -14210,6 +14280,26 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+            "type": "boolean"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Number of matching rows to skip before limit is applied.",
+            "examples": [
+              0,
+              50,
+              "100"
+            ]
           },
           "options": {
             "type": "object"
@@ -14241,6 +14331,22 @@
             },
             "type": "array"
           },
+          "scope": {
+            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
+            "enum": [
+              "project",
+              "global"
+            ],
+            "examples": [
+              "project",
+              "global"
+            ],
+            "type": "string"
+          },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
+          },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
             "examples": [
@@ -14257,15 +14363,11 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "id"
-        ],
+        "required": [],
         "type": "object"
       },
       "name": "pm_files",
-      "required": [
-        "id"
-      ]
+      "required": []
     },
     {
       "description": "Set, clear, or show the session focused item. When focused, pm_create defaults its parent to the focused item (an explicit parent still overrides). Pass id to focus an item, options.clear=true to clear, or neither to show current focus.",
@@ -18690,6 +18792,14 @@
           },
           "replaceDeps": {
             "description": "When true for update, atomically replace dependencies with the supplied --dep values.",
+            "type": "boolean"
+          },
+          "replaceDocs": {
+            "description": "When true for update, atomically replace linked docs with the supplied --doc values.",
+            "type": "boolean"
+          },
+          "replaceFiles": {
+            "description": "When true for update, atomically replace linked files with the supplied --file values.",
             "type": "boolean"
           },
           "replaceTests": {
@@ -32093,6 +32203,14 @@
             "description": "When true for update, atomically replace dependencies with the supplied --dep values.",
             "type": "boolean"
           },
+          "replaceDocs": {
+            "description": "When true for update, atomically replace linked docs with the supplied --doc values.",
+            "type": "boolean"
+          },
+          "replaceFiles": {
+            "description": "When true for update, atomically replace linked files with the supplied --file values.",
+            "type": "boolean"
+          },
           "replaceTests": {
             "description": "When true for update, atomically replace linked tests with the supplied --test values.",
             "type": "boolean"
@@ -32859,6 +32977,14 @@
           },
           "replaceDeps": {
             "description": "When true for update, atomically replace dependencies with the supplied --dep values.",
+            "type": "boolean"
+          },
+          "replaceDocs": {
+            "description": "When true for update, atomically replace linked docs with the supplied --doc values.",
+            "type": "boolean"
+          },
+          "replaceFiles": {
+            "description": "When true for update, atomically replace linked files with the supplied --file values.",
             "type": "boolean"
           },
           "replaceTests": {
@@ -34091,6 +34217,18 @@
             }
           }
         ],
+        "anyOf": [
+          {
+            "required": [
+              "id"
+            ]
+          },
+          {
+            "required": [
+              "lookupPath"
+            ]
+          }
+        ],
         "properties": {
           "action": {
             "const": "files",
@@ -34156,12 +34294,43 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum number of rows returned by the selected action.",
+            "examples": [
+              10,
+              "25"
+            ]
+          },
           "list": {
             "description": "When true, list command-specific entries without mutating state (for example linked paths for files/docs or topics for guide).",
             "examples": [
               true
             ],
             "type": "boolean"
+          },
+          "lookupPath": {
+            "description": "One or more source paths whose referencing pm items should be returned by files lookup.",
+            "examples": [
+              [
+                "src/sdk/files.ts"
+              ],
+              [
+                "README.md",
+                "docs/SDK.md"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "message": {
             "description": "History message for mutation audit trail.",
@@ -34181,6 +34350,26 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+            "type": "boolean"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Number of matching rows to skip before limit is applied.",
+            "examples": [
+              0,
+              50,
+              "100"
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",
@@ -34212,6 +34401,22 @@
             },
             "type": "array"
           },
+          "scope": {
+            "description": "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
+            "enum": [
+              "project",
+              "global"
+            ],
+            "examples": [
+              "project",
+              "global"
+            ],
+            "type": "string"
+          },
+          "strictRead": {
+            "description": "When true for list-family actions, fail if any source item or item directory cannot be read.",
+            "type": "boolean"
+          },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
             "examples": [
@@ -34229,8 +34434,7 @@
           }
         },
         "required": [
-          "action",
-          "id"
+          "action"
         ],
         "title": "pm action \"files\" parameters",
         "type": "object"

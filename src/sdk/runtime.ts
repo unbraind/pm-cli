@@ -213,7 +213,7 @@ import {
   type GraphResult,
   type GraphSubcommand,
 } from "./graph/run.js";
-import { runFiles, runFilesDiscover } from "./files.js";
+import { runFiles, runFilesDiscover, runFilesLookup } from "./files.js";
 import type { AppendCommandOptions, AppendResult } from "./lifecycle/append.js";
 import type {
   ClaimNextResult,
@@ -254,6 +254,8 @@ import type {
   FilesCommandOptions,
   FilesDiscoverOptions,
   FilesDiscoverResult,
+  FilesLookupOptions,
+  FilesLookupResult,
   FilesResult,
 } from "./files.js";
 import type { InitCommandOptions, InitResult } from "./init.js";
@@ -917,6 +919,11 @@ export class PmClient {
     options: FilesDiscoverOptions = {},
   ): Promise<FilesDiscoverResult> {
     return this.runTyped("files-discover", { id, options });
+  }
+
+  /** Find the items that reference one or more source paths. */
+  filesLookup(options: FilesLookupOptions): Promise<FilesLookupResult> {
+    return this.runTyped("files-lookup", { options });
   }
 
   /** Add, remove, clear, or list linked documentation for an item. */
@@ -1797,6 +1804,14 @@ export function filesDiscover(
   clientOptions: PmClientOptions = {},
 ): Promise<FilesDiscoverResult> {
   return new PmClient(clientOptions).filesDiscover(id, options);
+}
+
+/** Resolve items linked to source paths without constructing a reusable client. */
+export function filesLookup(
+  options: FilesLookupOptions,
+  clientOptions: PmClientOptions = {},
+): Promise<FilesLookupResult> {
+  return new PmClient(clientOptions).filesLookup(options);
 }
 
 /** Manage linked item docs without constructing a reusable client. */
@@ -3055,6 +3070,23 @@ function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
 }
 
 function runMcpFilesAction(ctx: McpActionDispatchContext): Promise<unknown> {
+  const lookupPaths = readStringArray(ctx.options.lookupPath);
+  if (lookupPaths && lookupPaths.length > 0) {
+    return runFilesLookup(
+      {
+        paths: lookupPaths,
+        scope:
+          ctx.options.scope === "project" || ctx.options.scope === "global"
+            ? ctx.options.scope
+            : undefined,
+        limit: parseMcpInteger(ctx.options.limit, "files lookup limit"),
+        offset: parseMcpInteger(ctx.options.offset, "files lookup offset"),
+        noTruncate: ctx.options.noTruncate === true,
+        strictRead: ctx.options.strictRead === true,
+      },
+      ctx.global,
+    );
+  }
   const fileId = requireMcpItemId(ctx);
   return ctx.options.discover === true
     ? runFilesDiscover(
@@ -3778,6 +3810,21 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
   graph: runMcpGraphAction,
   "files-discover": (ctx) =>
     runFilesDiscover(requireMcpItemId(ctx), ctx.options, ctx.global),
+  "files-lookup": (ctx) =>
+    runFilesLookup(
+      {
+        paths: readStringArray(ctx.options.paths),
+        scope:
+          ctx.options.scope === "project" || ctx.options.scope === "global"
+            ? ctx.options.scope
+            : undefined,
+        limit: parseMcpInteger(ctx.options.limit, "files lookup limit"),
+        offset: parseMcpInteger(ctx.options.offset, "files lookup offset"),
+        noTruncate: ctx.options.noTruncate === true,
+        strictRead: ctx.options.strictRead === true,
+      },
+      ctx.global,
+    ),
   history: (ctx) => runHistory(requireMcpItemId(ctx), ctx.options, ctx.global),
   "history-redact": (ctx) =>
     runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
@@ -3929,6 +3976,8 @@ export type {
   FilesCommandOptions,
   FilesDiscoverOptions,
   FilesDiscoverResult,
+  FilesLookupOptions,
+  FilesLookupResult,
   FilesResult,
   GcCommandOptions,
   GcResult,

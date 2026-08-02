@@ -102,6 +102,10 @@ const LINKED_TEST_INFRA_COLLISION_PATTERNS = [
   /web server[^.\n]*already running/i,
   /failed to listen on/i,
 ];
+const LINKED_TEST_LOCK_ACQUISITION_PATTERN =
+  /\b(?:could not|failed to|unable to)\s+acquire\b[^\n.]*\block\b/i;
+const LINKED_TEST_LOCK_CONTENTION_CONTEXT_PATTERN =
+  /\b(?:already running|timed?\s*out|timeout|held by another|lock\s+is\s+held)\b/i;
 const PM_TRACKER_READ_SUBCOMMANDS = new Set([
   "activity",
   "calendar",
@@ -1380,8 +1384,12 @@ function hasInfraCollisionSignal(
   const combined = [result.spawnError ?? "", result.stderr, result.stdout].join(
     "\n",
   );
-  return LINKED_TEST_INFRA_COLLISION_PATTERNS.some((pattern) =>
-    pattern.test(combined),
+  return (
+    LINKED_TEST_INFRA_COLLISION_PATTERNS.some((pattern) =>
+      pattern.test(combined),
+    ) ||
+    (LINKED_TEST_LOCK_ACQUISITION_PATTERN.test(combined) &&
+      LINKED_TEST_LOCK_CONTENTION_CONTEXT_PATTERN.test(combined))
   );
 }
 

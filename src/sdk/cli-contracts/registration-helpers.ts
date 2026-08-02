@@ -640,6 +640,8 @@ export function normalizeUpdateOptions(
     depRemove: readUpdateList("depRemove"),
     replaceDeps: optionTrue(commandOptions, "replaceDeps"),
     replaceTests: optionTrue(commandOptions, "replaceTests"),
+    replaceFiles: optionTrue(commandOptions, "replaceFiles"),
+    replaceDocs: optionTrue(commandOptions, "replaceDocs"),
     comment: readUpdateList("comment"),
     note: readUpdateList("note"),
     learning: readUpdateList("learning"),

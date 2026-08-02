@@ -19,8 +19,11 @@ export {
 } from "../core/store/item-metadata-cache.js";
 export {
   queryItemMetadataIndex,
+  queryLinkedFileMetadataIndex,
   querySimilarItemMetadataIndex,
+  type IndexedLinkedFileMatch,
   type ItemMetadataIndexQuery,
   type ItemMetadataIndexQueryResult,
+  type LinkedFileMetadataIndexResult,
   type SimilarItemMetadataIndexResult,
 } from "../core/store/item-metadata-query-index.js";

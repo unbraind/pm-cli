@@ -1,0 +1,60 @@
+id: pm-cstuys
+title: "GH-868: atomic replacement contract for linked files and docs"
+description: "Update supports atomic replace modes for tests and dependencies but rejects clearing and adding linked files or docs in one mutation. Add typed replace-files and replace-docs contracts across SDK, CLI, MCP, completions, history, and rollback behavior."
+type: Issue
+status: in_progress
+priority: 1
+tags[7]: "area:cli","area:mcp","area:sdk",atomicity,github-report,linked-resources,mutation-contract
+created_at: "2026-08-02T06:48:34.624Z"
+updated_at: "2026-08-02T11:35:45.255Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#b54ea3df17a9d4f6f64078c0"
+author: "harness:codex"
+acceptance_criteria: "Update accepts typed atomic replace-files and replace-docs inputs; CLI, SDK, MCP schemas, completions, and help expose the same contract; Replacement writes one history transition and cannot leave an intermediate empty set; Empty replacement and rollback behavior are tested; The GitHub report is linked to this canonical PM item"
+goal: project management = context management
+objective: Agents can correct complete evidence sets atomically through public SDK primitives
+value: Interrupted evidence maintenance cannot leave partial project context
+impact: Brings files and docs to mutation parity with tests and dependencies
+outcome: A single SDK/CLI action deterministically replaces linked evidence collections
+why_now: GitHub #868 identified the parity gap on 2026.8.2
+parent: pm-usfg
+risk: medium
+confidence: high
+reporter: GitHub #868
+severity: medium
+expected_result: Files and docs can be atomically replaced
+actual_result: Clear plus add is rejected and no replacement mode exists
+affected_version: 2026.8.2
+component: item update SDK/CLI/MCP contracts
+regression: false
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4e12,related,"2026-08-02T06:48:34.624Z","harness:codex","cli:create:dep",detected
+  pm-bjpo,related,"2026-08-02T06:48:34.624Z","harness:codex","cli:create:dep",detected
+  pm-zwpp,related,"2026-08-02T06:48:34.624Z","harness:codex","cli:create:dep",detected
+  pm-f86lth,implements,"2026-08-02T07:13:18.258Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-08-02T06:48:34.624Z","harness:codex","Duplicate check evidence: searched all open, closed, and canceled PM items for replace-files, replace-docs, atomic linked-resource replacement, and clear-plus-add. Closed pm-bjpo owns linked-test replacement only; no item owns files/docs parity. Source: https://github.com/unbraind/pm-cli/issues/868."
+  "2026-08-02T07:13:25.024Z","harness:codex","Implementation evidence: update and update-many now atomically replace files/docs with pre-mutation conflict/value validation, ownership bypass restrictions, legacy-none normalization parity, typed option contracts, documentation, and regression coverage."
+  "2026-08-02T07:22:06.399Z","harness:codex","Manual acceptance caught an argv-bootstrap parity gap before shipment: Commander exposed --replace-files/--replace-docs but the guarded canonical flag vocabulary did not. Added both update/update-many flag contracts and a subprocess CLI regression so typo correction cannot intercept valid replacement flags."
+  "2026-08-02T07:23:02.567Z","harness:codex","Manual isolated acceptance: dist CLI accepted --replace-files and --replace-docs together for temp item pm-d2xt and authoritative get returned only src/replaced.ts and docs/replaced.md. This proves guarded argv parsing plus atomic storage behavior outside the repository tracker."
+  "2026-08-02T11:28:18.862Z","harness:codex","Repository-wide verification: 418 test files and 6,703 tests passed under the sandboxed coverage runner with exact 100% statements (47,529/47,529), branches (34,246/34,246), functions (9,673/9,673), and lines (46,119/46,119). No coverage thresholds, exclusions, or ignore counts were weakened."
+  "2026-08-02T11:35:45.255Z","harness:codex","Packed-consumer acceptance: pnpm smoke:npx passed the generated tarball across 15 packaged modules. An independent tarball was then installed from unrelated root /tmp/tmp.0PKR29g4Dz into separate npm and Bun consumers with isolated project/global trackers; both initialized, created items, added evidence, and returned files lookup total=1. npm additionally proved atomic files/docs replacement and exact repeated evidence changed=false."
+files[11]{path,scope,note}:
+  sdk/public-surface.json,project,Reviewed public SDK surface for atomic evidence replacement contracts
+  src/cli/register-mutation.ts,project,update and update-many replacement flags
+  src/sdk/cli-contracts/flag-contracts.ts,project,argv bootstrap flag vocabulary
+  src/sdk/cli-contracts/registration-helpers.ts,project,CLI option normalization
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,replace option contracts
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,replace parameter metadata
+  src/sdk/lifecycle/legacy-none-tokens.ts,project,replacement-compatible legacy normalization
+  src/sdk/lifecycle/update-many.ts,project,bulk replacement preview parity
+  src/sdk/lifecycle/update.ts,project,atomic files and docs replacement
+  tests/fixtures/contracts/full.json,project,generated replacement contract snapshot
+  tests/unit/sdk/context-management-primitives.spec.ts,project,atomic replacement regression coverage
+tests[1]{command,scope,timeout_seconds}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-management-primitives.spec.ts,project,240
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,passed,failed,skipped}:
+  test-local-msbpwisz-bdw5tb,test,passed,"2026-08-02T11:28:56.296Z","2026-08-02T11:29:11.219Z","2026-08-02T11:29:11.219Z",1,0,0
+docs[1]{path,scope,note}:
+  docs/SDK_EVIDENCE_TRACEABILITY.md,project,atomic replacement contract
+body: ""

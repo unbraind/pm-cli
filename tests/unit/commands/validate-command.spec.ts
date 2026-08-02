@@ -18,6 +18,9 @@ import {
 } from "../../../src/cli/commands/validate.js";
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
+import { resolveItemTypeRegistry } from "../../../src/core/item/type-registry.js";
+import { listAllDocumentCandidatesCached } from "../../../src/core/store/item-metadata-cache.js";
+import { readSettings } from "../../../src/core/store/settings.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import {
   DEFAULT_GRANTED_FIX_SCOPES,
@@ -2430,6 +2433,24 @@ describe("runValidate", () => {
         ["append", id, "--json", "--body", `drift ${leakedPath}`, "--author", "seed-author", "--message", "append drift payload"],
         { expectJson: true },
       );
+      const settings = await readSettings(context.pmPath);
+      const typeRegistry = resolveItemTypeRegistry(settings);
+      await listAllDocumentCandidatesCached(
+        context.pmPath,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+        undefined,
+        settings.schema,
+        {
+          includeBody: true,
+          includeCollections: true,
+          forceSourceScan: true,
+          derivedIndexMinimumItems: 1,
+        },
+      );
+      await expect(
+        runValidate({ checkHistoryDrift: true }, { path: context.pmPath }),
+      ).resolves.toMatchObject({ warnings: [] });
 
       const redaction = await runHistoryRedact(
         id,
@@ -2442,6 +2463,12 @@ describe("runValidate", () => {
       );
       expect(redaction.changed).toBe(true);
       expect(redaction.history.verify_ok).toBe(true);
+      await expect(
+        readFile(
+          path.join(context.pmPath, "runtime", "history-drift-cache.json"),
+          "utf8",
+        ),
+      ).rejects.toMatchObject({ code: "ENOENT" });
 
       const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
       const historyCheck = checkByName(result, "history_drift");
